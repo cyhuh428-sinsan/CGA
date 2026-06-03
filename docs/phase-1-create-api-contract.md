@@ -1,3 +1,17 @@
+# Superseded By Aidot Structure Parity
+
+This document is retained as historical design context only.
+Do not implement separate CGA API namespaces, separate CGA draft schemas, or a new system structure from this document.
+
+Current binding rule:
+
+- CGA must keep Aidot's structure, functions, system, and API contracts identical by default.
+- CGA changes screen composition and workflow-first user experience.
+- Any unavoidable API/data/runtime change must be made with Aidot and CGA together, or added without breaking Aidot behavior.
+
+See `docs/aidot-structure-parity.md`.
+
+---
 # Phase 1 Create Step: API Contract Proposal
 
 Status: Proposal only. Not implemented.
@@ -193,3 +207,4 @@ If a shared gap is found, use one of the approved patterns:
 1. Should CGA management APIs use `/api/v1/cga/...` or a separate service base path?
 2. Should draft list include archived/deleted drafts in MVP?
 3. Should compatibility capabilities be returned from Create step immediately or deferred until Build Client?
+

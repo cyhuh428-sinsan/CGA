@@ -28,3 +28,9 @@ Confirmed decisions:
 - CGA-produced clients must be able to connect to Aidot Bot Servers when they use the Aidot-compatible client contract.
 - Client compatibility is bidirectional: Aidot clients -> CGA Bot Server, and CGA-produced clients -> Aidot Bot Server.
 - CGA-only optional client features must use capability detection or safe fallback when connected to Aidot.
+- CGA must keep Aidot structure, functions, system, and API contracts identical by default.
+- CGA is not a new system that merely references Aidot.
+- CGA changes screen composition, workflow-first navigation, labels, language, and beginner/advanced exposure.
+- Separate CGA API namespaces or data models are not default implementation direction.
+- New feature development is prohibited by default.
+- If a new feature is unavoidable, the request must explicitly state `새로운 기능 개발 요청` and wait for Shin-san approval before implementation.

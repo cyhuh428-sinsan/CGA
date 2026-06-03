@@ -1,3 +1,17 @@
+# Superseded By Aidot Structure Parity
+
+This document is retained as historical design context only.
+Do not implement separate CGA API namespaces, separate CGA draft schemas, or a new system structure from this document.
+
+Current binding rule:
+
+- CGA must keep Aidot's structure, functions, system, and API contracts identical by default.
+- CGA changes screen composition and workflow-first user experience.
+- Any unavoidable API/data/runtime change must be made with Aidot and CGA together, or added without breaking Aidot behavior.
+
+See `docs/aidot-structure-parity.md`.
+
+---
 # Phase 1 Create Step: Data Schema
 
 Status: Proposal only. Not implemented.
@@ -160,3 +174,4 @@ No change to:
 - Aidot runtime variables
 - Aidot runtime functions
 - Aidot channel message payload semantics
+

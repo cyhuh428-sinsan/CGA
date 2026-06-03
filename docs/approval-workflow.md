@@ -78,3 +78,15 @@ If there is impact, the proposal must choose one approved pattern:
 3. Keep the external Aidot contract and add an internal CGA adapter.
 
 
+
+## New Feature Rule
+
+New feature development is prohibited by default.
+
+If a new feature is needed, the proposal must explicitly be titled:
+
+```text
+새로운 기능 개발 요청
+```
+
+Without Shin-san approval, do not implement the new feature.

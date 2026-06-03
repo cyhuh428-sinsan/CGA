@@ -1,3 +1,17 @@
+# Superseded By Aidot Structure Parity
+
+This document is retained as historical design context only.
+Do not implement separate CGA API namespaces, separate CGA draft schemas, or a new system structure from this document.
+
+Current binding rule:
+
+- CGA must keep Aidot's structure, functions, system, and API contracts identical by default.
+- CGA changes screen composition and workflow-first user experience.
+- Any unavoidable API/data/runtime change must be made with Aidot and CGA together, or added without breaking Aidot behavior.
+
+See `docs/aidot-structure-parity.md`.
+
+---
 # Phase 2 Proposal: Input Step
 
 Status: Proposal only. Not implemented.
@@ -305,5 +319,6 @@ It must not alter:
 - Allow document upload before Connected LLM, but mark generation as blocked until LLM is connected.
 - Support CSV/TXT/manual rows in MVP; defer XLSX unless spreadsheet import is already easy in the chosen scaffold.
 - Defer Aidot version package import to Advanced Builder after basic Input/Generate flow is stable.
+
 
 

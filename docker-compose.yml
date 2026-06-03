@@ -1,0 +1,16 @@
+services:
+  cga-studio:
+    build:
+      context: .
+    working_dir: /workspace
+    command: npm run studio
+    environment:
+      PORT: "4173"
+    ports:
+      - "4173:4173"
+    volumes:
+      - .:/workspace
+      - cga_node_modules:/workspace/node_modules
+
+volumes:
+  cga_node_modules:

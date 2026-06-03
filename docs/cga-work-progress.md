@@ -1,0 +1,383 @@
+# CGA 작업 진행 기록
+
+## 2026-06-03
+
+### 현재 작업 목적
+- CGA Studio를 Aidot 신규 개발이 아니라 Aidot Workflow Shell로 정리한다.
+- Aidot의 구조, API, 런타임, webchat 호환성은 변경하지 않는다.
+- 작업은 `D:\Project\cga`에서만 진행한다.
+
+### 진행한 작업
+- `docs/CGA_Studio_설계서_완성본.md`를 `CGA 설계서.docx` 기준으로 보완했다.
+- 단계 구조를 `Create -> Setup -> Configure -> Review -> Edit -> Train -> Test -> Improve -> Deploy`로 정리했다.
+- `apps/studio/index.html` 정적 화면을 생성했다.
+- `apps/studio/styles.css` 정적 화면 스타일을 생성했다.
+
+### 현재 화면 방향
+- 상단: 현재 봇, 버전, 언어, Aidot API 유지 상태, Save/Test/Deploy 버튼
+- 왼쪽: 봇 제작 단계
+- 중앙: Configure/Review/Edit 중심 작업 화면
+- 오른쪽: 확정 원칙과 승인 필요 항목
+
+### 확정 원칙
+- Aidot 수정 금지
+- CGA 폴더에서만 작업
+- 새 기능 개발 금지
+- Aidot API/webchat/런타임 호환 유지
+- 각 화면은 신산님 승인 후 구현
+
+### 다음 작업 후보
+- 정적 화면을 브라우저에서 열어 시각 검토한다.
+- 신산님 승인 후 Create 화면 또는 Configure 화면 중 하나를 세부 설계한다.
+
+
+### 2026-06-03 추가 보완
+- `CGA_Studio_화면설계서_v2.0.docx`를 참고해 설계서를 보완했다.
+- 사용자 노출 단계를 6단계로 단순화하고, 내부 세부 단계 9단계와 매핑했다.
+- 글로벌 레이아웃 규칙(TopBar / Step Rail / Main Workspace / Status Panel)을 추가했다.
+- LLM 연결 상태 표시 규칙을 추가했다.
+- 수동 LLM Handoff 파일 규격과 주의사항을 추가했다.
+- 운영 화면 항목과 알람 조건을 추가했다.
+- 동적 의도 확장 승인, 자동 신규 의도 생성, 승인 대기 큐, 자동 재학습 연결은 새 기능 가능성이 있어 승인 필요 항목으로 분리했다.
+
+
+### 2026-06-03 화면 반영
+- `apps/studio/index.html`을 설계서 v2.0 기준에 맞춰 갱신했다.
+- 왼쪽 Step Rail을 사용자 노출 6단계로 단순화했다.
+- 중앙에 6단계와 Aidot 내부 세부 단계 매핑 패널을 추가했다.
+- Configure Bot 화면에 학습문장 경로와 PDF 경로의 LLM 연결 조건을 명확히 표시했다.
+- 승인 필요 항목에 수동 LLM Handoff와 동적 의도 확장 범위를 추가했다.
+
+- `apps/studio/styles.css`에 6단계 ↔ Aidot 내부 단계 매핑 패널 스타일을 추가했다.
+
+
+### 2026-06-03 6단계 화면 전체 구현 초안
+- 신산님 지시에 따라 단계마다 Aidot 기능을 다시 테스트하지 않는 방향으로 작업 기준을 조정했다.
+- `apps/studio/index.html`에 6단계 전체 화면 초안을 한 화면 안에 구성했다.
+- 01 Create Bot, 02 Configure Bot, 03 Detail Settings, 04 Build, 05 Test, 06 Operate 화면을 모두 추가했다.
+- 각 화면에 연결되는 Aidot 기존 기능 매핑을 표시했다.
+- 수동 LLM Handoff, PDF Q&A 생성, 동적 의도 확장처럼 새 기능 가능성이 있는 항목은 승인 필요 상태로 표시했다.
+- `apps/studio/styles.css`를 6단계 전체 화면에 맞게 재작성했다.
+
+
+### 2026-06-03 오픈 코어 전략 반영
+- 신산님 결정에 따라 상용 가치가 큰 기능을 별도 모듈로 분리하는 방향을 확정했다.
+- 설계서에 `오픈 코어 및 상용 모듈 분리 전략` 섹션을 추가했다.
+- Public Core와 Commercial Modules의 범위를 구분했다.
+- Commercial Module 후보를 Advanced Builder, Operations Monitor, License / Entitlement 3종으로 정리했다.
+- Studio 화면에 Open Core Strategy 섹션을 추가했다.
+- 공개 버전에서 상용 모듈은 `Commercial Module Required` 상태로 표시하는 원칙을 반영했다.
+
+
+### 2026-06-03 모듈 경계 구체화
+- Public Core와 Commercial Module 경계를 별도 문서로 작성했다.
+- `docs/cga-open-core-module-boundary.md`를 추가했다.
+- 화면별 공개 기능과 상용 모듈 후보를 구분했다.
+- Studio 화면에 `Module Boundary Matrix` 섹션을 추가했다.
+- Public Core는 Commercial Module 없이도 실행되어야 한다는 원칙을 명시했다.
+
+
+### 2026-06-04 다국어와 에러 메시지 기반 반영
+- 신산님 지시에 따라 메뉴보다 에러 메시지/상태 메시지/운영 알림의 i18n 기반을 먼저 분리했다.
+- `docs/cga-i18n-error-message-policy.md`를 추가했다.
+- `packages/i18n/error-catalog.json`을 추가했다.
+- 1차 locale 리소스 `en`, `ko`, `zh-CN`, `ja`, `vi`, `de`, `fr`를 추가했다.
+- Studio 화면에 `Localization and Error Messages` 섹션을 추가했다.
+- API 에러는 번역 문장이 아니라 안정적인 `error_code`와 `message_key`를 기준으로 처리한다는 원칙을 문서화했다.
+
+
+### 2026-06-04 화면 i18n 동작 반영
+- `packages/i18n/src/resolve-message.js`를 추가해 실제 앱에서 사용할 메시지 해석 유틸의 기준을 만들었다.
+- `packages/i18n/README.md`를 추가했다.
+- `apps/studio/i18n.js`를 추가해 정적 화면에서도 locale 선택과 에러 메시지 전환이 동작하도록 했다.
+- TopBar에 locale selector를 추가했다.
+- i18n 섹션과 에러 샘플 4개를 `data-i18n`, `data-error-key` 기반으로 전환했다.
+
+
+### 2026-06-04 Studio 실행 구조 전환
+- 정적 마크업 일부를 데이터 기반 렌더링으로 전환했다.
+- `apps/studio/data/workflow.js`에 6단계 워크플로우와 모듈 경계 데이터를 분리했다.
+- `apps/studio/app.js`를 추가해 워크플로우 레일, 모듈 경계표, 에러 샘플을 데이터 기반으로 렌더링한다.
+- `scripts/serve-studio.js`를 추가해 추가 의존성 없이 CGA Studio를 로컬 서버로 실행할 수 있게 했다.
+- `package.json`에 `npm run studio`, `npm run studio:check` 스크립트를 추가했다.
+
+
+### 2026-06-04 로컬 서버 실행 확인
+- `npm run studio:check` 문법 검사를 통과했다.
+- `apps/studio/app.js`와 `apps/studio/i18n.js` 문법 검사를 통과했다.
+- `scripts/serve-studio.js` 기반으로 CGA Studio 로컬 서버를 실행했다.
+- 실행 URL은 `http://localhost:4173`이다.
+- 서버 응답 상태 `200`을 확인했다.
+- 현재 실행 PID는 `35856`이다.
+
+
+### 2026-06-04 Public Core 계약 추가
+- `packages/contracts` 패키지를 추가했다.
+- 에러 응답 계약, 상용 모듈 상태 계약, 워크플로우 매핑 계약을 코드로 분리했다.
+- Studio 화면에 `Public Core Contracts` 섹션을 추가했다.
+- 모듈 경계 문서에 Public Contracts 섹션을 추가했다.
+
+
+### 2026-06-04 화면 구성 변경 가능 구조 반영
+- 신산님 지시에 따라 화면 구성을 언제든지 바꿀 수 있는 구조로 보완했다.
+- `apps/studio/data/layout.js`를 추가했다.
+- 각 화면 section에 `data-screen-id`를 부여했다.
+- `apps/studio/app.js`가 `layout.js` 기준으로 화면 순서, 노출 여부, 그룹 정보를 적용하도록 변경했다.
+- `docs/cga-screen-composition-policy.md`를 추가했다.
+
+
+### 2026-06-04 Studio 설정 검증 추가
+- `scripts/check-studio-config.js`를 추가했다.
+- `npm run studio:config-check` 스크립트를 추가했다.
+- `npm run studio:validate` 스크립트를 추가했다.
+- README에 CGA Studio 실행/검증/화면 구성 변경 방법을 추가했다.
+
+
+### 2026-06-04 Studio 검증 통과
+- `package.json`의 `studio:config-check`, `studio:validate` 스크립트 위치 오류를 수정했다.
+- locale 파일에 화면 i18n 키 누락분을 추가했다.
+- `npm run studio:validate`를 실행해 전체 검증이 통과했다.
+- 검증 통과 항목: layout id와 screen section 일치, 필수 workflow 6단계 존재, English locale key 존재, 모든 locale의 error catalog key 존재, contract files 존재.
+
+
+### 2026-06-04 Public Core 상태 모델 추가
+- `packages/public-core` 패키지를 추가했다.
+- `src/studio-state.js`에 CGA Studio 화면 상태 모델을 정의했다.
+- LLM 연결 상태, 단계 상태, 채널 상태 enum을 추가했다.
+- readiness 파생 함수와 PDF Q&A 생성 가능 여부, Kakao KR 채널 사용 가능 여부 함수를 추가했다.
+- `npm run studio:state-check` 검증 스크립트를 추가했다.
+- `npm run studio:validate`에 state check를 포함했다.
+
+
+### 2026-06-04 Public Core 상태 모델 검증 통과
+- `package.json` scripts 구조를 정상화했다.
+- `npm run studio:validate`에 `studio:state-check`가 포함되도록 수정했다.
+- `npm run studio:validate` 전체 검증이 통과했다.
+- `http://localhost:4173` 응답 상태 `200`을 다시 확인했다.
+
+
+### 2026-06-04 Studio 상태 모델 화면 연결
+- 로컬 서버를 CGA 루트 기준으로 서빙하도록 변경해 `packages`를 브라우저에서 import할 수 있게 했다.
+- `apps/studio/data/sample-state.js`를 추가했다.
+- `apps/studio/app.js`에서 Public Core 상태 모델의 `deriveReadiness`, `canGeneratePdfQa`, `canUseKakaoChannel`을 사용하도록 연결했다.
+- `Studio State and Readiness` 화면 섹션을 추가했다.
+- 화면 상태와 readiness issue가 하드코딩이 아니라 Public Core 상태 모델에서 파생되도록 했다.
+
+
+### 2026-06-04 상태 모델 화면 연결 검증 통과
+- 서버 루트를 CGA 프로젝트 루트로 전환했다.
+- `/` 요청이 `/apps/studio/index.html`로 연결되도록 수정했다.
+- `/packages/public-core/src/studio-state.js`가 브라우저에서 import 가능한 경로로 서빙되는 것을 확인했다.
+- 서버를 PID `30512`로 재시작했다.
+- `http://localhost:4173` 응답 상태 `200`을 확인했다.
+- `npm run studio:validate` 전체 검증이 통과했다.
+
+
+### 2026-06-04 Commercial Module 레지스트리 기본값 추가
+- `packages/public-core/src/module-registry.js`를 추가했다.
+- Public Core에서 상용 모듈이 설치되지 않은 기본 상태를 표현할 수 있게 했다.
+- Studio 화면에 `Commercial Module Availability` 섹션을 추가했다.
+- 상용 기능 후보가 기본적으로 `Commercial Module Required`로 표시되도록 연결했다.
+- `npm run studio:module-check`를 추가하고 `studio:validate`에 포함했다.
+
+
+### 2026-06-04 Create Bot 구조 결정 반영
+- 신산님 지시에 따라 전체 봇 구조에 영향을 주는 선택을 Create Bot 단계로 이동했다.
+- Create Bot 화면에 LLM 사용 여부, 구성 입력 방식, 오케스트레이터 모드, Bot Server 위치 선택을 추가했다.
+- `packages/public-core/src/studio-state.js`에 structural choices 모델을 추가했다.
+- `apps/studio/data/sample-state.js`와 `workflow.js`에 Create Bot 구조 결정 항목을 반영했다.
+- 설계서 6.1에 Create 단계 구조 결정 원칙을 추가했다.
+
+
+### 2026-06-04 Aidot 학습 이후 변경 불가 항목 반영
+- 신산님 기준에 따라 Aidot에서 학습 이후 변경 불가하거나 구조가 깨지는 항목은 모두 Create Bot에서 설정하도록 원칙을 강화했다.
+- `TRAINING_LOCKED_CREATE_FIELDS`와 `RUNTIME_ADJUSTABLE_FIELDS`를 Public Core 상태 모델에 추가했다.
+- Create Bot 화면에 `Locked after training` 표시를 추가했다.
+- 설계서에 `Aidot 학습 이후 변경 불가 항목` 섹션을 추가했다.
+- layout.js에서 누락된 `commercial-availability` section을 복구하고 화면 order를 정리했다.
+
+
+### 2026-06-04 Create Bot 구조 입력 상태 연결
+- Create Bot의 구조 결정 입력에 `data-structural-field`를 추가했다.
+- `apps/studio/app.js`에 현재 Studio 상태를 두고 입력 변경 시 상태 모델이 갱신되도록 연결했다.
+- LLM 사용 여부, 구성 입력 방식, 기본 언어 변경에 따라 PDF Q&A 가능 여부, Kakao KR 상태, readiness issue가 다시 계산되도록 했다.
+- Create Bot 오른쪽 Structure Summary를 하드코딩에서 상태 기반 렌더링으로 변경했다.
+
+
+### 2026-06-04 잠금 항목/실행 옵션 화면 분리
+- `Locked Structure vs Runtime Options` 화면 섹션을 추가했다.
+- Public Core 상태 모델의 `TRAINING_LOCKED_CREATE_FIELDS`, `RUNTIME_ADJUSTABLE_FIELDS`를 화면에 연결했다.
+- Create Bot에서 잠기는 구조 항목과 이후 단계에서 조정 가능한 실행 옵션을 분리 표시했다.
+- 설계서에 화면 정책을 추가했다.
+
+
+### 2026-06-04 주요 화면 한국어 전환 범위 확대
+- 사용자가 한국어 선택 시 대부분의 상단/좌측/hero/Create Bot/Approval 문구가 한국어로 보이도록 `data-i18n` 키를 확대했다.
+- workflow navigation 동적 렌더링에도 i18n 키를 연결했다.
+- locale 리소스와 `apps/studio/i18n.js` 내장 리소스를 재생성했다.
+
+
+### 2026-06-04 i18n 누락 검사 기반 추가
+- 화면 문구가 영어 하드코딩으로 쌓이지 않도록 `scripts/check-i18n-coverage.js`를 추가했다.
+- `npm run studio:i18n-check` 스크립트를 추가했다.
+- `npm run studio:validate`에 i18n coverage guard를 포함했다.
+
+
+### 2026-06-04 전체 화면 i18n 키 확대
+- Configure, Detail, Build, Test, Operate, Lock Policy, State, Commercial, Module Boundary, Contracts, Open Core 영역의 주요 HTML 문구를 i18n 키로 전환했다.
+- 한국어 리소스에 해당 키를 추가했다.
+- placeholder 번역 처리를 `i18n.js`에 추가했다.
+
+
+### 2026-06-04 사용자/로그인/API 답변 영역 추가
+- 신산님 지적에 따라 사용자, 로그인, 권한 관리 영역을 Public Core 화면에 추가했다.
+- API 답변을 `고정 텍스트가 아니라 외부 시스템 응답을 호출해 답변하는 방식`으로 정의했다.
+- `packages/contracts/src/access-contract.js`를 추가했다.
+- `packages/contracts/src/api-answer-contract.js`를 추가했다.
+- Studio 화면에 `Users, Login, and Access`, `External API Answer Source` 섹션을 추가했다.
+- `docs/cga-access-and-api-answer-policy.md`를 추가했다.
+
+
+### 2026-06-04 동적 데이터 API 답변 반영
+- 신산님 예시(기업 매출, 순이익처럼 계속 바뀌는 값)를 API 답변의 핵심 사례로 반영했다.
+- API 답변은 의도와 매핑은 저장하지만, 답변 시점에 외부 API를 호출해 최신 값을 보여주는 방식으로 정의했다.
+- `API_DATA_FRESHNESS`, `createDynamicMetricApiAnswerDraft`를 API answer contract에 추가했다.
+- Studio 화면에 동적 데이터 답변 예시를 추가했다.
+- 정책 문서에 동적 데이터 답변 처리 방식을 추가했다.
+
+
+### 2026-06-04 Aidot 기능 화면 전체 보존 원칙 반영
+- 신산님 지시에 따라 CGA는 Aidot 기능 화면을 빼거나 제외하지 않고 재구성하는 프로젝트라는 원칙을 명확히 반영했다.
+- 화면의 `hidden`, `optional`, `not used` 등 오해 가능한 표현을 보완했다.
+- Studio 화면에 `Aidot Feature Coverage` 섹션을 추가했다.
+- 설계서에 `Aidot 기능 화면 전체 보존 원칙`을 추가했다.
+- 화면 구성 정책 문서에 Aidot 기능 화면 보존 원칙을 추가했다.
+
+
+### 2026-06-04 공동 작업 플랫폼 기준 반영
+- 신산님 지시에 따라 CGA를 1인 제작기가 아니라 여러 명이 함께 작업하는 플랫폼으로 재정의했다.
+- `packages/contracts/src/collaboration-contract.js`를 추가했다.
+- `packages/public-core/src/collaboration-state.js`를 추가했다.
+- Studio 화면에 `Collaboration Platform` 섹션을 추가했다.
+- `docs/cga-collaboration-platform-policy.md`를 추가했다.
+- 설계서에 공동 작업 플랫폼 원칙을 추가했다.
+
+
+### 2026-06-04 1인 빠른 제작 + 선택적 공동 작업 기준 반영
+- 신산님 기준에 따라 CGA의 1차 목표를 `한 사람이 1~2일 안에 봇 하나를 만드는 것`으로 명확히 했다.
+- 공동 작업은 기본 화면을 무겁게 만드는 것이 아니라, 여러 명이 하나의 봇을 제작할 수 있게 하는 확장 구조로 정리했다.
+- Collaboration 화면과 설계서, 협업 정책 문서를 이 기준으로 수정했다.
+
+
+### 2026-06-04 빠른 1인 제작 목표를 계약/상태 모델에 고정
+- `packages/contracts/src/collaboration-contract.js`에 `BUILD_MODE`와 `DEFAULT_BUILD_TARGET`을 추가했다.
+- 기본 제작 모드는 `fast_solo`로 두고, 목표 제작 기간은 1~2일로 명시했다.
+- `packages/public-core/src/collaboration-state.js`의 협업 요약에 제작 모드, 목표 기간, 협업 가능 여부를 포함했다.
+- 협업 기능은 기본 제작 흐름을 방해하지 않는 선택적 확장이라는 기준을 정책 문서에 추가했다.
+- Studio 설정 검증에서 사용자/로그인, API 답변, 공동 작업 계약 파일도 존재 여부를 확인하도록 보강했다.
+
+
+### 2026-06-04 그룹 기준 관리 원칙 반영
+- 신산님 지시에 따라 CGA의 모든 관리 기준을 `시스템 전체`가 아니라 `그룹`으로 확정했다.
+- 봇, API 답변, 사용자 권한, 운영 접근, 화면 접근은 그룹 기준으로 관리한다.
+- 동일 그룹 사용자는 그룹이 관리하는 봇에 접근할 수 있어야 한다.
+- 그룹별 사용자 권한을 설정하고, 그룹 내 사용자 역할과 scope로 화면/기능 접근을 결정한다.
+- API 답변도 개인 자산이 아니라 `group_id + bot_id`로 연결되는 그룹 관리 자산으로 변경했다.
+- `packages/contracts/src/api-answer-contract.js`에 `group_id`, `bot_id`, `managed_by: group`, `secret_ref`, `allowed_group_scopes` 기준을 추가했다.
+- `docs/cga-access-and-api-answer-policy.md`에 그룹별 봇/API 관리 원칙을 명시했다.
+
+
+### 2026-06-04 서버형 SaaS 설치 원칙 반영
+- CGA는 개별 PC 설치형 도구가 아니라 서버에 설치해 서비스하는 SaaS 구조를 기본으로 확정했다.
+- 오픈소스 사용자가 각자 서버에 설치하더라도, 사용자는 브라우저로 서버에 접속해 사용하는 방식이다.
+- 하나의 서버 인스턴스 안에서 여러 그룹을 관리할 수 있어야 한다.
+- 서버 운영자는 인프라를 관리하지만, 봇/API/사용자 권한의 업무 기준은 그룹으로 유지한다.
+- 설계서와 접근/API 정책 문서에 이 기준을 반영했다.
+
+
+### 2026-06-04 폐쇄망/개인 WSL 컨테이너 설치 기준 반영
+- 폐쇄망에서도 CGA는 SaaS 구조로 설치해 사용하는 것으로 확정했다.
+- 개인 사용자는 WSL 또는 Docker 컨테이너로 CGA 서버를 띄우고 브라우저로 접속해 사용할 수 있다는 기준을 반영했다.
+- 클라우드, 사내 서버, 폐쇄망 서버, 개인 PC WSL 컨테이너는 배포 위치만 다르고 제품 구조는 서버형 SaaS로 동일하게 본다.
+
+
+### 2026-06-04 가입신청/기본 권한 관리 기준 반영
+- 가입신청, 로그인, 기본 권한 관리 기능을 CGA 우선 구현 대상으로 정리했다.
+- 모든 신규 사용자는 가입 시 자기 그룹으로 먼저 가입되는 구조로 확정했다.
+- 사용자는 다른 그룹에 가입신청을 할 수 있고, 승인되면 해당 그룹의 권한으로 봇/API/화면에 접근한다.
+- 그룹에 사용자가 없어지면 해당 그룹은 삭제하는 구조로 정리했다.
+- 그룹 생성은 관리자 권한을 가진 사용자만 가능하게 했다.
+- 시스템 전체 기본 관리자 사용자는 `admin`이며 삭제할 수 없는 사용자로 정의했다.
+- 관리자 권한 요청은 `admin` 사용자가 승인한다.
+- 각 그룹에는 그룹 관리자 1명이 있고, 그 사용자는 해당 그룹 안에서 모든 권한을 가진다.
+- `packages/contracts/src/access-contract.js`와 `packages/public-core/src/access-state.js`에 관련 계약과 샘플 상태를 추가했다.
+- Studio Access 화면에 가입/그룹 정책과 관리자 승인 정책 패널을 추가했다.
+
+
+### 2026-06-04 사용자별 언어 설정 기준 반영
+- 신산님 확인에 따라 언어 설정은 사용자별로 관리하는 것으로 확정했다.
+- 같은 그룹 안에서도 사용자마다 CGA Studio UI 언어가 다를 수 있다.
+- 에러 메시지와 운영 알림은 기본적으로 `user.locale` 기준으로 표시한다.
+- 봇 기본 언어와 사용자 UI 언어는 별도 설정으로 분리했다.
+- `createUser` 계약에 `locale`을 추가하고, Access 화면의 정책 요약에 현재 사용자 언어와 에러 메시지 언어 기준을 표시하도록 했다.
+
+
+### 2026-06-04 다국어 사용자 공동 작업 기준 반영
+- 다양한 언어 사용자가 하나의 그룹에서 같은 봇을 공동 작업하는 구조로 확정했다.
+- 그룹/봇/의도/답변/API 설정은 공통 작업 대상이고, 화면/에러/알림은 각 사용자 `user.locale` 기준으로 표시한다.
+- 같은 그룹 안에서 한국어 사용자와 일본어 사용자 등이 서로 다른 UI 언어로 같은 봇을 편집할 수 있어야 한다.
+- `docs/cga-collaboration-platform-policy.md`에 다국어 공동 작업 원칙을 추가했다.
+
+
+### 2026-06-04 CGA 에러와 봇 에러 분리
+- 신산님 기준에 따라 에러 메시지를 `CGA 에러`와 `봇 에러`로 분리했다.
+- CGA 에러는 사용자의 언어 `user.locale` 기준으로 표시한다.
+- 봇 에러는 봇의 언어 `bot.defaultLocale` 기준으로 표시한다.
+- 에러 코드 prefix를 `CGA_*`와 `BOT_*`로 분리했다.
+- `packages/contracts/src/error-contract.js`, `packages/i18n/error-catalog.json`, `packages/i18n/src/resolve-message.js`에 이 기준을 반영했다.
+
+
+### 2026-06-04 가입/그룹 권한 상태 전이 기준 추가
+- 가입 시 사용자와 자기 그룹, 그룹 관리자 멤버십을 함께 생성하는 `createSignupDraft` 계약을 추가했다.
+- 그룹 가입신청, 가입 승인, 멤버십 제거, 빈 그룹 자동 삭제 상태 전이 함수를 Public Core에 추가했다.
+- 관리자 권한 요청 상태를 추가하고, Access 화면 정책 요약에 대기 중인 관리자 요청 수를 표시하도록 했다.
+- 아직 실제 서버 API 구현은 아니며, 서버형 SaaS API를 만들 때 사용할 Public Core 기준 로직이다.
+
+
+### 2026-06-04 가입/로그인/그룹 승인 화면 흐름 보강
+- 신산님 지시에 따라 기본 권한 관리 기능을 화면에서 먼저 이해할 수 있도록 Access 화면을 보강했다.
+- `Users, Login, and Access` 화면 안에 `Signup / Login Flow`, `Group Users`, `Group Join Requests`, `Admin Permission Requests` 패널을 추가했다.
+- 가입 흐름은 `가입 -> 자기 그룹 생성 -> 로그인 -> 다른 그룹 가입신청 -> 승인 후 그룹 작업` 순서로 표시한다.
+- 그룹 사용자 패널은 그룹별 사용자, 역할, 사용자 UI 언어를 함께 보여준다.
+- 그룹 가입신청 패널은 어떤 사용자가 어떤 그룹에 어떤 역할로 가입을 요청했는지 표시한다.
+- 관리자 권한 요청 패널은 시스템 admin 승인이 필요한 요청을 표시한다.
+- 이 단계는 실제 서버 인증/API 구현이 아니라 CGA Public Core 기준 화면/상태 설계이며, Aidot 수정은 없다.
+
+
+### 2026-06-04 가입/로그인/그룹 관리 API 계약 초안 추가
+- `packages/contracts/src/auth-api-contract.js`를 추가했다.
+- CGA 전용 가입, 로그인, 현재 사용자 조회, 그룹 조회, 그룹 가입신청, 관리자 권한 요청 route 기준을 정의했다.
+- 가입 요청, 로그인 요청, 그룹 가입신청 payload, 관리자 권한 요청 payload, 로그인 세션 응답 형태를 계약 함수로 분리했다.
+- `npm run studio:validate`에 auth contract 문법 검사를 포함하도록 `studio:auth-check`를 추가했다.
+- `docs/cga-access-and-api-answer-policy.md`에 CGA 사용자/그룹 API 초안과 상태 전이를 문서화했다.
+- 이 API 계약은 CGA Studio 운영/권한 전용이며, Aidot 봇 런타임 API와 webchat 호환 API는 변경하지 않는다.
+
+
+### 2026-06-04 Public Core Contracts 화면에 Auth API 계약 표시
+- `Public Core Contracts` 화면에 `CGA Auth / Group API` 카드를 추가했다.
+- 가입, 로그인, 그룹 가입신청, 관리자 승인 API가 CGA 관리 API라는 점을 화면에 표시했다.
+- Aidot 런타임 API와 webchat API는 변경하지 않는다는 기준을 같은 카드에 명시했다.
+- 영어/한국어 i18n 리소스를 추가했고, 나머지 locale에는 누락 방지용 영어 fallback을 반영했다.
+
+
+### 2026-06-04 WSL 컨테이너 개발 실행 기준 반영
+- 신산님 지시에 따라 CGA 개발 프로세스는 Windows 로컬 Node 프로세스가 아니라 WSL 안의 Docker 컨테이너로 띄우는 방식으로 변경했다.
+- `Dockerfile`, `docker-compose.yml`, `.dockerignore`를 추가했다.
+- WSL 소스 기준 경로는 `~/deploy/cga`로 정했다.
+- WSL에는 Compose v2 명령인 `docker compose`가 아니라 `docker-compose`를 사용한다.
+- `docker-compose up --build cga-studio`로 CGA Studio 서버를 컨테이너에서 실행하도록 기준을 정했다.
+- `package.json`에 `studio:container`, `studio:container:down` 스크립트를 추가했다.
+- `.gitignore`를 추가해 `node_modules`가 Git에 포함되지 않도록 했다.
+- README와 접근/API 정책 문서에 WSL 컨테이너 개발 실행 원칙을 문서화했다.
+- 배포와 공유는 Git commit/push 기준으로 진행한다는 원칙을 명시했다.
+- `npm run studio`는 컨테이너 내부 서버 명령으로 유지하되, Windows 로컬에서 직접 실행하는 기본 방식으로 쓰지 않도록 정리했다.
