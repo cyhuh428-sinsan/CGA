@@ -153,6 +153,22 @@ export function summarizeGroupBotAccess(state) {
   }));
 }
 
+export function summarizeAccessOperations(state) {
+  const activeUsers = state.users.filter((user) => user.status === "active");
+  const activeGroups = state.groups.filter((group) => group.status === "active");
+  const activeMemberships = state.memberships.filter((membership) => membership.status === "active");
+  const systemAdmin = state.users.find((user) => user.id === state.policy.systemAdminUserId);
+  return {
+    activeUsers: activeUsers.length,
+    activeGroups: activeGroups.length,
+    activeMemberships: activeMemberships.length,
+    pendingJoinRequests: state.joinRequests.filter((request) => request.status === "pending").length,
+    pendingAdminRequests: state.adminRequests.filter((request) => request.status === "pending").length,
+    protectedAdmin: Boolean(systemAdmin && systemAdmin.deletable === false),
+    multilingualUsers: new Set(activeUsers.map((user) => user.locale)).size
+  };
+}
+
 export function summarizeAuthWorkflow(state) {
   return [
     { id: "signup", label: "Signup", detail: state.policy.signupCreatesOwnGroup ? "Creates user and personal group" : "Creates user only" },
