@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CGA Studio</title>
+  <link rel="stylesheet" href="/apps/studio/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-group">
+        <div class="brand-mark">CGA</div>
+        <div>
+          <h1>CGA Studio</h1>
+          <p data-i18n="app.subtitle">Aidot Workflow Shell · screen-first implementation draft</p>
+        </div>
+      </div>
+      <div class="context-bar" aria-label="Current bot context">
+        <span data-i18n="top.bot">Bot: SupportBot Draft</span>
+        <span data-i18n="top.version">Version: v0.1</span>
+        <label class="language-picker"><span data-i18n="top.language">Language</span><select data-locale-select><option value="en">English</option><option value="ko">한국어</option><option value="zh-CN">简体中文</option><option value="ja">日本語</option><option value="vi">Tiếng Việt</option><option value="de">Deutsch</option><option value="fr">Français</option></select></label>
+        <span class="status-ok" data-i18n="top.apiUnchanged">Aidot API unchanged</span>
+      </div>
+      <div class="actions">
+        <button type="button" class="ghost" data-i18n="common.save">Save</button>
+        <button type="button" class="ghost" data-i18n="common.preview">Preview</button>
+        <button type="button" class="primary" data-i18n="common.deploy">Deploy</button>
+      </div>
+    </header>
+
+    <aside class="workflow" aria-label="Bot build workflow">
+      <div class="section-title">
+        <strong data-i18n="workflow.title">Bot Build Workflow</strong>
+        <span data-i18n="workflow.subtitle">6 visible steps · Aidot functions reused</span>
+      </div>
+      <nav data-workflow-nav></nav>
+      <div class="rail-note">
+        <strong data-i18n="rule.title">Rule</strong>
+        <p data-i18n="rule.body">No new backend, API, runtime, simulator, or webchat contract.</p>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <section class="hero-panel" data-screen-id="hero">
+        <div>
+          <p class="eyebrow" data-i18n="hero.eyebrow">Implementation direction</p>
+          <h2 data-i18n="hero.title">Show each CGA screen, wire it to existing Aidot functions</h2>
+          <p data-i18n="hero.body">We proceed screen by screen without retesting every Aidot feature. Each screen states which Aidot function it reuses and what requires approval.</p>
+        </div>
+        <div class="contract-stack">
+          <span data-i18n="contract.aidotUntouched">Aidot code untouched</span>
+          <span data-i18n="contract.cgaOnly">CGA folder only</span>
+          <span data-i18n="contract.noNewFeature">No new feature without approval</span>
+          <span data-i18n="contract.webchat">Webchat compatibility preserved</span>
+        </div>
+      </section>
+
+      <section id="aidot-feature-coverage" data-screen-id="aidot-feature-coverage" class="screen-card coverage-card">
+        <div class="screen-heading">
+          <span>AF</span>
+          <div><h3 data-i18n="coverage.title">Aidot Feature Coverage</h3><p data-i18n="coverage.body">CGA does not remove Aidot feature screens. It relocates every needed Aidot screen into the bot-building workflow.</p></div>
+          <em data-i18n="coverage.map">Coverage rule: all Aidot feature screens are preserved, reorganized, and mapped</em>
+        </div>
+        <div class="coverage-grid">
+          <article><h4 data-i18n="coverage.create">Create / Setup</h4><p data-i18n="coverage.createBody">Bot create, bot setup, version, language, channel defaults, user/login/roles.</p></article>
+          <article><h4 data-i18n="coverage.configure">Configure / Review</h4><p data-i18n="coverage.configureBody">Training utterances, PDF/RAG, intent draft, intent review, answer draft.</p></article>
+          <article><h4 data-i18n="coverage.detail">Detail Settings</h4><p data-i18n="coverage.detailBody">Intent, answer, synonym, entity, dictionary, scenario, API card, variables, Talk cards.</p></article>
+          <article><h4 data-i18n="coverage.build">Build / Test</h4><p data-i18n="coverage.buildBody">NLU training, LLM NLU, RAG embedding, simulator, runtime variables, logs.</p></article>
+          <article><h4 data-i18n="coverage.operate">Operate / Improve</h4><p data-i18n="coverage.operateBody">Deploy, webchat, channels, operation version, analysis, evaluation, retrain.</p></article>
+          <article><h4 data-i18n="coverage.ruleTitle">Rule</h4><p data-i18n="coverage.ruleBody">No Aidot feature screen is removed. If a screen is not in the beginner path, it must appear in the mapped advanced or operation area.</p></article>
+        </div>
+      </section>
+
+      <section id="collaboration-platform" data-screen-id="collaboration-platform" class="screen-card collaboration-card">
+        <div class="screen-heading">
+          <span>CO</span>
+          <div><h3 data-i18n="collab.title">Collaboration Platform</h3><p data-i18n="collab.body">CGA is optimized for one person to build a bot in 1-2 days, while still allowing multiple people to collaborate on the same bot when needed.</p></div>
+          <em data-i18n="collab.map">Maps to Public Core: fast solo workflow + optional team collaboration</em>
+        </div>
+        <div class="collab-grid">
+          <article><h4 data-i18n="collab.roles">Fast solo first</h4><p data-i18n="collab.rolesBody">The default flow should let one builder create, configure, test, and deploy a bot quickly without collaboration overhead.</p></article>
+          <article><h4 data-i18n="collab.assignments">Team expansion</h4><p data-i18n="collab.assignmentsBody">When a bot grows, intents, answers, scenarios, API answers, deployments, and evaluations can be assigned to different users.</p></article>
+          <article><h4 data-i18n="collab.review">Review workflow</h4><p data-i18n="collab.reviewBody">Generated or edited content moves through review before it becomes approved bot content.</p></article>
+          <article><h4 data-i18n="collab.locks">Edit locks</h4><p data-i18n="collab.locksBody">When multiple users edit, short-lived locks prevent conflicting changes on the same item.</p></article>
+          <article><h4 data-i18n="collab.history">Change history</h4><p data-i18n="collab.historyBody">Every important change should keep actor, time, target, before/after summary, and review result.</p></article>
+          <article><h4 data-i18n="collab.dashboard">Team dashboard</h4><p data-i18n="collab.dashboardBody">The dashboard shows my tasks, waiting reviews, blocked items, and deployment readiness.</p></article>
+        </div>
+      </section>
+
+      <section id="access-management" data-screen-id="access-management" class="screen-card access-card">
+        <div class="screen-heading">
+          <span>AC</span>
+          <div><h3 data-i18n="access.title">Users, Login, and Access</h3><p data-i18n="access.body">CGA is an operating system for bot production, so user identity and permission boundaries are part of the Public Core.</p></div>
+          <em data-i18n="access.map">Maps to Public Core: login state / roles / scopes / audit-ready actions</em>
+        </div>
+        <div class="access-grid">
+          <article><h4 data-i18n="access.login">Login</h4><p data-i18n="access.loginBody">Authenticated users can create, configure, review, deploy, or operate bots based on role.</p></article>
+          <article><h4 data-i18n="access.roles">Roles</h4><p data-i18n="access.rolesBody">Owner, Admin, Builder, Reviewer, Operator, and Viewer roles separate responsibilities.</p></article>
+          <article><h4 data-i18n="access.scopes">Permission Scopes</h4><p data-i18n="access.scopesBody">Create, configure, review, deploy, user management, and API answer management scopes are explicit.</p></article>
+        </div>
+        <div class="auth-flow-layout">
+          <article>
+            <h4 data-i18n="access.authFlow">Signup / Login Flow</h4>
+            <p data-i18n="access.authFlowBody">The first access path is explicit: sign up, receive a personal group, log in, then request access to another group when needed.</p>
+            <div class="auth-flow" data-auth-flow></div>
+          </article>
+          <article>
+            <h4 data-i18n="access.groupUsers">Group Users</h4>
+            <p data-i18n="access.groupUsersBody">A group owns bots and APIs. Users receive roles inside the group, and those roles decide screen access.</p>
+            <div class="group-user-list" data-group-users></div>
+          </article>
+        </div>
+        <div class="request-layout">
+          <article>
+            <h4 data-i18n="access.joinRequests">Group Join Requests</h4>
+            <p data-i18n="access.joinRequestsBody">Users can request access to another group. Approval creates a membership for that group.</p>
+            <div class="request-list" data-join-requests></div>
+          </article>
+          <article>
+            <h4 data-i18n="access.adminRequests">Admin Permission Requests</h4>
+            <p data-i18n="access.adminRequestsBody">Admin permission requests are visible to the system admin and must be approved before privilege changes.</p>
+            <div class="request-list" data-admin-requests></div>
+          </article>
+        </div>
+        <div class="permission-layout">
+          <article>
+            <h4 data-i18n="access.groupAccess">Group Bot Access</h4>
+            <p data-i18n="access.groupAccessBody">Bots and APIs are managed by group. Users in the same group can access the group bot according to group scopes and their role.</p>
+            <div class="permission-table" data-group-access></div>
+          </article>
+          <article>
+            <h4 data-i18n="access.screenAccess">Current User Screen Access</h4>
+            <p data-i18n="access.screenAccessBody">Screens and actions are resolved from group membership, group scopes, role scopes, and user overrides.</p>
+            <div class="screen-access-list" data-screen-access></div>
+          </article>
+        </div>
+        <div class="auth-policy-layout">
+          <article>
+            <h4 data-i18n="access.authPolicy">Signup and Group Policy</h4>
+            <p data-i18n="access.authPolicyBody">Every new user signs up into their own group first. Users can request to join another group, and empty groups are deleted automatically.</p>
+            <div class="policy-list" data-auth-policy></div>
+          </article>
+          <article>
+            <h4 data-i18n="access.adminPolicy">Admin Approval Policy</h4>
+            <p data-i18n="access.adminPolicyBody">The base admin user cannot be deleted. Group creation and admin permission requests require approval by the system admin.</p>
+            <div class="policy-list" data-admin-policy></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="create" data-screen-id="create" class="screen-card">
+        <div class="screen-heading">
+          <span>01</span>
+          <div><h3 data-i18n="create.title">Create Bot</h3><p data-i18n="create.body">Set bot-level structural choices before any later configuration screen.</p></div>
+          <em data-i18n="create.map">Maps to Aidot: Bot create / Bot setup / Version / channel defaults</em>
+        </div>
+        <div class="two-column">
+          <div class="form-panel">
+            <div class="notice info" data-i18n="create.info">Structural choices are decided here. Anything that cannot be changed after Aidot training must be set in Create Bot.</div>
+            <div class="training-lock-list"><strong data-i18n="create.locked">Locked after training</strong><span data-i18n="create.lock.llm">LLM usage</span><span data-i18n="create.lock.input">Input type</span><span data-i18n="create.lock.pdf">PDF allowance</span><span data-i18n="create.lock.orchestrator">Orchestrator mode</span><span data-i18n="create.lock.server">Bot Server location</span><span data-i18n="create.lock.channels">Base channels</span></div>
+            <label><span data-i18n="field.botName">Bot Name</span><input data-structural-field="bot.name" value="SupportBot Draft" /></label>
+            <label><span data-i18n="field.description">Description</span><textarea data-structural-field="bot.description">Customer support chatbot draft for web and messenger channels.</textarea></label>
+            <div class="row-fields">
+              <label><span data-i18n="field.defaultLanguage">Default Language</span><select data-structural-field="bot.defaultLocale"><option value="en">English</option><option value="ko">Korean</option><option value="ja">Japanese</option><option value="de">German</option><option value="fr">French</option></select></label>
+              <label><span data-i18n="field.versionName">Version Name</span><input value="v0.1" /></label>
+            </div>
+            <div class="decision-grid">
+              <label><span data-i18n="field.useLlm">Use LLM for bot composition</span><select data-structural-field="structuralChoices.useLlm"><option value="false">No - utterance handoff/manual composition</option><option value="true">Yes - connected LLM composition</option></select></label>
+              <label><span data-i18n="field.compositionInput">Composition input type</span><select data-structural-field="structuralChoices.compositionInput"><option value="utterances">Training utterances only</option><option value="pdf">PDF documents only</option><option value="both">Training utterances + PDF documents</option></select></label>
+              <label><span data-i18n="field.orchestratorMode">Orchestrator mode</span><select data-structural-field="structuralChoices.orchestratorMode"><option value="decide_later">Decide later</option><option value="connect_existing">Connect existing orchestrator</option><option value="deploy_new">Deploy new orchestrator container</option></select></label>
+              <label><span data-i18n="field.botServerLocation">Bot Server location</span><select data-structural-field="structuralChoices.botServerLocation"><option value="decide_later">Decide later</option><option value="orchestrator_server">Same server as orchestrator</option><option value="separate_server">Separate bot server</option></select></label>
+            </div>
+            <label data-i18n="field.deploymentChannel">Deployment Channel</label>
+            <div class="choice-row"><button>Web</button><button>Desktop Messenger</button><button>Kakao KR</button></div>
+          </div>
+          <aside class="status-panel">
+            <h4 data-i18n="summary.structure">Structure Summary</h4>
+            <div data-create-summary></div>
+            <div class="next-action">Next: configure using the selected input structure.</div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="configure" data-screen-id="configure" class="screen-card selected">
+        <div class="screen-heading">
+          <span>02</span>
+          <div><h3 data-i18n="configure.title">Configure Bot</h3><p data-i18n="configure.body">LLM-first bot composition flow. Aidot ML/Semantic screens remain available in their mapped advanced areas.</p></div>
+          <em data-i18n="configure.map">Maps to Aidot: Training utterances / PDF-RAG / Intent draft</em>
+        </div>
+        <div class="notice warning">Bot composition in CGA uses LLM flow only. PDF Q&amp;A generation requires an LLM connection.</div>
+        <div class="input-paths">
+          <article>
+            <span class="path-label blue" data-i18n="configure.pathA">Path A · LLM optional</span>
+            <h4 data-i18n="configure.pathA.title">Training utterances → intent classification</h4>
+            <p data-i18n="configure.pathA.body">Input question-style utterances and requested intent count. Without connected LLM, use Manual LLM Handoff.</p>
+            <div class="mock-textarea">How do I reset my password?\nI forgot my login password.\nWhere can I change my email?\nHow do I cancel my plan?</div>
+            <div class="button-row"><button data-i18n="configure.export">Export Handoff File</button><button class="ghost-btn" data-i18n="configure.import">Import LLM Result</button></div>
+          </article>
+          <article>
+            <span class="path-label green" data-i18n="configure.pathB">Path B · LLM required</span>
+            <h4>PDF → Q&amp;A intent candidates</h4>
+            <p data-i18n="configure.pathB.body">Upload PDF now. Generation stays disabled until LLM connection is configured.</p>
+            <div class="upload-box">Drop PDF here or choose file</div>
+            <div class="button-row"><button disabled>Generate Q&amp;A Intents</button><button class="ghost-btn" data-i18n="configure.savePdf">Save PDF</button></div>
+          </article>
+        </div>
+        <div class="review-board">
+          <h4 data-i18n="review.preview">Intent Review Preview</h4>
+          <div class="intent-row"><strong>password_reset</strong><span data-i18n="review.utter6">6 utterances</span><span data-i18n="review.answerRequired">Answer draft required</span><button data-i18n="review.review">Review</button></div>
+          <div class="intent-row"><strong>account_update</strong><span>4 utterances</span><span data-i18n="review.ready">Ready</span><button data-i18n="review.review">Review</button></div>
+        </div>
+      </section>
+
+      <section id="detail" data-screen-id="detail" class="screen-card">
+        <div class="screen-heading">
+          <span>03</span>
+          <div><h3 data-i18n="detail.title">Detail Settings</h3><p data-i18n="detail.body">Beginner flow stays guided, and all Aidot detail screens remain available in this step.</p></div>
+          <em data-i18n="detail.map">Maps to Aidot: Intent / Entity / Dictionary / Scenario / API cards</em>
+        </div>
+        <div class="tab-strip"><button class="active-tab">Intent &amp; Answer</button><button data-i18n="detail.synonyms">Synonyms</button><button data-i18n="detail.entities">Entities</button><button data-i18n="detail.dictionary">Dictionary</button><button data-i18n="detail.scenario">Scenario</button><button data-i18n="detail.apiTools">API Tools</button></div>
+        <div class="editor-layout">
+          <div class="intent-list"><strong data-i18n="detail.intents">Intents</strong><p class="active-item">password_reset</p><p>account_update</p><p>billing_question</p></div>
+          <div class="answer-editor"><label>Answer<textarea>To reset your password, open Account Settings and choose Reset Password.</textarea></label><label>Representative Utterances<textarea>How do I reset my password?\nI forgot my login password.</textarea></label></div>
+          <aside class="status-panel compact"><h4 data-i18n="detail.advancedStatus">Advanced status</h4><p><b data-i18n="detail.synonyms">Synonyms</b><span data-i18n="detail.available">Available</span></p><p><b data-i18n="detail.entities">Entities</b><span data-i18n="detail.availableWhenNeeded">Available when needed</span></p><p><b data-i18n="detail.scenario">Scenario</b><span data-i18n="detail.simpleAnswer">Simple answer</span></p></aside>
+        </div>
+      </section>
+
+      <section id="api-answer-source" data-screen-id="api-answer-source" class="screen-card api-answer-card">
+        <div class="screen-heading">
+          <span>API</span>
+          <div><h3 data-i18n="apiAnswer.title">External API Answer Source</h3><p data-i18n="apiAnswer.body">API answers are used when the response is not fixed text but comes from an external business system.</p></div>
+          <em data-i18n="apiAnswer.map">Maps to Aidot: API card / response mapping / runtime variables</em>
+        </div>
+        <div class="api-answer-layout">
+          <div class="api-owner-card">
+            <h4 data-i18n="apiAnswer.groupManaged">Group-managed API</h4>
+            <p data-i18n="apiAnswer.groupManagedBody">API answers belong to the group bot, not to an individual user. Secret references and response mappings are controlled by group permissions.</p>
+            <div class="metric-example">
+              <span>group_id: g-support</span>
+              <span>bot_id: supportbot-draft</span>
+              <span>scope: apiAnswer.manage</span>
+            </div>
+          </div>
+          <div class="api-flow-card">
+            <h4 data-i18n="apiAnswer.flowTitle">Answer flow</h4>
+            <div class="api-flow"><span data-i18n="apiAnswer.userQuestion">User question</span><b></b><span data-i18n="apiAnswer.intent">Matched intent</span><b></b><span data-i18n="apiAnswer.externalSystem">External system API</span><b></b><span data-i18n="apiAnswer.finalAnswer">Bot answer</span></div>
+          </div>
+          <div class="api-config-card">
+            <label><span data-i18n="apiAnswer.name">API answer name</span><input value="order_status_lookup" /></label>
+            <label><span data-i18n="apiAnswer.endpoint">Endpoint URL</span><input value="https://api.example.com/orders/{order_id}" /></label>
+            <div class="row-fields">
+              <label><span data-i18n="apiAnswer.method">Method</span><select><option>GET</option><option>POST</option></select></label>
+              <label><span data-i18n="apiAnswer.auth">Auth type</span><select><option>Bearer</option><option>API Key</option><option>None</option></select></label>
+            </div>
+            <label><span data-i18n="apiAnswer.responsePath">Answer text path</span><input value="data.answer" /></label>
+          </div>
+
+          <div class="dynamic-api-example" data-dynamic-api-example>
+            <h4 data-i18n="apiAnswer.dynamicTitle">Dynamic data answer example</h4>
+            <p data-i18n="apiAnswer.dynamicBody">For values that change over time, such as company revenue or net income, CGA stores the intent and API mapping, then calls the external system at answer time.</p>
+            <div class="metric-example">
+              <span data-i18n="apiAnswer.metricQuestion">Question: What is this company’s latest net income?</span>
+              <span data-i18n="apiAnswer.metricApi">API: GET /financials/{company_id}/net-income</span>
+              <span data-i18n="apiAnswer.metricAnswer">Answer: Net income is shown from the latest external API response.</span>
+            </div>
+          </div>
+          <aside class="status-panel compact">
+            <h4 data-i18n="apiAnswer.safety">Runtime safety</h4>
+            <p><b data-i18n="apiAnswer.timeout">Timeout</b><span>5000ms</span></p>
+            <p><b data-i18n="apiAnswer.fallback">Fallback</b><span data-i18n="apiAnswer.fallbackReady">Required</span></p>
+            <p><b data-i18n="apiAnswer.secret">Secrets</b><span data-i18n="apiAnswer.secretRule">Never stored in public config</span></p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="build" data-screen-id="build" class="screen-card">
+        <div class="screen-heading">
+          <span>04</span>
+          <div><h3 data-i18n="build.title">Build</h3><p data-i18n="build.body">Run Aidot-compatible training/build readiness actions.</p></div>
+          <em data-i18n="build.map">Maps to Aidot: NLU training / LLM NLU / RAG embedding / deploy readiness</em>
+        </div>
+        <div class="readiness-grid">
+          <div class="ready"><strong data-i18n="build.botInfo">Bot info</strong><span data-i18n="build.complete">Complete</span></div>
+          <div class="ready"><strong data-i18n="build.intentCount">Intent count</strong><span>12 intents</span></div>
+          <div class="warn-card"><strong data-i18n="build.llmConnection">LLM connection</strong><span data-i18n="build.pdfNeeded">Needed for PDF path</span></div>
+          <div class="ready"><strong data-i18n="build.webchatContract">Webchat contract</strong><span data-i18n="build.unchanged">Unchanged</span></div>
+        </div>
+        <div class="button-row"><button data-i18n="build.run">Run Build</button><button class="ghost-btn" data-i18n="build.trainingStatus">View Aidot Training Status</button></div>
+      </section>
+
+      <section id="test" data-screen-id="test" class="screen-card">
+        <div class="screen-heading">
+          <span>05</span>
+          <div><h3 data-i18n="test.title">Test</h3><p data-i18n="test.body">Show Aidot simulator results in a builder-friendly layout.</p></div>
+          <em data-i18n="test.map">Maps to Aidot: Simulator / intent result / runtime variables</em>
+        </div>
+        <div class="simulator-layout">
+          <div class="chat-box"><p class="user-msg">I forgot my password.</p><p class="bot-msg">Open Account Settings and choose Reset Password.</p><input placeholder="Type a test message" data-i18n-placeholder="test.simPlaceholder" /></div>
+          <aside class="analysis-box"><h4 data-i18n="test.analysis">Conversation Analysis</h4><p><b data-i18n="test.matched">Matched intent</b><span>password_reset</span></p><p><b data-i18n="test.method">Method</b><span>LLM intent classification</span></p><p><b>Similarity</b><span>0.94</span></p><p><b>Latency</b><span>14ms</span></p></aside>
+        </div>
+      </section>
+
+      <section id="operate" data-screen-id="operate" class="screen-card">
+        <div class="screen-heading">
+          <span>06</span>
+          <div><h3 data-i18n="operate.title">Operate</h3><p data-i18n="operate.body">Deploy and monitor using Aidot-compatible channel and runtime contracts.</p></div>
+          <em data-i18n="operate.map">Maps to Aidot: Webchat / channel / operation version / analysis / retrain</em>
+        </div>
+        <div class="ops-grid">
+          <article><h4 data-i18n="operate.channelStatus">Channel Status</h4><strong data-i18n="operate.webOk">Web OK</strong><p data-i18n="operate.kakaoPending">Desktop and Kakao KR pending</p></article>
+          <article><h4 data-i18n="operate.volume">Conversation Volume</h4><strong>1,284</strong><p data-i18n="operate.normal">Normal range</p></article>
+          <article class="approval-needed"><h4 data-i18n="operate.undefined">Undefined Intent</h4><strong data-i18n="operate.pending1">1 pending</strong><p data-i18n="operate.dynamicApproval">Dynamic intent expansion requires approval.</p></article>
+          <article><h4 data-i18n="operate.container">Container Health</h4><strong data-i18n="operate.healthy">Healthy</strong><p data-i18n="operate.selfHost">Self-host target can be connected later</p></article>
+          <article><h4 data-i18n="operate.llmCost">LLM Cost</h4><strong data-i18n="operate.below">Below threshold</strong><p data-i18n="operate.costMetric">Cost alert uses existing metrics if available</p></article>
+          <article><h4 data-i18n="operate.compatibility">Compatibility</h4><strong data-i18n="operate.preserved">Preserved</strong><p data-i18n="operate.clients">Aidot clients can connect unchanged</p></article>
+        </div>
+      </section>
+      <section id="locked-vs-runtime" data-screen-id="locked-vs-runtime" class="screen-card lock-policy-card">
+        <div class="screen-heading">
+          <span>LK</span>
+          <div><h3 data-i18n="lock.title">Locked Structure vs Runtime Options</h3><p data-i18n="lock.body">Create Bot owns structural choices. Later screens only adjust runtime-safe options.</p></div>
+          <em data-i18n="lock.map">Locked after Aidot training vs adjustable during operation</em>
+        </div>
+        <div class="lock-runtime-grid">
+          <article>
+            <h4 data-i18n="lock.locked">Locked in Create Bot</h4>
+            <div data-locked-fields></div>
+          </article>
+          <article>
+            <h4 data-i18n="lock.runtime">Runtime-adjustable later</h4>
+            <div data-runtime-fields></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="state-readiness" data-screen-id="state-readiness" class="screen-card state-card">
+        <div class="screen-heading">
+          <span>ST</span>
+          <div><h3 data-i18n="state.title">Studio State and Readiness</h3><p data-i18n="state.body">Screen status is derived from Public Core state, not hardcoded per panel.</p></div>
+          <em data-i18n="state.map">Uses packages/public-core/src/studio-state.js</em>
+        </div>
+        <div class="state-grid" data-state-summary></div>
+        <div class="readiness-issues">
+          <h4 data-i18n="state.issues">Readiness Issues</h4>
+          <div data-readiness-issues></div>
+        </div>
+      </section>
+
+      <section id="i18n-policy" data-screen-id="i18n-policy" class="screen-card i18n-card">
+        <div class="screen-heading">
+          <span>i18n</span>
+          <div><h3 data-i18n="i18n.title">Localization and Error Messages</h3><p data-i18n="i18n.subtitle">Menus matter, but error messages and operational alerts must be localized from day one.</p></div>
+          <em>Default: English · Supported: KO / ZH-CN / JA / VI / DE / FR</em>
+        </div>
+        <div class="i18n-grid">
+          <article>
+            <h4 data-i18n="i18n.locales.title">Supported Locales</h4>
+            <p data-i18n="i18n.locales.body">English is the default fallback. Korean, Chinese, Japanese, Vietnamese, German, and French are first-phase locales.</p>
+            <div class="locale-row"><span>en</span><span>ko</span><span>zh-CN</span><span>ja</span><span>vi</span><span>de</span><span>fr</span></div>
+          </article>
+          <article>
+            <h4 data-i18n="i18n.contract.title">Error Code Contract</h4>
+            <p data-i18n="i18n.contract.body">APIs return stable error codes. The UI resolves messages by locale and falls back to English.</p>
+            <code>CGA_LLM_REQUIRED_FOR_PDF</code>
+          </article>
+          <article>
+            <h4 data-i18n="i18n.fallback.title">Fallback Order</h4>
+            <p data-i18n="i18n.fallback.body">Current locale → English → fallback_message → error_code.</p>
+            <span class="module-badge" data-i18n="i18n.noHardcode">Never hardcode user-facing errors</span>
+          </article>
+        </div>
+        <div class="error-samples" data-error-samples></div>
+      </section>
+
+      <section id="commercial-availability" data-screen-id="commercial-availability" class="screen-card commercial-availability-card">
+        <div class="screen-heading">
+          <span>CM</span>
+          <div><h3 data-i18n="commercial.title">Commercial Module Availability</h3><p data-i18n="commercial.body">Public Core can render commercial feature states without loading private implementations.</p></div>
+          <em data-i18n="commercial.map">Default registry: all commercial modules not installed</em>
+        </div>
+        <div class="feature-list" data-commercial-availability></div>
+      </section>
+
+      <section id="module-boundary" data-screen-id="module-boundary" class="screen-card boundary-card">
+        <div class="screen-heading">
+          <span>MB</span>
+          <div><h3 data-i18n="module.title">Module Boundary Matrix</h3><p data-i18n="module.body">Each screen shows what stays public and what becomes a commercial module candidate.</p></div>
+          <em data-i18n="module.map">Public Core must run without commercial modules</em>
+        </div>
+        <div class="boundary-table" data-boundary-table role="table" aria-label="Public and commercial module boundary"></div>
+      </section>
+
+      <section id="public-contracts" data-screen-id="public-contracts" class="screen-card contract-card">
+        <div class="screen-heading">
+          <span>CT</span>
+          <div><h3 data-i18n="contracts.title">Public Core Contracts</h3><p data-i18n="contracts.body">Stable contracts for errors, workflow mapping, and commercial module availability.</p></div>
+          <em data-i18n="contracts.map">Contracts are public. Commercial implementations stay separate.</em>
+        </div>
+        <div class="contract-grid">
+          <article>
+            <h4 data-i18n="contracts.error">Error Response</h4>
+            <code>{ error_code, message_key, fallback_message, details }</code>
+            <p data-i18n="contracts.errorBody">API and runtime errors must use stable codes and i18n message keys.</p>
+          </article>
+          <article>
+            <h4 data-i18n="contracts.module">Module Status</h4>
+            <code>{ module_id, status, enabled_features }</code>
+            <p data-i18n="contracts.moduleBody">Public Core can show disabled or commercial-required states without loading private modules.</p>
+          </article>
+          <article>
+            <h4 data-i18n="contracts.workflow">Workflow Mapping</h4>
+            <code>6 visible steps → Aidot internal functions</code>
+            <p data-i18n="contracts.workflowBody">The user sees a simple flow while Aidot compatibility remains unchanged.</p>
+          </article>
+          <article>
+            <h4 data-i18n="contracts.authApi">CGA Auth / Group API</h4>
+            <code>/api/cga/auth/* · /api/cga/groups/*</code>
+            <p data-i18n="contracts.authApiBody">Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="open-core" data-screen-id="open-core" class="screen-card commercial-card">
+        <div class="screen-heading">
+          <span>OC</span>
+          <div><h3 data-i18n="openCore.title">Open Core Strategy</h3><p data-i18n="openCore.body">Public CGA remains useful, while high-value commercial modules are separated.</p></div>
+          <em data-i18n="openCore.map">Public Core + Advanced Builder / Operations Monitor / Entitlement modules</em>
+        </div>
+        <div class="module-layout">
+          <article class="core-module">
+            <h4 data-i18n="openCore.public">Public Core</h4>
+            <p data-i18n="openCore.publicBody">Open on GitHub. Runs the basic CGA workflow with Aidot-compatible contracts.</p>
+            <ul><li>CGA Orchestrator Core</li><li>CGA Studio Basic UI</li><li>Basic bot build flow</li><li>Webchat/API compatibility</li></ul>
+          </article>
+          <article>
+            <h4 data-i18n="openCore.advanced">Advanced Builder</h4>
+            <p data-i18n="openCore.advancedBody">Commercial module for high-value bot creation automation.</p>
+            <ul><li>PDF Q&amp;A generation quality</li><li>Intent merge recommendation</li><li>Answer quality checks</li><li>Handoff result validation</li></ul>
+            <span class="module-badge" data-i18n="openCore.required">Commercial Module Required</span>
+          </article>
+          <article>
+            <h4 data-i18n="openCore.operations">Operations Monitor</h4>
+            <p data-i18n="openCore.operationsBody">Commercial module for production monitoring and improvement.</p>
+            <ul><li>LLM cost tracking</li><li>Channel alerting</li><li>Undefined intent analysis</li><li>Operations report</li></ul>
+            <span class="module-badge" data-i18n="openCore.required">Commercial Module Required</span>
+          </article>
+          <article>
+            <h4 data-i18n="openCore.entitlement">License / Entitlement</h4>
+            <p data-i18n="openCore.entitlementBody">Commercial control module for organization and feature access.</p>
+            <ul><li>License key validation</li><li>Bot / channel limits</li><li>Feature activation</li><li>Expiration checks</li></ul>
+            <span class="module-badge" data-i18n="openCore.private">Private Implementation</span>
+          </article>
+        </div>
+      </section>
+
+    </main>
+
+    <aside class="approval" aria-label="Approval checklist">
+      <div class="section-title">
+        <strong data-i18n="approval.title">Approval Checklist</strong>
+        <span data-i18n="approval.subtitle">Before implementation</span>
+      </div>
+      <div class="check-list confirmed">
+        <h3 data-i18n="approval.confirmed">Confirmed</h3>
+        <p data-i18n="approval.aidot">Aidot modification prohibited</p>
+        <p data-i18n="approval.cga">CGA folder only</p>
+        <p data-i18n="approval.compat">API / webchat compatibility preserved</p>
+        <p data-i18n="approval.noRetest">No repeated Aidot feature testing per step</p>
+      </div>
+      <div class="check-list pending">
+        <h3 data-i18n="approval.pending">Needs approval</h3>
+        <p data-i18n="approval.createFirst">Create first or bot list first</p>
+        <p data-i18n="approval.handoff">Manual LLM Handoff implementation scope</p>
+        <p data-i18n="approval.dynamic">Dynamic intent expansion excluded or approved</p>
+        <p data-i18n="approval.serverClient">Bot Server and client selection exposure</p>
+        <p data-i18n="approval.license">Public Core license and commercial module packaging</p>
+      </div>
+      <div class="message-card">
+        <strong data-i18n="workingRule.title">Working rule</strong>
+        <p data-i18n="workingRule.body">Proceed through all CGA screens, show what they do, and only request approval for new functionality.</p>
+      </div>
+    </aside>
+  </div>
+  <script type="module" src="/apps/studio/app.js"></script>
+  <script src="/apps/studio/i18n.js"></script>
+</body>
+</html>

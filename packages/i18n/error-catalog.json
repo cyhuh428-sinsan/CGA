@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "defaultLocale": "en",
+  "supportedLocales": [
+    "en",
+    "ko",
+    "zh-CN",
+    "ja",
+    "vi",
+    "de",
+    "fr"
+  ],
+  "errors": [
+    {
+      "code": "CGA_BOT_NAME_REQUIRED",
+      "key": "errors.bot.nameRequired",
+      "domain": "cga",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_LLM_NOT_CONNECTED",
+      "key": "errors.llm.notConnected",
+      "domain": "llm",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_LLM_REQUIRED_FOR_PDF",
+      "key": "errors.llm.requiredForPdf",
+      "domain": "llm",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_HANDOFF_RESULT_INVALID",
+      "key": "errors.handoff.resultInvalid",
+      "domain": "handoff",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_CHANNEL_CONNECTION_FAILED",
+      "key": "errors.channel.connectionFailed",
+      "domain": "channel",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_SIMULATOR_TIMEOUT",
+      "key": "errors.simulator.timeout",
+      "domain": "simulator",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_COMMERCIAL_MODULE_REQUIRED",
+      "key": "errors.commercial.moduleRequired",
+      "domain": "commercial",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_ENTITLEMENT_NOT_CONNECTED",
+      "key": "errors.entitlement.notConnected",
+      "domain": "entitlement",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "BOT_ANSWER_NOT_FOUND",
+      "key": "botErrors.answer.notFound",
+      "domain": "bot",
+      "audience": "bot_user",
+      "localeSource": "bot.defaultLocale"
+    },
+    {
+      "code": "BOT_API_LOOKUP_FAILED",
+      "key": "botErrors.api.lookupFailed",
+      "domain": "bot",
+      "audience": "bot_user",
+      "localeSource": "bot.defaultLocale"
+    },
+    {
+      "code": "BOT_FALLBACK_REQUIRED",
+      "key": "botErrors.fallback.required",
+      "domain": "bot",
+      "audience": "bot_user",
+      "localeSource": "bot.defaultLocale"
+    }
+  ]
+}
