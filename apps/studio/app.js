@@ -7,6 +7,7 @@ import { createSampleCollaborationState, summarizeCollaboration } from "/package
 import {
   createSampleAccessState,
   summarizeAccess,
+  summarizeAccessOperations,
   summarizeAccessPolicy,
   summarizeAdminRequests,
   summarizeAuthWorkflow,
@@ -190,6 +191,7 @@ function renderCollaborationSummary() {
 }
 
 function renderAccessPanels() {
+  const accessOperations = document.querySelector("[data-access-operations]");
   const authFlow = document.querySelector("[data-auth-flow]");
   const groupUsers = document.querySelector("[data-group-users]");
   const joinRequests = document.querySelector("[data-join-requests]");
@@ -198,9 +200,18 @@ function renderAccessPanels() {
   const screenAccess = document.querySelector("[data-screen-access]");
   const authPolicy = document.querySelector("[data-auth-policy]");
   const adminPolicy = document.querySelector("[data-admin-policy]");
-  if (!authFlow || !groupUsers || !joinRequests || !adminRequests || !groupAccess || !screenAccess || !authPolicy || !adminPolicy) return;
+  if (!accessOperations || !authFlow || !groupUsers || !joinRequests || !adminRequests || !groupAccess || !screenAccess || !authPolicy || !adminPolicy) return;
   const current = summarizeAccess(currentAccessState);
+  const operations = summarizeAccessOperations(currentAccessState);
   const policy = summarizeAccessPolicy(currentAccessState);
+  accessOperations.innerHTML = `
+    <div><strong data-i18n="access.activeUsers">Active users</strong><span>${operations.activeUsers}</span></div>
+    <div><strong data-i18n="access.activeGroups">Active groups</strong><span>${operations.activeGroups}</span></div>
+    <div><strong data-i18n="access.activeMemberships">Active memberships</strong><span>${operations.activeMemberships}</span></div>
+    <div><strong data-i18n="access.waitingApprovals">Waiting approvals</strong><span>${operations.pendingJoinRequests + operations.pendingAdminRequests}</span></div>
+    <div><strong data-i18n="access.protectedAdmin">Protected admin</strong><span>${operations.protectedAdmin ? "Yes" : "No"}</span></div>
+    <div><strong data-i18n="access.userLanguages">User languages</strong><span>${operations.multilingualUsers}</span></div>
+  `;
   authFlow.innerHTML = summarizeAuthWorkflow(currentAccessState).map((step, index) => `
     <div>
       <strong>${String(index + 1).padStart(2, "0")} · ${step.label}</strong>

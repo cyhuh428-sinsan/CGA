@@ -315,7 +315,15 @@ const CGA_I18N_RESOURCES = {
     "collab.blockedItems": "Blocked items",
     "collab.teamReady": "Team-ready",
     "contracts.authApi": "CGA Auth / Group API",
-    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged."
+    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged.",
+    "access.opsTitle": "Access Operations Snapshot",
+    "access.opsBody": "The operator should see group, user, approval, and language status without opening a database or command line.",
+    "access.activeUsers": "Active users",
+    "access.activeGroups": "Active groups",
+    "access.activeMemberships": "Active memberships",
+    "access.waitingApprovals": "Waiting approvals",
+    "access.protectedAdmin": "Protected admin",
+    "access.userLanguages": "User languages"
   },
   "en": {
     "meta.localeName": "English",
@@ -543,6 +551,14 @@ const CGA_I18N_RESOURCES = {
     "access.rolesBody": "Each user receives a role inside a group. That group role controls access to the group bots and APIs.",
     "access.scopes": "Permission Scopes",
     "access.scopesBody": "Create, configure, review, deploy, user management, and API answer management scopes are explicit.",
+    "access.opsTitle": "Access Operations Snapshot",
+    "access.opsBody": "The operator should see group, user, approval, and language status without opening a database or command line.",
+    "access.activeUsers": "Active users",
+    "access.activeGroups": "Active groups",
+    "access.activeMemberships": "Active memberships",
+    "access.waitingApprovals": "Waiting approvals",
+    "access.protectedAdmin": "Protected admin",
+    "access.userLanguages": "User languages",
     "access.authFlow": "Signup / Login Flow",
     "access.authFlowBody": "The first access path is explicit: sign up, receive a personal group, log in, then request access to another group when needed.",
     "access.groupUsers": "Group Users",
@@ -951,7 +967,15 @@ const CGA_I18N_RESOURCES = {
     "collab.blockedItems": "Blocked items",
     "collab.teamReady": "Team-ready",
     "contracts.authApi": "CGA Auth / Group API",
-    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged."
+    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged.",
+    "access.opsTitle": "Access Operations Snapshot",
+    "access.opsBody": "The operator should see group, user, approval, and language status without opening a database or command line.",
+    "access.activeUsers": "Active users",
+    "access.activeGroups": "Active groups",
+    "access.activeMemberships": "Active memberships",
+    "access.waitingApprovals": "Waiting approvals",
+    "access.protectedAdmin": "Protected admin",
+    "access.userLanguages": "User languages"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1269,7 +1293,15 @@ const CGA_I18N_RESOURCES = {
     "collab.blockedItems": "Blocked items",
     "collab.teamReady": "Team-ready",
     "contracts.authApi": "CGA Auth / Group API",
-    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged."
+    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged.",
+    "access.opsTitle": "Access Operations Snapshot",
+    "access.opsBody": "The operator should see group, user, approval, and language status without opening a database or command line.",
+    "access.activeUsers": "Active users",
+    "access.activeGroups": "Active groups",
+    "access.activeMemberships": "Active memberships",
+    "access.waitingApprovals": "Waiting approvals",
+    "access.protectedAdmin": "Protected admin",
+    "access.userLanguages": "User languages"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -1497,6 +1529,14 @@ const CGA_I18N_RESOURCES = {
     "access.rolesBody": "사용자는 그룹 안에서 역할을 받습니다. 이 그룹 역할이 그룹 봇과 API 접근을 제어합니다.",
     "access.scopes": "권한 범위",
     "access.scopesBody": "생성, 구성, 검수, 배포, 사용자 관리, API 답변 관리 권한을 명확히 분리합니다.",
+    "access.opsTitle": "권한 운영 현황",
+    "access.opsBody": "운영자는 DB나 명령줄을 열지 않고도 그룹, 사용자, 승인, 언어 상태를 화면에서 확인해야 합니다.",
+    "access.activeUsers": "활성 사용자",
+    "access.activeGroups": "활성 그룹",
+    "access.activeMemberships": "활성 멤버십",
+    "access.waitingApprovals": "승인 대기",
+    "access.protectedAdmin": "보호된 admin",
+    "access.userLanguages": "사용자 언어 수",
     "access.authFlow": "가입 / 로그인 흐름",
     "access.authFlowBody": "첫 접근 흐름을 명확히 분리합니다. 가입하면 자기 그룹을 받고, 로그인 후 필요한 경우 다른 그룹 가입을 신청합니다.",
     "access.groupUsers": "그룹 사용자",
@@ -1905,7 +1945,15 @@ const CGA_I18N_RESOURCES = {
     "collab.blockedItems": "Blocked items",
     "collab.teamReady": "Team-ready",
     "contracts.authApi": "CGA Auth / Group API",
-    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged."
+    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged.",
+    "access.opsTitle": "Access Operations Snapshot",
+    "access.opsBody": "The operator should see group, user, approval, and language status without opening a database or command line.",
+    "access.activeUsers": "Active users",
+    "access.activeGroups": "Active groups",
+    "access.activeMemberships": "Active memberships",
+    "access.waitingApprovals": "Waiting approvals",
+    "access.protectedAdmin": "Protected admin",
+    "access.userLanguages": "User languages"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -2223,7 +2271,15 @@ const CGA_I18N_RESOURCES = {
     "collab.blockedItems": "Blocked items",
     "collab.teamReady": "Team-ready",
     "contracts.authApi": "CGA Auth / Group API",
-    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged."
+    "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged.",
+    "access.opsTitle": "Access Operations Snapshot",
+    "access.opsBody": "The operator should see group, user, approval, and language status without opening a database or command line.",
+    "access.activeUsers": "Active users",
+    "access.activeGroups": "Active groups",
+    "access.activeMemberships": "Active memberships",
+    "access.waitingApprovals": "Waiting approvals",
+    "access.protectedAdmin": "Protected admin",
+    "access.userLanguages": "User languages"
   }
 };
 

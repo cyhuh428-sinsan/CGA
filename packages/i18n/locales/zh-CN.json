@@ -314,5 +314,13 @@
   "collab.blockedItems": "Blocked items",
   "collab.teamReady": "Team-ready",
   "contracts.authApi": "CGA Auth / Group API",
-  "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged."
+  "contracts.authApiBody": "Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged.",
+  "access.opsTitle": "Access Operations Snapshot",
+  "access.opsBody": "The operator should see group, user, approval, and language status without opening a database or command line.",
+  "access.activeUsers": "Active users",
+  "access.activeGroups": "Active groups",
+  "access.activeMemberships": "Active memberships",
+  "access.waitingApprovals": "Waiting approvals",
+  "access.protectedAdmin": "Protected admin",
+  "access.userLanguages": "User languages"
 }

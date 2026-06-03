@@ -393,3 +393,23 @@
 - 컨테이너 이름은 `cga-cga-studio-1`이고, `0.0.0.0:4173->4173/tcp`로 노출된다.
 - Windows 브라우저 기준 `http://localhost:4173` 응답 상태 `200`을 확인했다.
 - 컨테이너 내부에서 `npm run studio:validate`를 실행했고 전체 검증이 통과했다.
+
+
+### 2026-06-04 권한 운영 현황 패널 추가
+- `Users, Login, and Access` 화면에 `Access Operations Snapshot` 패널을 추가했다.
+- 운영자가 DB나 명령줄을 열지 않고도 활성 사용자 수, 활성 그룹 수, 활성 멤버십 수, 승인 대기 수, admin 보호 상태, 사용자 언어 수를 확인할 수 있게 했다.
+- `packages/public-core/src/access-state.js`에 `summarizeAccessOperations`를 추가했다.
+- Studio 화면은 이 Public Core 요약 함수에서 나온 값으로 운영 지표를 렌더링한다.
+- 영어/한국어 i18n 리소스를 추가했고, 다른 locale은 누락 방지용 영어 fallback으로 보강했다.
+- 이 작업은 CGA 화면/상태 모델 보강이며 Aidot 수정은 없다.
+
+
+### 2026-06-04 Aidot 기준 화면 폰트 정책 반영
+- 신산님 지시에 따라 CGA Studio 화면 기준 해상도를 `1920x1080` 운영 화면으로 잡았다.
+- 폰트는 Aidot 운영 화면 톤에 맞춰 큰 마케팅형 타이포그래피를 사용하지 않는다.
+- 특별한 제목도 최대 `12px`이며, 일반 본문은 `12px` 이하로 유지한다.
+- 왼쪽 단계 메뉴 제목은 `11px` 기준으로 설정했다.
+- 보조 설명은 `10px`, 메타/배지/eyebrow는 `9px` 기준으로 설정했다.
+- `apps/studio/styles.css`에 `--font-title`, `--font-body`, `--font-nav`, `--font-support`, `--font-meta` 변수를 추가했다.
+- `font-size`가 12px를 초과하지 않도록 CSS를 정리했다.
+- 오른쪽 `확정 / 승인 필요` 패널은 개발 중 임시 확인용이며, 최종 CGA Studio 운영 화면에서는 제거 대상으로 본다.
