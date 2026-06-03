@@ -381,3 +381,15 @@
 - README와 접근/API 정책 문서에 WSL 컨테이너 개발 실행 원칙을 문서화했다.
 - 배포와 공유는 Git commit/push 기준으로 진행한다는 원칙을 명시했다.
 - `npm run studio`는 컨테이너 내부 서버 명령으로 유지하되, Windows 로컬에서 직접 실행하는 기본 방식으로 쓰지 않도록 정리했다.
+
+
+### 2026-06-04 WSL `~/deploy/cga` Git 배포 및 컨테이너 실행 확인
+- Windows 작업본을 `codex/wsl-container-dev` 브랜치에 커밋했다.
+- 커밋: `744101e feat: add cga studio container workflow`
+- 원격 저장소 `origin/codex/wsl-container-dev`로 push했다.
+- WSL의 `/home/daon/deploy/cga`에 해당 브랜치를 Git clone했다.
+- WSL에서 `docker-compose config`가 정상 통과했다.
+- WSL에서 `docker-compose up --build -d cga-studio`로 컨테이너를 실행했다.
+- 컨테이너 이름은 `cga-cga-studio-1`이고, `0.0.0.0:4173->4173/tcp`로 노출된다.
+- Windows 브라우저 기준 `http://localhost:4173` 응답 상태 `200`을 확인했다.
+- 컨테이너 내부에서 `npm run studio:validate`를 실행했고 전체 검증이 통과했다.
