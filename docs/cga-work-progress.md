@@ -407,9 +407,12 @@
 ### 2026-06-04 Aidot 기준 화면 폰트 정책 반영
 - 신산님 지시에 따라 CGA Studio 화면 기준 해상도를 `1920x1080` 운영 화면으로 잡았다.
 - 폰트는 Aidot 운영 화면 톤에 맞춰 큰 마케팅형 타이포그래피를 사용하지 않는다.
-- 특별한 제목도 최대 `12px`이며, 일반 본문은 `12px` 이하로 유지한다.
-- 왼쪽 단계 메뉴 제목은 `11px` 기준으로 설정했다.
+- 브랜드명 `CGA Studio`는 예외적으로 `24px`로 설정했다.
+- 왼쪽 섹션 제목 `봇 제작 워크플로우`는 `14px`로 설정했다.
+- 왼쪽 단계 번호 `01~06`은 `14px`로 설정했다.
+- 화면 제목, 왼쪽 단계 메뉴 제목, 일반 본문은 `12px` 기준으로 설정했다.
 - 보조 설명은 `10px`, 메타/배지/eyebrow는 `9px` 기준으로 설정했다.
 - `apps/studio/styles.css`에 `--font-title`, `--font-body`, `--font-nav`, `--font-support`, `--font-meta` 변수를 추가했다.
-- `font-size`가 12px를 초과하지 않도록 CSS를 정리했다.
+- `scripts/check-studio-style.js`를 추가해 허용된 예외 외에 `font-size`가 12px를 초과하지 않도록 검증한다.
+- `npm run studio:validate`에 `studio:style-check`를 포함했다.
 - 오른쪽 `확정 / 승인 필요` 패널은 개발 중 임시 확인용이며, 최종 CGA Studio 운영 화면에서는 제거 대상으로 본다.
