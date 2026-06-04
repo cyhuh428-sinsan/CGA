@@ -490,3 +490,14 @@
 - `packages/public-core/src/collaboration-state.js`에 상태 전이 함수 `lockWorkItem`, `releaseWorkItemLock`, `submitReviewDecision`을 추가했다.
 - 이 단계는 실제 서버 저장/동시성 제어 구현이 아니라 CGA Studio 화면 상태 모델이다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-04 메인 화면 표시 순서 재정렬
+- 신산님 지적에 따라 Aidot admin 계열 기능이 봇 생성 흐름 안에 섞이지 않도록 실제 메인 화면 표시 순서도 재정렬했다.
+- `apps/studio/data/layout.js` 기준으로 화면 순서를 `Bot Workspace -> Team Dashboard -> Create/Configure/Detail/API/Build/Test/Operate -> System Administration -> Reference/Business -> Temporary`로 변경했다.
+- `Users, Login, and Access`는 `System Administration` 영역으로 이동했다.
+- `Collaboration Platform`, `Locked Structure`, `State Readiness`, `i18n`, `Aidot Coverage`, `Public Contracts`는 제작 흐름 뒤의 Reference 영역으로 이동했다.
+- `Module Boundary`, `Commercial Availability`, `Open Core`는 Business 영역으로 이동했다.
+- 개발 중 안내용 `Implementation Direction` 성격의 `hero` 화면은 최종 운영 화면이 아니므로 `temporary` 그룹으로 두고 맨 뒤에 배치했다.
+- 왼쪽 메뉴 분리와 실제 화면 스크롤 순서가 같은 기준을 따르도록 정리했다.
+- 이 작업은 CGA 화면 구성 순서 변경이며 Aidot 코드는 수정하지 않았다.
