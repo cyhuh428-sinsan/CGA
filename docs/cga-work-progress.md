@@ -416,3 +416,19 @@
 - `scripts/check-studio-style.js`를 추가해 허용된 예외 외에 `font-size`가 12px를 초과하지 않도록 검증한다.
 - `npm run studio:validate`에 `studio:style-check`를 포함했다.
 - 오른쪽 `확정 / 승인 필요` 패널은 개발 중 임시 확인용이며, 최종 CGA Studio 운영 화면에서는 제거 대상으로 본다.
+
+
+### 2026-06-04 폰트 기준 재확정 및 Admin/API 우선 구현 진행
+- 신산님 화면 확인 기준으로 CGA Studio 폰트 기준을 다시 확정했다.
+- 브랜드명 `CGA Studio`는 `24px`로 유지한다.
+- 화면 최상위 제목과 왼쪽 단계 번호 `01~06`은 `14px`로 사용한다.
+- 메뉴 제목, 항목 제목, 카드 제목은 `12px`로 사용한다.
+- 일반 본문은 `10px`로 사용한다.
+- 보조 설명 문구는 `9px`로 사용한다.
+- `apps/studio/styles.css`의 폰트 변수를 `--font-brand`, `--font-top`, `--font-title`, `--font-body`, `--font-desc` 기준으로 정리했다.
+- `scripts/check-studio-style.js`를 최신 폰트 기준 검사로 갱신했다.
+- 신산님 지시에 따라 다음 화면 작업보다 `로그인, 사용자/그룹 관리, 그룹별 API 관리`를 먼저 진행한다.
+- `Users, Login, and Access` 화면에 Login Session, Signup, Group Management, Approval Queue 작업대를 추가했다.
+- `External API Answer Source` 화면에 Group API Registry 작업대를 추가했다.
+- `Implementation direction`과 오른쪽 `Approval Checklist`는 최종 운영 화면에서 제거될 개발 확인용 영역이므로, 실제 작업 화면과 구분되도록 임시 영역 색상을 다르게 표시했다.
+- 이 단계는 CGA Public Core 화면/상태 모델 작업이며, Aidot 코드는 수정하지 않았다.

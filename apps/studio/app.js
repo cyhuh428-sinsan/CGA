@@ -5,7 +5,13 @@ import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
 import { createSampleCollaborationState, summarizeCollaboration } from "/packages/public-core/src/collaboration-state.js";
 import {
+  approveAdminPermissionRequest,
+  approveGroupJoinRequest,
+  applySignup,
+  createManagedGroup,
   createSampleAccessState,
+  loginAsUser,
+  requestGroupJoin,
   summarizeAccess,
   summarizeAccessOperations,
   summarizeAccessPolicy,
@@ -18,7 +24,16 @@ import {
 
 const currentStudioState = structuredClone(sampleStudioState);
 const currentCollaborationState = createSampleCollaborationState();
-const currentAccessState = createSampleAccessState();
+let currentAccessState = createSampleAccessState();
+let currentApiRegistry = [
+  {
+    group_id: "g-support",
+    bot_id: "supportbot-draft",
+    name: "order_status_lookup",
+    endpoint_url: "https://api.example.com/orders/{order_id}",
+    response_path: "data.answer"
+  }
+];
 
 
 
@@ -192,6 +207,11 @@ function renderCollaborationSummary() {
 
 function renderAccessPanels() {
   const accessOperations = document.querySelector("[data-access-operations]");
+  const loginUser = document.querySelector("[data-login-user]");
+  const currentSession = document.querySelector("[data-current-session]");
+  const joinGroup = document.querySelector("[data-join-group]");
+  const joinRole = document.querySelector("[data-join-role]");
+  const adminQueue = document.querySelector("[data-admin-action-queue]");
   const authFlow = document.querySelector("[data-auth-flow]");
   const groupUsers = document.querySelector("[data-group-users]");
   const joinRequests = document.querySelector("[data-join-requests]");
@@ -200,10 +220,41 @@ function renderAccessPanels() {
   const screenAccess = document.querySelector("[data-screen-access]");
   const authPolicy = document.querySelector("[data-auth-policy]");
   const adminPolicy = document.querySelector("[data-admin-policy]");
-  if (!accessOperations || !authFlow || !groupUsers || !joinRequests || !adminRequests || !groupAccess || !screenAccess || !authPolicy || !adminPolicy) return;
+  if (!accessOperations || !loginUser || !currentSession || !joinGroup || !joinRole || !adminQueue || !authFlow || !groupUsers || !joinRequests || !adminRequests || !groupAccess || !screenAccess || !authPolicy || !adminPolicy) return;
   const current = summarizeAccess(currentAccessState);
   const operations = summarizeAccessOperations(currentAccessState);
   const policy = summarizeAccessPolicy(currentAccessState);
+  loginUser.innerHTML = currentAccessState.users
+    .filter((user) => user.status === "active")
+    .map((user) => `<option value="${user.id}" ${user.id === currentAccessState.currentUserId ? "selected" : ""}>${user.name} · ${user.id} · ${user.locale}</option>`)
+    .join("");
+  currentSession.innerHTML = `
+    <strong>${current.user?.name || "User"}</strong>
+    <span>${current.user?.id || ""} · ${current.user?.locale || "en"} · ${current.memberships.map((item) => `${item.group_id}/${item.role}`).join(", ")}</span>
+  `;
+  joinGroup.innerHTML = currentAccessState.groups
+    .filter((group) => group.status === "active")
+    .map((group) => `<option value="${group.id}">${group.name}</option>`)
+    .join("");
+  joinRole.innerHTML = ["viewer", "builder", "reviewer", "operator", "group_admin"]
+    .map((role) => `<option value="${role}">${role}</option>`)
+    .join("");
+  adminQueue.innerHTML = [
+    ...summarizeJoinRequests(currentAccessState).filter((request) => request.status === "pending").map((request) => `
+      <div>
+        <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
+        <span>${request.requested_role} · group join</span>
+        <button type="button" data-approve-join="${request.id}">Approve</button>
+      </div>
+    `),
+    ...summarizeAdminRequests(currentAccessState).filter((request) => request.status === "pending").map((request) => `
+      <div>
+        <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
+        <span>${request.requested_role} · admin permission</span>
+        <button type="button" data-approve-admin="${request.id}">Approve</button>
+      </div>
+    `)
+  ].join("") || `<div><strong>No pending approval</strong><span>Queue is empty</span></div>`;
   accessOperations.innerHTML = `
     <div><strong data-i18n="access.activeUsers">Active users</strong><span>${operations.activeUsers}</span></div>
     <div><strong data-i18n="access.activeGroups">Active groups</strong><span>${operations.activeGroups}</span></div>
@@ -264,6 +315,119 @@ function renderAccessPanels() {
     <p><strong data-i18n="access.groupCreateAdmin">Group creation approval</strong><span>${policy.groupCreationRequiresSystemAdmin ? "System admin required" : "Open"}</span></p>
     <p><strong data-i18n="access.groupsWithoutAdmin">Groups without group admin</strong><span>${policy.groupsWithoutAdmin.join(", ") || "None"}</span></p>
   `;
+  bindAdminActionButtons();
+}
+
+function renderApiRegistry() {
+  const apiGroup = document.querySelector("[data-api-group]");
+  const apiRegistry = document.querySelector("[data-api-registry]");
+  if (!apiGroup || !apiRegistry) return;
+  apiGroup.innerHTML = currentAccessState.groups
+    .filter((group) => group.status === "active")
+    .map((group) => `<option value="${group.id}">${group.name}</option>`)
+    .join("");
+  apiRegistry.innerHTML = currentApiRegistry.map((api) => `
+    <div>
+      <strong>${api.name}</strong>
+      <span>${api.group_id} · ${api.endpoint_url} · ${api.response_path}</span>
+    </div>
+  `).join("") || `<div><strong>No API answer</strong><span>Register a group API answer first.</span></div>`;
+}
+
+function rerenderAdminAndAccess() {
+  renderAccessPanels();
+  renderApiRegistry();
+  document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+}
+
+function bindAdminActionButtons() {
+  document.querySelectorAll("[data-approve-join]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentAccessState = approveGroupJoinRequest(currentAccessState, { requestId: button.dataset.approveJoin, reviewerId: "admin" });
+      rerenderAdminAndAccess();
+    });
+  });
+  document.querySelectorAll("[data-approve-admin]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentAccessState = approveAdminPermissionRequest(currentAccessState, { requestId: button.dataset.approveAdmin, reviewerId: "admin" });
+      rerenderAdminAndAccess();
+    });
+  });
+}
+
+function bindAdminWorkbench() {
+  const loginSubmit = document.querySelector("[data-login-submit]");
+  const signupSubmit = document.querySelector("[data-signup-submit]");
+  const groupCreate = document.querySelector("[data-group-create]");
+  const joinSubmit = document.querySelector("[data-join-submit]");
+  const apiAdd = document.querySelector("[data-api-add]");
+  if (loginSubmit && loginSubmit.dataset.bound !== "true") {
+    loginSubmit.dataset.bound = "true";
+    loginSubmit.addEventListener("click", () => {
+      currentAccessState = loginAsUser(currentAccessState, { userId: document.querySelector("[data-login-user]")?.value });
+      rerenderAdminAndAccess();
+    });
+  }
+  if (signupSubmit && signupSubmit.dataset.bound !== "true") {
+    signupSubmit.dataset.bound = "true";
+    signupSubmit.addEventListener("click", () => {
+      const id = document.querySelector("[data-signup-id]")?.value?.trim();
+      const name = document.querySelector("[data-signup-name]")?.value?.trim();
+      if (!id || !name) return;
+      currentAccessState = applySignup(currentAccessState, {
+        userId: id,
+        name,
+        locale: document.querySelector("[data-signup-locale]")?.value || "en",
+        groupName: document.querySelector("[data-signup-group]")?.value?.trim() || `${name} Group`
+      });
+      rerenderAdminAndAccess();
+    });
+  }
+  if (groupCreate && groupCreate.dataset.bound !== "true") {
+    groupCreate.dataset.bound = "true";
+    groupCreate.addEventListener("click", () => {
+      const id = document.querySelector("[data-group-id]")?.value?.trim();
+      const name = document.querySelector("[data-group-name]")?.value?.trim();
+      if (!id || !name) return;
+      currentAccessState = createManagedGroup(currentAccessState, { id, name });
+      rerenderAdminAndAccess();
+    });
+  }
+  if (joinSubmit && joinSubmit.dataset.bound !== "true") {
+    joinSubmit.dataset.bound = "true";
+    joinSubmit.addEventListener("click", () => {
+      currentAccessState = requestGroupJoin(currentAccessState, {
+        id: `jr-${Date.now()}`,
+        userId: currentAccessState.currentUserId,
+        groupId: document.querySelector("[data-join-group]")?.value,
+        requestedRole: document.querySelector("[data-join-role]")?.value || "viewer"
+      });
+      rerenderAdminAndAccess();
+    });
+  }
+  if (apiAdd && apiAdd.dataset.bound !== "true") {
+    apiAdd.dataset.bound = "true";
+    apiAdd.addEventListener("click", () => {
+      const name = document.querySelector("[data-api-name]")?.value?.trim();
+      const endpoint = document.querySelector("[data-api-endpoint]")?.value?.trim();
+      if (!name || !endpoint) return;
+      currentApiRegistry = [
+        ...currentApiRegistry,
+        {
+          group_id: document.querySelector("[data-api-group]")?.value || "g-support",
+          bot_id: currentAccessState.botId,
+          name,
+          endpoint_url: endpoint,
+          response_path: document.querySelector("[data-api-response-path]")?.value?.trim() || "data.answer"
+        }
+      ];
+      rerenderAdminAndAccess();
+    });
+  }
 }
 
 function renderStateSummary() {
@@ -346,6 +510,8 @@ function bootApp() {
   renderCommercialAvailability();
   renderCollaborationSummary();
   renderAccessPanels();
+  renderApiRegistry();
+  bindAdminWorkbench();
   renderLockPolicy();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }

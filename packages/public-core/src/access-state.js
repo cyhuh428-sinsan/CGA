@@ -77,6 +77,20 @@ export function applySignup(state, { userId, name, locale = "en", groupName }) {
   };
 }
 
+export function loginAsUser(state, { userId }) {
+  const user = state.users.find((item) => item.id === userId && item.status === "active");
+  if (!user) return state;
+  return { ...state, currentUserId: user.id };
+}
+
+export function createManagedGroup(state, { id, name }) {
+  if (!id || state.groups.some((group) => group.id === id)) return state;
+  return {
+    ...state,
+    groups: [...state.groups, createGroup({ id, name })]
+  };
+}
+
 export function requestGroupJoin(state, { id, userId, groupId, requestedRole = USER_ROLES.VIEWER }) {
   return {
     ...state,
@@ -95,6 +109,26 @@ export function approveGroupJoinRequest(state, { requestId, reviewerId }) {
     joinRequests: state.joinRequests.map((item) => item.id === requestId ? { ...item, status: "approved", reviewed_by: reviewerId, reviewed_at: new Date(0).toISOString() } : item),
     memberships: [
       ...state.memberships,
+      createGroupMembership({ userId: request.user_id, groupId: request.group_id, role: request.requested_role })
+    ]
+  };
+}
+
+export function approveAdminPermissionRequest(state, { requestId, reviewerId }) {
+  const request = state.adminRequests.find((item) => item.id === requestId);
+  if (!request || request.status !== "pending") return state;
+  const memberships = state.memberships.map((membership) => {
+    if (membership.user_id === request.user_id && membership.group_id === request.group_id && membership.status === "active") {
+      return { ...membership, role: request.requested_role };
+    }
+    return membership;
+  });
+  const hasMembership = memberships.some((membership) => membership.user_id === request.user_id && membership.group_id === request.group_id && membership.status === "active");
+  return {
+    ...state,
+    adminRequests: state.adminRequests.map((item) => item.id === requestId ? { ...item, status: "approved", reviewed_by: reviewerId, reviewed_at: new Date(0).toISOString() } : item),
+    memberships: hasMembership ? memberships : [
+      ...memberships,
       createGroupMembership({ userId: request.user_id, groupId: request.group_id, role: request.requested_role })
     ]
   };
