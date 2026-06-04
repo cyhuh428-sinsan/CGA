@@ -55,46 +55,60 @@ export const workflowSteps = [
   }
 ];
 
-export const managementLinks = [
+export const productionLinks = [
   {
     id: "workspace-home",
     code: "BOT",
-    titleKey: "management.workspace.title",
-    subtitleKey: "management.workspace.subtitle",
+    titleKey: "production.workspace.title",
+    subtitleKey: "production.workspace.subtitle",
     title: "Bot Workspace",
     subtitle: "Groups · bots · entry"
   },
   {
     id: "team-dashboard",
     code: "TM",
-    titleKey: "management.team.title",
-    subtitleKey: "management.team.subtitle",
+    titleKey: "production.team.title",
+    subtitleKey: "production.team.subtitle",
     title: "Team Dashboard",
     subtitle: "Tasks · reviews · blocks"
   },
   {
-    id: "access-management",
-    code: "AD",
-    titleKey: "management.access.title",
-    subtitleKey: "management.access.subtitle",
-    title: "User / Group Admin",
-    subtitle: "Login · roles · approvals"
-  },
-  {
     id: "api-answer-source",
     code: "API",
-    titleKey: "management.api.title",
-    subtitleKey: "management.api.subtitle",
+    titleKey: "production.api.title",
+    subtitleKey: "production.api.subtitle",
     title: "Group API Registry",
     subtitle: "External answer sources"
-  },
+  }
+];
+
+export const systemAdminLinks = [
+  {
+    id: "access-management",
+    code: "AD",
+    titleKey: "systemAdmin.access.title",
+    subtitleKey: "systemAdmin.access.subtitle",
+    title: "User / Group Admin",
+    subtitle: "Login · roles · approvals"
+  }
+];
+
+export const referenceLinks = [
   {
     id: "aidot-feature-coverage",
     code: "AF",
-    titleKey: "management.coverage.title",
-    subtitleKey: "management.coverage.subtitle",
+    titleKey: "reference.coverage.title",
+    subtitleKey: "reference.coverage.subtitle",
     title: "Aidot Coverage",
     subtitle: "Preserved feature map"
+  },
+  {
+    id: "hero",
+    code: "TMP",
+    titleKey: "reference.temporary.title",
+    subtitleKey: "reference.temporary.subtitle",
+    title: "Temporary Notes",
+    subtitle: "Removed before final UI"
   }
 ];
 
