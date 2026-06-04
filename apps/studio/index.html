@@ -42,7 +42,7 @@
     </aside>
 
     <main class="workspace">
-      <section class="hero-panel" data-screen-id="hero">
+      <section class="hero-panel temporary-panel" data-screen-id="hero">
         <div>
           <p class="eyebrow" data-i18n="hero.eyebrow">Implementation direction</p>
           <h2 data-i18n="hero.title">Show each CGA screen, wire it to existing Aidot functions</h2>
@@ -105,6 +105,47 @@
             <p data-i18n="access.opsBody">The operator should see group, user, approval, and language status without opening a database or command line.</p>
           </div>
           <div class="access-ops-grid" data-access-operations></div>
+        </div>
+        <div class="admin-workbench">
+          <article>
+            <h4 data-i18n="admin.loginTitle">Login Session</h4>
+            <p data-i18n="admin.loginBody">Switch the active user and immediately recalculate group memberships, screen access, and user language.</p>
+            <div class="admin-form-row">
+              <select data-login-user></select>
+              <button type="button" data-login-submit data-i18n="admin.loginButton">Login</button>
+            </div>
+            <div class="admin-result" data-current-session></div>
+          </article>
+          <article>
+            <h4 data-i18n="admin.signupTitle">Signup</h4>
+            <p data-i18n="admin.signupBody">A new user receives a personal group and becomes that group’s administrator.</p>
+            <div class="admin-form-grid">
+              <input data-signup-id placeholder="user-id" />
+              <input data-signup-name placeholder="name" />
+              <select data-signup-locale><option value="en">en</option><option value="ko">ko</option><option value="ja">ja</option><option value="vi">vi</option><option value="de">de</option><option value="fr">fr</option></select>
+              <input data-signup-group placeholder="group name" />
+            </div>
+            <button type="button" data-signup-submit data-i18n="admin.signupButton">Create user</button>
+          </article>
+          <article>
+            <h4 data-i18n="admin.groupTitle">Group Management</h4>
+            <p data-i18n="admin.groupBody">Create groups and request membership using the current user session.</p>
+            <div class="admin-form-grid">
+              <input data-group-id placeholder="group-id" />
+              <input data-group-name placeholder="group name" />
+              <select data-join-group></select>
+              <select data-join-role></select>
+            </div>
+            <div class="admin-form-row">
+              <button type="button" data-group-create data-i18n="admin.groupCreate">Create group</button>
+              <button type="button" data-join-submit data-i18n="admin.joinRequest">Request join</button>
+            </div>
+          </article>
+          <article>
+            <h4 data-i18n="admin.approvalTitle">Approval Queue</h4>
+            <p data-i18n="admin.approvalBody">The admin user approves group join requests and admin permission requests.</p>
+            <div class="admin-queue" data-admin-action-queue></div>
+          </article>
         </div>
         <div class="auth-flow-layout">
           <article>
@@ -261,6 +302,18 @@
               <label><span data-i18n="apiAnswer.auth">Auth type</span><select><option>Bearer</option><option>API Key</option><option>None</option></select></label>
             </div>
             <label><span data-i18n="apiAnswer.responsePath">Answer text path</span><input value="data.answer" /></label>
+          </div>
+          <div class="api-admin-panel">
+            <h4 data-i18n="apiAnswer.adminTitle">Group API Registry</h4>
+            <p data-i18n="apiAnswer.adminBody">Register external API answers by group. These are bot assets controlled by group permissions.</p>
+            <div class="admin-form-grid">
+              <select data-api-group></select>
+              <input data-api-name placeholder="api answer name" />
+              <input data-api-endpoint placeholder="endpoint url" />
+              <input data-api-response-path placeholder="response path" />
+            </div>
+            <button type="button" data-api-add data-i18n="apiAnswer.addApi">Add API answer</button>
+            <div class="api-registry-list" data-api-registry></div>
           </div>
 
           <div class="dynamic-api-example" data-dynamic-api-example>
@@ -463,7 +516,7 @@
 
     </main>
 
-    <aside class="approval" aria-label="Approval checklist">
+    <aside class="approval temporary-panel" aria-label="Approval checklist">
       <div class="section-title">
         <strong data-i18n="approval.title">Approval Checklist</strong>
         <span data-i18n="approval.subtitle">Before implementation</span>

@@ -322,5 +322,20 @@
   "access.activeMemberships": "Active memberships",
   "access.waitingApprovals": "Waiting approvals",
   "access.protectedAdmin": "Protected admin",
-  "access.userLanguages": "User languages"
+  "access.userLanguages": "User languages",
+  "admin.loginTitle": "Login Session",
+  "admin.loginBody": "Switch the active user and immediately recalculate group memberships, screen access, and user language.",
+  "admin.loginButton": "Login",
+  "admin.signupTitle": "Signup",
+  "admin.signupBody": "A new user receives a personal group and becomes that group’s administrator.",
+  "admin.signupButton": "Create user",
+  "admin.groupTitle": "Group Management",
+  "admin.groupBody": "Create groups and request membership using the current user session.",
+  "admin.groupCreate": "Create group",
+  "admin.joinRequest": "Request join",
+  "admin.approvalTitle": "Approval Queue",
+  "admin.approvalBody": "The admin user approves group join requests and admin permission requests.",
+  "apiAnswer.adminTitle": "Group API Registry",
+  "apiAnswer.adminBody": "Register external API answers by group. These are bot assets controlled by group permissions.",
+  "apiAnswer.addApi": "Add API answer"
 }
