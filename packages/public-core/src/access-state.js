@@ -83,8 +83,36 @@ export function loginAsUser(state, { userId }) {
   return { ...state, currentUserId: user.id };
 }
 
-export function createManagedGroup(state, { id, name }) {
-  if (!id || state.groups.some((group) => group.id === id)) return state;
+export function isSystemAdmin(state, userId) {
+  return getUserGroupMemberships(state, userId).some((membership) => membership.role === USER_ROLES.SYSTEM_ADMIN);
+}
+
+export function isGroupAdminForGroup(state, userId, groupId) {
+  return getUserGroupMemberships(state, userId).some((membership) => (
+    membership.group_id === groupId &&
+    [USER_ROLES.GROUP_ADMIN, USER_ROLES.OWNER, USER_ROLES.SYSTEM_ADMIN].includes(membership.role)
+  ));
+}
+
+export function canCreateManagedGroup(state, userId = state?.currentUserId) {
+  if (!state?.policy?.groupCreationRequiresSystemAdmin) return true;
+  return isSystemAdmin(state, userId);
+}
+
+export function canApproveGroupJoinRequest(state, { requestId, reviewerId = state?.currentUserId }) {
+  const request = state.joinRequests.find((item) => item.id === requestId);
+  if (!request || request.status !== "pending") return false;
+  return isGroupAdminForGroup(state, reviewerId, request.group_id) || isSystemAdmin(state, reviewerId);
+}
+
+export function canApproveAdminPermissionRequest(state, { requestId, reviewerId = state?.currentUserId }) {
+  const request = state.adminRequests.find((item) => item.id === requestId);
+  if (!request || request.status !== "pending") return false;
+  return isSystemAdmin(state, reviewerId);
+}
+
+export function createManagedGroup(state, { id, name, actorId = state?.currentUserId }) {
+  if (!id || state.groups.some((group) => group.id === id) || !canCreateManagedGroup(state, actorId)) return state;
   return {
     ...state,
     groups: [...state.groups, createGroup({ id, name })]
@@ -103,7 +131,7 @@ export function requestGroupJoin(state, { id, userId, groupId, requestedRole = U
 
 export function approveGroupJoinRequest(state, { requestId, reviewerId }) {
   const request = state.joinRequests.find((item) => item.id === requestId);
-  if (!request || request.status !== "pending") return state;
+  if (!request || request.status !== "pending" || !canApproveGroupJoinRequest(state, { requestId, reviewerId })) return state;
   return {
     ...state,
     joinRequests: state.joinRequests.map((item) => item.id === requestId ? { ...item, status: "approved", reviewed_by: reviewerId, reviewed_at: new Date(0).toISOString() } : item),
@@ -116,7 +144,7 @@ export function approveGroupJoinRequest(state, { requestId, reviewerId }) {
 
 export function approveAdminPermissionRequest(state, { requestId, reviewerId }) {
   const request = state.adminRequests.find((item) => item.id === requestId);
-  if (!request || request.status !== "pending") return state;
+  if (!request || request.status !== "pending" || !canApproveAdminPermissionRequest(state, { requestId, reviewerId })) return state;
   const memberships = state.memberships.map((membership) => {
     if (membership.user_id === request.user_id && membership.group_id === request.group_id && membership.status === "active") {
       return { ...membership, role: request.requested_role };

@@ -780,6 +780,15 @@ textarea { min-height: 84px; resize: vertical; }
   align-items: center;
 }
 
+.admin-queue > div.blocked-action {
+  background: #f8fafc;
+}
+
+.admin-queue > div.blocked-action strong,
+.admin-queue > div.blocked-action span {
+  color: var(--muted);
+}
+
 .admin-queue > div span {
   grid-column: 1;
 }
