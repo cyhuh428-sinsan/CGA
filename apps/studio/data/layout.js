@@ -3,6 +3,7 @@ export const screenLayout = [
   { id: "aidot-feature-coverage", group: "foundation", visible: true, order: 12, mode: "public" },
   { id: "access-management", group: "foundation", visible: true, order: 15, mode: "public" },
   { id: "collaboration-platform", group: "foundation", visible: true, order: 18, mode: "public" },
+  { id: "workspace-home", group: "workspace", visible: true, order: 19, mode: "public" },
   { id: "create", group: "workflow", visible: true, order: 20, mode: "public" },
   { id: "configure", group: "workflow", visible: true, order: 30, mode: "public" },
   { id: "detail", group: "workflow", visible: true, order: 40, mode: "public" },

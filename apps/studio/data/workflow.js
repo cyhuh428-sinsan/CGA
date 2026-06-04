@@ -57,6 +57,14 @@ export const workflowSteps = [
 
 export const managementLinks = [
   {
+    id: "workspace-home",
+    code: "BOT",
+    titleKey: "management.workspace.title",
+    subtitleKey: "management.workspace.subtitle",
+    title: "Bot Workspace",
+    subtitle: "Groups · bots · entry"
+  },
+  {
     id: "access-management",
     code: "AD",
     titleKey: "management.access.title",

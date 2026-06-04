@@ -1061,8 +1061,110 @@ textarea { min-height: 84px; resize: vertical; }
   margin-top: 14px;
 }
 
-@media (max-width: 1300px) { .app-shell { grid-template-columns: 240px 1fr; } .approval { grid-column: 1 / -1; position: static; } .topbar { grid-template-columns: 1fr; height: auto; position: static; } .context-bar { justify-content: flex-start; } .hero-panel, .two-column, .simulator-layout, .editor-layout, .permission-layout, .auth-policy-layout, .auth-flow-layout, .request-layout, .access-ops-panel { grid-template-columns: 1fr; } }
-@media (max-width: 820px) { .app-shell { grid-template-columns: 1fr; padding: 12px; } .workflow { position: static; } .input-paths, .readiness-grid, .ops-grid, .module-layout, .boundary-table, .i18n-grid, .error-samples, .contract-grid, .state-grid, .decision-grid, .lock-runtime-grid, .access-grid, .access-ops-grid, .api-answer-layout, .metric-example, .coverage-grid, .collab-grid, .collab-summary, .permission-table, .screen-access-list > div, .policy-list p { grid-template-columns: 1fr; } .screen-heading { grid-template-columns: 42px 1fr; } .screen-heading em { grid-column: 1 / -1; max-width: none; } .intent-row { grid-template-columns: 1fr; } .mini-flow { white-space: normal; flex-wrap: wrap; } }
+.workspace-home-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 280px;
+  gap: 14px;
+}
+
+.workspace-selector,
+.workspace-bot-list {
+  border: 1px solid var(--muted-line);
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 14px;
+}
+
+.workspace-selector h4,
+.workspace-bot-list h4 {
+  font-size: var(--font-title);
+  margin-bottom: 8px;
+}
+
+.workspace-selector p {
+  color: #475569;
+  font-size: var(--font-desc);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.workspace-summary,
+.bot-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.workspace-summary > div,
+.empty-list {
+  border: 1px solid var(--muted-line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px 12px;
+}
+
+.workspace-summary strong,
+.empty-list strong {
+  display: block;
+  font-size: var(--font-body);
+  margin-bottom: 4px;
+}
+
+.workspace-summary span,
+.empty-list span {
+  color: #475569;
+  font-size: var(--font-desc);
+}
+
+.workspace-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.workspace-list-head button,
+.bot-list-row {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+}
+
+.workspace-list-head button {
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+.bot-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  text-align: left;
+  align-items: center;
+  padding: 9px 10px;
+}
+
+.bot-list-row strong {
+  font-size: var(--font-title);
+}
+
+.bot-list-row span {
+  color: #475569;
+  font-size: var(--font-desc);
+  justify-self: end;
+}
+
+.bot-list-row.selected {
+  border-color: #14b8a6;
+  background: var(--teal-soft);
+}
+
+@media (max-width: 1300px) { .app-shell { grid-template-columns: 240px 1fr; } .approval { grid-column: 1 / -1; position: static; } .topbar { grid-template-columns: 1fr; height: auto; position: static; } .context-bar { justify-content: flex-start; } .hero-panel, .two-column, .simulator-layout, .editor-layout, .permission-layout, .auth-policy-layout, .auth-flow-layout, .request-layout, .access-ops-panel, .workspace-home-layout { grid-template-columns: 1fr; } }
+@media (max-width: 820px) { .app-shell { grid-template-columns: 1fr; padding: 12px; } .workflow { position: static; } .input-paths, .readiness-grid, .ops-grid, .module-layout, .boundary-table, .i18n-grid, .error-samples, .contract-grid, .state-grid, .decision-grid, .lock-runtime-grid, .access-grid, .access-ops-grid, .api-answer-layout, .metric-example, .coverage-grid, .collab-grid, .collab-summary, .permission-table, .screen-access-list > div, .policy-list p, .bot-list-row { grid-template-columns: 1fr; } .screen-heading { grid-template-columns: 42px 1fr; } .screen-heading em { grid-column: 1 / -1; max-width: none; } .intent-row { grid-template-columns: 1fr; } .mini-flow { white-space: normal; flex-wrap: wrap; } }
 
 .status-panel [data-create-summary] {
   display: block;

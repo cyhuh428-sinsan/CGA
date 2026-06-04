@@ -94,6 +94,35 @@
         </div>
       </section>
 
+      <section id="workspace-home" data-screen-id="workspace-home" class="screen-card workspace-home-card">
+        <div class="screen-heading">
+          <span aria-label="Bot Workspace">BW</span>
+          <div><h3 data-i18n="workspace.title">Bot Workspace</h3><p data-i18n="workspace.body">After login, users first choose a group and open or create a bot inside that group.</p></div>
+          <em data-i18n="workspace.map">Server SaaS entry: user session → group workspace → bot build workflow</em>
+        </div>
+        <div class="workspace-home-layout">
+          <article class="workspace-selector">
+            <h4 data-i18n="workspace.groupTitle">Current Group</h4>
+            <p data-i18n="workspace.groupBody">Bots and APIs are managed by group. The selected group decides which bots are visible.</p>
+            <select data-workspace-group></select>
+            <div class="workspace-summary" data-workspace-summary></div>
+          </article>
+          <article class="workspace-bot-list">
+            <div class="workspace-list-head">
+              <h4 data-i18n="workspace.botListTitle">Group Bots</h4>
+              <button type="button" data-workspace-create data-i18n="workspace.createBot">Create Bot</button>
+            </div>
+            <div class="bot-list" data-workspace-bots></div>
+          </article>
+          <aside class="status-panel compact">
+            <h4 data-i18n="workspace.nextTitle">Next Action</h4>
+            <p><b data-i18n="workspace.currentBot">Current bot</b><span data-current-bot-name>SupportBot Draft</span></p>
+            <p><b data-i18n="workspace.currentGroup">Current group</b><span data-current-group-name></span></p>
+            <div class="next-action" data-i18n="workspace.nextBody">Open a bot, then continue through Create Bot and the build workflow.</div>
+          </aside>
+        </div>
+      </section>
+
       <section id="access-management" data-screen-id="access-management" class="screen-card access-card">
         <div class="screen-heading">
           <span>AC</span>

@@ -345,5 +345,18 @@
   "management.api.title": "Group API Registry",
   "management.api.subtitle": "External answer sources",
   "management.coverage.title": "Aidot Coverage",
-  "management.coverage.subtitle": "Preserved feature map"
+  "management.coverage.subtitle": "Preserved feature map",
+  "management.workspace.title": "Bot Workspace",
+  "management.workspace.subtitle": "Groups · bots · entry",
+  "workspace.title": "Bot Workspace",
+  "workspace.body": "After login, users first choose a group and open or create a bot inside that group.",
+  "workspace.map": "Server SaaS entry: user session → group workspace → bot build workflow",
+  "workspace.groupTitle": "Current Group",
+  "workspace.groupBody": "Bots and APIs are managed by group. The selected group decides which bots are visible.",
+  "workspace.botListTitle": "Group Bots",
+  "workspace.createBot": "Create Bot",
+  "workspace.nextTitle": "Next Action",
+  "workspace.currentBot": "Current bot",
+  "workspace.currentGroup": "Current group",
+  "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow."
 }
