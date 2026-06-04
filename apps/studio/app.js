@@ -206,6 +206,7 @@ function renderCollaborationSummary() {
 }
 
 function renderAccessPanels() {
+  const currentUserBadge = document.querySelector("[data-current-user-badge]");
   const accessOperations = document.querySelector("[data-access-operations]");
   const loginUser = document.querySelector("[data-login-user]");
   const currentSession = document.querySelector("[data-current-session]");
@@ -224,6 +225,10 @@ function renderAccessPanels() {
   const current = summarizeAccess(currentAccessState);
   const operations = summarizeAccessOperations(currentAccessState);
   const policy = summarizeAccessPolicy(currentAccessState);
+  if (currentUserBadge) {
+    const roles = current.memberships.map((item) => item.role).join(", ") || "no role";
+    currentUserBadge.textContent = `${current.user?.name || "User"} · ${current.user?.locale || "en"} · ${roles}`;
+  }
   loginUser.innerHTML = currentAccessState.users
     .filter((user) => user.status === "active")
     .map((user) => `<option value="${user.id}" ${user.id === currentAccessState.currentUserId ? "selected" : ""}>${user.name} · ${user.id} · ${user.locale}</option>`)
@@ -316,6 +321,20 @@ function renderAccessPanels() {
     <p><strong data-i18n="access.groupsWithoutAdmin">Groups without group admin</strong><span>${policy.groupsWithoutAdmin.join(", ") || "None"}</span></p>
   `;
   bindAdminActionButtons();
+  applyAccessToNavigation(current);
+}
+
+function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) {
+  const screenAccess = new Map(current.screens.map((screen) => [screen.screenId, screen]));
+  document.querySelectorAll(".management-nav a, [data-workflow-nav] a").forEach((link) => {
+    const id = link.getAttribute("href")?.replace("#", "");
+    const access = screenAccess.get(id);
+    const allowed = access ? access.allowed : true;
+    link.classList.toggle("access-blocked", !allowed);
+    link.classList.toggle("access-allowed", allowed);
+    link.setAttribute("aria-disabled", allowed ? "false" : "true");
+    link.dataset.accessLabel = allowed ? "Allowed" : `Blocked · ${access?.scope || "no scope"}`;
+  });
 }
 
 function renderApiRegistry() {
@@ -430,6 +449,18 @@ function bindAdminWorkbench() {
   }
 }
 
+function bindAccessNavigationGuard() {
+  document.querySelectorAll(".management-nav a, [data-workflow-nav] a").forEach((link) => {
+    if (link.dataset.guardBound === "true") return;
+    link.dataset.guardBound = "true";
+    link.addEventListener("click", (event) => {
+      if (link.classList.contains("access-blocked")) {
+        event.preventDefault();
+      }
+    });
+  });
+}
+
 function renderStateSummary() {
   const container = document.querySelector("[data-state-summary]");
   if (!container) return;
@@ -514,6 +545,7 @@ function bootApp() {
   applyScreenLayout();
   renderManagementRail();
   renderWorkflowRail();
+  bindAccessNavigationGuard();
   renderBoundaryMatrix();
   renderErrorSamples();
   bindCreateControls();
