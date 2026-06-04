@@ -480,3 +480,13 @@
 - `Reference`에는 `Aidot Coverage`와 최종 UI에서 제거될 `Temporary Notes`를 배치했다.
 - System Administration 메뉴는 색상을 다르게 적용해 봇 제작 흐름과 시각적으로 구분했다.
 - 이 단계는 화면 정보구조 정리이며, 새 Aidot 기능 개발이나 Aidot 수정은 없다.
+
+
+### 2026-06-04 Team Dashboard 편집 잠금/검수 동작 연결
+- 기존 협업 계약의 `createEditLock`, `REVIEW_DECISION`, `WORK_ITEM_STATUS`를 사용해 Team Dashboard 화면 동작을 연결했다.
+- `My Tasks` 항목에서 현재 사용자에게 배정된 작업은 `Lock`/`Unlock`으로 편집 잠금 상태를 전환할 수 있다.
+- `Review Queue` 항목은 `Approve` 또는 `Request changes`로 상태를 변경할 수 있다.
+- `Blocked Items` 항목은 `Move to todo`로 다시 처리 대기 상태로 돌릴 수 있다.
+- `packages/public-core/src/collaboration-state.js`에 상태 전이 함수 `lockWorkItem`, `releaseWorkItemLock`, `submitReviewDecision`을 추가했다.
+- 이 단계는 실제 서버 저장/동시성 제어 구현이 아니라 CGA Studio 화면 상태 모델이다.
+- Aidot 코드는 수정하지 않았다.

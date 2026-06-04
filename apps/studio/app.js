@@ -3,7 +3,7 @@ import { getVisibleLayout } from "./data/layout.js";
 import { sampleStudioState } from "./data/sample-state.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
-import { createSampleCollaborationState, summarizeCollaboration, summarizeTeamDashboard } from "/packages/public-core/src/collaboration-state.js";
+import { createSampleCollaborationState, lockWorkItem, releaseWorkItemLock, submitReviewDecision, summarizeCollaboration, summarizeTeamDashboard } from "/packages/public-core/src/collaboration-state.js";
 import {
   approveAdminPermissionRequest,
   approveGroupJoinRequest,
@@ -23,7 +23,7 @@ import {
 } from "/packages/public-core/src/access-state.js";
 
 const currentStudioState = structuredClone(sampleStudioState);
-const currentCollaborationState = createSampleCollaborationState();
+let currentCollaborationState = createSampleCollaborationState();
 let currentAccessState = createSampleAccessState();
 let currentWorkspaceGroupId = "g-support";
 let currentWorkspaceBotId = "supportbot-draft";
@@ -253,21 +253,72 @@ function renderTeamDashboard() {
   const statusStrip = document.querySelector("[data-team-status-strip]");
   if (!myTasks || !reviewQueue || !blockedItems || !statusStrip) return;
   const dashboard = summarizeTeamDashboard(currentCollaborationState, { currentUserId: currentAccessState.currentUserId });
-  const renderItems = (items, emptyText) => items.map((item) => `
+  const renderItems = (items, emptyText, mode) => items.map((item) => {
+    const lockOwner = item.lock?.user_id;
+    const isMine = item.assignee_id === currentAccessState.currentUserId;
+    const canUnlock = lockOwner === currentAccessState.currentUserId;
+    return `
     <div class="team-task-row ${item.status}">
       <strong>${item.title}</strong>
-      <span>${item.type} · ${item.status} · ${item.assignee?.name || item.assignee_id || "unassigned"}</span>
+      <span>${item.type} · ${item.status} · ${item.assignee?.name || item.assignee_id || "unassigned"}${lockOwner ? ` · locked by ${lockOwner}` : ""}</span>
+      <div class="team-task-actions">
+        ${mode === "mine" && !lockOwner && isMine ? `<button type="button" data-lock-work="${item.id}">Lock</button>` : ""}
+        ${mode === "mine" && canUnlock ? `<button type="button" data-unlock-work="${item.id}">Unlock</button>` : ""}
+        ${mode === "review" ? `<button type="button" data-approve-work="${item.id}">Approve</button><button type="button" data-request-change="${item.id}">Request changes</button>` : ""}
+        ${mode === "blocked" ? `<button type="button" data-request-change="${item.id}">Move to todo</button>` : ""}
+      </div>
     </div>
-  `).join("") || `<div class="team-task-empty"><strong>${emptyText}</strong><span>Current user: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
-  myTasks.innerHTML = renderItems(dashboard.myTasks, "No assigned task");
-  reviewQueue.innerHTML = renderItems(dashboard.reviewQueue, "No review waiting");
-  blockedItems.innerHTML = renderItems(dashboard.blockedItems, "No blocked item");
+  `;
+  }).join("") || `<div class="team-task-empty"><strong>${emptyText}</strong><span>Current user: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
+  myTasks.innerHTML = renderItems(dashboard.myTasks, "No assigned task", "mine");
+  reviewQueue.innerHTML = renderItems(dashboard.reviewQueue, "No review waiting", "review");
+  blockedItems.innerHTML = renderItems(dashboard.blockedItems, "No blocked item", "blocked");
   statusStrip.innerHTML = dashboard.byStatus.map((entry) => `
     <div class="team-status-card ${entry.status}">
       <strong>${entry.status}</strong>
       <span>${entry.count}</span>
     </div>
   `).join("");
+  bindTeamDashboardActions();
+}
+
+function bindTeamDashboardActions() {
+  document.querySelectorAll("[data-lock-work]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentCollaborationState = lockWorkItem(currentCollaborationState, { workItemId: button.dataset.lockWork, userId: currentAccessState.currentUserId });
+      renderTeamDashboard();
+      renderCollaborationSummary();
+    });
+  });
+  document.querySelectorAll("[data-unlock-work]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentCollaborationState = releaseWorkItemLock(currentCollaborationState, { workItemId: button.dataset.unlockWork, userId: currentAccessState.currentUserId });
+      renderTeamDashboard();
+      renderCollaborationSummary();
+    });
+  });
+  document.querySelectorAll("[data-approve-work]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.approveWork, reviewerId: currentAccessState.currentUserId, decision: "approve" });
+      renderTeamDashboard();
+      renderCollaborationSummary();
+    });
+  });
+  document.querySelectorAll("[data-request-change]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.requestChange, reviewerId: currentAccessState.currentUserId, decision: "request_changes" });
+      renderTeamDashboard();
+      renderCollaborationSummary();
+    });
+  });
 }
 
 function renderWorkspaceHome() {
