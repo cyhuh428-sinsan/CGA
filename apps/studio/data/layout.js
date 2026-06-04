@@ -1,10 +1,6 @@
 export const screenLayout = [
-  { id: "hero", group: "overview", visible: true, order: 10, mode: "public" },
-  { id: "aidot-feature-coverage", group: "foundation", visible: true, order: 12, mode: "public" },
-  { id: "access-management", group: "foundation", visible: true, order: 15, mode: "public" },
-  { id: "collaboration-platform", group: "foundation", visible: true, order: 18, mode: "public" },
-  { id: "workspace-home", group: "workspace", visible: true, order: 19, mode: "public" },
-  { id: "team-dashboard", group: "workspace", visible: true, order: 19.5, mode: "public" },
+  { id: "workspace-home", group: "workspace", visible: true, order: 10, mode: "public" },
+  { id: "team-dashboard", group: "workspace", visible: true, order: 12, mode: "public" },
   { id: "create", group: "workflow", visible: true, order: 20, mode: "public" },
   { id: "configure", group: "workflow", visible: true, order: 30, mode: "public" },
   { id: "detail", group: "workflow", visible: true, order: 40, mode: "public" },
@@ -12,13 +8,17 @@ export const screenLayout = [
   { id: "build", group: "workflow", visible: true, order: 50, mode: "public" },
   { id: "test", group: "workflow", visible: true, order: 60, mode: "public" },
   { id: "operate", group: "workflow", visible: true, order: 70, mode: "public" },
-  { id: "locked-vs-runtime", group: "foundation", visible: true, order: 80, mode: "public" },
-  { id: "state-readiness", group: "foundation", visible: true, order: 140, mode: "public" },
-  { id: "i18n-policy", group: "foundation", visible: true, order: 90, mode: "public" },
-  { id: "commercial-availability", group: "business", visible: true, order: 100, mode: "public" },
-  { id: "module-boundary", group: "foundation", visible: true, order: 110, mode: "public" },
-  { id: "public-contracts", group: "foundation", visible: true, order: 120, mode: "public" },
-  { id: "open-core", group: "business", visible: true, order: 130, mode: "public" }
+  { id: "access-management", group: "system-admin", visible: true, order: 100, mode: "public" },
+  { id: "collaboration-platform", group: "reference", visible: true, order: 120, mode: "public" },
+  { id: "locked-vs-runtime", group: "reference", visible: true, order: 130, mode: "public" },
+  { id: "state-readiness", group: "reference", visible: true, order: 140, mode: "public" },
+  { id: "i18n-policy", group: "reference", visible: true, order: 150, mode: "public" },
+  { id: "aidot-feature-coverage", group: "reference", visible: true, order: 160, mode: "public" },
+  { id: "public-contracts", group: "reference", visible: true, order: 170, mode: "public" },
+  { id: "module-boundary", group: "business", visible: true, order: 180, mode: "public" },
+  { id: "commercial-availability", group: "business", visible: true, order: 190, mode: "public" },
+  { id: "open-core", group: "business", visible: true, order: 200, mode: "public" },
+  { id: "hero", group: "temporary", visible: true, order: 900, mode: "public" }
 ];
 
 export const layoutPolicy = Object.freeze({
