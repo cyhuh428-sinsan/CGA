@@ -25,6 +25,34 @@ import {
 const currentStudioState = structuredClone(sampleStudioState);
 const currentCollaborationState = createSampleCollaborationState();
 let currentAccessState = createSampleAccessState();
+let currentWorkspaceGroupId = "g-support";
+let currentWorkspaceBotId = "supportbot-draft";
+let currentWorkspaceBots = [
+  {
+    id: "supportbot-draft",
+    group_id: "g-support",
+    name: "SupportBot Draft",
+    status: "draft",
+    locale: "ko",
+    updated_at: "2026-06-04"
+  },
+  {
+    id: "faqbot-v1",
+    group_id: "g-support",
+    name: "FAQ Bot v1",
+    status: "ready",
+    locale: "en",
+    updated_at: "2026-06-03"
+  },
+  {
+    id: "ops-assistant",
+    group_id: "g-ops",
+    name: "Ops Assistant",
+    status: "operating",
+    locale: "en",
+    updated_at: "2026-06-02"
+  }
+];
 let currentApiRegistry = [
   {
     group_id: "g-support",
@@ -34,6 +62,19 @@ let currentApiRegistry = [
     response_path: "data.answer"
   }
 ];
+
+function getActiveGroupsForCurrentUser() {
+  const memberships = currentAccessState.memberships.filter((membership) => membership.user_id === currentAccessState.currentUserId && membership.status === "active");
+  return currentAccessState.groups.filter((group) => group.status === "active" && memberships.some((membership) => membership.group_id === group.id));
+}
+
+function getCurrentWorkspaceGroup() {
+  return currentAccessState.groups.find((group) => group.id === currentWorkspaceGroupId) || getActiveGroupsForCurrentUser()[0] || null;
+}
+
+function getCurrentWorkspaceBot() {
+  return currentWorkspaceBots.find((bot) => bot.id === currentWorkspaceBotId) || currentWorkspaceBots.find((bot) => bot.group_id === currentWorkspaceGroupId) || null;
+}
 
 
 
@@ -205,6 +246,85 @@ function renderCollaborationSummary() {
   `;
 }
 
+function renderWorkspaceHome() {
+  const groupSelect = document.querySelector("[data-workspace-group]");
+  const summary = document.querySelector("[data-workspace-summary]");
+  const botList = document.querySelector("[data-workspace-bots]");
+  const currentBotName = document.querySelector("[data-current-bot-name]");
+  const currentGroupName = document.querySelector("[data-current-group-name]");
+  if (!groupSelect || !summary || !botList) return;
+  const groups = getActiveGroupsForCurrentUser();
+  if (!groups.some((group) => group.id === currentWorkspaceGroupId)) {
+    currentWorkspaceGroupId = groups[0]?.id || currentWorkspaceGroupId;
+  }
+  const group = getCurrentWorkspaceGroup();
+  const bots = currentWorkspaceBots.filter((bot) => bot.group_id === currentWorkspaceGroupId);
+  const currentBot = getCurrentWorkspaceBot();
+  groupSelect.innerHTML = groups.map((item) => `<option value="${item.id}" ${item.id === currentWorkspaceGroupId ? "selected" : ""}>${item.name}</option>`).join("");
+  summary.innerHTML = `
+    <div><strong>${group?.name || "No group"}</strong><span>${bots.length} bot(s) · ${currentAccessState.currentUserId}</span></div>
+  `;
+  botList.innerHTML = bots.map((bot) => `
+    <button type="button" class="bot-list-row ${bot.id === currentWorkspaceBotId ? "selected" : ""}" data-open-bot="${bot.id}">
+      <strong>${bot.name}</strong>
+      <span>${bot.status} · ${bot.locale} · ${bot.updated_at}</span>
+    </button>
+  `).join("") || `<div class="empty-list"><strong>No bot in this group</strong><span>Create a bot to start the workflow.</span></div>`;
+  if (currentBotName) currentBotName.textContent = currentBot?.name || "No bot selected";
+  if (currentGroupName) currentGroupName.textContent = group?.name || "No group selected";
+  bindWorkspaceActions();
+}
+
+function bindWorkspaceActions() {
+  const groupSelect = document.querySelector("[data-workspace-group]");
+  const createButton = document.querySelector("[data-workspace-create]");
+  if (groupSelect && groupSelect.dataset.bound !== "true") {
+    groupSelect.dataset.bound = "true";
+    groupSelect.addEventListener("change", () => {
+      currentWorkspaceGroupId = groupSelect.value;
+      currentWorkspaceBotId = currentWorkspaceBots.find((bot) => bot.group_id === currentWorkspaceGroupId)?.id || "";
+      renderWorkspaceHome();
+      rerenderAdminAndAccess();
+    });
+  }
+  if (createButton && createButton.dataset.bound !== "true") {
+    createButton.dataset.bound = "true";
+    createButton.addEventListener("click", () => {
+      const nextNumber = currentWorkspaceBots.length + 1;
+      const id = `bot-${Date.now()}`;
+      const bot = {
+        id,
+        group_id: currentWorkspaceGroupId,
+        name: `New Bot ${nextNumber}`,
+        status: "draft",
+        locale: currentStudioState.bot.defaultLocale,
+        updated_at: "2026-06-04"
+      };
+      currentWorkspaceBots = [...currentWorkspaceBots, bot];
+      currentWorkspaceBotId = id;
+      currentStudioState.bot.name = bot.name;
+      renderWorkspaceHome();
+      renderCreateSummary();
+      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  }
+  document.querySelectorAll("[data-open-bot]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const bot = currentWorkspaceBots.find((item) => item.id === button.dataset.openBot);
+      if (!bot) return;
+      currentWorkspaceBotId = bot.id;
+      currentWorkspaceGroupId = bot.group_id;
+      currentStudioState.bot.name = bot.name;
+      currentStudioState.bot.defaultLocale = bot.locale;
+      renderWorkspaceHome();
+      renderCreateSummary();
+      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  });
+}
+
 function renderAccessPanels() {
   const currentUserBadge = document.querySelector("[data-current-user-badge]");
   const accessOperations = document.querySelector("[data-access-operations]");
@@ -354,6 +474,7 @@ function renderApiRegistry() {
 }
 
 function rerenderAdminAndAccess() {
+  renderWorkspaceHome();
   renderAccessPanels();
   renderApiRegistry();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -554,6 +675,7 @@ function bootApp() {
   renderReadinessIssues();
   renderCommercialAvailability();
   renderCollaborationSummary();
+  renderWorkspaceHome();
   renderAccessPanels();
   renderApiRegistry();
   bindAdminWorkbench();
