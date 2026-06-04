@@ -432,3 +432,12 @@
 - `External API Answer Source` 화면에 Group API Registry 작업대를 추가했다.
 - `Implementation direction`과 오른쪽 `Approval Checklist`는 최종 운영 화면에서 제거될 개발 확인용 영역이므로, 실제 작업 화면과 구분되도록 임시 영역 색상을 다르게 표시했다.
 - 이 단계는 CGA Public Core 화면/상태 모델 작업이며, Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-04 관리 메뉴 노출 보강
+- `Users, Login, and Access`와 `External API Answer Source` 화면이 추가되었지만 왼쪽 메뉴에는 봇 제작 6단계만 보여 관리 기능을 찾기 어려운 상태였다.
+- 왼쪽 상단에 `Management` 메뉴 그룹을 추가했다.
+- 관리 메뉴에는 `User / Group Admin`, `Group API Registry`, `Aidot Coverage` 바로가기를 배치했다.
+- 이 메뉴는 새 백엔드 기능이 아니라 이미 있는 CGA 화면으로 이동하는 UI 재배치다.
+- 폰트 기준은 기존 확정 기준을 유지했다: 메뉴 제목 12, 설명 9.
+- 영어/한국어 i18n 키를 추가하고, 다른 locale에는 영어 fallback을 반영했다.

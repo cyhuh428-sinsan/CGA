@@ -55,6 +55,33 @@ export const workflowSteps = [
   }
 ];
 
+export const managementLinks = [
+  {
+    id: "access-management",
+    code: "AD",
+    titleKey: "management.access.title",
+    subtitleKey: "management.access.subtitle",
+    title: "User / Group Admin",
+    subtitle: "Login · roles · approvals"
+  },
+  {
+    id: "api-answer-source",
+    code: "API",
+    titleKey: "management.api.title",
+    subtitleKey: "management.api.subtitle",
+    title: "Group API Registry",
+    subtitle: "External answer sources"
+  },
+  {
+    id: "aidot-feature-coverage",
+    code: "AF",
+    titleKey: "management.coverage.title",
+    subtitleKey: "management.coverage.subtitle",
+    title: "Aidot Coverage",
+    subtitle: "Preserved feature map"
+  }
+];
+
 export const errorSamples = [
   { code: "CGA_BOT_NAME_REQUIRED", key: "errors.bot.nameRequired" },
   { code: "CGA_LLM_NOT_CONNECTED", key: "errors.llm.notConnected" },

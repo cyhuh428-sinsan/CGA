@@ -338,7 +338,15 @@ const CGA_I18N_RESOURCES = {
     "admin.approvalBody": "The admin user approves group join requests and admin permission requests.",
     "apiAnswer.adminTitle": "Group API Registry",
     "apiAnswer.adminBody": "Register external API answers by group. These are bot assets controlled by group permissions.",
-    "apiAnswer.addApi": "Add API answer"
+    "apiAnswer.addApi": "Add API answer",
+    "management.title": "Management",
+    "management.subtitle": "Users · groups · APIs",
+    "management.access.title": "User / Group Admin",
+    "management.access.subtitle": "Login · roles · approvals",
+    "management.api.title": "Group API Registry",
+    "management.api.subtitle": "External answer sources",
+    "management.coverage.title": "Aidot Coverage",
+    "management.coverage.subtitle": "Preserved feature map"
   },
   "en": {
     "meta.localeName": "English",
@@ -391,6 +399,14 @@ const CGA_I18N_RESOURCES = {
     "workflow.test.subtitle": "Simulator",
     "workflow.operate.title": "Operate",
     "workflow.operate.subtitle": "Deploy / Improve",
+    "management.title": "Management",
+    "management.subtitle": "Users · groups · APIs",
+    "management.access.title": "User / Group Admin",
+    "management.access.subtitle": "Login · roles · approvals",
+    "management.api.title": "Group API Registry",
+    "management.api.subtitle": "External answer sources",
+    "management.coverage.title": "Aidot Coverage",
+    "management.coverage.subtitle": "Preserved feature map",
     "rule.title": "Rule",
     "rule.body": "No new backend, API, runtime, simulator, or webchat contract.",
     "hero.eyebrow": "Implementation direction",
@@ -1020,7 +1036,15 @@ const CGA_I18N_RESOURCES = {
     "admin.approvalBody": "The admin user approves group join requests and admin permission requests.",
     "apiAnswer.adminTitle": "Group API Registry",
     "apiAnswer.adminBody": "Register external API answers by group. These are bot assets controlled by group permissions.",
-    "apiAnswer.addApi": "Add API answer"
+    "apiAnswer.addApi": "Add API answer",
+    "management.title": "Management",
+    "management.subtitle": "Users · groups · APIs",
+    "management.access.title": "User / Group Admin",
+    "management.access.subtitle": "Login · roles · approvals",
+    "management.api.title": "Group API Registry",
+    "management.api.subtitle": "External answer sources",
+    "management.coverage.title": "Aidot Coverage",
+    "management.coverage.subtitle": "Preserved feature map"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1361,7 +1385,15 @@ const CGA_I18N_RESOURCES = {
     "admin.approvalBody": "The admin user approves group join requests and admin permission requests.",
     "apiAnswer.adminTitle": "Group API Registry",
     "apiAnswer.adminBody": "Register external API answers by group. These are bot assets controlled by group permissions.",
-    "apiAnswer.addApi": "Add API answer"
+    "apiAnswer.addApi": "Add API answer",
+    "management.title": "Management",
+    "management.subtitle": "Users · groups · APIs",
+    "management.access.title": "User / Group Admin",
+    "management.access.subtitle": "Login · roles · approvals",
+    "management.api.title": "Group API Registry",
+    "management.api.subtitle": "External answer sources",
+    "management.coverage.title": "Aidot Coverage",
+    "management.coverage.subtitle": "Preserved feature map"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -1414,6 +1446,14 @@ const CGA_I18N_RESOURCES = {
     "workflow.test.subtitle": "시뮬레이터",
     "workflow.operate.title": "운영",
     "workflow.operate.subtitle": "배포 / 개선",
+    "management.title": "관리",
+    "management.subtitle": "사용자 · 그룹 · API",
+    "management.access.title": "사용자 / 그룹 관리",
+    "management.access.subtitle": "로그인 · 권한 · 승인",
+    "management.api.title": "그룹 API 레지스트리",
+    "management.api.subtitle": "외부 답변 소스",
+    "management.coverage.title": "Aidot 기능 보존",
+    "management.coverage.subtitle": "기능 화면 매핑",
     "rule.title": "규칙",
     "rule.body": "새 백엔드, API, 런타임, 시뮬레이터, webchat 계약을 만들지 않습니다.",
     "hero.eyebrow": "구현 방향",
@@ -2043,7 +2083,15 @@ const CGA_I18N_RESOURCES = {
     "admin.approvalBody": "The admin user approves group join requests and admin permission requests.",
     "apiAnswer.adminTitle": "Group API Registry",
     "apiAnswer.adminBody": "Register external API answers by group. These are bot assets controlled by group permissions.",
-    "apiAnswer.addApi": "Add API answer"
+    "apiAnswer.addApi": "Add API answer",
+    "management.title": "Management",
+    "management.subtitle": "Users · groups · APIs",
+    "management.access.title": "User / Group Admin",
+    "management.access.subtitle": "Login · roles · approvals",
+    "management.api.title": "Group API Registry",
+    "management.api.subtitle": "External answer sources",
+    "management.coverage.title": "Aidot Coverage",
+    "management.coverage.subtitle": "Preserved feature map"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -2384,7 +2432,15 @@ const CGA_I18N_RESOURCES = {
     "admin.approvalBody": "The admin user approves group join requests and admin permission requests.",
     "apiAnswer.adminTitle": "Group API Registry",
     "apiAnswer.adminBody": "Register external API answers by group. These are bot assets controlled by group permissions.",
-    "apiAnswer.addApi": "Add API answer"
+    "apiAnswer.addApi": "Add API answer",
+    "management.title": "Management",
+    "management.subtitle": "Users · groups · APIs",
+    "management.access.title": "User / Group Admin",
+    "management.access.subtitle": "Login · roles · approvals",
+    "management.api.title": "Group API Registry",
+    "management.api.subtitle": "External answer sources",
+    "management.coverage.title": "Aidot Coverage",
+    "management.coverage.subtitle": "Preserved feature map"
   }
 };
 
