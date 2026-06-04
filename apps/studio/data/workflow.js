@@ -65,6 +65,14 @@ export const managementLinks = [
     subtitle: "Groups · bots · entry"
   },
   {
+    id: "team-dashboard",
+    code: "TM",
+    titleKey: "management.team.title",
+    subtitleKey: "management.team.subtitle",
+    title: "Team Dashboard",
+    subtitle: "Tasks · reviews · blocks"
+  },
+  {
     id: "access-management",
     code: "AD",
     titleKey: "management.access.title",

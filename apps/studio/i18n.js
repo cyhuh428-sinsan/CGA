@@ -359,7 +359,15 @@ const CGA_I18N_RESOURCES = {
     "workspace.nextTitle": "Next Action",
     "workspace.currentBot": "Current bot",
     "workspace.currentGroup": "Current group",
-    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow."
+    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow.",
+    "management.team.title": "Team Dashboard",
+    "management.team.subtitle": "Tasks · reviews · blocks",
+    "team.title": "Team Dashboard",
+    "team.body": "Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.",
+    "team.map": "Public Core collaboration state: assignments, review, locks, and blocked work",
+    "team.myTasks": "My Tasks",
+    "team.reviewQueue": "Review Queue",
+    "team.blockedItems": "Blocked Items"
   },
   "en": {
     "meta.localeName": "English",
@@ -416,6 +424,8 @@ const CGA_I18N_RESOURCES = {
     "management.subtitle": "Users · groups · APIs",
     "management.workspace.title": "Bot Workspace",
     "management.workspace.subtitle": "Groups · bots · entry",
+    "management.team.title": "Team Dashboard",
+    "management.team.subtitle": "Tasks · reviews · blocks",
     "management.access.title": "User / Group Admin",
     "management.access.subtitle": "Login · roles · approvals",
     "management.api.title": "Group API Registry",
@@ -485,6 +495,12 @@ const CGA_I18N_RESOURCES = {
     "workspace.currentBot": "Current bot",
     "workspace.currentGroup": "Current group",
     "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow.",
+    "team.title": "Team Dashboard",
+    "team.body": "Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.",
+    "team.map": "Public Core collaboration state: assignments, review, locks, and blocked work",
+    "team.myTasks": "My Tasks",
+    "team.reviewQueue": "Review Queue",
+    "team.blockedItems": "Blocked Items",
     "configure.title": "Configure Bot",
     "configure.body": "LLM-first bot composition flow. Aidot ML/Semantic screens remain available in their mapped advanced areas.",
     "configure.map": "Maps to Aidot: Training utterances / PDF-RAG / Intent draft",
@@ -1083,7 +1099,15 @@ const CGA_I18N_RESOURCES = {
     "workspace.nextTitle": "Next Action",
     "workspace.currentBot": "Current bot",
     "workspace.currentGroup": "Current group",
-    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow."
+    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow.",
+    "management.team.title": "Team Dashboard",
+    "management.team.subtitle": "Tasks · reviews · blocks",
+    "team.title": "Team Dashboard",
+    "team.body": "Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.",
+    "team.map": "Public Core collaboration state: assignments, review, locks, and blocked work",
+    "team.myTasks": "My Tasks",
+    "team.reviewQueue": "Review Queue",
+    "team.blockedItems": "Blocked Items"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1445,7 +1469,15 @@ const CGA_I18N_RESOURCES = {
     "workspace.nextTitle": "Next Action",
     "workspace.currentBot": "Current bot",
     "workspace.currentGroup": "Current group",
-    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow."
+    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow.",
+    "management.team.title": "Team Dashboard",
+    "management.team.subtitle": "Tasks · reviews · blocks",
+    "team.title": "Team Dashboard",
+    "team.body": "Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.",
+    "team.map": "Public Core collaboration state: assignments, review, locks, and blocked work",
+    "team.myTasks": "My Tasks",
+    "team.reviewQueue": "Review Queue",
+    "team.blockedItems": "Blocked Items"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -1502,6 +1534,8 @@ const CGA_I18N_RESOURCES = {
     "management.subtitle": "사용자 · 그룹 · API",
     "management.workspace.title": "봇 작업공간",
     "management.workspace.subtitle": "그룹 · 봇 · 진입",
+    "management.team.title": "팀 대시보드",
+    "management.team.subtitle": "작업 · 검수 · 차단",
     "management.access.title": "사용자 / 그룹 관리",
     "management.access.subtitle": "로그인 · 권한 · 승인",
     "management.api.title": "그룹 API 레지스트리",
@@ -1571,6 +1605,12 @@ const CGA_I18N_RESOURCES = {
     "workspace.currentBot": "현재 봇",
     "workspace.currentGroup": "현재 그룹",
     "workspace.nextBody": "봇을 연 뒤 Create Bot과 제작 워크플로우를 이어서 진행합니다.",
+    "team.title": "팀 대시보드",
+    "team.body": "빠른 1인 제작 흐름은 무겁게 만들지 않으면서 내 작업, 검수 대기, 차단 항목을 보여줍니다.",
+    "team.map": "Public Core 협업 상태: 작업 배정, 검수, 편집 잠금, 차단 항목",
+    "team.myTasks": "내 작업",
+    "team.reviewQueue": "검수 대기",
+    "team.blockedItems": "차단 항목",
     "configure.title": "봇 구성",
     "configure.body": "LLM 우선 봇 구성 흐름입니다. Aidot의 ML/Semantic 화면은 삭제하지 않고 매핑된 고급 영역에서 사용할 수 있습니다.",
     "configure.map": "Aidot 매핑: 학습문장 / PDF-RAG / 의도 초안",
@@ -2169,7 +2209,15 @@ const CGA_I18N_RESOURCES = {
     "workspace.nextTitle": "Next Action",
     "workspace.currentBot": "Current bot",
     "workspace.currentGroup": "Current group",
-    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow."
+    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow.",
+    "management.team.title": "Team Dashboard",
+    "management.team.subtitle": "Tasks · reviews · blocks",
+    "team.title": "Team Dashboard",
+    "team.body": "Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.",
+    "team.map": "Public Core collaboration state: assignments, review, locks, and blocked work",
+    "team.myTasks": "My Tasks",
+    "team.reviewQueue": "Review Queue",
+    "team.blockedItems": "Blocked Items"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -2531,7 +2579,15 @@ const CGA_I18N_RESOURCES = {
     "workspace.nextTitle": "Next Action",
     "workspace.currentBot": "Current bot",
     "workspace.currentGroup": "Current group",
-    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow."
+    "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow.",
+    "management.team.title": "Team Dashboard",
+    "management.team.subtitle": "Tasks · reviews · blocks",
+    "team.title": "Team Dashboard",
+    "team.body": "Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.",
+    "team.map": "Public Core collaboration state: assignments, review, locks, and blocked work",
+    "team.myTasks": "My Tasks",
+    "team.reviewQueue": "Review Queue",
+    "team.blockedItems": "Blocked Items"
   }
 };
 

@@ -358,5 +358,13 @@
   "workspace.nextTitle": "Next Action",
   "workspace.currentBot": "Current bot",
   "workspace.currentGroup": "Current group",
-  "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow."
+  "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow.",
+  "management.team.title": "Team Dashboard",
+  "management.team.subtitle": "Tasks · reviews · blocks",
+  "team.title": "Team Dashboard",
+  "team.body": "Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.",
+  "team.map": "Public Core collaboration state: assignments, review, locks, and blocked work",
+  "team.myTasks": "My Tasks",
+  "team.reviewQueue": "Review Queue",
+  "team.blockedItems": "Blocked Items"
 }
