@@ -8,6 +8,9 @@ import {
   approveAdminPermissionRequest,
   approveGroupJoinRequest,
   applySignup,
+  canApproveAdminPermissionRequest,
+  canApproveGroupJoinRequest,
+  canCreateManagedGroup,
   createManagedGroup,
   createSampleAccessState,
   loginAsUser,
@@ -440,20 +443,26 @@ function renderAccessPanels() {
     .map((role) => `<option value="${role}">${role}</option>`)
     .join("");
   adminQueue.innerHTML = [
-    ...summarizeJoinRequests(currentAccessState).filter((request) => request.status === "pending").map((request) => `
-      <div>
+    ...summarizeJoinRequests(currentAccessState).filter((request) => request.status === "pending").map((request) => {
+      const canApprove = canApproveGroupJoinRequest(currentAccessState, { requestId: request.id, reviewerId: currentAccessState.currentUserId });
+      return `
+      <div class="${canApprove ? "" : "blocked-action"}">
         <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
-        <span>${request.requested_role} · group join</span>
-        <button type="button" data-approve-join="${request.id}">Approve</button>
+        <span>${request.requested_role} · group join · ${canApprove ? "group admin approval" : "requires group admin"}</span>
+        <button type="button" data-approve-join="${request.id}" ${canApprove ? "" : "disabled"}>Approve</button>
       </div>
-    `),
-    ...summarizeAdminRequests(currentAccessState).filter((request) => request.status === "pending").map((request) => `
-      <div>
+    `;
+    }),
+    ...summarizeAdminRequests(currentAccessState).filter((request) => request.status === "pending").map((request) => {
+      const canApprove = canApproveAdminPermissionRequest(currentAccessState, { requestId: request.id, reviewerId: currentAccessState.currentUserId });
+      return `
+      <div class="${canApprove ? "" : "blocked-action"}">
         <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
-        <span>${request.requested_role} · admin permission</span>
-        <button type="button" data-approve-admin="${request.id}">Approve</button>
+        <span>${request.requested_role} · admin permission · ${canApprove ? "system admin approval" : "requires system admin"}</span>
+        <button type="button" data-approve-admin="${request.id}" ${canApprove ? "" : "disabled"}>Approve</button>
       </div>
-    `)
+    `;
+    })
   ].join("") || `<div><strong>No pending approval</strong><span>Queue is empty</span></div>`;
   accessOperations.innerHTML = `
     <div><strong data-i18n="access.activeUsers">Active users</strong><span>${operations.activeUsers}</span></div>
@@ -513,6 +522,7 @@ function renderAccessPanels() {
     <p><strong data-i18n="access.systemAdmin">Base system admin</strong><span>${policy.systemAdmin?.id || "admin"}</span></p>
     <p><strong data-i18n="access.adminDeletable">Admin deletable</strong><span>${policy.systemAdmin?.deletable ? "Yes" : "No"}</span></p>
     <p><strong data-i18n="access.groupCreateAdmin">Group creation approval</strong><span>${policy.groupCreationRequiresSystemAdmin ? "System admin required" : "Open"}</span></p>
+    <p><strong data-i18n="access.currentGroupCreate">Current user can create group</strong><span>${canCreateManagedGroup(currentAccessState, currentAccessState.currentUserId) ? "Yes" : "No"}</span></p>
     <p><strong data-i18n="access.groupsWithoutAdmin">Groups without group admin</strong><span>${policy.groupsWithoutAdmin.join(", ") || "None"}</span></p>
   `;
   bindAdminActionButtons();
@@ -561,7 +571,7 @@ function bindAdminActionButtons() {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
-      currentAccessState = approveGroupJoinRequest(currentAccessState, { requestId: button.dataset.approveJoin, reviewerId: "admin" });
+      currentAccessState = approveGroupJoinRequest(currentAccessState, { requestId: button.dataset.approveJoin, reviewerId: currentAccessState.currentUserId });
       rerenderAdminAndAccess();
     });
   });
@@ -569,7 +579,7 @@ function bindAdminActionButtons() {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
-      currentAccessState = approveAdminPermissionRequest(currentAccessState, { requestId: button.dataset.approveAdmin, reviewerId: "admin" });
+      currentAccessState = approveAdminPermissionRequest(currentAccessState, { requestId: button.dataset.approveAdmin, reviewerId: currentAccessState.currentUserId });
       rerenderAdminAndAccess();
     });
   });
@@ -609,7 +619,7 @@ function bindAdminWorkbench() {
       const id = document.querySelector("[data-group-id]")?.value?.trim();
       const name = document.querySelector("[data-group-name]")?.value?.trim();
       if (!id || !name) return;
-      currentAccessState = createManagedGroup(currentAccessState, { id, name });
+      currentAccessState = createManagedGroup(currentAccessState, { id, name, actorId: currentAccessState.currentUserId });
       rerenderAdminAndAccess();
     });
   }

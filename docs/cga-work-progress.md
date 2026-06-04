@@ -501,3 +501,14 @@
 - 개발 중 안내용 `Implementation Direction` 성격의 `hero` 화면은 최종 운영 화면이 아니므로 `temporary` 그룹으로 두고 맨 뒤에 배치했다.
 - 왼쪽 메뉴 분리와 실제 화면 스크롤 순서가 같은 기준을 따르도록 정리했다.
 - 이 작업은 CGA 화면 구성 순서 변경이며 Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-04 그룹 가입 승인과 시스템 admin 승인 분리
+- 신산님이 정한 그룹 기준 운영 원칙에 맞춰 승인 주체를 분리했다.
+- 그룹 가입신청은 대상 그룹의 `group_admin` 또는 시스템 `admin`만 승인할 수 있게 Public Core 상태 전이 함수를 보강했다.
+- 관리자 권한 요청은 시스템 `admin`만 승인할 수 있게 Public Core 상태 전이 함수를 보강했다.
+- 그룹 생성은 `groupCreationRequiresSystemAdmin` 정책이 켜져 있으면 시스템 `admin`만 수행할 수 있게 했다.
+- `Users, Login, and Access` 화면의 승인 대기열은 현재 로그인 사용자의 권한에 따라 Approve 버튼을 활성/비활성으로 표시한다.
+- 권한이 없는 승인 항목은 `requires group admin` 또는 `requires system admin`으로 표시한다.
+- 정책 문서 `docs/cga-access-and-api-answer-policy.md`에 그룹 가입 승인자와 관리자 권한 승인자를 명확히 분리해 기록했다.
+- 이 작업은 CGA 권한 상태 모델과 화면 동작 보강이며 Aidot 코드는 수정하지 않았다.
