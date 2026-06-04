@@ -66,7 +66,10 @@ button:disabled { opacity: .48; }
 .workflow, .approval { padding: 16px; max-height: calc(100vh - 104px); overflow: auto; }
 .section-title { margin-bottom: 14px; }
 .section-title strong { display: block; font-size: var(--font-top); }
-.management-title { margin-bottom: 10px; }
+.management-title, .system-admin-title, .reference-title { margin-bottom: 10px; }
+.system-admin-title, .reference-title {
+  margin-top: 18px;
+}
 .management-nav {
   display: grid;
   gap: 8px;
@@ -120,6 +123,20 @@ button:disabled { opacity: .48; }
 .management-nav a.access-blocked::after,
 .workflow a.access-blocked::after {
   color: var(--warn);
+}
+.system-admin-nav a {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+.system-admin-nav a span {
+  color: var(--warn);
+}
+.reference-nav a {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+.reference-nav a span {
+  color: #64748b;
 }
 .workflow nav { display: grid; gap: 10px; }
 .workflow a { text-decoration: none; color: inherit; width: 100%; min-height: 64px; text-align: left; border: 1px solid var(--muted-line); border-radius: 8px; background: #f8fafc; display: grid; grid-template-columns: 30px 1fr; grid-template-rows: 24px 18px; column-gap: 9px; padding: 10px; }

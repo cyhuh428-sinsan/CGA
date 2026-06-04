@@ -470,3 +470,13 @@
 - 메뉴 접근 권한은 `bot.view` 기준으로 표시한다.
 - 이 단계는 실제 서버 작업 배정 API 구현이 아니라 CGA Studio 화면/상태 설계다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-04 Bot Production과 System Administration 메뉴 분리
+- 신산님 지적에 따라 Aidot admin 계열 기능은 봇 생성 흐름과 직접 관련된 기능이 아니라 시스템 운영 기능으로 분리해야 한다고 정리했다.
+- 왼쪽 메뉴의 기존 `Management` 단일 묶음을 `Bot Production`, `System Administration`, `Reference`로 분리했다.
+- `Bot Production`에는 `Bot Workspace`, `Team Dashboard`, `Group API Registry`를 배치했다.
+- `System Administration`에는 `User / Group Admin`을 배치했다.
+- `Reference`에는 `Aidot Coverage`와 최종 UI에서 제거될 `Temporary Notes`를 배치했다.
+- System Administration 메뉴는 색상을 다르게 적용해 봇 제작 흐름과 시각적으로 구분했다.
+- 이 단계는 화면 정보구조 정리이며, 새 Aidot 기능 개발이나 Aidot 수정은 없다.

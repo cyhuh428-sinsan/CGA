@@ -1,4 +1,4 @@
-import { workflowSteps, managementLinks, errorSamples } from "./data/workflow.js";
+import { workflowSteps, productionLinks, systemAdminLinks, referenceLinks, errorSamples } from "./data/workflow.js";
 import { getVisibleLayout } from "./data/layout.js";
 import { sampleStudioState } from "./data/sample-state.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
@@ -649,16 +649,22 @@ function renderWorkflowRail() {
   `).join("");
 }
 
-function renderManagementRail() {
-  const nav = document.querySelector("[data-management-nav]");
+function renderLinkRail(selector, links) {
+  const nav = document.querySelector(selector);
   if (!nav) return;
-  nav.innerHTML = managementLinks.map((link) => `
+  nav.innerHTML = links.map((link) => `
     <a href="#${link.id}">
       <span>${link.code}</span>
       <strong data-i18n="${link.titleKey}">${link.title}</strong>
       <small data-i18n="${link.subtitleKey}">${link.subtitle}</small>
     </a>
   `).join("");
+}
+
+function renderNavigationRails() {
+  renderLinkRail("[data-production-nav]", productionLinks);
+  renderLinkRail("[data-system-admin-nav]", systemAdminLinks);
+  renderLinkRail("[data-reference-nav]", referenceLinks);
 }
 
 function renderBoundaryMatrix() {
@@ -689,7 +695,7 @@ function renderErrorSamples() {
 
 function bootApp() {
   applyScreenLayout();
-  renderManagementRail();
+  renderNavigationRails();
   renderWorkflowRail();
   bindAccessNavigationGuard();
   renderBoundaryMatrix();
