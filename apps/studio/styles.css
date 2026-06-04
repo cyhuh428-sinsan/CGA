@@ -1225,6 +1225,28 @@ textarea { min-height: 84px; resize: vertical; }
   line-height: 1.35;
 }
 
+.team-task-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.team-task-actions button {
+  min-height: 26px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  padding: 0 8px;
+  font-size: var(--font-desc);
+}
+
+.team-task-actions button:first-child {
+  border-color: #14b8a6;
+  color: var(--teal);
+}
+
 .team-task-row.review {
   border-color: #bfdbfe;
   background: #eff6ff;

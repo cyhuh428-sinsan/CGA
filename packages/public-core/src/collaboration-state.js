@@ -1,4 +1,4 @@
-import { DEFAULT_BUILD_TARGET, WORK_ITEM_STATUS, WORK_ITEM_TYPE, createWorkItem } from "../../contracts/src/collaboration-contract.js";
+import { DEFAULT_BUILD_TARGET, REVIEW_DECISION, WORK_ITEM_STATUS, WORK_ITEM_TYPE, createEditLock, createWorkItem } from "../../contracts/src/collaboration-contract.js";
 
 export function createSampleCollaborationState() {
   return {
@@ -54,5 +54,57 @@ export function summarizeTeamDashboard(state, { currentUserId = null } = {}) {
       ...item,
       assignee: usersById.get(item.assignee_id) || null
     }))
+  };
+}
+
+export function lockWorkItem(state, { workItemId, userId, lockedAt = "2026-06-04T00:00:00.000Z", expiresAt = "2026-06-04T00:30:00.000Z" }) {
+  return {
+    ...state,
+    workItems: state.workItems.map((item) => {
+      if (item.id !== workItemId) return item;
+      if (item.lock && item.lock.user_id !== userId) return item;
+      return {
+        ...item,
+        lock: createEditLock({ userId, lockedAt, expiresAt }),
+        status: item.status === WORK_ITEM_STATUS.TODO ? WORK_ITEM_STATUS.IN_PROGRESS : item.status,
+        updated_at: lockedAt
+      };
+    })
+  };
+}
+
+export function releaseWorkItemLock(state, { workItemId, userId, releasedAt = "2026-06-04T00:30:00.000Z" }) {
+  return {
+    ...state,
+    workItems: state.workItems.map((item) => {
+      if (item.id !== workItemId) return item;
+      if (item.lock && item.lock.user_id !== userId) return item;
+      return {
+        ...item,
+        lock: null,
+        updated_at: releasedAt
+      };
+    })
+  };
+}
+
+export function submitReviewDecision(state, { workItemId, reviewerId, decision, decidedAt = "2026-06-04T01:00:00.000Z" }) {
+  const nextStatus = {
+    [REVIEW_DECISION.APPROVE]: WORK_ITEM_STATUS.APPROVED,
+    [REVIEW_DECISION.REQUEST_CHANGES]: WORK_ITEM_STATUS.TODO,
+    [REVIEW_DECISION.COMMENT]: WORK_ITEM_STATUS.REVIEW
+  }[decision] || WORK_ITEM_STATUS.REVIEW;
+  return {
+    ...state,
+    workItems: state.workItems.map((item) => {
+      if (item.id !== workItemId) return item;
+      return {
+        ...item,
+        status: nextStatus,
+        reviewers: [...item.reviewers, { user_id: reviewerId, decision, reviewed_at: decidedAt }],
+        lock: null,
+        updated_at: decidedAt
+      };
+    })
   };
 }
