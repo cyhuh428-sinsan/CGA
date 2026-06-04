@@ -111,6 +111,7 @@ export const ROLE_SCOPE_DEFAULTS = Object.freeze({
 
 export const SCREEN_SCOPE_REQUIREMENTS = Object.freeze({
   "workspace-home": ACCESS_SCOPES.BOT_VIEW,
+  "team-dashboard": ACCESS_SCOPES.BOT_VIEW,
   "access-management": ACCESS_SCOPES.USER_MANAGE,
   "create": ACCESS_SCOPES.BOT_CREATE,
   "configure": ACCESS_SCOPES.BOT_CONFIGURE,

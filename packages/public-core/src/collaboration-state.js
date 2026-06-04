@@ -32,3 +32,27 @@ export function summarizeCollaboration(state) {
     collaborationAvailable: target.collaboration_available
   };
 }
+
+export function summarizeTeamDashboard(state, { currentUserId = null } = {}) {
+  const usersById = new Map((state?.users || []).map((user) => [user.id, user]));
+  const workItems = state?.workItems || [];
+  const myTasks = currentUserId ? workItems.filter((item) => item.assignee_id === currentUserId) : [];
+  const reviewQueue = workItems.filter((item) => item.status === WORK_ITEM_STATUS.REVIEW);
+  const blockedItems = workItems.filter((item) => item.status === WORK_ITEM_STATUS.BLOCKED);
+  const byStatus = Object.values(WORK_ITEM_STATUS).map((status) => ({
+    status,
+    count: workItems.filter((item) => item.status === status).length
+  }));
+  return {
+    currentUserId,
+    currentUser: usersById.get(currentUserId) || null,
+    myTasks,
+    reviewQueue,
+    blockedItems,
+    byStatus,
+    workItems: workItems.map((item) => ({
+      ...item,
+      assignee: usersById.get(item.assignee_id) || null
+    }))
+  };
+}

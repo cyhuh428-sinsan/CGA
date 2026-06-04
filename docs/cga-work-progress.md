@@ -459,3 +459,14 @@
 - 선택한 그룹에 따라 보이는 봇 목록이 달라지고, 현재 봇/현재 그룹을 상태 패널에 표시한다.
 - 이 단계는 실제 DB/API 구현이 아니라 CGA Public Core 화면 흐름 설계다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-04 Team Dashboard 작업 화면 추가
+- CGA는 한 사람이 빠르게 봇을 만들 수 있어야 하지만, 여러 명이 같은 봇을 공동 작업할 수 있어야 한다.
+- `Team Dashboard` 화면을 추가했다.
+- 현재 로그인 사용자 기준의 `My Tasks`, 검수 대기 `Review Queue`, 차단 항목 `Blocked Items`를 표시한다.
+- 협업 상태는 새 구조가 아니라 기존 `packages/public-core/src/collaboration-state.js`와 `packages/contracts/src/collaboration-contract.js`를 사용한다.
+- 왼쪽 Management 메뉴에 `Team Dashboard` 바로가기를 추가했다.
+- 메뉴 접근 권한은 `bot.view` 기준으로 표시한다.
+- 이 단계는 실제 서버 작업 배정 API 구현이 아니라 CGA Studio 화면/상태 설계다.
+- Aidot 코드는 수정하지 않았다.

@@ -3,7 +3,7 @@ import { getVisibleLayout } from "./data/layout.js";
 import { sampleStudioState } from "./data/sample-state.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
-import { createSampleCollaborationState, summarizeCollaboration } from "/packages/public-core/src/collaboration-state.js";
+import { createSampleCollaborationState, summarizeCollaboration, summarizeTeamDashboard } from "/packages/public-core/src/collaboration-state.js";
 import {
   approveAdminPermissionRequest,
   approveGroupJoinRequest,
@@ -246,6 +246,30 @@ function renderCollaborationSummary() {
   `;
 }
 
+function renderTeamDashboard() {
+  const myTasks = document.querySelector("[data-team-my-tasks]");
+  const reviewQueue = document.querySelector("[data-team-review-queue]");
+  const blockedItems = document.querySelector("[data-team-blocked-items]");
+  const statusStrip = document.querySelector("[data-team-status-strip]");
+  if (!myTasks || !reviewQueue || !blockedItems || !statusStrip) return;
+  const dashboard = summarizeTeamDashboard(currentCollaborationState, { currentUserId: currentAccessState.currentUserId });
+  const renderItems = (items, emptyText) => items.map((item) => `
+    <div class="team-task-row ${item.status}">
+      <strong>${item.title}</strong>
+      <span>${item.type} · ${item.status} · ${item.assignee?.name || item.assignee_id || "unassigned"}</span>
+    </div>
+  `).join("") || `<div class="team-task-empty"><strong>${emptyText}</strong><span>Current user: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
+  myTasks.innerHTML = renderItems(dashboard.myTasks, "No assigned task");
+  reviewQueue.innerHTML = renderItems(dashboard.reviewQueue, "No review waiting");
+  blockedItems.innerHTML = renderItems(dashboard.blockedItems, "No blocked item");
+  statusStrip.innerHTML = dashboard.byStatus.map((entry) => `
+    <div class="team-status-card ${entry.status}">
+      <strong>${entry.status}</strong>
+      <span>${entry.count}</span>
+    </div>
+  `).join("");
+}
+
 function renderWorkspaceHome() {
   const groupSelect = document.querySelector("[data-workspace-group]");
   const summary = document.querySelector("[data-workspace-summary]");
@@ -475,6 +499,7 @@ function renderApiRegistry() {
 
 function rerenderAdminAndAccess() {
   renderWorkspaceHome();
+  renderTeamDashboard();
   renderAccessPanels();
   renderApiRegistry();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -676,6 +701,7 @@ function bootApp() {
   renderCommercialAvailability();
   renderCollaborationSummary();
   renderWorkspaceHome();
+  renderTeamDashboard();
   renderAccessPanels();
   renderApiRegistry();
   bindAdminWorkbench();
