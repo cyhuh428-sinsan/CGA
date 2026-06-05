@@ -195,6 +195,19 @@ export function getEffectiveUserScopes(state, userId = state?.currentUserId, bot
   return allowed.filter((scope) => !denied.has(scope));
 }
 
+export function getEffectiveGroupScopes(state, userId = state?.currentUserId, groupId, botId = state?.botId) {
+  const memberships = getUserGroupMemberships(state, userId).filter((membership) => membership.group_id === groupId);
+  const groupAccess = state.groupBotAccess.find((access) => access.group_id === groupId && access.bot_id === botId);
+  const systemAdmin = isSystemAdmin(state, userId);
+  const roleScopes = memberships.flatMap((membership) => getRoleScopes(membership.role));
+  const override = state.userOverrides.find((item) => item.user_id === userId && item.bot_id === botId);
+  const scopedGroupAccess = memberships.length > 0 || systemAdmin ? groupAccess?.scopes || [] : [];
+  const systemScopes = systemAdmin ? getRoleScopes(USER_ROLES.SYSTEM_ADMIN) : [];
+  const allowed = mergeScopes(roleScopes, scopedGroupAccess, systemScopes, override?.allow_scopes || []);
+  const denied = new Set(override?.deny_scopes || []);
+  return allowed.filter((scope) => !denied.has(scope));
+}
+
 export function summarizeAccess(state, userId = state?.currentUserId) {
   const user = state?.users?.find((item) => item.id === userId) || null;
   const memberships = getUserGroupMemberships(state, userId);

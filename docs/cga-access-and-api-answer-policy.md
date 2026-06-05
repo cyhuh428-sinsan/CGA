@@ -34,6 +34,7 @@ CGA의 모든 관리 기준은 시스템 전체가 아니라 그룹이다.
 - 동일한 그룹에 속한 사용자는 그 그룹의 봇과 API 자산에 접근할 수 있다.
 - 그룹별 사용자 권한을 설정한다.
 - 실제 접근 가능 화면과 기능은 그룹 멤버십, 그룹 내 사용자 역할, 그룹별 scope로 결정한다.
+- 화면 안의 주요 action 버튼도 선택한 그룹과 봇 기준의 scope로 활성/비활성 처리한다.
 - 개인별 권한은 기본 관리 기준이 아니며, 예외적으로 추가 허용 또는 차단할 때만 사용한다.
 - 기본 권한 판단 기준은 `group_id + bot_id + scopes`이다.
 - 사용자별 예외는 `user_id + bot_id + allow_scopes / deny_scopes`로 처리한다.
@@ -172,6 +173,7 @@ API 답변은 그룹이 관리하는 봇 자산이다.
 - API endpoint, request mapping, response mapping은 그룹 봇 설정으로 관리한다.
 - 같은 그룹의 `apiAnswer.manage` 권한이 있는 사용자는 API 답변을 등록/수정할 수 있다.
 - 같은 그룹의 `bot.view` 권한이 있는 사용자는 API 답변 설정과 상태를 조회할 수 있다.
+- `apiAnswer.manage` 권한이 없는 사용자는 API 답변 추가 버튼을 사용할 수 없다.
 - Secret/API key 원문은 public config에 저장하지 않고, 그룹 권한으로 접근 가능한 `secret_ref`만 연결한다.
 - 운영자는 API 답변을 수정하지 않더라도 운영 화면에서 호출 상태와 장애 상태를 볼 수 있어야 한다.
 

@@ -109,6 +109,15 @@ async function checkAccessTransitions() {
   if (state.memberships.length !== beforeUnauthorizedJoin) fail("builder should not approve group join request");
   state = accessState.approveGroupJoinRequest(state, { requestId: "jr-new-support", reviewerId: "u-group-admin" });
   if (!state.memberships.some((membership) => membership.user_id === "u-new" && membership.group_id === "g-support" && membership.role === "builder")) fail("join approval transition did not create membership");
+  const supportScopes = accessState.getEffectiveGroupScopes(state, "u-new", "g-support", "supportbot-draft");
+  const ownGroupScopes = accessState.getEffectiveGroupScopes(state, "u-new", "g-u-new", "supportbot-draft");
+  const pendingOpsScopes = accessState.getEffectiveGroupScopes(state, "u-builder", "g-ops", "supportbot-draft");
+  const operatorScopes = accessState.getEffectiveGroupScopes(state, "u-operator", "g-ops", "supportbot-draft");
+  if (!supportScopes.includes("bot.create")) fail("group-scoped builder should have bot.create in approved group");
+  if (!ownGroupScopes.includes("bot.create")) fail("signup owner group admin should have bot.create in own group");
+  if (pendingOpsScopes.includes("bot.create")) fail("pending group join should not grant bot.create in target group");
+  if (pendingOpsScopes.includes("bot.operate")) fail("pending group join should not grant group access scopes in target group");
+  if (operatorScopes.includes("bot.create")) fail("operator should not get bot.create in operations group");
   const beforeUnauthorizedGroupCreate = state.groups.length;
   state = accessState.createManagedGroup(state, { id: "g-nope", name: "Nope", actorId: "u-builder" });
   if (state.groups.length !== beforeUnauthorizedGroupCreate) fail("builder should not create managed group when system admin approval is required");

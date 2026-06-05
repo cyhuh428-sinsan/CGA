@@ -15,7 +15,7 @@ import {
   createManagedGroup,
   createSampleAccessState,
   loginAsUser,
-  getEffectiveUserScopes,
+  getEffectiveGroupScopes,
   requestGroupJoin,
   summarizeAccess,
   summarizeAccessOperations,
@@ -94,7 +94,11 @@ function getBotsForGroup(groupId) {
 }
 
 function canManageApiAnswerForCurrentSelection() {
-  return getEffectiveUserScopes(currentAccessState, currentAccessState.currentUserId, currentApiBotId).includes("apiAnswer.manage");
+  return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentApiGroupId, currentApiBotId).includes("apiAnswer.manage");
+}
+
+function canCreateBotInCurrentWorkspace() {
+  return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.create");
 }
 
 
@@ -348,6 +352,7 @@ function renderWorkspaceHome() {
   const groupSelect = document.querySelector("[data-workspace-group]");
   const summary = document.querySelector("[data-workspace-summary]");
   const botList = document.querySelector("[data-workspace-bots]");
+  const createButton = document.querySelector("[data-workspace-create]");
   const currentBotName = document.querySelector("[data-current-bot-name]");
   const currentGroupName = document.querySelector("[data-current-group-name]");
   if (!groupSelect || !summary || !botList) return;
@@ -358,10 +363,12 @@ function renderWorkspaceHome() {
   const group = getCurrentWorkspaceGroup();
   const bots = currentWorkspaceBots.filter((bot) => bot.group_id === currentWorkspaceGroupId);
   const currentBot = getCurrentWorkspaceBot();
+  const canCreateBot = canCreateBotInCurrentWorkspace();
   groupSelect.innerHTML = groups.map((item) => `<option value="${item.id}" ${item.id === currentWorkspaceGroupId ? "selected" : ""}>${item.name}</option>`).join("");
   summary.innerHTML = `
-    <div><strong>${group?.name || "No group"}</strong><span>${bots.length} bot(s) · ${currentAccessState.currentUserId}</span></div>
+    <div><strong>${group?.name || "No group"}</strong><span>${bots.length} bot(s) · ${currentAccessState.currentUserId} · ${canCreateBot ? "bot.create" : "blocked: bot.create"}</span></div>
   `;
+  if (createButton) createButton.disabled = !canCreateBot;
   botList.innerHTML = bots.map((bot) => `
     <button type="button" class="bot-list-row ${bot.id === currentWorkspaceBotId ? "selected" : ""}" data-open-bot="${bot.id}">
       <strong>${bot.name}</strong>
@@ -408,6 +415,7 @@ function bindWorkspaceActions() {
   if (createButton && createButton.dataset.bound !== "true") {
     createButton.dataset.bound = "true";
     createButton.addEventListener("click", () => {
+      if (!canCreateBotInCurrentWorkspace()) return;
       const nextNumber = currentWorkspaceBots.length + 1;
       const id = `bot-${Date.now()}`;
       const bot = {

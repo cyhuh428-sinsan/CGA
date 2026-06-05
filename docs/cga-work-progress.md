@@ -532,3 +532,13 @@
 - Create Bot의 Version Name 입력을 `bot.version` 상태에 연결했다.
 - Create Bot에서 봇 이름이나 버전을 수정하면 상단 context bar도 같은 상태를 기준으로 갱신된다.
 - 이 작업은 CGA Studio 화면 상태 표시 보강이며 Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-05 Bot Workspace action 권한 제어 보강
+- Bot Workspace의 `Create Bot` 버튼을 선택한 그룹/봇 기준의 `bot.create` 권한에 연결했다.
+- 현재 사용자가 선택한 그룹에서 `bot.create` 권한이 없으면 `Create Bot` 버튼은 비활성화된다.
+- 클릭 이벤트에도 같은 권한 가드를 넣어 버튼 상태와 실제 상태 전이가 어긋나지 않게 했다.
+- Public Core에 `getEffectiveGroupScopes`를 추가해 전체 사용자 권한이 아니라 선택 그룹 기준 권한을 계산하도록 했다.
+- Group API Registry의 API 추가 권한도 선택한 `group_id + bot_id` 기준의 `apiAnswer.manage` 권한으로 계산하도록 변경했다.
+- 검증 스크립트에 그룹별 scope 회귀 검사를 추가했다. pending 가입이나 operator 역할이 `bot.create` 권한을 받지 않는지 확인한다.
+- 이 작업은 CGA 권한 상태 모델과 화면 action 제어 보강이며 Aidot 코드는 수정하지 않았다.
