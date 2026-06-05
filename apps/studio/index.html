@@ -18,8 +18,9 @@
       </div>
       <div class="context-bar" aria-label="Current bot context">
         <span data-current-user-badge></span>
-        <span data-i18n="top.bot">Bot: SupportBot Draft</span>
-        <span data-i18n="top.version">Version: v0.1</span>
+        <span data-current-group-badge></span>
+        <span data-current-bot-badge></span>
+        <span data-current-version-badge></span>
         <label class="language-picker"><span data-i18n="top.language">Language</span><select data-locale-select><option value="en">English</option><option value="ko">한국어</option><option value="zh-CN">简体中文</option><option value="ja">日本語</option><option value="vi">Tiếng Việt</option><option value="de">Deutsch</option><option value="fr">Français</option></select></label>
         <span class="status-ok" data-i18n="top.apiUnchanged">Aidot API unchanged</span>
       </div>
@@ -279,7 +280,7 @@
             <label><span data-i18n="field.description">Description</span><textarea data-structural-field="bot.description">Customer support chatbot draft for web and messenger channels.</textarea></label>
             <div class="row-fields">
               <label><span data-i18n="field.defaultLanguage">Default Language</span><select data-structural-field="bot.defaultLocale"><option value="en">English</option><option value="ko">Korean</option><option value="ja">Japanese</option><option value="de">German</option><option value="fr">French</option></select></label>
-              <label><span data-i18n="field.versionName">Version Name</span><input value="v0.1" /></label>
+              <label><span data-i18n="field.versionName">Version Name</span><input data-structural-field="bot.version" value="v0.1" /></label>
             </div>
             <div class="decision-grid">
               <label><span data-i18n="field.useLlm">Use LLM for bot composition</span><select data-structural-field="structuralChoices.useLlm"><option value="false">No - utterance handoff/manual composition</option><option value="true">Yes - connected LLM composition</option></select></label>
