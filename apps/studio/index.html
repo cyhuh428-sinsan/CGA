@@ -353,9 +353,7 @@
             <h4 data-i18n="apiAnswer.groupManaged">Group-managed API</h4>
             <p data-i18n="apiAnswer.groupManagedBody">API answers belong to the group bot, not to an individual user. Secret references and response mappings are controlled by group permissions.</p>
             <div class="metric-example">
-              <span>group_id: g-support</span>
-              <span>bot_id: supportbot-draft</span>
-              <span>scope: apiAnswer.manage</span>
+              <span data-api-owner-meta></span>
             </div>
           </div>
           <div class="api-flow-card">
@@ -376,6 +374,7 @@
             <p data-i18n="apiAnswer.adminBody">Register external API answers by group. These are bot assets controlled by group permissions.</p>
             <div class="admin-form-grid">
               <select data-api-group></select>
+              <select data-api-bot></select>
               <input data-api-name placeholder="api answer name" />
               <input data-api-endpoint placeholder="endpoint url" />
               <input data-api-response-path placeholder="response path" />

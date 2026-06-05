@@ -167,6 +167,8 @@ API 답변은 고정답변 텍스트가 아니라 외부 시스템에 존재하�
 API 답변은 그룹이 관리하는 봇 자산이다.
 
 - API 답변은 `group_id`와 `bot_id`에 연결한다.
+- Studio의 Group API Registry는 현재 로그인 사용자가 속한 그룹만 선택 대상으로 보여준다.
+- API 목록은 선택한 `group_id + bot_id` 기준으로 필터링한다.
 - API endpoint, request mapping, response mapping은 그룹 봇 설정으로 관리한다.
 - 같은 그룹의 `apiAnswer.manage` 권한이 있는 사용자는 API 답변을 등록/수정할 수 있다.
 - 같은 그룹의 `bot.view` 권한이 있는 사용자는 API 답변 설정과 상태를 조회할 수 있다.

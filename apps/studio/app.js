@@ -3,6 +3,7 @@ import { getVisibleLayout } from "./data/layout.js";
 import { sampleStudioState } from "./data/sample-state.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
+import { createGroupManagedApiAnswerDraft } from "/packages/contracts/src/api-answer-contract.js";
 import { createSampleCollaborationState, lockWorkItem, releaseWorkItemLock, submitReviewDecision, summarizeCollaboration, summarizeTeamDashboard } from "/packages/public-core/src/collaboration-state.js";
 import {
   approveAdminPermissionRequest,
@@ -14,6 +15,7 @@ import {
   createManagedGroup,
   createSampleAccessState,
   loginAsUser,
+  getEffectiveUserScopes,
   requestGroupJoin,
   summarizeAccess,
   summarizeAccessOperations,
@@ -62,9 +64,14 @@ let currentApiRegistry = [
     bot_id: "supportbot-draft",
     name: "order_status_lookup",
     endpoint_url: "https://api.example.com/orders/{order_id}",
+    method: "GET",
+    auth_type: "bearer",
+    secret_ref: "secret:group/g-support/order-status",
     response_path: "data.answer"
   }
 ];
+let currentApiGroupId = "g-support";
+let currentApiBotId = "supportbot-draft";
 
 function getActiveGroupsForCurrentUser() {
   const memberships = currentAccessState.memberships.filter((membership) => membership.user_id === currentAccessState.currentUserId && membership.status === "active");
@@ -77,6 +84,14 @@ function getCurrentWorkspaceGroup() {
 
 function getCurrentWorkspaceBot() {
   return currentWorkspaceBots.find((bot) => bot.id === currentWorkspaceBotId) || currentWorkspaceBots.find((bot) => bot.group_id === currentWorkspaceGroupId) || null;
+}
+
+function getBotsForGroup(groupId) {
+  return currentWorkspaceBots.filter((bot) => bot.group_id === groupId);
+}
+
+function canManageApiAnswerForCurrentSelection() {
+  return getEffectiveUserScopes(currentAccessState, currentAccessState.currentUserId, currentApiBotId).includes("apiAnswer.manage");
 }
 
 
@@ -361,6 +376,8 @@ function bindWorkspaceActions() {
     groupSelect.addEventListener("change", () => {
       currentWorkspaceGroupId = groupSelect.value;
       currentWorkspaceBotId = currentWorkspaceBots.find((bot) => bot.group_id === currentWorkspaceGroupId)?.id || "";
+      currentApiGroupId = currentWorkspaceGroupId;
+      currentApiBotId = currentWorkspaceBotId;
       renderWorkspaceHome();
       rerenderAdminAndAccess();
     });
@@ -380,6 +397,8 @@ function bindWorkspaceActions() {
       };
       currentWorkspaceBots = [...currentWorkspaceBots, bot];
       currentWorkspaceBotId = id;
+      currentApiGroupId = currentWorkspaceGroupId;
+      currentApiBotId = id;
       currentStudioState.bot.name = bot.name;
       renderWorkspaceHome();
       renderCreateSummary();
@@ -394,6 +413,8 @@ function bindWorkspaceActions() {
       if (!bot) return;
       currentWorkspaceBotId = bot.id;
       currentWorkspaceGroupId = bot.group_id;
+      currentApiGroupId = bot.group_id;
+      currentApiBotId = bot.id;
       currentStudioState.bot.name = bot.name;
       currentStudioState.bot.defaultLocale = bot.locale;
       renderWorkspaceHome();
@@ -544,18 +565,39 @@ function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) 
 
 function renderApiRegistry() {
   const apiGroup = document.querySelector("[data-api-group]");
+  const apiBot = document.querySelector("[data-api-bot]");
   const apiRegistry = document.querySelector("[data-api-registry]");
-  if (!apiGroup || !apiRegistry) return;
-  apiGroup.innerHTML = currentAccessState.groups
-    .filter((group) => group.status === "active")
-    .map((group) => `<option value="${group.id}">${group.name}</option>`)
+  const apiOwnerMeta = document.querySelector("[data-api-owner-meta]");
+  const apiAdd = document.querySelector("[data-api-add]");
+  if (!apiGroup || !apiBot || !apiRegistry) return;
+  const groups = getActiveGroupsForCurrentUser();
+  if (!groups.some((group) => group.id === currentApiGroupId)) {
+    currentApiGroupId = groups[0]?.id || currentWorkspaceGroupId;
+  }
+  const bots = getBotsForGroup(currentApiGroupId);
+  if (!bots.some((bot) => bot.id === currentApiBotId)) {
+    currentApiBotId = bots[0]?.id || currentWorkspaceBotId;
+  }
+  const canManageApi = canManageApiAnswerForCurrentSelection();
+  apiGroup.innerHTML = groups
+    .map((group) => `<option value="${group.id}" ${group.id === currentApiGroupId ? "selected" : ""}>${group.name}</option>`)
     .join("");
-  apiRegistry.innerHTML = currentApiRegistry.map((api) => `
+  apiBot.innerHTML = bots
+    .map((bot) => `<option value="${bot.id}" ${bot.id === currentApiBotId ? "selected" : ""}>${bot.name}</option>`)
+    .join("");
+  if (apiOwnerMeta) {
+    apiOwnerMeta.textContent = `group_id: ${currentApiGroupId} · bot_id: ${currentApiBotId || "none"} · ${canManageApi ? "scope: apiAnswer.manage" : "blocked: apiAnswer.manage"}`;
+  }
+  if (apiAdd) {
+    apiAdd.disabled = !canManageApi || !currentApiBotId;
+  }
+  const filteredApis = currentApiRegistry.filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId);
+  apiRegistry.innerHTML = filteredApis.map((api) => `
     <div>
       <strong>${api.name}</strong>
-      <span>${api.group_id} · ${api.endpoint_url} · ${api.response_path}</span>
+      <span>${api.group_id} · ${api.bot_id} · ${api.method || "GET"} · ${api.endpoint_url} · ${api.response_path}</span>
     </div>
-  `).join("") || `<div><strong>No API answer</strong><span>Register a group API answer first.</span></div>`;
+  `).join("") || `<div><strong>No API answer</strong><span>Register a group API answer for the selected bot.</span></div>`;
 }
 
 function rerenderAdminAndAccess() {
@@ -590,6 +632,8 @@ function bindAdminWorkbench() {
   const signupSubmit = document.querySelector("[data-signup-submit]");
   const groupCreate = document.querySelector("[data-group-create]");
   const joinSubmit = document.querySelector("[data-join-submit]");
+  const apiGroup = document.querySelector("[data-api-group]");
+  const apiBot = document.querySelector("[data-api-bot]");
   const apiAdd = document.querySelector("[data-api-add]");
   if (loginSubmit && loginSubmit.dataset.bound !== "true") {
     loginSubmit.dataset.bound = "true";
@@ -638,20 +682,38 @@ function bindAdminWorkbench() {
   if (apiAdd && apiAdd.dataset.bound !== "true") {
     apiAdd.dataset.bound = "true";
     apiAdd.addEventListener("click", () => {
+      if (!canManageApiAnswerForCurrentSelection()) return;
       const name = document.querySelector("[data-api-name]")?.value?.trim();
       const endpoint = document.querySelector("[data-api-endpoint]")?.value?.trim();
       if (!name || !endpoint) return;
+      const draft = createGroupManagedApiAnswerDraft({ groupId: currentApiGroupId, botId: currentApiBotId });
       currentApiRegistry = [
         ...currentApiRegistry,
         {
-          group_id: document.querySelector("[data-api-group]")?.value || "g-support",
-          bot_id: currentAccessState.botId,
+          ...draft,
           name,
           endpoint_url: endpoint,
+          method: "GET",
+          auth_type: "none",
           response_path: document.querySelector("[data-api-response-path]")?.value?.trim() || "data.answer"
         }
       ];
       rerenderAdminAndAccess();
+    });
+  }
+  if (apiGroup && apiGroup.dataset.bound !== "true") {
+    apiGroup.dataset.bound = "true";
+    apiGroup.addEventListener("change", () => {
+      currentApiGroupId = apiGroup.value;
+      currentApiBotId = getBotsForGroup(currentApiGroupId)[0]?.id || "";
+      renderApiRegistry();
+    });
+  }
+  if (apiBot && apiBot.dataset.bound !== "true") {
+    apiBot.dataset.bound = "true";
+    apiBot.addEventListener("change", () => {
+      currentApiBotId = apiBot.value;
+      renderApiRegistry();
     });
   }
 }

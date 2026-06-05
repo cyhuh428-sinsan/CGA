@@ -512,3 +512,14 @@
 - 권한이 없는 승인 항목은 `requires group admin` 또는 `requires system admin`으로 표시한다.
 - 정책 문서 `docs/cga-access-and-api-answer-policy.md`에 그룹 가입 승인자와 관리자 권한 승인자를 명확히 분리해 기록했다.
 - 이 작업은 CGA 권한 상태 모델과 화면 동작 보강이며 Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-05 Group API Registry 그룹/봇 연결 보강
+- `External API Answer Source`의 Group API Registry를 현재 로그인 사용자의 활성 그룹 기준으로 동작하게 정리했다.
+- API 그룹 선택 목록은 현재 사용자가 속한 그룹만 표시한다.
+- API 봇 선택 목록은 선택한 그룹에 속한 봇만 표시한다.
+- API 목록은 선택한 `group_id + bot_id` 기준으로 필터링해 보여준다.
+- API 등록 시 `packages/contracts/src/api-answer-contract.js`의 `createGroupManagedApiAnswerDraft`를 사용해 `group_id`, `bot_id`, `managed_by: group`, `allowed_group_scopes` 기준을 유지한다.
+- 현재 사용자에게 `apiAnswer.manage` 권한이 없거나 선택된 봇이 없으면 API 추가 버튼을 비활성화한다.
+- Bot Workspace에서 그룹이나 봇을 바꾸면 Group API Registry의 선택 그룹/봇도 함께 맞춰진다.
+- 이 작업은 CGA Studio 화면 상태 연결 보강이며 Aidot 코드는 수정하지 않았다.
