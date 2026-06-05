@@ -37,6 +37,7 @@ let currentWorkspaceBots = [
     id: "supportbot-draft",
     group_id: "g-support",
     name: "SupportBot Draft",
+    version: "v0.1",
     status: "draft",
     locale: "ko",
     updated_at: "2026-06-04"
@@ -45,6 +46,7 @@ let currentWorkspaceBots = [
     id: "faqbot-v1",
     group_id: "g-support",
     name: "FAQ Bot v1",
+    version: "v1.0",
     status: "ready",
     locale: "en",
     updated_at: "2026-06-03"
@@ -53,6 +55,7 @@ let currentWorkspaceBots = [
     id: "ops-assistant",
     group_id: "g-ops",
     name: "Ops Assistant",
+    version: "v0.3",
     status: "operating",
     locale: "en",
     updated_at: "2026-06-02"
@@ -148,8 +151,10 @@ function renderCreateSummary() {
 
 function renderAllStatePanels() {
   renderCreateSummary();
+  renderTopContext();
   bindCreateControls();
   renderCreateSummary();
+  renderTopContext();
   renderStateSummary();
   renderReadinessIssues();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -365,7 +370,25 @@ function renderWorkspaceHome() {
   `).join("") || `<div class="empty-list"><strong>No bot in this group</strong><span>Create a bot to start the workflow.</span></div>`;
   if (currentBotName) currentBotName.textContent = currentBot?.name || "No bot selected";
   if (currentGroupName) currentGroupName.textContent = group?.name || "No group selected";
+  renderTopContext();
   bindWorkspaceActions();
+}
+
+function renderTopContext() {
+  const current = summarizeAccess(currentAccessState);
+  const group = getCurrentWorkspaceGroup();
+  const bot = getCurrentWorkspaceBot();
+  const currentUserBadge = document.querySelector("[data-current-user-badge]");
+  const currentGroupBadge = document.querySelector("[data-current-group-badge]");
+  const currentBotBadge = document.querySelector("[data-current-bot-badge]");
+  const currentVersionBadge = document.querySelector("[data-current-version-badge]");
+  if (currentUserBadge) {
+    const roles = current.memberships.map((item) => item.role).join(", ") || "no role";
+    currentUserBadge.textContent = `${current.user?.name || "User"} · ${current.user?.locale || "en"} · ${roles}`;
+  }
+  if (currentGroupBadge) currentGroupBadge.textContent = `Group: ${group?.name || "None"}`;
+  if (currentBotBadge) currentBotBadge.textContent = `Bot: ${currentStudioState.bot.name || bot?.name || "None"}`;
+  if (currentVersionBadge) currentVersionBadge.textContent = `Version: ${currentStudioState.bot.version || "v0.1"}`;
 }
 
 function bindWorkspaceActions() {
@@ -400,8 +423,10 @@ function bindWorkspaceActions() {
       currentApiGroupId = currentWorkspaceGroupId;
       currentApiBotId = id;
       currentStudioState.bot.name = bot.name;
+      currentStudioState.bot.version = "v0.1";
       renderWorkspaceHome();
       renderCreateSummary();
+      renderTopContext();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
     });
   }
@@ -417,8 +442,10 @@ function bindWorkspaceActions() {
       currentApiBotId = bot.id;
       currentStudioState.bot.name = bot.name;
       currentStudioState.bot.defaultLocale = bot.locale;
+      currentStudioState.bot.version = bot.version || currentStudioState.bot.version || "v0.1";
       renderWorkspaceHome();
       renderCreateSummary();
+      renderTopContext();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
     });
   });
@@ -444,10 +471,7 @@ function renderAccessPanels() {
   const current = summarizeAccess(currentAccessState);
   const operations = summarizeAccessOperations(currentAccessState);
   const policy = summarizeAccessPolicy(currentAccessState);
-  if (currentUserBadge) {
-    const roles = current.memberships.map((item) => item.role).join(", ") || "no role";
-    currentUserBadge.textContent = `${current.user?.name || "User"} · ${current.user?.locale || "en"} · ${roles}`;
-  }
+  renderTopContext();
   loginUser.innerHTML = currentAccessState.users
     .filter((user) => user.status === "active")
     .map((user) => `<option value="${user.id}" ${user.id === currentAccessState.currentUserId ? "selected" : ""}>${user.name} · ${user.id} · ${user.locale}</option>`)

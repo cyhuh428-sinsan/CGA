@@ -523,3 +523,12 @@
 - 현재 사용자에게 `apiAnswer.manage` 권한이 없거나 선택된 봇이 없으면 API 추가 버튼을 비활성화한다.
 - Bot Workspace에서 그룹이나 봇을 바꾸면 Group API Registry의 선택 그룹/봇도 함께 맞춰진다.
 - 이 작업은 CGA Studio 화면 상태 연결 보강이며 Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-05 상단 현재 작업 컨텍스트 동적 연결
+- 상단 context bar의 고정 문구 `Bot: SupportBot Draft`, `Version: v0.1`을 실제 상태 기반 표시로 변경했다.
+- 상단에는 현재 사용자, 현재 그룹, 현재 봇, 현재 버전이 표시된다.
+- Bot Workspace에서 그룹이나 봇을 선택하면 상단 그룹/봇/버전 표시가 함께 갱신된다.
+- Create Bot의 Version Name 입력을 `bot.version` 상태에 연결했다.
+- Create Bot에서 봇 이름이나 버전을 수정하면 상단 context bar도 같은 상태를 기준으로 갱신된다.
+- 이 작업은 CGA Studio 화면 상태 표시 보강이며 Aidot 코드는 수정하지 않았다.
