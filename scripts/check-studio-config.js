@@ -95,6 +95,7 @@ const contractFiles = [
   "packages/contracts/src/access-contract.js",
   "packages/contracts/src/auth-api-contract.js",
   "packages/contracts/src/api-answer-contract.js",
+  "packages/contracts/src/aidot-package-contract.js",
   "packages/contracts/src/collaboration-contract.js"
 ];
 for (const file of contractFiles) {
@@ -139,6 +140,43 @@ async function checkAccessTransitions() {
   if (process.exitCode !== 1) pass("access transition rules work");
 }
 
-checkAccessTransitions().then(() => {
+async function checkAidotPackageContract() {
+  const contract = await import("../packages/contracts/src/aidot-package-contract.js");
+  const scopes = new Set(contract.AIDOT_COMPATIBLE_PACKAGE_ASSETS.map((item) => item.scope));
+  for (const scope of [
+    "bot",
+    "version",
+    "dialog",
+    "api",
+    "intent_utterance",
+    "entity",
+    "dictionary",
+    "blocklist",
+    "rule"
+  ]) {
+    if (!scopes.has(scope)) fail(`Aidot package contract missing scope '${scope}'`);
+  }
+  for (const scope of ["bot", "version", "dialog", "api"]) {
+    const asset = contract.getAidotCompatibleAsset(scope);
+    if (asset?.fileFormat !== "json") fail(`Aidot package scope '${scope}' must use json`);
+    if (asset?.uploadMode !== "replace") fail(`Aidot package scope '${scope}' must replace on upload`);
+  }
+  for (const scope of ["intent_utterance", "entity", "dictionary", "blocklist", "rule"]) {
+    const asset = contract.getAidotCompatibleAsset(scope);
+    if (asset?.fileFormat !== "txt") fail(`Aidot package scope '${scope}' must use txt`);
+    if (asset?.uploadMode !== "merge") fail(`Aidot package scope '${scope}' must merge on upload`);
+  }
+  const botAsset = contract.getAidotCompatibleAsset("bot");
+  if (!botAsset?.requiredTopLevelKeys?.includes("AIDOTAssistantVersion")) fail("Aidot bot package must keep AIDOTAssistantVersion");
+  if (!botAsset?.requiredTopLevelKeys?.includes("dialogList")) fail("Aidot bot package must keep dialogList");
+  const dialogAsset = contract.getAidotCompatibleAsset("dialog");
+  if (!dialogAsset?.requiredTopLevelKeys?.includes("flowGraph")) fail("Aidot dialog package must keep flowGraph");
+  if (contract.AIDOT_DIALOG_TYPE.MODULE !== 0 || contract.AIDOT_DIALOG_TYPE.INTENT !== 1) fail("Aidot dialogType contract must keep module=0 and intent=1");
+  const dictionaryAsset = contract.getAidotCompatibleAsset("dictionary");
+  if (!dictionaryAsset?.legacyHeaders?.includes("동의어")) fail("Aidot dictionary contract must accept legacy 단어/동의어 header");
+  if (process.exitCode !== 1) pass("Aidot-compatible package contract is complete");
+}
+
+Promise.all([checkAccessTransitions(), checkAidotPackageContract()]).then(() => {
   if (process.exitCode === 1) process.exit(1);
 });
