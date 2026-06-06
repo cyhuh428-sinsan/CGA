@@ -101,6 +101,21 @@ function canCreateBotInCurrentWorkspace() {
   return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.create");
 }
 
+function getCurrentAccessUser() {
+  return currentAccessState.users.find((user) => user.id === currentAccessState.currentUserId) || null;
+}
+
+function syncStudioLocaleToCurrentUser() {
+  const locale = getCurrentAccessUser()?.locale || "en";
+  if (window.cgaStudioI18n?.setLocale) {
+    window.cgaStudioI18n.setLocale(locale);
+    return;
+  }
+  const select = document.querySelector("[data-locale-select]");
+  if (select) select.value = locale;
+  localStorage.setItem("cga.studio.locale", locale);
+}
+
 
 
 function getByPath(object, path) {
@@ -633,6 +648,7 @@ function renderApiRegistry() {
 }
 
 function rerenderAdminAndAccess() {
+  syncStudioLocaleToCurrentUser();
   renderWorkspaceHome();
   renderTeamDashboard();
   renderAccessPanels();
@@ -867,7 +883,9 @@ function bootApp() {
   renderApiRegistry();
   bindAdminWorkbench();
   renderLockPolicy();
+  syncStudioLocaleToCurrentUser();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }
 
 document.addEventListener("DOMContentLoaded", bootApp);
+document.addEventListener("cga:i18n-ready", syncStudioLocaleToCurrentUser);

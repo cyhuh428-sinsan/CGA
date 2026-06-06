@@ -542,3 +542,13 @@
 - Group API Registry의 API 추가 권한도 선택한 `group_id + bot_id` 기준의 `apiAnswer.manage` 권한으로 계산하도록 변경했다.
 - 검증 스크립트에 그룹별 scope 회귀 검사를 추가했다. pending 가입이나 operator 역할이 `bot.create` 권한을 받지 않는지 확인한다.
 - 이 작업은 CGA 권한 상태 모델과 화면 action 제어 보강이며 Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-06 사용자별 CGA Studio 언어 동기화
+- 신산님 원칙에 따라 사용자의 UI 언어와 봇의 기본 언어를 분리했다.
+- CGA Studio 화면/에러 메시지는 현재 로그인 사용자 `user.locale` 기준으로 표시한다.
+- 봇의 기본 언어 `bot.defaultLocale`은 봇 학습/운영 언어 기준으로 유지하며, 사용자 UI 언어를 바꿔도 봇 언어는 변경하지 않는다.
+- `apps/studio/i18n.js`에 `window.cgaStudioI18n.setLocale()` 공개 연결을 추가했다.
+- `apps/studio/app.js`에 `syncStudioLocaleToCurrentUser()`를 추가해 로그인 사용자 변경, 가입 직후 로그인 상태 변경, 관리자/권한 화면 재렌더 시 현재 사용자 언어를 Studio locale selector와 동기화한다.
+- `scripts/check-studio-config.js`에 사용자 locale 동기화 연결이 빠지지 않았는지 확인하는 회귀검사를 추가했다.
+- 이 작업은 CGA Studio 화면 언어 동작 보강이며 Aidot 코드는 수정하지 않았다.
