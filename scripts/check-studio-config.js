@@ -42,6 +42,7 @@ function loadLocales() {
 const html = read(path.join(studio, "index.html"));
 const layoutSource = read(path.join(studio, "data", "layout.js"));
 const workflowSource = read(path.join(studio, "data", "workflow.js"));
+const studioAppSource = read(path.join(studio, "app.js"));
 const errorCatalog = JSON.parse(read(path.join(root, "packages", "i18n", "error-catalog.json")));
 const locales = loadLocales();
 
@@ -81,6 +82,11 @@ for (const locale of locales) {
   }
 }
 if (process.exitCode !== 1) pass("all locales contain catalog error keys");
+
+if (!appSource.includes("window.cgaStudioI18n")) fail("studio i18n API is not exposed for user locale sync");
+if (!studioAppSource.includes("syncStudioLocaleToCurrentUser")) fail("studio app does not sync UI locale from current user");
+if (!studioAppSource.includes("getCurrentAccessUser()?.locale")) fail("studio app locale sync is not based on user.locale");
+if (process.exitCode !== 1) pass("studio UI locale sync is wired to current user locale");
 
 const contractFiles = [
   "packages/contracts/src/error-contract.js",

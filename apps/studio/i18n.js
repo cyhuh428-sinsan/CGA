@@ -2643,45 +2643,66 @@ const CGA_I18N_RESOURCES = {
 const FALLBACK_LOCALE = 'en';
 const STORAGE_KEY = 'cga.studio.locale';
 
+function normalizeLocale(locale) {
+  return CGA_I18N_RESOURCES[locale] ? locale : FALLBACK_LOCALE;
+}
+
 function resolveMessage(locale, key, fallback) {
-  const current = CGA_I18N_RESOURCES[locale] || {};
+  const normalizedLocale = normalizeLocale(locale);
+  const current = CGA_I18N_RESOURCES[normalizedLocale] || {};
   const fallbackMessages = CGA_I18N_RESOURCES[FALLBACK_LOCALE] || {};
   return current[key] || fallbackMessages[key] || fallback || key;
 }
 
-function applyLocale(locale) {
-  document.documentElement.lang = locale;
+function applyLocale(locale, options = {}) {
+  const normalizedLocale = normalizeLocale(locale);
+  const persist = options.persist !== false;
+  document.documentElement.lang = normalizedLocale;
   document.querySelectorAll('[data-i18n]').forEach((node) => {
     const key = node.getAttribute('data-i18n');
-    node.textContent = resolveMessage(locale, key, node.textContent);
+    node.textContent = resolveMessage(normalizedLocale, key, node.textContent);
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
     const key = node.getAttribute('data-i18n-placeholder');
-    node.setAttribute('placeholder', resolveMessage(locale, key, node.getAttribute('placeholder') || ''));
+    node.setAttribute('placeholder', resolveMessage(normalizedLocale, key, node.getAttribute('placeholder') || ''));
   });
   document.querySelectorAll('[data-i18n-title]').forEach((node) => {
     const key = node.getAttribute('data-i18n-title');
-    node.setAttribute('title', resolveMessage(locale, key, node.getAttribute('title') || ''));
+    node.setAttribute('title', resolveMessage(normalizedLocale, key, node.getAttribute('title') || ''));
   });
   document.querySelectorAll('[data-error-key]').forEach((node) => {
     const key = node.getAttribute('data-error-key');
-    node.textContent = resolveMessage(locale, key, node.textContent);
+    node.textContent = resolveMessage(normalizedLocale, key, node.textContent);
   });
-  localStorage.setItem(STORAGE_KEY, locale);
+  const select = document.querySelector('[data-locale-select]');
+  if (select) select.value = normalizedLocale;
+  if (persist) localStorage.setItem(STORAGE_KEY, normalizedLocale);
+  return normalizedLocale;
+}
+
+function getStoredLocale() {
+  return normalizeLocale(localStorage.getItem(STORAGE_KEY) || FALLBACK_LOCALE);
 }
 
 function bootI18n() {
   const select = document.querySelector('[data-locale-select]');
-  const initial = localStorage.getItem(STORAGE_KEY) || FALLBACK_LOCALE;
+  const initial = getStoredLocale();
   if (select) {
-    select.value = CGA_I18N_RESOURCES[initial] ? initial : FALLBACK_LOCALE;
+    select.value = initial;
     select.addEventListener('change', () => applyLocale(select.value));
   }
   applyLocale(select?.value || initial);
+  document.dispatchEvent(new CustomEvent('cga:i18n-ready'));
 }
+
+window.cgaStudioI18n = {
+  getLocale: getStoredLocale,
+  setLocale: applyLocale,
+  resolveMessage
+};
 
 document.addEventListener('DOMContentLoaded', bootI18n);
 document.addEventListener('cga:content-rendered', () => {
   const select = document.querySelector('[data-locale-select]');
-  applyLocale(select?.value || localStorage.getItem(STORAGE_KEY) || FALLBACK_LOCALE);
+  applyLocale(select?.value || getStoredLocale());
 });
