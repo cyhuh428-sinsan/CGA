@@ -596,3 +596,16 @@
 - 다운로드 파일명은 `Dictionary_봇명_YYYYMMDD.txt`, `Entity_봇명_YYYYMMDD.txt` 형태를 사용한다.
 - 현재 단계는 CGA Studio 브라우저 상태 기반 동작이며, 서버 저장/API 연결은 다음 단계에서 진행한다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 나머지 Aidot 호환 자산 다운로드·업로드 동작 연결
+- `Detail Settings`의 기존 Reusable Bot Assets 카드 중 미연결 상태였던 `Intent / Answer`, `Synonyms`, `Scenario`, `API Mapping`, `Rule` 버튼에 실제 동작을 연결했다.
+- `Synonyms` 카드는 Aidot 기준으로 의도 발화문 TXT 이동에 해당하므로 `발화문,구분값` 형식의 header 없는 TXT로 다운로드·업로드한다.
+- `Rule` 다운로드는 Aidot 호환 `룰 이름,룰 설명,룰 표현식,연결 의도/모듈,사용여부(Y/N)` TXT 형식으로 생성한다.
+- `Rule` 업로드는 같은 TXT 형식을 읽고 기존 Rule 목록에 병합한다.
+- `Intent / Answer`와 `Scenario`는 Aidot 대화 JSON 최상위 키인 `flowGraph`, `licenseInfo`, `AIDOTAssistantVersion`, `dialogType`, `messageDigest`를 가진 JSON으로 다운로드·업로드한다.
+- `Intent / Answer`는 `dialogType: 1`, `Scenario`는 `dialogType: 0` 기준으로 생성한다.
+- `API Mapping`은 현재 선택된 `group_id + bot_id`의 API Registry 항목을 JSON으로 다운로드하고, 업로드 시 같은 그룹/봇 범위의 API 목록을 교체한다.
+- 현재 단계는 CGA Studio 브라우저 상태 기반 동작이며, 실제 서버 저장/API 연결은 다음 단계에서 진행한다.
+- `node --check apps\studio\app.js`와 `npm run studio:validate`를 통과했다.
+- Aidot 코드는 수정하지 않았다.

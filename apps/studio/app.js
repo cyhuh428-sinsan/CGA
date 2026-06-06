@@ -85,6 +85,19 @@ let currentEntityAssets = [
   { name: "email", value: "email", rowType: "P", detail: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b" },
   { name: "channel", value: "web", rowType: "S", detail: "webchat" }
 ];
+let currentIntentUtteranceAssets = [
+  { utterance: "I need to reset my password", division: "password_reset" },
+  { utterance: "How do I update my account?", division: "account_update" },
+  { utterance: "I have a billing question", division: "billing_question" }
+];
+let currentRuleAssets = [
+  { name: "Business hours", description: "Route after-hours questions", expression: "time.after(18:00)", target: "support_after_hours", enabled: "Y" },
+  { name: "Billing priority", description: "Route billing requests", expression: "intent == billing_question", target: "billing_question", enabled: "Y" }
+];
+let currentScenarioAssets = [
+  { id: "password_reset", type: "intent", displayName: "password_reset" },
+  { id: "account_update", type: "intent", displayName: "account_update" }
+];
 
 function getActiveGroupsForCurrentUser() {
   const memberships = currentAccessState.memberships.filter((membership) => membership.user_id === currentAccessState.currentUserId && membership.status === "active");
@@ -242,6 +255,45 @@ function parseEntityTxt(text) {
     .filter((item) => item.name && item.value);
 }
 
+function buildIntentUtteranceTxt(items) {
+  return items.map((item) => [item.utterance, item.division].map(escapeTxtCell).join(",")).join("\r\n");
+}
+
+function parseIntentUtteranceTxt(text) {
+  return splitTextRows(text)
+    .map((line) => {
+      const [utterance = "", division = ""] = parseDelimitedLine(line);
+      return { utterance: utterance.trim(), division: division.trim() };
+    })
+    .filter((item) => item.utterance && item.division);
+}
+
+function buildRuleTxt(items) {
+  const header = ["룰 이름", "룰 설명", "룰 표현식", "연결 의도/모듈", "사용여부(Y/N)"];
+  const rows = items.map((item) => [item.name, item.description, item.expression, item.target, item.enabled]);
+  return [header, ...rows].map((row) => row.map(escapeTxtCell).join(",")).join("\r\n");
+}
+
+function parseRuleTxt(text) {
+  const lines = splitTextRows(text);
+  if (!lines.length) return [];
+  const first = parseDelimitedLine(lines[0]);
+  const hasHeader = first[0] === "룰 이름";
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+  return dataLines
+    .map((line) => {
+      const [name = "", description = "", expression = "", target = "", enabled = "Y"] = parseDelimitedLine(line);
+      return {
+        name: name.trim(),
+        description: description.trim(),
+        expression: expression.trim(),
+        target: target.trim(),
+        enabled: enabled.trim().toUpperCase() === "N" ? "N" : "Y"
+      };
+    })
+    .filter((item) => item.name && item.expression);
+}
+
 function mergeDictionaryAssets(existing, incoming) {
   const buckets = new Map(existing.map((item) => [item.word, new Set(item.synonyms)]));
   for (const item of incoming) {
@@ -256,6 +308,92 @@ function mergeEntityAssets(existing, incoming) {
   const rows = new Map(existing.map((item) => [keyOf(item), item]));
   incoming.forEach((item) => rows.set(keyOf(item), item));
   return [...rows.values()];
+}
+
+function mergeIntentUtteranceAssets(existing, incoming) {
+  const keyOf = (item) => `${item.utterance}\u0001${item.division}`;
+  const rows = new Map(existing.map((item) => [keyOf(item), item]));
+  incoming.forEach((item) => rows.set(keyOf(item), item));
+  return [...rows.values()];
+}
+
+function mergeRuleAssets(existing, incoming) {
+  const rows = new Map(existing.map((item) => [item.name, item]));
+  incoming.forEach((item) => rows.set(item.name, item));
+  return [...rows.values()];
+}
+
+function buildAidotDialogPackage(kind = "intent") {
+  const bot = getCurrentWorkspaceBot();
+  const dialogType = kind === "scenario" ? 0 : 1;
+  return {
+    flowGraph: {
+      botId: bot?.id || currentWorkspaceBotId,
+      locale: currentStudioState.bot.defaultLocale || bot?.locale || "en",
+      nodes: currentScenarioAssets.map((item) => ({
+        id: item.id,
+        label: item.displayName,
+        type: item.type
+      }))
+    },
+    licenseInfo: null,
+    AIDOTAssistantVersion: "CGA-AIDOT-COMPATIBLE-1",
+    dialogType,
+    messageDigest: ""
+  };
+}
+
+function applyAidotDialogPackage(packageJson) {
+  if (!packageJson || typeof packageJson !== "object" || !("flowGraph" in packageJson)) {
+    throw new Error("Invalid Aidot dialog package: flowGraph is required.");
+  }
+  const nodes = Array.isArray(packageJson.flowGraph?.nodes) ? packageJson.flowGraph.nodes : [];
+  currentScenarioAssets = nodes.map((node) => ({
+    id: String(node.id || node.dialogId || `dialog-${Date.now()}`),
+    type: String(node.type || (packageJson.dialogType === 0 ? "module" : "intent")),
+    displayName: String(node.label || node.displayName || node.id || "Imported dialog")
+  }));
+  currentTransferStatus = `Uploaded dialog JSON: ${currentScenarioAssets.length} node(s) replaced`;
+}
+
+function buildApiMappingPackage() {
+  const entries = currentApiRegistry.filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId);
+  return {
+    manifest: createAidotPackageManifest({
+      scope: "api",
+      botId: currentApiBotId || currentWorkspaceBotId,
+      botLocale: currentStudioState.bot.defaultLocale || "en"
+    }),
+    apiList: entries.map((api) => ({
+      name: api.name,
+      endpoint_url: api.endpoint_url,
+      method: api.method || "GET",
+      auth_type: api.auth_type || "none",
+      secret_ref: api.secret_ref || "",
+      response_path: api.response_path || "data.answer"
+    }))
+  };
+}
+
+function applyApiMappingPackage(packageJson) {
+  const apiList = Array.isArray(packageJson?.apiList) ? packageJson.apiList : Array.isArray(packageJson) ? packageJson : [];
+  if (!apiList.length) {
+    throw new Error("Invalid API package: apiList is required.");
+  }
+  currentApiRegistry = [
+    ...currentApiRegistry.filter((api) => !(api.group_id === currentApiGroupId && api.bot_id === currentApiBotId)),
+    ...apiList.map((api) => ({
+      group_id: currentApiGroupId,
+      bot_id: currentApiBotId,
+      name: String(api.name || "imported_api"),
+      endpoint_url: String(api.endpoint_url || api.url || ""),
+      method: String(api.method || "GET"),
+      auth_type: String(api.auth_type || "none"),
+      secret_ref: String(api.secret_ref || ""),
+      response_path: String(api.response_path || "data.answer")
+    })).filter((api) => api.endpoint_url)
+  ];
+  currentTransferStatus = `Uploaded API JSON: ${apiList.length} item(s) replaced`;
 }
 
 function buildAidotBotPackage() {
@@ -743,10 +881,35 @@ function bindAssetTransferActions() {
         downloadTextFile(fileName, buildDictionaryTxt(currentDictionaryAssets));
         currentTransferStatus = `Downloaded dictionary TXT: ${fileName}`;
       }
+      if (button.dataset.assetDownload === "intentUtterance") {
+        const fileName = `IntentUtterance_${botName}_${getTodayStamp()}.txt`;
+        downloadTextFile(fileName, buildIntentUtteranceTxt(currentIntentUtteranceAssets));
+        currentTransferStatus = `Downloaded intent utterance TXT: ${fileName}`;
+      }
       if (button.dataset.assetDownload === "entity") {
         const fileName = `Entity_${botName}_${getTodayStamp()}.txt`;
         downloadTextFile(fileName, buildEntityTxt(currentEntityAssets));
         currentTransferStatus = `Downloaded entity TXT: ${fileName}`;
+      }
+      if (button.dataset.assetDownload === "rule") {
+        const fileName = `Rule_${botName}_${getTodayStamp()}.txt`;
+        downloadTextFile(fileName, buildRuleTxt(currentRuleAssets));
+        currentTransferStatus = `Downloaded rule TXT: ${fileName}`;
+      }
+      if (button.dataset.assetDownload === "intentDialog") {
+        const fileName = `Dialog_${botName}_${getTodayStamp()}.json`;
+        downloadJsonFile(fileName, buildAidotDialogPackage("intent"));
+        currentTransferStatus = `Downloaded intent dialog JSON: ${fileName}`;
+      }
+      if (button.dataset.assetDownload === "scenario") {
+        const fileName = `Scenario_${botName}_${getTodayStamp()}.json`;
+        downloadJsonFile(fileName, buildAidotDialogPackage("scenario"));
+        currentTransferStatus = `Downloaded scenario JSON: ${fileName}`;
+      }
+      if (button.dataset.assetDownload === "apiMapping") {
+        const fileName = `API_${botName}_${getTodayStamp()}.json`;
+        downloadJsonFile(fileName, buildApiMappingPackage());
+        currentTransferStatus = `Downloaded API JSON: ${fileName}`;
       }
       renderWorkspaceHome();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -763,11 +926,36 @@ function bindAssetTransferActions() {
           currentTransferStatus = `Uploaded dictionary TXT: ${incoming.length} row(s) merged`;
         });
       }
+      if (button.dataset.assetUpload === "intentUtterance") {
+        requestTextUpload((text) => {
+          const incoming = parseIntentUtteranceTxt(text);
+          currentIntentUtteranceAssets = mergeIntentUtteranceAssets(currentIntentUtteranceAssets, incoming);
+          currentTransferStatus = `Uploaded intent utterance TXT: ${incoming.length} row(s) merged`;
+        });
+      }
       if (button.dataset.assetUpload === "entity") {
         requestTextUpload((text) => {
           const incoming = parseEntityTxt(text);
           currentEntityAssets = mergeEntityAssets(currentEntityAssets, incoming);
           currentTransferStatus = `Uploaded entity TXT: ${incoming.length} row(s) merged`;
+        });
+      }
+      if (button.dataset.assetUpload === "rule") {
+        requestTextUpload((text) => {
+          const incoming = parseRuleTxt(text);
+          currentRuleAssets = mergeRuleAssets(currentRuleAssets, incoming);
+          currentTransferStatus = `Uploaded rule TXT: ${incoming.length} row(s) merged`;
+        });
+      }
+      if (button.dataset.assetUpload === "intentDialog" || button.dataset.assetUpload === "scenario") {
+        requestJsonUpload((json) => {
+          applyAidotDialogPackage(json);
+        });
+      }
+      if (button.dataset.assetUpload === "apiMapping") {
+        requestJsonUpload((json) => {
+          applyApiMappingPackage(json);
+          renderApiRegistry();
         });
       }
     });
