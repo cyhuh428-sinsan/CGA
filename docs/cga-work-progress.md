@@ -564,3 +564,14 @@
 - 다만 현재 Aidot가 다국어를 지원하지 않으므로 Aidot 호환 패키지는 선택한 단일 봇 언어 기준으로 처리하고, CGA 다국어 패키지는 CGA 전용 경로 또는 Aidot 호환성 수정이 필요한 후보로 구분했다.
 - 기본 방향은 Aidot를 수정하지 않고 CGA가 Aidot 기존 형식에 맞추는 것이다. Aidot 수정은 정말 다른 방법이 없을 때만 사유와 영향 범위를 제시한 뒤 진행한다.
 - 이 작업은 CGA Studio 화면/정책 보강이며 Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-06 Aidot import/export 포맷 계약 추가
+- Aidot 저장소는 수정하지 않고, `D:\Project\Aidot\docs\asset-import-export-format.md`와 관련 화면/라이브러리만 참조했다.
+- 확인한 Aidot 기준은 봇 전체/봇 버전/대화/API는 JSON, 개체/동의어 사전/Blocklist/의도 발화문/Rule은 TXT이다.
+- Aidot 기준에서 JSON 업로드는 교체, TXT 업로드는 병합으로 정리되어 있다.
+- `packages/contracts/src/aidot-package-contract.js`를 추가해 CGA가 따라야 할 Aidot 호환 패키지 scope, 파일 형식, 업로드 모드, 봇 JSON 최상위 키, 대화 JSON 최상위 키, `dialogType` 규칙을 코드 계약으로 고정했다.
+- `scripts/check-studio-config.js`에 Aidot 호환 패키지 계약 검증을 추가했다.
+- `Bot Workspace`와 `Detail Settings` 화면에 JSON/TXT 및 교체/병합 기준을 표시했다.
+- 정책 문서에 Aidot 호환 import/export 포맷 매트릭스를 추가했다.
+- 이 작업은 CGA 계약/화면/정책 보강이며 Aidot 코드는 수정하지 않았다.

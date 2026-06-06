@@ -404,6 +404,8 @@ function renderWorkspaceHome() {
       <div class="version-strip">
         <span><b data-i18n="transfer.currentVersion">Current version</b>${currentVersion}</span>
         <span><b data-i18n="transfer.compatibility">Compatibility</b>Aidot / CGA</span>
+        <span><b data-i18n="transfer.botPackageFormat">Bot package</b>JSON · replace</span>
+        <span><b data-i18n="transfer.assetPackageFormat">Text assets</b>TXT · merge</span>
       </div>
       <div class="button-row">
         <button type="button" data-i18n="transfer.downloadBot">Download Bot</button>

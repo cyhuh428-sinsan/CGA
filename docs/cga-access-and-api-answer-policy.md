@@ -66,6 +66,20 @@ CGA의 모든 관리 기준은 시스템 전체가 아니라 그룹이다.
 - 기본 방향은 Aidot를 수정하지 않고 CGA가 Aidot의 기존 패키지 형식에 맞추는 것이다.
 - Aidot 수정이 필요하다고 판단되는 경우에는 먼저 수정 사유, 영향 범위, 변경 전/후 diff를 제시하고 승인 후 진행한다.
 
+Aidot 호환 import/export 포맷:
+
+| 자산 | 파일 | 업로드 동작 | CGA 처리 기준 |
+| --- | --- | --- | --- |
+| 봇 전체 | JSON | 교체 | `AIDOTAssistantVersion`, `botVo`, `dialogList`, `entityTypeList`, `dictionaryVoList`, `blacklistList` 등 Aidot 최상위 키 유지 |
+| 봇 버전 | JSON | 교체 | 선택 버전 단위로 내보내되 Aidot 업로드 가능 구조를 우선 |
+| 대화/의도/모듈 | JSON | 교체 | `flowGraph`, `dialogType`, `messageDigest` 유지. `dialogType=0`은 모듈, `dialogType=1`은 의도 |
+| API 정의 | JSON | 교체 | API는 TXT가 아니라 JSON 자산으로 처리 |
+| 개체 | TXT | 병합 | `개체명,개체값,유형(S/P),상세` 헤더 |
+| 동의어 사전 | TXT | 병합 | `대표어,유의어1,유의어2,...` 기준, `단어,동의어` legacy 형식도 허용 |
+| Blocklist | TXT | 병합 | `Blocklist 이름,유형,제외 단어/정규 표현식,사용여부` 헤더 |
+| 의도 발화문 | TXT | 병합 | 헤더 없는 `발화문,구분값` 구조 |
+| Rule | TXT | 병합 | `룰 이름,룰 설명,룰 표현식,연결 의도/모듈,사용여부(Y/N)` 헤더 |
+
 ## 1.2 서버형 SaaS 설치 원칙
 
 CGA는 개별 PC에 설치해 쓰는 단독 도구가 아니라, 서버에 설치해 서비스하는 SaaS 구조를 기본으로 한다.
