@@ -194,6 +194,7 @@
   "transfer.dialogJsonReplace": "대화 JSON · 교체",
   "transfer.apiJsonReplace": "API JSON · 교체",
   "transfer.txtMerge": "TXT · 병합",
+  "transfer.readyStatus": "Aidot 호환 패키지 교환 준비 완료.",
   "transfer.download": "다운로드",
   "transfer.upload": "업로드",
   "build.title": "빌드",

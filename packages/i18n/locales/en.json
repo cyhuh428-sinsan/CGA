@@ -194,6 +194,7 @@
   "transfer.dialogJsonReplace": "Dialog JSON · replace",
   "transfer.apiJsonReplace": "API JSON · replace",
   "transfer.txtMerge": "TXT · merge",
+  "transfer.readyStatus": "Ready for Aidot-compatible package exchange.",
   "transfer.download": "Download",
   "transfer.upload": "Upload",
   "build.title": "Build",
