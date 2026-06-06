@@ -5,7 +5,7 @@ export const workflowSteps = [
     title: "Create Bot",
     subtitle: "Structure decisions / Setup",
     mapsTo: "Aidot: Bot create / Bot setup / Version / channel defaults",
-    publicCore: ["Bot name", "Description", "Default language", "LLM usage", "Composition input", "Bot Server location", "Orchestrator mode", "Basic channel", "User / login / roles"],
+    publicCore: ["Bot name", "Description", "Default language", "LLM usage", "Composition input", "Bot Server location", "Orchestrator mode", "Basic channel", "Bot version", "Bot copy", "Aidot-compatible download/upload", "User / login / roles"],
     commercial: ["Organization limits", "Template recommendation"]
   },
   {
@@ -23,7 +23,7 @@ export const workflowSteps = [
     title: "Detail Settings",
     subtitle: "Edit",
     mapsTo: "Aidot: Intent / Entity / Dictionary / Scenario / API cards",
-    publicCore: ["Intent", "Answer", "Synonym", "Entity", "Dictionary", "Scenario", "External API answer source"],
+    publicCore: ["Intent", "Answer", "Synonym", "Entity", "Dictionary", "Scenario", "External API answer source", "Asset download/upload"],
     commercial: ["Scenario suggestion", "API mapping automation"]
   },
   {
@@ -113,8 +113,11 @@ export const referenceLinks = [
 ];
 
 export const errorSamples = [
-  { code: "CGA_BOT_NAME_REQUIRED", key: "errors.bot.nameRequired" },
-  { code: "CGA_LLM_NOT_CONNECTED", key: "errors.llm.notConnected" },
-  { code: "CGA_LLM_REQUIRED_FOR_PDF", key: "errors.llm.requiredForPdf" },
-  { code: "CGA_COMMERCIAL_MODULE_REQUIRED", key: "errors.commercial.moduleRequired" }
+  { code: "CGA_BOT_NAME_REQUIRED", key: "errors.bot.nameRequired", localeSource: "user.locale" },
+  { code: "CGA_LLM_NOT_CONNECTED", key: "errors.llm.notConnected", localeSource: "user.locale" },
+  { code: "CGA_LLM_REQUIRED_FOR_PDF", key: "errors.llm.requiredForPdf", localeSource: "user.locale" },
+  { code: "CGA_COMMERCIAL_MODULE_REQUIRED", key: "errors.commercial.moduleRequired", localeSource: "user.locale" },
+  { code: "BOT_ANSWER_NOT_FOUND", key: "botErrors.answer.notFound", localeSource: "bot.defaultLocale" },
+  { code: "BOT_API_LOOKUP_FAILED", key: "botErrors.api.lookupFailed", localeSource: "bot.defaultLocale" },
+  { code: "BOT_FALLBACK_REQUIRED", key: "botErrors.fallback.required", localeSource: "bot.defaultLocale" }
 ];

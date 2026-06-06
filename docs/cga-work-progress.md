@@ -552,3 +552,15 @@
 - `apps/studio/app.js`에 `syncStudioLocaleToCurrentUser()`를 추가해 로그인 사용자 변경, 가입 직후 로그인 상태 변경, 관리자/권한 화면 재렌더 시 현재 사용자 언어를 Studio locale selector와 동기화한다.
 - `scripts/check-studio-config.js`에 사용자 locale 동기화 연결이 빠지지 않았는지 확인하는 회귀검사를 추가했다.
 - 이 작업은 CGA Studio 화면 언어 동작 보강이며 Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-06 Aidot 호환 봇 패키지와 자산 이동 원칙 반영
+- 신산님 추가 요구에 따라 봇은 버전 단위로 관리하고, 봇 복사뿐 아니라 다운로드/업로드가 가능해야 한다는 원칙을 반영했다.
+- `Bot Workspace`에 `Bot Version / Package` 영역을 추가했다.
+- 현재 봇의 버전, Aidot/CGA 호환성, 봇 복사, 봇 다운로드, 봇 업로드, 버전 다운로드, 버전 업로드 버튼 위치를 표시했다.
+- `Detail Settings`에 `Reusable Bot Assets` 영역을 추가했다.
+- 의도/답변, 동의어, 개체, 사전, 시나리오, API 매핑을 Aidot 호환 패키지로 다운로드/업로드할 수 있어야 한다고 화면에 표시했다.
+- CGA에서 다운로드한 봇 패키지는 Aidot에 업로드 가능해야 하고, Aidot에서 다운로드한 봇 패키지도 CGA에 업로드 가능해야 한다는 상호 호환 원칙을 정책 문서에 추가했다.
+- 다만 현재 Aidot가 다국어를 지원하지 않으므로 Aidot 호환 패키지는 선택한 단일 봇 언어 기준으로 처리하고, CGA 다국어 패키지는 CGA 전용 경로 또는 Aidot 호환성 수정이 필요한 후보로 구분했다.
+- 기본 방향은 Aidot를 수정하지 않고 CGA가 Aidot 기존 형식에 맞추는 것이다. Aidot 수정은 정말 다른 방법이 없을 때만 사유와 영향 범위를 제시한 뒤 진행한다.
+- 이 작업은 CGA Studio 화면/정책 보강이며 Aidot 코드는 수정하지 않았다.

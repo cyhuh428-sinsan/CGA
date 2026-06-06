@@ -174,6 +174,7 @@ function renderAllStatePanels() {
   bindCreateControls();
   renderCreateSummary();
   renderTopContext();
+  renderErrorSamples();
   renderStateSummary();
   renderReadinessIssues();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -368,6 +369,7 @@ function renderWorkspaceHome() {
   const summary = document.querySelector("[data-workspace-summary]");
   const botList = document.querySelector("[data-workspace-bots]");
   const createButton = document.querySelector("[data-workspace-create]");
+  const transfer = document.querySelector("[data-workspace-transfer]");
   const currentBotName = document.querySelector("[data-current-bot-name]");
   const currentGroupName = document.querySelector("[data-current-group-name]");
   if (!groupSelect || !summary || !botList) return;
@@ -390,6 +392,27 @@ function renderWorkspaceHome() {
       <span>${bot.status} · ${bot.locale} · ${bot.updated_at}</span>
     </button>
   `).join("") || `<div class="empty-list"><strong>No bot in this group</strong><span>Create a bot to start the workflow.</span></div>`;
+  if (transfer) {
+    const currentVersion = currentStudioState.bot.version || currentBot?.version || "v0.1";
+    transfer.innerHTML = `
+      <div class="workspace-list-head">
+        <h4 data-i18n="transfer.botPackageTitle">Bot Version / Package</h4>
+        <button type="button" ${canCreateBot ? "" : "disabled"} data-i18n="transfer.copyBot">Copy Bot</button>
+      </div>
+      <p data-i18n="transfer.botPackageBody">Manage the current bot by version, and exchange Aidot-compatible bot packages with Aidot or CGA.</p>
+      <p class="compat-note" data-i18n="transfer.aidotLocaleBoundary">Aidot upload compatibility uses a single selected bot language. CGA multilingual packages require a CGA-only import path or an Aidot compatibility update.</p>
+      <div class="version-strip">
+        <span><b data-i18n="transfer.currentVersion">Current version</b>${currentVersion}</span>
+        <span><b data-i18n="transfer.compatibility">Compatibility</b>Aidot / CGA</span>
+      </div>
+      <div class="button-row">
+        <button type="button" data-i18n="transfer.downloadBot">Download Bot</button>
+        <button type="button" class="ghost-btn" data-i18n="transfer.uploadBot">Upload Bot</button>
+        <button type="button" class="ghost-btn" data-i18n="transfer.downloadVersion">Download Version</button>
+        <button type="button" class="ghost-btn" data-i18n="transfer.uploadVersion">Upload Version</button>
+      </div>
+    `;
+  }
   if (currentBotName) currentBotName.textContent = currentBot?.name || "No bot selected";
   if (currentGroupName) currentGroupName.textContent = group?.name || "No group selected";
   renderTopContext();
@@ -856,12 +879,30 @@ function renderBoundaryMatrix() {
 function renderErrorSamples() {
   const container = document.querySelector("[data-error-samples]");
   if (!container) return;
-  container.innerHTML = errorSamples.map((sample) => `
-    <div>
-      <strong>${sample.code}</strong>
-      <span data-error-key="${sample.key}">${sample.code}</span>
+  const cgaErrors = errorSamples.filter((sample) => sample.localeSource === "user.locale");
+  const botErrors = errorSamples.filter((sample) => sample.localeSource === "bot.defaultLocale");
+  const botLocale = currentStudioState.bot.defaultLocale || "en";
+  const resolveBotMessage = (sample) => window.cgaStudioI18n?.resolveMessage(botLocale, sample.key, sample.code) || sample.code;
+  container.innerHTML = `
+    <div class="error-sample-group">
+      <strong><span data-i18n="i18n.cgaErrorGroup">CGA Error</span> · user.locale</strong>
+      ${cgaErrors.map((sample) => `
+        <p>
+          <b>${sample.code}</b>
+          <span data-error-key="${sample.key}">${sample.code}</span>
+        </p>
+      `).join("")}
     </div>
-  `).join("");
+    <div class="error-sample-group">
+      <strong><span data-i18n="i18n.botErrorGroup">Bot Error</span> · ${botLocale}</strong>
+      ${botErrors.map((sample) => `
+        <p>
+          <b>${sample.code}</b>
+          <span data-bot-error-key="${sample.key}">${resolveBotMessage(sample)}</span>
+        </p>
+      `).join("")}
+    </div>
+  `;
 }
 
 function bootApp() {
