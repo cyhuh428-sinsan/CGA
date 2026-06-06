@@ -585,3 +585,14 @@
 - `Download Version`은 CGA 버전 패키지를 생성하고, `Upload Version`은 해당 패키지를 현재 봇의 Studio 상태에 반영한다.
 - 현재 단계는 CGA Studio 브라우저 상태 기반 동작이며, 서버 저장/API 연결은 다음 단계에서 Aidot 호환 계약 기준으로 연결한다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-06 Dictionary / Entity TXT 다운로드·업로드 동작 연결
+- `Detail Settings`의 `Dictionary`와 `Entities` 카드에 실제 TXT 다운로드/업로드 동작을 연결했다.
+- `Dictionary` 다운로드는 Aidot 호환 `대표어,유의어1,유의어2,...` TXT 형식으로 생성한다.
+- `Dictionary` 업로드는 `대표어,유의어...` 형식과 legacy `단어,동의어` 형식을 읽고 기존 사전에 병합한다.
+- `Entity` 다운로드는 Aidot 호환 `개체명,개체값,유형(S/P),상세` TXT 형식으로 생성한다.
+- `Entity` 업로드는 같은 TXT 형식을 읽고 기존 개체 목록에 병합한다.
+- 다운로드 파일명은 `Dictionary_봇명_YYYYMMDD.txt`, `Entity_봇명_YYYYMMDD.txt` 형태를 사용한다.
+- 현재 단계는 CGA Studio 브라우저 상태 기반 동작이며, 서버 저장/API 연결은 다음 단계에서 진행한다.
+- Aidot 코드는 수정하지 않았다.

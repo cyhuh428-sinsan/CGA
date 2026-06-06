@@ -77,6 +77,14 @@ let currentApiRegistry = [
 let currentApiGroupId = "g-support";
 let currentApiBotId = "supportbot-draft";
 let currentTransferStatus = "";
+let currentDictionaryAssets = [
+  { word: "password", synonyms: ["login password", "account password"] },
+  { word: "plan", synonyms: ["subscription", "membership"] }
+];
+let currentEntityAssets = [
+  { name: "email", value: "email", rowType: "P", detail: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b" },
+  { name: "channel", value: "web", rowType: "S", detail: "webchat" }
+];
 
 function getActiveGroupsForCurrentUser() {
   const memberships = currentAccessState.memberships.filter((membership) => membership.user_id === currentAccessState.currentUserId && membership.status === "active");
@@ -126,6 +134,128 @@ function downloadJsonFile(fileName, data) {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+function downloadTextFile(fileName, text) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeTxtCell(value) {
+  const text = String(value ?? "");
+  if (/[",\r\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function parseDelimitedLine(line) {
+  const cells = [];
+  let current = "";
+  let inQuotes = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"') {
+      if (inQuotes && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      cells.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function splitTextRows(text) {
+  return text
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function buildDictionaryTxt(items) {
+  const maxSynonymCount = Math.max(1, ...items.map((item) => item.synonyms.length));
+  const header = ["대표어", ...Array.from({ length: maxSynonymCount }, (_, index) => `유의어${index + 1}`)];
+  const rows = items.map((item) => [
+    item.word,
+    ...Array.from({ length: maxSynonymCount }, (_, index) => item.synonyms[index] || "")
+  ]);
+  return [header, ...rows].map((row) => row.map(escapeTxtCell).join(",")).join("\r\n");
+}
+
+function parseDictionaryTxt(text) {
+  const lines = splitTextRows(text);
+  if (!lines.length) return [];
+  const first = parseDelimitedLine(lines[0]);
+  const hasHeader = ["대표어", "단어"].includes(first[0]);
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+  const buckets = new Map();
+  for (const line of dataLines) {
+    const [word = "", ...synonyms] = parseDelimitedLine(line);
+    const normalizedWord = word.trim();
+    if (!normalizedWord) continue;
+    if (!buckets.has(normalizedWord)) buckets.set(normalizedWord, new Set());
+    synonyms.map((item) => item.trim()).filter(Boolean).forEach((item) => buckets.get(normalizedWord).add(item));
+  }
+  return [...buckets.entries()].map(([word, synonyms]) => ({ word, synonyms: [...synonyms] }));
+}
+
+function buildEntityTxt(items) {
+  const header = ["개체명", "개체값", "유형(S/P)", "상세"];
+  const rows = items.map((item) => [item.name, item.value, item.rowType, item.detail]);
+  return [header, ...rows].map((row) => row.map(escapeTxtCell).join(",")).join("\r\n");
+}
+
+function parseEntityTxt(text) {
+  const lines = splitTextRows(text);
+  if (!lines.length) return [];
+  const first = parseDelimitedLine(lines[0]);
+  const hasHeader = first[0] === "개체명";
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+  return dataLines
+    .map((line) => {
+      const [name = "", value = "", rowType = "S", detail = ""] = parseDelimitedLine(line);
+      return {
+        name: name.trim(),
+        value: value.trim(),
+        rowType: rowType.trim().toUpperCase() === "P" ? "P" : "S",
+        detail: detail.trim()
+      };
+    })
+    .filter((item) => item.name && item.value);
+}
+
+function mergeDictionaryAssets(existing, incoming) {
+  const buckets = new Map(existing.map((item) => [item.word, new Set(item.synonyms)]));
+  for (const item of incoming) {
+    if (!buckets.has(item.word)) buckets.set(item.word, new Set());
+    item.synonyms.forEach((synonym) => buckets.get(item.word).add(synonym));
+  }
+  return [...buckets.entries()].map(([word, synonyms]) => ({ word, synonyms: [...synonyms] }));
+}
+
+function mergeEntityAssets(existing, incoming) {
+  const keyOf = (item) => `${item.name}\u0001${item.value}\u0001${item.rowType}`;
+  const rows = new Map(existing.map((item) => [keyOf(item), item]));
+  incoming.forEach((item) => rows.set(keyOf(item), item));
+  return [...rows.values()];
 }
 
 function buildAidotBotPackage() {
@@ -239,6 +369,10 @@ async function readJsonFile(file) {
   return JSON.parse(text);
 }
 
+async function readTextFile(file) {
+  return file.text();
+}
+
 function requestJsonUpload(onJson) {
   const input = document.createElement("input");
   input.type = "file";
@@ -252,6 +386,24 @@ function requestJsonUpload(onJson) {
       renderWorkspaceHome();
     } catch (error) {
       currentTransferStatus = error instanceof Error ? error.message : "Upload failed.";
+      renderWorkspaceHome();
+    }
+  });
+  input.click();
+}
+
+function requestTextUpload(onText) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".txt,text/plain";
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      await onText(await readTextFile(file));
+      renderWorkspaceHome();
+    } catch (error) {
+      currentTransferStatus = error instanceof Error ? error.message : "Text upload failed.";
       renderWorkspaceHome();
     }
   });
@@ -577,6 +729,49 @@ function renderWorkspaceHome() {
   if (currentGroupName) currentGroupName.textContent = group?.name || "No group selected";
   renderTopContext();
   bindWorkspaceActions();
+}
+
+function bindAssetTransferActions() {
+  document.querySelectorAll("[data-asset-download]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const bot = getCurrentWorkspaceBot();
+      const botName = getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot");
+      if (button.dataset.assetDownload === "dictionary") {
+        const fileName = `Dictionary_${botName}_${getTodayStamp()}.txt`;
+        downloadTextFile(fileName, buildDictionaryTxt(currentDictionaryAssets));
+        currentTransferStatus = `Downloaded dictionary TXT: ${fileName}`;
+      }
+      if (button.dataset.assetDownload === "entity") {
+        const fileName = `Entity_${botName}_${getTodayStamp()}.txt`;
+        downloadTextFile(fileName, buildEntityTxt(currentEntityAssets));
+        currentTransferStatus = `Downloaded entity TXT: ${fileName}`;
+      }
+      renderWorkspaceHome();
+      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  });
+  document.querySelectorAll("[data-asset-upload]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      if (button.dataset.assetUpload === "dictionary") {
+        requestTextUpload((text) => {
+          const incoming = parseDictionaryTxt(text);
+          currentDictionaryAssets = mergeDictionaryAssets(currentDictionaryAssets, incoming);
+          currentTransferStatus = `Uploaded dictionary TXT: ${incoming.length} row(s) merged`;
+        });
+      }
+      if (button.dataset.assetUpload === "entity") {
+        requestTextUpload((text) => {
+          const incoming = parseEntityTxt(text);
+          currentEntityAssets = mergeEntityAssets(currentEntityAssets, incoming);
+          currentTransferStatus = `Uploaded entity TXT: ${incoming.length} row(s) merged`;
+        });
+      }
+    });
+  });
 }
 
 function renderTopContext() {
@@ -1127,6 +1322,7 @@ function bootApp() {
   renderApiRegistry();
   bindAdminWorkbench();
   renderLockPolicy();
+  bindAssetTransferActions();
   syncStudioLocaleToCurrentUser();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }
