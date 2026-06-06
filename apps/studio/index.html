@@ -125,6 +125,7 @@
             </div>
             <div class="bot-list" data-workspace-bots></div>
           </article>
+          <article class="workspace-transfer-card" data-workspace-transfer></article>
           <aside class="status-panel compact">
             <h4 data-i18n="workspace.nextTitle">Next Action</h4>
             <p><b data-i18n="workspace.currentBot">Current bot</b><span data-current-bot-name>SupportBot Draft</span></p>
@@ -340,6 +341,21 @@
           <div class="intent-list"><strong data-i18n="detail.intents">Intents</strong><p class="active-item">password_reset</p><p>account_update</p><p>billing_question</p></div>
           <div class="answer-editor"><label>Answer<textarea>To reset your password, open Account Settings and choose Reset Password.</textarea></label><label>Representative Utterances<textarea>How do I reset my password?\nI forgot my login password.</textarea></label></div>
           <aside class="status-panel compact"><h4 data-i18n="detail.advancedStatus">Advanced status</h4><p><b data-i18n="detail.synonyms">Synonyms</b><span data-i18n="detail.available">Available</span></p><p><b data-i18n="detail.entities">Entities</b><span data-i18n="detail.availableWhenNeeded">Available when needed</span></p><p><b data-i18n="detail.scenario">Scenario</b><span data-i18n="detail.simpleAnswer">Simple answer</span></p></aside>
+        </div>
+        <div class="asset-transfer-panel">
+          <div>
+            <h4 data-i18n="transfer.assetsTitle">Reusable Bot Assets</h4>
+            <p data-i18n="transfer.assetsBody">Download or upload major bot assets as Aidot-compatible packages so another Aidot or CGA bot can reuse them.</p>
+            <p class="compat-note" data-i18n="transfer.aidotLocaleBoundary">Aidot upload compatibility uses a single selected bot language. CGA multilingual packages require a CGA-only import path or an Aidot compatibility update.</p>
+          </div>
+          <div class="asset-transfer-grid">
+            <article><strong data-i18n="transfer.intentAnswer">Intent / Answer</strong><span data-i18n="transfer.aidotCompatible">Aidot-compatible</span><div><button data-i18n="transfer.download">Download</button><button class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
+            <article><strong data-i18n="detail.synonyms">Synonyms</strong><span data-i18n="transfer.aidotCompatible">Aidot-compatible</span><div><button data-i18n="transfer.download">Download</button><button class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
+            <article><strong data-i18n="detail.entities">Entities</strong><span data-i18n="transfer.aidotCompatible">Aidot-compatible</span><div><button data-i18n="transfer.download">Download</button><button class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
+            <article><strong data-i18n="detail.dictionary">Dictionary</strong><span data-i18n="transfer.aidotCompatible">Aidot-compatible</span><div><button data-i18n="transfer.download">Download</button><button class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
+            <article><strong data-i18n="detail.scenario">Scenario</strong><span data-i18n="transfer.aidotCompatible">Aidot-compatible</span><div><button data-i18n="transfer.download">Download</button><button class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
+            <article><strong data-i18n="transfer.apiMapping">API Mapping</strong><span data-i18n="transfer.aidotCompatible">Aidot-compatible</span><div><button data-i18n="transfer.download">Download</button><button class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
+          </div>
         </div>
       </section>
 
