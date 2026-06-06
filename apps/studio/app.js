@@ -4,6 +4,7 @@ import { sampleStudioState } from "./data/sample-state.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
 import { createGroupManagedApiAnswerDraft } from "/packages/contracts/src/api-answer-contract.js";
+import { createAidotPackageManifest } from "/packages/contracts/src/aidot-package-contract.js";
 import { createSampleCollaborationState, lockWorkItem, releaseWorkItemLock, submitReviewDecision, summarizeCollaboration, summarizeTeamDashboard } from "/packages/public-core/src/collaboration-state.js";
 import {
   approveAdminPermissionRequest,
@@ -75,6 +76,7 @@ let currentApiRegistry = [
 ];
 let currentApiGroupId = "g-support";
 let currentApiBotId = "supportbot-draft";
+let currentTransferStatus = "";
 
 function getActiveGroupsForCurrentUser() {
   const memberships = currentAccessState.memberships.filter((membership) => membership.user_id === currentAccessState.currentUserId && membership.status === "active");
@@ -99,6 +101,161 @@ function canManageApiAnswerForCurrentSelection() {
 
 function canCreateBotInCurrentWorkspace() {
   return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.create");
+}
+
+function getSafeFileName(value, fallback) {
+  const normalized = String(value || fallback)
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+    .replace(/\s+/g, "_");
+  return normalized || fallback;
+}
+
+function getTodayStamp() {
+  const now = new Date();
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function downloadJsonFile(fileName, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildAidotBotPackage() {
+  const bot = getCurrentWorkspaceBot();
+  return {
+    AIDOTAssistantVersion: "CGA-AIDOT-COMPATIBLE-1",
+    messageDigest: "",
+    botVo: {
+      botId: bot?.id || currentWorkspaceBotId,
+      botName: currentStudioState.bot.name || bot?.name || "CGA Bot",
+      description: currentStudioState.bot.description || "",
+      defaultLanguage: currentStudioState.bot.defaultLocale || bot?.locale || "en",
+      versionName: currentStudioState.bot.version || bot?.version || "v0.1"
+    },
+    licenseVo: null,
+    botSystemConfigVoList: [
+      { configKey: "bot.defaultLocale", configValue: currentStudioState.bot.defaultLocale || "en" },
+      { configKey: "bot.version", configValue: currentStudioState.bot.version || "v0.1" },
+      { configKey: "cga.compatibility", configValue: "aidot_single_language" }
+    ],
+    dialogList: [
+      { dialogId: "password_reset", dialogType: 1, displayName: "password_reset" },
+      { dialogId: "account_update", dialogType: 1, displayName: "account_update" },
+      { dialogId: "billing_question", dialogType: 1, displayName: "billing_question" }
+    ],
+    dialogFlowGraphList: [],
+    entityTypeList: [],
+    faqDialogList: [],
+    floatingButtonVoList: [],
+    ruleVoList: [],
+    smallTalkVoList: [],
+    dictionaryVoList: [],
+    blacklistList: []
+  };
+}
+
+function buildCgaVersionPackage() {
+  const bot = getCurrentWorkspaceBot();
+  return {
+    manifest: createAidotPackageManifest({
+      scope: "version",
+      botId: bot?.id || currentWorkspaceBotId,
+      versionId: currentStudioState.bot.version || bot?.version || "v0.1",
+      botLocale: currentStudioState.bot.defaultLocale || bot?.locale || "en"
+    }),
+    version: {
+      bot: structuredClone(currentStudioState.bot),
+      structuralChoices: structuredClone(currentStudioState.structuralChoices),
+      counts: structuredClone(currentStudioState.counts),
+      llm: structuredClone(currentStudioState.llm),
+      channels: structuredClone(currentStudioState.channels)
+    }
+  };
+}
+
+function applyAidotBotPackage(packageJson) {
+  const botVo = packageJson?.botVo;
+  if (!botVo || typeof botVo !== "object") {
+    throw new Error("Invalid Aidot bot package: botVo is required.");
+  }
+  const nextId = getSafeFileName(botVo.botId || `bot-${Date.now()}`, `bot-${Date.now()}`);
+  const nextName = String(botVo.botName || botVo.name || "Imported Bot");
+  const nextLocale = String(botVo.defaultLanguage || botVo.locale || currentStudioState.bot.defaultLocale || "en");
+  const nextVersion = String(botVo.versionName || botVo.version || "v0.1");
+  const importedBot = {
+    id: currentWorkspaceBots.some((bot) => bot.id === nextId) ? `${nextId}-${Date.now()}` : nextId,
+    group_id: currentWorkspaceGroupId,
+    name: nextName,
+    version: nextVersion,
+    status: "draft",
+    locale: nextLocale,
+    updated_at: "imported"
+  };
+  currentWorkspaceBots = [...currentWorkspaceBots, importedBot];
+  currentWorkspaceBotId = importedBot.id;
+  currentApiGroupId = currentWorkspaceGroupId;
+  currentApiBotId = importedBot.id;
+  currentStudioState.bot.name = importedBot.name;
+  currentStudioState.bot.description = String(botVo.description || "");
+  currentStudioState.bot.defaultLocale = importedBot.locale;
+  currentStudioState.bot.version = importedBot.version;
+  currentTransferStatus = `Imported bot package: ${importedBot.name}`;
+}
+
+function applyCgaVersionPackage(packageJson) {
+  const version = packageJson?.version;
+  if (!version?.bot) {
+    throw new Error("Invalid CGA version package: version.bot is required.");
+  }
+  currentStudioState.bot = { ...currentStudioState.bot, ...version.bot };
+  if (version.structuralChoices) currentStudioState.structuralChoices = { ...currentStudioState.structuralChoices, ...version.structuralChoices };
+  if (version.counts) currentStudioState.counts = { ...currentStudioState.counts, ...version.counts };
+  if (version.llm) currentStudioState.llm = { ...currentStudioState.llm, ...version.llm };
+  if (version.channels) currentStudioState.channels = { ...currentStudioState.channels, ...version.channels };
+  currentWorkspaceBots = currentWorkspaceBots.map((bot) =>
+    bot.id === currentWorkspaceBotId
+      ? {
+          ...bot,
+          name: currentStudioState.bot.name,
+          version: currentStudioState.bot.version || bot.version,
+          locale: currentStudioState.bot.defaultLocale || bot.locale,
+          updated_at: "uploaded"
+        }
+      : bot
+  );
+  currentTransferStatus = `Uploaded version package: ${currentStudioState.bot.version || "v0.1"}`;
+}
+
+async function readJsonFile(file) {
+  const text = await file.text();
+  return JSON.parse(text);
+}
+
+function requestJsonUpload(onJson) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      await onJson(await readJsonFile(file));
+      renderAllStatePanels();
+      renderWorkspaceHome();
+    } catch (error) {
+      currentTransferStatus = error instanceof Error ? error.message : "Upload failed.";
+      renderWorkspaceHome();
+    }
+  });
+  input.click();
 }
 
 function getCurrentAccessUser() {
@@ -401,6 +558,7 @@ function renderWorkspaceHome() {
       </div>
       <p data-i18n="transfer.botPackageBody">Manage the current bot by version, and exchange Aidot-compatible bot packages with Aidot or CGA.</p>
       <p class="compat-note" data-i18n="transfer.aidotLocaleBoundary">Aidot upload compatibility uses a single selected bot language. CGA multilingual packages require a CGA-only import path or an Aidot compatibility update.</p>
+      <p class="transfer-status">${currentTransferStatus || `<span data-i18n="transfer.readyStatus">Ready for Aidot-compatible package exchange.</span>`}</p>
       <div class="version-strip">
         <span><b data-i18n="transfer.currentVersion">Current version</b>${currentVersion}</span>
         <span><b data-i18n="transfer.compatibility">Compatibility</b>Aidot / CGA</span>
@@ -408,10 +566,10 @@ function renderWorkspaceHome() {
         <span><b data-i18n="transfer.assetPackageFormat">Text assets</b>TXT · merge</span>
       </div>
       <div class="button-row">
-        <button type="button" data-i18n="transfer.downloadBot">Download Bot</button>
-        <button type="button" class="ghost-btn" data-i18n="transfer.uploadBot">Upload Bot</button>
-        <button type="button" class="ghost-btn" data-i18n="transfer.downloadVersion">Download Version</button>
-        <button type="button" class="ghost-btn" data-i18n="transfer.uploadVersion">Upload Version</button>
+        <button type="button" data-download-bot-package data-i18n="transfer.downloadBot">Download Bot</button>
+        <button type="button" class="ghost-btn" data-upload-bot-package data-i18n="transfer.uploadBot">Upload Bot</button>
+        <button type="button" class="ghost-btn" data-download-version-package data-i18n="transfer.downloadVersion">Download Version</button>
+        <button type="button" class="ghost-btn" data-upload-version-package data-i18n="transfer.uploadVersion">Upload Version</button>
       </div>
     `;
   }
@@ -441,6 +599,10 @@ function renderTopContext() {
 function bindWorkspaceActions() {
   const groupSelect = document.querySelector("[data-workspace-group]");
   const createButton = document.querySelector("[data-workspace-create]");
+  const downloadBot = document.querySelector("[data-download-bot-package]");
+  const uploadBot = document.querySelector("[data-upload-bot-package]");
+  const downloadVersion = document.querySelector("[data-download-version-package]");
+  const uploadVersion = document.querySelector("[data-upload-version-package]");
   if (groupSelect && groupSelect.dataset.bound !== "true") {
     groupSelect.dataset.bound = "true";
     groupSelect.addEventListener("change", () => {
@@ -476,6 +638,45 @@ function bindWorkspaceActions() {
       renderCreateSummary();
       renderTopContext();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  }
+  if (downloadBot && downloadBot.dataset.bound !== "true") {
+    downloadBot.dataset.bound = "true";
+    downloadBot.addEventListener("click", () => {
+      const bot = getCurrentWorkspaceBot();
+      const fileName = `Bot_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getTodayStamp()}.json`;
+      downloadJsonFile(fileName, buildAidotBotPackage());
+      currentTransferStatus = `Downloaded bot package: ${fileName}`;
+      renderWorkspaceHome();
+      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  }
+  if (uploadBot && uploadBot.dataset.bound !== "true") {
+    uploadBot.dataset.bound = "true";
+    uploadBot.addEventListener("click", () => {
+      requestJsonUpload((json) => {
+        applyAidotBotPackage(json);
+      });
+    });
+  }
+  if (downloadVersion && downloadVersion.dataset.bound !== "true") {
+    downloadVersion.dataset.bound = "true";
+    downloadVersion.addEventListener("click", () => {
+      const bot = getCurrentWorkspaceBot();
+      const version = currentStudioState.bot.version || bot?.version || "v0.1";
+      const fileName = `Version_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getSafeFileName(version, "v0_1")}_${getTodayStamp()}.json`;
+      downloadJsonFile(fileName, buildCgaVersionPackage());
+      currentTransferStatus = `Downloaded version package: ${fileName}`;
+      renderWorkspaceHome();
+      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  }
+  if (uploadVersion && uploadVersion.dataset.bound !== "true") {
+    uploadVersion.dataset.bound = "true";
+    uploadVersion.addEventListener("click", () => {
+      requestJsonUpload((json) => {
+        applyCgaVersionPackage(json);
+      });
     });
   }
   document.querySelectorAll("[data-open-bot]").forEach((button) => {

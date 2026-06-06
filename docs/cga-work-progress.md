@@ -575,3 +575,13 @@
 - `Bot Workspace`와 `Detail Settings` 화면에 JSON/TXT 및 교체/병합 기준을 표시했다.
 - 정책 문서에 Aidot 호환 import/export 포맷 매트릭스를 추가했다.
 - 이 작업은 CGA 계약/화면/정책 보강이며 Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-06 Bot Package 다운로드/업로드 동작 연결
+- `Bot Workspace`의 `Download Bot`, `Upload Bot`, `Download Version`, `Upload Version` 버튼을 실제 브라우저 동작에 연결했다.
+- `Download Bot`은 Aidot 호환 최상위 키를 가진 JSON 패키지를 생성한다.
+- 생성되는 봇 패키지는 `AIDOTAssistantVersion`, `messageDigest`, `botVo`, `licenseVo`, `botSystemConfigVoList`, `dialogList`, `dialogFlowGraphList`, `entityTypeList`, `faqDialogList`, `floatingButtonVoList`, `ruleVoList`, `smallTalkVoList`, `dictionaryVoList`, `blacklistList`를 포함한다.
+- `Upload Bot`은 JSON 파일을 읽어 `botVo` 기준으로 현재 그룹에 새 봇을 추가하고, 현재 작업 봇으로 선택한다.
+- `Download Version`은 CGA 버전 패키지를 생성하고, `Upload Version`은 해당 패키지를 현재 봇의 Studio 상태에 반영한다.
+- 현재 단계는 CGA Studio 브라우저 상태 기반 동작이며, 서버 저장/API 연결은 다음 단계에서 Aidot 호환 계약 기준으로 연결한다.
+- Aidot 코드는 수정하지 않았다.
