@@ -96,6 +96,7 @@ const contractFiles = [
   "packages/contracts/src/auth-api-contract.js",
   "packages/contracts/src/api-answer-contract.js",
   "packages/contracts/src/aidot-package-contract.js",
+  "packages/contracts/src/asset-transfer-api-contract.js",
   "packages/contracts/src/collaboration-contract.js"
 ];
 for (const file of contractFiles) {
@@ -177,6 +178,32 @@ async function checkAidotPackageContract() {
   if (process.exitCode !== 1) pass("Aidot-compatible package contract is complete");
 }
 
-Promise.all([checkAccessTransitions(), checkAidotPackageContract()]).then(() => {
+async function checkAssetTransferApiContract() {
+  const packageContract = await import("../packages/contracts/src/aidot-package-contract.js");
+  const transferContract = await import("../packages/contracts/src/asset-transfer-api-contract.js");
+  for (const route of Object.values(transferContract.ASSET_TRANSFER_API_ROUTES)) {
+    if (!route.startsWith("/api/cga/")) fail(`asset transfer route must stay in /api/cga namespace: ${route}`);
+  }
+  for (const asset of packageContract.AIDOT_COMPATIBLE_PACKAGE_ASSETS) {
+    const requirement = transferContract.getAssetTransferScopeRequirement(asset.scope);
+    if (!requirement) fail(`asset transfer requirement missing scope '${asset.scope}'`);
+    if (!requirement?.exportScopes?.length) fail(`asset transfer export scope missing for '${asset.scope}'`);
+    if (!requirement?.importScopes?.length) fail(`asset transfer import scope missing for '${asset.scope}'`);
+    const exportRequest = transferContract.createAssetExportRequest({
+      groupId: "g-support",
+      botId: "supportbot-draft",
+      scope: asset.scope,
+      botLocale: "ko"
+    });
+    if (exportRequest.expected_file_format !== asset.fileFormat) fail(`asset transfer export format mismatch for '${asset.scope}'`);
+    if (exportRequest.upload_mode !== asset.uploadMode) fail(`asset transfer upload mode mismatch for '${asset.scope}'`);
+    const response = transferContract.createAssetTransferResponse({ request: exportRequest });
+    if (response.manifest.scope !== asset.scope) fail(`asset transfer response manifest scope mismatch for '${asset.scope}'`);
+    if (response.manifest.bot_id !== "supportbot-draft") fail(`asset transfer response manifest bot id mismatch for '${asset.scope}'`);
+  }
+  if (process.exitCode !== 1) pass("Aidot asset transfer API contract is complete");
+}
+
+Promise.all([checkAccessTransitions(), checkAidotPackageContract(), checkAssetTransferApiContract()]).then(() => {
   if (process.exitCode === 1) process.exit(1);
 });
