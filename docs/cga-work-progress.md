@@ -609,3 +609,17 @@
 - 현재 단계는 CGA Studio 브라우저 상태 기반 동작이며, 실제 서버 저장/API 연결은 다음 단계에서 진행한다.
 - `node --check apps\studio\app.js`와 `npm run studio:validate`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 자산 이동 API 계약 추가
+- 브라우저 상태 기반으로 연결한 봇/자산 다운로드·업로드 기능을 서버형 SaaS 구조에서 받을 수 있도록 Public Core API 계약을 추가했다.
+- 새 파일은 `packages/contracts/src/asset-transfer-api-contract.js`이다.
+- API 네임스페이스는 기존 Aidot 런타임/webchat/API를 건드리지 않기 위해 `/api/cga/groups/{groupId}/bots/{botId}/...` 기준으로 고정했다.
+- Route 기준은 `EXPORT`, `IMPORT`, `MANIFEST`, `HISTORY` 네 가지다.
+- 모든 자산 이동은 `group_id + bot_id + scope` 기준이며, scope는 `aidot-package-contract.js`의 Aidot 호환 scope를 그대로 사용한다.
+- Bot/API/Dialog/TXT 자산별 파일 포맷과 upload mode는 기존 `aidot-package-contract.js`에서 가져오므로, 화면과 서버 계약이 서로 다른 포맷을 쓰지 않도록 했다.
+- Export/Import 권한은 group scope 기준으로 분리했다. 예: API 자산은 `apiAnswer.manage`, 일반 봇 자산 import는 `bot.update` 또는 bot 생성은 `bot.create` 기준이다.
+- `package.json`에 `studio:asset-transfer-check`를 추가하고 `studio:validate`에 포함했다.
+- `scripts/check-studio-config.js`에서 모든 Aidot 호환 scope에 자산 이동 권한 요구사항과 `/api/cga` route가 있는지 검사하도록 했다.
+- 이 단계는 실제 API 서버 구현이 아니라 서버 구현 전 계약 고정 단계다.
+- Aidot 코드는 수정하지 않았다.

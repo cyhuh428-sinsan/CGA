@@ -14,6 +14,12 @@ CGA Public Core와 Commercial Module이 공유하는 공개 계약을 정의한�
 - `error-contract.js`: API/런타임 에러 응답 계약
 - `module-contract.js`: 상용 모듈 연결 상태와 기능 가용성 계약
 - `workflow-contract.js`: CGA 6단계 화면과 Aidot 내부 기능 매핑 계약
+- `access-contract.js`: 사용자, 그룹, 역할, scope 계약
+- `auth-api-contract.js`: 가입, 로그인, 그룹 가입, 관리자 승인 API 계약
+- `api-answer-contract.js`: 그룹 기준 외부 API 답변 자산 계약
+- `aidot-package-contract.js`: Aidot 호환 봇/자산 패키지 포맷 계약
+- `asset-transfer-api-contract.js`: 그룹/봇 기준 자산 다운로드·업로드 API 계약
+- `collaboration-contract.js`: 공동 작업, 잠금, 검수 상태 계약
 
 ## 금지
 
