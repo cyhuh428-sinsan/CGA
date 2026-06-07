@@ -232,6 +232,37 @@ async function uploadAssetToServer(assetKey, body, fileName) {
   }
 }
 
+function getAssetTransferHistoryUrl() {
+  const groupId = encodeURIComponent(currentWorkspaceGroupId || "g-support");
+  const botId = encodeURIComponent(currentWorkspaceBotId || "supportbot-draft");
+  return `/api/cga/groups/${groupId}/bots/${botId}/asset-transfers`;
+}
+
+function renderTransferHistoryItems(container, items) {
+  const recent = [...items].reverse().slice(0, 5);
+  container.innerHTML = recent.length
+    ? recent.map((item) => `
+      <div>
+        <strong>${item.scope || "asset"} · ${item.direction || "transfer"}</strong>
+        <span>${item.source || item.asset_path || "server"} · ${item.created_at || ""}</span>
+      </div>
+    `).join("")
+    : `<div><strong>No transfer history</strong><span>Download or upload a package to create a server record.</span></div>`;
+}
+
+async function refreshTransferHistory() {
+  const container = document.querySelector("[data-transfer-history]");
+  if (!container) return;
+  try {
+    const response = await fetch(getAssetTransferHistoryUrl());
+    if (!response.ok) throw new Error("History request failed");
+    const payload = await response.json();
+    renderTransferHistoryItems(container, Array.isArray(payload.items) ? payload.items : []);
+  } catch {
+    container.innerHTML = `<div><strong>History unavailable</strong><span>Server transfer history could not be loaded.</span></div>`;
+  }
+}
+
 function escapeTxtCell(value) {
   const text = String(value ?? "");
   if (/[",\r\n]/.test(text)) {
@@ -934,12 +965,19 @@ function renderWorkspaceHome() {
         <button type="button" class="ghost-btn" data-download-version-package data-i18n="transfer.downloadVersion">Download Version</button>
         <button type="button" class="ghost-btn" data-upload-version-package data-i18n="transfer.uploadVersion">Upload Version</button>
       </div>
+      <div class="transfer-history-panel">
+        <h5>Server Transfer History</h5>
+        <div class="transfer-history-list" data-transfer-history>
+          <div><strong>Loading history</strong><span>Reading server records...</span></div>
+        </div>
+      </div>
     `;
   }
   if (currentBotName) currentBotName.textContent = currentBot?.name || "No bot selected";
   if (currentGroupName) currentGroupName.textContent = group?.name || "No group selected";
   renderTopContext();
   bindWorkspaceActions();
+  refreshTransferHistory();
 }
 
 function bindAssetTransferActions() {

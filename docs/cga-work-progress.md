@@ -685,3 +685,13 @@
 - `scripts/serve-studio.js`의 version 샘플 JSON을 CGA 버전 패키지 형태에 맞췄다.
 - `scripts/check-studio-config.js`에 `botPackage -> bot`, `versionPackage -> version` scope 매핑 회귀 체크를 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 Bot Workspace Transfer History 화면 추가
+- 운영자가 파일이나 CLI를 직접 보지 않아도 서버 자산 이동 기록을 확인할 수 있도록 `Bot Workspace`의 `Bot Version / Package` 카드에 `Server Transfer History` 패널을 추가했다.
+- `refreshTransferHistory()`가 `/api/cga/groups/{groupId}/bots/{botId}/asset-transfers`를 호출해 현재 그룹/봇의 최근 기록을 조회한다.
+- 최근 5개 기록을 `scope · direction`, `source 또는 asset_path`, `created_at` 형태로 표시한다.
+- 서버 history 조회 실패 시 `History unavailable` 상태를 화면에 표시한다.
+- 패널 스타일은 기존 Aidot 기준 폰트 정책을 유지해 제목 12px, 기록 본문 10px, 설명 9px 기준으로 구성했다.
+- `scripts/check-studio-config.js`에 `refreshTransferHistory`와 `data-transfer-history`가 유지되는지 검사하는 회귀 체크를 추가했다.
+- 이 단계는 서버 저장소를 화면에서 확인하는 운영 UI이며, Aidot 코드는 수정하지 않았다.
