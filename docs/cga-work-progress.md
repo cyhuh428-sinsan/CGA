@@ -649,3 +649,15 @@
 - `scripts/check-asset-transfer-api.mjs`는 임시 `CGA_DATA_DIR`을 사용해 테스트하고, manifest/export/import/history뿐 아니라 `asset-transfer-history.json` 파일 생성과 기록 개수까지 검증한다.
 - 이 단계는 정식 DB 전 단계의 재시작 대비 저장소이며, 다음 단계에서 실제 group/bot asset body 저장 또는 DB adapter로 확장한다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 자산 본문 파일 저장 및 재export 연결
+- `scripts/serve-studio.js`에 업로드된 자산 본문 저장소를 추가했다.
+- 저장 위치는 `.cga-data/assets/{groupId}/{botId}/{scope}.{fileFormat}`이며, URL 값은 `sanitizePathSegment()`로 정규화해 경로 주입을 막는다.
+- `import` 요청이 들어오면 요청 본문을 자산 파일로 저장하고, transfer history에 `asset_path`를 기록한다.
+- `export` 요청은 저장된 자산 본문이 있으면 샘플 데이터 대신 저장본을 내려준다.
+- 저장본이 없을 때만 기존 Aidot 호환 샘플 JSON/TXT를 반환한다.
+- export history에는 `source: stored` 또는 `source: sample`을 기록해 운영자가 어떤 데이터가 내려갔는지 확인할 수 있게 했다.
+- `scripts/check-asset-transfer-api.mjs`는 import 후 재export를 호출해 업로드한 본문이 다시 내려오는지 확인한다.
+- 이 단계는 정식 DB 전 단계의 파일 저장소이며, 다음 단계에서 Studio 화면 버튼을 서버 API 호출로 전환하거나 DB adapter를 추가한다.
+- Aidot 코드는 수정하지 않았다.

@@ -48,6 +48,37 @@ function recordAssetTransfer(entry) {
   writeJsonFile(assetTransferHistoryFile, assetTransferHistory);
 }
 
+function sanitizePathSegment(value, fallback) {
+  const text = String(value || fallback)
+    .trim()
+    .replace(/[^A-Za-z0-9._-]/g, "_")
+    .replace(/_+/g, "_");
+  return text || fallback;
+}
+
+function getAssetBodyFilePath({ groupId, botId, scope, fileFormat }) {
+  return path.join(
+    dataDir,
+    "assets",
+    sanitizePathSegment(groupId, "group"),
+    sanitizePathSegment(botId, "bot"),
+    `${sanitizePathSegment(scope, "asset")}.${fileFormat}`
+  );
+}
+
+function storeAssetBody({ groupId, botId, scope, fileFormat, body }) {
+  const filePath = getAssetBodyFilePath({ groupId, botId, scope, fileFormat });
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, body, "utf8");
+  return path.relative(dataDir, filePath).replace(/\\/g, "/");
+}
+
+function readStoredAssetBody({ groupId, botId, scope, fileFormat }) {
+  const filePath = getAssetBodyFilePath({ groupId, botId, scope, fileFormat });
+  if (!fs.existsSync(filePath)) return null;
+  return fs.readFileSync(filePath, "utf8");
+}
+
 function sendJson(res, status, payload) {
   send(res, status, JSON.stringify(payload, null, 2), "application/json; charset=utf-8");
 }
@@ -186,10 +217,23 @@ async function handleAssetTransferApi(req, res, urlPath, query) {
     }
     const request = contract.createAssetExportRequest({ groupId, botId, scope, botLocale });
     const transferId = `export-${Date.now()}`;
-    recordAssetTransfer({ transfer_id: transferId, group_id: groupId, bot_id: botId, scope, direction: "export", created_at: new Date().toISOString() });
+    const storedBody = readStoredAssetBody({ groupId, botId, scope, fileFormat: asset.fileFormat });
+    recordAssetTransfer({
+      transfer_id: transferId,
+      group_id: groupId,
+      bot_id: botId,
+      scope,
+      direction: "export",
+      source: storedBody == null ? "sample" : "stored",
+      created_at: new Date().toISOString()
+    });
     const fileName = `CGA_${scope}_${botId}_${getTodayStamp()}.${asset.fileFormat}`;
     if (asset.fileFormat === "txt") {
-      sendDownload(res, fileName, buildSampleTextAsset(scope), "text/plain; charset=utf-8");
+      sendDownload(res, fileName, storedBody ?? buildSampleTextAsset(scope), "text/plain; charset=utf-8");
+      return true;
+    }
+    if (storedBody != null) {
+      sendDownload(res, fileName, storedBody, "application/json; charset=utf-8");
       return true;
     }
     const payload = {
@@ -214,6 +258,7 @@ async function handleAssetTransferApi(req, res, urlPath, query) {
       fileName: req.headers["x-cga-file-name"] || `uploaded.${asset.fileFormat}`
     });
     const transferId = `import-${Date.now()}`;
+    const storedPath = storeAssetBody({ groupId, botId, scope, fileFormat: asset.fileFormat, body });
     recordAssetTransfer({
       transfer_id: transferId,
       group_id: groupId,
@@ -221,6 +266,7 @@ async function handleAssetTransferApi(req, res, urlPath, query) {
       scope,
       direction: "import",
       byte_length: Buffer.byteLength(body, "utf8"),
+      asset_path: storedPath,
       created_at: new Date().toISOString()
     });
     sendJson(res, 202, contract.createAssetTransferResponse({ request, status: contract.ASSET_TRANSFER_STATUS.ACCEPTED, transferId }));
