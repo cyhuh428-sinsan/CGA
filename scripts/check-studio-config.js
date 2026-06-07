@@ -88,6 +88,11 @@ if (!studioAppSource.includes("syncStudioLocaleToCurrentUser")) fail("studio app
 if (!studioAppSource.includes("getCurrentAccessUser()?.locale")) fail("studio app locale sync is not based on user.locale");
 if (process.exitCode !== 1) pass("studio UI locale sync is wired to current user locale");
 
+if (!studioAppSource.includes("downloadAssetFromServer")) fail("studio app does not download reusable assets through server API");
+if (!studioAppSource.includes("uploadAssetToServer")) fail("studio app does not upload reusable assets through server API");
+if (!studioAppSource.includes("/api/cga/groups/")) fail("studio app asset transfer URL does not use /api/cga namespace");
+if (process.exitCode !== 1) pass("studio reusable asset buttons are wired to server API");
+
 const contractFiles = [
   "packages/contracts/src/error-contract.js",
   "packages/contracts/src/module-contract.js",

@@ -161,6 +161,75 @@ function downloadTextFile(fileName, text) {
   URL.revokeObjectURL(url);
 }
 
+function downloadBlobFile(fileName, blob) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getAssetTransferScope(assetKey) {
+  return {
+    intentDialog: "dialog",
+    scenario: "dialog",
+    apiMapping: "api",
+    intentUtterance: "intent_utterance",
+    entity: "entity",
+    dictionary: "dictionary",
+    rule: "rule"
+  }[assetKey] || assetKey;
+}
+
+function getAssetTransferFileFormat(assetKey) {
+  return ["intentDialog", "scenario", "apiMapping"].includes(assetKey) ? "json" : "txt";
+}
+
+function getAssetTransferUrl(assetKey, action) {
+  const groupId = encodeURIComponent(currentWorkspaceGroupId || "g-support");
+  const botId = encodeURIComponent(currentWorkspaceBotId || "supportbot-draft");
+  const scope = encodeURIComponent(getAssetTransferScope(assetKey));
+  const botLocale = encodeURIComponent(currentStudioState.bot.defaultLocale || "en");
+  return `/api/cga/groups/${groupId}/bots/${botId}/assets/${scope}/${action}?bot_locale=${botLocale}`;
+}
+
+function getFileNameFromContentDisposition(value) {
+  const match = String(value || "").match(/filename="([^"]+)"/);
+  return match?.[1] || "";
+}
+
+async function downloadAssetFromServer(assetKey) {
+  try {
+    const response = await fetch(getAssetTransferUrl(assetKey, "export"));
+    if (!response.ok) return "";
+    const fileName = getFileNameFromContentDisposition(response.headers.get("Content-Disposition")) ||
+      `CGA_${getAssetTransferScope(assetKey)}_${getSafeFileName(currentWorkspaceBotId, "bot")}_${getTodayStamp()}.${getAssetTransferFileFormat(assetKey)}`;
+    downloadBlobFile(fileName, await response.blob());
+    return fileName;
+  } catch {
+    return "";
+  }
+}
+
+async function uploadAssetToServer(assetKey, body, fileName) {
+  try {
+    const response = await fetch(getAssetTransferUrl(assetKey, "import"), {
+      method: "POST",
+      headers: {
+        "Content-Type": getAssetTransferFileFormat(assetKey) === "json" ? "application/json; charset=utf-8" : "text/plain; charset=utf-8",
+        "X-CGA-File-Name": fileName || `uploaded.${getAssetTransferFileFormat(assetKey)}`
+      },
+      body
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 function escapeTxtCell(value) {
   const text = String(value ?? "");
   if (/[",\r\n]/.test(text)) {
@@ -519,7 +588,7 @@ function requestJsonUpload(onJson) {
     const file = input.files?.[0];
     if (!file) return;
     try {
-      await onJson(await readJsonFile(file));
+      await onJson(await readJsonFile(file), file);
       renderAllStatePanels();
       renderWorkspaceHome();
     } catch (error) {
@@ -538,7 +607,7 @@ function requestTextUpload(onText) {
     const file = input.files?.[0];
     if (!file) return;
     try {
-      await onText(await readTextFile(file));
+      await onText(await readTextFile(file), file);
       renderWorkspaceHome();
     } catch (error) {
       currentTransferStatus = error instanceof Error ? error.message : "Text upload failed.";
@@ -873,9 +942,16 @@ function bindAssetTransferActions() {
   document.querySelectorAll("[data-asset-download]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const bot = getCurrentWorkspaceBot();
       const botName = getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot");
+      const serverFileName = await downloadAssetFromServer(button.dataset.assetDownload);
+      if (serverFileName) {
+        currentTransferStatus = `Downloaded from server asset API: ${serverFileName}`;
+        renderWorkspaceHome();
+        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+        return;
+      }
       if (button.dataset.assetDownload === "dictionary") {
         const fileName = `Dictionary_${botName}_${getTodayStamp()}.txt`;
         downloadTextFile(fileName, buildDictionaryTxt(currentDictionaryAssets));
@@ -920,41 +996,49 @@ function bindAssetTransferActions() {
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
       if (button.dataset.assetUpload === "dictionary") {
-        requestTextUpload((text) => {
+        requestTextUpload(async (text, file) => {
           const incoming = parseDictionaryTxt(text);
           currentDictionaryAssets = mergeDictionaryAssets(currentDictionaryAssets, incoming);
-          currentTransferStatus = `Uploaded dictionary TXT: ${incoming.length} row(s) merged`;
+          const synced = await uploadAssetToServer("dictionary", text, file?.name);
+          currentTransferStatus = `Uploaded dictionary TXT: ${incoming.length} row(s) merged${synced ? " / server saved" : " / local only"}`;
         });
       }
       if (button.dataset.assetUpload === "intentUtterance") {
-        requestTextUpload((text) => {
+        requestTextUpload(async (text, file) => {
           const incoming = parseIntentUtteranceTxt(text);
           currentIntentUtteranceAssets = mergeIntentUtteranceAssets(currentIntentUtteranceAssets, incoming);
-          currentTransferStatus = `Uploaded intent utterance TXT: ${incoming.length} row(s) merged`;
+          const synced = await uploadAssetToServer("intentUtterance", text, file?.name);
+          currentTransferStatus = `Uploaded intent utterance TXT: ${incoming.length} row(s) merged${synced ? " / server saved" : " / local only"}`;
         });
       }
       if (button.dataset.assetUpload === "entity") {
-        requestTextUpload((text) => {
+        requestTextUpload(async (text, file) => {
           const incoming = parseEntityTxt(text);
           currentEntityAssets = mergeEntityAssets(currentEntityAssets, incoming);
-          currentTransferStatus = `Uploaded entity TXT: ${incoming.length} row(s) merged`;
+          const synced = await uploadAssetToServer("entity", text, file?.name);
+          currentTransferStatus = `Uploaded entity TXT: ${incoming.length} row(s) merged${synced ? " / server saved" : " / local only"}`;
         });
       }
       if (button.dataset.assetUpload === "rule") {
-        requestTextUpload((text) => {
+        requestTextUpload(async (text, file) => {
           const incoming = parseRuleTxt(text);
           currentRuleAssets = mergeRuleAssets(currentRuleAssets, incoming);
-          currentTransferStatus = `Uploaded rule TXT: ${incoming.length} row(s) merged`;
+          const synced = await uploadAssetToServer("rule", text, file?.name);
+          currentTransferStatus = `Uploaded rule TXT: ${incoming.length} row(s) merged${synced ? " / server saved" : " / local only"}`;
         });
       }
       if (button.dataset.assetUpload === "intentDialog" || button.dataset.assetUpload === "scenario") {
-        requestJsonUpload((json) => {
+        requestJsonUpload(async (json, file) => {
           applyAidotDialogPackage(json);
+          const synced = await uploadAssetToServer(button.dataset.assetUpload, JSON.stringify(json, null, 2), file?.name);
+          currentTransferStatus = `${currentTransferStatus}${synced ? " / server saved" : " / local only"}`;
         });
       }
       if (button.dataset.assetUpload === "apiMapping") {
-        requestJsonUpload((json) => {
+        requestJsonUpload(async (json, file) => {
           applyApiMappingPackage(json);
+          const synced = await uploadAssetToServer("apiMapping", JSON.stringify(json, null, 2), file?.name);
+          currentTransferStatus = `${currentTransferStatus}${synced ? " / server saved" : " / local only"}`;
           renderApiRegistry();
         });
       }

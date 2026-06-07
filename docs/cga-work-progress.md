@@ -661,3 +661,15 @@
 - `scripts/check-asset-transfer-api.mjs`는 import 후 재export를 호출해 업로드한 본문이 다시 내려오는지 확인한다.
 - 이 단계는 정식 DB 전 단계의 파일 저장소이며, 다음 단계에서 Studio 화면 버튼을 서버 API 호출로 전환하거나 DB adapter를 추가한다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 Studio 자산 버튼 서버 API 연결
+- `Detail Settings`의 Reusable Bot Assets 다운로드/업로드 버튼을 `/api/cga/groups/{groupId}/bots/{botId}/assets/{scope}/...` 서버 API에 연결했다.
+- 다운로드는 먼저 서버 `export` endpoint를 호출하고, 서버 응답이 실패할 때만 기존 브라우저 로컬 Blob 생성 방식으로 fallback한다.
+- 업로드는 기존 브라우저 상태 병합/적용을 유지하면서, 같은 파일 본문을 서버 `import` endpoint로 전송한다.
+- 서버 저장 성공 시 transfer status에 `server saved`를 표시하고, 실패 시 `local only`로 표시해 운영자가 상태를 구분할 수 있게 했다.
+- `requestTextUpload()`와 `requestJsonUpload()`은 원본 파일명을 handler에 함께 전달하도록 바꿨고, 서버에는 `X-CGA-File-Name`으로 전달한다.
+- `intentDialog`, `scenario`, `apiMapping`, `intentUtterance`, `entity`, `dictionary`, `rule`을 Aidot 호환 scope로 매핑했다.
+- `scripts/check-studio-config.js`에 Studio 화면이 `downloadAssetFromServer`, `uploadAssetToServer`, `/api/cga/groups/` 연결을 유지하는지 검사하는 회귀 체크를 추가했다.
+- 기존 Bot Workspace의 Bot/Version 패키지 버튼은 아직 브라우저 로컬 패키지 방식이며, 다음 단계에서 서버 API 연결 대상으로 남아 있다.
+- Aidot 코드는 수정하지 않았다.
