@@ -673,3 +673,15 @@
 - `scripts/check-studio-config.js`에 Studio 화면이 `downloadAssetFromServer`, `uploadAssetToServer`, `/api/cga/groups/` 연결을 유지하는지 검사하는 회귀 체크를 추가했다.
 - 기존 Bot Workspace의 Bot/Version 패키지 버튼은 아직 브라우저 로컬 패키지 방식이며, 다음 단계에서 서버 API 연결 대상으로 남아 있다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 Bot Workspace 패키지 버튼 서버 API 연결
+- `Bot Workspace`의 `Download Bot`, `Upload Bot`, `Download Version`, `Upload Version` 버튼을 서버 자산 이동 API에 연결했다.
+- Bot 패키지는 Aidot 호환 scope `bot`, Version 패키지는 scope `version`으로 매핑한다.
+- 다운로드는 서버 `export`를 우선 호출하고 실패하면 기존 브라우저 로컬 패키지 생성으로 fallback한다.
+- 업로드는 기존 화면 상태 반영을 유지하면서 서버 `import` endpoint에 같은 JSON 본문을 저장한다.
+- 서버 저장 성공 시 transfer status에 `server saved`, 실패 시 `local only`를 표시한다.
+- 서버 export wrapper 형태인 `{ manifest, package }`도 다시 업로드할 수 있도록 Bot/Version apply 함수가 `package` 내부 본문을 읽을 수 있게 했다.
+- `scripts/serve-studio.js`의 version 샘플 JSON을 CGA 버전 패키지 형태에 맞췄다.
+- `scripts/check-studio-config.js`에 `botPackage -> bot`, `versionPackage -> version` scope 매핑 회귀 체크를 추가했다.
+- Aidot 코드는 수정하지 않았다.

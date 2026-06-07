@@ -157,6 +157,21 @@ function buildSampleJsonAsset(scope, groupId, botId, botLocale) {
       messageDigest: ""
     };
   }
+  if (scope === "version") {
+    return {
+      version: {
+        bot: {
+          name: "CGA Bot",
+          defaultLocale: botLocale,
+          version: "v0.1"
+        },
+        structuralChoices: {},
+        counts: {},
+        llm: {},
+        channels: {}
+      }
+    };
+  }
   return {
     AIDOTAssistantVersion: "CGA-AIDOT-COMPATIBLE-1",
     messageDigest: "",

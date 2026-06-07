@@ -174,6 +174,8 @@ function downloadBlobFile(fileName, blob) {
 
 function getAssetTransferScope(assetKey) {
   return {
+    botPackage: "bot",
+    versionPackage: "version",
     intentDialog: "dialog",
     scenario: "dialog",
     apiMapping: "api",
@@ -185,7 +187,7 @@ function getAssetTransferScope(assetKey) {
 }
 
 function getAssetTransferFileFormat(assetKey) {
-  return ["intentDialog", "scenario", "apiMapping"].includes(assetKey) ? "json" : "txt";
+  return ["botPackage", "versionPackage", "intentDialog", "scenario", "apiMapping"].includes(assetKey) ? "json" : "txt";
 }
 
 function getAssetTransferUrl(assetKey, action) {
@@ -519,7 +521,8 @@ function buildCgaVersionPackage() {
 }
 
 function applyAidotBotPackage(packageJson) {
-  const botVo = packageJson?.botVo;
+  const packageBody = packageJson?.package || packageJson;
+  const botVo = packageBody?.botVo;
   if (!botVo || typeof botVo !== "object") {
     throw new Error("Invalid Aidot bot package: botVo is required.");
   }
@@ -548,7 +551,8 @@ function applyAidotBotPackage(packageJson) {
 }
 
 function applyCgaVersionPackage(packageJson) {
-  const version = packageJson?.version;
+  const packageBody = packageJson?.package || packageJson;
+  const version = packageBody?.version;
   if (!version?.bot) {
     throw new Error("Invalid CGA version package: version.bot is required.");
   }
@@ -1109,8 +1113,15 @@ function bindWorkspaceActions() {
   }
   if (downloadBot && downloadBot.dataset.bound !== "true") {
     downloadBot.dataset.bound = "true";
-    downloadBot.addEventListener("click", () => {
+    downloadBot.addEventListener("click", async () => {
       const bot = getCurrentWorkspaceBot();
+      const serverFileName = await downloadAssetFromServer("botPackage");
+      if (serverFileName) {
+        currentTransferStatus = `Downloaded bot package from server asset API: ${serverFileName}`;
+        renderWorkspaceHome();
+        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+        return;
+      }
       const fileName = `Bot_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getTodayStamp()}.json`;
       downloadJsonFile(fileName, buildAidotBotPackage());
       currentTransferStatus = `Downloaded bot package: ${fileName}`;
@@ -1121,16 +1132,25 @@ function bindWorkspaceActions() {
   if (uploadBot && uploadBot.dataset.bound !== "true") {
     uploadBot.dataset.bound = "true";
     uploadBot.addEventListener("click", () => {
-      requestJsonUpload((json) => {
+      requestJsonUpload(async (json, file) => {
         applyAidotBotPackage(json);
+        const synced = await uploadAssetToServer("botPackage", JSON.stringify(json, null, 2), file?.name);
+        currentTransferStatus = `${currentTransferStatus}${synced ? " / server saved" : " / local only"}`;
       });
     });
   }
   if (downloadVersion && downloadVersion.dataset.bound !== "true") {
     downloadVersion.dataset.bound = "true";
-    downloadVersion.addEventListener("click", () => {
+    downloadVersion.addEventListener("click", async () => {
       const bot = getCurrentWorkspaceBot();
       const version = currentStudioState.bot.version || bot?.version || "v0.1";
+      const serverFileName = await downloadAssetFromServer("versionPackage");
+      if (serverFileName) {
+        currentTransferStatus = `Downloaded version package from server asset API: ${serverFileName}`;
+        renderWorkspaceHome();
+        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+        return;
+      }
       const fileName = `Version_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getSafeFileName(version, "v0_1")}_${getTodayStamp()}.json`;
       downloadJsonFile(fileName, buildCgaVersionPackage());
       currentTransferStatus = `Downloaded version package: ${fileName}`;
@@ -1141,8 +1161,10 @@ function bindWorkspaceActions() {
   if (uploadVersion && uploadVersion.dataset.bound !== "true") {
     uploadVersion.dataset.bound = "true";
     uploadVersion.addEventListener("click", () => {
-      requestJsonUpload((json) => {
+      requestJsonUpload(async (json, file) => {
         applyCgaVersionPackage(json);
+        const synced = await uploadAssetToServer("versionPackage", JSON.stringify(json, null, 2), file?.name);
+        currentTransferStatus = `${currentTransferStatus}${synced ? " / server saved" : " / local only"}`;
       });
     });
   }
