@@ -36,11 +36,11 @@ export const ASSET_TRANSFER_SCOPE_REQUIREMENTS = Object.freeze({
   },
   [AIDOT_PACKAGE_SCOPE.VERSION]: {
     exportScopes: [ACCESS_SCOPES.BOT_VIEW],
-    importScopes: [ACCESS_SCOPES.BOT_UPDATE]
+    importScopes: [ACCESS_SCOPES.BOT_CONFIGURE]
   },
   [AIDOT_PACKAGE_SCOPE.DIALOG]: {
     exportScopes: [ACCESS_SCOPES.BOT_VIEW],
-    importScopes: [ACCESS_SCOPES.BOT_UPDATE]
+    importScopes: [ACCESS_SCOPES.BOT_CONFIGURE]
   },
   [AIDOT_PACKAGE_SCOPE.API]: {
     exportScopes: [ACCESS_SCOPES.API_ANSWER_MANAGE],
@@ -48,23 +48,23 @@ export const ASSET_TRANSFER_SCOPE_REQUIREMENTS = Object.freeze({
   },
   [AIDOT_PACKAGE_SCOPE.INTENT_UTTERANCE]: {
     exportScopes: [ACCESS_SCOPES.BOT_VIEW],
-    importScopes: [ACCESS_SCOPES.BOT_UPDATE]
+    importScopes: [ACCESS_SCOPES.BOT_CONFIGURE]
   },
   [AIDOT_PACKAGE_SCOPE.ENTITY]: {
     exportScopes: [ACCESS_SCOPES.BOT_VIEW],
-    importScopes: [ACCESS_SCOPES.BOT_UPDATE]
+    importScopes: [ACCESS_SCOPES.BOT_CONFIGURE]
   },
   [AIDOT_PACKAGE_SCOPE.DICTIONARY]: {
     exportScopes: [ACCESS_SCOPES.BOT_VIEW],
-    importScopes: [ACCESS_SCOPES.BOT_UPDATE]
+    importScopes: [ACCESS_SCOPES.BOT_CONFIGURE]
   },
   [AIDOT_PACKAGE_SCOPE.BLOCKLIST]: {
     exportScopes: [ACCESS_SCOPES.BOT_VIEW],
-    importScopes: [ACCESS_SCOPES.BOT_UPDATE]
+    importScopes: [ACCESS_SCOPES.BOT_CONFIGURE]
   },
   [AIDOT_PACKAGE_SCOPE.RULE]: {
     exportScopes: [ACCESS_SCOPES.BOT_VIEW],
-    importScopes: [ACCESS_SCOPES.BOT_UPDATE]
+    importScopes: [ACCESS_SCOPES.BOT_CONFIGURE]
   }
 });
 
