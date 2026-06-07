@@ -91,6 +91,8 @@ if (process.exitCode !== 1) pass("studio UI locale sync is wired to current user
 if (!studioAppSource.includes("downloadAssetFromServer")) fail("studio app does not download reusable assets through server API");
 if (!studioAppSource.includes("uploadAssetToServer")) fail("studio app does not upload reusable assets through server API");
 if (!studioAppSource.includes("/api/cga/groups/")) fail("studio app asset transfer URL does not use /api/cga namespace");
+if (!studioAppSource.includes("botPackage: \"bot\"")) fail("studio app does not map Bot package to server asset API scope");
+if (!studioAppSource.includes("versionPackage: \"version\"")) fail("studio app does not map Version package to server asset API scope");
 if (process.exitCode !== 1) pass("studio reusable asset buttons are wired to server API");
 
 const contractFiles = [
