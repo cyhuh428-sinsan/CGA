@@ -706,3 +706,14 @@
 - `version` import 후에는 업로드한 JSON 본문이 `.cga-data/assets/{groupId}/{botId}/version.json`에 저장되고, 재export 시 저장본이 다시 내려오는지 확인한다.
 - transfer history는 dictionary/bot/version의 export/import/re-export 기록이 모두 남는지 확인하도록 최소 9건 이상을 검증한다.
 - 이 검증은 서버형 SaaS 구조에서 Bot/Version 패키지 호환 다운로드·업로드가 깨지지 않도록 막는 회귀 체크이며, Aidot 코드는 수정하지 않았다.
+
+
+## 2026-06-08
+
+### Bot Workspace 전송 이력 다국어 문구 보강
+- `Bot Workspace`의 `Server Transfer History` 패널에 남아 있던 하드코딩 문구를 i18n 키로 전환했다.
+- 전환한 문구는 이력 제목, 로딩 상태, 빈 이력 상태, 조회 실패 상태이다.
+- 영문/한국어 locale 리소스와 브라우저 내장 `apps/studio/i18n.js` 리소스에 같은 키를 추가했다.
+- 다른 locale은 해당 키가 없으면 기존 i18n fallback 규칙에 따라 영어로 표시된다.
+- `scripts/check-studio-config.js`에 transfer history i18n 키가 Studio 앱과 i18n 리소스에 모두 존재하는지 확인하는 회귀 체크를 추가했다.
+- 이 작업은 화면 문구와 검증 보강이며, Aidot 코드는 수정하지 않았다.

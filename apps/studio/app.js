@@ -247,7 +247,7 @@ function renderTransferHistoryItems(container, items) {
         <span>${item.source || item.asset_path || "server"} · ${item.created_at || ""}</span>
       </div>
     `).join("")
-    : `<div><strong>No transfer history</strong><span>Download or upload a package to create a server record.</span></div>`;
+    : `<div><strong data-i18n="transfer.historyEmptyTitle">No transfer history</strong><span data-i18n="transfer.historyEmptyBody">Download or upload a package to create a server record.</span></div>`;
 }
 
 async function refreshTransferHistory() {
@@ -259,7 +259,7 @@ async function refreshTransferHistory() {
     const payload = await response.json();
     renderTransferHistoryItems(container, Array.isArray(payload.items) ? payload.items : []);
   } catch {
-    container.innerHTML = `<div><strong>History unavailable</strong><span>Server transfer history could not be loaded.</span></div>`;
+    container.innerHTML = `<div><strong data-i18n="transfer.historyUnavailableTitle">History unavailable</strong><span data-i18n="transfer.historyUnavailableBody">Server transfer history could not be loaded.</span></div>`;
   }
 }
 
@@ -966,9 +966,9 @@ function renderWorkspaceHome() {
         <button type="button" class="ghost-btn" data-upload-version-package data-i18n="transfer.uploadVersion">Upload Version</button>
       </div>
       <div class="transfer-history-panel">
-        <h5>Server Transfer History</h5>
+        <h5 data-i18n="transfer.historyTitle">Server Transfer History</h5>
         <div class="transfer-history-list" data-transfer-history>
-          <div><strong>Loading history</strong><span>Reading server records...</span></div>
+          <div><strong data-i18n="transfer.historyLoadingTitle">Loading history</strong><span data-i18n="transfer.historyLoadingBody">Reading server records...</span></div>
         </div>
       </div>
     `;

@@ -95,6 +95,15 @@ if (!studioAppSource.includes("botPackage: \"bot\"")) fail("studio app does not 
 if (!studioAppSource.includes("versionPackage: \"version\"")) fail("studio app does not map Version package to server asset API scope");
 if (!studioAppSource.includes("refreshTransferHistory")) fail("studio app does not load server transfer history");
 if (!studioAppSource.includes("data-transfer-history")) fail("studio workspace does not render transfer history panel");
+for (const key of [
+  "transfer.historyTitle",
+  "transfer.historyLoadingTitle",
+  "transfer.historyEmptyTitle",
+  "transfer.historyUnavailableTitle"
+]) {
+  if (!studioAppSource.includes(key)) fail(`studio transfer history UI is missing i18n key '${key}'`);
+  if (!appSource.includes(key)) fail(`studio i18n resources are missing transfer history key '${key}'`);
+}
 if (process.exitCode !== 1) pass("studio reusable asset buttons are wired to server API");
 
 const contractFiles = [
