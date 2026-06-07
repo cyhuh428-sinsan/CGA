@@ -695,3 +695,14 @@
 - 패널 스타일은 기존 Aidot 기준 폰트 정책을 유지해 제목 12px, 기록 본문 10px, 설명 9px 기준으로 구성했다.
 - `scripts/check-studio-config.js`에 `refreshTransferHistory`와 `data-transfer-history`가 유지되는지 검사하는 회귀 체크를 추가했다.
 - 이 단계는 서버 저장소를 화면에서 확인하는 운영 UI이며, Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 Bot/Version 자산 이동 API 자동 검증 확대
+- 기존 자산 이동 API 검증은 `dictionary` TXT 중심이었으나, Bot Workspace의 `Download Bot`, `Upload Bot`, `Download Version`, `Upload Version`이 서버 API에 연결되었으므로 자동 검증 범위를 확대했다.
+- `scripts/check-asset-transfer-api.mjs`가 임시 Studio 서버와 임시 `CGA_DATA_DIR`을 띄운 뒤 `dictionary`, `bot`, `version` scope를 모두 실제 HTTP로 검증한다.
+- `bot` scope는 manifest의 파일 형식이 JSON인지, import 권한 기준이 `bot.create`인지, export가 Aidot 호환 `botVo` 패키지를 반환하는지 확인한다.
+- `bot` import 후에는 업로드한 JSON 본문이 `.cga-data/assets/{groupId}/{botId}/bot.json`에 저장되고, 재export 시 저장본이 다시 내려오는지 확인한다.
+- `version` scope는 manifest의 파일 형식이 JSON인지, import 권한 기준이 `bot.configure`인지, export가 CGA version package 구조를 반환하는지 확인한다.
+- `version` import 후에는 업로드한 JSON 본문이 `.cga-data/assets/{groupId}/{botId}/version.json`에 저장되고, 재export 시 저장본이 다시 내려오는지 확인한다.
+- transfer history는 dictionary/bot/version의 export/import/re-export 기록이 모두 남는지 확인하도록 최소 9건 이상을 검증한다.
+- 이 검증은 서버형 SaaS 구조에서 Bot/Version 패키지 호환 다운로드·업로드가 깨지지 않도록 막는 회귀 체크이며, Aidot 코드는 수정하지 않았다.
