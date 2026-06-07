@@ -623,3 +623,18 @@
 - `scripts/check-studio-config.js`에서 모든 Aidot 호환 scope에 자산 이동 권한 요구사항과 `/api/cga` route가 있는지 검사하도록 했다.
 - 이 단계는 실제 API 서버 구현이 아니라 서버 구현 전 계약 고정 단계다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 Studio 서버 자산 이동 API 최소 구현
+- `scripts/serve-studio.js`에 `/api/cga/groups/{groupId}/bots/{botId}/assets/{scope}/manifest`, `export`, `import`, `asset-transfers` endpoint를 추가했다.
+- 기존 Aidot 런타임/webchat/API endpoint는 수정하지 않고, CGA 전용 `/api/cga` namespace 안에서만 처리한다.
+- `manifest`는 `asset-transfer-api-contract.js`와 `aidot-package-contract.js` 기준으로 현재 scope의 파일 형식, upload mode, 권한 요구사항을 반환한다.
+- `export`는 Aidot 호환 샘플 JSON/TXT 패키지를 내려준다. TXT 자산은 Aidot 기준 header/row 형식을 유지한다.
+- `import`는 요청 본문을 받고 `accepted` 상태와 manifest를 반환하며, 현재 단계에서는 DB 저장 대신 서버 메모리의 transfer history에 기록한다.
+- `asset-transfers`는 같은 `group_id + bot_id` 범위에서 export/import 기록을 반환한다.
+- 권한 요구사항에서 존재하지 않는 `bot.update` 참조를 발견해 실제 access contract에 존재하는 `bot.configure`로 수정했다.
+- `scripts/check-asset-transfer-api.mjs`를 추가해 임시 Studio 서버를 띄우고 manifest/export/import/history endpoint를 자동 검증한다.
+- `package.json`에 `studio:asset-api-check`를 추가하고 `studio:validate`에 포함했다.
+- `node --check scripts\serve-studio.js`, `node --check packages\contracts\src\asset-transfer-api-contract.js`, `npm run studio:validate`, 실제 curl endpoint 확인을 통과했다.
+- 이 단계는 영구 저장소 연결 전 최소 서버 API 구현이며, 다음 단계에서 서버 저장소/화면 fetch 연결로 이어간다.
+- Aidot 코드는 수정하지 않았다.

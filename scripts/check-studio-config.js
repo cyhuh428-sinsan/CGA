@@ -189,6 +189,8 @@ async function checkAssetTransferApiContract() {
     if (!requirement) fail(`asset transfer requirement missing scope '${asset.scope}'`);
     if (!requirement?.exportScopes?.length) fail(`asset transfer export scope missing for '${asset.scope}'`);
     if (!requirement?.importScopes?.length) fail(`asset transfer import scope missing for '${asset.scope}'`);
+    if (requirement?.exportScopes?.some((scope) => typeof scope !== "string" || !scope)) fail(`asset transfer export scope has invalid value for '${asset.scope}'`);
+    if (requirement?.importScopes?.some((scope) => typeof scope !== "string" || !scope)) fail(`asset transfer import scope has invalid value for '${asset.scope}'`);
     const exportRequest = transferContract.createAssetExportRequest({
       groupId: "g-support",
       botId: "supportbot-draft",
