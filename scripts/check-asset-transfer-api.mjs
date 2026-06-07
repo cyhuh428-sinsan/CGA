@@ -1,10 +1,14 @@
 import { spawn } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const port = String(4193 + Math.floor(Math.random() * 100));
 const baseUrl = `http://localhost:${port}`;
+const dataDir = mkdtempSync(join(tmpdir(), "cga-asset-api-"));
 const server = spawn("node", ["scripts/serve-studio.js"], {
   cwd: process.cwd(),
-  env: { ...process.env, PORT: port },
+  env: { ...process.env, PORT: port, CGA_DATA_DIR: dataDir },
   stdio: "pipe"
 });
 
@@ -49,9 +53,16 @@ async function main() {
 
   const history = await fetch(`${prefix}/asset-transfers`).then((response) => response.json());
   if (!Array.isArray(history.items) || history.items.length < 2) fail("asset transfer history did not record export/import");
+  const historyFile = join(dataDir, "asset-transfer-history.json");
+  if (!existsSync(historyFile)) fail("asset transfer history file was not created");
+  const storedHistory = JSON.parse(readFileSync(historyFile, "utf8"));
+  if (!Array.isArray(storedHistory) || storedHistory.length < 2) fail("asset transfer history file did not persist export/import");
   console.log("OK asset transfer API endpoints passed");
 }
 
 main()
   .catch((error) => fail(error instanceof Error ? error.message : "asset transfer API check failed"))
-  .finally(() => server.kill());
+  .finally(() => {
+    server.kill();
+    rmSync(dataDir, { recursive: true, force: true });
+  });

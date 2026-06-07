@@ -4,7 +4,9 @@ const path = require("path");
 
 const root = path.resolve(__dirname, "..");
 const port = Number(process.env.PORT || 4173);
-const assetTransferHistory = [];
+const dataDir = path.resolve(process.env.CGA_DATA_DIR || path.join(root, ".cga-data"));
+const assetTransferHistoryFile = path.join(dataDir, "asset-transfer-history.json");
+let assetTransferHistory = loadAssetTransferHistory();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -17,6 +19,33 @@ const types = {
 function send(res, status, body, type = "text/plain; charset=utf-8") {
   res.writeHead(status, { "Content-Type": type });
   res.end(body);
+}
+
+function ensureDataDir() {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+function loadJsonFile(filePath, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonFile(filePath, payload) {
+  ensureDataDir();
+  fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
+}
+
+function loadAssetTransferHistory() {
+  const history = loadJsonFile(assetTransferHistoryFile, []);
+  return Array.isArray(history) ? history : [];
+}
+
+function recordAssetTransfer(entry) {
+  assetTransferHistory = [...assetTransferHistory, entry];
+  writeJsonFile(assetTransferHistoryFile, assetTransferHistory);
 }
 
 function sendJson(res, status, payload) {
@@ -157,7 +186,7 @@ async function handleAssetTransferApi(req, res, urlPath, query) {
     }
     const request = contract.createAssetExportRequest({ groupId, botId, scope, botLocale });
     const transferId = `export-${Date.now()}`;
-    assetTransferHistory.push({ transfer_id: transferId, group_id: groupId, bot_id: botId, scope, direction: "export", created_at: new Date().toISOString() });
+    recordAssetTransfer({ transfer_id: transferId, group_id: groupId, bot_id: botId, scope, direction: "export", created_at: new Date().toISOString() });
     const fileName = `CGA_${scope}_${botId}_${getTodayStamp()}.${asset.fileFormat}`;
     if (asset.fileFormat === "txt") {
       sendDownload(res, fileName, buildSampleTextAsset(scope), "text/plain; charset=utf-8");
@@ -185,7 +214,7 @@ async function handleAssetTransferApi(req, res, urlPath, query) {
       fileName: req.headers["x-cga-file-name"] || `uploaded.${asset.fileFormat}`
     });
     const transferId = `import-${Date.now()}`;
-    assetTransferHistory.push({
+    recordAssetTransfer({
       transfer_id: transferId,
       group_id: groupId,
       bot_id: botId,

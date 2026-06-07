@@ -638,3 +638,14 @@
 - `node --check scripts\serve-studio.js`, `node --check packages\contracts\src\asset-transfer-api-contract.js`, `npm run studio:validate`, 실제 curl endpoint 확인을 통과했다.
 - 이 단계는 영구 저장소 연결 전 최소 서버 API 구현이며, 다음 단계에서 서버 저장소/화면 fetch 연결로 이어간다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### 2026-06-07 자산 이동 기록 파일 저장소 추가
+- `scripts/serve-studio.js`의 자산 이동 기록을 서버 메모리 배열에서 파일 기반 저장으로 전환했다.
+- 기본 저장 위치는 CGA 루트의 `.cga-data/asset-transfer-history.json`이며, 운영/테스트에서는 `CGA_DATA_DIR` 환경 변수로 위치를 바꿀 수 있다.
+- `.cga-data/`는 런타임 데이터이므로 `.gitignore`에 추가했다.
+- `export`와 `import`가 발생하면 `recordAssetTransfer()`를 통해 파일에 즉시 기록한다.
+- `asset-transfers` 조회는 파일에서 로드된 transfer history를 기준으로 응답한다.
+- `scripts/check-asset-transfer-api.mjs`는 임시 `CGA_DATA_DIR`을 사용해 테스트하고, manifest/export/import/history뿐 아니라 `asset-transfer-history.json` 파일 생성과 기록 개수까지 검증한다.
+- 이 단계는 정식 DB 전 단계의 재시작 대비 저장소이며, 다음 단계에서 실제 group/bot asset body 저장 또는 DB adapter로 확장한다.
+- Aidot 코드는 수정하지 않았다.
