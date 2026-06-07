@@ -51,12 +51,17 @@ async function main() {
   if (imported.status !== "accepted") fail("dictionary import was not accepted");
   if (imported.request?.upload_mode !== "merge") fail("dictionary import upload mode mismatch");
 
+  const reExported = await fetch(`${prefix}/assets/dictionary/export`);
+  const reExportedText = await reExported.text();
+  if (!reExported.ok || !reExportedText.includes("password,login password")) fail("dictionary export did not return stored import body");
+
   const history = await fetch(`${prefix}/asset-transfers`).then((response) => response.json());
-  if (!Array.isArray(history.items) || history.items.length < 2) fail("asset transfer history did not record export/import");
+  if (!Array.isArray(history.items) || history.items.length < 3) fail("asset transfer history did not record export/import/re-export");
+  if (!history.items.some((item) => item.direction === "import" && item.asset_path?.includes("dictionary.txt"))) fail("asset transfer history did not record stored asset path");
   const historyFile = join(dataDir, "asset-transfer-history.json");
   if (!existsSync(historyFile)) fail("asset transfer history file was not created");
   const storedHistory = JSON.parse(readFileSync(historyFile, "utf8"));
-  if (!Array.isArray(storedHistory) || storedHistory.length < 2) fail("asset transfer history file did not persist export/import");
+  if (!Array.isArray(storedHistory) || storedHistory.length < 3) fail("asset transfer history file did not persist export/import/re-export");
   console.log("OK asset transfer API endpoints passed");
 }
 
