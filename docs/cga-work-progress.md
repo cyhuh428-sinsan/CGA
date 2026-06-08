@@ -798,3 +798,15 @@
 - `package.json`의 `studio:validate`에 `studio:composition-check`를 추가했다.
 - `scripts/check-studio-config.js`에 Configure Bot composition API route와 `composition-registry.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### Studio 다국어 반응 보강
+- 신산님 확인 결과, 영어/한국어 이외 언어를 선택해도 JS 동적 렌더링 영역과 일부 select option이 거의 영어로 남는 문제가 있었다.
+- 원인은 정적 `data-i18n` 리소스 일부가 영어 fallback 값으로 남아 있고, `Bot Workspace`, Top Context, 권한 라벨, Create Summary처럼 JS가 그리는 영역은 별도 번역 해석을 사용하지 않았기 때문이다.
+- `apps/studio/index.html`의 Create Bot 주요 select option에 `data-i18n` 키를 추가했다.
+- `apps/studio/app.js`에 동적 메시지 오버레이를 추가해 상단 배지, 좌측 권한 라벨, Bot Workspace 요약, Create Summary 값, 패키지 포맷 표시가 선택 언어에 반응하도록 했다.
+- 언어 선택 시 기존 사용자 locale로 되돌아가는 현상을 줄이기 위해 현재 language selector 값을 우선 사용하도록 `getCurrentLocale()`와 `syncStudioLocaleToCurrentUser()`를 보완했다.
+- 1차 보강 언어는 영어, 한국어, 독일어, 일본어, 중국어 간체이다. 베트남어/프랑스어는 다음 보강 단위에서 같은 방식으로 화면별 누락 키를 확장한다.
+- `packages/i18n/locales/en.json`에 새 option i18n key를 추가해 i18n coverage guard가 새 정적 키를 감시하게 했다.
+- `node --check apps/studio/app.js`, `node scripts/check-i18n-coverage.js`, `npm run studio:validate`를 통과했다.
+- Aidot 코드는 수정하지 않았다.

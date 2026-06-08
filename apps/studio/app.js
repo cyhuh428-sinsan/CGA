@@ -118,6 +118,161 @@ let currentScenarioAssets = [
   { id: "account_update", type: "intent", displayName: "account_update" }
 ];
 
+const dynamicMessages = {
+  en: {
+    "common.allowed": "Allowed",
+    "common.blocked": "Blocked",
+    "common.disabled": "Disabled",
+    "common.enabled": "Enabled",
+    "common.none": "None",
+    "common.noRole": "no role",
+    "common.serverSaved": "server saved",
+    "common.localOnly": "local only",
+    "workspace.noGroup": "No group",
+    "workspace.noGroupSelected": "No group selected",
+    "workspace.noBotSelected": "No bot selected",
+    "workspace.noBotInGroup": "No bot in this group",
+    "workspace.createBotToStart": "Create a bot to start the workflow.",
+    "workspace.botCount": "bot(s)",
+    "workspace.blockedCreate": "blocked: bot.create",
+    "top.groupPrefix": "Group",
+    "top.botPrefix": "Bot",
+    "top.versionPrefix": "Version",
+    "summary.llmUsed": "LLM composition",
+    "summary.llmNotUsed": "LLM off",
+    "summary.allowed": "Allowed",
+    "summary.disabled": "Disabled",
+    "transfer.jsonReplace": "JSON · replace",
+    "transfer.txtMergeShort": "TXT · merge"
+  },
+  ko: {
+    "common.allowed": "허용",
+    "common.blocked": "차단",
+    "common.disabled": "비활성",
+    "common.enabled": "활성",
+    "common.none": "없음",
+    "common.noRole": "역할 없음",
+    "common.serverSaved": "서버 저장",
+    "common.localOnly": "로컬만 반영",
+    "workspace.noGroup": "그룹 없음",
+    "workspace.noGroupSelected": "선택된 그룹 없음",
+    "workspace.noBotSelected": "선택된 봇 없음",
+    "workspace.noBotInGroup": "이 그룹에 봇이 없습니다",
+    "workspace.createBotToStart": "봇을 생성하면 제작 흐름을 시작할 수 있습니다.",
+    "workspace.botCount": "개 봇",
+    "workspace.blockedCreate": "차단: bot.create",
+    "top.groupPrefix": "그룹",
+    "top.botPrefix": "봇",
+    "top.versionPrefix": "버전",
+    "summary.llmUsed": "구성에 사용",
+    "summary.llmNotUsed": "사용 안 함",
+    "summary.allowed": "허용",
+    "summary.disabled": "비활성",
+    "transfer.jsonReplace": "JSON · 교체",
+    "transfer.txtMergeShort": "TXT · 병합"
+  },
+  de: {
+    "common.allowed": "Erlaubt",
+    "common.blocked": "Blockiert",
+    "common.disabled": "Deaktiviert",
+    "common.enabled": "Aktiviert",
+    "common.none": "Keine",
+    "common.noRole": "keine Rolle",
+    "workspace.noGroup": "Keine Gruppe",
+    "workspace.noGroupSelected": "Keine Gruppe ausgewählt",
+    "workspace.noBotSelected": "Kein Bot ausgewählt",
+    "workspace.noBotInGroup": "Kein Bot in dieser Gruppe",
+    "workspace.createBotToStart": "Erstellen Sie einen Bot, um den Workflow zu starten.",
+    "workspace.botCount": " Bot(s)",
+    "workspace.blockedCreate": "blockiert: bot.create",
+    "top.groupPrefix": "Gruppe",
+    "top.botPrefix": "Bot",
+    "top.versionPrefix": "Version",
+    "summary.llmUsed": "Für Konfiguration verwendet",
+    "summary.llmNotUsed": "Nicht verwendet",
+    "summary.allowed": "Erlaubt",
+    "summary.disabled": "Deaktiviert",
+    "transfer.jsonReplace": "JSON · ersetzen",
+    "transfer.txtMergeShort": "TXT · zusammenführen"
+  },
+  ja: {
+    "common.allowed": "許可",
+    "common.blocked": "ブロック",
+    "common.disabled": "無効",
+    "common.enabled": "有効",
+    "common.none": "なし",
+    "common.noRole": "役割なし",
+    "workspace.noGroup": "グループなし",
+    "workspace.noGroupSelected": "グループ未選択",
+    "workspace.noBotSelected": "ボット未選択",
+    "workspace.noBotInGroup": "このグループにボットはありません",
+    "workspace.createBotToStart": "ボットを作成するとワークフローを開始できます。",
+    "workspace.botCount": "個のボット",
+    "workspace.blockedCreate": "ブロック: bot.create",
+    "top.groupPrefix": "グループ",
+    "top.botPrefix": "ボット",
+    "top.versionPrefix": "バージョン",
+    "summary.llmUsed": "構成に使用",
+    "summary.llmNotUsed": "未使用",
+    "summary.allowed": "許可",
+    "summary.disabled": "無効",
+    "transfer.jsonReplace": "JSON · 置換",
+    "transfer.txtMergeShort": "TXT · マージ"
+  },
+  "zh-CN": {
+    "common.allowed": "允许",
+    "common.blocked": "阻止",
+    "common.disabled": "禁用",
+    "common.enabled": "启用",
+    "common.none": "无",
+    "common.noRole": "无角色",
+    "workspace.noGroup": "无组",
+    "workspace.noGroupSelected": "未选择组",
+    "workspace.noBotSelected": "未选择机器人",
+    "workspace.noBotInGroup": "此组中没有机器人",
+    "workspace.createBotToStart": "创建机器人即可开始流程。",
+    "workspace.botCount": "个机器人",
+    "workspace.blockedCreate": "阻止: bot.create",
+    "top.groupPrefix": "组",
+    "top.botPrefix": "机器人",
+    "top.versionPrefix": "版本",
+    "summary.llmUsed": "用于配置",
+    "summary.llmNotUsed": "未使用",
+    "summary.allowed": "允许",
+    "summary.disabled": "禁用",
+    "transfer.jsonReplace": "JSON · 替换",
+    "transfer.txtMergeShort": "TXT · 合并"
+  }
+};
+
+function getCurrentLocale() {
+  return document.querySelector("[data-locale-select]")?.value || getCurrentAccessUser()?.locale || window.cgaStudioI18n?.getLocale?.() || document.documentElement.lang || "en";
+}
+
+function t(key, fallback = key) {
+  const locale = getCurrentLocale();
+  return dynamicMessages[locale]?.[key] ||
+    window.cgaStudioI18n?.resolveMessage?.(locale, key, fallback) ||
+    dynamicMessages.en[key] ||
+    fallback;
+}
+
+function applyDynamicLocaleOverrides(locale = getCurrentLocale()) {
+  const messages = dynamicMessages[locale];
+  if (!messages) return;
+  document.documentElement.lang = locale;
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const key = node.getAttribute("data-i18n");
+    if (messages[key]) node.textContent = messages[key];
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-placeholder");
+    if (messages[key]) node.setAttribute("placeholder", messages[key]);
+  });
+  const select = document.querySelector("[data-locale-select]");
+  if (select && select.value !== locale) select.value = locale;
+}
+
 function getActiveGroupsForCurrentUser() {
   const memberships = currentAccessState.memberships.filter((membership) => membership.user_id === currentAccessState.currentUserId && membership.status === "active");
   return currentAccessState.groups.filter((group) => group.status === "active" && memberships.some((membership) => membership.group_id === group.id));
@@ -900,14 +1055,16 @@ function getCurrentAccessUser() {
 }
 
 function syncStudioLocaleToCurrentUser() {
-  const locale = getCurrentAccessUser()?.locale || "en";
+  const locale = getCurrentLocale();
   if (window.cgaStudioI18n?.setLocale) {
     window.cgaStudioI18n.setLocale(locale);
+    applyDynamicLocaleOverrides(locale);
     return;
   }
   const select = document.querySelector("[data-locale-select]");
   if (select) select.value = locale;
   localStorage.setItem("cga.studio.locale", locale);
+  applyDynamicLocaleOverrides(locale);
 }
 
 
@@ -955,8 +1112,8 @@ function renderCreateSummary() {
   container.innerHTML = `
     <p><b data-i18n="summary.language">Language</b><span>${currentStudioState.bot.defaultLocale}</span></p>
     <p><b data-i18n="summary.input">Input</b><span>${choices.compositionInput}</span></p>
-    <p><b data-i18n="summary.llm">LLM</b><span class="${choices.useLlm ? "" : "warn"}">${choices.useLlm ? "Used for composition" : "Not used"}</span></p>
-    <p><b data-i18n="summary.pdfQa">PDF Q&A</b><span class="${choices.allowPdf ? "" : "warn"}">${choices.allowPdf ? "Allowed" : "Disabled"}</span></p>
+    <p><b data-i18n="summary.llm">LLM</b><span class="${choices.useLlm ? "" : "warn"}">${choices.useLlm ? t("summary.llmUsed", "LLM composition") : t("summary.llmNotUsed", "LLM off")}</span></p>
+    <p><b data-i18n="summary.pdfQa">PDF Q&A</b><span class="${choices.allowPdf ? "" : "warn"}">${choices.allowPdf ? t("summary.allowed", "Allowed") : t("summary.disabled", "Disabled")}</span></p>
     <p><b data-i18n="summary.orchestrator">Orchestrator</b><span>${choices.orchestratorMode}</span></p>
     <p><b data-i18n="summary.botServer">Bot Server</b><span>${choices.botServerLocation}</span></p>
   `;
@@ -1340,7 +1497,7 @@ function renderWorkspaceHome() {
   const canCreateBot = canCreateBotInCurrentWorkspace();
   groupSelect.innerHTML = groups.map((item) => `<option value="${item.id}" ${item.id === currentWorkspaceGroupId ? "selected" : ""}>${item.name}</option>`).join("");
   summary.innerHTML = `
-    <div><strong>${group?.name || "No group"}</strong><span>${bots.length} bot(s) · ${currentAccessState.currentUserId} · ${canCreateBot ? "bot.create" : "blocked: bot.create"}</span></div>
+    <div><strong>${group?.name || t("workspace.noGroup", "No group")}</strong><span>${bots.length}${t("workspace.botCount", " bot(s)")} · ${currentAccessState.currentUserId} · ${canCreateBot ? "bot.create" : t("workspace.blockedCreate", "blocked: bot.create")}</span></div>
   `;
   if (createButton) createButton.disabled = !canCreateBot;
   botList.innerHTML = bots.map((bot) => `
@@ -1348,7 +1505,7 @@ function renderWorkspaceHome() {
       <strong>${bot.name}</strong>
       <span>${bot.status} · ${bot.locale} · ${bot.updated_at}</span>
     </button>
-  `).join("") || `<div class="empty-list"><strong>No bot in this group</strong><span>Create a bot to start the workflow.</span></div>`;
+  `).join("") || `<div class="empty-list"><strong>${t("workspace.noBotInGroup", "No bot in this group")}</strong><span>${t("workspace.createBotToStart", "Create a bot to start the workflow.")}</span></div>`;
   if (transfer) {
     const currentVersion = currentStudioState.bot.version || currentBot?.version || "v0.1";
     transfer.innerHTML = `
@@ -1362,8 +1519,8 @@ function renderWorkspaceHome() {
       <div class="version-strip">
         <span><b data-i18n="transfer.currentVersion">Current version</b>${currentVersion}</span>
         <span><b data-i18n="transfer.compatibility">Compatibility</b>Aidot / CGA</span>
-        <span><b data-i18n="transfer.botPackageFormat">Bot package</b>JSON · replace</span>
-        <span><b data-i18n="transfer.assetPackageFormat">Text assets</b>TXT · merge</span>
+        <span><b data-i18n="transfer.botPackageFormat">Bot package</b>${t("transfer.jsonReplace", "JSON · replace")}</span>
+        <span><b data-i18n="transfer.assetPackageFormat">Text assets</b>${t("transfer.txtMergeShort", "TXT · merge")}</span>
       </div>
       <div class="button-row">
         <button type="button" data-download-bot-package data-i18n="transfer.downloadBot">Download Bot</button>
@@ -1379,8 +1536,8 @@ function renderWorkspaceHome() {
       </div>
     `;
   }
-  if (currentBotName) currentBotName.textContent = currentBot?.name || "No bot selected";
-  if (currentGroupName) currentGroupName.textContent = group?.name || "No group selected";
+  if (currentBotName) currentBotName.textContent = currentBot?.name || t("workspace.noBotSelected", "No bot selected");
+  if (currentGroupName) currentGroupName.textContent = group?.name || t("workspace.noGroupSelected", "No group selected");
   renderTopContext();
   bindWorkspaceActions();
   refreshTransferHistory();
@@ -1503,12 +1660,12 @@ function renderTopContext() {
   const currentBotBadge = document.querySelector("[data-current-bot-badge]");
   const currentVersionBadge = document.querySelector("[data-current-version-badge]");
   if (currentUserBadge) {
-    const roles = current.memberships.map((item) => item.role).join(", ") || "no role";
+    const roles = current.memberships.map((item) => item.role).join(", ") || t("common.noRole", "no role");
     currentUserBadge.textContent = `${current.user?.name || "User"} · ${current.user?.locale || "en"} · ${roles}`;
   }
-  if (currentGroupBadge) currentGroupBadge.textContent = `Group: ${group?.name || "None"}`;
-  if (currentBotBadge) currentBotBadge.textContent = `Bot: ${currentStudioState.bot.name || bot?.name || "None"}`;
-  if (currentVersionBadge) currentVersionBadge.textContent = `Version: ${currentStudioState.bot.version || "v0.1"}`;
+  if (currentGroupBadge) currentGroupBadge.textContent = `${t("top.groupPrefix", "Group")}: ${group?.name || t("common.none", "None")}`;
+  if (currentBotBadge) currentBotBadge.textContent = `${t("top.botPrefix", "Bot")}: ${currentStudioState.bot.name || bot?.name || t("common.none", "None")}`;
+  if (currentVersionBadge) currentVersionBadge.textContent = `${t("top.versionPrefix", "Version")}: ${currentStudioState.bot.version || "v0.1"}`;
 }
 
 function bindWorkspaceActions() {
@@ -1770,7 +1927,7 @@ function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) 
     link.classList.toggle("access-blocked", !allowed);
     link.classList.toggle("access-allowed", allowed);
     link.setAttribute("aria-disabled", allowed ? "false" : "true");
-    link.dataset.accessLabel = allowed ? "Allowed" : `Blocked · ${access?.scope || "no scope"}`;
+    link.dataset.accessLabel = allowed ? t("common.allowed", "Allowed") : `${t("common.blocked", "Blocked")} · ${access?.scope || "no scope"}`;
   });
 }
 
@@ -2148,3 +2305,13 @@ function bootApp() {
 
 document.addEventListener("DOMContentLoaded", bootApp);
 document.addEventListener("cga:i18n-ready", syncStudioLocaleToCurrentUser);
+document.addEventListener("cga:content-rendered", syncStudioLocaleToCurrentUser);
+document.addEventListener("change", (event) => {
+  if (event.target?.matches?.("[data-locale-select]")) {
+    window.setTimeout(() => {
+      renderAllStatePanels();
+      rerenderAdminAndAccess();
+      applyDynamicLocaleOverrides(event.target.value);
+    }, 0);
+  }
+});
