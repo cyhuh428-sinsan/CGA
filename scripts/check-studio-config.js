@@ -84,6 +84,37 @@ for (const locale of locales) {
 }
 if (process.exitCode !== 1) pass("all locales contain catalog error keys");
 
+const englishLocale = locales.find((locale) => locale.name === "en.json");
+const englishData = englishLocale?.data || {};
+const englishKeys = Object.keys(englishData).sort();
+for (const locale of locales) {
+  const localeKeys = Object.keys(locale.data).sort();
+  const missing = englishKeys.filter((key) => !(key in locale.data));
+  const extra = localeKeys.filter((key) => !(key in englishData));
+  if (missing.length) fail(`${locale.name} missing locale keys: ${missing.join(", ")}`);
+  if (extra.length && locale.name !== "en.json") fail(`${locale.name} has unexpected locale keys: ${extra.join(", ")}`);
+}
+if (process.exitCode !== 1) pass("all locale files match English key coverage");
+
+const resourceMatch = appSource.match(/const CGA_I18N_RESOURCES = ([\s\S]*?);\n\nconst FALLBACK_LOCALE/);
+if (!resourceMatch) {
+  fail("studio i18n.js does not expose parseable CGA_I18N_RESOURCES");
+} else {
+  const bundledResources = JSON.parse(resourceMatch[1]);
+  for (const locale of locales) {
+    const localeId = locale.name.replace(/\.json$/, "");
+    const bundled = bundledResources[localeId];
+    if (!bundled) {
+      fail(`studio i18n.js missing bundled locale '${localeId}'`);
+      continue;
+    }
+    if (JSON.stringify(bundled) !== JSON.stringify(locale.data)) {
+      fail(`studio i18n.js bundled locale '${localeId}' is not synced with packages/i18n/locales/${locale.name}`);
+    }
+  }
+}
+if (process.exitCode !== 1) pass("studio bundled i18n resources match locale files");
+
 if (!appSource.includes("window.cgaStudioI18n")) fail("studio i18n API is not exposed for user locale sync");
 if (!studioAppSource.includes("syncStudioLocaleToCurrentUser")) fail("studio app does not sync UI locale from current user");
 if (!studioAppSource.includes("getCurrentAccessUser()?.locale")) fail("studio app locale sync is not based on user.locale");

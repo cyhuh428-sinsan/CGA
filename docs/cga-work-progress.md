@@ -810,3 +810,24 @@
 - `packages/i18n/locales/en.json`에 새 option i18n key를 추가해 i18n coverage guard가 새 정적 키를 감시하게 했다.
 - `node --check apps/studio/app.js`, `node scripts/check-i18n-coverage.js`, `npm run studio:validate`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-08 Studio locale 리소스 전체 키 동기화
+- 신산님 지적대로 영어/한국어 외 언어가 부분적으로만 반응하던 문제를 더 좁혀 확인했다.
+- 원인은 `packages/i18n/locales/en.json`에는 새 키가 추가됐지만 `de`, `fr`, `ja`, `ko`, `vi`, `zh-CN` locale 파일에는 일부 키가 누락되어 있었고, `apps/studio/i18n.js` 내장 리소스도 JSON 리소스와 동기화 검증이 없었기 때문이다.
+- 영어 기준 locale 키를 모든 1차 지원 언어 파일에 맞췄다.
+- 보강한 핵심 영역은 Create Bot select option, CGA/Bot 에러 그룹 라벨, Bot/Version Package 및 Server Transfer History 문구이다.
+- `apps/studio/i18n.js`를 `packages/i18n/locales/*.json` 기준으로 재생성해 브라우저에서 사용하는 내장 리소스도 같은 키를 갖게 했다.
+- `scripts/check-studio-config.js`에 모든 locale 파일이 영어 기준 키를 빠짐없이 갖는지 확인하는 검증을 추가했다.
+- `scripts/check-studio-config.js`에 `apps/studio/i18n.js` 내장 리소스가 locale JSON 파일과 동기화되어 있는지 확인하는 검증을 추가했다.
+- `node --check scripts/check-studio-config.js`, `node --check apps/studio/i18n.js`, `node scripts/check-studio-config.js`, `node scripts/check-i18n-coverage.js`를 통과했다.
+- Aidot 코드는 수정하지 않았다.
+
+### 2026-06-08 Studio 주요 화면 다국어 문구 보강
+- locale 키 동기화 이후에도 일부 언어 파일에 영어 fallback 값이 많이 남아 있음을 확인했다.
+- 한 번에 전체 전문 번역을 완료하기보다, 현재 화면에서 즉시 보이는 상단/좌측 메뉴, Workflow, Production/System Admin/Reference 메뉴, Create Bot 주요 제목/필드/선택지, 요약, 승인 라벨, CGA/Bot 에러 메시지, Bot/Version Package 영역을 우선 보강했다.
+- 독일어, 일본어, 중국어 간체, 베트남어, 프랑스어에 주요 화면 문구 번역을 추가했다.
+- JS가 동적으로 렌더링하는 Allowed/Blocked, 그룹/봇/버전 배지, 서버 저장 상태, workspace 빈 상태, JSON/TXT 병합 라벨에 베트남어/프랑스어 메시지를 추가하고, 독일어/일본어/중국어 간체의 서버 저장 상태 문구도 보강했다.
+- `apps/studio/i18n.js`는 locale JSON 기준으로 다시 동기화했다.
+- 아직 전체 설명문/설계문 수준의 전문 번역은 남아 있으며, 다음 단계에서 화면별로 계속 축소해야 한다.
+- `node --check apps/studio/app.js`, `node --check apps/studio/i18n.js`, `node scripts/check-studio-config.js`를 통과했다.
+- Aidot 코드는 수정하지 않았다.
