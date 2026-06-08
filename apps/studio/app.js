@@ -554,6 +554,10 @@ function getCompositionUrl(groupId = currentWorkspaceGroupId, botId = currentWor
   return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/composition`;
 }
 
+function getDetailAssetsUrl(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/detail-assets`;
+}
+
 function applyCompositionFromServer(composition) {
   if (!composition || typeof composition !== "object") return false;
   currentCompositionState = {
@@ -570,10 +574,29 @@ function applyCompositionFromServer(composition) {
   return true;
 }
 
+function applyDetailAssetsFromServer(detailAssets) {
+  if (!detailAssets || typeof detailAssets !== "object") return false;
+  if (Array.isArray(detailAssets.intent_utterances)) currentIntentUtteranceAssets = detailAssets.intent_utterances;
+  if (Array.isArray(detailAssets.entities)) currentEntityAssets = detailAssets.entities;
+  if (Array.isArray(detailAssets.dictionary)) currentDictionaryAssets = detailAssets.dictionary;
+  if (Array.isArray(detailAssets.rules)) currentRuleAssets = detailAssets.rules;
+  if (Array.isArray(detailAssets.scenarios)) currentScenarioAssets = detailAssets.scenarios;
+  const intentCount = new Set(currentIntentUtteranceAssets.map((item) => item.division).filter(Boolean)).size;
+  currentStudioState.counts.utterances = currentIntentUtteranceAssets.length || currentStudioState.counts.utterances;
+  currentStudioState.counts.intents = intentCount || currentStudioState.counts.intents;
+  return true;
+}
+
 async function refreshCompositionFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
   if (!groupId || !botId) return false;
   const payload = await requestCgaJson(getCompositionUrl(groupId, botId));
   return applyCompositionFromServer(payload);
+}
+
+async function refreshDetailAssetsFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  if (!groupId || !botId) return false;
+  const payload = await requestCgaJson(getDetailAssetsUrl(groupId, botId));
+  return applyDetailAssetsFromServer(payload);
 }
 
 async function saveCompositionToServer() {
@@ -586,6 +609,23 @@ async function saveCompositionToServer() {
   await requestCgaJson(getCompositionUrl(), {
     method: "PUT",
     body: payload
+  });
+  return true;
+}
+
+async function saveDetailAssetsToServer() {
+  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
+  await requestCgaJson(getDetailAssetsUrl(), {
+    method: "PUT",
+    body: {
+      group_id: currentWorkspaceGroupId,
+      bot_id: currentWorkspaceBotId,
+      intent_utterances: currentIntentUtteranceAssets,
+      entities: currentEntityAssets,
+      dictionary: currentDictionaryAssets,
+      rules: currentRuleAssets,
+      scenarios: currentScenarioAssets
+    }
   });
   return true;
 }
@@ -1663,6 +1703,7 @@ function bindAssetTransferActions() {
           const incoming = parseDictionaryTxt(text);
           currentDictionaryAssets = mergeDictionaryAssets(currentDictionaryAssets, incoming);
           const synced = await uploadAssetToServer("dictionary", text, file?.name);
+          if (synced) await saveDetailAssetsToServer().catch(() => false);
           currentTransferStatus = `Uploaded dictionary TXT: ${incoming.length} row(s) merged${synced ? " / server saved" : " / local only"}`;
         });
       }
@@ -1671,6 +1712,7 @@ function bindAssetTransferActions() {
           const incoming = parseIntentUtteranceTxt(text);
           currentIntentUtteranceAssets = mergeIntentUtteranceAssets(currentIntentUtteranceAssets, incoming);
           const synced = await uploadAssetToServer("intentUtterance", text, file?.name);
+          if (synced) await saveDetailAssetsToServer().catch(() => false);
           currentTransferStatus = `Uploaded intent utterance TXT: ${incoming.length} row(s) merged${synced ? " / server saved" : " / local only"}`;
         });
       }
@@ -1679,6 +1721,7 @@ function bindAssetTransferActions() {
           const incoming = parseEntityTxt(text);
           currentEntityAssets = mergeEntityAssets(currentEntityAssets, incoming);
           const synced = await uploadAssetToServer("entity", text, file?.name);
+          if (synced) await saveDetailAssetsToServer().catch(() => false);
           currentTransferStatus = `Uploaded entity TXT: ${incoming.length} row(s) merged${synced ? " / server saved" : " / local only"}`;
         });
       }
@@ -1687,6 +1730,7 @@ function bindAssetTransferActions() {
           const incoming = parseRuleTxt(text);
           currentRuleAssets = mergeRuleAssets(currentRuleAssets, incoming);
           const synced = await uploadAssetToServer("rule", text, file?.name);
+          if (synced) await saveDetailAssetsToServer().catch(() => false);
           currentTransferStatus = `Uploaded rule TXT: ${incoming.length} row(s) merged${synced ? " / server saved" : " / local only"}`;
         });
       }
@@ -1694,6 +1738,7 @@ function bindAssetTransferActions() {
         requestJsonUpload(async (json, file) => {
           applyAidotDialogPackage(json);
           const synced = await uploadAssetToServer(button.dataset.assetUpload, JSON.stringify(json, null, 2), file?.name);
+          if (synced) await saveDetailAssetsToServer().catch(() => false);
           currentTransferStatus = `${currentTransferStatus}${synced ? " / server saved" : " / local only"}`;
         });
       }
@@ -1741,6 +1786,7 @@ function bindWorkspaceActions() {
         await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId);
         await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
         await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
+        await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
       } catch {
         const bot = currentWorkspaceBots.find((item) => item.group_id === currentWorkspaceGroupId) || null;
         if (bot) applyCurrentBotToStudioState(bot);
@@ -1771,6 +1817,7 @@ function bindWorkspaceActions() {
         applyCurrentBotToStudioState(created.bot || bot);
         await saveStudioStateToServer();
         await saveCompositionToServer();
+        await saveDetailAssetsToServer();
       } catch {
         currentWorkspaceBots = [...currentWorkspaceBots, bot];
         applyCurrentBotToStudioState(bot);
@@ -1804,6 +1851,10 @@ function bindWorkspaceActions() {
       requestJsonUpload(async (json, file) => {
         applyAidotBotPackage(json);
         const synced = await uploadAssetToServer("botPackage", JSON.stringify(json, null, 2), file?.name);
+        if (synced) {
+          await saveStudioStateToServer().catch(() => false);
+          await saveDetailAssetsToServer().catch(() => false);
+        }
         currentTransferStatus = `${currentTransferStatus}${synced ? " / server saved" : " / local only"}`;
       });
     });
@@ -1833,6 +1884,10 @@ function bindWorkspaceActions() {
       requestJsonUpload(async (json, file) => {
         applyCgaVersionPackage(json);
         const synced = await uploadAssetToServer("versionPackage", JSON.stringify(json, null, 2), file?.name);
+        if (synced) {
+          await saveStudioStateToServer().catch(() => false);
+          await saveDetailAssetsToServer().catch(() => false);
+        }
         currentTransferStatus = `${currentTransferStatus}${synced ? " / server saved" : " / local only"}`;
       });
     });
@@ -1846,6 +1901,7 @@ function bindWorkspaceActions() {
       applyCurrentBotToStudioState(bot);
       await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+      await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       renderWorkspaceHome();
       renderAllStatePanels();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -2354,6 +2410,7 @@ function bootApp() {
         await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
         await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+        await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         renderAllStatePanels();
         rerenderAdminAndAccess();
       }

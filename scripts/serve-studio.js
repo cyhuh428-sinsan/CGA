@@ -11,12 +11,14 @@ const apiAnswerRegistryFile = path.join(dataDir, "api-answer-registry.json");
 const workspaceBotsFile = path.join(dataDir, "workspace-bots.json");
 const studioStateRegistryFile = path.join(dataDir, "studio-state-registry.json");
 const compositionRegistryFile = path.join(dataDir, "composition-registry.json");
+const detailAssetRegistryFile = path.join(dataDir, "detail-asset-registry.json");
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
 let apiAnswerRegistry = loadApiAnswerRegistry();
 let workspaceBots = loadWorkspaceBots();
 let studioStateRegistry = loadStudioStateRegistry();
 let compositionRegistry = loadCompositionRegistry();
+let detailAssetRegistry = loadDetailAssetRegistry();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -202,6 +204,17 @@ function saveCompositionRegistry(registry) {
   return registry;
 }
 
+function loadDetailAssetRegistry() {
+  const registry = loadJsonFile(detailAssetRegistryFile, []);
+  return Array.isArray(registry) ? registry : [];
+}
+
+function saveDetailAssetRegistry(registry) {
+  detailAssetRegistry = registry;
+  writeJsonFile(detailAssetRegistryFile, registry);
+  return registry;
+}
+
 function createDefaultCompositionForBot(groupId, botId) {
   return {
     group_id: groupId,
@@ -218,6 +231,35 @@ function createDefaultCompositionForBot(groupId, botId) {
     intent_candidates: [
       { intent: "password_reset", utterance_count: 6, status: "answer_required" },
       { intent: "account_update", utterance_count: 4, status: "ready" }
+    ],
+    updated_at: null
+  };
+}
+
+function createDefaultDetailAssetsForBot(groupId, botId) {
+  return {
+    group_id: groupId,
+    bot_id: botId,
+    intent_utterances: [
+      { utterance: "I need to reset my password", division: "password_reset" },
+      { utterance: "How do I update my account?", division: "account_update" },
+      { utterance: "I have a billing question", division: "billing_question" }
+    ],
+    entities: [
+      { name: "email", value: "email", rowType: "P", detail: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b" },
+      { name: "channel", value: "web", rowType: "S", detail: "webchat" }
+    ],
+    dictionary: [
+      { word: "password", synonyms: ["login password", "account password"] },
+      { word: "plan", synonyms: ["subscription", "membership"] }
+    ],
+    rules: [
+      { name: "Business hours", description: "Route after-hours questions", expression: "time.after(18:00)", target: "support_after_hours", enabled: "Y" },
+      { name: "Billing priority", description: "Route billing requests", expression: "intent == billing_question", target: "billing_question", enabled: "Y" }
+    ],
+    scenarios: [
+      { id: "password_reset", type: "intent", displayName: "password_reset" },
+      { id: "account_update", type: "intent", displayName: "account_update" }
     ],
     updated_at: null
   };
@@ -334,6 +376,15 @@ function parseStudioStatePath(urlPath) {
 
 function parseCompositionPath(urlPath) {
   const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/composition$/);
+  if (!match) return null;
+  return {
+    groupId: match[1],
+    botId: match[2]
+  };
+}
+
+function parseDetailAssetPath(urlPath) {
+  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/detail-assets$/);
   if (!match) return null;
   return {
     groupId: match[1],
@@ -488,6 +539,47 @@ async function handleCompositionApi(req, res, urlPath) {
       next
     ]);
     sendJson(res, 200, { status: "saved", composition: next });
+    return true;
+  }
+
+  sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+  return true;
+}
+
+async function handleDetailAssetApi(req, res, urlPath) {
+  const parsed = parseDetailAssetPath(urlPath);
+  if (!parsed) return false;
+  const { groupId, botId } = parsed;
+
+  if (req.method === "GET") {
+    const saved = detailAssetRegistry.find((item) => item.group_id === groupId && item.bot_id === botId);
+    sendJson(res, 200, saved || createDefaultDetailAssetsForBot(groupId, botId));
+    return true;
+  }
+
+  if (req.method === "PUT") {
+    if (!(await canConfigureWorkspaceBot(req, groupId, botId))) {
+      sendJson(res, 403, { error_code: "CGA_DETAIL_ASSET_CONFIGURE_FORBIDDEN", message_key: "errors.bot.configureForbidden" });
+      return true;
+    }
+    const body = await readJsonRequest(req);
+    const next = {
+      ...createDefaultDetailAssetsForBot(groupId, botId),
+      ...body,
+      group_id: groupId,
+      bot_id: botId,
+      intent_utterances: Array.isArray(body.intent_utterances) ? body.intent_utterances : [],
+      entities: Array.isArray(body.entities) ? body.entities : [],
+      dictionary: Array.isArray(body.dictionary) ? body.dictionary : [],
+      rules: Array.isArray(body.rules) ? body.rules : [],
+      scenarios: Array.isArray(body.scenarios) ? body.scenarios : [],
+      updated_at: new Date().toISOString()
+    };
+    saveDetailAssetRegistry([
+      ...detailAssetRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId)),
+      next
+    ]);
+    sendJson(res, 200, { status: "saved", detail_assets: next });
     return true;
   }
 
@@ -909,6 +1001,7 @@ const server = http.createServer(async (req, res) => {
     if (await handleAuthApi(req, res, urlPath)) return;
     if (await handleStudioStateApi(req, res, urlPath)) return;
     if (await handleCompositionApi(req, res, urlPath)) return;
+    if (await handleDetailAssetApi(req, res, urlPath)) return;
     if (await handleWorkspaceBotApi(req, res, urlPath)) return;
     if (await handleApiAnswerApi(req, res, urlPath)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;

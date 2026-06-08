@@ -878,3 +878,29 @@
 - `package.json`의 `studio:validate`에 `studio:i18n-no-fallback-check`, `studio:dynamic-i18n-check`를 추가했다.
 - `node scripts/check-i18n-no-fallback.js`, `node scripts/check-studio-dynamic-i18n.js`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 Detail Settings 자산 서버 저장/API 연결
+- 다국어 회귀 방지 이후 다음 잔여 작업으로 `Detail Settings`의 실제 편집 자산 상태를 서버 재시작 대비 저장소에 연결했다.
+- 기존에는 `Detail Settings`의 Reusable Bot Assets 다운로드/업로드 버튼이 `/api/cga/groups/{groupId}/bots/{botId}/assets/{scope}/...` 자산 전송 API에는 연결되어 있었지만, 화면이 들고 있는 구조화 상태(`intent_utterances`, `entities`, `dictionary`, `rules`, `scenarios`)를 별도 서버 상태로 읽고 저장하는 API는 없었다.
+- `scripts/serve-studio.js`에 `/api/cga/groups/{groupId}/bots/{botId}/detail-assets` API를 추가했다.
+  - `GET`: 선택한 `group_id + bot_id`의 Detail 자산 상태를 반환한다.
+  - `PUT`: `bot.configure` 권한이 있는 사용자만 Detail 자산 상태를 저장한다.
+  - 저장 파일은 `.cga-data/detail-asset-registry.json`이다.
+- 서버 기본값은 현재 Studio 화면에서 사용하던 샘플 자산과 동일하게 유지했다.
+  - 학습문장/의도: `password_reset`, `account_update`, `billing_question`
+  - 개체: `email`, `channel`
+  - 사전: `password`, `plan`
+  - Rule: `Business hours`, `Billing priority`
+  - Scenario: `password_reset`, `account_update`
+- `apps/studio/app.js`에 `refreshDetailAssetsFromServer`, `saveDetailAssetsToServer`, `applyDetailAssetsFromServer`를 추가했다.
+- 앱 부팅, 그룹 변경, 봇 열기, 새 봇 생성 시 Detail 자산을 서버와 동기화하도록 연결했다.
+- Dictionary, Intent Utterance, Entity, Rule, Dialog/Scenario 업로드 후 서버 자산 전송이 성공하면 구조화된 Detail 자산 상태도 같이 저장하도록 연결했다.
+- Bot/Version 패키지 업로드 후에도 현재 Studio 상태와 Detail 자산 상태를 저장하도록 보강했다.
+- `scripts/check-detail-assets-api.mjs`를 추가해 다음을 검증한다.
+  - 기본 Detail 자산 읽기
+  - `bot.configure` 권한이 없는 `u-operator`의 저장 차단
+  - `u-builder`의 Detail 자산 저장
+  - `.cga-data/detail-asset-registry.json` 파일 영구 저장
+- `package.json`의 `studio:validate`에 `studio:detail-assets-check`를 추가했다.
+- `scripts/check-studio-config.js`가 Detail API route, 앱 refresh/save 함수, 서버 저장 파일, 서버 handler 존재를 감시하도록 보강했다.
+- Aidot 코드는 수정하지 않았다.
