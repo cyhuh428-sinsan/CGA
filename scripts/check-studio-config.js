@@ -93,6 +93,8 @@ if (!studioAppSource.includes("requestCgaJson")) fail("studio app does not call 
 if (!studioAppSource.includes("refreshAccessStateFromServer")) fail("studio app does not refresh access state from server");
 if (!studioAppSource.includes("refreshWorkspaceBotsFromServer")) fail("studio app does not refresh Bot Workspace bot list from server");
 if (!studioAppSource.includes("createWorkspaceBotOnServer")) fail("studio app does not create Bot Workspace bots through server API");
+if (!studioAppSource.includes("refreshStudioStateFromServer")) fail("studio app does not refresh Create Bot state from server");
+if (!studioAppSource.includes("saveStudioStateToServer")) fail("studio app does not save Create Bot state through server API");
 if (!studioAppSource.includes("refreshApiRegistryFromServer")) fail("studio app does not refresh Group API Registry from server");
 if (!studioAppSource.includes("saveApiAnswerToServer")) fail("studio app does not save Group API Registry entries through server API");
 for (const route of [
@@ -102,6 +104,7 @@ for (const route of [
   "/api/cga/groups/join-requests",
   "/api/cga/admin/permission-requests",
   "/bots",
+  "/studio-state",
   "/api-answers"
 ]) {
   if (!studioAppSource.includes(route)) fail(`studio app is missing access API route '${route}'`);
@@ -116,15 +119,18 @@ for (const route of [
   "/api/cga/groups/join-requests",
   "/api/cga/admin/permission-requests",
   "/bots",
+  "/studio-state",
   "/api-answers"
 ]) {
   if (!studioServerSource.includes(route)) fail(`studio server is missing auth/group route '${route}'`);
 }
 if (!studioServerSource.includes("access-state.json")) fail("studio server does not persist access state");
 if (!studioServerSource.includes("workspace-bots.json")) fail("studio server does not persist Bot Workspace bots");
+if (!studioServerSource.includes("studio-state-registry.json")) fail("studio server does not persist Create Bot studio state");
 if (!studioServerSource.includes("api-answer-registry.json")) fail("studio server does not persist group API answer registry");
 if (!studioServerSource.includes("handleAuthApi")) fail("studio server does not route CGA auth API");
 if (!studioServerSource.includes("handleWorkspaceBotApi")) fail("studio server does not route Bot Workspace API");
+if (!studioServerSource.includes("handleStudioStateApi")) fail("studio server does not route Create Bot studio state API");
 if (!studioServerSource.includes("handleApiAnswerApi")) fail("studio server does not route Group API Registry API");
 if (process.exitCode !== 1) pass("studio auth, group, and API answer routes exist");
 
