@@ -12,6 +12,7 @@ const workspaceBotsFile = path.join(dataDir, "workspace-bots.json");
 const studioStateRegistryFile = path.join(dataDir, "studio-state-registry.json");
 const compositionRegistryFile = path.join(dataDir, "composition-registry.json");
 const detailAssetRegistryFile = path.join(dataDir, "detail-asset-registry.json");
+const operationsStateRegistryFile = path.join(dataDir, "operations-state-registry.json");
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
 let apiAnswerRegistry = loadApiAnswerRegistry();
@@ -19,6 +20,7 @@ let workspaceBots = loadWorkspaceBots();
 let studioStateRegistry = loadStudioStateRegistry();
 let compositionRegistry = loadCompositionRegistry();
 let detailAssetRegistry = loadDetailAssetRegistry();
+let operationsStateRegistry = loadOperationsStateRegistry();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -215,6 +217,17 @@ function saveDetailAssetRegistry(registry) {
   return registry;
 }
 
+function loadOperationsStateRegistry() {
+  const registry = loadJsonFile(operationsStateRegistryFile, []);
+  return Array.isArray(registry) ? registry : [];
+}
+
+function saveOperationsStateRegistry(registry) {
+  operationsStateRegistry = registry;
+  writeJsonFile(operationsStateRegistryFile, registry);
+  return registry;
+}
+
 function createDefaultCompositionForBot(groupId, botId) {
   return {
     group_id: groupId,
@@ -261,6 +274,43 @@ function createDefaultDetailAssetsForBot(groupId, botId) {
       { id: "password_reset", type: "intent", displayName: "password_reset" },
       { id: "account_update", type: "intent", displayName: "account_update" }
     ],
+    updated_at: null
+  };
+}
+
+function createDefaultOperationsStateForBot(groupId, botId) {
+  return {
+    group_id: groupId,
+    bot_id: botId,
+    build: {
+      status: "ready",
+      bot_info: "complete",
+      intent_count: 12,
+      llm_status: "needed_for_pdf",
+      webchat_contract: "unchanged",
+      last_run_at: null
+    },
+    test: {
+      last_user_message: "I forgot my password.",
+      last_bot_message: "Open Account Settings and choose Reset Password.",
+      matched_intent: "password_reset",
+      method: "LLM intent classification",
+      similarity: 0.94,
+      latency_ms: 14,
+      last_run_at: null
+    },
+    operate: {
+      deployment_status: "draft",
+      channel_status: "web_ok",
+      channel_detail: "desktop_kakao_pending",
+      conversation_volume: 1284,
+      volume_status: "normal",
+      undefined_intents: 1,
+      container_health: "healthy",
+      llm_cost_status: "below_threshold",
+      compatibility: "preserved",
+      last_deployed_at: null
+    },
     updated_at: null
   };
 }
@@ -392,6 +442,16 @@ function parseDetailAssetPath(urlPath) {
   };
 }
 
+function parseOperationsStatePath(urlPath) {
+  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/operations-state(?:\/([^/]+))?$/);
+  if (!match) return null;
+  return {
+    groupId: match[1],
+    botId: match[2],
+    action: match[3] || null
+  };
+}
+
 async function canCreateWorkspaceBot(req, groupId, botId = "supportbot-draft") {
   const accessStateModule = await import("../packages/public-core/src/access-state.js");
   const state = await loadAccessState();
@@ -404,6 +464,13 @@ async function canConfigureWorkspaceBot(req, groupId, botId) {
   const state = await loadAccessState();
   const actorId = getActorId(req, state);
   return accessStateModule.getEffectiveGroupScopes(state, actorId, groupId, botId).includes("bot.configure");
+}
+
+async function hasBotScope(req, groupId, botId, scope) {
+  const accessStateModule = await import("../packages/public-core/src/access-state.js");
+  const state = await loadAccessState();
+  const actorId = getActorId(req, state);
+  return accessStateModule.getEffectiveGroupScopes(state, actorId, groupId, botId).includes(scope);
 }
 
 async function handleWorkspaceBotApi(req, res, urlPath) {
@@ -580,6 +647,121 @@ async function handleDetailAssetApi(req, res, urlPath) {
       next
     ]);
     sendJson(res, 200, { status: "saved", detail_assets: next });
+    return true;
+  }
+
+  sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+  return true;
+}
+
+async function handleOperationsStateApi(req, res, urlPath) {
+  const parsed = parseOperationsStatePath(urlPath);
+  if (!parsed) return false;
+  const { groupId, botId, action } = parsed;
+  const accessContract = await import("../packages/contracts/src/access-contract.js");
+  const saved = operationsStateRegistry.find((item) => item.group_id === groupId && item.bot_id === botId);
+  const baseState = saved || createDefaultOperationsStateForBot(groupId, botId);
+
+  if (!action && req.method === "GET") {
+    sendJson(res, 200, baseState);
+    return true;
+  }
+
+  if (!action && req.method === "PUT") {
+    if (!(await hasBotScope(req, groupId, botId, accessContract.ACCESS_SCOPES.BOT_OPERATE))) {
+      sendJson(res, 403, { error_code: "CGA_OPERATIONS_STATE_FORBIDDEN", message_key: "errors.bot.operateForbidden" });
+      return true;
+    }
+    const body = await readJsonRequest(req);
+    const next = {
+      ...baseState,
+      ...body,
+      group_id: groupId,
+      bot_id: botId,
+      updated_at: new Date().toISOString()
+    };
+    saveOperationsStateRegistry([
+      ...operationsStateRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId)),
+      next
+    ]);
+    sendJson(res, 200, { status: "saved", operations_state: next });
+    return true;
+  }
+
+  if (req.method === "POST" && action) {
+    const now = new Date().toISOString();
+    const body = await readJsonRequest(req);
+    let requiredScope = accessContract.ACCESS_SCOPES.BOT_OPERATE;
+    let next = { ...baseState, updated_at: now };
+
+    if (action === "run-build") {
+      requiredScope = accessContract.ACCESS_SCOPES.BOT_CONFIGURE;
+      next = {
+        ...next,
+        build: {
+          ...baseState.build,
+          status: "built",
+          intent_count: Number(body.intent_count || baseState.build.intent_count || 0),
+          last_run_at: now
+        }
+      };
+    } else if (action === "run-test") {
+      requiredScope = accessContract.ACCESS_SCOPES.BOT_REVIEW;
+      const message = String(body.message || baseState.test.last_user_message || "I forgot my password.");
+      next = {
+        ...next,
+        test: {
+          ...baseState.test,
+          last_user_message: message,
+          last_bot_message: message.toLowerCase().includes("password")
+            ? "Open Account Settings and choose Reset Password."
+            : "This simulator preview uses the Aidot-compatible runtime contract.",
+          matched_intent: message.toLowerCase().includes("password") ? "password_reset" : "fallback_preview",
+          method: "Aidot-compatible simulator preview",
+          similarity: message.toLowerCase().includes("password") ? 0.94 : 0.62,
+          latency_ms: 14,
+          last_run_at: now
+        }
+      };
+    } else if (action === "deploy") {
+      requiredScope = accessContract.ACCESS_SCOPES.BOT_DEPLOY;
+      next = {
+        ...next,
+        operate: {
+          ...baseState.operate,
+          deployment_status: "deployed",
+          channel_status: "web_ok",
+          compatibility: "preserved",
+          last_deployed_at: now
+        }
+      };
+    } else if (action === "refresh-operate") {
+      requiredScope = accessContract.ACCESS_SCOPES.BOT_OPERATE;
+      next = {
+        ...next,
+        operate: {
+          ...baseState.operate,
+          conversation_volume: Number(baseState.operate.conversation_volume || 0) + 1,
+          volume_status: "normal",
+          container_health: "healthy",
+          llm_cost_status: "below_threshold"
+        }
+      };
+    } else {
+      sendJson(res, 404, { error_code: "CGA_OPERATIONS_ACTION_NOT_FOUND", message_key: "errors.operations.actionNotFound", action });
+      return true;
+    }
+
+    if (!(await hasBotScope(req, groupId, botId, requiredScope))) {
+      sendJson(res, 403, { error_code: "CGA_OPERATIONS_ACTION_FORBIDDEN", message_key: "errors.operations.actionForbidden", required_scope: requiredScope });
+      return true;
+    }
+
+    saveOperationsStateRegistry([
+      ...operationsStateRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId)),
+      next
+    ]);
+    sendJson(res, 200, { status: "saved", action, operations_state: next });
     return true;
   }
 
@@ -1002,6 +1184,7 @@ const server = http.createServer(async (req, res) => {
     if (await handleStudioStateApi(req, res, urlPath)) return;
     if (await handleCompositionApi(req, res, urlPath)) return;
     if (await handleDetailAssetApi(req, res, urlPath)) return;
+    if (await handleOperationsStateApi(req, res, urlPath)) return;
     if (await handleWorkspaceBotApi(req, res, urlPath)) return;
     if (await handleApiAnswerApi(req, res, urlPath)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;

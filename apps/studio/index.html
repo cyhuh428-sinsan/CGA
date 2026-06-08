@@ -27,7 +27,7 @@
       <div class="actions">
         <button type="button" class="ghost" data-i18n="common.save">Save</button>
         <button type="button" class="ghost" data-i18n="common.preview">Preview</button>
-        <button type="button" class="primary" data-i18n="common.deploy">Deploy</button>
+        <button type="button" class="primary" data-deploy-action data-i18n="common.deploy">Deploy</button>
       </div>
     </header>
 
@@ -425,13 +425,13 @@
           <div><h3 data-i18n="build.title">Build</h3><p data-i18n="build.body">Run Aidot-compatible training/build readiness actions.</p></div>
           <em data-i18n="build.map">Maps to Aidot: NLU training / LLM NLU / RAG embedding / deploy readiness</em>
         </div>
-        <div class="readiness-grid">
-          <div class="ready"><strong data-i18n="build.botInfo">Bot info</strong><span data-i18n="build.complete">Complete</span></div>
-          <div class="ready"><strong data-i18n="build.intentCount">Intent count</strong><span>12 intents</span></div>
-          <div class="warn-card"><strong data-i18n="build.llmConnection">LLM connection</strong><span data-i18n="build.pdfNeeded">Needed for PDF path</span></div>
-          <div class="ready"><strong data-i18n="build.webchatContract">Webchat contract</strong><span data-i18n="build.unchanged">Unchanged</span></div>
+        <div class="readiness-grid" data-build-readiness>
+          <div class="ready"><strong data-i18n="build.botInfo">Bot info</strong><span data-build-bot-info data-i18n="build.complete">Complete</span></div>
+          <div class="ready"><strong data-i18n="build.intentCount">Intent count</strong><span data-build-intent-count>12 intents</span></div>
+          <div class="warn-card"><strong data-i18n="build.llmConnection">LLM connection</strong><span data-build-llm-status data-i18n="build.pdfNeeded">Needed for PDF path</span></div>
+          <div class="ready"><strong data-i18n="build.webchatContract">Webchat contract</strong><span data-build-webchat-status data-i18n="build.unchanged">Unchanged</span></div>
         </div>
-        <div class="button-row"><button data-i18n="build.run">Run Build</button><button class="ghost-btn" data-i18n="build.trainingStatus">View Aidot Training Status</button></div>
+        <div class="button-row"><button data-build-run data-i18n="build.run">Run Build</button><button class="ghost-btn" data-build-refresh data-i18n="build.trainingStatus">View Aidot Training Status</button></div>
       </section>
 
       <section id="test" data-screen-id="test" class="screen-card">
@@ -441,8 +441,8 @@
           <em data-i18n="test.map">Maps to Aidot: Simulator / intent result / runtime variables</em>
         </div>
         <div class="simulator-layout">
-          <div class="chat-box"><p class="user-msg">I forgot my password.</p><p class="bot-msg">Open Account Settings and choose Reset Password.</p><input placeholder="Type a test message" data-i18n-placeholder="test.simPlaceholder" /></div>
-          <aside class="analysis-box"><h4 data-i18n="test.analysis">Conversation Analysis</h4><p><b data-i18n="test.matched">Matched intent</b><span>password_reset</span></p><p><b data-i18n="test.method">Method</b><span>LLM intent classification</span></p><p><b>Similarity</b><span>0.94</span></p><p><b>Latency</b><span>14ms</span></p></aside>
+          <div class="chat-box"><p class="user-msg" data-test-user-message>I forgot my password.</p><p class="bot-msg" data-test-bot-message>Open Account Settings and choose Reset Password.</p><input placeholder="Type a test message" data-test-input data-i18n-placeholder="test.simPlaceholder" /></div>
+          <aside class="analysis-box"><h4 data-i18n="test.analysis">Conversation Analysis</h4><p><b data-i18n="test.matched">Matched intent</b><span data-test-intent>password_reset</span></p><p><b data-i18n="test.method">Method</b><span data-test-method>LLM intent classification</span></p><p><b>Similarity</b><span data-test-similarity>0.94</span></p><p><b>Latency</b><span data-test-latency>14ms</span></p></aside>
         </div>
       </section>
 
@@ -453,12 +453,12 @@
           <em data-i18n="operate.map">Maps to Aidot: Webchat / channel / operation version / analysis / retrain</em>
         </div>
         <div class="ops-grid">
-          <article><h4 data-i18n="operate.channelStatus">Channel Status</h4><strong data-i18n="operate.webOk">Web OK</strong><p data-i18n="operate.kakaoPending">Desktop and Kakao KR pending</p></article>
-          <article><h4 data-i18n="operate.volume">Conversation Volume</h4><strong>1,284</strong><p data-i18n="operate.normal">Normal range</p></article>
-          <article class="approval-needed"><h4 data-i18n="operate.undefined">Undefined Intent</h4><strong data-i18n="operate.pending1">1 pending</strong><p data-i18n="operate.dynamicApproval">Dynamic intent expansion requires approval.</p></article>
-          <article><h4 data-i18n="operate.container">Container Health</h4><strong data-i18n="operate.healthy">Healthy</strong><p data-i18n="operate.selfHost">Self-host target can be connected later</p></article>
-          <article><h4 data-i18n="operate.llmCost">LLM Cost</h4><strong data-i18n="operate.below">Below threshold</strong><p data-i18n="operate.costMetric">Cost alert uses existing metrics if available</p></article>
-          <article><h4 data-i18n="operate.compatibility">Compatibility</h4><strong data-i18n="operate.preserved">Preserved</strong><p data-i18n="operate.clients">Aidot clients can connect unchanged</p></article>
+          <article><h4 data-i18n="operate.channelStatus">Channel Status</h4><strong data-operate-channel data-i18n="operate.webOk">Web OK</strong><p data-operate-channel-detail data-i18n="operate.kakaoPending">Desktop and Kakao KR pending</p></article>
+          <article><h4 data-i18n="operate.volume">Conversation Volume</h4><strong data-operate-volume>1,284</strong><p data-operate-volume-status data-i18n="operate.normal">Normal range</p></article>
+          <article class="approval-needed"><h4 data-i18n="operate.undefined">Undefined Intent</h4><strong data-operate-undefined data-i18n="operate.pending1">1 pending</strong><p data-i18n="operate.dynamicApproval">Dynamic intent expansion requires approval.</p></article>
+          <article><h4 data-i18n="operate.container">Container Health</h4><strong data-operate-container data-i18n="operate.healthy">Healthy</strong><p data-i18n="operate.selfHost">Self-host target can be connected later</p></article>
+          <article><h4 data-i18n="operate.llmCost">LLM Cost</h4><strong data-operate-cost data-i18n="operate.below">Below threshold</strong><p data-i18n="operate.costMetric">Cost alert uses existing metrics if available</p></article>
+          <article><h4 data-i18n="operate.compatibility">Compatibility</h4><strong data-operate-compatibility data-i18n="operate.preserved">Preserved</strong><p data-i18n="operate.clients">Aidot clients can connect unchanged</p></article>
         </div>
       </section>
       <section id="locked-vs-runtime" data-screen-id="locked-vs-runtime" class="screen-card lock-policy-card">

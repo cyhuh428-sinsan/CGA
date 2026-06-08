@@ -117,6 +117,40 @@ let currentScenarioAssets = [
   { id: "password_reset", type: "intent", displayName: "password_reset" },
   { id: "account_update", type: "intent", displayName: "account_update" }
 ];
+let currentOperationsState = {
+  group_id: "g-support",
+  bot_id: "supportbot-draft",
+  build: {
+    status: "ready",
+    bot_info: "complete",
+    intent_count: 12,
+    llm_status: "needed_for_pdf",
+    webchat_contract: "unchanged",
+    last_run_at: null
+  },
+  test: {
+    last_user_message: "I forgot my password.",
+    last_bot_message: "Open Account Settings and choose Reset Password.",
+    matched_intent: "password_reset",
+    method: "LLM intent classification",
+    similarity: 0.94,
+    latency_ms: 14,
+    last_run_at: null
+  },
+  operate: {
+    deployment_status: "draft",
+    channel_status: "web_ok",
+    channel_detail: "desktop_kakao_pending",
+    conversation_volume: 1284,
+    volume_status: "normal",
+    undefined_intents: 1,
+    container_health: "healthy",
+    llm_cost_status: "below_threshold",
+    compatibility: "preserved",
+    last_deployed_at: null
+  },
+  updated_at: null
+};
 
 const dynamicMessages = {
   en: {
@@ -126,6 +160,8 @@ const dynamicMessages = {
     "common.enabled": "Enabled",
     "common.none": "None",
     "common.noRole": "no role",
+    "common.intentUnit": "intents",
+    "common.pendingUnit": "pending",
     "common.serverSaved": "server saved",
     "common.localOnly": "local only",
     "workspace.noGroup": "No group",
@@ -152,6 +188,8 @@ const dynamicMessages = {
     "common.enabled": "활성",
     "common.none": "없음",
     "common.noRole": "역할 없음",
+    "common.intentUnit": "개 의도",
+    "common.pendingUnit": "건 대기",
     "common.serverSaved": "서버 저장",
     "common.localOnly": "로컬만 반영",
     "workspace.noGroup": "그룹 없음",
@@ -178,6 +216,8 @@ const dynamicMessages = {
     "common.enabled": "Aktiviert",
     "common.none": "Keine",
     "common.noRole": "keine Rolle",
+    "common.intentUnit": "Intents",
+    "common.pendingUnit": "ausstehend",
     "common.serverSaved": "auf Server gespeichert",
     "common.localOnly": "nur lokal",
     "workspace.noGroup": "Keine Gruppe",
@@ -204,6 +244,8 @@ const dynamicMessages = {
     "common.enabled": "有効",
     "common.none": "なし",
     "common.noRole": "役割なし",
+    "common.intentUnit": "件の意図",
+    "common.pendingUnit": "件保留",
     "common.serverSaved": "サーバー保存済み",
     "common.localOnly": "ローカルのみ",
     "workspace.noGroup": "グループなし",
@@ -230,6 +272,8 @@ const dynamicMessages = {
     "common.enabled": "启用",
     "common.none": "无",
     "common.noRole": "无角色",
+    "common.intentUnit": "个意图",
+    "common.pendingUnit": "个待处理",
     "common.serverSaved": "已保存到服务器",
     "common.localOnly": "仅本地",
     "workspace.noGroup": "无组",
@@ -256,6 +300,8 @@ const dynamicMessages = {
     "common.enabled": "Bật",
     "common.none": "Không có",
     "common.noRole": "không có vai trò",
+    "common.intentUnit": "ý định",
+    "common.pendingUnit": "đang chờ",
     "common.serverSaved": "đã lưu máy chủ",
     "common.localOnly": "chỉ cục bộ",
     "workspace.noGroup": "Không có nhóm",
@@ -282,6 +328,8 @@ const dynamicMessages = {
     "common.enabled": "Activé",
     "common.none": "Aucun",
     "common.noRole": "aucun rôle",
+    "common.intentUnit": "intentions",
+    "common.pendingUnit": "en attente",
     "common.serverSaved": "enregistré serveur",
     "common.localOnly": "local uniquement",
     "workspace.noGroup": "Aucun groupe",
@@ -558,6 +606,11 @@ function getDetailAssetsUrl(groupId = currentWorkspaceGroupId, botId = currentWo
   return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/detail-assets`;
 }
 
+function getOperationsStateUrl(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId, action = "") {
+  const base = `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/operations-state`;
+  return action ? `${base}/${action}` : base;
+}
+
 function applyCompositionFromServer(composition) {
   if (!composition || typeof composition !== "object") return false;
   currentCompositionState = {
@@ -587,6 +640,20 @@ function applyDetailAssetsFromServer(detailAssets) {
   return true;
 }
 
+function applyOperationsStateFromServer(operationsState) {
+  if (!operationsState || typeof operationsState !== "object") return false;
+  currentOperationsState = {
+    ...currentOperationsState,
+    ...operationsState,
+    group_id: currentWorkspaceGroupId,
+    bot_id: currentWorkspaceBotId,
+    build: { ...currentOperationsState.build, ...(operationsState.build || {}) },
+    test: { ...currentOperationsState.test, ...(operationsState.test || {}) },
+    operate: { ...currentOperationsState.operate, ...(operationsState.operate || {}) }
+  };
+  return true;
+}
+
 async function refreshCompositionFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
   if (!groupId || !botId) return false;
   const payload = await requestCgaJson(getCompositionUrl(groupId, botId));
@@ -597,6 +664,12 @@ async function refreshDetailAssetsFromServer(groupId = currentWorkspaceGroupId, 
   if (!groupId || !botId) return false;
   const payload = await requestCgaJson(getDetailAssetsUrl(groupId, botId));
   return applyDetailAssetsFromServer(payload);
+}
+
+async function refreshOperationsStateFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  if (!groupId || !botId) return false;
+  const payload = await requestCgaJson(getOperationsStateUrl(groupId, botId));
+  return applyOperationsStateFromServer(payload);
 }
 
 async function saveCompositionToServer() {
@@ -610,6 +683,16 @@ async function saveCompositionToServer() {
     method: "PUT",
     body: payload
   });
+  return true;
+}
+
+async function runOperationsAction(action, body = {}) {
+  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
+  const payload = await requestCgaJson(getOperationsStateUrl(currentWorkspaceGroupId, currentWorkspaceBotId, action), {
+    method: "POST",
+    body
+  });
+  applyOperationsStateFromServer(payload.operations_state);
   return true;
 }
 
@@ -1217,17 +1300,62 @@ function renderCreateSummary() {
   `;
 }
 
+function renderOperationsPanels() {
+  const build = currentOperationsState.build || {};
+  const test = currentOperationsState.test || {};
+  const operate = currentOperationsState.operate || {};
+  const botInfo = document.querySelector("[data-build-bot-info]");
+  const intentCount = document.querySelector("[data-build-intent-count]");
+  const llmStatus = document.querySelector("[data-build-llm-status]");
+  const webchatStatus = document.querySelector("[data-build-webchat-status]");
+  const testUser = document.querySelector("[data-test-user-message]");
+  const testBot = document.querySelector("[data-test-bot-message]");
+  const testIntent = document.querySelector("[data-test-intent]");
+  const testMethod = document.querySelector("[data-test-method]");
+  const testSimilarity = document.querySelector("[data-test-similarity]");
+  const testLatency = document.querySelector("[data-test-latency]");
+  const channel = document.querySelector("[data-operate-channel]");
+  const channelDetail = document.querySelector("[data-operate-channel-detail]");
+  const volume = document.querySelector("[data-operate-volume]");
+  const volumeStatus = document.querySelector("[data-operate-volume-status]");
+  const undefinedIntents = document.querySelector("[data-operate-undefined]");
+  const containerHealth = document.querySelector("[data-operate-container]");
+  const cost = document.querySelector("[data-operate-cost]");
+  const compatibility = document.querySelector("[data-operate-compatibility]");
+
+  if (botInfo) botInfo.textContent = build.bot_info === "complete" ? t("build.complete", "Complete") : build.bot_info || "-";
+  if (intentCount) intentCount.textContent = `${build.intent_count ?? currentStudioState.counts.intents ?? 0} ${t("common.intentUnit", "intents")}`;
+  if (llmStatus) llmStatus.textContent = build.llm_status === "needed_for_pdf" ? t("build.pdfNeeded", "Needed for PDF path") : build.llm_status || "-";
+  if (webchatStatus) webchatStatus.textContent = build.webchat_contract === "unchanged" ? t("build.unchanged", "Unchanged") : build.webchat_contract || "-";
+  if (testUser) testUser.textContent = test.last_user_message || "";
+  if (testBot) testBot.textContent = test.last_bot_message || "";
+  if (testIntent) testIntent.textContent = test.matched_intent || "-";
+  if (testMethod) testMethod.textContent = test.method || "-";
+  if (testSimilarity) testSimilarity.textContent = Number(test.similarity ?? 0).toFixed(2);
+  if (testLatency) testLatency.textContent = `${Number(test.latency_ms ?? 0)}ms`;
+  if (channel) channel.textContent = operate.channel_status === "web_ok" ? t("operate.webOk", "Web OK") : operate.channel_status || "-";
+  if (channelDetail) channelDetail.textContent = operate.channel_detail === "desktop_kakao_pending" ? t("operate.kakaoPending", "Desktop and Kakao KR pending") : operate.channel_detail || "-";
+  if (volume) volume.textContent = Number(operate.conversation_volume ?? 0).toLocaleString();
+  if (volumeStatus) volumeStatus.textContent = operate.volume_status === "normal" ? t("operate.normal", "Normal range") : operate.volume_status || "-";
+  if (undefinedIntents) undefinedIntents.textContent = `${Number(operate.undefined_intents ?? 0)} ${t("common.pendingUnit", "pending")}`;
+  if (containerHealth) containerHealth.textContent = operate.container_health === "healthy" ? t("operate.healthy", "Healthy") : operate.container_health || "-";
+  if (cost) cost.textContent = operate.llm_cost_status === "below_threshold" ? t("operate.below", "Below threshold") : operate.llm_cost_status || "-";
+  if (compatibility) compatibility.textContent = operate.compatibility === "preserved" ? t("operate.preserved", "Preserved") : operate.compatibility || "-";
+}
+
 function renderAllStatePanels() {
   renderCreateSummary();
   renderTopContext();
   bindCreateControls();
   bindConfigureComposition();
+  bindOperationsActions();
   renderCreateSummary();
   renderTopContext();
   renderConfigureComposition();
   renderErrorSamples();
   renderStateSummary();
   renderReadinessIssues();
+  renderOperationsPanels();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }
 
@@ -1754,6 +1882,52 @@ function bindAssetTransferActions() {
   });
 }
 
+function bindOperationsActions() {
+  const runBuild = document.querySelector("[data-build-run]");
+  const refreshBuild = document.querySelector("[data-build-refresh]");
+  const testInput = document.querySelector("[data-test-input]");
+  const deploy = document.querySelector("[data-deploy-action]");
+
+  if (runBuild && runBuild.dataset.bound !== "true") {
+    runBuild.dataset.bound = "true";
+    runBuild.addEventListener("click", async () => {
+      await runOperationsAction("run-build", {
+        intent_count: currentStudioState.counts.intents || currentIntentUtteranceAssets.length || currentOperationsState.build.intent_count
+      }).catch(() => false);
+      renderAllStatePanels();
+    });
+  }
+
+  if (refreshBuild && refreshBuild.dataset.bound !== "true") {
+    refreshBuild.dataset.bound = "true";
+    refreshBuild.addEventListener("click", async () => {
+      await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+      renderAllStatePanels();
+    });
+  }
+
+  if (testInput && testInput.dataset.bound !== "true") {
+    testInput.dataset.bound = "true";
+    testInput.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      const message = testInput.value.trim();
+      if (!message) return;
+      await runOperationsAction("run-test", { message }).catch(() => false);
+      testInput.value = "";
+      renderAllStatePanels();
+    });
+  }
+
+  if (deploy && deploy.dataset.bound !== "true") {
+    deploy.dataset.bound = "true";
+    deploy.addEventListener("click", async () => {
+      await runOperationsAction("deploy").catch(() => false);
+      renderAllStatePanels();
+    });
+  }
+}
+
 function renderTopContext() {
   const current = summarizeAccess(currentAccessState);
   const group = getCurrentWorkspaceGroup();
@@ -1787,6 +1961,7 @@ function bindWorkspaceActions() {
         await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
         await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
         await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
+        await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
       } catch {
         const bot = currentWorkspaceBots.find((item) => item.group_id === currentWorkspaceGroupId) || null;
         if (bot) applyCurrentBotToStudioState(bot);
@@ -1818,6 +1993,7 @@ function bindWorkspaceActions() {
         await saveStudioStateToServer();
         await saveCompositionToServer();
         await saveDetailAssetsToServer();
+        await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       } catch {
         currentWorkspaceBots = [...currentWorkspaceBots, bot];
         applyCurrentBotToStudioState(bot);
@@ -1902,6 +2078,7 @@ function bindWorkspaceActions() {
       await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+      await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       renderWorkspaceHome();
       renderAllStatePanels();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -2402,6 +2579,7 @@ function bootApp() {
   bindAdminWorkbench();
   renderLockPolicy();
   bindAssetTransferActions();
+  bindOperationsActions();
   syncStudioLocaleToCurrentUser();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
   refreshAccessStateFromServer()
@@ -2411,6 +2589,7 @@ function bootApp() {
         await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+        await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         renderAllStatePanels();
         rerenderAdminAndAccess();
       }

@@ -904,3 +904,36 @@
 - `package.json`의 `studio:validate`에 `studio:detail-assets-check`를 추가했다.
 - `scripts/check-studio-config.js`가 Detail API route, 앱 refresh/save 함수, 서버 저장 파일, 서버 handler 존재를 감시하도록 보강했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 Build/Test/Operate 운영 상태 서버 저장/API 연결
+- `Detail Settings` 자산 저장 연결 이후, 남아 있던 제작 흐름 화면 중 `Build`, `Test`, `Operate`가 정적 표시 중심으로 남아 있는 것을 확인했다.
+- Aidot의 실제 학습 엔진, 시뮬레이터, 배포 런타임을 새로 구현하지 않고, CGA 화면에서 필요한 운영 상태를 서버에 저장/조회하는 최소 연결을 추가했다.
+- `scripts/serve-studio.js`에 `/api/cga/groups/{groupId}/bots/{botId}/operations-state` API를 추가했다.
+  - `GET`: 선택한 `group_id + bot_id`의 Build/Test/Operate 상태를 반환한다.
+  - `PUT`: 운영 상태 전체 저장용이며 `bot.operate` 권한이 필요하다.
+  - `POST /run-build`: Build 실행 상태를 갱신하며 `bot.configure` 권한이 필요하다.
+  - `POST /run-test`: Simulator preview 상태를 갱신하며 `bot.review` 권한이 필요하다.
+  - `POST /deploy`: 배포 상태를 갱신하며 `bot.deploy` 권한이 필요하다.
+  - `POST /refresh-operate`: 운영 지표 refresh용이며 `bot.operate` 권한이 필요하다.
+  - 저장 파일은 `.cga-data/operations-state-registry.json`이다.
+- `apps/studio/index.html`의 기존 Build/Test/Operate 화면에 새 문구를 만들지 않고 `data-*` 연결점만 추가했다.
+  - `Run Build` 버튼은 `/operations-state/run-build`로 연결한다.
+  - Test 입력창은 Enter 입력 시 `/operations-state/run-test`로 연결한다.
+  - 상단 `Deploy` 버튼은 `/operations-state/deploy`로 연결한다.
+  - Build readiness 카드, Simulator 분석 카드, Operate 상태 카드는 서버 상태로 렌더링한다.
+- `apps/studio/app.js`에 `currentOperationsState`, `refreshOperationsStateFromServer`, `runOperationsAction`, `renderOperationsPanels`, `bindOperationsActions`를 추가했다.
+- 앱 부팅, 그룹 변경, 봇 열기 시 operations state를 서버와 동기화하도록 연결했다.
+- 동적 수치 단위(`intents`, `pending`)도 다국어 동적 메시지로 분리했다.
+- `scripts/check-studio-dynamic-i18n.js`가 새 동적 단위 키를 감시하도록 보강했다.
+- `scripts/check-operations-state-api.mjs`를 추가해 다음을 검증한다.
+  - 기본 operations state 읽기
+  - 권한 없는 사용자 build 실행 차단
+  - builder의 build 실행
+  - reviewer의 simulator preview 실행
+  - builder의 deploy 차단
+  - admin의 deploy 실행
+  - `.cga-data/operations-state-registry.json` 파일 영구 저장
+- `package.json`의 `studio:validate`에 `studio:operations-state-check`를 추가했다.
+- `scripts/check-studio-config.js`가 operations API route, 앱 refresh/action 함수, 서버 저장 파일, 서버 handler 존재를 감시하도록 보강했다.
+- `npm run studio:validate`를 통과했다.
+- Aidot 코드는 수정하지 않았다.
