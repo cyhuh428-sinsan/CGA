@@ -767,3 +767,18 @@
 - `package.json`의 `studio:validate`에 `studio:workspace-bots-check`를 추가했다.
 - `scripts/check-studio-config.js`에 Bot Workspace 화면/서버 route와 `workspace-bots.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### Create Bot 구조 설정 서버 저장/API 연결
+- `Create Bot`에서 입력하는 봇명, 설명, 기본 언어, 버전, LLM 사용 여부, 입력 방식, PDF 허용, 오케스트레이터 모드, Bot Server 위치를 현재 봇의 Studio 상태로 서버에 저장하도록 연결했다.
+- 추가한 endpoint는 `/api/cga/groups/{groupId}/bots/{botId}/studio-state`이다.
+- `GET`은 선택한 `group_id + bot_id`의 저장된 Studio 상태를 반환하고, 저장본이 없으면 현재 workspace bot 메타데이터 기준 기본 상태를 반환한다.
+- `PUT`은 `bot.configure` 권한이 있는 사용자만 저장할 수 있다.
+- 서버 저장소는 `.cga-data/studio-state-registry.json` 파일이다. 정식 DB 전 단계의 재시작 대비 저장소로 사용한다.
+- Studio 상태 저장 시 `workspace-bots.json`의 봇명, 버전, 언어도 함께 갱신해 Bot Workspace 목록과 Create Bot 입력값이 어긋나지 않게 했다.
+- 화면은 `refreshStudioStateFromServer()`로 선택 봇의 구조 설정을 읽고, `saveStudioStateToServer()`로 Create Bot 변경 내용을 저장한다.
+- 그룹 변경, 봇 열기, 최초 화면 로딩 시 서버에 저장된 Studio 상태를 다시 읽어 화면 입력값과 요약 패널에 반영한다.
+- `scripts/check-studio-state-api.mjs`를 추가해 기본 상태 조회, 권한 없는 저장 차단, 권한 있는 저장, 파일 저장, workspace bot 메타데이터 갱신을 실제 HTTP로 검증한다.
+- `package.json`의 `studio:validate`에 `studio:studio-state-check`를 추가했다.
+- `scripts/check-studio-config.js`에 Create Bot 상태 API route와 `studio-state-registry.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
+- Aidot 코드는 수정하지 않았다.

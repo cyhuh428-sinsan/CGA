@@ -9,10 +9,12 @@ const assetTransferHistoryFile = path.join(dataDir, "asset-transfer-history.json
 const accessStateFile = path.join(dataDir, "access-state.json");
 const apiAnswerRegistryFile = path.join(dataDir, "api-answer-registry.json");
 const workspaceBotsFile = path.join(dataDir, "workspace-bots.json");
+const studioStateRegistryFile = path.join(dataDir, "studio-state-registry.json");
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
 let apiAnswerRegistry = loadApiAnswerRegistry();
 let workspaceBots = loadWorkspaceBots();
+let studioStateRegistry = loadStudioStateRegistry();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -126,6 +128,67 @@ function saveWorkspaceBots(bots) {
   return bots;
 }
 
+function loadStudioStateRegistry() {
+  const registry = loadJsonFile(studioStateRegistryFile, []);
+  return Array.isArray(registry) ? registry : [];
+}
+
+function saveStudioStateRegistry(registry) {
+  studioStateRegistry = registry;
+  writeJsonFile(studioStateRegistryFile, registry);
+  return registry;
+}
+
+function createDefaultStudioStateForBot(groupId, botId) {
+  const bot = workspaceBots.find((item) => item.group_id === groupId && item.id === botId) || {};
+  return {
+    bot: {
+      id: botId,
+      name: bot.name || "New Bot",
+      description: "",
+      version: bot.version || "v0.1",
+      defaultLocale: bot.locale || "en",
+      selectedChannels: ["web"]
+    },
+    structuralChoices: {
+      useLlm: false,
+      compositionInput: "utterances",
+      allowPdf: false,
+      botServerLocation: "decide_later",
+      orchestratorMode: "decide_later"
+    },
+    orchestrator: {
+      mode: "decide_later",
+      endpoint: null
+    },
+    llm: {
+      status: "not_connected",
+      provider: null,
+      model: null
+    },
+    workflow: {
+      create: "in_progress",
+      configure: "not_started",
+      detail: "not_started",
+      build: "not_started",
+      test: "not_started",
+      operate: "not_started"
+    },
+    counts: {
+      intents: 0,
+      utterances: 0,
+      documents: 0,
+      pendingApprovals: 0
+    },
+    channels: {
+      web: "not_configured",
+      desktopMessenger: "not_configured",
+      kakaoKr: (bot.locale || "en") === "ko" ? "not_configured" : "disabled"
+    },
+    commercialModules: {}
+  };
+}
+
 function sanitizePathSegment(value, fallback) {
   const text = String(value || fallback)
     .trim()
@@ -226,11 +289,27 @@ function parseWorkspaceBotPath(urlPath) {
   };
 }
 
+function parseStudioStatePath(urlPath) {
+  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/studio-state$/);
+  if (!match) return null;
+  return {
+    groupId: match[1],
+    botId: match[2]
+  };
+}
+
 async function canCreateWorkspaceBot(req, groupId, botId = "supportbot-draft") {
   const accessStateModule = await import("../packages/public-core/src/access-state.js");
   const state = await loadAccessState();
   const actorId = getActorId(req, state);
   return accessStateModule.getEffectiveGroupScopes(state, actorId, groupId, botId).includes("bot.create");
+}
+
+async function canConfigureWorkspaceBot(req, groupId, botId) {
+  const accessStateModule = await import("../packages/public-core/src/access-state.js");
+  const state = await loadAccessState();
+  const actorId = getActorId(req, state);
+  return accessStateModule.getEffectiveGroupScopes(state, actorId, groupId, botId).includes("bot.configure");
 }
 
 async function handleWorkspaceBotApi(req, res, urlPath) {
@@ -268,6 +347,65 @@ async function handleWorkspaceBotApi(req, res, urlPath) {
     };
     saveWorkspaceBots([...workspaceBots, bot]);
     sendJson(res, 201, { status: "created", bot });
+    return true;
+  }
+
+  sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+  return true;
+}
+
+async function handleStudioStateApi(req, res, urlPath) {
+  const parsed = parseStudioStatePath(urlPath);
+  if (!parsed) return false;
+  const { groupId, botId } = parsed;
+
+  if (req.method === "GET") {
+    const saved = studioStateRegistry.find((item) => item.group_id === groupId && item.bot_id === botId);
+    sendJson(res, 200, {
+      group_id: groupId,
+      bot_id: botId,
+      state: saved?.state || createDefaultStudioStateForBot(groupId, botId),
+      updated_at: saved?.updated_at || null
+    });
+    return true;
+  }
+
+  if (req.method === "PUT") {
+    if (!(await canConfigureWorkspaceBot(req, groupId, botId))) {
+      sendJson(res, 403, { error_code: "CGA_BOT_CONFIGURE_FORBIDDEN", message_key: "errors.bot.configureForbidden" });
+      return true;
+    }
+    const body = await readJsonRequest(req);
+    const state = body.state && typeof body.state === "object" ? body.state : body;
+    const botState = state.bot || {};
+    const updatedAt = new Date().toISOString();
+    const entry = {
+      group_id: groupId,
+      bot_id: botId,
+      state: {
+        ...state,
+        bot: {
+          ...botState,
+          id: botId
+        }
+      },
+      updated_at: updatedAt
+    };
+    saveStudioStateRegistry([
+      ...studioStateRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId)),
+      entry
+    ]);
+    saveWorkspaceBots(workspaceBots.map((bot) => {
+      if (bot.group_id !== groupId || bot.id !== botId) return bot;
+      return {
+        ...bot,
+        name: botState.name || bot.name,
+        version: botState.version || bot.version,
+        locale: botState.defaultLocale || bot.locale,
+        updated_at: updatedAt.slice(0, 10)
+      };
+    }));
+    sendJson(res, 200, { status: "saved", group_id: groupId, bot_id: botId, state: entry.state, updated_at: updatedAt });
     return true;
   }
 
@@ -687,6 +825,7 @@ const server = http.createServer(async (req, res) => {
   const query = new URL(req.url || "/", "http://localhost").searchParams;
   try {
     if (await handleAuthApi(req, res, urlPath)) return;
+    if (await handleStudioStateApi(req, res, urlPath)) return;
     if (await handleWorkspaceBotApi(req, res, urlPath)) return;
     if (await handleApiAnswerApi(req, res, urlPath)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;

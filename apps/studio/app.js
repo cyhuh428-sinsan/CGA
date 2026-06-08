@@ -77,6 +77,7 @@ let currentApiRegistry = [
 let currentApiGroupId = "g-support";
 let currentApiBotId = "supportbot-draft";
 let currentTransferStatus = "";
+let studioStateSaveTimer = null;
 let currentDictionaryAssets = [
   { word: "password", synonyms: ["login password", "account password"] },
   { word: "plan", synonyms: ["subscription", "membership"] }
@@ -130,6 +131,7 @@ function applyCurrentBotToStudioState(bot) {
   currentWorkspaceGroupId = bot.group_id;
   currentApiGroupId = bot.group_id;
   currentApiBotId = bot.id;
+  currentStudioState.bot.id = bot.id;
   currentStudioState.bot.name = bot.name;
   currentStudioState.bot.defaultLocale = bot.locale;
   currentStudioState.bot.version = bot.version || currentStudioState.bot.version || "v0.1";
@@ -311,6 +313,50 @@ function getAssetTransferHistoryUrl() {
 
 function getWorkspaceBotsUrl(groupId = currentWorkspaceGroupId) {
   return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots`;
+}
+
+function getStudioStateUrl(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/studio-state`;
+}
+
+function applyStudioStateFromServer(state) {
+  if (!state || typeof state !== "object") return false;
+  if (state.bot) currentStudioState.bot = { ...currentStudioState.bot, ...state.bot, id: currentWorkspaceBotId };
+  if (state.structuralChoices) currentStudioState.structuralChoices = { ...currentStudioState.structuralChoices, ...state.structuralChoices };
+  if (state.orchestrator) currentStudioState.orchestrator = { ...currentStudioState.orchestrator, ...state.orchestrator };
+  if (state.llm) currentStudioState.llm = { ...currentStudioState.llm, ...state.llm };
+  if (state.workflow) currentStudioState.workflow = { ...currentStudioState.workflow, ...state.workflow };
+  if (state.counts) currentStudioState.counts = { ...currentStudioState.counts, ...state.counts };
+  if (state.channels) currentStudioState.channels = { ...currentStudioState.channels, ...state.channels };
+  if (state.commercialModules) currentStudioState.commercialModules = { ...currentStudioState.commercialModules, ...state.commercialModules };
+  return true;
+}
+
+async function refreshStudioStateFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  if (!groupId || !botId) return false;
+  const payload = await requestCgaJson(getStudioStateUrl(groupId, botId));
+  return applyStudioStateFromServer(payload.state);
+}
+
+async function saveStudioStateToServer() {
+  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
+  await requestCgaJson(getStudioStateUrl(), {
+    method: "PUT",
+    body: {
+      state: currentStudioState
+    }
+  });
+  await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
+  return true;
+}
+
+function scheduleStudioStateSave() {
+  window.clearTimeout(studioStateSaveTimer);
+  studioStateSaveTimer = window.setTimeout(() => {
+    saveStudioStateToServer()
+      .then(() => renderWorkspaceHome())
+      .catch(() => {});
+  }, 500);
 }
 
 async function refreshWorkspaceBotsFromServer(groupId = currentWorkspaceGroupId) {
@@ -866,17 +912,22 @@ function renderAllStatePanels() {
 function bindCreateControls() {
   syncCreateControlsFromState();
   document.querySelectorAll("[data-structural-field]").forEach((control) => {
+    if (control.dataset.createBound === "true") return;
+    control.dataset.createBound = "true";
     control.addEventListener("input", () => {
       const field = control.dataset.structuralField;
       setByPath(currentStudioState, field, coerceFieldValue(field, control.value));
       applyStructuralSideEffects(field);
       renderAllStatePanels();
+      scheduleStudioStateSave();
     });
-    control.addEventListener("change", () => {
+    control.addEventListener("change", async () => {
       const field = control.dataset.structuralField;
       setByPath(currentStudioState, field, coerceFieldValue(field, control.value));
       applyStructuralSideEffects(field);
       renderAllStatePanels();
+      await saveStudioStateToServer().catch(() => false);
+      renderWorkspaceHome();
     });
   });
 }
@@ -1250,11 +1301,13 @@ function bindWorkspaceActions() {
       currentWorkspaceGroupId = groupSelect.value;
       try {
         await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId);
+        await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
       } catch {
         const bot = currentWorkspaceBots.find((item) => item.group_id === currentWorkspaceGroupId) || null;
         if (bot) applyCurrentBotToStudioState(bot);
       }
       renderWorkspaceHome();
+      renderAllStatePanels();
       rerenderAdminAndAccess();
     });
   }
@@ -1277,13 +1330,13 @@ function bindWorkspaceActions() {
         const created = await createWorkspaceBotOnServer(bot);
         currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== created.bot?.id), created.bot || bot];
         applyCurrentBotToStudioState(created.bot || bot);
+        await saveStudioStateToServer();
       } catch {
         currentWorkspaceBots = [...currentWorkspaceBots, bot];
         applyCurrentBotToStudioState(bot);
       }
       renderWorkspaceHome();
-      renderCreateSummary();
-      renderTopContext();
+      renderAllStatePanels();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
     });
   }
@@ -1347,13 +1400,13 @@ function bindWorkspaceActions() {
   document.querySelectorAll("[data-open-bot]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const bot = currentWorkspaceBots.find((item) => item.id === button.dataset.openBot);
       if (!bot) return;
       applyCurrentBotToStudioState(bot);
+      await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       renderWorkspaceHome();
-      renderCreateSummary();
-      renderTopContext();
+      renderAllStatePanels();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
     });
   });
@@ -1856,6 +1909,8 @@ function bootApp() {
     .then(async (loaded) => {
       if (loaded) {
         await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
+        await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+        renderAllStatePanels();
         rerenderAdminAndAccess();
       }
     })
