@@ -753,3 +753,17 @@
 - `package.json`의 `studio:validate`에 `studio:api-answer-check`를 추가했다.
 - `scripts/check-studio-config.js`에 Group API Registry 화면/서버 route와 `api-answer-registry.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### Bot Workspace 그룹별 봇 목록/생성 서버 API 연결
+- `Bot Workspace`의 그룹별 봇 목록과 `Create Bot` 버튼을 브라우저 메모리 배열에서 CGA 서버 API 우선 방식으로 연결했다.
+- 추가한 endpoint는 `/api/cga/groups/{groupId}/bots`이다.
+- `GET`은 선택한 그룹의 봇 목록을 반환하고, `POST`는 `bot.create` 권한이 있는 사용자만 그룹 봇을 생성할 수 있다.
+- 서버 저장소는 `.cga-data/workspace-bots.json` 파일이다. 정식 DB 전 단계의 재시작 대비 저장소로 사용한다.
+- 화면은 `refreshWorkspaceBotsFromServer()`로 서버 봇 목록을 읽고, `createWorkspaceBotOnServer()`로 신규 봇을 저장한다.
+- 그룹 변경 시 선택 그룹의 서버 봇 목록을 다시 읽고, 첫 번째 봇을 현재 작업 봇으로 동기화한다.
+- 최초 화면 로딩 시 access state를 서버에서 읽은 뒤 Bot Workspace 봇 목록도 서버에서 동기화한다.
+- `scripts/check-workspace-bots-api.mjs`를 추가해 그룹 봇 목록 조회, 권한 없는 생성 차단, 권한 있는 생성, 파일 저장을 실제 HTTP로 검증한다.
+- `package.json`의 `studio:validate`에 `studio:workspace-bots-check`를 추가했다.
+- `scripts/check-studio-config.js`에 Bot Workspace 화면/서버 route와 `workspace-bots.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
+- Aidot 코드는 수정하지 않았다.

@@ -8,9 +8,11 @@ const dataDir = path.resolve(process.env.CGA_DATA_DIR || path.join(root, ".cga-d
 const assetTransferHistoryFile = path.join(dataDir, "asset-transfer-history.json");
 const accessStateFile = path.join(dataDir, "access-state.json");
 const apiAnswerRegistryFile = path.join(dataDir, "api-answer-registry.json");
+const workspaceBotsFile = path.join(dataDir, "workspace-bots.json");
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
 let apiAnswerRegistry = loadApiAnswerRegistry();
+let workspaceBots = loadWorkspaceBots();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -79,6 +81,49 @@ function saveApiAnswerRegistry(registry) {
   apiAnswerRegistry = registry;
   writeJsonFile(apiAnswerRegistryFile, registry);
   return registry;
+}
+
+function createDefaultWorkspaceBots() {
+  return [
+    {
+      id: "supportbot-draft",
+      group_id: "g-support",
+      name: "SupportBot Draft",
+      version: "v0.1",
+      status: "draft",
+      locale: "ko",
+      updated_at: "2026-06-04"
+    },
+    {
+      id: "faqbot-v1",
+      group_id: "g-support",
+      name: "FAQ Bot v1",
+      version: "v1.0",
+      status: "ready",
+      locale: "en",
+      updated_at: "2026-06-03"
+    },
+    {
+      id: "ops-assistant",
+      group_id: "g-ops",
+      name: "Ops Assistant",
+      version: "v0.3",
+      status: "operating",
+      locale: "en",
+      updated_at: "2026-06-02"
+    }
+  ];
+}
+
+function loadWorkspaceBots() {
+  const bots = loadJsonFile(workspaceBotsFile, null);
+  return Array.isArray(bots) ? bots : createDefaultWorkspaceBots();
+}
+
+function saveWorkspaceBots(bots) {
+  workspaceBots = bots;
+  writeJsonFile(workspaceBotsFile, bots);
+  return bots;
 }
 
 function sanitizePathSegment(value, fallback) {
@@ -171,6 +216,63 @@ function parseApiAnswerPath(urlPath) {
     groupId: match[1],
     botId: match[2]
   };
+}
+
+function parseWorkspaceBotPath(urlPath) {
+  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots$/);
+  if (!match) return null;
+  return {
+    groupId: match[1]
+  };
+}
+
+async function canCreateWorkspaceBot(req, groupId, botId = "supportbot-draft") {
+  const accessStateModule = await import("../packages/public-core/src/access-state.js");
+  const state = await loadAccessState();
+  const actorId = getActorId(req, state);
+  return accessStateModule.getEffectiveGroupScopes(state, actorId, groupId, botId).includes("bot.create");
+}
+
+async function handleWorkspaceBotApi(req, res, urlPath) {
+  const parsed = parseWorkspaceBotPath(urlPath);
+  if (!parsed) return false;
+  const { groupId } = parsed;
+
+  if (req.method === "GET") {
+    sendJson(res, 200, {
+      group_id: groupId,
+      items: workspaceBots.filter((bot) => bot.group_id === groupId)
+    });
+    return true;
+  }
+
+  if (req.method === "POST") {
+    const body = await readJsonRequest(req);
+    const id = sanitizePathSegment(body.id || `bot-${Date.now()}`, "bot");
+    if (!(await canCreateWorkspaceBot(req, groupId, id))) {
+      sendJson(res, 403, { error_code: "CGA_BOT_CREATE_FORBIDDEN", message_key: "errors.bot.createForbidden" });
+      return true;
+    }
+    if (workspaceBots.some((bot) => bot.group_id === groupId && bot.id === id)) {
+      sendJson(res, 409, { error_code: "CGA_BOT_ALREADY_EXISTS", message_key: "errors.bot.exists" });
+      return true;
+    }
+    const bot = {
+      id,
+      group_id: groupId,
+      name: body.name || "New Bot",
+      version: body.version || "v0.1",
+      status: body.status || "draft",
+      locale: body.locale || "en",
+      updated_at: new Date().toISOString().slice(0, 10)
+    };
+    saveWorkspaceBots([...workspaceBots, bot]);
+    sendJson(res, 201, { status: "created", bot });
+    return true;
+  }
+
+  sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+  return true;
 }
 
 async function canManageApiAnswer(req, groupId, botId) {
@@ -585,6 +687,7 @@ const server = http.createServer(async (req, res) => {
   const query = new URL(req.url || "/", "http://localhost").searchParams;
   try {
     if (await handleAuthApi(req, res, urlPath)) return;
+    if (await handleWorkspaceBotApi(req, res, urlPath)) return;
     if (await handleApiAnswerApi(req, res, urlPath)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;
   } catch (error) {

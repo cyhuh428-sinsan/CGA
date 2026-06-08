@@ -124,6 +124,17 @@ function canCreateBotInCurrentWorkspace() {
   return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.create");
 }
 
+function applyCurrentBotToStudioState(bot) {
+  if (!bot) return;
+  currentWorkspaceBotId = bot.id;
+  currentWorkspaceGroupId = bot.group_id;
+  currentApiGroupId = bot.group_id;
+  currentApiBotId = bot.id;
+  currentStudioState.bot.name = bot.name;
+  currentStudioState.bot.defaultLocale = bot.locale;
+  currentStudioState.bot.version = bot.version || currentStudioState.bot.version || "v0.1";
+}
+
 function getSafeFileName(value, fallback) {
   const normalized = String(value || fallback)
     .trim()
@@ -296,6 +307,38 @@ function getAssetTransferHistoryUrl() {
   const groupId = encodeURIComponent(currentWorkspaceGroupId || "g-support");
   const botId = encodeURIComponent(currentWorkspaceBotId || "supportbot-draft");
   return `/api/cga/groups/${groupId}/bots/${botId}/asset-transfers`;
+}
+
+function getWorkspaceBotsUrl(groupId = currentWorkspaceGroupId) {
+  return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots`;
+}
+
+async function refreshWorkspaceBotsFromServer(groupId = currentWorkspaceGroupId) {
+  if (!groupId) return false;
+  const payload = await requestCgaJson(getWorkspaceBotsUrl(groupId));
+  if (!Array.isArray(payload.items)) return false;
+  currentWorkspaceBots = [
+    ...currentWorkspaceBots.filter((bot) => bot.group_id !== groupId),
+    ...payload.items
+  ];
+  if (!payload.items.some((bot) => bot.id === currentWorkspaceBotId)) {
+    const nextBot = payload.items[0] || null;
+    if (nextBot) applyCurrentBotToStudioState(nextBot);
+  }
+  return true;
+}
+
+async function createWorkspaceBotOnServer(bot) {
+  return requestCgaJson(getWorkspaceBotsUrl(bot.group_id), {
+    method: "POST",
+    body: {
+      id: bot.id,
+      name: bot.name,
+      version: bot.version || "v0.1",
+      status: bot.status || "draft",
+      locale: bot.locale || "en"
+    }
+  });
 }
 
 function getApiAnswerRegistryUrl(groupId = currentApiGroupId, botId = currentApiBotId) {
@@ -1203,18 +1246,21 @@ function bindWorkspaceActions() {
   const uploadVersion = document.querySelector("[data-upload-version-package]");
   if (groupSelect && groupSelect.dataset.bound !== "true") {
     groupSelect.dataset.bound = "true";
-    groupSelect.addEventListener("change", () => {
+    groupSelect.addEventListener("change", async () => {
       currentWorkspaceGroupId = groupSelect.value;
-      currentWorkspaceBotId = currentWorkspaceBots.find((bot) => bot.group_id === currentWorkspaceGroupId)?.id || "";
-      currentApiGroupId = currentWorkspaceGroupId;
-      currentApiBotId = currentWorkspaceBotId;
+      try {
+        await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId);
+      } catch {
+        const bot = currentWorkspaceBots.find((item) => item.group_id === currentWorkspaceGroupId) || null;
+        if (bot) applyCurrentBotToStudioState(bot);
+      }
       renderWorkspaceHome();
       rerenderAdminAndAccess();
     });
   }
   if (createButton && createButton.dataset.bound !== "true") {
     createButton.dataset.bound = "true";
-    createButton.addEventListener("click", () => {
+    createButton.addEventListener("click", async () => {
       if (!canCreateBotInCurrentWorkspace()) return;
       const nextNumber = currentWorkspaceBots.length + 1;
       const id = `bot-${Date.now()}`;
@@ -1224,14 +1270,17 @@ function bindWorkspaceActions() {
         name: `New Bot ${nextNumber}`,
         status: "draft",
         locale: currentStudioState.bot.defaultLocale,
+        version: "v0.1",
         updated_at: "2026-06-04"
       };
-      currentWorkspaceBots = [...currentWorkspaceBots, bot];
-      currentWorkspaceBotId = id;
-      currentApiGroupId = currentWorkspaceGroupId;
-      currentApiBotId = id;
-      currentStudioState.bot.name = bot.name;
-      currentStudioState.bot.version = "v0.1";
+      try {
+        const created = await createWorkspaceBotOnServer(bot);
+        currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== created.bot?.id), created.bot || bot];
+        applyCurrentBotToStudioState(created.bot || bot);
+      } catch {
+        currentWorkspaceBots = [...currentWorkspaceBots, bot];
+        applyCurrentBotToStudioState(bot);
+      }
       renderWorkspaceHome();
       renderCreateSummary();
       renderTopContext();
@@ -1301,13 +1350,7 @@ function bindWorkspaceActions() {
     button.addEventListener("click", () => {
       const bot = currentWorkspaceBots.find((item) => item.id === button.dataset.openBot);
       if (!bot) return;
-      currentWorkspaceBotId = bot.id;
-      currentWorkspaceGroupId = bot.group_id;
-      currentApiGroupId = bot.group_id;
-      currentApiBotId = bot.id;
-      currentStudioState.bot.name = bot.name;
-      currentStudioState.bot.defaultLocale = bot.locale;
-      currentStudioState.bot.version = bot.version || currentStudioState.bot.version || "v0.1";
+      applyCurrentBotToStudioState(bot);
       renderWorkspaceHome();
       renderCreateSummary();
       renderTopContext();
@@ -1810,8 +1853,11 @@ function bootApp() {
   syncStudioLocaleToCurrentUser();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
   refreshAccessStateFromServer()
-    .then((loaded) => {
-      if (loaded) rerenderAdminAndAccess();
+    .then(async (loaded) => {
+      if (loaded) {
+        await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
+        rerenderAdminAndAccess();
+      }
     })
     .catch(() => {});
 }
