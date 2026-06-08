@@ -78,6 +78,24 @@ let currentApiGroupId = "g-support";
 let currentApiBotId = "supportbot-draft";
 let currentTransferStatus = "";
 let studioStateSaveTimer = null;
+let compositionSaveTimer = null;
+let currentCompositionState = {
+  group_id: "g-support",
+  bot_id: "supportbot-draft",
+  input_mode: "utterances",
+  utterances: [
+    "How do I reset my password?",
+    "I forgot my login password.",
+    "Where can I change my email?",
+    "How do I cancel my plan?"
+  ],
+  requested_intent_count: 2,
+  pdf: null,
+  intent_candidates: [
+    { intent: "password_reset", utterance_count: 6, status: "answer_required" },
+    { intent: "account_update", utterance_count: 4, status: "ready" }
+  ]
+};
 let currentDictionaryAssets = [
   { word: "password", synonyms: ["login password", "account password"] },
   { word: "plan", synonyms: ["subscription", "membership"] }
@@ -317,6 +335,53 @@ function getWorkspaceBotsUrl(groupId = currentWorkspaceGroupId) {
 
 function getStudioStateUrl(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
   return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/studio-state`;
+}
+
+function getCompositionUrl(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/composition`;
+}
+
+function applyCompositionFromServer(composition) {
+  if (!composition || typeof composition !== "object") return false;
+  currentCompositionState = {
+    ...currentCompositionState,
+    ...composition,
+    group_id: currentWorkspaceGroupId,
+    bot_id: currentWorkspaceBotId,
+    utterances: Array.isArray(composition.utterances) ? composition.utterances : currentCompositionState.utterances,
+    intent_candidates: Array.isArray(composition.intent_candidates) ? composition.intent_candidates : currentCompositionState.intent_candidates
+  };
+  currentStudioState.counts.utterances = currentCompositionState.utterances.length;
+  currentStudioState.counts.intents = currentCompositionState.intent_candidates.length;
+  currentStudioState.counts.documents = currentCompositionState.pdf ? 1 : currentStudioState.counts.documents;
+  return true;
+}
+
+async function refreshCompositionFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  if (!groupId || !botId) return false;
+  const payload = await requestCgaJson(getCompositionUrl(groupId, botId));
+  return applyCompositionFromServer(payload);
+}
+
+async function saveCompositionToServer() {
+  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
+  const payload = {
+    ...currentCompositionState,
+    group_id: currentWorkspaceGroupId,
+    bot_id: currentWorkspaceBotId
+  };
+  await requestCgaJson(getCompositionUrl(), {
+    method: "PUT",
+    body: payload
+  });
+  return true;
+}
+
+function scheduleCompositionSave() {
+  window.clearTimeout(compositionSaveTimer);
+  compositionSaveTimer = window.setTimeout(() => {
+    saveCompositionToServer().catch(() => {});
+  }, 500);
 }
 
 function applyStudioStateFromServer(state) {
@@ -901,12 +966,167 @@ function renderAllStatePanels() {
   renderCreateSummary();
   renderTopContext();
   bindCreateControls();
+  bindConfigureComposition();
   renderCreateSummary();
   renderTopContext();
+  renderConfigureComposition();
   renderErrorSamples();
   renderStateSummary();
   renderReadinessIssues();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+}
+
+function normalizeIntentCandidate(item, index = 0) {
+  const intent = item.intent || item.name || item.id || `intent_${index + 1}`;
+  const utterances = Array.isArray(item.utterances) ? item.utterances : [];
+  return {
+    intent,
+    utterance_count: Number(item.utterance_count || item.utteranceCount || utterances.length || 0),
+    status: item.status || "answer_required"
+  };
+}
+
+function buildManualHandoffPackage() {
+  return {
+    type: "cga.manual_llm_handoff",
+    group_id: currentWorkspaceGroupId,
+    bot_id: currentWorkspaceBotId,
+    bot_locale: currentStudioState.bot.defaultLocale || "en",
+    requested_intent_count: currentCompositionState.requested_intent_count,
+    utterances: currentCompositionState.utterances,
+    instruction: "Classify these training utterances into intent candidates and return intent_candidates."
+  };
+}
+
+function extractIntentCandidatesFromResult(json) {
+  const source = json.intent_candidates || json.intents || json.result?.intent_candidates || [];
+  return Array.isArray(source) ? source.map(normalizeIntentCandidate) : [];
+}
+
+function renderConfigureComposition() {
+  const utterances = document.querySelector("[data-config-utterances]");
+  const intentCount = document.querySelector("[data-config-intent-count]");
+  const pdfSelect = document.querySelector("[data-config-pdf-select]");
+  const generateQa = document.querySelector("[data-config-generate-qa]");
+  const preview = document.querySelector("[data-config-preview]");
+  if (utterances && document.activeElement !== utterances) utterances.value = currentCompositionState.utterances.join("\n");
+  if (intentCount && document.activeElement !== intentCount) intentCount.value = String(currentCompositionState.requested_intent_count || 1);
+  if (pdfSelect) {
+    pdfSelect.textContent = currentCompositionState.pdf?.file_name || window.cgaStudioI18n?.resolveMessage?.(window.cgaStudioI18n.getLocale?.() || "en", "configure.upload", "Drop PDF here or choose file") || "Drop PDF here or choose file";
+  }
+  if (generateQa) {
+    generateQa.disabled = !canGeneratePdfQa(currentStudioState) || !currentCompositionState.pdf;
+  }
+  if (preview) {
+    const candidates = currentCompositionState.intent_candidates || [];
+    preview.innerHTML = candidates.map((item) => `
+      <div class="intent-row">
+        <strong>${item.intent}</strong>
+        <span>${item.utterance_count || 0} utterances</span>
+        <span>${item.status || "answer_required"}</span>
+        <button type="button" data-i18n="review.review">Review</button>
+      </div>
+    `).join("") || `<div class="intent-row"><strong>No intent candidate</strong><span>0 utterances</span><span>Manual handoff or PDF Q&A result required</span><button type="button" disabled data-i18n="review.review">Review</button></div>`;
+  }
+}
+
+function requestPdfFile(handler) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/pdf,.pdf";
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.addEventListener("load", async () => {
+      await handler(file, String(reader.result || ""));
+      renderAllStatePanels();
+    });
+    reader.readAsDataURL(file);
+  });
+  input.click();
+}
+
+function bindConfigureComposition() {
+  const utterances = document.querySelector("[data-config-utterances]");
+  const intentCount = document.querySelector("[data-config-intent-count]");
+  const exportHandoff = document.querySelector("[data-config-export-handoff]");
+  const importResult = document.querySelector("[data-config-import-result]");
+  const pdfSelect = document.querySelector("[data-config-pdf-select]");
+  const savePdf = document.querySelector("[data-config-save-pdf]");
+  if (utterances && utterances.dataset.bound !== "true") {
+    utterances.dataset.bound = "true";
+    utterances.addEventListener("input", () => {
+      currentCompositionState.utterances = utterances.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+      currentStudioState.counts.utterances = currentCompositionState.utterances.length;
+      scheduleCompositionSave();
+      renderStateSummary();
+    });
+  }
+  if (intentCount && intentCount.dataset.bound !== "true") {
+    intentCount.dataset.bound = "true";
+    intentCount.addEventListener("input", () => {
+      currentCompositionState.requested_intent_count = Math.max(1, Number(intentCount.value || 1));
+      scheduleCompositionSave();
+    });
+  }
+  if (exportHandoff && exportHandoff.dataset.bound !== "true") {
+    exportHandoff.dataset.bound = "true";
+    exportHandoff.addEventListener("click", async () => {
+      await saveCompositionToServer().catch(() => false);
+      const fileName = `CGA_Handoff_${getSafeFileName(currentStudioState.bot.name, "CGA_Bot")}_${getTodayStamp()}.json`;
+      downloadJsonFile(fileName, buildManualHandoffPackage());
+    });
+  }
+  if (importResult && importResult.dataset.bound !== "true") {
+    importResult.dataset.bound = "true";
+    importResult.addEventListener("click", () => {
+      requestJsonUpload(async (json) => {
+        const candidates = extractIntentCandidatesFromResult(json);
+        if (candidates.length) {
+          currentCompositionState.intent_candidates = candidates;
+          currentStudioState.counts.intents = candidates.length;
+          await saveCompositionToServer().catch(() => false);
+          renderAllStatePanels();
+        }
+      });
+    });
+  }
+  if (pdfSelect && pdfSelect.dataset.bound !== "true") {
+    pdfSelect.dataset.bound = "true";
+    pdfSelect.addEventListener("click", () => {
+      requestPdfFile(async (file, dataUrl) => {
+        currentCompositionState.pdf = {
+          file_name: file.name,
+          byte_length: file.size,
+          type: file.type || "application/pdf",
+          data_url: dataUrl
+        };
+        currentStudioState.counts.documents = 1;
+        await saveCompositionToServer().catch(() => false);
+      });
+    });
+  }
+  if (savePdf && savePdf.dataset.bound !== "true") {
+    savePdf.dataset.bound = "true";
+    savePdf.addEventListener("click", async () => {
+      if (!currentCompositionState.pdf) {
+        requestPdfFile(async (file, dataUrl) => {
+          currentCompositionState.pdf = {
+            file_name: file.name,
+            byte_length: file.size,
+            type: file.type || "application/pdf",
+            data_url: dataUrl
+          };
+          currentStudioState.counts.documents = 1;
+          await saveCompositionToServer().catch(() => false);
+        });
+        return;
+      }
+      await saveCompositionToServer().catch(() => false);
+      renderAllStatePanels();
+    });
+  }
 }
 
 function bindCreateControls() {
@@ -998,12 +1218,15 @@ function renderCommercialAvailability() {
   const container = document.querySelector("[data-commercial-availability]");
   if (!container) return;
   const registry = createDefaultModuleRegistry();
+  const locale = window.cgaStudioI18n?.getLocale?.() || "en";
+  const moduleAvailable = window.cgaStudioI18n?.resolveMessage?.(locale, "detail.available", "On") || "On";
+  const moduleRequired = window.cgaStudioI18n?.resolveMessage?.(locale, "openCore.required", "Module required") || "Module required";
   container.innerHTML = DEFAULT_COMMERCIAL_FEATURE_CHECKS.map((featureId) => {
     const availability = getFeatureAvailability(registry, featureId);
     return `
       <div class="feature-row ${availability.available ? "available" : "missing"}">
         <strong>${featureId}</strong>
-        <span>${availability.available ? "Available" : "Commercial Module Required"}</span>
+        <span>${availability.available ? moduleAvailable : moduleRequired}</span>
       </div>
     `;
   }).join("");
@@ -1302,6 +1525,7 @@ function bindWorkspaceActions() {
       try {
         await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId);
         await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
+        await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
       } catch {
         const bot = currentWorkspaceBots.find((item) => item.group_id === currentWorkspaceGroupId) || null;
         if (bot) applyCurrentBotToStudioState(bot);
@@ -1331,6 +1555,7 @@ function bindWorkspaceActions() {
         currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== created.bot?.id), created.bot || bot];
         applyCurrentBotToStudioState(created.bot || bot);
         await saveStudioStateToServer();
+        await saveCompositionToServer();
       } catch {
         currentWorkspaceBots = [...currentWorkspaceBots, bot];
         applyCurrentBotToStudioState(bot);
@@ -1405,6 +1630,7 @@ function bindWorkspaceActions() {
       if (!bot) return;
       applyCurrentBotToStudioState(bot);
       await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+      await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       renderWorkspaceHome();
       renderAllStatePanels();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -1891,7 +2117,9 @@ function bootApp() {
   renderBoundaryMatrix();
   renderErrorSamples();
   bindCreateControls();
+  bindConfigureComposition();
   renderCreateSummary();
+  renderConfigureComposition();
   renderStateSummary();
   renderReadinessIssues();
   renderCommercialAvailability();
@@ -1910,6 +2138,7 @@ function bootApp() {
       if (loaded) {
         await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
         await refreshStudioStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+        await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         renderAllStatePanels();
         rerenderAdminAndAccess();
       }

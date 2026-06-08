@@ -207,8 +207,11 @@ textarea { min-height: 84px; resize: vertical; }
 .path-label.green { color: var(--green); background: var(--green-soft); }
 .input-paths h4 { margin-top: 12px; font-size: var(--font-body); }
 .input-paths p { margin-top: 9px; color: #475569; line-height: 1.5; }
-.mock-textarea, .upload-box { margin-top: 14px; min-height: 112px; border: 1px dashed #94a3b8; border-radius: 8px; background: #fff; padding: 12px; color: #334155; white-space: pre-line; }
-.upload-box { display: grid; place-items: center; color: var(--muted); }
+.mock-textarea, .upload-box { margin-top: 14px; min-height: 112px; border: 1px dashed #94a3b8; border-radius: 8px; background: #fff; padding: 12px; color: #334155; white-space: pre-line; font: inherit; }
+.mock-textarea { width: 100%; resize: vertical; line-height: 1.55; }
+.upload-box { width: 100%; display: grid; place-items: center; color: var(--muted); text-align: center; cursor: pointer; }
+.inline-field { margin-top: 10px; display: grid; gap: 6px; }
+.inline-field input { width: 100%; border: 1px solid var(--muted-line); border-radius: 8px; padding: 8px 10px; font: inherit; }
 .mini-flow { margin-top: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 9px; color: #334155; font-size: var(--font-body); white-space: nowrap; }
 .mini-flow span { width: 28px; height: 2px; background: #94a3b8; display: inline-block; position: relative; }
 .mini-flow span::after { content: ""; position: absolute; right: -1px; top: -4px; border-left: 8px solid #94a3b8; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }

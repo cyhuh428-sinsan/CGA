@@ -10,11 +10,13 @@ const accessStateFile = path.join(dataDir, "access-state.json");
 const apiAnswerRegistryFile = path.join(dataDir, "api-answer-registry.json");
 const workspaceBotsFile = path.join(dataDir, "workspace-bots.json");
 const studioStateRegistryFile = path.join(dataDir, "studio-state-registry.json");
+const compositionRegistryFile = path.join(dataDir, "composition-registry.json");
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
 let apiAnswerRegistry = loadApiAnswerRegistry();
 let workspaceBots = loadWorkspaceBots();
 let studioStateRegistry = loadStudioStateRegistry();
+let compositionRegistry = loadCompositionRegistry();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -189,6 +191,38 @@ function createDefaultStudioStateForBot(groupId, botId) {
   };
 }
 
+function loadCompositionRegistry() {
+  const registry = loadJsonFile(compositionRegistryFile, []);
+  return Array.isArray(registry) ? registry : [];
+}
+
+function saveCompositionRegistry(registry) {
+  compositionRegistry = registry;
+  writeJsonFile(compositionRegistryFile, registry);
+  return registry;
+}
+
+function createDefaultCompositionForBot(groupId, botId) {
+  return {
+    group_id: groupId,
+    bot_id: botId,
+    input_mode: "utterances",
+    utterances: [
+      "How do I reset my password?",
+      "I forgot my login password.",
+      "Where can I change my email?",
+      "How do I cancel my plan?"
+    ],
+    requested_intent_count: 2,
+    pdf: null,
+    intent_candidates: [
+      { intent: "password_reset", utterance_count: 6, status: "answer_required" },
+      { intent: "account_update", utterance_count: 4, status: "ready" }
+    ],
+    updated_at: null
+  };
+}
+
 function sanitizePathSegment(value, fallback) {
   const text = String(value || fallback)
     .trim()
@@ -291,6 +325,15 @@ function parseWorkspaceBotPath(urlPath) {
 
 function parseStudioStatePath(urlPath) {
   const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/studio-state$/);
+  if (!match) return null;
+  return {
+    groupId: match[1],
+    botId: match[2]
+  };
+}
+
+function parseCompositionPath(urlPath) {
+  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/composition$/);
   if (!match) return null;
   return {
     groupId: match[1],
@@ -406,6 +449,45 @@ async function handleStudioStateApi(req, res, urlPath) {
       };
     }));
     sendJson(res, 200, { status: "saved", group_id: groupId, bot_id: botId, state: entry.state, updated_at: updatedAt });
+    return true;
+  }
+
+  sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+  return true;
+}
+
+async function handleCompositionApi(req, res, urlPath) {
+  const parsed = parseCompositionPath(urlPath);
+  if (!parsed) return false;
+  const { groupId, botId } = parsed;
+
+  if (req.method === "GET") {
+    const saved = compositionRegistry.find((item) => item.group_id === groupId && item.bot_id === botId);
+    sendJson(res, 200, saved || createDefaultCompositionForBot(groupId, botId));
+    return true;
+  }
+
+  if (req.method === "PUT") {
+    if (!(await canConfigureWorkspaceBot(req, groupId, botId))) {
+      sendJson(res, 403, { error_code: "CGA_BOT_CONFIGURE_FORBIDDEN", message_key: "errors.bot.configureForbidden" });
+      return true;
+    }
+    const body = await readJsonRequest(req);
+    const next = {
+      ...createDefaultCompositionForBot(groupId, botId),
+      ...body,
+      group_id: groupId,
+      bot_id: botId,
+      utterances: Array.isArray(body.utterances) ? body.utterances.map((item) => String(item)).filter(Boolean) : [],
+      requested_intent_count: Number(body.requested_intent_count || body.requestedIntentCount || 0),
+      intent_candidates: Array.isArray(body.intent_candidates) ? body.intent_candidates : [],
+      updated_at: new Date().toISOString()
+    };
+    saveCompositionRegistry([
+      ...compositionRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId)),
+      next
+    ]);
+    sendJson(res, 200, { status: "saved", composition: next });
     return true;
   }
 
@@ -826,6 +908,7 @@ const server = http.createServer(async (req, res) => {
   try {
     if (await handleAuthApi(req, res, urlPath)) return;
     if (await handleStudioStateApi(req, res, urlPath)) return;
+    if (await handleCompositionApi(req, res, urlPath)) return;
     if (await handleWorkspaceBotApi(req, res, urlPath)) return;
     if (await handleApiAnswerApi(req, res, urlPath)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;

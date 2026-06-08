@@ -782,3 +782,19 @@
 - `package.json`의 `studio:validate`에 `studio:studio-state-check`를 추가했다.
 - `scripts/check-studio-config.js`에 Create Bot 상태 API route와 `studio-state-registry.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### Configure Bot 학습문장/PDF 구성 입력 서버 저장/API 연결
+- `Configure Bot`의 학습문장 입력, 요청 의도 수, 수동 LLM Handoff 파일 내보내기, LLM 결과 가져오기, PDF 선택/저장을 실제 화면 동작으로 연결했다.
+- 추가한 endpoint는 `/api/cga/groups/{groupId}/bots/{botId}/composition`이다.
+- `GET`은 선택한 `group_id + bot_id`의 구성 입력 상태를 반환하고, 저장본이 없으면 기본 학습문장/의도 후보 샘플을 반환한다.
+- `PUT`은 `bot.configure` 권한이 있는 사용자만 저장할 수 있다.
+- 서버 저장소는 `.cga-data/composition-registry.json` 파일이다. 정식 DB 전 단계의 재시작 대비 저장소로 사용한다.
+- 학습문장 경로는 LLM이 연결되지 않아도 수동 Handoff JSON을 다운로드하고, 외부 LLM 결과 JSON을 다시 업로드해 의도 후보를 구성할 수 있게 했다.
+- PDF 경로는 현재 단계에서 PDF 파일명, 크기, MIME type, data URL을 구성 입력 상태로 저장한다. 실제 PDF Q&A 생성은 기존 설계대로 LLM 연결 조건이 충족될 때 활성화된다.
+- 화면은 `refreshCompositionFromServer()`로 선택 봇의 구성 입력을 읽고, `saveCompositionToServer()`로 변경 내용을 저장한다.
+- 그룹 변경, 봇 열기, 최초 화면 로딩 시 서버에 저장된 composition을 다시 읽어 학습문장 입력값과 Intent Review Preview에 반영한다.
+- `scripts/check-composition-api.mjs`를 추가해 기본 상태 조회, 권한 없는 저장 차단, 권한 있는 저장, PDF 메타데이터 저장, 파일 저장을 실제 HTTP로 검증한다.
+- `package.json`의 `studio:validate`에 `studio:composition-check`를 추가했다.
+- `scripts/check-studio-config.js`에 Configure Bot composition API route와 `composition-registry.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
+- Aidot 코드는 수정하지 않았다.
