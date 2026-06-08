@@ -869,3 +869,12 @@
 - 영어 locale과 값이 완전히 동일한 키는 주요 비영어 locale 기준 0개가 되었다.
 - `node scripts/check-i18n-critical.js`, `node scripts/check-studio-config.js`, `node scripts/check-i18n-coverage.js`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 전체 비영어 fallback 회귀 방지 검증 추가
+- 2026-06-08 기준으로 주요 비영어 locale의 영어 동일 문구를 0개까지 줄였으므로, 이 상태가 깨지지 않도록 전체 회귀 검증을 추가했다.
+- `scripts/check-i18n-no-fallback.js`를 추가해 독일어, 프랑스어, 일본어, 베트남어, 중국어 간체 locale이 영어 locale과 동일한 값을 갖지 않도록 검사한다.
+- `scripts/check-studio-dynamic-i18n.js`를 추가해 JS 동적 렌더링 메시지(`dynamicMessages`)가 `en`, `ko`, `de`, `fr`, `ja`, `vi`, `zh-CN` 전체를 지원하는지 검사한다.
+- 동적 검증은 `Allowed/Blocked`, Workspace 빈 상태, 상단 그룹/봇/버전 prefix, summary 상태, transfer 표시 등 JS 렌더링 영역의 필수 키를 확인한다.
+- `package.json`의 `studio:validate`에 `studio:i18n-no-fallback-check`, `studio:dynamic-i18n-check`를 추가했다.
+- `node scripts/check-i18n-no-fallback.js`, `node scripts/check-studio-dynamic-i18n.js`를 통과했다.
+- Aidot 코드는 수정하지 않았다.
