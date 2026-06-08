@@ -298,6 +298,35 @@ function getAssetTransferHistoryUrl() {
   return `/api/cga/groups/${groupId}/bots/${botId}/asset-transfers`;
 }
 
+function getApiAnswerRegistryUrl(groupId = currentApiGroupId, botId = currentApiBotId) {
+  return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/api-answers`;
+}
+
+async function refreshApiRegistryFromServer() {
+  if (!currentApiGroupId || !currentApiBotId) return false;
+  const payload = await requestCgaJson(getApiAnswerRegistryUrl());
+  if (!Array.isArray(payload.items)) return false;
+  currentApiRegistry = [
+    ...currentApiRegistry.filter((api) => !(api.group_id === currentApiGroupId && api.bot_id === currentApiBotId)),
+    ...payload.items
+  ];
+  return true;
+}
+
+async function saveApiAnswerToServer(api) {
+  return requestCgaJson(getApiAnswerRegistryUrl(api.group_id, api.bot_id), {
+    method: "POST",
+    body: {
+      name: api.name,
+      endpoint_url: api.endpoint_url,
+      method: api.method || "GET",
+      auth_type: api.auth_type || "none",
+      secret_ref: api.secret_ref || "",
+      response_path: api.response_path || api.response_mapping?.answer_text_path || "data.answer"
+    }
+  });
+}
+
 function renderTransferHistoryItems(container, items) {
   const recent = [...items].reverse().slice(0, 5);
   container.innerHTML = recent.length
@@ -1458,6 +1487,20 @@ function renderApiRegistry() {
       <span>${api.group_id} · ${api.bot_id} · ${api.method || "GET"} · ${api.endpoint_url} · ${api.response_path}</span>
     </div>
   `).join("") || `<div><strong>No API answer</strong><span>Register a group API answer for the selected bot.</span></div>`;
+  refreshApiRegistryFromServer()
+    .then((loaded) => {
+      if (loaded) {
+        const nextItems = currentApiRegistry.filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId);
+        apiRegistry.innerHTML = nextItems.map((api) => `
+          <div>
+            <strong>${api.name}</strong>
+            <span>${api.group_id} · ${api.bot_id} · ${api.method || "GET"} · ${api.endpoint_url} · ${api.response_path || api.response_mapping?.answer_text_path || "data.answer"}</span>
+          </div>
+        `).join("") || `<div><strong>No API answer</strong><span>Register a group API answer for the selected bot.</span></div>`;
+        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+      }
+    })
+    .catch(() => {});
 }
 
 function rerenderAdminAndAccess() {
@@ -1588,23 +1631,26 @@ function bindAdminWorkbench() {
   }
   if (apiAdd && apiAdd.dataset.bound !== "true") {
     apiAdd.dataset.bound = "true";
-    apiAdd.addEventListener("click", () => {
+    apiAdd.addEventListener("click", async () => {
       if (!canManageApiAnswerForCurrentSelection()) return;
       const name = document.querySelector("[data-api-name]")?.value?.trim();
       const endpoint = document.querySelector("[data-api-endpoint]")?.value?.trim();
       if (!name || !endpoint) return;
       const draft = createGroupManagedApiAnswerDraft({ groupId: currentApiGroupId, botId: currentApiBotId });
-      currentApiRegistry = [
-        ...currentApiRegistry,
-        {
-          ...draft,
-          name,
-          endpoint_url: endpoint,
-          method: "GET",
-          auth_type: "none",
-          response_path: document.querySelector("[data-api-response-path]")?.value?.trim() || "data.answer"
-        }
-      ];
+      const api = {
+        ...draft,
+        name,
+        endpoint_url: endpoint,
+        method: "GET",
+        auth_type: "none",
+        response_path: document.querySelector("[data-api-response-path]")?.value?.trim() || "data.answer"
+      };
+      try {
+        await saveApiAnswerToServer(api);
+        await refreshApiRegistryFromServer();
+      } catch {
+        currentApiRegistry = [...currentApiRegistry, api];
+      }
       rerenderAdminAndAccess();
     });
   }

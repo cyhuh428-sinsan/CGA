@@ -7,8 +7,10 @@ const port = Number(process.env.PORT || 4173);
 const dataDir = path.resolve(process.env.CGA_DATA_DIR || path.join(root, ".cga-data"));
 const assetTransferHistoryFile = path.join(dataDir, "asset-transfer-history.json");
 const accessStateFile = path.join(dataDir, "access-state.json");
+const apiAnswerRegistryFile = path.join(dataDir, "api-answer-registry.json");
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
+let apiAnswerRegistry = loadApiAnswerRegistry();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -66,6 +68,17 @@ function saveAccessState(state) {
 
 function getActorId(req, state) {
   return req.headers["x-cga-user-id"] || state.currentUserId || "admin";
+}
+
+function loadApiAnswerRegistry() {
+  const registry = loadJsonFile(apiAnswerRegistryFile, []);
+  return Array.isArray(registry) ? registry : [];
+}
+
+function saveApiAnswerRegistry(registry) {
+  apiAnswerRegistry = registry;
+  writeJsonFile(apiAnswerRegistryFile, registry);
+  return registry;
 }
 
 function sanitizePathSegment(value, fallback) {
@@ -149,6 +162,74 @@ function parseAuthApiPath(urlPath) {
   const adminApprove = urlPath.match(/^\/api\/cga\/admin\/permission-requests\/([^/]+)\/approve$/);
   if (adminApprove) return { action: "approveAdminPermissionRequest", requestId: adminApprove[1] };
   return null;
+}
+
+function parseApiAnswerPath(urlPath) {
+  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/api-answers$/);
+  if (!match) return null;
+  return {
+    groupId: match[1],
+    botId: match[2]
+  };
+}
+
+async function canManageApiAnswer(req, groupId, botId) {
+  const accessStateModule = await import("../packages/public-core/src/access-state.js");
+  const state = await loadAccessState();
+  const actorId = getActorId(req, state);
+  return accessStateModule.getEffectiveGroupScopes(state, actorId, groupId, botId).includes("apiAnswer.manage");
+}
+
+async function handleApiAnswerApi(req, res, urlPath) {
+  const parsed = parseApiAnswerPath(urlPath);
+  if (!parsed) return false;
+  const { groupId, botId } = parsed;
+  const items = apiAnswerRegistry.filter((item) => item.group_id === groupId && item.bot_id === botId);
+
+  if (req.method === "GET") {
+    sendJson(res, 200, { group_id: groupId, bot_id: botId, items });
+    return true;
+  }
+
+  if (req.method === "POST") {
+    if (!(await canManageApiAnswer(req, groupId, botId))) {
+      sendJson(res, 403, { error_code: "CGA_API_ANSWER_MANAGE_FORBIDDEN", message_key: "errors.apiAnswer.manageForbidden" });
+      return true;
+    }
+    const contract = await import("../packages/contracts/src/api-answer-contract.js");
+    const body = await readJsonRequest(req);
+    const draft = contract.createGroupManagedApiAnswerDraft({ groupId, botId });
+    const entry = {
+      ...draft,
+      id: body.id || `api-${Date.now()}`,
+      name: body.name || "",
+      endpoint_url: body.endpoint_url || body.endpoint || "",
+      method: body.method || "GET",
+      auth_type: body.auth_type || "none",
+      secret_ref: body.secret_ref || "",
+      response_path: body.response_path || body.response_mapping?.answer_text_path || "data.answer",
+      response_mapping: {
+        ...draft.response_mapping,
+        ...(body.response_mapping || {}),
+        answer_text_path: body.response_path || body.response_mapping?.answer_text_path || "data.answer"
+      },
+      updated_at: new Date().toISOString()
+    };
+    if (!entry.name || !entry.endpoint_url) {
+      sendJson(res, 400, { error_code: "CGA_API_ANSWER_REQUIRED_FIELD_MISSING", message_key: "errors.apiAnswer.requiredField" });
+      return true;
+    }
+    const next = [
+      ...apiAnswerRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId && item.name === entry.name)),
+      entry
+    ];
+    saveApiAnswerRegistry(next);
+    sendJson(res, 201, { status: "created", item: entry });
+    return true;
+  }
+
+  sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+  return true;
 }
 
 async function createAccessSessionResponse(state, userId = state.currentUserId) {
@@ -504,6 +585,7 @@ const server = http.createServer(async (req, res) => {
   const query = new URL(req.url || "/", "http://localhost").searchParams;
   try {
     if (await handleAuthApi(req, res, urlPath)) return;
+    if (await handleApiAnswerApi(req, res, urlPath)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;
   } catch (error) {
     sendJson(res, 500, {

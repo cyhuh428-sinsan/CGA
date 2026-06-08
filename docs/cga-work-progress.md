@@ -740,3 +740,16 @@
 - 최초 화면 로딩 시에도 `refreshAccessStateFromServer()`를 호출해 서버에 저장된 사용자/그룹 상태를 화면에 동기화한다.
 - `scripts/check-studio-config.js`에 Access 화면이 CGA auth/group API route를 실제로 참조하는지 확인하는 회귀 체크를 추가했다.
 - 이 작업은 CGA 화면과 CGA 관리 API 연결이며, Aidot 코드는 수정하지 않았다.
+
+
+### Group API Registry 서버 저장소/API 연결
+- `External API Answer Source`의 `Group API Registry`를 브라우저 메모리 배열에서 CGA 서버 API 우선 방식으로 연결했다.
+- 추가한 endpoint는 `/api/cga/groups/{groupId}/bots/{botId}/api-answers`이다.
+- `GET`은 선택한 `group_id + bot_id`의 API 답변 목록을 반환하고, `POST`는 `apiAnswer.manage` 권한이 있는 사용자만 그룹 관리 API 답변을 등록할 수 있다.
+- 서버 저장소는 `.cga-data/api-answer-registry.json` 파일이다. 정식 DB 전 단계의 재시작 대비 저장소로 사용한다.
+- API 답변 등록은 `packages/contracts/src/api-answer-contract.js`의 `createGroupManagedApiAnswerDraft()`를 사용해 `group_id`, `bot_id`, `managed_by: group`, `allowed_group_scopes` 기준을 유지한다.
+- 화면은 `refreshApiRegistryFromServer()`로 서버 목록을 읽고, `saveApiAnswerToServer()`로 신규 API 답변을 저장한다.
+- `scripts/check-api-answer-api.mjs`를 추가해 권한 없는 사용자 차단, 권한 있는 사용자 등록, response mapping, 파일 저장을 실제 HTTP로 검증한다.
+- `package.json`의 `studio:validate`에 `studio:api-answer-check`를 추가했다.
+- `scripts/check-studio-config.js`에 Group API Registry 화면/서버 route와 `api-answer-registry.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
+- Aidot 코드는 수정하지 않았다.
