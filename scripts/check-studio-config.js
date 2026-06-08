@@ -130,6 +130,8 @@ if (!studioAppSource.includes("refreshCompositionFromServer")) fail("studio app 
 if (!studioAppSource.includes("saveCompositionToServer")) fail("studio app does not save Configure Bot composition through server API");
 if (!studioAppSource.includes("refreshDetailAssetsFromServer")) fail("studio app does not refresh Detail Settings assets from server");
 if (!studioAppSource.includes("saveDetailAssetsToServer")) fail("studio app does not save Detail Settings assets through server API");
+if (!studioAppSource.includes("refreshOperationsStateFromServer")) fail("studio app does not refresh Build/Test/Operate state from server");
+if (!studioAppSource.includes("runOperationsAction")) fail("studio app does not run Build/Test/Operate actions through server API");
 if (!studioAppSource.includes("refreshApiRegistryFromServer")) fail("studio app does not refresh Group API Registry from server");
 if (!studioAppSource.includes("saveApiAnswerToServer")) fail("studio app does not save Group API Registry entries through server API");
 for (const route of [
@@ -142,6 +144,7 @@ for (const route of [
   "/studio-state",
   "/composition",
   "/detail-assets",
+  "/operations-state",
   "/api-answers"
 ]) {
   if (!studioAppSource.includes(route)) fail(`studio app is missing access API route '${route}'`);
@@ -159,6 +162,7 @@ for (const route of [
   "/studio-state",
   "/composition",
   "/detail-assets",
+  "/operations-state",
   "/api-answers"
 ]) {
   if (!studioServerSource.includes(route)) fail(`studio server is missing auth/group route '${route}'`);
@@ -168,12 +172,14 @@ if (!studioServerSource.includes("workspace-bots.json")) fail("studio server doe
 if (!studioServerSource.includes("studio-state-registry.json")) fail("studio server does not persist Create Bot studio state");
 if (!studioServerSource.includes("composition-registry.json")) fail("studio server does not persist Configure Bot composition");
 if (!studioServerSource.includes("detail-asset-registry.json")) fail("studio server does not persist Detail Settings assets");
+if (!studioServerSource.includes("operations-state-registry.json")) fail("studio server does not persist Build/Test/Operate state");
 if (!studioServerSource.includes("api-answer-registry.json")) fail("studio server does not persist group API answer registry");
 if (!studioServerSource.includes("handleAuthApi")) fail("studio server does not route CGA auth API");
 if (!studioServerSource.includes("handleWorkspaceBotApi")) fail("studio server does not route Bot Workspace API");
 if (!studioServerSource.includes("handleStudioStateApi")) fail("studio server does not route Create Bot studio state API");
 if (!studioServerSource.includes("handleCompositionApi")) fail("studio server does not route Configure Bot composition API");
 if (!studioServerSource.includes("handleDetailAssetApi")) fail("studio server does not route Detail Settings asset API");
+if (!studioServerSource.includes("handleOperationsStateApi")) fail("studio server does not route Build/Test/Operate state API");
 if (!studioServerSource.includes("handleApiAnswerApi")) fail("studio server does not route Group API Registry API");
 if (process.exitCode !== 1) pass("studio auth, group, and API answer routes exist");
 

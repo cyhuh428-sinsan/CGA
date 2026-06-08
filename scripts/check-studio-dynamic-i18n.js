@@ -11,6 +11,8 @@ const requiredDynamicKeys = [
   "common.enabled",
   "common.none",
   "common.noRole",
+  "common.intentUnit",
+  "common.pendingUnit",
   "common.serverSaved",
   "common.localOnly",
   "workspace.noGroup",
