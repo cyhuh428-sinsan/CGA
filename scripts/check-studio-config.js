@@ -43,6 +43,7 @@ const html = read(path.join(studio, "index.html"));
 const layoutSource = read(path.join(studio, "data", "layout.js"));
 const workflowSource = read(path.join(studio, "data", "workflow.js"));
 const studioAppSource = read(path.join(studio, "app.js"));
+const studioServerSource = read(path.join(root, "scripts", "serve-studio.js"));
 const errorCatalog = JSON.parse(read(path.join(root, "packages", "i18n", "error-catalog.json")));
 const locales = loadLocales();
 
@@ -87,6 +88,20 @@ if (!appSource.includes("window.cgaStudioI18n")) fail("studio i18n API is not ex
 if (!studioAppSource.includes("syncStudioLocaleToCurrentUser")) fail("studio app does not sync UI locale from current user");
 if (!studioAppSource.includes("getCurrentAccessUser()?.locale")) fail("studio app locale sync is not based on user.locale");
 if (process.exitCode !== 1) pass("studio UI locale sync is wired to current user locale");
+
+for (const route of [
+  "/api/cga/auth/signup",
+  "/api/cga/auth/login",
+  "/api/cga/auth/me",
+  "/api/cga/groups",
+  "/api/cga/groups/join-requests",
+  "/api/cga/admin/permission-requests"
+]) {
+  if (!studioServerSource.includes(route)) fail(`studio server is missing auth/group route '${route}'`);
+}
+if (!studioServerSource.includes("access-state.json")) fail("studio server does not persist access state");
+if (!studioServerSource.includes("handleAuthApi")) fail("studio server does not route CGA auth API");
+if (process.exitCode !== 1) pass("studio auth and group API routes exist");
 
 if (!studioAppSource.includes("downloadAssetFromServer")) fail("studio app does not download reusable assets through server API");
 if (!studioAppSource.includes("uploadAssetToServer")) fail("studio app does not upload reusable assets through server API");

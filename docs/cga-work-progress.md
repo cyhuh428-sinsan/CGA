@@ -717,3 +717,16 @@
 - 다른 locale은 해당 키가 없으면 기존 i18n fallback 규칙에 따라 영어로 표시된다.
 - `scripts/check-studio-config.js`에 transfer history i18n 키가 Studio 앱과 i18n 리소스에 모두 존재하는지 확인하는 회귀 체크를 추가했다.
 - 이 작업은 화면 문구와 검증 보강이며, Aidot 코드는 수정하지 않았다.
+
+
+### CGA 인증/그룹 관리 서버 API 최소 구현
+- 계약과 화면 상태 모델로만 존재하던 CGA 사용자/그룹 관리 기능을 `scripts/serve-studio.js`의 CGA 전용 API로 연결했다.
+- 추가한 endpoint는 `/api/cga/auth/signup`, `/api/cga/auth/login`, `/api/cga/auth/me`, `/api/cga/groups`, `/api/cga/groups/join-requests`, `/api/cga/groups/join-requests/{request_id}/approve`, `/api/cga/admin/permission-requests`, `/api/cga/admin/permission-requests/{request_id}/approve`이다.
+- 기존 Aidot 런타임/API/webchat endpoint는 수정하지 않고, CGA 관리 API는 모두 `/api/cga` namespace 안에만 추가했다.
+- 서버 상태 저장은 현재 자산 저장소와 같은 `.cga-data/access-state.json` 파일 기반으로 구현했다. 정식 DB 전 단계의 재시작 대비 저장소이다.
+- API 구현은 `packages/public-core/src/access-state.js`의 상태 전이 함수와 `packages/contracts/src/access-contract.js`, `auth-api-contract.js`를 재사용한다.
+- 그룹 생성은 시스템 `admin`만 가능하고, 그룹 가입 승인은 대상 그룹 관리자 또는 시스템 admin, 관리자 권한 승인은 시스템 admin만 가능하도록 기존 Public Core 규칙을 따른다.
+- `scripts/check-auth-api.mjs`를 추가해 실제 임시 Studio 서버를 띄우고 signup/login/me/groups/join approval/admin approval/persistence 흐름을 HTTP로 검증한다.
+- `package.json`의 `studio:validate`에 `studio:auth-api-check`를 추가했다.
+- `scripts/check-studio-config.js`에 CGA 인증/그룹 API route와 `access-state.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
+- Aidot 코드는 수정하지 않았다.
