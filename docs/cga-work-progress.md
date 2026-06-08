@@ -851,3 +851,13 @@
 - 남은 영어 동일 문구 수는 주요 비영어 locale 기준 약 150개 전후로 줄었다. 남은 항목은 주로 긴 설명문, 기능명, 일부 설계/coverage 문구이다.
 - `node scripts/check-i18n-critical.js`, `node scripts/check-i18n-coverage.js`, `node scripts/check-studio-config.js`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-08 운영 설명문 i18n fallback 축소
+- 남은 영어 fallback 중 사용자/그룹 권한, Admin, Group API Registry, Aidot Feature Coverage, Collaboration 설명문을 우선 보강했다.
+- 독일어, 프랑스어, 일본어, 중국어 간체, 베트남어에 운영 설명문과 상태 라벨을 추가했다.
+- `scripts/check-i18n-critical.js`의 prefix 검증 범위를 `access`, `admin`, `apiAnswer`, `coverage`, `collab`까지 확장했다.
+- `Secrets`, `Dynamic data answer example`, API 예시, Build/Test처럼 영어 제품성 단어로 남아 있던 일부 critical 라벨도 현지화 표시로 바꿨다.
+- `apps/studio/i18n.js`는 locale JSON 기준으로 다시 동기화했다.
+- 남은 영어 동일 문구 수는 주요 비영어 locale 기준 약 65~70개 수준으로 줄었다. 남은 항목은 주로 hero/contract/create/configure/detail/build/test/operate의 긴 설명문과 일부 기능명이다.
+- `node scripts/check-i18n-critical.js`, `node scripts/check-i18n-coverage.js`, `node scripts/check-studio-config.js`를 통과했다.
+- Aidot 코드는 수정하지 않았다.
