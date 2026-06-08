@@ -203,6 +203,66 @@ function getFileNameFromContentDisposition(value) {
   return match?.[1] || "";
 }
 
+function getCgaAuthHeaders() {
+  return {
+    "Content-Type": "application/json; charset=utf-8",
+    "X-CGA-User-Id": currentAccessState.currentUserId || "admin"
+  };
+}
+
+async function requestCgaJson(path, { method = "GET", body } = {}) {
+  const response = await fetch(path, {
+    method,
+    headers: getCgaAuthHeaders(),
+    body: body == null ? undefined : JSON.stringify(body)
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error_code || payload?.message_key || `CGA request failed: ${response.status}`);
+  }
+  return payload;
+}
+
+function applyAccessStatePayload(payload) {
+  if (!payload || typeof payload !== "object") return false;
+  if (!Array.isArray(payload.users) || !Array.isArray(payload.groups) || !Array.isArray(payload.memberships)) return false;
+  currentAccessState = {
+    ...currentAccessState,
+    botId: payload.bot_id || currentAccessState.botId,
+    currentUserId: payload.current_user_id || currentAccessState.currentUserId,
+    users: payload.users,
+    groups: payload.groups,
+    memberships: payload.memberships,
+    groupBotAccess: Array.isArray(payload.group_bot_access) ? payload.group_bot_access : currentAccessState.groupBotAccess,
+    userOverrides: Array.isArray(payload.user_overrides) ? payload.user_overrides : currentAccessState.userOverrides,
+    joinRequests: Array.isArray(payload.join_requests) ? payload.join_requests : currentAccessState.joinRequests,
+    adminRequests: Array.isArray(payload.admin_requests) ? payload.admin_requests : currentAccessState.adminRequests,
+    policy: payload.policy || currentAccessState.policy
+  };
+  return true;
+}
+
+async function refreshAccessStateFromServer() {
+  const payload = await requestCgaJson("/api/cga/groups");
+  return applyAccessStatePayload(payload);
+}
+
+async function runAccessServerAction(action, fallback) {
+  try {
+    await action();
+    await refreshAccessStateFromServer();
+    rerenderAdminAndAccess();
+    return true;
+  } catch (error) {
+    if (fallback) {
+      fallback(error);
+      rerenderAdminAndAccess();
+      return false;
+    }
+    throw error;
+  }
+}
+
 async function downloadAssetFromServer(assetKey) {
   try {
     const response = await fetch(getAssetTransferUrl(assetKey, "export"));
@@ -1413,17 +1473,25 @@ function bindAdminActionButtons() {
   document.querySelectorAll("[data-approve-join]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
-      currentAccessState = approveGroupJoinRequest(currentAccessState, { requestId: button.dataset.approveJoin, reviewerId: currentAccessState.currentUserId });
-      rerenderAdminAndAccess();
+    button.addEventListener("click", async () => {
+      await runAccessServerAction(
+        () => requestCgaJson(`/api/cga/groups/join-requests/${encodeURIComponent(button.dataset.approveJoin)}/approve`, { method: "POST" }),
+        () => {
+          currentAccessState = approveGroupJoinRequest(currentAccessState, { requestId: button.dataset.approveJoin, reviewerId: currentAccessState.currentUserId });
+        }
+      );
     });
   });
   document.querySelectorAll("[data-approve-admin]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
-      currentAccessState = approveAdminPermissionRequest(currentAccessState, { requestId: button.dataset.approveAdmin, reviewerId: currentAccessState.currentUserId });
-      rerenderAdminAndAccess();
+    button.addEventListener("click", async () => {
+      await runAccessServerAction(
+        () => requestCgaJson(`/api/cga/admin/permission-requests/${encodeURIComponent(button.dataset.approveAdmin)}/approve`, { method: "POST" }),
+        () => {
+          currentAccessState = approveAdminPermissionRequest(currentAccessState, { requestId: button.dataset.approveAdmin, reviewerId: currentAccessState.currentUserId });
+        }
+      );
     });
   });
 }
@@ -1438,46 +1506,84 @@ function bindAdminWorkbench() {
   const apiAdd = document.querySelector("[data-api-add]");
   if (loginSubmit && loginSubmit.dataset.bound !== "true") {
     loginSubmit.dataset.bound = "true";
-    loginSubmit.addEventListener("click", () => {
-      currentAccessState = loginAsUser(currentAccessState, { userId: document.querySelector("[data-login-user]")?.value });
-      rerenderAdminAndAccess();
+    loginSubmit.addEventListener("click", async () => {
+      const userId = document.querySelector("[data-login-user]")?.value;
+      await runAccessServerAction(
+        async () => {
+          const session = await requestCgaJson("/api/cga/auth/login", { method: "POST", body: { user_id: userId } });
+          currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
+        },
+        () => {
+          currentAccessState = loginAsUser(currentAccessState, { userId });
+        }
+      );
     });
   }
   if (signupSubmit && signupSubmit.dataset.bound !== "true") {
     signupSubmit.dataset.bound = "true";
-    signupSubmit.addEventListener("click", () => {
+    signupSubmit.addEventListener("click", async () => {
       const id = document.querySelector("[data-signup-id]")?.value?.trim();
       const name = document.querySelector("[data-signup-name]")?.value?.trim();
       if (!id || !name) return;
-      currentAccessState = applySignup(currentAccessState, {
-        userId: id,
-        name,
-        locale: document.querySelector("[data-signup-locale]")?.value || "en",
-        groupName: document.querySelector("[data-signup-group]")?.value?.trim() || `${name} Group`
-      });
-      rerenderAdminAndAccess();
+      const locale = document.querySelector("[data-signup-locale]")?.value || "en";
+      const groupName = document.querySelector("[data-signup-group]")?.value?.trim() || `${name} Group`;
+      await runAccessServerAction(
+        async () => {
+          const session = await requestCgaJson("/api/cga/auth/signup", {
+            method: "POST",
+            body: {
+              user_id: id,
+              name,
+              locale,
+              group_name: groupName
+            }
+          });
+          currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || id };
+        },
+        () => {
+          currentAccessState = applySignup(currentAccessState, { userId: id, name, locale, groupName });
+        }
+      );
     });
   }
   if (groupCreate && groupCreate.dataset.bound !== "true") {
     groupCreate.dataset.bound = "true";
-    groupCreate.addEventListener("click", () => {
+    groupCreate.addEventListener("click", async () => {
       const id = document.querySelector("[data-group-id]")?.value?.trim();
       const name = document.querySelector("[data-group-name]")?.value?.trim();
       if (!id || !name) return;
-      currentAccessState = createManagedGroup(currentAccessState, { id, name, actorId: currentAccessState.currentUserId });
-      rerenderAdminAndAccess();
+      await runAccessServerAction(
+        () => requestCgaJson("/api/cga/groups", { method: "POST", body: { group_id: id, name } }),
+        () => {
+          currentAccessState = createManagedGroup(currentAccessState, { id, name, actorId: currentAccessState.currentUserId });
+        }
+      );
     });
   }
   if (joinSubmit && joinSubmit.dataset.bound !== "true") {
     joinSubmit.dataset.bound = "true";
-    joinSubmit.addEventListener("click", () => {
-      currentAccessState = requestGroupJoin(currentAccessState, {
-        id: `jr-${Date.now()}`,
-        userId: currentAccessState.currentUserId,
-        groupId: document.querySelector("[data-join-group]")?.value,
-        requestedRole: document.querySelector("[data-join-role]")?.value || "viewer"
-      });
-      rerenderAdminAndAccess();
+    joinSubmit.addEventListener("click", async () => {
+      const id = `jr-${Date.now()}`;
+      const groupId = document.querySelector("[data-join-group]")?.value;
+      const requestedRole = document.querySelector("[data-join-role]")?.value || "viewer";
+      await runAccessServerAction(
+        () => requestCgaJson("/api/cga/groups/join-requests", {
+          method: "POST",
+          body: {
+            id,
+            group_id: groupId,
+            requested_role: requestedRole
+          }
+        }),
+        () => {
+          currentAccessState = requestGroupJoin(currentAccessState, {
+            id,
+            userId: currentAccessState.currentUserId,
+            groupId,
+            requestedRole
+          });
+        }
+      );
     });
   }
   if (apiAdd && apiAdd.dataset.bound !== "true") {
@@ -1657,6 +1763,11 @@ function bootApp() {
   bindAssetTransferActions();
   syncStudioLocaleToCurrentUser();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+  refreshAccessStateFromServer()
+    .then((loaded) => {
+      if (loaded) rerenderAdminAndAccess();
+    })
+    .catch(() => {});
 }
 
 document.addEventListener("DOMContentLoaded", bootApp);

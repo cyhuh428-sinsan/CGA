@@ -730,3 +730,13 @@
 - `package.json`의 `studio:validate`에 `studio:auth-api-check`를 추가했다.
 - `scripts/check-studio-config.js`에 CGA 인증/그룹 API route와 `access-state.json` 저장소 존재 여부를 확인하는 회귀 체크를 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+
+### Access Management 화면 서버 API 연결
+- `Users, Login, and Access` 화면의 로그인, 가입, 그룹 생성, 그룹 가입신청, 그룹 가입 승인, 관리자 권한 승인 버튼을 서버 API 우선 방식으로 연결했다.
+- 화면은 `/api/cga/auth/login`, `/api/cga/auth/signup`, `/api/cga/groups`, `/api/cga/groups/join-requests`, `/api/cga/groups/join-requests/{request_id}/approve`, `/api/cga/admin/permission-requests/{request_id}/approve`를 호출한다.
+- 작업 성공 후에는 `/api/cga/groups`를 다시 호출해 서버의 `.cga-data/access-state.json` 기준 상태를 화면에 반영한다.
+- 서버 API 호출이 실패하는 경우에는 기존 브라우저 로컬 상태 전이를 fallback으로 사용한다. 이 fallback은 화면 시안 검토 중 서버가 꺼졌을 때만 사용하는 임시 안전장치이다.
+- 최초 화면 로딩 시에도 `refreshAccessStateFromServer()`를 호출해 서버에 저장된 사용자/그룹 상태를 화면에 동기화한다.
+- `scripts/check-studio-config.js`에 Access 화면이 CGA auth/group API route를 실제로 참조하는지 확인하는 회귀 체크를 추가했다.
+- 이 작업은 CGA 화면과 CGA 관리 API 연결이며, Aidot 코드는 수정하지 않았다.

@@ -180,10 +180,15 @@ async function handleAuthApi(req, res, urlPath) {
     if (req.method === "GET") {
       sendJson(res, 200, {
         current_user_id: actorId,
+        users: state.users,
         groups: state.groups,
         memberships: state.memberships.filter((item) => item.status === "active"),
+        group_bot_access: state.groupBotAccess,
+        user_overrides: state.userOverrides,
         join_requests: state.joinRequests,
-        admin_requests: state.adminRequests
+        admin_requests: state.adminRequests,
+        policy: state.policy,
+        bot_id: state.botId
       });
       return true;
     }
