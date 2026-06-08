@@ -20,7 +20,7 @@ const criticalKeys = [
   "apiAnswer.title", "apiAnswer.flowTitle", "apiAnswer.userQuestion", "apiAnswer.intent", "apiAnswer.externalSystem", "apiAnswer.finalAnswer", "apiAnswer.name", "apiAnswer.endpoint", "apiAnswer.auth", "apiAnswer.responsePath", "apiAnswer.safety", "apiAnswer.groupManaged", "apiAnswer.adminTitle", "apiAnswer.addApi",
   "collab.title", "collab.roles", "collab.assignments", "collab.review", "collab.locks", "collab.history", "collab.dashboard"
 ];
-const criticalPrefixes = ["approval", "workingRule", "lock", "state", "commercial", "module", "contracts", "openCore"];
+const criticalPrefixes = ["approval", "workingRule", "lock", "state", "commercial", "module", "contracts", "openCore", "access", "admin", "apiAnswer", "coverage", "collab"];
 for (const key of Object.keys(english)) {
   if (criticalPrefixes.some((prefix) => key.startsWith(`${prefix}.`)) && !criticalKeys.includes(key)) criticalKeys.push(key);
 }
