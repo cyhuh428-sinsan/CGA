@@ -831,3 +831,13 @@
 - 아직 전체 설명문/설계문 수준의 전문 번역은 남아 있으며, 다음 단계에서 화면별로 계속 축소해야 한다.
 - `node --check apps/studio/app.js`, `node --check apps/studio/i18n.js`, `node scripts/check-studio-config.js`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-08 핵심 화면 i18n fallback 방지 검증 추가
+- 다국어 리소스에 키가 있어도 값이 영어와 같으면 사용자는 언어 변경이 반응하지 않는 것으로 느낄 수 있으므로, 핵심 화면 키에 대한 추가 검증을 만들었다.
+- `scripts/check-i18n-critical.js`를 추가해 독일어, 프랑스어, 일본어, 베트남어, 중국어 간체에서 주요 화면/운영 라벨이 영어 fallback 값으로 남지 않도록 검사한다.
+- 핵심 검증 대상은 상단 버튼, 워크플로우, Bot Workspace, Team Dashboard, Configure, Detail, Build, Test, Operate, Access/Admin, Group API Registry, Collaboration의 제목/버튼/필드 라벨이다.
+- 독일어, 일본어, 중국어 간체, 베트남어, 프랑스어의 핵심 운영 화면 라벨을 추가로 보강했다.
+- `apps/studio/i18n.js`는 locale JSON 기준으로 다시 동기화했다.
+- `package.json`에 `studio:i18n-critical-check`를 추가하고 `studio:validate`에 포함했다.
+- `node scripts/check-i18n-critical.js`, `node scripts/check-studio-config.js`, `node scripts/check-i18n-coverage.js`를 통과했다.
+- Aidot 코드는 수정하지 않았다.
