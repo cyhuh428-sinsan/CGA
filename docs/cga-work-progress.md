@@ -861,3 +861,11 @@
 - 남은 영어 동일 문구 수는 주요 비영어 locale 기준 약 65~70개 수준으로 줄었다. 남은 항목은 주로 hero/contract/create/configure/detail/build/test/operate의 긴 설명문과 일부 기능명이다.
 - `node scripts/check-i18n-critical.js`, `node scripts/check-i18n-coverage.js`, `node scripts/check-studio-config.js`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-08 비영어 locale 영어 fallback 0개 달성
+- 남아 있던 hero, contract, create, workspace, team, configure, review, detail, build, test, operate 영역의 제작 흐름 설명문을 독일어, 프랑스어, 일본어, 중국어 간체, 베트남어에 추가했다.
+- 마지막까지 영어와 동일하게 남아 있던 `LLM`, `PDF Q&A`, `Bot Server`, `Web OK`, `Endpoint URL` 같은 약어/제품성 라벨도 각 언어에서 반응이 보이도록 현지화 표시명으로 조정했다.
+- `apps/studio/i18n.js`는 locale JSON 기준으로 다시 동기화했다.
+- 영어 locale과 값이 완전히 동일한 키는 주요 비영어 locale 기준 0개가 되었다.
+- `node scripts/check-i18n-critical.js`, `node scripts/check-studio-config.js`, `node scripts/check-i18n-coverage.js`를 통과했다.
+- Aidot 코드는 수정하지 않았다.
