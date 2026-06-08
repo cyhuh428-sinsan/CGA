@@ -20,6 +20,10 @@ const criticalKeys = [
   "apiAnswer.title", "apiAnswer.flowTitle", "apiAnswer.userQuestion", "apiAnswer.intent", "apiAnswer.externalSystem", "apiAnswer.finalAnswer", "apiAnswer.name", "apiAnswer.endpoint", "apiAnswer.auth", "apiAnswer.responsePath", "apiAnswer.safety", "apiAnswer.groupManaged", "apiAnswer.adminTitle", "apiAnswer.addApi",
   "collab.title", "collab.roles", "collab.assignments", "collab.review", "collab.locks", "collab.history", "collab.dashboard"
 ];
+const criticalPrefixes = ["approval", "workingRule", "lock", "state", "commercial", "module", "contracts", "openCore"];
+for (const key of Object.keys(english)) {
+  if (criticalPrefixes.some((prefix) => key.startsWith(`${prefix}.`)) && !criticalKeys.includes(key)) criticalKeys.push(key);
+}
 const allowedSame = new Set(["summary.llm", "summary.pdfQa", "summary.botServer", "apiAnswer.endpoint", "apiAnswer.method", "apiAnswer.timeout", "apiAnswer.fallback"]);
 const targets = ["de.json", "fr.json", "ja.json", "vi.json", "zh-CN.json"];
 const failures = [];
