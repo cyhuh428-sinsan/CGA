@@ -312,21 +312,21 @@
             <span class="path-label blue" data-i18n="configure.pathA">Path A · LLM optional</span>
             <h4 data-i18n="configure.pathA.title">Training utterances → intent classification</h4>
             <p data-i18n="configure.pathA.body">Input question-style utterances and requested intent count. Without connected LLM, use Manual LLM Handoff.</p>
-            <div class="mock-textarea">How do I reset my password?\nI forgot my login password.\nWhere can I change my email?\nHow do I cancel my plan?</div>
-            <div class="button-row"><button data-i18n="configure.export">Export Handoff File</button><button class="ghost-btn" data-i18n="configure.import">Import LLM Result</button></div>
+            <textarea class="mock-textarea" data-config-utterances></textarea>
+            <label class="inline-field"><span data-i18n="build.intentCount">Intent count</span><input type="number" min="1" value="2" data-config-intent-count /></label>
+            <div class="button-row"><button type="button" data-config-export-handoff data-i18n="configure.export">Export Handoff File</button><button type="button" class="ghost-btn" data-config-import-result data-i18n="configure.import">Import LLM Result</button></div>
           </article>
           <article>
             <span class="path-label green" data-i18n="configure.pathB">Path B · LLM required</span>
-            <h4>PDF → Q&amp;A intent candidates</h4>
+            <h4 data-i18n="configure.pathB.title">PDF → Q&amp;A intent candidates</h4>
             <p data-i18n="configure.pathB.body">Upload PDF now. Generation stays disabled until LLM connection is configured.</p>
-            <div class="upload-box">Drop PDF here or choose file</div>
-            <div class="button-row"><button disabled>Generate Q&amp;A Intents</button><button class="ghost-btn" data-i18n="configure.savePdf">Save PDF</button></div>
+            <button type="button" class="upload-box" data-config-pdf-select data-i18n="configure.upload">Drop PDF here or choose file</button>
+            <div class="button-row"><button type="button" data-config-generate-qa disabled data-i18n="configure.generateQa">Generate Q&amp;A Intents</button><button type="button" class="ghost-btn" data-config-save-pdf data-i18n="configure.savePdf">Save PDF</button></div>
           </article>
         </div>
         <div class="review-board">
           <h4 data-i18n="review.preview">Intent Review Preview</h4>
-          <div class="intent-row"><strong>password_reset</strong><span data-i18n="review.utter6">6 utterances</span><span data-i18n="review.answerRequired">Answer draft required</span><button data-i18n="review.review">Review</button></div>
-          <div class="intent-row"><strong>account_update</strong><span>4 utterances</span><span data-i18n="review.ready">Ready</span><button data-i18n="review.review">Review</button></div>
+          <div data-config-preview></div>
         </div>
       </section>
 
