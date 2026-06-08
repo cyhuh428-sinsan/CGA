@@ -89,6 +89,19 @@ if (!studioAppSource.includes("syncStudioLocaleToCurrentUser")) fail("studio app
 if (!studioAppSource.includes("getCurrentAccessUser()?.locale")) fail("studio app locale sync is not based on user.locale");
 if (process.exitCode !== 1) pass("studio UI locale sync is wired to current user locale");
 
+if (!studioAppSource.includes("requestCgaJson")) fail("studio app does not call CGA management APIs");
+if (!studioAppSource.includes("refreshAccessStateFromServer")) fail("studio app does not refresh access state from server");
+for (const route of [
+  "/api/cga/auth/signup",
+  "/api/cga/auth/login",
+  "/api/cga/groups",
+  "/api/cga/groups/join-requests",
+  "/api/cga/admin/permission-requests"
+]) {
+  if (!studioAppSource.includes(route)) fail(`studio app is missing access API route '${route}'`);
+}
+if (process.exitCode !== 1) pass("studio access screen is wired to auth and group APIs");
+
 for (const route of [
   "/api/cga/auth/signup",
   "/api/cga/auth/login",
