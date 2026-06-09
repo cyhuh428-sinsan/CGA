@@ -1385,3 +1385,27 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 이후 남은 동적 fallback 후보 중 실제 화면 노출 가능성이 높은 항목부터 계속 정리한다.
+
+### 2026-06-09 화면 전환 조회/저장 지연 방지 구조 1차 반영
+- 신산님 지시로 Aidot에서 화면 전환 시 조회/저장 지연을 줄이기 위해 변경했던 구조를 CGA에 반복하지 않도록 확인했다.
+- Aidot의 `apps/web/components/studio-workspace-provider.tsx`는 캐시된 작업공간 context를 먼저 화면에 적용하고, 서버 조회는 뒤에서 갱신한다.
+- Aidot의 `apps/web/components/version-management-page.tsx`도 `getCachedStudioWorkspaceContext()`를 먼저 적용한 뒤 서버 context를 다시 조회한다.
+- CGA는 현재 SPA 초안 구조라 같은 캐시 계층을 바로 복사하지 않고, 우선 API 구조 변경 없이 순차 조회 병목과 반복 조회를 줄이는 1차 구조를 반영했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - `refreshWorkspaceDataFromServer()`를 추가해 Studio State, Configure Composition, Detail Assets, Operations State, Collaboration State를 `Promise.allSettled()`로 병렬 조회한다.
+  - 초기 진입과 그룹 변경, 봇 열기에서 기존 순차 조회를 병렬 묶음 조회로 변경했다.
+  - `workspaceDataRefreshSerial`을 추가해 빠른 화면 전환 중 오래된 조회 결과가 뒤늦게 화면을 덮어쓰는 위험을 줄였다.
+  - 각 화면 데이터 refresh 함수가 요청 당시의 `groupId/botId`와 현재 선택이 같은 경우에만 응답을 적용하도록 보강했다.
+  - `renderApiRegistry()`가 반복 렌더링될 때마다 API Registry 조회를 다시 걸지 않도록 `apiRegistryRefreshPromise`, `API_REGISTRY_CACHE_TTL_MS`, `apiRegistryLoadedAtByKey`를 추가했다.
+  - API 답변 저장 후에는 해당 그룹/봇 Registry 캐시를 무효화해 다음 조회에서 최신 값을 받도록 했다.
+- `scripts/check-studio-config.js`
+  - 작업공간 조회가 순차 API 대기 구조로 되돌아가지 않도록 `refreshWorkspaceDataFromServer`, `Promise.allSettled`, `workspaceDataRefreshSerial` 존재를 검증한다.
+  - API Registry 반복 조회 억제 구조가 빠지면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 다음 단계에서는 Aidot의 `getCachedStudioWorkspaceContext()` 패턴처럼 CGA에도 작업공간 snapshot/cache 계층을 둘지 설계로 확정한다.
+- 저장은 현재 `scheduleStudioStateSave()`, `scheduleCompositionSave()`의 debounce가 있으나, Detail Assets/패키지 업로드 저장은 액션 단위 저장이므로 추후 화면별 저장 정책을 분리 검토한다.

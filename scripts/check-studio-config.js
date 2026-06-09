@@ -157,6 +157,9 @@ if (!studioAppSource.includes("synced === false")) fail("studio collaboration fa
 if (!studioAppSource.includes("/api/cga/auth/logout")) fail("studio app is missing logout API call");
 if (!studioAppSource.includes("refreshAccessStateFromServer")) fail("studio app does not refresh access state from server");
 if (!studioAppSource.includes("refreshWorkspaceBotsFromServer")) fail("studio app does not refresh Bot Workspace bot list from server");
+if (!studioAppSource.includes("refreshWorkspaceDataFromServer")) fail("studio app does not use a bounded workspace refresh coordinator");
+if (!studioAppSource.includes("Promise.allSettled")) fail("studio app workspace refresh must not serialize every screen API");
+if (!studioAppSource.includes("workspaceDataRefreshSerial")) fail("studio app workspace refresh does not guard stale screen transitions");
 if (!studioAppSource.includes("createWorkspaceBotOnServer")) fail("studio app does not create Bot Workspace bots through server API");
 if (!studioAppSource.includes("refreshStudioStateFromServer")) fail("studio app does not refresh Create Bot state from server");
 if (!studioAppSource.includes("saveStudioStateToServer")) fail("studio app does not save Create Bot state through server API");
@@ -170,6 +173,8 @@ if (!studioAppSource.includes("refreshCollaborationStateFromServer")) fail("stud
 if (!studioAppSource.includes("runCollaborationAction")) fail("studio app does not run Team Dashboard actions through server API");
 if (!studioAppSource.includes("refreshApiRegistryFromServer")) fail("studio app does not refresh Group API Registry from server");
 if (!studioAppSource.includes("saveApiAnswerToServer")) fail("studio app does not save Group API Registry entries through server API");
+if (!studioAppSource.includes("API_REGISTRY_CACHE_TTL_MS")) fail("studio API Registry refresh does not suppress repeated screen render fetches");
+if (!studioAppSource.includes("apiRegistryRefreshPromise")) fail("studio API Registry refresh does not reuse in-flight requests");
 if (!studioAppSource.includes("renderAccessBadge")) fail("studio access UI does not render compact operation badges");
 if (!studioAppSource.includes("renderStatusBadge")) fail("studio access UI does not render localized status badges");
 if (!studioAppSource.includes("formatMemberships")) fail("studio access UI does not format memberships consistently");
