@@ -1188,3 +1188,47 @@
 #### 다음 작업
 - 다음 단계는 운영/개발 모드 분리를 더 명확히 하기 위해 `CGA_AUTH_HEADER_FALLBACK=disabled`를 docker-compose 운영 profile 또는 환경 예시에 연결하는 것이다.
 - 그 다음은 권한 오류뿐 아니라 API 필드 누락/중복/업로드 실패 같은 일반 작업 오류도 같은 메시지 체계로 확장하면 된다.
+
+### 2026-06-09 인증 개발/운영 모드 분리
+- 권한 오류 표시 이후, 운영 모드에서 헤더 기반 사용자 전환이 열려 있지 않도록 실행 설정을 분리했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `docker-compose.yml`
+  - `CGA_AUTH_HEADER_FALLBACK` 환경값을 노출했다.
+  - 기본값은 개발 편의를 위해 `enabled`다.
+- `docker-compose.prod.yml`
+  - 운영형 override 파일을 추가했다.
+  - `CGA_AUTH_HEADER_FALLBACK: "disabled"`를 강제한다.
+- `.env.example`
+  - `PORT=4173`
+  - `CGA_AUTH_HEADER_FALLBACK=enabled`
+  - 개발 기본값을 명시했다.
+- `scripts/serve-studio.js`
+  - `CGA_AUTH_HEADER_FALLBACK=disabled`이고 세션이 없는 요청은 `401 CGA_AUTH_REQUIRED`를 반환한다.
+  - 로그인/가입/로그아웃 endpoint는 세션 없이 접근 가능하게 유지했다.
+- `packages/i18n/error-catalog.json`
+  - `CGA_AUTH_REQUIRED`를 인증 오류 카탈로그에 추가했다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - `errors.auth.required`를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+- `scripts/check-auth-api.mjs`
+  - 개발 기본 모드 검증 후 서버를 재시작해 `CGA_AUTH_HEADER_FALLBACK=disabled` 상태를 검증한다.
+  - strict mode에서 헤더만 있는 `/api/cga/auth/me`는 401이어야 한다.
+  - strict mode에서도 로그인 후 세션 토큰으로 `/api/cga/auth/me`는 성공해야 한다.
+- `scripts/check-studio-config.js`
+  - `docker-compose.yml`, `docker-compose.prod.yml`, `.env.example`에 인증 fallback 설정이 있는지 검증한다.
+- `README.md`
+  - 개발 실행과 운영형 실행 명령을 분리해 문서화했다.
+  - 운영형 실행 명령은 `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build cga-studio`다.
+
+#### 검증 결과
+- `node --check scripts/serve-studio.js` 통과
+- `node --check scripts/check-auth-api.mjs` 통과
+- `node scripts/check-auth-api.mjs` 통과
+- `node scripts/check-studio-config.js` 통과
+- `npm run studio:validate` 통과
+- WSL의 `docker-compose -f docker-compose.yml -f docker-compose.prod.yml config`는 커밋/push 전에는 새 파일이 WSL deploy 폴더에 없어서 실패했다. 커밋 후 WSL pull 뒤 재검증해야 한다.
+
+#### 다음 작업
+- 커밋/push 후 WSL deploy 폴더에 pull 받고 운영 compose config를 다시 확인한다.
+- 이후 일반 작업 오류(API 필드 누락, 중복, 업로드 실패)를 같은 메시지 체계로 확장한다.

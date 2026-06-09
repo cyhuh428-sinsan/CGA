@@ -6,6 +6,7 @@ services:
     command: npm run studio
     environment:
       PORT: "4173"
+      CGA_AUTH_HEADER_FALLBACK: "${CGA_AUTH_HEADER_FALLBACK:-enabled}"
     ports:
       - "4173:4173"
     volumes:

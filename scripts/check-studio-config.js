@@ -45,6 +45,9 @@ const layoutSource = read(path.join(studio, "data", "layout.js"));
 const workflowSource = read(path.join(studio, "data", "workflow.js"));
 const studioAppSource = read(path.join(studio, "app.js"));
 const studioServerSource = read(path.join(root, "scripts", "serve-studio.js"));
+const composeSource = read(path.join(root, "docker-compose.yml"));
+const prodComposeSource = read(path.join(root, "docker-compose.prod.yml"));
+const envExampleSource = read(path.join(root, ".env.example"));
 const errorCatalog = JSON.parse(read(path.join(root, "packages", "i18n", "error-catalog.json")));
 const locales = loadLocales();
 
@@ -208,6 +211,10 @@ if (!studioServerSource.includes("auth-credentials.json")) fail("studio server d
 if (!studioServerSource.includes("auth-sessions.json")) fail("studio server does not persist auth sessions");
 if (!studioServerSource.includes("CGA_AUTH_HEADER_FALLBACK")) fail("studio server does not expose dev-only header fallback control");
 if (!studioServerSource.includes("CGA_SESSION_EXPIRED")) fail("studio server does not report expired sessions");
+if (!studioServerSource.includes("CGA_AUTH_REQUIRED")) fail("studio server does not require login when header fallback is disabled");
+if (!composeSource.includes("CGA_AUTH_HEADER_FALLBACK")) fail("docker-compose.yml does not expose auth header fallback configuration");
+if (!prodComposeSource.includes('CGA_AUTH_HEADER_FALLBACK: "disabled"')) fail("docker-compose.prod.yml does not disable auth header fallback");
+if (!envExampleSource.includes("CGA_AUTH_HEADER_FALLBACK=enabled")) fail(".env.example does not document development auth header fallback default");
 if (!studioServerSource.includes("hashPassword")) fail("studio server does not hash passwords");
 if (!studioServerSource.includes("verifyPassword")) fail("studio server does not verify passwords");
 if (!studioServerSource.includes("createAuthSession")) fail("studio server does not create auth sessions");

@@ -1117,6 +1117,10 @@ async function handleAuthApi(req, res, urlPath) {
     sendJson(res, 401, { error_code: "CGA_SESSION_EXPIRED", message_key: "errors.auth.sessionExpired" }, { "Set-Cookie": createExpiredSessionCookie() });
     return true;
   }
+  if (!sessionUserId && !isHeaderAuthFallbackEnabled() && !["login", "signup", "logout"].includes(parsed.action)) {
+    sendJson(res, 401, { error_code: "CGA_AUTH_REQUIRED", message_key: "errors.auth.required" });
+    return true;
+  }
   const actorId = sessionUserId || (isHeaderAuthFallbackEnabled() ? (req.headers["x-cga-user-id"] || state.currentUserId || "admin") : "");
 
   if (parsed.action === "me") {

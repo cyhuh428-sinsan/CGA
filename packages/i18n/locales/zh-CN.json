@@ -449,5 +449,6 @@
   "errors.bot.viewForbidden": "您无权查看此机器人。",
   "errors.operations.actionForbidden": "您无权执行此运营操作。",
   "errors.collaboration.actionForbidden": "您无权更新此协作项目。",
-  "errors.apiAnswer.manageForbidden": "您无权管理组 API 回答。"
+  "errors.apiAnswer.manageForbidden": "您无权管理组 API 回答。",
+  "errors.auth.required": "请先登录再继续。"
 }

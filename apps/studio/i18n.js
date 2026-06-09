@@ -450,7 +450,8 @@ const CGA_I18N_RESOURCES = {
     "errors.bot.viewForbidden": "Sie haben keine Berechtigung, diesen Bot anzuzeigen.",
     "errors.operations.actionForbidden": "Sie haben keine Berechtigung, diese Betriebsaktion auszuführen.",
     "errors.collaboration.actionForbidden": "Sie haben keine Berechtigung, dieses Zusammenarbeitselement zu aktualisieren.",
-    "errors.apiAnswer.manageForbidden": "Sie haben keine Berechtigung, Gruppen-API-Antworten zu verwalten."
+    "errors.apiAnswer.manageForbidden": "Sie haben keine Berechtigung, Gruppen-API-Antworten zu verwalten.",
+    "errors.auth.required": "Bitte melden Sie sich an, um fortzufahren."
   },
   "en": {
     "meta.localeName": "English",
@@ -903,7 +904,8 @@ const CGA_I18N_RESOURCES = {
     "errors.bot.viewForbidden": "You do not have permission to view this bot.",
     "errors.operations.actionForbidden": "You do not have permission to run this operation.",
     "errors.collaboration.actionForbidden": "You do not have permission to update this collaboration item.",
-    "errors.apiAnswer.manageForbidden": "You do not have permission to manage group API answers."
+    "errors.apiAnswer.manageForbidden": "You do not have permission to manage group API answers.",
+    "errors.auth.required": "Please log in to continue."
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1356,7 +1358,8 @@ const CGA_I18N_RESOURCES = {
     "errors.bot.viewForbidden": "Vous n’avez pas l’autorisation de voir ce bot.",
     "errors.operations.actionForbidden": "Vous n’avez pas l’autorisation d’exécuter cette opération.",
     "errors.collaboration.actionForbidden": "Vous n’avez pas l’autorisation de mettre à jour cet élément de collaboration.",
-    "errors.apiAnswer.manageForbidden": "Vous n’avez pas l’autorisation de gérer les réponses API du groupe."
+    "errors.apiAnswer.manageForbidden": "Vous n’avez pas l’autorisation de gérer les réponses API du groupe.",
+    "errors.auth.required": "Veuillez vous connecter pour continuer."
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1809,7 +1812,8 @@ const CGA_I18N_RESOURCES = {
     "errors.bot.viewForbidden": "このボットを表示する権限がありません。",
     "errors.operations.actionForbidden": "この運用操作を実行する権限がありません。",
     "errors.collaboration.actionForbidden": "この共同作業項目を更新する権限がありません。",
-    "errors.apiAnswer.manageForbidden": "グループ API 回答を管理する権限がありません。"
+    "errors.apiAnswer.manageForbidden": "グループ API 回答を管理する権限がありません。",
+    "errors.auth.required": "続行するにはログインしてください。"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2262,7 +2266,8 @@ const CGA_I18N_RESOURCES = {
     "errors.bot.viewForbidden": "이 봇을 볼 권한이 없습니다.",
     "errors.operations.actionForbidden": "이 운영 작업을 실행할 권한이 없습니다.",
     "errors.collaboration.actionForbidden": "이 협업 항목을 수정할 권한이 없습니다.",
-    "errors.apiAnswer.manageForbidden": "그룹 API 답변을 관리할 권한이 없습니다."
+    "errors.apiAnswer.manageForbidden": "그룹 API 답변을 관리할 권한이 없습니다.",
+    "errors.auth.required": "계속하려면 로그인해야 합니다."
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2715,7 +2720,8 @@ const CGA_I18N_RESOURCES = {
     "errors.bot.viewForbidden": "Bạn không có quyền xem bot này.",
     "errors.operations.actionForbidden": "Bạn không có quyền chạy thao tác vận hành này.",
     "errors.collaboration.actionForbidden": "Bạn không có quyền cập nhật mục cộng tác này.",
-    "errors.apiAnswer.manageForbidden": "Bạn không có quyền quản lý câu trả lời API của nhóm."
+    "errors.apiAnswer.manageForbidden": "Bạn không có quyền quản lý câu trả lời API của nhóm.",
+    "errors.auth.required": "Vui lòng đăng nhập để tiếp tục."
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3168,7 +3174,8 @@ const CGA_I18N_RESOURCES = {
     "errors.bot.viewForbidden": "您无权查看此机器人。",
     "errors.operations.actionForbidden": "您无权执行此运营操作。",
     "errors.collaboration.actionForbidden": "您无权更新此协作项目。",
-    "errors.apiAnswer.manageForbidden": "您无权管理组 API 回答。"
+    "errors.apiAnswer.manageForbidden": "您无权管理组 API 回答。",
+    "errors.auth.required": "请先登录再继续。"
   }
 };
 

@@ -6,11 +6,15 @@ import { join } from "node:path";
 const port = String(4293 + Math.floor(Math.random() * 100));
 const baseUrl = `http://localhost:${port}`;
 const dataDir = mkdtempSync(join(tmpdir(), "cga-auth-api-"));
-const server = spawn("node", ["scripts/serve-studio.js"], {
-  cwd: process.cwd(),
-  env: { ...process.env, PORT: port, CGA_DATA_DIR: dataDir },
-  stdio: "pipe"
-});
+let server = spawnServer({ PORT: port, CGA_DATA_DIR: dataDir });
+
+function spawnServer(env) {
+  return spawn("node", ["scripts/serve-studio.js"], {
+    cwd: process.cwd(),
+    env: { ...process.env, ...env },
+    stdio: "pipe"
+  });
+}
 
 function fail(message) {
   console.error(`FAIL ${message}`);
@@ -29,6 +33,12 @@ async function waitForServer() {
     }
   }
   fail("auth API test server did not start");
+}
+
+async function stopServer() {
+  if (!server) return;
+  server.kill();
+  await new Promise((resolve) => setTimeout(resolve, 250));
 }
 
 async function requestJson(path, { method = "GET", userId = "u-builder", sessionToken = "", cookie = "", body } = {}) {
@@ -198,12 +208,31 @@ async function main() {
   const storedSessions = JSON.parse(readFileSync(authSessionsFile, "utf8"));
   if (storedSessions.sessions?.[login.session_token]) fail("logout did not remove the session token");
 
+  await stopServer();
+  server = spawnServer({ PORT: port, CGA_DATA_DIR: dataDir, CGA_AUTH_HEADER_FALLBACK: "disabled" });
+  await waitForServer();
+
+  await expectStatus("/api/cga/auth/me", {
+    userId: "admin"
+  }, 401, "disabled header fallback should require login");
+
+  const strictLoginResult = await expectOk("/api/cga/auth/login", {
+    method: "POST",
+    body: { user_id: "u-api", password: "api-pass-1" }
+  }, "login should work when header fallback is disabled");
+  if (!strictLoginResult.payload.session_token) fail("strict login did not return session token");
+  const strictMeResult = await expectOk("/api/cga/auth/me", {
+    userId: "admin",
+    sessionToken: strictLoginResult.payload.session_token
+  }, "session token should work when header fallback is disabled");
+  if (strictMeResult.payload.user?.id !== "u-api") fail("strict mode did not resolve session token user");
+
   console.log("OK auth and group API endpoints passed");
 }
 
 main()
   .catch((error) => fail(error instanceof Error ? error.message : "auth API check failed"))
   .finally(() => {
-    server.kill();
+    server?.kill();
     rmSync(dataDir, { recursive: true, force: true });
   });

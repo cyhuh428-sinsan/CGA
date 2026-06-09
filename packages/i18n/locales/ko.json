@@ -449,5 +449,6 @@
   "errors.bot.viewForbidden": "이 봇을 볼 권한이 없습니다.",
   "errors.operations.actionForbidden": "이 운영 작업을 실행할 권한이 없습니다.",
   "errors.collaboration.actionForbidden": "이 협업 항목을 수정할 권한이 없습니다.",
-  "errors.apiAnswer.manageForbidden": "그룹 API 답변을 관리할 권한이 없습니다."
+  "errors.apiAnswer.manageForbidden": "그룹 API 답변을 관리할 권한이 없습니다.",
+  "errors.auth.required": "계속하려면 로그인해야 합니다."
 }

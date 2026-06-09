@@ -449,5 +449,6 @@
   "errors.bot.viewForbidden": "Sie haben keine Berechtigung, diesen Bot anzuzeigen.",
   "errors.operations.actionForbidden": "Sie haben keine Berechtigung, diese Betriebsaktion auszuführen.",
   "errors.collaboration.actionForbidden": "Sie haben keine Berechtigung, dieses Zusammenarbeitselement zu aktualisieren.",
-  "errors.apiAnswer.manageForbidden": "Sie haben keine Berechtigung, Gruppen-API-Antworten zu verwalten."
+  "errors.apiAnswer.manageForbidden": "Sie haben keine Berechtigung, Gruppen-API-Antworten zu verwalten.",
+  "errors.auth.required": "Bitte melden Sie sich an, um fortzufahren."
 }

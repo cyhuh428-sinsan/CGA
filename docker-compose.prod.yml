@@ -1,0 +1,4 @@
+services:
+  cga-studio:
+    environment:
+      CGA_AUTH_HEADER_FALLBACK: "disabled"

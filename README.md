@@ -108,6 +108,28 @@ docker-compose down
 - 개발자는 원칙적으로 Windows 로컬에서 `npm run studio`를 직접 실행하지 않는다.
 - 로컬 PC, 폐쇄망, 개인 WSL 환경 모두 동일하게 컨테이너 프로세스로 실행한다.
 
+## 인증 실행 모드
+
+개발 기본 실행은 기존 테스트와 화면 확인 편의를 위해 `X-CGA-User-Id` 헤더 fallback을 허용한다.
+
+```bash
+cd ~/deploy/cga
+docker-compose up --build cga-studio
+```
+
+운영형 실행에서는 헤더 fallback을 끄고 로그인 세션 토큰 또는 `cga_session` 쿠키만 사용한다.
+
+```bash
+cd ~/deploy/cga
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build cga-studio
+```
+
+운영형 실행 기준:
+
+- `CGA_AUTH_HEADER_FALLBACK=disabled`
+- `/api/cga/auth/login` 또는 `/api/cga/auth/signup`으로 발급된 세션만 사용자로 인정
+- 세션 없이 `/api/cga/auth/me` 또는 관리 API를 호출하면 `CGA_AUTH_REQUIRED` 반환
+
 ## CGA Studio 검증
 
 화면 구성, i18n 에러 키, Public Core 계약 파일을 확인한다.
