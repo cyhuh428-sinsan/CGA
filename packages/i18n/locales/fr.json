@@ -466,5 +466,16 @@
   "status.active": "actif",
   "status.pending": "en attente",
   "status.approved": "approuvé",
-  "status.deleted": "supprimé"
+  "status.deleted": "supprimé",
+  "authFlow.signup.label": "Inscription",
+  "authFlow.signup.detailWithGroup": "Crée l’utilisateur et le groupe personnel",
+  "authFlow.signup.detailUserOnly": "Crée seulement l’utilisateur",
+  "authFlow.login.label": "Connexion",
+  "authFlow.login.detail": "Charge la langue utilisateur et les adhésions actives",
+  "authFlow.join-request.label": "Demande d’adhésion",
+  "authFlow.join-request.detail": "{count} demande(s) de groupe en attente",
+  "authFlow.approval.label": "Approbation",
+  "authFlow.approval.detail": "L’adhésion au groupe est créée après approbation",
+  "authFlow.work.label": "Travail bot",
+  "authFlow.work.detail": "Les écrans s’ouvrent selon le rôle de groupe et les portées"
 }

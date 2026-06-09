@@ -466,5 +466,16 @@
   "status.active": "active",
   "status.pending": "pending",
   "status.approved": "approved",
-  "status.deleted": "deleted"
+  "status.deleted": "deleted",
+  "authFlow.signup.label": "Signup",
+  "authFlow.signup.detailWithGroup": "Creates user and personal group",
+  "authFlow.signup.detailUserOnly": "Creates user only",
+  "authFlow.login.label": "Login",
+  "authFlow.login.detail": "Loads user locale and active memberships",
+  "authFlow.join-request.label": "Join request",
+  "authFlow.join-request.detail": "{count} pending group request(s)",
+  "authFlow.approval.label": "Approval",
+  "authFlow.approval.detail": "Group membership is created after approval",
+  "authFlow.work.label": "Bot work",
+  "authFlow.work.detail": "Screens open from group role and scopes"
 }

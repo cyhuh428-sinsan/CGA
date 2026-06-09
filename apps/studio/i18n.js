@@ -467,7 +467,18 @@ const CGA_I18N_RESOURCES = {
     "status.active": "aktiv",
     "status.pending": "ausstehend",
     "status.approved": "genehmigt",
-    "status.deleted": "gelöscht"
+    "status.deleted": "gelöscht",
+    "authFlow.signup.label": "Registrierung",
+    "authFlow.signup.detailWithGroup": "Erstellt Benutzer und persönliche Gruppe",
+    "authFlow.signup.detailUserOnly": "Erstellt nur den Benutzer",
+    "authFlow.login.label": "Anmeldung",
+    "authFlow.login.detail": "Lädt Benutzersprache und aktive Mitgliedschaften",
+    "authFlow.join-request.label": "Beitrittsanfrage",
+    "authFlow.join-request.detail": "{count} ausstehende Gruppenanfrage(n)",
+    "authFlow.approval.label": "Freigabe",
+    "authFlow.approval.detail": "Nach der Freigabe wird die Gruppenmitgliedschaft erstellt",
+    "authFlow.work.label": "Bot-Arbeit",
+    "authFlow.work.detail": "Bildschirme öffnen sich nach Gruppenrolle und Scopes"
   },
   "en": {
     "meta.localeName": "English",
@@ -937,7 +948,18 @@ const CGA_I18N_RESOURCES = {
     "status.active": "active",
     "status.pending": "pending",
     "status.approved": "approved",
-    "status.deleted": "deleted"
+    "status.deleted": "deleted",
+    "authFlow.signup.label": "Signup",
+    "authFlow.signup.detailWithGroup": "Creates user and personal group",
+    "authFlow.signup.detailUserOnly": "Creates user only",
+    "authFlow.login.label": "Login",
+    "authFlow.login.detail": "Loads user locale and active memberships",
+    "authFlow.join-request.label": "Join request",
+    "authFlow.join-request.detail": "{count} pending group request(s)",
+    "authFlow.approval.label": "Approval",
+    "authFlow.approval.detail": "Group membership is created after approval",
+    "authFlow.work.label": "Bot work",
+    "authFlow.work.detail": "Screens open from group role and scopes"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1407,7 +1429,18 @@ const CGA_I18N_RESOURCES = {
     "status.active": "actif",
     "status.pending": "en attente",
     "status.approved": "approuvé",
-    "status.deleted": "supprimé"
+    "status.deleted": "supprimé",
+    "authFlow.signup.label": "Inscription",
+    "authFlow.signup.detailWithGroup": "Crée l’utilisateur et le groupe personnel",
+    "authFlow.signup.detailUserOnly": "Crée seulement l’utilisateur",
+    "authFlow.login.label": "Connexion",
+    "authFlow.login.detail": "Charge la langue utilisateur et les adhésions actives",
+    "authFlow.join-request.label": "Demande d’adhésion",
+    "authFlow.join-request.detail": "{count} demande(s) de groupe en attente",
+    "authFlow.approval.label": "Approbation",
+    "authFlow.approval.detail": "L’adhésion au groupe est créée après approbation",
+    "authFlow.work.label": "Travail bot",
+    "authFlow.work.detail": "Les écrans s’ouvrent selon le rôle de groupe et les portées"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1877,7 +1910,18 @@ const CGA_I18N_RESOURCES = {
     "status.active": "有効",
     "status.pending": "保留中",
     "status.approved": "承認済み",
-    "status.deleted": "削除済み"
+    "status.deleted": "削除済み",
+    "authFlow.signup.label": "サインアップ",
+    "authFlow.signup.detailWithGroup": "ユーザーと個人グループを作成します",
+    "authFlow.signup.detailUserOnly": "ユーザーのみ作成します",
+    "authFlow.login.label": "ログイン",
+    "authFlow.login.detail": "ユーザー言語と有効なメンバーシップを読み込みます",
+    "authFlow.join-request.label": "参加リクエスト",
+    "authFlow.join-request.detail": "保留中のグループリクエスト {count} 件",
+    "authFlow.approval.label": "承認",
+    "authFlow.approval.detail": "承認後にグループメンバーシップが作成されます",
+    "authFlow.work.label": "ボット作業",
+    "authFlow.work.detail": "グループロールとスコープに応じて画面が開きます"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2347,7 +2391,18 @@ const CGA_I18N_RESOURCES = {
     "status.active": "활성",
     "status.pending": "대기",
     "status.approved": "승인됨",
-    "status.deleted": "삭제됨"
+    "status.deleted": "삭제됨",
+    "authFlow.signup.label": "가입",
+    "authFlow.signup.detailWithGroup": "사용자와 개인 그룹을 생성합니다",
+    "authFlow.signup.detailUserOnly": "사용자만 생성합니다",
+    "authFlow.login.label": "로그인",
+    "authFlow.login.detail": "사용자 언어와 활성 멤버십을 불러옵니다",
+    "authFlow.join-request.label": "그룹 가입 요청",
+    "authFlow.join-request.detail": "대기 중인 그룹 요청 {count}건",
+    "authFlow.approval.label": "승인",
+    "authFlow.approval.detail": "승인 후 그룹 멤버십이 생성됩니다",
+    "authFlow.work.label": "봇 작업",
+    "authFlow.work.detail": "그룹 역할과 scope에 따라 화면이 열립니다"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2817,7 +2872,18 @@ const CGA_I18N_RESOURCES = {
     "status.active": "đang hoạt động",
     "status.pending": "đang chờ",
     "status.approved": "đã duyệt",
-    "status.deleted": "đã xóa"
+    "status.deleted": "đã xóa",
+    "authFlow.signup.label": "Đăng ký",
+    "authFlow.signup.detailWithGroup": "Tạo người dùng và nhóm cá nhân",
+    "authFlow.signup.detailUserOnly": "Chỉ tạo người dùng",
+    "authFlow.login.label": "Đăng nhập",
+    "authFlow.login.detail": "Tải ngôn ngữ người dùng và tư cách thành viên đang hoạt động",
+    "authFlow.join-request.label": "Yêu cầu tham gia",
+    "authFlow.join-request.detail": "{count} yêu cầu nhóm đang chờ",
+    "authFlow.approval.label": "Phê duyệt",
+    "authFlow.approval.detail": "Tư cách thành viên nhóm được tạo sau khi phê duyệt",
+    "authFlow.work.label": "Công việc bot",
+    "authFlow.work.detail": "Màn hình mở theo vai trò nhóm và phạm vi quyền"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3287,7 +3353,18 @@ const CGA_I18N_RESOURCES = {
     "status.active": "活跃",
     "status.pending": "待处理",
     "status.approved": "已批准",
-    "status.deleted": "已删除"
+    "status.deleted": "已删除",
+    "authFlow.signup.label": "注册",
+    "authFlow.signup.detailWithGroup": "创建用户和个人组",
+    "authFlow.signup.detailUserOnly": "仅创建用户",
+    "authFlow.login.label": "登录",
+    "authFlow.login.detail": "加载用户语言和有效成员关系",
+    "authFlow.join-request.label": "加入请求",
+    "authFlow.join-request.detail": "{count} 个待处理组请求",
+    "authFlow.approval.label": "审批",
+    "authFlow.approval.detail": "审批后创建组成员关系",
+    "authFlow.work.label": "机器人工作",
+    "authFlow.work.detail": "根据组角色和权限范围开放屏幕"
   }
 };
 

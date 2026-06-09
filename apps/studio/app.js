@@ -2579,6 +2579,23 @@ function formatMemberships(memberships) {
   return memberships.map((item) => `${item.group_id}/${item.role}`).join(", ") || t("common.none", "None");
 }
 
+function getAuthFlowLabel(stepId, fallback) {
+  return t(`authFlow.${stepId}.label`, fallback);
+}
+
+function getAuthFlowDetail(step, state) {
+  if (step.id === "signup") {
+    return state.policy.signupCreatesOwnGroup
+      ? t("authFlow.signup.detailWithGroup", "Creates user and personal group")
+      : t("authFlow.signup.detailUserOnly", "Creates user only");
+  }
+  if (step.id === "join-request") {
+    const count = state.joinRequests.filter((request) => request.status === "pending").length;
+    return t("authFlow.join-request.detail", "{count} pending group request(s)").replace("{count}", count);
+  }
+  return t(`authFlow.${step.id}.detail`, step.detail);
+}
+
 function renderAccessPanels() {
   const currentUserBadge = document.querySelector("[data-current-user-badge]");
   const accessOperations = document.querySelector("[data-access-operations]");
@@ -2665,8 +2682,8 @@ function renderAccessPanels() {
   `;
   authFlow.innerHTML = summarizeAuthWorkflow(currentAccessState).map((step, index) => `
     <div>
-      <strong>${String(index + 1).padStart(2, "0")} · ${step.label}</strong>
-      <span>${step.detail}</span>
+      <strong>${String(index + 1).padStart(2, "0")} · ${getAuthFlowLabel(step.id, step.label)}</strong>
+      <span>${getAuthFlowDetail(step, currentAccessState)}</span>
     </div>
   `).join("");
   groupUsers.innerHTML = summarizeGroupUsers(currentAccessState).map((entry) => `

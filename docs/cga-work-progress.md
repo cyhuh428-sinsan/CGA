@@ -1288,3 +1288,23 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 이후 User / Group Admin 화면에서 실제 가입/로그인/그룹 생성/가입 요청/승인 흐름을 브라우저에서 확인한다.
+
+### 2026-06-09 Auth Flow 동적 문구 다국어 보강
+- User / Group Admin 화면의 `Signup / Login Flow` 영역이 Public Core 상태 모델의 영어 label/detail을 그대로 표시하는 문제를 확인했다.
+- 상태 모델은 내부 흐름 식별자 유지 목적으로 그대로 두고, Studio 화면에서 `step.id` 기준으로 사용자 언어 메시지를 해석하도록 변경했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - `getAuthFlowLabel()`, `getAuthFlowDetail()`을 추가했다.
+  - `summarizeAuthWorkflow()`가 반환하는 영어 label/detail을 직접 표시하지 않고 `authFlow.*` i18n key로 표시한다.
+  - 대기 중인 그룹 가입 요청 수는 `{count}` 치환 방식으로 사용자 언어 문장에 반영한다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - `authFlow.signup/login/join-request/approval/work` label/detail 문구를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+  - Studio 번들 i18n 리소스를 locale JSON 기준으로 다시 동기화했다.
+- `scripts/check-studio-config.js`
+  - Auth Flow label/detail helper와 필수 locale key가 없으면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 이후 Access/Admin 화면의 실제 버튼 흐름을 브라우저 또는 별도 UI 검증 스크립트로 확인한다.

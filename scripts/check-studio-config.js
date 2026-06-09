@@ -173,8 +173,26 @@ if (!studioAppSource.includes("saveApiAnswerToServer")) fail("studio app does no
 if (!studioAppSource.includes("renderAccessBadge")) fail("studio access UI does not render compact operation badges");
 if (!studioAppSource.includes("renderStatusBadge")) fail("studio access UI does not render localized status badges");
 if (!studioAppSource.includes("formatMemberships")) fail("studio access UI does not format memberships consistently");
+if (!studioAppSource.includes("getAuthFlowLabel")) fail("studio access auth flow labels are not localized by step id");
+if (!studioAppSource.includes("getAuthFlowDetail")) fail("studio access auth flow details are not localized by step id");
 if (!studioAppSource.includes("access.roleSummary")) fail("studio access UI does not show current user role summary");
 if (!studioAppSource.includes("access.userCount")) fail("studio group user list does not show group user counts");
+for (const key of [
+  "authFlow.signup.label",
+  "authFlow.signup.detailWithGroup",
+  "authFlow.login.label",
+  "authFlow.login.detail",
+  "authFlow.join-request.label",
+  "authFlow.join-request.detail",
+  "authFlow.approval.label",
+  "authFlow.approval.detail",
+  "authFlow.work.label",
+  "authFlow.work.detail"
+]) {
+  for (const locale of locales) {
+    if (!(key in locale.data)) fail(`${locale.name} missing auth flow locale key '${key}'`);
+  }
+}
 for (const route of [
   "/api/cga/auth/signup",
   "/api/cga/auth/login",

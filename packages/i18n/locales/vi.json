@@ -466,5 +466,16 @@
   "status.active": "đang hoạt động",
   "status.pending": "đang chờ",
   "status.approved": "đã duyệt",
-  "status.deleted": "đã xóa"
+  "status.deleted": "đã xóa",
+  "authFlow.signup.label": "Đăng ký",
+  "authFlow.signup.detailWithGroup": "Tạo người dùng và nhóm cá nhân",
+  "authFlow.signup.detailUserOnly": "Chỉ tạo người dùng",
+  "authFlow.login.label": "Đăng nhập",
+  "authFlow.login.detail": "Tải ngôn ngữ người dùng và tư cách thành viên đang hoạt động",
+  "authFlow.join-request.label": "Yêu cầu tham gia",
+  "authFlow.join-request.detail": "{count} yêu cầu nhóm đang chờ",
+  "authFlow.approval.label": "Phê duyệt",
+  "authFlow.approval.detail": "Tư cách thành viên nhóm được tạo sau khi phê duyệt",
+  "authFlow.work.label": "Công việc bot",
+  "authFlow.work.detail": "Màn hình mở theo vai trò nhóm và phạm vi quyền"
 }
