@@ -167,13 +167,17 @@ if (!studioAppSource.includes("createWorkspaceBotOnServer")) fail("studio app do
 if (!studioAppSource.includes("refreshStudioStateFromServer")) fail("studio app does not refresh Create Bot state from server");
 if (!studioAppSource.includes("saveStudioStateToServer")) fail("studio app does not save Create Bot state through server API");
 if (!studioAppSource.includes("runQueuedSave")) fail("studio app does not serialize repeated save requests");
+if (!studioAppSource.includes("currentQueue.saveAction = saveAction")) fail("studio save queue does not keep the latest pending save action");
+if (!studioAppSource.includes("cloneForSnapshot(currentStudioState)")) fail("studio state save does not capture payload at request time");
 if (!studioAppSource.includes("persistStudioStateToServer")) fail("studio state save is not split into queued wrapper and persist action");
 if (!studioAppSource.includes("refreshCompositionFromServer")) fail("studio app does not refresh Configure Bot composition from server");
 if (!studioAppSource.includes("saveCompositionToServer")) fail("studio app does not save Configure Bot composition through server API");
 if (!studioAppSource.includes("persistCompositionToServer")) fail("composition save is not split into queued wrapper and persist action");
+if (!studioAppSource.includes("cloneForSnapshot(currentCompositionState)")) fail("composition save does not capture payload at request time");
 if (!studioAppSource.includes("refreshDetailAssetsFromServer")) fail("studio app does not refresh Detail Settings assets from server");
 if (!studioAppSource.includes("saveDetailAssetsToServer")) fail("studio app does not save Detail Settings assets through server API");
 if (!studioAppSource.includes("persistDetailAssetsToServer")) fail("detail asset save is not split into queued wrapper and persist action");
+if (!studioAppSource.includes("cloneForSnapshot(currentIntentUtteranceAssets)")) fail("detail asset save does not capture payload at request time");
 if (!studioAppSource.includes("refreshOperationsStateFromServer")) fail("studio app does not refresh Build/Test/Operate state from server");
 if (!studioAppSource.includes("runOperationsAction")) fail("studio app does not run Build/Test/Operate actions through server API");
 if (!studioAppSource.includes("refreshCollaborationStateFromServer")) fail("studio app does not refresh Team Dashboard collaboration state from server");
