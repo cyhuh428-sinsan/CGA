@@ -339,6 +339,7 @@
   "access.currentGroupCreate": "当前用户可创建组",
   "access.groupsWithoutAdmin": "无组管理员的组",
   "admin.loginTitle": "登录会话",
+  "admin.authentication": "认证",
   "admin.loginBody": "切换当前用户，并立即重新计算成员关系、屏幕访问和语言。",
   "admin.loginButton": "登录",
   "admin.signupTitle": "注册",
@@ -496,5 +497,7 @@
   "apiAnswer.manageAllowed": "可管理API回答",
   "apiAnswer.manageBlocked": "已阻止：apiAnswer.manage",
   "workspace.createAllowed": "可创建机器人",
-  "workspace.createBlocked": "已阻止：bot.create"
+  "workspace.createBlocked": "已阻止：bot.create",
+  "common.user": "用户",
+  "common.group": "组"
 }

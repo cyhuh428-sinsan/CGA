@@ -339,6 +339,7 @@
   "access.currentGroupCreate": "現在ユーザーはグループ作成可",
   "access.groupsWithoutAdmin": "グループ管理者なし",
   "admin.loginTitle": "ログインセッション",
+  "admin.authentication": "認証",
   "admin.loginBody": "アクティブユーザーを切り替え、メンバーシップ、画面アクセス、言語を再計算します。",
   "admin.loginButton": "ログイン",
   "admin.signupTitle": "登録",
@@ -496,5 +497,7 @@
   "apiAnswer.manageAllowed": "API回答を管理できます",
   "apiAnswer.manageBlocked": "ブロック: apiAnswer.manage",
   "workspace.createAllowed": "ボットを作成できます",
-  "workspace.createBlocked": "ブロック: bot.create"
+  "workspace.createBlocked": "ブロック: bot.create",
+  "common.user": "ユーザー",
+  "common.group": "グループ"
 }

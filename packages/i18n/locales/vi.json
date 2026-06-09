@@ -339,6 +339,7 @@
   "access.currentGroupCreate": "Người dùng hiện tại có thể tạo nhóm",
   "access.groupsWithoutAdmin": "Nhóm thiếu group admin",
   "admin.loginTitle": "Phiên đăng nhập",
+  "admin.authentication": "Xác thực",
   "admin.loginBody": "Đổi người dùng hiện tại và tính lại membership, truy cập màn hình, ngôn ngữ.",
   "admin.loginButton": "Đăng nhập",
   "admin.signupTitle": "Đăng ký",
@@ -496,5 +497,7 @@
   "apiAnswer.manageAllowed": "Có thể quản lý trả lời API",
   "apiAnswer.manageBlocked": "Bị chặn: apiAnswer.manage",
   "workspace.createAllowed": "Có thể tạo bot",
-  "workspace.createBlocked": "Bị chặn: bot.create"
+  "workspace.createBlocked": "Bị chặn: bot.create",
+  "common.user": "Người dùng",
+  "common.group": "Nhóm"
 }

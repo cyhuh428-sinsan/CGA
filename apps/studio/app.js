@@ -163,6 +163,8 @@ const dynamicMessages = {
     "common.disabled": "Disabled",
     "common.enabled": "Enabled",
     "common.none": "None",
+    "common.user": "User",
+    "common.group": "Group",
     "common.noRole": "no role",
     "common.intentUnit": "intents",
     "common.pendingUnit": "pending",
@@ -239,6 +241,8 @@ const dynamicMessages = {
     "common.disabled": "비활성",
     "common.enabled": "활성",
     "common.none": "없음",
+    "common.user": "사용자",
+    "common.group": "그룹",
     "common.noRole": "역할 없음",
     "common.intentUnit": "개 의도",
     "common.pendingUnit": "건 대기",
@@ -315,6 +319,8 @@ const dynamicMessages = {
     "common.disabled": "Deaktiviert",
     "common.enabled": "Aktiviert",
     "common.none": "Keine",
+    "common.user": "Benutzer",
+    "common.group": "Gruppe",
     "common.noRole": "keine Rolle",
     "common.intentUnit": "Intents",
     "common.pendingUnit": "ausstehend",
@@ -391,6 +397,8 @@ const dynamicMessages = {
     "common.disabled": "無効",
     "common.enabled": "有効",
     "common.none": "なし",
+    "common.user": "ユーザー",
+    "common.group": "グループ",
     "common.noRole": "役割なし",
     "common.intentUnit": "件の意図",
     "common.pendingUnit": "件保留",
@@ -467,6 +475,8 @@ const dynamicMessages = {
     "common.disabled": "禁用",
     "common.enabled": "启用",
     "common.none": "无",
+    "common.user": "用户",
+    "common.group": "组",
     "common.noRole": "无角色",
     "common.intentUnit": "个意图",
     "common.pendingUnit": "个待处理",
@@ -543,6 +553,8 @@ const dynamicMessages = {
     "common.disabled": "Tắt",
     "common.enabled": "Bật",
     "common.none": "Không có",
+    "common.user": "Người dùng",
+    "common.group": "Nhóm",
     "common.noRole": "không có vai trò",
     "common.intentUnit": "ý định",
     "common.pendingUnit": "đang chờ",
@@ -619,6 +631,8 @@ const dynamicMessages = {
     "common.disabled": "Désactivé",
     "common.enabled": "Activé",
     "common.none": "Aucun",
+    "common.user": "Utilisateur",
+    "common.group": "Groupe",
     "common.noRole": "aucun rôle",
     "common.intentUnit": "intentions",
     "common.pendingUnit": "en attente",
@@ -2478,7 +2492,7 @@ function renderTopContext() {
   const currentVersionBadge = document.querySelector("[data-current-version-badge]");
   if (currentUserBadge) {
     const roles = current.memberships.map((item) => item.role).join(", ") || t("common.noRole", "no role");
-    currentUserBadge.textContent = `${current.user?.name || "User"} · ${current.user?.locale || "en"} · ${roles}`;
+    currentUserBadge.textContent = `${current.user?.name || t("common.user", "User")} · ${current.user?.locale || "en"} · ${roles}`;
   }
   if (currentGroupBadge) currentGroupBadge.textContent = `${t("top.groupPrefix", "Group")}: ${group?.name || t("common.none", "None")}`;
   if (currentBotBadge) currentBotBadge.textContent = `${t("top.botPrefix", "Bot")}: ${currentStudioState.bot.name || bot?.name || t("common.none", "None")}`;
@@ -2696,7 +2710,7 @@ function renderAccessPanels() {
   const currentRoles = [...new Set(current.memberships.map((item) => item.role))].join(", ") || t("common.noRole", "no role");
   currentSession.innerHTML = `
     <div class="session-header">
-      <strong>${current.user?.name || "User"}</strong>
+      <strong>${current.user?.name || t("common.user", "User")}</strong>
       ${renderStatusBadge(current.user?.status || "active")}
     </div>
     <span>${current.user?.id || ""} · ${current.user?.locale || "en"} · ${formatMemberships(current.memberships)}</span>
@@ -2708,7 +2722,7 @@ function renderAccessPanels() {
   `;
   if (authMessage) {
     authMessage.classList.toggle("auth-message", Boolean(currentAuthMessage));
-    renderMessageNode(authMessage, currentAuthMessage, "Authentication");
+    renderMessageNode(authMessage, currentAuthMessage, t("admin.authentication", "Authentication"));
   }
   joinGroup.innerHTML = currentAccessState.groups
     .filter((group) => group.status === "active")
@@ -2782,11 +2796,11 @@ function renderAccessPanels() {
     </div>
   `).join("");
   groupAccess.innerHTML = summarizeGroupBotAccess(currentAccessState).map((access) => `
-    <div><strong>${access.group?.name || "Group"}</strong><span>${access.botId}</span></div>
+    <div><strong>${access.group?.name || t("common.group", "Group")}</strong><span>${access.botId}</span></div>
     <div><span class="scope-list">${access.scopes.map((scope) => `<b>${scope}</b>`).join("")}</span></div>
   `).join("");
   screenAccess.innerHTML = `
-    <div class="current-user"><strong>${current.user?.name || "User"}</strong><span>${formatMemberships(current.memberships)}</span></div>
+    <div class="current-user"><strong>${current.user?.name || t("common.user", "User")}</strong><span>${formatMemberships(current.memberships)}</span></div>
     ${current.screens.map((screen) => `
       <div class="${screen.allowed ? "allowed" : "denied"}">
         <strong>${screen.screenId}</strong>

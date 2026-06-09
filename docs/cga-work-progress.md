@@ -1365,3 +1365,23 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 이후 남아 있는 화면 동적 문구 중 사용자에게 직접 보이는 권한/scope/상태 표시를 계속 축소한다.
+
+### 2026-06-09 Access/Admin fallback 문구 다국어 보강
+- User / Group Admin과 상단 context bar에서 사용자명 또는 그룹명이 비어 있을 때 `User`, `Group`, `Authentication` 같은 기본 영어 문구가 직접 표시될 수 있음을 확인했다.
+- 인증/권한 구조와 서버 API는 변경하지 않고, fallback 표시 문구만 사용자 언어 기반으로 변경했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - 상단 사용자 배지, 현재 세션 카드, Group Bot/API Access, Current User Screen Access의 `User`/`Group` fallback을 `common.user`, `common.group`으로 변경했다.
+  - 인증 메시지 기본 제목 `Authentication`을 `admin.authentication`으로 변경했다.
+  - `dynamicMessages`에 7개 locale(en, ko, zh-CN, ja, vi, de, fr) fallback 문구를 추가했다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - `common.user`, `common.group`, `admin.authentication` 키를 7개 locale에 추가했다.
+  - Studio 번들 i18n 리소스를 locale JSON 기준으로 다시 동기화했다.
+- `scripts/check-studio-config.js`, `scripts/check-studio-dynamic-i18n.js`
+  - Access/Admin fallback key가 누락되면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 이후 남은 동적 fallback 후보 중 실제 화면 노출 가능성이 높은 항목부터 계속 정리한다.

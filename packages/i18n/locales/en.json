@@ -339,6 +339,7 @@
   "access.currentGroupCreate": "Current user can create group",
   "access.groupsWithoutAdmin": "Groups without group admin",
   "admin.loginTitle": "Login Session",
+  "admin.authentication": "Authentication",
   "admin.loginBody": "Switch the active user and immediately recalculate group memberships, screen access, and user language.",
   "admin.loginButton": "Login",
   "admin.signupTitle": "Signup",
@@ -496,5 +497,7 @@
   "apiAnswer.manageAllowed": "Can manage API answers",
   "apiAnswer.manageBlocked": "Blocked: apiAnswer.manage",
   "workspace.createAllowed": "Can create bots",
-  "workspace.createBlocked": "Blocked: bot.create"
+  "workspace.createBlocked": "Blocked: bot.create",
+  "common.user": "User",
+  "common.group": "Group"
 }
