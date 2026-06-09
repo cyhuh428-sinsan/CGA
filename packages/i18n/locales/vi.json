@@ -439,5 +439,15 @@
   "errors.auth.groupCreateForbidden": "Chỉ quản trị viên hệ thống mới có thể tạo nhóm.",
   "errors.auth.joinApprovalForbidden": "Chỉ quản trị viên của nhóm đích mới có thể duyệt yêu cầu tham gia.",
   "errors.auth.adminApprovalForbidden": "Chỉ quản trị viên hệ thống mới có thể duyệt yêu cầu quyền quản trị.",
-  "errors.auth.sessionExpired": "Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại."
+  "errors.auth.sessionExpired": "Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại.",
+  "message.actionFailedTitle": "Thao tác thất bại",
+  "message.actionForbiddenTitle": "Cần quyền",
+  "message.actionFailedBody": "Không thể hoàn tất thao tác.",
+  "errors.bot.createForbidden": "Bạn không có quyền tạo bot trong nhóm này.",
+  "errors.bot.configureForbidden": "Bạn không có quyền cấu hình bot này.",
+  "errors.bot.operateForbidden": "Bạn không có quyền vận hành bot này.",
+  "errors.bot.viewForbidden": "Bạn không có quyền xem bot này.",
+  "errors.operations.actionForbidden": "Bạn không có quyền chạy thao tác vận hành này.",
+  "errors.collaboration.actionForbidden": "Bạn không có quyền cập nhật mục cộng tác này.",
+  "errors.apiAnswer.manageForbidden": "Bạn không có quyền quản lý câu trả lời API của nhóm."
 }

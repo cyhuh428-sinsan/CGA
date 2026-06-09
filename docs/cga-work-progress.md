@@ -1142,3 +1142,49 @@
 #### 다음 작업
 - 다음 단계는 권한 없는 화면/작업 접근 시 같은 메시지 영역 또는 화면별 상태 영역에 사용자 언어 오류를 표시하는 것이다.
 - 이후 `CGA_AUTH_HEADER_FALLBACK=disabled` 기준을 docker-compose 운영 profile에 연결하면 운영/개발 모드 분리가 더 명확해진다.
+
+### 2026-06-09 권한 오류 사용자 언어 표시 1차
+- 로그인/세션 오류 표시 이후, 권한 없는 작업과 화면 액션도 사용자 언어로 안내되도록 보강했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - Workspace 상단에 `data-global-message` 공통 작업 메시지 영역을 추가했다.
+- `apps/studio/styles.css`
+  - 공통 메시지 영역 스타일을 추가했다.
+  - 신산님 기준의 화면 폰트 체계 안에서 제목은 12px, 본문은 9px 설명 크기를 사용한다.
+- `apps/studio/app.js`
+  - `currentGlobalMessage`, `setGlobalMessage`, `clearGlobalMessage`, `renderGlobalMessage`, `showApiErrorMessage`를 추가했다.
+  - 서버가 401/403/409 등 명확한 오류를 반환하면 `message_key`를 현재 사용자 언어로 해석해 Workspace 상단에 표시한다.
+  - `runAccessServerAction`은 서버가 명확히 거부한 경우 더 이상 로컬 fallback을 실행하지 않는다.
+  - `runOperationsAction`, `runCollaborationAction`도 서버 권한 거부 시 공통 메시지를 표시한다.
+  - Team Dashboard 협업 액션은 서버 권한 거부와 네트워크 실패를 구분한다.
+    - 서버 권한 거부: 메시지 표시, 로컬 fallback 없음
+    - 네트워크 실패: 기존 시안 동작 유지를 위해 로컬 fallback 허용
+  - Bot Workspace의 봇 생성, Group API Registry의 API 답변 등록도 서버 권한 거부 시 로컬 fallback하지 않고 메시지를 표시한다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - 공통 작업 오류 메시지 `message.actionFailedTitle`, `message.actionForbiddenTitle`, `message.actionFailedBody`를 7개 locale에 추가했다.
+  - 주요 권한 오류 message key를 7개 locale에 추가했다.
+    - `errors.bot.createForbidden`
+    - `errors.bot.configureForbidden`
+    - `errors.bot.operateForbidden`
+    - `errors.bot.viewForbidden`
+    - `errors.operations.actionForbidden`
+    - `errors.collaboration.actionForbidden`
+    - `errors.apiAnswer.manageForbidden`
+- `packages/i18n/error-catalog.json`
+  - 위 권한 오류 코드를 안정 에러 카탈로그에 추가했다.
+- `scripts/check-studio-config.js`
+  - 공통 메시지 영역, `showApiErrorMessage`, 권한 오류 메시지 키, 협업 fallback 구분 로직을 검증한다.
+
+#### 검증 결과
+- `node --check apps/studio/app.js` 통과
+- `node scripts/check-studio-config.js` 통과
+- `node scripts/check-auth-api.mjs` 통과
+- `node scripts/check-i18n-no-fallback.js` 통과
+- `npm run studio:validate` 통과
+- 기존 경고 `MODULE_TYPELESS_PACKAGE_JSON`는 계속 표시되지만 실패가 아니다.
+
+#### 다음 작업
+- 다음 단계는 운영/개발 모드 분리를 더 명확히 하기 위해 `CGA_AUTH_HEADER_FALLBACK=disabled`를 docker-compose 운영 profile 또는 환경 예시에 연결하는 것이다.
+- 그 다음은 권한 오류뿐 아니라 API 필드 누락/중복/업로드 실패 같은 일반 작업 오류도 같은 메시지 체계로 확장하면 된다.

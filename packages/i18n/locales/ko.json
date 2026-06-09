@@ -439,5 +439,15 @@
   "errors.auth.groupCreateForbidden": "그룹 생성은 시스템 관리자만 할 수 있습니다.",
   "errors.auth.joinApprovalForbidden": "대상 그룹 관리자만 가입 요청을 승인할 수 있습니다.",
   "errors.auth.adminApprovalForbidden": "관리자 권한 요청은 시스템 관리자만 승인할 수 있습니다.",
-  "errors.auth.sessionExpired": "세션이 만료되었습니다. 다시 로그인하세요."
+  "errors.auth.sessionExpired": "세션이 만료되었습니다. 다시 로그인하세요.",
+  "message.actionFailedTitle": "작업 실패",
+  "message.actionForbiddenTitle": "권한 필요",
+  "message.actionFailedBody": "작업을 완료할 수 없습니다.",
+  "errors.bot.createForbidden": "이 그룹에서 봇을 생성할 권한이 없습니다.",
+  "errors.bot.configureForbidden": "이 봇을 구성할 권한이 없습니다.",
+  "errors.bot.operateForbidden": "이 봇을 운영할 권한이 없습니다.",
+  "errors.bot.viewForbidden": "이 봇을 볼 권한이 없습니다.",
+  "errors.operations.actionForbidden": "이 운영 작업을 실행할 권한이 없습니다.",
+  "errors.collaboration.actionForbidden": "이 협업 항목을 수정할 권한이 없습니다.",
+  "errors.apiAnswer.manageForbidden": "그룹 API 답변을 관리할 권한이 없습니다."
 }

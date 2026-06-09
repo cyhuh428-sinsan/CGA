@@ -439,5 +439,15 @@
   "errors.auth.groupCreateForbidden": "Only a system administrator can create a group.",
   "errors.auth.joinApprovalForbidden": "Only the target group administrator can approve this join request.",
   "errors.auth.adminApprovalForbidden": "Only the system administrator can approve admin permission requests.",
-  "errors.auth.sessionExpired": "Your session has expired. Please log in again."
+  "errors.auth.sessionExpired": "Your session has expired. Please log in again.",
+  "message.actionFailedTitle": "Action failed",
+  "message.actionForbiddenTitle": "Permission required",
+  "message.actionFailedBody": "The action could not be completed.",
+  "errors.bot.createForbidden": "You do not have permission to create bots in this group.",
+  "errors.bot.configureForbidden": "You do not have permission to configure this bot.",
+  "errors.bot.operateForbidden": "You do not have permission to operate this bot.",
+  "errors.bot.viewForbidden": "You do not have permission to view this bot.",
+  "errors.operations.actionForbidden": "You do not have permission to run this operation.",
+  "errors.collaboration.actionForbidden": "You do not have permission to update this collaboration item.",
+  "errors.apiAnswer.manageForbidden": "You do not have permission to manage group API answers."
 }

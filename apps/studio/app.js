@@ -80,6 +80,7 @@ let currentApiGroupId = "g-support";
 let currentApiBotId = "supportbot-draft";
 let currentTransferStatus = "";
 let currentAuthMessage = null;
+let currentGlobalMessage = null;
 let studioStateSaveTimer = null;
 let compositionSaveTimer = null;
 let currentCompositionState = {
@@ -702,6 +703,32 @@ function clearAuthMessage() {
   currentAuthMessage = null;
 }
 
+function setGlobalMessage(kind, titleKey, bodyKeyOrText) {
+  currentGlobalMessage = { kind, titleKey, bodyKeyOrText };
+}
+
+function clearGlobalMessage() {
+  currentGlobalMessage = null;
+}
+
+function renderMessageNode(node, message, fallbackTitle = "Message") {
+  if (!node) return;
+  node.hidden = !message;
+  const body = message?.bodyKeyOrText || "";
+  node.innerHTML = message ? `
+    <strong>${t(message.titleKey, fallbackTitle)}</strong>
+    <span>${body.includes(".") ? t(body, body) : body}</span>
+  ` : "";
+}
+
+function showApiErrorMessage(error, titleKey = "message.actionFailedTitle") {
+  setGlobalMessage("error", titleKey, getCgaErrorMessage(error, t("message.actionFailedBody", "The action could not be completed.")));
+}
+
+function renderGlobalMessage() {
+  renderMessageNode(document.querySelector("[data-global-message]"), currentGlobalMessage, "Message");
+}
+
 function applyDynamicLocaleOverrides(locale = getCurrentLocale()) {
   const messages = dynamicMessages[locale];
   if (!messages) return;
@@ -901,9 +928,15 @@ async function runAccessServerAction(action, fallback) {
   try {
     await action();
     await refreshAccessStateFromServer();
+    clearGlobalMessage();
     rerenderAdminAndAccess();
     return true;
   } catch (error) {
+    if (error.status) {
+      showApiErrorMessage(error, "message.actionForbiddenTitle");
+      rerenderAdminAndAccess();
+      return false;
+    }
     if (fallback) {
       fallback(error);
       rerenderAdminAndAccess();
@@ -1067,21 +1100,41 @@ async function saveCompositionToServer() {
 
 async function runOperationsAction(action, body = {}) {
   if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
-  const payload = await requestCgaJson(getOperationsStateUrl(currentWorkspaceGroupId, currentWorkspaceBotId, action), {
-    method: "POST",
-    body
-  });
-  applyOperationsStateFromServer(payload.operations_state);
-  return true;
+  try {
+    const payload = await requestCgaJson(getOperationsStateUrl(currentWorkspaceGroupId, currentWorkspaceBotId, action), {
+      method: "POST",
+      body
+    });
+    clearGlobalMessage();
+    applyOperationsStateFromServer(payload.operations_state);
+    return true;
+  } catch (error) {
+    if (error.status) {
+      showApiErrorMessage(error, "message.actionForbiddenTitle");
+      renderGlobalMessage();
+      return null;
+    }
+    return false;
+  }
 }
 
 async function runCollaborationAction(workItemId, action) {
   if (!currentWorkspaceGroupId || !currentWorkspaceBotId || !workItemId || !action) return false;
-  const payload = await requestCgaJson(getCollaborationStateUrl(currentWorkspaceGroupId, currentWorkspaceBotId, workItemId, action), {
-    method: "POST"
-  });
-  applyCollaborationStateFromServer(payload.collaboration_state);
-  return true;
+  try {
+    const payload = await requestCgaJson(getCollaborationStateUrl(currentWorkspaceGroupId, currentWorkspaceBotId, workItemId, action), {
+      method: "POST"
+    });
+    clearGlobalMessage();
+    applyCollaborationStateFromServer(payload.collaboration_state);
+    return true;
+  } catch (error) {
+    if (error.status) {
+      showApiErrorMessage(error, "message.actionForbiddenTitle");
+      renderGlobalMessage();
+      return null;
+    }
+    return false;
+  }
 }
 
 async function saveDetailAssetsToServer() {
@@ -1732,6 +1785,7 @@ function renderOperationsPanels() {
 }
 
 function renderAllStatePanels() {
+  renderGlobalMessage();
   renderCreateSummary();
   renderTopContext();
   bindCreateControls();
@@ -2063,9 +2117,10 @@ function bindTeamDashboardActions() {
     button.dataset.bound = "true";
     button.addEventListener("click", async () => {
       const synced = await runCollaborationAction(button.dataset.lockWork, "lock").catch(() => false);
-      if (!synced) currentCollaborationState = lockWorkItem(currentCollaborationState, { workItemId: button.dataset.lockWork, userId: currentAccessState.currentUserId });
+      if (synced === false) currentCollaborationState = lockWorkItem(currentCollaborationState, { workItemId: button.dataset.lockWork, userId: currentAccessState.currentUserId });
       renderTeamDashboard();
       renderCollaborationSummary();
+      renderGlobalMessage();
     });
   });
   document.querySelectorAll("[data-unlock-work]").forEach((button) => {
@@ -2073,9 +2128,10 @@ function bindTeamDashboardActions() {
     button.dataset.bound = "true";
     button.addEventListener("click", async () => {
       const synced = await runCollaborationAction(button.dataset.unlockWork, "unlock").catch(() => false);
-      if (!synced) currentCollaborationState = releaseWorkItemLock(currentCollaborationState, { workItemId: button.dataset.unlockWork, userId: currentAccessState.currentUserId });
+      if (synced === false) currentCollaborationState = releaseWorkItemLock(currentCollaborationState, { workItemId: button.dataset.unlockWork, userId: currentAccessState.currentUserId });
       renderTeamDashboard();
       renderCollaborationSummary();
+      renderGlobalMessage();
     });
   });
   document.querySelectorAll("[data-approve-work]").forEach((button) => {
@@ -2083,9 +2139,10 @@ function bindTeamDashboardActions() {
     button.dataset.bound = "true";
     button.addEventListener("click", async () => {
       const synced = await runCollaborationAction(button.dataset.approveWork, "approve").catch(() => false);
-      if (!synced) currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.approveWork, reviewerId: currentAccessState.currentUserId, decision: "approve" });
+      if (synced === false) currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.approveWork, reviewerId: currentAccessState.currentUserId, decision: "approve" });
       renderTeamDashboard();
       renderCollaborationSummary();
+      renderGlobalMessage();
     });
   });
   document.querySelectorAll("[data-request-change]").forEach((button) => {
@@ -2093,9 +2150,10 @@ function bindTeamDashboardActions() {
     button.dataset.bound = "true";
     button.addEventListener("click", async () => {
       const synced = await runCollaborationAction(button.dataset.requestChange, "request-changes").catch(() => false);
-      if (!synced) currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.requestChange, reviewerId: currentAccessState.currentUserId, decision: "request_changes" });
+      if (synced === false) currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.requestChange, reviewerId: currentAccessState.currentUserId, decision: "request_changes" });
       renderTeamDashboard();
       renderCollaborationSummary();
+      renderGlobalMessage();
     });
   });
 }
@@ -2392,9 +2450,13 @@ function bindWorkspaceActions() {
         await saveDetailAssetsToServer();
         await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
-      } catch {
+      } catch (error) {
+        if (error.status) {
+          showApiErrorMessage(error, "message.actionForbiddenTitle");
+        } else {
         currentWorkspaceBots = [...currentWorkspaceBots, bot];
         applyCurrentBotToStudioState(bot);
+        }
       }
       renderWorkspaceHome();
       renderAllStatePanels();
@@ -2520,13 +2582,8 @@ function renderAccessPanels() {
     <span>${current.user?.id || ""} · ${current.user?.locale || "en"} · ${current.memberships.map((item) => `${item.group_id}/${item.role}`).join(", ")}</span>
   `;
   if (authMessage) {
-    authMessage.hidden = !currentAuthMessage;
     authMessage.classList.toggle("auth-message", Boolean(currentAuthMessage));
-    const authMessageBody = currentAuthMessage?.bodyKeyOrText || "";
-    authMessage.innerHTML = currentAuthMessage ? `
-      <strong>${t(currentAuthMessage.titleKey, "Authentication")}</strong>
-      <span>${authMessageBody.includes(".") ? t(authMessageBody, authMessageBody) : authMessageBody}</span>
-    ` : "";
+    renderMessageNode(authMessage, currentAuthMessage, "Authentication");
   }
   joinGroup.innerHTML = currentAccessState.groups
     .filter((group) => group.status === "active")
@@ -2687,6 +2744,7 @@ function renderApiRegistry() {
 }
 
 function rerenderAdminAndAccess() {
+  renderGlobalMessage();
   syncStudioLocaleToCurrentUser();
   renderWorkspaceHome();
   renderCollaborationSummary();
@@ -2873,8 +2931,12 @@ function bindAdminWorkbench() {
       try {
         await saveApiAnswerToServer(api);
         await refreshApiRegistryFromServer();
-      } catch {
+      } catch (error) {
+        if (error.status) {
+          showApiErrorMessage(error, "message.actionForbiddenTitle");
+        } else {
         currentApiRegistry = [...currentApiRegistry, api];
+        }
       }
       rerenderAdminAndAccess();
     });

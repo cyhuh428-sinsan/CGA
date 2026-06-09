@@ -439,5 +439,15 @@
   "errors.auth.groupCreateForbidden": "只有系统管理员可以创建组。",
   "errors.auth.joinApprovalForbidden": "只有目标组管理员可以批准此加入请求。",
   "errors.auth.adminApprovalForbidden": "只有系统管理员可以批准管理员权限请求。",
-  "errors.auth.sessionExpired": "您的会话已过期。请重新登录。"
+  "errors.auth.sessionExpired": "您的会话已过期。请重新登录。",
+  "message.actionFailedTitle": "操作失败",
+  "message.actionForbiddenTitle": "需要权限",
+  "message.actionFailedBody": "无法完成该操作。",
+  "errors.bot.createForbidden": "您无权在此组中创建机器人。",
+  "errors.bot.configureForbidden": "您无权配置此机器人。",
+  "errors.bot.operateForbidden": "您无权运营此机器人。",
+  "errors.bot.viewForbidden": "您无权查看此机器人。",
+  "errors.operations.actionForbidden": "您无权执行此运营操作。",
+  "errors.collaboration.actionForbidden": "您无权更新此协作项目。",
+  "errors.apiAnswer.manageForbidden": "您无权管理组 API 回答。"
 }
