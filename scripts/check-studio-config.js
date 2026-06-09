@@ -170,6 +170,11 @@ if (!studioAppSource.includes("refreshCollaborationStateFromServer")) fail("stud
 if (!studioAppSource.includes("runCollaborationAction")) fail("studio app does not run Team Dashboard actions through server API");
 if (!studioAppSource.includes("refreshApiRegistryFromServer")) fail("studio app does not refresh Group API Registry from server");
 if (!studioAppSource.includes("saveApiAnswerToServer")) fail("studio app does not save Group API Registry entries through server API");
+if (!studioAppSource.includes("renderAccessBadge")) fail("studio access UI does not render compact operation badges");
+if (!studioAppSource.includes("renderStatusBadge")) fail("studio access UI does not render localized status badges");
+if (!studioAppSource.includes("formatMemberships")) fail("studio access UI does not format memberships consistently");
+if (!studioAppSource.includes("access.roleSummary")) fail("studio access UI does not show current user role summary");
+if (!studioAppSource.includes("access.userCount")) fail("studio group user list does not show group user counts");
 for (const route of [
   "/api/cga/auth/signup",
   "/api/cga/auth/login",

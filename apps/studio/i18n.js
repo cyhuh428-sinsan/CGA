@@ -458,7 +458,16 @@ const CGA_I18N_RESOURCES = {
     "errors.collaboration.actionNotFound": "Die angeforderte Kollaborationsaktion wurde nicht gefunden.",
     "errors.apiAnswer.requiredField": "API-Antwortname und Endpoint-URL sind erforderlich.",
     "errors.asset.scopeNotFound": "Der angeforderte Ressourcentyp wird nicht unterstützt.",
-    "errors.api.requestFailed": "Der Server konnte die Anfrage nicht abschließen."
+    "errors.api.requestFailed": "Der Server konnte die Anfrage nicht abschließen.",
+    "access.roleSummary": "Rollen",
+    "access.groupCount": "Gruppen",
+    "access.scopeCount": "Berechtigungen",
+    "access.userCount": "Benutzer",
+    "admin.reviewer": "Prüfer",
+    "status.active": "aktiv",
+    "status.pending": "ausstehend",
+    "status.approved": "genehmigt",
+    "status.deleted": "gelöscht"
   },
   "en": {
     "meta.localeName": "English",
@@ -919,7 +928,16 @@ const CGA_I18N_RESOURCES = {
     "errors.collaboration.actionNotFound": "The requested collaboration action was not found.",
     "errors.apiAnswer.requiredField": "API answer name and endpoint URL are required.",
     "errors.asset.scopeNotFound": "The requested asset type is not supported.",
-    "errors.api.requestFailed": "The server could not complete the request."
+    "errors.api.requestFailed": "The server could not complete the request.",
+    "access.roleSummary": "Roles",
+    "access.groupCount": "Groups",
+    "access.scopeCount": "Scopes",
+    "access.userCount": "Users",
+    "admin.reviewer": "reviewer",
+    "status.active": "active",
+    "status.pending": "pending",
+    "status.approved": "approved",
+    "status.deleted": "deleted"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1380,7 +1398,16 @@ const CGA_I18N_RESOURCES = {
     "errors.collaboration.actionNotFound": "L’action de collaboration demandée est introuvable.",
     "errors.apiAnswer.requiredField": "Le nom de la réponse API et l’URL du point de terminaison sont obligatoires.",
     "errors.asset.scopeNotFound": "Le type de ressource demandé n’est pas pris en charge.",
-    "errors.api.requestFailed": "Le serveur n’a pas pu terminer la requête."
+    "errors.api.requestFailed": "Le serveur n’a pas pu terminer la requête.",
+    "access.roleSummary": "Rôles",
+    "access.groupCount": "Groupes",
+    "access.scopeCount": "Portées",
+    "access.userCount": "Utilisateurs",
+    "admin.reviewer": "réviseur",
+    "status.active": "actif",
+    "status.pending": "en attente",
+    "status.approved": "approuvé",
+    "status.deleted": "supprimé"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1841,7 +1868,16 @@ const CGA_I18N_RESOURCES = {
     "errors.collaboration.actionNotFound": "要求された共同作業アクションが見つかりません。",
     "errors.apiAnswer.requiredField": "API回答名とエンドポイントURLは必須です。",
     "errors.asset.scopeNotFound": "要求されたアセット種別はサポートされていません。",
-    "errors.api.requestFailed": "サーバーはリクエストを完了できませんでした。"
+    "errors.api.requestFailed": "サーバーはリクエストを完了できませんでした。",
+    "access.roleSummary": "ロール",
+    "access.groupCount": "グループ",
+    "access.scopeCount": "権限",
+    "access.userCount": "ユーザー",
+    "admin.reviewer": "レビュー担当",
+    "status.active": "有効",
+    "status.pending": "保留中",
+    "status.approved": "承認済み",
+    "status.deleted": "削除済み"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2302,7 +2338,16 @@ const CGA_I18N_RESOURCES = {
     "errors.collaboration.actionNotFound": "요청한 협업 작업을 찾을 수 없습니다.",
     "errors.apiAnswer.requiredField": "API 답변 이름과 엔드포인트 URL은 필수입니다.",
     "errors.asset.scopeNotFound": "요청한 자산 유형은 지원되지 않습니다.",
-    "errors.api.requestFailed": "서버가 요청을 완료하지 못했습니다."
+    "errors.api.requestFailed": "서버가 요청을 완료하지 못했습니다.",
+    "access.roleSummary": "역할",
+    "access.groupCount": "그룹",
+    "access.scopeCount": "권한",
+    "access.userCount": "사용자",
+    "admin.reviewer": "검토자",
+    "status.active": "활성",
+    "status.pending": "대기",
+    "status.approved": "승인됨",
+    "status.deleted": "삭제됨"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2763,7 +2808,16 @@ const CGA_I18N_RESOURCES = {
     "errors.collaboration.actionNotFound": "Không tìm thấy thao tác cộng tác được yêu cầu.",
     "errors.apiAnswer.requiredField": "Tên trả lời API và URL endpoint là bắt buộc.",
     "errors.asset.scopeNotFound": "Loại tài sản được yêu cầu không được hỗ trợ.",
-    "errors.api.requestFailed": "Máy chủ không thể hoàn tất yêu cầu."
+    "errors.api.requestFailed": "Máy chủ không thể hoàn tất yêu cầu.",
+    "access.roleSummary": "Vai trò",
+    "access.groupCount": "Nhóm",
+    "access.scopeCount": "Quyền",
+    "access.userCount": "Người dùng",
+    "admin.reviewer": "người duyệt",
+    "status.active": "đang hoạt động",
+    "status.pending": "đang chờ",
+    "status.approved": "đã duyệt",
+    "status.deleted": "đã xóa"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3224,7 +3278,16 @@ const CGA_I18N_RESOURCES = {
     "errors.collaboration.actionNotFound": "未找到请求的协作操作。",
     "errors.apiAnswer.requiredField": "必须填写 API 回答名称和端点 URL。",
     "errors.asset.scopeNotFound": "不支持请求的资产类型。",
-    "errors.api.requestFailed": "服务器无法完成该请求。"
+    "errors.api.requestFailed": "服务器无法完成该请求。",
+    "access.roleSummary": "角色",
+    "access.groupCount": "组",
+    "access.scopeCount": "权限范围",
+    "access.userCount": "用户",
+    "admin.reviewer": "审核者",
+    "status.active": "活跃",
+    "status.pending": "待处理",
+    "status.approved": "已批准",
+    "status.deleted": "已删除"
   }
 };
 

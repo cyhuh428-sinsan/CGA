@@ -457,5 +457,14 @@
   "errors.collaboration.actionNotFound": "The requested collaboration action was not found.",
   "errors.apiAnswer.requiredField": "API answer name and endpoint URL are required.",
   "errors.asset.scopeNotFound": "The requested asset type is not supported.",
-  "errors.api.requestFailed": "The server could not complete the request."
+  "errors.api.requestFailed": "The server could not complete the request.",
+  "access.roleSummary": "Roles",
+  "access.groupCount": "Groups",
+  "access.scopeCount": "Scopes",
+  "access.userCount": "Users",
+  "admin.reviewer": "reviewer",
+  "status.active": "active",
+  "status.pending": "pending",
+  "status.approved": "approved",
+  "status.deleted": "deleted"
 }

@@ -903,6 +903,58 @@ textarea { min-height: 84px; resize: vertical; }
   margin-bottom: 3px;
 }
 
+.session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.access-badge-row,
+.group-user-members,
+.scope-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.access-badge,
+.status-badge,
+.scope-list b,
+.group-user-members span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  padding: 2px 7px;
+  font-size: var(--font-desc);
+  line-height: 1.2;
+}
+
+.access-badge b,
+.group-user-members b {
+  color: #0f766e;
+}
+
+.status-badge {
+  border-color: #b7f3df;
+  background: #ecfdf5;
+  color: #047857;
+  font-weight: 800;
+}
+
+.status-pending {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
 .admin-result span,
 .admin-queue span,
 .api-registry-list span {
@@ -998,6 +1050,10 @@ textarea { min-height: 84px; resize: vertical; }
   border-radius: 8px;
   background: #ffffff;
   padding: 10px 12px;
+}
+
+.group-user-list > div.group-user-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .auth-flow strong,
