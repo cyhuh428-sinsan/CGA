@@ -981,3 +981,11 @@
 - `renderAccessPanels()`와 `renderApiRegistry()`가 하드코딩 문자열 대신 `t()` 번역 해석 함수를 사용하도록 변경했다.
 - `scripts/check-studio-dynamic-i18n.js`에 새 동적 문구 키를 필수 검사 대상으로 추가해, 다음 작업에서 특정 locale 누락이 발생하면 검증이 실패하도록 했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 Team/State 동적 문구 다국어 보강
+- Access/Admin 동적 문구 보강 이후, Team Dashboard와 Studio State/Readiness 패널의 일부 상태 문구가 JS 템플릿에서 영어로 직접 출력되는 것을 확인했다.
+- 대상 문구는 `Available/Disabled`, `No assigned task`, `No review waiting`, `No blocked item`, `Current user`, `Lock/Unlock/Request changes/Move to todo`, State 패널의 `Bot/Locale/Intents/Documents/Readiness`, `Not named`, `Ready/Blocked`, PDF/Kakao 상태, `No blocking issue` 등이다.
+- 새 기능이나 서버 API를 추가하지 않고, 기존 `dynamicMessages`와 `t()` 번역 해석 흐름에만 연결했다.
+- `renderCollaborationSummary()`, `renderTeamDashboard()`, `renderStateSummary()`, `renderReadinessIssues()`의 하드코딩 표시 문구를 다국어 동적 메시지로 교체했다.
+- `scripts/check-studio-dynamic-i18n.js`에 Team/State 관련 새 동적 키를 필수 검사 대상으로 추가했다.
+- Aidot 코드는 수정하지 않았다.

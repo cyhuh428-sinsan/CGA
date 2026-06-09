@@ -196,7 +196,30 @@ const dynamicMessages = {
     "admin.systemAdminRequired": "System admin required",
     "admin.approve": "Approve",
     "apiAnswer.noApiAnswer": "No API answer",
-    "apiAnswer.registerForBot": "Register a group API answer for the selected bot."
+    "apiAnswer.registerForBot": "Register a group API answer for the selected bot.",
+    "team.available": "Available",
+    "team.noAssignedTask": "No assigned task",
+    "team.noReviewWaiting": "No review waiting",
+    "team.noBlockedItem": "No blocked item",
+    "team.currentUser": "Current user",
+    "team.unassigned": "unassigned",
+    "team.lockedBy": "locked by",
+    "team.lock": "Lock",
+    "team.unlock": "Unlock",
+    "team.requestChanges": "Request changes",
+    "team.moveToTodo": "Move to todo",
+    "state.bot": "Bot",
+    "state.locale": "Locale",
+    "state.intents": "Intents",
+    "state.documents": "Documents",
+    "state.readiness": "Readiness",
+    "state.notNamed": "Not named",
+    "state.ready": "Ready",
+    "state.pdfAvailable": "Available",
+    "state.pdfBlockedLlm": "Blocked: LLM required",
+    "state.kakaoAvailableKo": "Available for Korean locale",
+    "state.kakaoDisabledNonKo": "Disabled outside Korean locale",
+    "state.noBlockingIssue": "No blocking issue."
   },
   ko: {
     "common.allowed": "허용",
@@ -241,7 +264,30 @@ const dynamicMessages = {
     "admin.systemAdminRequired": "시스템 admin 필요",
     "admin.approve": "승인",
     "apiAnswer.noApiAnswer": "API 답변 없음",
-    "apiAnswer.registerForBot": "선택한 봇에 그룹 API 답변을 등록하세요."
+    "apiAnswer.registerForBot": "선택한 봇에 그룹 API 답변을 등록하세요.",
+    "team.available": "사용 가능",
+    "team.noAssignedTask": "배정된 작업 없음",
+    "team.noReviewWaiting": "검수 대기 없음",
+    "team.noBlockedItem": "차단 항목 없음",
+    "team.currentUser": "현재 사용자",
+    "team.unassigned": "미배정",
+    "team.lockedBy": "잠금 사용자",
+    "team.lock": "잠금",
+    "team.unlock": "잠금 해제",
+    "team.requestChanges": "수정 요청",
+    "team.moveToTodo": "할 일로 이동",
+    "state.bot": "봇",
+    "state.locale": "Locale",
+    "state.intents": "의도",
+    "state.documents": "문서",
+    "state.readiness": "준비 상태",
+    "state.notNamed": "이름 없음",
+    "state.ready": "준비 완료",
+    "state.pdfAvailable": "사용 가능",
+    "state.pdfBlockedLlm": "차단: LLM 필요",
+    "state.kakaoAvailableKo": "한국어 봇에서 사용 가능",
+    "state.kakaoDisabledNonKo": "한국어 외 비활성",
+    "state.noBlockingIssue": "차단 이슈 없음"
   },
   de: {
     "common.allowed": "Erlaubt",
@@ -286,7 +332,30 @@ const dynamicMessages = {
     "admin.systemAdminRequired": "Systemadmin erforderlich",
     "admin.approve": "Freigeben",
     "apiAnswer.noApiAnswer": "Keine API-Antwort",
-    "apiAnswer.registerForBot": "Registrieren Sie eine Gruppen-API-Antwort für den ausgewählten Bot."
+    "apiAnswer.registerForBot": "Registrieren Sie eine Gruppen-API-Antwort für den ausgewählten Bot.",
+    "team.available": "Verfügbar",
+    "team.noAssignedTask": "Keine zugewiesene Aufgabe",
+    "team.noReviewWaiting": "Kein Review wartet",
+    "team.noBlockedItem": "Kein blockiertes Element",
+    "team.currentUser": "Aktueller Benutzer",
+    "team.unassigned": "nicht zugewiesen",
+    "team.lockedBy": "gesperrt von",
+    "team.lock": "Sperren",
+    "team.unlock": "Entsperren",
+    "team.requestChanges": "Änderungen anfordern",
+    "team.moveToTodo": "Zu Todo verschieben",
+    "state.bot": "Bot",
+    "state.locale": "Sprache",
+    "state.intents": "Intents",
+    "state.documents": "Dokumente",
+    "state.readiness": "Bereitschaft",
+    "state.notNamed": "Nicht benannt",
+    "state.ready": "Bereit",
+    "state.pdfAvailable": "Verfügbar",
+    "state.pdfBlockedLlm": "Blockiert: LLM erforderlich",
+    "state.kakaoAvailableKo": "Für koreanische Sprache verfügbar",
+    "state.kakaoDisabledNonKo": "Außerhalb Koreanisch deaktiviert",
+    "state.noBlockingIssue": "Kein blockierendes Problem."
   },
   ja: {
     "common.allowed": "許可",
@@ -331,7 +400,30 @@ const dynamicMessages = {
     "admin.systemAdminRequired": "システムadminが必要",
     "admin.approve": "承認",
     "apiAnswer.noApiAnswer": "API回答なし",
-    "apiAnswer.registerForBot": "選択したボットにグループAPI回答を登録してください。"
+    "apiAnswer.registerForBot": "選択したボットにグループAPI回答を登録してください。",
+    "team.available": "利用可能",
+    "team.noAssignedTask": "割り当てタスクなし",
+    "team.noReviewWaiting": "レビュー待ちなし",
+    "team.noBlockedItem": "ブロック項目なし",
+    "team.currentUser": "現在のユーザー",
+    "team.unassigned": "未割り当て",
+    "team.lockedBy": "ロック中",
+    "team.lock": "ロック",
+    "team.unlock": "ロック解除",
+    "team.requestChanges": "変更依頼",
+    "team.moveToTodo": "Todoへ移動",
+    "state.bot": "ボット",
+    "state.locale": "Locale",
+    "state.intents": "意図",
+    "state.documents": "文書",
+    "state.readiness": "準備状態",
+    "state.notNamed": "名前なし",
+    "state.ready": "準備完了",
+    "state.pdfAvailable": "利用可能",
+    "state.pdfBlockedLlm": "ブロック: LLMが必要",
+    "state.kakaoAvailableKo": "韓国語ロケールで利用可能",
+    "state.kakaoDisabledNonKo": "韓国語以外では無効",
+    "state.noBlockingIssue": "ブロック中の問題なし。"
   },
   "zh-CN": {
     "common.allowed": "允许",
@@ -376,7 +468,30 @@ const dynamicMessages = {
     "admin.systemAdminRequired": "需要系统admin",
     "admin.approve": "审批",
     "apiAnswer.noApiAnswer": "没有API回答",
-    "apiAnswer.registerForBot": "请为所选机器人注册组API回答。"
+    "apiAnswer.registerForBot": "请为所选机器人注册组API回答。",
+    "team.available": "可用",
+    "team.noAssignedTask": "没有分配任务",
+    "team.noReviewWaiting": "没有审核等待",
+    "team.noBlockedItem": "没有阻塞项",
+    "team.currentUser": "当前用户",
+    "team.unassigned": "未分配",
+    "team.lockedBy": "锁定者",
+    "team.lock": "锁定",
+    "team.unlock": "解锁",
+    "team.requestChanges": "请求修改",
+    "team.moveToTodo": "移到Todo",
+    "state.bot": "机器人",
+    "state.locale": "Locale",
+    "state.intents": "意图",
+    "state.documents": "文档",
+    "state.readiness": "就绪状态",
+    "state.notNamed": "未命名",
+    "state.ready": "就绪",
+    "state.pdfAvailable": "可用",
+    "state.pdfBlockedLlm": "阻止：需要LLM",
+    "state.kakaoAvailableKo": "韩语locale可用",
+    "state.kakaoDisabledNonKo": "非韩语locale禁用",
+    "state.noBlockingIssue": "没有阻塞问题。"
   },
   vi: {
     "common.allowed": "Được phép",
@@ -421,7 +536,30 @@ const dynamicMessages = {
     "admin.systemAdminRequired": "Cần system admin",
     "admin.approve": "Phê duyệt",
     "apiAnswer.noApiAnswer": "Không có trả lời API",
-    "apiAnswer.registerForBot": "Đăng ký trả lời API nhóm cho bot đã chọn."
+    "apiAnswer.registerForBot": "Đăng ký trả lời API nhóm cho bot đã chọn.",
+    "team.available": "Khả dụng",
+    "team.noAssignedTask": "Không có việc được giao",
+    "team.noReviewWaiting": "Không có review đang chờ",
+    "team.noBlockedItem": "Không có mục bị chặn",
+    "team.currentUser": "Người dùng hiện tại",
+    "team.unassigned": "chưa gán",
+    "team.lockedBy": "đã khóa bởi",
+    "team.lock": "Khóa",
+    "team.unlock": "Mở khóa",
+    "team.requestChanges": "Yêu cầu sửa",
+    "team.moveToTodo": "Chuyển về Todo",
+    "state.bot": "Bot",
+    "state.locale": "Locale",
+    "state.intents": "Ý định",
+    "state.documents": "Tài liệu",
+    "state.readiness": "Sẵn sàng",
+    "state.notNamed": "Chưa đặt tên",
+    "state.ready": "Sẵn sàng",
+    "state.pdfAvailable": "Khả dụng",
+    "state.pdfBlockedLlm": "Bị chặn: cần LLM",
+    "state.kakaoAvailableKo": "Khả dụng cho locale Hàn",
+    "state.kakaoDisabledNonKo": "Tắt ngoài locale Hàn",
+    "state.noBlockingIssue": "Không có vấn đề chặn."
   },
   fr: {
     "common.allowed": "Autorisé",
@@ -466,7 +604,30 @@ const dynamicMessages = {
     "admin.systemAdminRequired": "Admin système requis",
     "admin.approve": "Approuver",
     "apiAnswer.noApiAnswer": "Aucune réponse API",
-    "apiAnswer.registerForBot": "Enregistrez une réponse API de groupe pour le bot sélectionné."
+    "apiAnswer.registerForBot": "Enregistrez une réponse API de groupe pour le bot sélectionné.",
+    "team.available": "Disponible",
+    "team.noAssignedTask": "Aucune tâche assignée",
+    "team.noReviewWaiting": "Aucune revue en attente",
+    "team.noBlockedItem": "Aucun élément bloqué",
+    "team.currentUser": "Utilisateur courant",
+    "team.unassigned": "non assigné",
+    "team.lockedBy": "verrouillé par",
+    "team.lock": "Verrouiller",
+    "team.unlock": "Déverrouiller",
+    "team.requestChanges": "Demander des changements",
+    "team.moveToTodo": "Déplacer vers Todo",
+    "state.bot": "Bot",
+    "state.locale": "Locale",
+    "state.intents": "Intentions",
+    "state.documents": "Documents",
+    "state.readiness": "État de préparation",
+    "state.notNamed": "Sans nom",
+    "state.ready": "Prêt",
+    "state.pdfAvailable": "Disponible",
+    "state.pdfBlockedLlm": "Bloqué : LLM requis",
+    "state.kakaoAvailableKo": "Disponible pour la locale coréenne",
+    "state.kakaoDisabledNonKo": "Désactivé hors locale coréenne",
+    "state.noBlockingIssue": "Aucun problème bloquant."
   }
 };
 
@@ -1770,11 +1931,11 @@ function renderCollaborationSummary() {
   const summary = summarizeCollaboration(currentCollaborationState);
   container.innerHTML = `
     <div class="state-metric ok"><strong data-i18n="collab.mode">Default mode</strong><span>${summary.mode}</span></div>
-    <div class="state-metric ok"><strong data-i18n="collab.targetDays">Build target</strong><span>${summary.targetDays} days</span></div>
+    <div class="state-metric ok"><strong data-i18n="collab.targetDays">Build target</strong><span>${summary.targetDays}</span></div>
     <div class="state-metric"><strong data-i18n="collab.totalWork">Work items</strong><span>${summary.total}</span></div>
     <div class="state-metric"><strong data-i18n="collab.reviewQueue">Review queue</strong><span>${summary.review}</span></div>
     <div class="state-metric ${summary.blocked ? "blocked" : "ok"}"><strong data-i18n="collab.blockedItems">Blocked items</strong><span>${summary.blocked}</span></div>
-    <div class="state-metric ok"><strong data-i18n="collab.teamReady">Team-ready</strong><span>${summary.collaborationAvailable ? "Available" : "Disabled"}</span></div>
+    <div class="state-metric ok"><strong data-i18n="collab.teamReady">Team-ready</strong><span>${summary.collaborationAvailable ? t("team.available", "Available") : t("common.disabled", "Disabled")}</span></div>
   `;
 }
 
@@ -1792,19 +1953,19 @@ function renderTeamDashboard() {
     return `
     <div class="team-task-row ${item.status}">
       <strong>${item.title}</strong>
-      <span>${item.type} · ${item.status} · ${item.assignee?.name || item.assignee_id || "unassigned"}${lockOwner ? ` · locked by ${lockOwner}` : ""}</span>
+      <span>${item.type} · ${item.status} · ${item.assignee?.name || item.assignee_id || t("team.unassigned", "unassigned")}${lockOwner ? ` · ${t("team.lockedBy", "locked by")} ${lockOwner}` : ""}</span>
       <div class="team-task-actions">
-        ${mode === "mine" && !lockOwner && isMine ? `<button type="button" data-lock-work="${item.id}">Lock</button>` : ""}
-        ${mode === "mine" && canUnlock ? `<button type="button" data-unlock-work="${item.id}">Unlock</button>` : ""}
-        ${mode === "review" ? `<button type="button" data-approve-work="${item.id}">Approve</button><button type="button" data-request-change="${item.id}">Request changes</button>` : ""}
-        ${mode === "blocked" ? `<button type="button" data-request-change="${item.id}">Move to todo</button>` : ""}
+        ${mode === "mine" && !lockOwner && isMine ? `<button type="button" data-lock-work="${item.id}">${t("team.lock", "Lock")}</button>` : ""}
+        ${mode === "mine" && canUnlock ? `<button type="button" data-unlock-work="${item.id}">${t("team.unlock", "Unlock")}</button>` : ""}
+        ${mode === "review" ? `<button type="button" data-approve-work="${item.id}">${t("admin.approve", "Approve")}</button><button type="button" data-request-change="${item.id}">${t("team.requestChanges", "Request changes")}</button>` : ""}
+        ${mode === "blocked" ? `<button type="button" data-request-change="${item.id}">${t("team.moveToTodo", "Move to todo")}</button>` : ""}
       </div>
     </div>
   `;
-  }).join("") || `<div class="team-task-empty"><strong>${emptyText}</strong><span>Current user: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
-  myTasks.innerHTML = renderItems(dashboard.myTasks, "No assigned task", "mine");
-  reviewQueue.innerHTML = renderItems(dashboard.reviewQueue, "No review waiting", "review");
-  blockedItems.innerHTML = renderItems(dashboard.blockedItems, "No blocked item", "blocked");
+  }).join("") || `<div class="team-task-empty"><strong>${emptyText}</strong><span>${t("team.currentUser", "Current user")}: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
+  myTasks.innerHTML = renderItems(dashboard.myTasks, t("team.noAssignedTask", "No assigned task"), "mine");
+  reviewQueue.innerHTML = renderItems(dashboard.reviewQueue, t("team.noReviewWaiting", "No review waiting"), "review");
+  blockedItems.innerHTML = renderItems(dashboard.blockedItems, t("team.noBlockedItem", "No blocked item"), "blocked");
   statusStrip.innerHTML = dashboard.byStatus.map((entry) => `
     <div class="team-status-card ${entry.status}">
       <strong>${entry.status}</strong>
@@ -2614,14 +2775,14 @@ function renderStateSummary() {
   const container = document.querySelector("[data-state-summary]");
   if (!container) return;
   const readiness = deriveReadiness(currentStudioState)
-  const pdfStatus = canGeneratePdfQa(currentStudioState) ? "Available" : "Blocked: LLM required";
-  const kakaoStatus = canUseKakaoChannel(currentStudioState) ? "Available for Korean locale" : "Disabled outside Korean locale";
+  const pdfStatus = canGeneratePdfQa(currentStudioState) ? t("state.pdfAvailable", "Available") : t("state.pdfBlockedLlm", "Blocked: LLM required");
+  const kakaoStatus = canUseKakaoChannel(currentStudioState) ? t("state.kakaoAvailableKo", "Available for Korean locale") : t("state.kakaoDisabledNonKo", "Disabled outside Korean locale");
   container.innerHTML = `
-    <div class="state-metric"><strong>Bot</strong><span>${currentStudioState.bot.name || "Not named"}</span></div>
-    <div class="state-metric"><strong>Locale</strong><span>${currentStudioState.bot.defaultLocale}</span></div>
-    <div class="state-metric"><strong>Intents</strong><span>${currentStudioState.counts.intents}</span></div>
-    <div class="state-metric"><strong>Documents</strong><span>${currentStudioState.counts.documents}</span></div>
-    <div class="state-metric ${readiness.ready ? "ok" : "blocked"}"><strong>Readiness</strong><span>${readiness.ready ? "Ready" : "Blocked"}</span></div>
+    <div class="state-metric"><strong>${t("state.bot", "Bot")}</strong><span>${currentStudioState.bot.name || t("state.notNamed", "Not named")}</span></div>
+    <div class="state-metric"><strong>${t("state.locale", "Locale")}</strong><span>${currentStudioState.bot.defaultLocale}</span></div>
+    <div class="state-metric"><strong>${t("state.intents", "Intents")}</strong><span>${currentStudioState.counts.intents}</span></div>
+    <div class="state-metric"><strong>${t("state.documents", "Documents")}</strong><span>${currentStudioState.counts.documents}</span></div>
+    <div class="state-metric ${readiness.ready ? "ok" : "blocked"}"><strong>${t("state.readiness", "Readiness")}</strong><span>${readiness.ready ? t("state.ready", "Ready") : t("common.blocked", "Blocked")}</span></div>
     <div class="state-metric blocked"><strong>PDF Q&A</strong><span>${pdfStatus}</span></div>
     <div class="state-metric"><strong>Kakao KR</strong><span>${kakaoStatus}</span></div>
   `;
@@ -2632,7 +2793,7 @@ function renderReadinessIssues() {
   if (!container) return;
   const readiness = deriveReadiness(currentStudioState)
   if (readiness.ready) {
-    container.innerHTML = `<p class="issue-ok">No blocking issue.</p>`;
+    container.innerHTML = `<p class="issue-ok">${t("state.noBlockingIssue", "No blocking issue.")}</p>`;
     return;
   }
   container.innerHTML = readiness.issues.map((issue) => `
