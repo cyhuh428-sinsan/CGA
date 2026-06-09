@@ -184,6 +184,9 @@ if (!studioAppSource.includes("workspace.createAllowed")) fail("studio Bot Works
 if (!studioAppSource.includes("workspace.createBlocked")) fail("studio Bot Workspace create-blocked state is not localized");
 if (!studioAppSource.includes("access.roleSummary")) fail("studio access UI does not show current user role summary");
 if (!studioAppSource.includes("access.userCount")) fail("studio group user list does not show group user counts");
+if (!studioAppSource.includes("common.user")) fail("studio access UI user fallback is not localized");
+if (!studioAppSource.includes("common.group")) fail("studio access UI group fallback is not localized");
+if (!studioAppSource.includes("admin.authentication")) fail("studio auth message fallback title is not localized");
 for (const key of [
   "authFlow.signup.label",
   "authFlow.signup.detailWithGroup",
@@ -235,6 +238,15 @@ for (const key of [
 ]) {
   for (const locale of locales) {
     if (!(key in locale.data)) fail(`${locale.name} missing Bot Workspace access locale key '${key}'`);
+  }
+}
+for (const key of [
+  "common.user",
+  "common.group",
+  "admin.authentication"
+]) {
+  for (const locale of locales) {
+    if (!(key in locale.data)) fail(`${locale.name} missing access fallback locale key '${key}'`);
   }
 }
 for (const route of [

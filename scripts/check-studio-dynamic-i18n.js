@@ -10,6 +10,8 @@ const requiredDynamicKeys = [
   "common.disabled",
   "common.enabled",
   "common.none",
+  "common.user",
+  "common.group",
   "common.noRole",
   "common.intentUnit",
   "common.pendingUnit",

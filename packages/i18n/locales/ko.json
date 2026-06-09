@@ -339,6 +339,7 @@
   "access.currentGroupCreate": "현재 사용자 그룹 생성 가능",
   "access.groupsWithoutAdmin": "그룹 관리자가 없는 그룹",
   "admin.loginTitle": "로그인 세션",
+  "admin.authentication": "인증",
   "admin.loginBody": "현재 사용자를 전환하고 그룹 멤버십, 화면 접근, 사용자 언어를 즉시 다시 계산합니다.",
   "admin.loginButton": "로그인",
   "admin.signupTitle": "가입",
@@ -496,5 +497,7 @@
   "apiAnswer.manageAllowed": "API 답변 관리 가능",
   "apiAnswer.manageBlocked": "차단됨: apiAnswer.manage",
   "workspace.createAllowed": "봇 생성 가능",
-  "workspace.createBlocked": "차단: bot.create"
+  "workspace.createBlocked": "차단: bot.create",
+  "common.user": "사용자",
+  "common.group": "그룹"
 }

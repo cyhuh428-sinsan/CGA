@@ -340,6 +340,7 @@ const CGA_I18N_RESOURCES = {
     "access.currentGroupCreate": "Aktueller Benutzer kann Gruppe erstellen",
     "access.groupsWithoutAdmin": "Gruppen ohne Gruppenadmin",
     "admin.loginTitle": "Login-Sitzung",
+    "admin.authentication": "Authentifizierung",
     "admin.loginBody": "Aktiven Benutzer wechseln und Mitgliedschaften, Bildschirmzugriff und Sprache sofort neu berechnen.",
     "admin.loginButton": "Anmelden",
     "admin.signupTitle": "Registrierung",
@@ -497,7 +498,9 @@ const CGA_I18N_RESOURCES = {
     "apiAnswer.manageAllowed": "API-Antworten verwaltbar",
     "apiAnswer.manageBlocked": "Blockiert: apiAnswer.manage",
     "workspace.createAllowed": "Bots können erstellt werden",
-    "workspace.createBlocked": "Blockiert: bot.create"
+    "workspace.createBlocked": "Blockiert: bot.create",
+    "common.user": "Benutzer",
+    "common.group": "Gruppe"
   },
   "en": {
     "meta.localeName": "English",
@@ -840,6 +843,7 @@ const CGA_I18N_RESOURCES = {
     "access.currentGroupCreate": "Current user can create group",
     "access.groupsWithoutAdmin": "Groups without group admin",
     "admin.loginTitle": "Login Session",
+    "admin.authentication": "Authentication",
     "admin.loginBody": "Switch the active user and immediately recalculate group memberships, screen access, and user language.",
     "admin.loginButton": "Login",
     "admin.signupTitle": "Signup",
@@ -997,7 +1001,9 @@ const CGA_I18N_RESOURCES = {
     "apiAnswer.manageAllowed": "Can manage API answers",
     "apiAnswer.manageBlocked": "Blocked: apiAnswer.manage",
     "workspace.createAllowed": "Can create bots",
-    "workspace.createBlocked": "Blocked: bot.create"
+    "workspace.createBlocked": "Blocked: bot.create",
+    "common.user": "User",
+    "common.group": "Group"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1340,6 +1346,7 @@ const CGA_I18N_RESOURCES = {
     "access.currentGroupCreate": "Utilisateur actuel peut créer un groupe",
     "access.groupsWithoutAdmin": "Groupes sans admin groupe",
     "admin.loginTitle": "Session de connexion",
+    "admin.authentication": "Authentification",
     "admin.loginBody": "Changer l’utilisateur actif et recalculer immédiatement adhésions, accès écran et langue.",
     "admin.loginButton": "Connexion",
     "admin.signupTitle": "Inscription",
@@ -1497,7 +1504,9 @@ const CGA_I18N_RESOURCES = {
     "apiAnswer.manageAllowed": "Peut gérer les réponses API",
     "apiAnswer.manageBlocked": "Bloqué : apiAnswer.manage",
     "workspace.createAllowed": "Peut créer des bots",
-    "workspace.createBlocked": "Bloqué : bot.create"
+    "workspace.createBlocked": "Bloqué : bot.create",
+    "common.user": "Utilisateur",
+    "common.group": "Groupe"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1840,6 +1849,7 @@ const CGA_I18N_RESOURCES = {
     "access.currentGroupCreate": "現在ユーザーはグループ作成可",
     "access.groupsWithoutAdmin": "グループ管理者なし",
     "admin.loginTitle": "ログインセッション",
+    "admin.authentication": "認証",
     "admin.loginBody": "アクティブユーザーを切り替え、メンバーシップ、画面アクセス、言語を再計算します。",
     "admin.loginButton": "ログイン",
     "admin.signupTitle": "登録",
@@ -1997,7 +2007,9 @@ const CGA_I18N_RESOURCES = {
     "apiAnswer.manageAllowed": "API回答を管理できます",
     "apiAnswer.manageBlocked": "ブロック: apiAnswer.manage",
     "workspace.createAllowed": "ボットを作成できます",
-    "workspace.createBlocked": "ブロック: bot.create"
+    "workspace.createBlocked": "ブロック: bot.create",
+    "common.user": "ユーザー",
+    "common.group": "グループ"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2340,6 +2352,7 @@ const CGA_I18N_RESOURCES = {
     "access.currentGroupCreate": "현재 사용자 그룹 생성 가능",
     "access.groupsWithoutAdmin": "그룹 관리자가 없는 그룹",
     "admin.loginTitle": "로그인 세션",
+    "admin.authentication": "인증",
     "admin.loginBody": "현재 사용자를 전환하고 그룹 멤버십, 화면 접근, 사용자 언어를 즉시 다시 계산합니다.",
     "admin.loginButton": "로그인",
     "admin.signupTitle": "가입",
@@ -2497,7 +2510,9 @@ const CGA_I18N_RESOURCES = {
     "apiAnswer.manageAllowed": "API 답변 관리 가능",
     "apiAnswer.manageBlocked": "차단됨: apiAnswer.manage",
     "workspace.createAllowed": "봇 생성 가능",
-    "workspace.createBlocked": "차단: bot.create"
+    "workspace.createBlocked": "차단: bot.create",
+    "common.user": "사용자",
+    "common.group": "그룹"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2840,6 +2855,7 @@ const CGA_I18N_RESOURCES = {
     "access.currentGroupCreate": "Người dùng hiện tại có thể tạo nhóm",
     "access.groupsWithoutAdmin": "Nhóm thiếu group admin",
     "admin.loginTitle": "Phiên đăng nhập",
+    "admin.authentication": "Xác thực",
     "admin.loginBody": "Đổi người dùng hiện tại và tính lại membership, truy cập màn hình, ngôn ngữ.",
     "admin.loginButton": "Đăng nhập",
     "admin.signupTitle": "Đăng ký",
@@ -2997,7 +3013,9 @@ const CGA_I18N_RESOURCES = {
     "apiAnswer.manageAllowed": "Có thể quản lý trả lời API",
     "apiAnswer.manageBlocked": "Bị chặn: apiAnswer.manage",
     "workspace.createAllowed": "Có thể tạo bot",
-    "workspace.createBlocked": "Bị chặn: bot.create"
+    "workspace.createBlocked": "Bị chặn: bot.create",
+    "common.user": "Người dùng",
+    "common.group": "Nhóm"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3340,6 +3358,7 @@ const CGA_I18N_RESOURCES = {
     "access.currentGroupCreate": "当前用户可创建组",
     "access.groupsWithoutAdmin": "无组管理员的组",
     "admin.loginTitle": "登录会话",
+    "admin.authentication": "认证",
     "admin.loginBody": "切换当前用户，并立即重新计算成员关系、屏幕访问和语言。",
     "admin.loginButton": "登录",
     "admin.signupTitle": "注册",
@@ -3497,7 +3516,9 @@ const CGA_I18N_RESOURCES = {
     "apiAnswer.manageAllowed": "可管理API回答",
     "apiAnswer.manageBlocked": "已阻止：apiAnswer.manage",
     "workspace.createAllowed": "可创建机器人",
-    "workspace.createBlocked": "已阻止：bot.create"
+    "workspace.createBlocked": "已阻止：bot.create",
+    "common.user": "用户",
+    "common.group": "组"
   }
 };
 
