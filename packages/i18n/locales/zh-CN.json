@@ -492,5 +492,7 @@
   "transfer.status.uploadedRows": "已上传 {asset}: 合并 {count} 行 / {sync}",
   "transfer.status.uploadedItems": "已上传 {asset}: 替换 {count} 个项目",
   "transfer.status.imported": "已导入 {asset}: {name}",
-  "transfer.status.updated": "包已更新"
+  "transfer.status.updated": "包已更新",
+  "apiAnswer.manageAllowed": "可管理API回答",
+  "apiAnswer.manageBlocked": "已阻止：apiAnswer.manage"
 }

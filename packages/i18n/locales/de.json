@@ -492,5 +492,7 @@
   "transfer.status.uploadedRows": "{asset} hochgeladen: {count} Zeile(n) zusammengeführt / {sync}",
   "transfer.status.uploadedItems": "{asset} hochgeladen: {count} Element(e) ersetzt",
   "transfer.status.imported": "{asset} importiert: {name}",
-  "transfer.status.updated": "Paket aktualisiert"
+  "transfer.status.updated": "Paket aktualisiert",
+  "apiAnswer.manageAllowed": "API-Antworten verwaltbar",
+  "apiAnswer.manageBlocked": "Blockiert: apiAnswer.manage"
 }

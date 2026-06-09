@@ -492,5 +492,7 @@
   "transfer.status.uploadedRows": "Đã tải lên {asset}: gộp {count} dòng / {sync}",
   "transfer.status.uploadedItems": "Đã tải lên {asset}: thay thế {count} mục",
   "transfer.status.imported": "Đã nhập {asset}: {name}",
-  "transfer.status.updated": "Đã cập nhật gói"
+  "transfer.status.updated": "Đã cập nhật gói",
+  "apiAnswer.manageAllowed": "Có thể quản lý trả lời API",
+  "apiAnswer.manageBlocked": "Bị chặn: apiAnswer.manage"
 }

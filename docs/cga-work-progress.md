@@ -1328,3 +1328,21 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 이후 남아 있는 동적 영어 문구 후보를 계속 축소한다.
+
+### 2026-06-09 API Registry 권한 상태 다국어 보강
+- Group API Registry의 소유자 메타 영역에 `scope: apiAnswer.manage`, `blocked: apiAnswer.manage` 같은 영어 권한 상태 문자열이 직접 표시되는 것을 확인했다.
+- 서버 API나 권한 구조는 변경하지 않고, 화면 표시 문구만 사용자 언어 기반으로 변경했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - API Registry 메타의 권한 상태를 `apiAnswer.manageAllowed`, `apiAnswer.manageBlocked` i18n key로 표시하도록 변경했다.
+  - bot이 없을 때 표시하는 값도 기존 `none` 문자열 대신 `common.none`을 사용하도록 했다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - API Registry 권한 상태 문구를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+- `scripts/check-studio-config.js`
+  - API Registry 권한 상태 key가 누락되면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 이후 작업 화면에 남은 fallback 영어 문자열을 계속 줄인다.

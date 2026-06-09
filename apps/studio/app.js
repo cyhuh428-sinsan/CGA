@@ -2836,7 +2836,10 @@ function renderApiRegistry() {
     .map((bot) => `<option value="${bot.id}" ${bot.id === currentApiBotId ? "selected" : ""}>${bot.name}</option>`)
     .join("");
   if (apiOwnerMeta) {
-    apiOwnerMeta.textContent = `group_id: ${currentApiGroupId} · bot_id: ${currentApiBotId || "none"} · ${canManageApi ? "scope: apiAnswer.manage" : "blocked: apiAnswer.manage"}`;
+    const accessLabel = canManageApi
+      ? t("apiAnswer.manageAllowed", "Can manage API answers")
+      : t("apiAnswer.manageBlocked", "Blocked: apiAnswer.manage");
+    apiOwnerMeta.textContent = `group_id: ${currentApiGroupId} · bot_id: ${currentApiBotId || t("common.none", "None")} · ${accessLabel}`;
   }
   if (apiAdd) {
     apiAdd.disabled = !canManageApi || !currentApiBotId;

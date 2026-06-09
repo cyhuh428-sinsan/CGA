@@ -493,7 +493,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.uploadedRows": "{asset} hochgeladen: {count} Zeile(n) zusammengeführt / {sync}",
     "transfer.status.uploadedItems": "{asset} hochgeladen: {count} Element(e) ersetzt",
     "transfer.status.imported": "{asset} importiert: {name}",
-    "transfer.status.updated": "Paket aktualisiert"
+    "transfer.status.updated": "Paket aktualisiert",
+    "apiAnswer.manageAllowed": "API-Antworten verwaltbar",
+    "apiAnswer.manageBlocked": "Blockiert: apiAnswer.manage"
   },
   "en": {
     "meta.localeName": "English",
@@ -989,7 +991,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.uploadedRows": "Uploaded {asset}: {count} row(s) merged / {sync}",
     "transfer.status.uploadedItems": "Uploaded {asset}: {count} item(s) replaced",
     "transfer.status.imported": "Imported {asset}: {name}",
-    "transfer.status.updated": "Updated package"
+    "transfer.status.updated": "Updated package",
+    "apiAnswer.manageAllowed": "Can manage API answers",
+    "apiAnswer.manageBlocked": "Blocked: apiAnswer.manage"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1485,7 +1489,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.uploadedRows": "{asset} téléversé : {count} ligne(s) fusionnée(s) / {sync}",
     "transfer.status.uploadedItems": "{asset} téléversé : {count} élément(s) remplacé(s)",
     "transfer.status.imported": "{asset} importé : {name}",
-    "transfer.status.updated": "Paquet mis à jour"
+    "transfer.status.updated": "Paquet mis à jour",
+    "apiAnswer.manageAllowed": "Peut gérer les réponses API",
+    "apiAnswer.manageBlocked": "Bloqué : apiAnswer.manage"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1981,7 +1987,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.uploadedRows": "{asset} をアップロードしました: {count} 行をマージ / {sync}",
     "transfer.status.uploadedItems": "{asset} をアップロードしました: {count} 件を置換",
     "transfer.status.imported": "{asset} をインポートしました: {name}",
-    "transfer.status.updated": "パッケージを更新しました"
+    "transfer.status.updated": "パッケージを更新しました",
+    "apiAnswer.manageAllowed": "API回答を管理できます",
+    "apiAnswer.manageBlocked": "ブロック: apiAnswer.manage"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2477,7 +2485,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.uploadedRows": "{asset} 업로드 완료: {count}행 병합 / {sync}",
     "transfer.status.uploadedItems": "{asset} 업로드 완료: {count}개 항목 교체",
     "transfer.status.imported": "{asset} 가져오기 완료: {name}",
-    "transfer.status.updated": "패키지 갱신 완료"
+    "transfer.status.updated": "패키지 갱신 완료",
+    "apiAnswer.manageAllowed": "API 답변 관리 가능",
+    "apiAnswer.manageBlocked": "차단됨: apiAnswer.manage"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2973,7 +2983,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.uploadedRows": "Đã tải lên {asset}: gộp {count} dòng / {sync}",
     "transfer.status.uploadedItems": "Đã tải lên {asset}: thay thế {count} mục",
     "transfer.status.imported": "Đã nhập {asset}: {name}",
-    "transfer.status.updated": "Đã cập nhật gói"
+    "transfer.status.updated": "Đã cập nhật gói",
+    "apiAnswer.manageAllowed": "Có thể quản lý trả lời API",
+    "apiAnswer.manageBlocked": "Bị chặn: apiAnswer.manage"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3469,7 +3481,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.uploadedRows": "已上传 {asset}: 合并 {count} 行 / {sync}",
     "transfer.status.uploadedItems": "已上传 {asset}: 替换 {count} 个项目",
     "transfer.status.imported": "已导入 {asset}: {name}",
-    "transfer.status.updated": "包已更新"
+    "transfer.status.updated": "包已更新",
+    "apiAnswer.manageAllowed": "可管理API回答",
+    "apiAnswer.manageBlocked": "已阻止：apiAnswer.manage"
   }
 };
 

@@ -492,5 +492,7 @@
   "transfer.status.uploadedRows": "{asset} téléversé : {count} ligne(s) fusionnée(s) / {sync}",
   "transfer.status.uploadedItems": "{asset} téléversé : {count} élément(s) remplacé(s)",
   "transfer.status.imported": "{asset} importé : {name}",
-  "transfer.status.updated": "Paquet mis à jour"
+  "transfer.status.updated": "Paquet mis à jour",
+  "apiAnswer.manageAllowed": "Peut gérer les réponses API",
+  "apiAnswer.manageBlocked": "Bloqué : apiAnswer.manage"
 }

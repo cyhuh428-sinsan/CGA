@@ -178,6 +178,8 @@ if (!studioAppSource.includes("getAuthFlowDetail")) fail("studio access auth flo
 if (!studioAppSource.includes("formatTransferDownloaded")) fail("studio transfer download status is not localized");
 if (!studioAppSource.includes("formatTransferUploaded")) fail("studio transfer upload status is not localized");
 if (!studioAppSource.includes("appendTransferSyncStatus")) fail("studio transfer sync suffix is not localized");
+if (!studioAppSource.includes("apiAnswer.manageAllowed")) fail("studio API Registry allowed state is not localized");
+if (!studioAppSource.includes("apiAnswer.manageBlocked")) fail("studio API Registry blocked state is not localized");
 if (!studioAppSource.includes("access.roleSummary")) fail("studio access UI does not show current user role summary");
 if (!studioAppSource.includes("access.userCount")) fail("studio group user list does not show group user counts");
 for (const key of [
@@ -215,6 +217,14 @@ for (const key of [
 ]) {
   for (const locale of locales) {
     if (!(key in locale.data)) fail(`${locale.name} missing transfer status locale key '${key}'`);
+  }
+}
+for (const key of [
+  "apiAnswer.manageAllowed",
+  "apiAnswer.manageBlocked"
+]) {
+  for (const locale of locales) {
+    if (!(key in locale.data)) fail(`${locale.name} missing API Registry access locale key '${key}'`);
   }
 }
 for (const route of [
