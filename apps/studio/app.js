@@ -86,6 +86,7 @@ let currentAuthMessage = null;
 let currentGlobalMessage = null;
 let studioStateSaveTimer = null;
 let compositionSaveTimer = null;
+const saveQueues = new Map();
 let workspaceDataRefreshSerial = 0;
 let apiRegistryRefreshKey = "";
 let apiRegistryRefreshPromise = null;
@@ -1222,6 +1223,34 @@ function applyCollaborationStateFromServer(collaborationState) {
   return true;
 }
 
+async function runQueuedSave(queueKey, saveAction) {
+  const currentQueue = saveQueues.get(queueKey) || { running: false, pending: false, promise: null };
+  currentQueue.pending = true;
+  if (currentQueue.running && currentQueue.promise) {
+    saveQueues.set(queueKey, currentQueue);
+    return currentQueue.promise;
+  }
+  currentQueue.running = true;
+  currentQueue.promise = (async () => {
+    let lastResult = false;
+    try {
+      while (currentQueue.pending) {
+        currentQueue.pending = false;
+        lastResult = await saveAction();
+      }
+      return lastResult;
+    } finally {
+      currentQueue.running = false;
+      currentQueue.promise = null;
+      if (!currentQueue.pending) {
+        saveQueues.delete(queueKey);
+      }
+    }
+  })();
+  saveQueues.set(queueKey, currentQueue);
+  return currentQueue.promise;
+}
+
 async function refreshCompositionFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
   if (!groupId || !botId) return false;
   const payload = await requestCgaJson(getCompositionUrl(groupId, botId));
@@ -1250,7 +1279,7 @@ async function refreshCollaborationStateFromServer(groupId = currentWorkspaceGro
   return applyCollaborationStateFromServer(payload);
 }
 
-async function saveCompositionToServer() {
+async function persistCompositionToServer() {
   if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
   const payload = {
     ...currentCompositionState,
@@ -1263,6 +1292,10 @@ async function saveCompositionToServer() {
   });
   saveWorkspaceSnapshot();
   return true;
+}
+
+async function saveCompositionToServer() {
+  return runQueuedSave(`composition:${currentWorkspaceGroupId}:${currentWorkspaceBotId}`, persistCompositionToServer);
 }
 
 async function runOperationsAction(action, body = {}) {
@@ -1304,7 +1337,7 @@ async function runCollaborationAction(workItemId, action) {
   }
 }
 
-async function saveDetailAssetsToServer() {
+async function persistDetailAssetsToServer() {
   if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
   await requestCgaJson(getDetailAssetsUrl(), {
     method: "PUT",
@@ -1320,6 +1353,10 @@ async function saveDetailAssetsToServer() {
   });
   saveWorkspaceSnapshot();
   return true;
+}
+
+async function saveDetailAssetsToServer() {
+  return runQueuedSave(`detail-assets:${currentWorkspaceGroupId}:${currentWorkspaceBotId}`, persistDetailAssetsToServer);
 }
 
 function scheduleCompositionSave() {
@@ -1349,7 +1386,7 @@ async function refreshStudioStateFromServer(groupId = currentWorkspaceGroupId, b
   return applyStudioStateFromServer(payload.state);
 }
 
-async function saveStudioStateToServer() {
+async function persistStudioStateToServer() {
   if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
   await requestCgaJson(getStudioStateUrl(), {
     method: "PUT",
@@ -1360,6 +1397,10 @@ async function saveStudioStateToServer() {
   await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
   saveWorkspaceSnapshot();
   return true;
+}
+
+async function saveStudioStateToServer() {
+  return runQueuedSave(`studio-state:${currentWorkspaceGroupId}:${currentWorkspaceBotId}`, persistStudioStateToServer);
 }
 
 function scheduleStudioStateSave() {

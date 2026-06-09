@@ -166,10 +166,14 @@ if (!studioAppSource.includes("saveWorkspaceSnapshot")) fail("studio app does no
 if (!studioAppSource.includes("createWorkspaceBotOnServer")) fail("studio app does not create Bot Workspace bots through server API");
 if (!studioAppSource.includes("refreshStudioStateFromServer")) fail("studio app does not refresh Create Bot state from server");
 if (!studioAppSource.includes("saveStudioStateToServer")) fail("studio app does not save Create Bot state through server API");
+if (!studioAppSource.includes("runQueuedSave")) fail("studio app does not serialize repeated save requests");
+if (!studioAppSource.includes("persistStudioStateToServer")) fail("studio state save is not split into queued wrapper and persist action");
 if (!studioAppSource.includes("refreshCompositionFromServer")) fail("studio app does not refresh Configure Bot composition from server");
 if (!studioAppSource.includes("saveCompositionToServer")) fail("studio app does not save Configure Bot composition through server API");
+if (!studioAppSource.includes("persistCompositionToServer")) fail("composition save is not split into queued wrapper and persist action");
 if (!studioAppSource.includes("refreshDetailAssetsFromServer")) fail("studio app does not refresh Detail Settings assets from server");
 if (!studioAppSource.includes("saveDetailAssetsToServer")) fail("studio app does not save Detail Settings assets through server API");
+if (!studioAppSource.includes("persistDetailAssetsToServer")) fail("detail asset save is not split into queued wrapper and persist action");
 if (!studioAppSource.includes("refreshOperationsStateFromServer")) fail("studio app does not refresh Build/Test/Operate state from server");
 if (!studioAppSource.includes("runOperationsAction")) fail("studio app does not run Build/Test/Operate actions through server API");
 if (!studioAppSource.includes("refreshCollaborationStateFromServer")) fail("studio app does not refresh Team Dashboard collaboration state from server");

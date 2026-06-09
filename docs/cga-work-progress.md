@@ -1431,3 +1431,23 @@
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 다음 단계에서는 서버에 여러 화면 상태를 한 번에 내려주는 workspace context API가 필요한지 검토한다. 이 경우 새 API가 되므로 신산님 승인 후 진행해야 한다.
 - 현재는 기존 API를 유지한 상태에서 클라이언트 체감 속도 개선만 적용했다.
+
+### 2026-06-10 저장 요청 직렬화 구조 1차 반영
+- 화면 전환/입력 중 저장 요청이 겹치면 같은 자산에 대한 PUT 요청이 동시에 나가고, 늦게 끝난 이전 저장이 최신 상태를 덮을 위험이 있다.
+- 새 API나 서버 구조 변경 없이, CGA Studio 클라이언트에서 같은 저장 대상별로 요청을 직렬화하도록 1차 보강했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - `saveQueues`와 `runQueuedSave()`를 추가했다.
+  - 같은 queue key의 저장이 이미 실행 중이면 새 요청은 pending으로 표시하고, 현재 저장이 끝난 뒤 최신 메모리 상태 기준으로 한 번 더 저장한다.
+  - `saveCompositionToServer()`는 `persistCompositionToServer()`를 감싸는 queued wrapper로 변경했다.
+  - `saveDetailAssetsToServer()`는 `persistDetailAssetsToServer()`를 감싸는 queued wrapper로 변경했다.
+  - `saveStudioStateToServer()`는 `persistStudioStateToServer()`를 감싸는 queued wrapper로 변경했다.
+  - 기존 API URL, payload, 저장 함수 호출부는 유지했다.
+- `scripts/check-studio-config.js`
+  - `runQueuedSave`, `persistStudioStateToServer`, `persistCompositionToServer`, `persistDetailAssetsToServer`가 누락되면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 이후 저장 실패/대기 상태를 화면에 어떻게 표시할지 검토한다. UI 표시 방식 변경은 화면 영향이 있으므로 신산님 확인 후 진행한다.
