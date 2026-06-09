@@ -973,3 +973,11 @@
 - `apps/studio/i18n.js`를 locale JSON 기준으로 다시 동기화했다.
 - `scripts/check-studio-config.js`가 `data-i18n-placeholder` 키도 필수 locale key로 검사하도록 보강했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 Access/Admin 동적 문구 다국어 보강
+- Signup/Group/API placeholder 보강 이후, `apps/studio/app.js`가 동적으로 렌더링하는 Access/Admin 화면 문구 중 일부가 locale JSON 검증 대상이 아니라 영어로 직접 남아 있음을 확인했다.
+- 대상 문구는 승인 대기열의 `group join`, `group admin approval`, `requires group admin`, `admin permission`, `system admin approval`, `requires system admin`, `No pending approval`, `Queue is empty`, 정책 상태의 `Yes/No`, `Enabled/Disabled`, `System admin required/Open`, API Registry 빈 상태 문구 등이다.
+- 새 서버 API나 기능을 만들지 않고, 기존 `dynamicMessages` 구조에 7개 지원 locale(en, ko, de, fr, ja, vi, zh-CN)의 동적 문구 키를 추가했다.
+- `renderAccessPanels()`와 `renderApiRegistry()`가 하드코딩 문자열 대신 `t()` 번역 해석 함수를 사용하도록 변경했다.
+- `scripts/check-studio-dynamic-i18n.js`에 새 동적 문구 키를 필수 검사 대상으로 추가해, 다음 작업에서 특정 locale 누락이 발생하면 검증이 실패하도록 했다.
+- Aidot 코드는 수정하지 않았다.

@@ -164,6 +164,10 @@ const dynamicMessages = {
     "common.pendingUnit": "pending",
     "common.serverSaved": "server saved",
     "common.localOnly": "local only",
+    "common.yes": "Yes",
+    "common.no": "No",
+    "common.open": "Open",
+    "common.noScope": "no scope",
     "workspace.noGroup": "No group",
     "workspace.noGroupSelected": "No group selected",
     "workspace.noBotSelected": "No bot selected",
@@ -179,7 +183,20 @@ const dynamicMessages = {
     "summary.allowed": "Allowed",
     "summary.disabled": "Disabled",
     "transfer.jsonReplace": "JSON · replace",
-    "transfer.txtMergeShort": "TXT · merge"
+    "transfer.txtMergeShort": "TXT · merge",
+    "admin.groupJoin": "group join",
+    "admin.groupAdminApproval": "group admin approval",
+    "admin.requiresGroupAdmin": "requires group admin",
+    "admin.adminPermission": "admin permission",
+    "admin.systemAdminApproval": "system admin approval",
+    "admin.requiresSystemAdmin": "requires system admin",
+    "admin.noPendingApproval": "No pending approval",
+    "admin.queueEmpty": "Queue is empty",
+    "admin.noActiveUser": "No active user",
+    "admin.systemAdminRequired": "System admin required",
+    "admin.approve": "Approve",
+    "apiAnswer.noApiAnswer": "No API answer",
+    "apiAnswer.registerForBot": "Register a group API answer for the selected bot."
   },
   ko: {
     "common.allowed": "허용",
@@ -192,6 +209,10 @@ const dynamicMessages = {
     "common.pendingUnit": "건 대기",
     "common.serverSaved": "서버 저장",
     "common.localOnly": "로컬만 반영",
+    "common.yes": "예",
+    "common.no": "아니오",
+    "common.open": "열림",
+    "common.noScope": "scope 없음",
     "workspace.noGroup": "그룹 없음",
     "workspace.noGroupSelected": "선택된 그룹 없음",
     "workspace.noBotSelected": "선택된 봇 없음",
@@ -207,7 +228,20 @@ const dynamicMessages = {
     "summary.allowed": "허용",
     "summary.disabled": "비활성",
     "transfer.jsonReplace": "JSON · 교체",
-    "transfer.txtMergeShort": "TXT · 병합"
+    "transfer.txtMergeShort": "TXT · 병합",
+    "admin.groupJoin": "그룹 가입",
+    "admin.groupAdminApproval": "그룹 관리자 승인",
+    "admin.requiresGroupAdmin": "그룹 관리자 필요",
+    "admin.adminPermission": "관리자 권한",
+    "admin.systemAdminApproval": "시스템 admin 승인",
+    "admin.requiresSystemAdmin": "시스템 admin 필요",
+    "admin.noPendingApproval": "대기 중인 승인 없음",
+    "admin.queueEmpty": "대기열이 비어 있습니다",
+    "admin.noActiveUser": "활성 사용자 없음",
+    "admin.systemAdminRequired": "시스템 admin 필요",
+    "admin.approve": "승인",
+    "apiAnswer.noApiAnswer": "API 답변 없음",
+    "apiAnswer.registerForBot": "선택한 봇에 그룹 API 답변을 등록하세요."
   },
   de: {
     "common.allowed": "Erlaubt",
@@ -220,6 +254,10 @@ const dynamicMessages = {
     "common.pendingUnit": "ausstehend",
     "common.serverSaved": "auf Server gespeichert",
     "common.localOnly": "nur lokal",
+    "common.yes": "Ja",
+    "common.no": "Nein",
+    "common.open": "Offen",
+    "common.noScope": "kein Scope",
     "workspace.noGroup": "Keine Gruppe",
     "workspace.noGroupSelected": "Keine Gruppe ausgewählt",
     "workspace.noBotSelected": "Kein Bot ausgewählt",
@@ -235,7 +273,20 @@ const dynamicMessages = {
     "summary.allowed": "Erlaubt",
     "summary.disabled": "Deaktiviert",
     "transfer.jsonReplace": "JSON · ersetzen",
-    "transfer.txtMergeShort": "TXT · zusammenführen"
+    "transfer.txtMergeShort": "TXT · zusammenführen",
+    "admin.groupJoin": "Gruppenbeitritt",
+    "admin.groupAdminApproval": "Freigabe durch Gruppenadmin",
+    "admin.requiresGroupAdmin": "Gruppenadmin erforderlich",
+    "admin.adminPermission": "Admin-Berechtigung",
+    "admin.systemAdminApproval": "Freigabe durch Systemadmin",
+    "admin.requiresSystemAdmin": "Systemadmin erforderlich",
+    "admin.noPendingApproval": "Keine ausstehende Freigabe",
+    "admin.queueEmpty": "Warteschlange ist leer",
+    "admin.noActiveUser": "Keine aktiven Benutzer",
+    "admin.systemAdminRequired": "Systemadmin erforderlich",
+    "admin.approve": "Freigeben",
+    "apiAnswer.noApiAnswer": "Keine API-Antwort",
+    "apiAnswer.registerForBot": "Registrieren Sie eine Gruppen-API-Antwort für den ausgewählten Bot."
   },
   ja: {
     "common.allowed": "許可",
@@ -248,6 +299,10 @@ const dynamicMessages = {
     "common.pendingUnit": "件保留",
     "common.serverSaved": "サーバー保存済み",
     "common.localOnly": "ローカルのみ",
+    "common.yes": "はい",
+    "common.no": "いいえ",
+    "common.open": "開放",
+    "common.noScope": "scopeなし",
     "workspace.noGroup": "グループなし",
     "workspace.noGroupSelected": "グループ未選択",
     "workspace.noBotSelected": "ボット未選択",
@@ -263,7 +318,20 @@ const dynamicMessages = {
     "summary.allowed": "許可",
     "summary.disabled": "無効",
     "transfer.jsonReplace": "JSON · 置換",
-    "transfer.txtMergeShort": "TXT · マージ"
+    "transfer.txtMergeShort": "TXT · マージ",
+    "admin.groupJoin": "グループ参加",
+    "admin.groupAdminApproval": "グループ管理者承認",
+    "admin.requiresGroupAdmin": "グループ管理者が必要",
+    "admin.adminPermission": "管理者権限",
+    "admin.systemAdminApproval": "システムadmin承認",
+    "admin.requiresSystemAdmin": "システムadminが必要",
+    "admin.noPendingApproval": "保留中の承認なし",
+    "admin.queueEmpty": "キューは空です",
+    "admin.noActiveUser": "有効なユーザーなし",
+    "admin.systemAdminRequired": "システムadminが必要",
+    "admin.approve": "承認",
+    "apiAnswer.noApiAnswer": "API回答なし",
+    "apiAnswer.registerForBot": "選択したボットにグループAPI回答を登録してください。"
   },
   "zh-CN": {
     "common.allowed": "允许",
@@ -276,6 +344,10 @@ const dynamicMessages = {
     "common.pendingUnit": "个待处理",
     "common.serverSaved": "已保存到服务器",
     "common.localOnly": "仅本地",
+    "common.yes": "是",
+    "common.no": "否",
+    "common.open": "开放",
+    "common.noScope": "无scope",
     "workspace.noGroup": "无组",
     "workspace.noGroupSelected": "未选择组",
     "workspace.noBotSelected": "未选择机器人",
@@ -291,7 +363,20 @@ const dynamicMessages = {
     "summary.allowed": "允许",
     "summary.disabled": "禁用",
     "transfer.jsonReplace": "JSON · 替换",
-    "transfer.txtMergeShort": "TXT · 合并"
+    "transfer.txtMergeShort": "TXT · 合并",
+    "admin.groupJoin": "组加入",
+    "admin.groupAdminApproval": "组管理员审批",
+    "admin.requiresGroupAdmin": "需要组管理员",
+    "admin.adminPermission": "管理员权限",
+    "admin.systemAdminApproval": "系统admin审批",
+    "admin.requiresSystemAdmin": "需要系统admin",
+    "admin.noPendingApproval": "没有待审批项",
+    "admin.queueEmpty": "队列为空",
+    "admin.noActiveUser": "没有活跃用户",
+    "admin.systemAdminRequired": "需要系统admin",
+    "admin.approve": "审批",
+    "apiAnswer.noApiAnswer": "没有API回答",
+    "apiAnswer.registerForBot": "请为所选机器人注册组API回答。"
   },
   vi: {
     "common.allowed": "Được phép",
@@ -304,6 +389,10 @@ const dynamicMessages = {
     "common.pendingUnit": "đang chờ",
     "common.serverSaved": "đã lưu máy chủ",
     "common.localOnly": "chỉ cục bộ",
+    "common.yes": "Có",
+    "common.no": "Không",
+    "common.open": "Mở",
+    "common.noScope": "không có scope",
     "workspace.noGroup": "Không có nhóm",
     "workspace.noGroupSelected": "Chưa chọn nhóm",
     "workspace.noBotSelected": "Chưa chọn bot",
@@ -319,7 +408,20 @@ const dynamicMessages = {
     "summary.allowed": "Được phép",
     "summary.disabled": "Tắt",
     "transfer.jsonReplace": "JSON · thay thế",
-    "transfer.txtMergeShort": "TXT · gộp"
+    "transfer.txtMergeShort": "TXT · gộp",
+    "admin.groupJoin": "vào nhóm",
+    "admin.groupAdminApproval": "group admin phê duyệt",
+    "admin.requiresGroupAdmin": "cần group admin",
+    "admin.adminPermission": "quyền admin",
+    "admin.systemAdminApproval": "system admin phê duyệt",
+    "admin.requiresSystemAdmin": "cần system admin",
+    "admin.noPendingApproval": "Không có phê duyệt đang chờ",
+    "admin.queueEmpty": "Hàng đợi trống",
+    "admin.noActiveUser": "Không có người dùng hoạt động",
+    "admin.systemAdminRequired": "Cần system admin",
+    "admin.approve": "Phê duyệt",
+    "apiAnswer.noApiAnswer": "Không có trả lời API",
+    "apiAnswer.registerForBot": "Đăng ký trả lời API nhóm cho bot đã chọn."
   },
   fr: {
     "common.allowed": "Autorisé",
@@ -332,6 +434,10 @@ const dynamicMessages = {
     "common.pendingUnit": "en attente",
     "common.serverSaved": "enregistré serveur",
     "common.localOnly": "local uniquement",
+    "common.yes": "Oui",
+    "common.no": "Non",
+    "common.open": "Ouvert",
+    "common.noScope": "aucun scope",
     "workspace.noGroup": "Aucun groupe",
     "workspace.noGroupSelected": "Aucun groupe sélectionné",
     "workspace.noBotSelected": "Aucun bot sélectionné",
@@ -347,7 +453,20 @@ const dynamicMessages = {
     "summary.allowed": "Autorisé",
     "summary.disabled": "Désactivé",
     "transfer.jsonReplace": "JSON · remplacer",
-    "transfer.txtMergeShort": "TXT · fusionner"
+    "transfer.txtMergeShort": "TXT · fusionner",
+    "admin.groupJoin": "adhésion au groupe",
+    "admin.groupAdminApproval": "approbation admin de groupe",
+    "admin.requiresGroupAdmin": "admin de groupe requis",
+    "admin.adminPermission": "permission admin",
+    "admin.systemAdminApproval": "approbation admin système",
+    "admin.requiresSystemAdmin": "admin système requis",
+    "admin.noPendingApproval": "Aucune approbation en attente",
+    "admin.queueEmpty": "La file est vide",
+    "admin.noActiveUser": "Aucun utilisateur actif",
+    "admin.systemAdminRequired": "Admin système requis",
+    "admin.approve": "Approuver",
+    "apiAnswer.noApiAnswer": "Aucune réponse API",
+    "apiAnswer.registerForBot": "Enregistrez une réponse API de groupe pour le bot sélectionné."
   }
 };
 
@@ -2165,8 +2284,8 @@ function renderAccessPanels() {
       return `
       <div class="${canApprove ? "" : "blocked-action"}">
         <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
-        <span>${request.requested_role} · group join · ${canApprove ? "group admin approval" : "requires group admin"}</span>
-        <button type="button" data-approve-join="${request.id}" ${canApprove ? "" : "disabled"}>Approve</button>
+        <span>${request.requested_role} · ${t("admin.groupJoin", "group join")} · ${canApprove ? t("admin.groupAdminApproval", "group admin approval") : t("admin.requiresGroupAdmin", "requires group admin")}</span>
+        <button type="button" data-approve-join="${request.id}" ${canApprove ? "" : "disabled"}>${t("admin.approve", "Approve")}</button>
       </div>
     `;
     }),
@@ -2175,18 +2294,18 @@ function renderAccessPanels() {
       return `
       <div class="${canApprove ? "" : "blocked-action"}">
         <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
-        <span>${request.requested_role} · admin permission · ${canApprove ? "system admin approval" : "requires system admin"}</span>
-        <button type="button" data-approve-admin="${request.id}" ${canApprove ? "" : "disabled"}>Approve</button>
+        <span>${request.requested_role} · ${t("admin.adminPermission", "admin permission")} · ${canApprove ? t("admin.systemAdminApproval", "system admin approval") : t("admin.requiresSystemAdmin", "requires system admin")}</span>
+        <button type="button" data-approve-admin="${request.id}" ${canApprove ? "" : "disabled"}>${t("admin.approve", "Approve")}</button>
       </div>
     `;
     })
-  ].join("") || `<div><strong>No pending approval</strong><span>Queue is empty</span></div>`;
+  ].join("") || `<div><strong>${t("admin.noPendingApproval", "No pending approval")}</strong><span>${t("admin.queueEmpty", "Queue is empty")}</span></div>`;
   accessOperations.innerHTML = `
     <div><strong data-i18n="access.activeUsers">Active users</strong><span>${operations.activeUsers}</span></div>
     <div><strong data-i18n="access.activeGroups">Active groups</strong><span>${operations.activeGroups}</span></div>
     <div><strong data-i18n="access.activeMemberships">Active memberships</strong><span>${operations.activeMemberships}</span></div>
     <div><strong data-i18n="access.waitingApprovals">Waiting approvals</strong><span>${operations.pendingJoinRequests + operations.pendingAdminRequests}</span></div>
-    <div><strong data-i18n="access.protectedAdmin">Protected admin</strong><span>${operations.protectedAdmin ? "Yes" : "No"}</span></div>
+    <div><strong data-i18n="access.protectedAdmin">Protected admin</strong><span>${operations.protectedAdmin ? t("common.yes", "Yes") : t("common.no", "No")}</span></div>
     <div><strong data-i18n="access.userLanguages">User languages</strong><span>${operations.multilingualUsers}</span></div>
   `;
   authFlow.innerHTML = summarizeAuthWorkflow(currentAccessState).map((step, index) => `
@@ -2198,7 +2317,7 @@ function renderAccessPanels() {
   groupUsers.innerHTML = summarizeGroupUsers(currentAccessState).map((entry) => `
     <div>
       <strong>${entry.group.name}</strong>
-      <span>${entry.users.map(({ user, membership }) => `${user?.name || membership.user_id} / ${membership.role} / ${user?.locale || "en"}`).join(", ") || "No active user"}</span>
+      <span>${entry.users.map(({ user, membership }) => `${user?.name || membership.user_id} / ${membership.role} / ${user?.locale || "en"}`).join(", ") || t("admin.noActiveUser", "No active user")}</span>
     </div>
   `).join("");
   joinRequests.innerHTML = summarizeJoinRequests(currentAccessState).map((request) => `
@@ -2222,25 +2341,25 @@ function renderAccessPanels() {
     ${current.screens.map((screen) => `
       <div class="${screen.allowed ? "allowed" : "denied"}">
         <strong>${screen.screenId}</strong>
-        <span>${screen.allowed ? "Allowed" : "Blocked"} · ${screen.scope}</span>
+        <span>${screen.allowed ? t("common.allowed", "Allowed") : t("common.blocked", "Blocked")} · ${screen.scope}</span>
       </div>
     `).join("")}
   `;
   authPolicy.innerHTML = `
-    <p><strong data-i18n="access.signupGroup">Signup creates own group</strong><span>${policy.signupCreatesOwnGroup ? "Enabled" : "Disabled"}</span></p>
+    <p><strong data-i18n="access.signupGroup">Signup creates own group</strong><span>${policy.signupCreatesOwnGroup ? t("common.enabled", "Enabled") : t("common.disabled", "Disabled")}</span></p>
     <p><strong data-i18n="access.userLocale">User language setting</strong><span>${current.user?.locale || "en"}</span></p>
     <p><strong data-i18n="access.errorLocale">Error message language</strong><span>${policy.errorLocaleSource}</span></p>
     <p><strong data-i18n="access.pendingJoin">Pending group join requests</strong><span>${policy.pendingJoinRequests}</span></p>
     <p><strong data-i18n="access.pendingAdmin">Pending admin requests</strong><span>${policy.pendingAdminRequests}</span></p>
-    <p><strong data-i18n="access.emptyGroups">Empty groups auto-delete</strong><span>${policy.emptyGroupAutoDelete ? "Enabled" : "Disabled"}</span></p>
-    <p><strong data-i18n="access.emptyGroupIds">Groups without users</strong><span>${policy.groupsWithoutUsers.join(", ") || "None"}</span></p>
+    <p><strong data-i18n="access.emptyGroups">Empty groups auto-delete</strong><span>${policy.emptyGroupAutoDelete ? t("common.enabled", "Enabled") : t("common.disabled", "Disabled")}</span></p>
+    <p><strong data-i18n="access.emptyGroupIds">Groups without users</strong><span>${policy.groupsWithoutUsers.join(", ") || t("common.none", "None")}</span></p>
   `;
   adminPolicy.innerHTML = `
     <p><strong data-i18n="access.systemAdmin">Base system admin</strong><span>${policy.systemAdmin?.id || "admin"}</span></p>
-    <p><strong data-i18n="access.adminDeletable">Admin deletable</strong><span>${policy.systemAdmin?.deletable ? "Yes" : "No"}</span></p>
-    <p><strong data-i18n="access.groupCreateAdmin">Group creation approval</strong><span>${policy.groupCreationRequiresSystemAdmin ? "System admin required" : "Open"}</span></p>
-    <p><strong data-i18n="access.currentGroupCreate">Current user can create group</strong><span>${canCreateManagedGroup(currentAccessState, currentAccessState.currentUserId) ? "Yes" : "No"}</span></p>
-    <p><strong data-i18n="access.groupsWithoutAdmin">Groups without group admin</strong><span>${policy.groupsWithoutAdmin.join(", ") || "None"}</span></p>
+    <p><strong data-i18n="access.adminDeletable">Admin deletable</strong><span>${policy.systemAdmin?.deletable ? t("common.yes", "Yes") : t("common.no", "No")}</span></p>
+    <p><strong data-i18n="access.groupCreateAdmin">Group creation approval</strong><span>${policy.groupCreationRequiresSystemAdmin ? t("admin.systemAdminRequired", "System admin required") : t("common.open", "Open")}</span></p>
+    <p><strong data-i18n="access.currentGroupCreate">Current user can create group</strong><span>${canCreateManagedGroup(currentAccessState, currentAccessState.currentUserId) ? t("common.yes", "Yes") : t("common.no", "No")}</span></p>
+    <p><strong data-i18n="access.groupsWithoutAdmin">Groups without group admin</strong><span>${policy.groupsWithoutAdmin.join(", ") || t("common.none", "None")}</span></p>
   `;
   bindAdminActionButtons();
   applyAccessToNavigation(current);
@@ -2255,7 +2374,7 @@ function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) 
     link.classList.toggle("access-blocked", !allowed);
     link.classList.toggle("access-allowed", allowed);
     link.setAttribute("aria-disabled", allowed ? "false" : "true");
-    link.dataset.accessLabel = allowed ? t("common.allowed", "Allowed") : `${t("common.blocked", "Blocked")} · ${access?.scope || "no scope"}`;
+    link.dataset.accessLabel = allowed ? t("common.allowed", "Allowed") : `${t("common.blocked", "Blocked")} · ${access?.scope || t("common.noScope", "no scope")}`;
   });
 }
 
@@ -2293,7 +2412,7 @@ function renderApiRegistry() {
       <strong>${api.name}</strong>
       <span>${api.group_id} · ${api.bot_id} · ${api.method || "GET"} · ${api.endpoint_url} · ${api.response_path}</span>
     </div>
-  `).join("") || `<div><strong>No API answer</strong><span>Register a group API answer for the selected bot.</span></div>`;
+  `).join("") || `<div><strong>${t("apiAnswer.noApiAnswer", "No API answer")}</strong><span>${t("apiAnswer.registerForBot", "Register a group API answer for the selected bot.")}</span></div>`;
   refreshApiRegistryFromServer()
     .then((loaded) => {
       if (loaded) {
@@ -2303,7 +2422,7 @@ function renderApiRegistry() {
             <strong>${api.name}</strong>
             <span>${api.group_id} · ${api.bot_id} · ${api.method || "GET"} · ${api.endpoint_url} · ${api.response_path || api.response_mapping?.answer_text_path || "data.answer"}</span>
           </div>
-        `).join("") || `<div><strong>No API answer</strong><span>Register a group API answer for the selected bot.</span></div>`;
+        `).join("") || `<div><strong>${t("apiAnswer.noApiAnswer", "No API answer")}</strong><span>${t("apiAnswer.registerForBot", "Register a group API answer for the selected bot.")}</span></div>`;
         document.dispatchEvent(new CustomEvent("cga:content-rendered"));
       }
     })

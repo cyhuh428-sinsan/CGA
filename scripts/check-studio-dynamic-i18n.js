@@ -15,6 +15,10 @@ const requiredDynamicKeys = [
   "common.pendingUnit",
   "common.serverSaved",
   "common.localOnly",
+  "common.yes",
+  "common.no",
+  "common.open",
+  "common.noScope",
   "workspace.noGroup",
   "workspace.noGroupSelected",
   "workspace.noBotSelected",
@@ -30,7 +34,20 @@ const requiredDynamicKeys = [
   "summary.allowed",
   "summary.disabled",
   "transfer.jsonReplace",
-  "transfer.txtMergeShort"
+  "transfer.txtMergeShort",
+  "admin.groupJoin",
+  "admin.groupAdminApproval",
+  "admin.requiresGroupAdmin",
+  "admin.adminPermission",
+  "admin.systemAdminApproval",
+  "admin.requiresSystemAdmin",
+  "admin.noPendingApproval",
+  "admin.queueEmpty",
+  "admin.noActiveUser",
+  "admin.systemAdminRequired",
+  "admin.approve",
+  "apiAnswer.noApiAnswer",
+  "apiAnswer.registerForBot"
 ];
 
 const failures = [];
