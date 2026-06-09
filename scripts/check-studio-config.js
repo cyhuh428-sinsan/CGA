@@ -160,6 +160,9 @@ if (!studioAppSource.includes("refreshWorkspaceBotsFromServer")) fail("studio ap
 if (!studioAppSource.includes("refreshWorkspaceDataFromServer")) fail("studio app does not use a bounded workspace refresh coordinator");
 if (!studioAppSource.includes("Promise.allSettled")) fail("studio app workspace refresh must not serialize every screen API");
 if (!studioAppSource.includes("workspaceDataRefreshSerial")) fail("studio app workspace refresh does not guard stale screen transitions");
+if (!studioAppSource.includes("WORKSPACE_SNAPSHOT_TTL_MS")) fail("studio app does not keep a bounded workspace snapshot cache");
+if (!studioAppSource.includes("applyCachedWorkspaceSnapshot")) fail("studio app does not apply cached workspace state before server refresh");
+if (!studioAppSource.includes("saveWorkspaceSnapshot")) fail("studio app does not refresh workspace snapshot after server save or refresh");
 if (!studioAppSource.includes("createWorkspaceBotOnServer")) fail("studio app does not create Bot Workspace bots through server API");
 if (!studioAppSource.includes("refreshStudioStateFromServer")) fail("studio app does not refresh Create Bot state from server");
 if (!studioAppSource.includes("saveStudioStateToServer")) fail("studio app does not save Create Bot state through server API");

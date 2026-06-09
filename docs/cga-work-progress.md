@@ -1409,3 +1409,25 @@
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 다음 단계에서는 Aidot의 `getCachedStudioWorkspaceContext()` 패턴처럼 CGA에도 작업공간 snapshot/cache 계층을 둘지 설계로 확정한다.
 - 저장은 현재 `scheduleStudioStateSave()`, `scheduleCompositionSave()`의 debounce가 있으나, Detail Assets/패키지 업로드 저장은 액션 단위 저장이므로 추후 화면별 저장 정책을 분리 검토한다.
+
+### 2026-06-09 작업공간 snapshot/cache 계층 1차 반영
+- Aidot의 `getCachedStudioWorkspaceContext()` 패턴을 CGA SPA 초안 구조에 맞춰 1차로 반영했다.
+- 목표는 화면 전환 시 서버 응답을 기다리느라 빈 화면 또는 오래 걸리는 화면이 보이지 않도록, 마지막 정상 작업공간 상태를 먼저 적용하고 서버 응답으로 갱신하는 것이다.
+- API 경로, 서버 저장 포맷, Aidot 호환 계약은 변경하지 않았다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - `WORKSPACE_SNAPSHOT_STORAGE_PREFIX`, `WORKSPACE_SNAPSHOT_VERSION`, `WORKSPACE_SNAPSHOT_TTL_MS`를 추가했다.
+  - 현재 사용자/그룹/봇 기준의 snapshot key를 사용해 작업공간별 cache가 섞이지 않도록 했다.
+  - snapshot에는 현재 그룹의 봇 목록, Studio State, Composition, Detail Assets, Operations State, Collaboration State를 저장한다.
+  - 서버 refresh 성공 후와 주요 저장 함수(`saveStudioStateToServer`, `saveCompositionToServer`, `saveDetailAssetsToServer`) 이후 snapshot을 갱신한다.
+  - 초기 진입, 그룹 변경, 봇 열기에서 가능한 경우 cached snapshot을 먼저 적용하고 이후 서버 데이터로 갱신한다.
+  - snapshot TTL은 60초로 제한해 너무 오래된 상태가 계속 보이는 위험을 줄였다.
+- `scripts/check-studio-config.js`
+  - `WORKSPACE_SNAPSHOT_TTL_MS`, `applyCachedWorkspaceSnapshot`, `saveWorkspaceSnapshot`이 누락되면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 다음 단계에서는 서버에 여러 화면 상태를 한 번에 내려주는 workspace context API가 필요한지 검토한다. 이 경우 새 API가 되므로 신산님 승인 후 진행해야 한다.
+- 현재는 기존 API를 유지한 상태에서 클라이언트 체감 속도 개선만 적용했다.

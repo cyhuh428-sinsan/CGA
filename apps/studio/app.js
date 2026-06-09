@@ -29,6 +29,9 @@ import {
 } from "/packages/public-core/src/access-state.js";
 
 const AUTH_SESSION_STORAGE_KEY = "cga-studio-session-token";
+const WORKSPACE_SNAPSHOT_STORAGE_PREFIX = "cga-studio-workspace-snapshot";
+const WORKSPACE_SNAPSHOT_VERSION = 1;
+const WORKSPACE_SNAPSHOT_TTL_MS = 60000;
 
 const currentStudioState = structuredClone(sampleStudioState);
 let currentCollaborationState = createSampleCollaborationState();
@@ -815,6 +818,76 @@ function applyCurrentBotToStudioState(bot) {
   currentStudioState.bot.version = bot.version || currentStudioState.bot.version || "v0.1";
 }
 
+function getWorkspaceSnapshotKey(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  return [
+    WORKSPACE_SNAPSHOT_STORAGE_PREFIX,
+    currentAccessState.currentUserId || "anonymous",
+    groupId || "no-group",
+    botId || "no-bot"
+  ].join(":");
+}
+
+function cloneForSnapshot(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function saveWorkspaceSnapshot() {
+  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
+  try {
+    localStorage.setItem(getWorkspaceSnapshotKey(), JSON.stringify({
+      version: WORKSPACE_SNAPSHOT_VERSION,
+      saved_at: Date.now(),
+      group_id: currentWorkspaceGroupId,
+      bot_id: currentWorkspaceBotId,
+      workspace_bots: cloneForSnapshot(currentWorkspaceBots.filter((bot) => bot.group_id === currentWorkspaceGroupId)),
+      studio_state: cloneForSnapshot(currentStudioState),
+      composition_state: cloneForSnapshot(currentCompositionState),
+      detail_assets: {
+        intent_utterances: cloneForSnapshot(currentIntentUtteranceAssets),
+        entities: cloneForSnapshot(currentEntityAssets),
+        dictionary: cloneForSnapshot(currentDictionaryAssets),
+        rules: cloneForSnapshot(currentRuleAssets),
+        scenarios: cloneForSnapshot(currentScenarioAssets)
+      },
+      operations_state: cloneForSnapshot(currentOperationsState),
+      collaboration_state: cloneForSnapshot(currentCollaborationState)
+    }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function applyWorkspaceSnapshot(snapshot) {
+  if (!snapshot || snapshot.version !== WORKSPACE_SNAPSHOT_VERSION) return false;
+  if (snapshot.group_id !== currentWorkspaceGroupId || snapshot.bot_id !== currentWorkspaceBotId) return false;
+  if (Array.isArray(snapshot.workspace_bots)) {
+    currentWorkspaceBots = [
+      ...currentWorkspaceBots.filter((bot) => bot.group_id !== currentWorkspaceGroupId),
+      ...snapshot.workspace_bots
+    ];
+  }
+  if (snapshot.studio_state) applyStudioStateFromServer(snapshot.studio_state);
+  if (snapshot.composition_state) applyCompositionFromServer(snapshot.composition_state);
+  if (snapshot.detail_assets) applyDetailAssetsFromServer(snapshot.detail_assets);
+  if (snapshot.operations_state) applyOperationsStateFromServer(snapshot.operations_state);
+  if (snapshot.collaboration_state) applyCollaborationStateFromServer(snapshot.collaboration_state);
+  return true;
+}
+
+function applyCachedWorkspaceSnapshot({ maxAgeMs = WORKSPACE_SNAPSHOT_TTL_MS } = {}) {
+  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
+  try {
+    const raw = localStorage.getItem(getWorkspaceSnapshotKey());
+    if (!raw) return false;
+    const snapshot = JSON.parse(raw);
+    if (Date.now() - Number(snapshot.saved_at || 0) > maxAgeMs) return false;
+    return applyWorkspaceSnapshot(snapshot);
+  } catch {
+    return false;
+  }
+}
+
 function getSafeFileName(value, fallback) {
   const normalized = String(value || fallback)
     .trim()
@@ -1188,6 +1261,7 @@ async function saveCompositionToServer() {
     method: "PUT",
     body: payload
   });
+  saveWorkspaceSnapshot();
   return true;
 }
 
@@ -1244,6 +1318,7 @@ async function saveDetailAssetsToServer() {
       scenarios: currentScenarioAssets
     }
   });
+  saveWorkspaceSnapshot();
   return true;
 }
 
@@ -1283,6 +1358,7 @@ async function saveStudioStateToServer() {
     }
   });
   await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
+  saveWorkspaceSnapshot();
   return true;
 }
 
@@ -1315,6 +1391,11 @@ async function refreshWorkspaceDataFromServer({ includeBots = false } = {}) {
   if (includeBots) {
     await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
     if (refreshSerial !== workspaceDataRefreshSerial) return false;
+    if (applyCachedWorkspaceSnapshot()) {
+      renderWorkspaceHome();
+      renderAllStatePanels();
+      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    }
   }
   const groupId = currentWorkspaceGroupId;
   const botId = currentWorkspaceBotId;
@@ -1327,7 +1408,9 @@ async function refreshWorkspaceDataFromServer({ includeBots = false } = {}) {
     refreshCollaborationStateFromServer(groupId, botId)
   ]);
   if (refreshSerial !== workspaceDataRefreshSerial) return false;
-  return results.some((result) => result.status === "fulfilled" && result.value);
+  const refreshed = results.some((result) => result.status === "fulfilled" && result.value);
+  if (refreshed) saveWorkspaceSnapshot();
+  return refreshed;
 }
 
 async function createWorkspaceBotOnServer(bot) {
@@ -2682,6 +2765,11 @@ function bindWorkspaceActions() {
       const bot = currentWorkspaceBots.find((item) => item.id === button.dataset.openBot);
       if (!bot) return;
       applyCurrentBotToStudioState(bot);
+      if (applyCachedWorkspaceSnapshot()) {
+        renderWorkspaceHome();
+        renderAllStatePanels();
+        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+      }
       await refreshWorkspaceDataFromServer().catch(() => false);
       renderWorkspaceHome();
       renderAllStatePanels();
