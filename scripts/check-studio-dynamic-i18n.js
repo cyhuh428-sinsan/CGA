@@ -70,7 +70,13 @@ const requiredDynamicKeys = [
   "state.pdfBlockedLlm",
   "state.kakaoAvailableKo",
   "state.kakaoDisabledNonKo",
-  "state.noBlockingIssue"
+  "state.noBlockingIssue",
+  "review.utteranceUnit",
+  "review.noIntentCandidate",
+  "review.manualResultRequired",
+  "module.screen",
+  "module.publicCore",
+  "module.commercialCandidate"
 ];
 
 const failures = [];

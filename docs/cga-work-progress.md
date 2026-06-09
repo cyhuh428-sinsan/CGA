@@ -989,3 +989,11 @@
 - `renderCollaborationSummary()`, `renderTeamDashboard()`, `renderStateSummary()`, `renderReadinessIssues()`의 하드코딩 표시 문구를 다국어 동적 메시지로 교체했다.
 - `scripts/check-studio-dynamic-i18n.js`에 Team/State 관련 새 동적 키를 필수 검사 대상으로 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 Configure/Boundary 동적 문구 다국어 보강
+- Team/State 동적 문구 보강 이후, Configure Bot의 Intent Review Preview 빈 상태와 Module Boundary Matrix 헤더가 JS 템플릿에서 영어로 직접 출력되는 것을 확인했다.
+- 대상 문구는 `No intent candidate`, `0 utterances`, `Manual handoff or PDF Q&A result required`, `Screen`, `Public Core`, `Commercial Candidate`이다.
+- 기존 Configure composition 상태와 Boundary Matrix 데이터 구조는 변경하지 않고, 표시 문구만 `dynamicMessages`와 `t()` 번역 해석 흐름으로 연결했다.
+- Intent 후보 상태값 `answer_required`, `ready`도 기존 locale 키 `review.answerRequired`, `review.ready`를 통해 표시되도록 보강했다.
+- `scripts/check-studio-dynamic-i18n.js`에 Configure/Boundary 관련 새 동적 키를 필수 검사 대상으로 추가했다.
+- Aidot 코드는 수정하지 않았다.

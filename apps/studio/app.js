@@ -219,7 +219,13 @@ const dynamicMessages = {
     "state.pdfBlockedLlm": "Blocked: LLM required",
     "state.kakaoAvailableKo": "Available for Korean locale",
     "state.kakaoDisabledNonKo": "Disabled outside Korean locale",
-    "state.noBlockingIssue": "No blocking issue."
+    "state.noBlockingIssue": "No blocking issue.",
+    "review.utteranceUnit": "utterances",
+    "review.noIntentCandidate": "No intent candidate",
+    "review.manualResultRequired": "Manual handoff or PDF Q&A result required",
+    "module.screen": "Screen",
+    "module.publicCore": "Public Core",
+    "module.commercialCandidate": "Commercial Candidate"
   },
   ko: {
     "common.allowed": "허용",
@@ -287,7 +293,13 @@ const dynamicMessages = {
     "state.pdfBlockedLlm": "차단: LLM 필요",
     "state.kakaoAvailableKo": "한국어 봇에서 사용 가능",
     "state.kakaoDisabledNonKo": "한국어 외 비활성",
-    "state.noBlockingIssue": "차단 이슈 없음"
+    "state.noBlockingIssue": "차단 이슈 없음",
+    "review.utteranceUnit": "개 학습문장",
+    "review.noIntentCandidate": "의도 후보 없음",
+    "review.manualResultRequired": "수동 Handoff 또는 PDF Q&A 결과가 필요합니다",
+    "module.screen": "화면",
+    "module.publicCore": "Public Core",
+    "module.commercialCandidate": "상용 후보"
   },
   de: {
     "common.allowed": "Erlaubt",
@@ -355,7 +367,13 @@ const dynamicMessages = {
     "state.pdfBlockedLlm": "Blockiert: LLM erforderlich",
     "state.kakaoAvailableKo": "Für koreanische Sprache verfügbar",
     "state.kakaoDisabledNonKo": "Außerhalb Koreanisch deaktiviert",
-    "state.noBlockingIssue": "Kein blockierendes Problem."
+    "state.noBlockingIssue": "Kein blockierendes Problem.",
+    "review.utteranceUnit": "Trainingssätze",
+    "review.noIntentCandidate": "Kein Intent-Kandidat",
+    "review.manualResultRequired": "Manuelles Handoff oder PDF-Q&A-Ergebnis erforderlich",
+    "module.screen": "Bildschirm",
+    "module.publicCore": "Public Core",
+    "module.commercialCandidate": "Kommerzieller Kandidat"
   },
   ja: {
     "common.allowed": "許可",
@@ -423,7 +441,13 @@ const dynamicMessages = {
     "state.pdfBlockedLlm": "ブロック: LLMが必要",
     "state.kakaoAvailableKo": "韓国語ロケールで利用可能",
     "state.kakaoDisabledNonKo": "韓国語以外では無効",
-    "state.noBlockingIssue": "ブロック中の問題なし。"
+    "state.noBlockingIssue": "ブロック中の問題なし。",
+    "review.utteranceUnit": "件の学習文",
+    "review.noIntentCandidate": "意図候補なし",
+    "review.manualResultRequired": "手動HandoffまたはPDF Q&A結果が必要です",
+    "module.screen": "画面",
+    "module.publicCore": "Public Core",
+    "module.commercialCandidate": "商用候補"
   },
   "zh-CN": {
     "common.allowed": "允许",
@@ -491,7 +515,13 @@ const dynamicMessages = {
     "state.pdfBlockedLlm": "阻止：需要LLM",
     "state.kakaoAvailableKo": "韩语locale可用",
     "state.kakaoDisabledNonKo": "非韩语locale禁用",
-    "state.noBlockingIssue": "没有阻塞问题。"
+    "state.noBlockingIssue": "没有阻塞问题。",
+    "review.utteranceUnit": "条训练语句",
+    "review.noIntentCandidate": "没有意图候选",
+    "review.manualResultRequired": "需要手动Handoff或PDF Q&A结果",
+    "module.screen": "屏幕",
+    "module.publicCore": "Public Core",
+    "module.commercialCandidate": "商业候选"
   },
   vi: {
     "common.allowed": "Được phép",
@@ -559,7 +589,13 @@ const dynamicMessages = {
     "state.pdfBlockedLlm": "Bị chặn: cần LLM",
     "state.kakaoAvailableKo": "Khả dụng cho locale Hàn",
     "state.kakaoDisabledNonKo": "Tắt ngoài locale Hàn",
-    "state.noBlockingIssue": "Không có vấn đề chặn."
+    "state.noBlockingIssue": "Không có vấn đề chặn.",
+    "review.utteranceUnit": "câu huấn luyện",
+    "review.noIntentCandidate": "Không có ý định ứng viên",
+    "review.manualResultRequired": "Cần kết quả Handoff thủ công hoặc PDF Q&A",
+    "module.screen": "Màn hình",
+    "module.publicCore": "Public Core",
+    "module.commercialCandidate": "Ứng viên thương mại"
   },
   fr: {
     "common.allowed": "Autorisé",
@@ -627,7 +663,13 @@ const dynamicMessages = {
     "state.pdfBlockedLlm": "Bloqué : LLM requis",
     "state.kakaoAvailableKo": "Disponible pour la locale coréenne",
     "state.kakaoDisabledNonKo": "Désactivé hors locale coréenne",
-    "state.noBlockingIssue": "Aucun problème bloquant."
+    "state.noBlockingIssue": "Aucun problème bloquant.",
+    "review.utteranceUnit": "énoncés",
+    "review.noIntentCandidate": "Aucun candidat d’intention",
+    "review.manualResultRequired": "Résultat Handoff manuel ou PDF Q&A requis",
+    "module.screen": "Écran",
+    "module.publicCore": "Public Core",
+    "module.commercialCandidate": "Candidat commercial"
   }
 };
 
@@ -1712,14 +1754,18 @@ function renderConfigureComposition() {
   }
   if (preview) {
     const candidates = currentCompositionState.intent_candidates || [];
+    const getIntentStatusLabel = (status) => ({
+      answer_required: t("review.answerRequired", "Answer draft required"),
+      ready: t("review.ready", "Ready")
+    })[status] || status || t("review.answerRequired", "Answer draft required");
     preview.innerHTML = candidates.map((item) => `
       <div class="intent-row">
         <strong>${item.intent}</strong>
-        <span>${item.utterance_count || 0} utterances</span>
-        <span>${item.status || "answer_required"}</span>
+        <span>${item.utterance_count || 0} ${t("review.utteranceUnit", "utterances")}</span>
+        <span>${getIntentStatusLabel(item.status)}</span>
         <button type="button" data-i18n="review.review">Review</button>
       </div>
-    `).join("") || `<div class="intent-row"><strong>No intent candidate</strong><span>0 utterances</span><span>Manual handoff or PDF Q&A result required</span><button type="button" disabled data-i18n="review.review">Review</button></div>`;
+    `).join("") || `<div class="intent-row"><strong>${t("review.noIntentCandidate", "No intent candidate")}</strong><span>0 ${t("review.utteranceUnit", "utterances")}</span><span>${t("review.manualResultRequired", "Manual handoff or PDF Q&A result required")}</span><button type="button" disabled data-i18n="review.review">Review</button></div>`;
   }
 }
 
@@ -2835,9 +2881,9 @@ function renderBoundaryMatrix() {
   const table = document.querySelector("[data-boundary-table]");
   if (!table) return;
   table.innerHTML = `
-    <div class="boundary-head">Screen</div>
-    <div class="boundary-head">Public Core</div>
-    <div class="boundary-head">Commercial Candidate</div>
+    <div class="boundary-head">${t("module.screen", "Screen")}</div>
+    <div class="boundary-head">${t("module.publicCore", "Public Core")}</div>
+    <div class="boundary-head">${t("module.commercialCandidate", "Commercial Candidate")}</div>
     ${workflowSteps.map((step) => `
       <div>${step.number} ${step.title}</div>
       <div>${step.publicCore.join(", ")}</div>
