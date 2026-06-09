@@ -13,6 +13,7 @@ const studioStateRegistryFile = path.join(dataDir, "studio-state-registry.json")
 const compositionRegistryFile = path.join(dataDir, "composition-registry.json");
 const detailAssetRegistryFile = path.join(dataDir, "detail-asset-registry.json");
 const operationsStateRegistryFile = path.join(dataDir, "operations-state-registry.json");
+const collaborationStateRegistryFile = path.join(dataDir, "collaboration-state-registry.json");
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
 let apiAnswerRegistry = loadApiAnswerRegistry();
@@ -21,6 +22,7 @@ let studioStateRegistry = loadStudioStateRegistry();
 let compositionRegistry = loadCompositionRegistry();
 let detailAssetRegistry = loadDetailAssetRegistry();
 let operationsStateRegistry = loadOperationsStateRegistry();
+let collaborationStateRegistry = loadCollaborationStateRegistry();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -228,6 +230,17 @@ function saveOperationsStateRegistry(registry) {
   return registry;
 }
 
+function loadCollaborationStateRegistry() {
+  const registry = loadJsonFile(collaborationStateRegistryFile, []);
+  return Array.isArray(registry) ? registry : [];
+}
+
+function saveCollaborationStateRegistry(registry) {
+  collaborationStateRegistry = registry;
+  writeJsonFile(collaborationStateRegistryFile, registry);
+  return registry;
+}
+
 function createDefaultCompositionForBot(groupId, botId) {
   return {
     group_id: groupId,
@@ -311,6 +324,16 @@ function createDefaultOperationsStateForBot(groupId, botId) {
       compatibility: "preserved",
       last_deployed_at: null
     },
+    updated_at: null
+  };
+}
+
+async function createDefaultCollaborationStateForBot(groupId, botId) {
+  const collaborationStateModule = await import("../packages/public-core/src/collaboration-state.js");
+  return {
+    ...collaborationStateModule.createSampleCollaborationState(),
+    group_id: groupId,
+    bot_id: botId,
     updated_at: null
   };
 }
@@ -449,6 +472,17 @@ function parseOperationsStatePath(urlPath) {
     groupId: match[1],
     botId: match[2],
     action: match[3] || null
+  };
+}
+
+function parseCollaborationStatePath(urlPath) {
+  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/collaboration-state(?:\/work-items\/([^/]+)\/([^/]+))?$/);
+  if (!match) return null;
+  return {
+    groupId: match[1],
+    botId: match[2],
+    workItemId: match[3] || null,
+    action: match[4] || null
   };
 }
 
@@ -762,6 +796,78 @@ async function handleOperationsStateApi(req, res, urlPath) {
       next
     ]);
     sendJson(res, 200, { status: "saved", action, operations_state: next });
+    return true;
+  }
+
+  sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+  return true;
+}
+
+async function handleCollaborationStateApi(req, res, urlPath) {
+  const parsed = parseCollaborationStatePath(urlPath);
+  if (!parsed) return false;
+  const { groupId, botId, workItemId, action } = parsed;
+  const accessContract = await import("../packages/contracts/src/access-contract.js");
+  const collaborationStateModule = await import("../packages/public-core/src/collaboration-state.js");
+  const saved = collaborationStateRegistry.find((item) => item.group_id === groupId && item.bot_id === botId);
+  const baseState = saved || await createDefaultCollaborationStateForBot(groupId, botId);
+
+  if (!action && req.method === "GET") {
+    if (!(await hasBotScope(req, groupId, botId, accessContract.ACCESS_SCOPES.BOT_VIEW))) {
+      sendJson(res, 403, { error_code: "CGA_COLLABORATION_VIEW_FORBIDDEN", message_key: "errors.bot.viewForbidden" });
+      return true;
+    }
+    sendJson(res, 200, baseState);
+    return true;
+  }
+
+  if (req.method === "POST" && workItemId && action) {
+    const actorId = getActorId(req, await loadAccessState());
+    const now = new Date().toISOString();
+    let requiredScope = accessContract.ACCESS_SCOPES.BOT_CONFIGURE;
+    let next = baseState;
+
+    if (action === "lock") {
+      next = collaborationStateModule.lockWorkItem(baseState, {
+        workItemId,
+        userId: actorId,
+        lockedAt: now,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+      });
+    } else if (action === "unlock") {
+      next = collaborationStateModule.releaseWorkItemLock(baseState, { workItemId, userId: actorId, releasedAt: now });
+    } else if (action === "approve") {
+      requiredScope = accessContract.ACCESS_SCOPES.BOT_REVIEW;
+      next = collaborationStateModule.submitReviewDecision(baseState, {
+        workItemId,
+        reviewerId: actorId,
+        decision: "approve",
+        decidedAt: now
+      });
+    } else if (action === "request-changes" || action === "move-to-todo") {
+      requiredScope = accessContract.ACCESS_SCOPES.BOT_REVIEW;
+      next = collaborationStateModule.submitReviewDecision(baseState, {
+        workItemId,
+        reviewerId: actorId,
+        decision: "request_changes",
+        decidedAt: now
+      });
+    } else {
+      sendJson(res, 404, { error_code: "CGA_COLLABORATION_ACTION_NOT_FOUND", message_key: "errors.collaboration.actionNotFound", action });
+      return true;
+    }
+
+    if (!(await hasBotScope(req, groupId, botId, requiredScope))) {
+      sendJson(res, 403, { error_code: "CGA_COLLABORATION_ACTION_FORBIDDEN", message_key: "errors.collaboration.actionForbidden", required_scope: requiredScope });
+      return true;
+    }
+
+    const scopedNext = { ...next, group_id: groupId, bot_id: botId, updated_at: now };
+    saveCollaborationStateRegistry([
+      ...collaborationStateRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId)),
+      scopedNext
+    ]);
+    sendJson(res, 200, { status: "saved", action, collaboration_state: scopedNext });
     return true;
   }
 
@@ -1185,6 +1291,7 @@ const server = http.createServer(async (req, res) => {
     if (await handleCompositionApi(req, res, urlPath)) return;
     if (await handleDetailAssetApi(req, res, urlPath)) return;
     if (await handleOperationsStateApi(req, res, urlPath)) return;
+    if (await handleCollaborationStateApi(req, res, urlPath)) return;
     if (await handleWorkspaceBotApi(req, res, urlPath)) return;
     if (await handleApiAnswerApi(req, res, urlPath)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;

@@ -611,6 +611,11 @@ function getOperationsStateUrl(groupId = currentWorkspaceGroupId, botId = curren
   return action ? `${base}/${action}` : base;
 }
 
+function getCollaborationStateUrl(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId, workItemId = "", action = "") {
+  const base = `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/collaboration-state`;
+  return workItemId && action ? `${base}/work-items/${encodeURIComponent(workItemId)}/${encodeURIComponent(action)}` : base;
+}
+
 function applyCompositionFromServer(composition) {
   if (!composition || typeof composition !== "object") return false;
   currentCompositionState = {
@@ -654,6 +659,16 @@ function applyOperationsStateFromServer(operationsState) {
   return true;
 }
 
+function applyCollaborationStateFromServer(collaborationState) {
+  if (!collaborationState || typeof collaborationState !== "object") return false;
+  if (!Array.isArray(collaborationState.workItems)) return false;
+  currentCollaborationState = {
+    ...currentCollaborationState,
+    ...collaborationState
+  };
+  return true;
+}
+
 async function refreshCompositionFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
   if (!groupId || !botId) return false;
   const payload = await requestCgaJson(getCompositionUrl(groupId, botId));
@@ -670,6 +685,12 @@ async function refreshOperationsStateFromServer(groupId = currentWorkspaceGroupI
   if (!groupId || !botId) return false;
   const payload = await requestCgaJson(getOperationsStateUrl(groupId, botId));
   return applyOperationsStateFromServer(payload);
+}
+
+async function refreshCollaborationStateFromServer(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  if (!groupId || !botId) return false;
+  const payload = await requestCgaJson(getCollaborationStateUrl(groupId, botId));
+  return applyCollaborationStateFromServer(payload);
 }
 
 async function saveCompositionToServer() {
@@ -693,6 +714,15 @@ async function runOperationsAction(action, body = {}) {
     body
   });
   applyOperationsStateFromServer(payload.operations_state);
+  return true;
+}
+
+async function runCollaborationAction(workItemId, action) {
+  if (!currentWorkspaceGroupId || !currentWorkspaceBotId || !workItemId || !action) return false;
+  const payload = await requestCgaJson(getCollaborationStateUrl(currentWorkspaceGroupId, currentWorkspaceBotId, workItemId, action), {
+    method: "POST"
+  });
+  applyCollaborationStateFromServer(payload.collaboration_state);
   return true;
 }
 
@@ -1669,8 +1699,9 @@ function bindTeamDashboardActions() {
   document.querySelectorAll("[data-lock-work]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
-      currentCollaborationState = lockWorkItem(currentCollaborationState, { workItemId: button.dataset.lockWork, userId: currentAccessState.currentUserId });
+    button.addEventListener("click", async () => {
+      const synced = await runCollaborationAction(button.dataset.lockWork, "lock").catch(() => false);
+      if (!synced) currentCollaborationState = lockWorkItem(currentCollaborationState, { workItemId: button.dataset.lockWork, userId: currentAccessState.currentUserId });
       renderTeamDashboard();
       renderCollaborationSummary();
     });
@@ -1678,8 +1709,9 @@ function bindTeamDashboardActions() {
   document.querySelectorAll("[data-unlock-work]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
-      currentCollaborationState = releaseWorkItemLock(currentCollaborationState, { workItemId: button.dataset.unlockWork, userId: currentAccessState.currentUserId });
+    button.addEventListener("click", async () => {
+      const synced = await runCollaborationAction(button.dataset.unlockWork, "unlock").catch(() => false);
+      if (!synced) currentCollaborationState = releaseWorkItemLock(currentCollaborationState, { workItemId: button.dataset.unlockWork, userId: currentAccessState.currentUserId });
       renderTeamDashboard();
       renderCollaborationSummary();
     });
@@ -1687,8 +1719,9 @@ function bindTeamDashboardActions() {
   document.querySelectorAll("[data-approve-work]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
-      currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.approveWork, reviewerId: currentAccessState.currentUserId, decision: "approve" });
+    button.addEventListener("click", async () => {
+      const synced = await runCollaborationAction(button.dataset.approveWork, "approve").catch(() => false);
+      if (!synced) currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.approveWork, reviewerId: currentAccessState.currentUserId, decision: "approve" });
       renderTeamDashboard();
       renderCollaborationSummary();
     });
@@ -1696,8 +1729,9 @@ function bindTeamDashboardActions() {
   document.querySelectorAll("[data-request-change]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
-      currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.requestChange, reviewerId: currentAccessState.currentUserId, decision: "request_changes" });
+    button.addEventListener("click", async () => {
+      const synced = await runCollaborationAction(button.dataset.requestChange, "request-changes").catch(() => false);
+      if (!synced) currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.requestChange, reviewerId: currentAccessState.currentUserId, decision: "request_changes" });
       renderTeamDashboard();
       renderCollaborationSummary();
     });
@@ -1962,6 +1996,7 @@ function bindWorkspaceActions() {
         await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
         await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
         await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
+        await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
       } catch {
         const bot = currentWorkspaceBots.find((item) => item.group_id === currentWorkspaceGroupId) || null;
         if (bot) applyCurrentBotToStudioState(bot);
@@ -1994,6 +2029,7 @@ function bindWorkspaceActions() {
         await saveCompositionToServer();
         await saveDetailAssetsToServer();
         await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+        await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       } catch {
         currentWorkspaceBots = [...currentWorkspaceBots, bot];
         applyCurrentBotToStudioState(bot);
@@ -2079,6 +2115,7 @@ function bindWorkspaceActions() {
       await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+      await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
       renderWorkspaceHome();
       renderAllStatePanels();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -2276,6 +2313,7 @@ function renderApiRegistry() {
 function rerenderAdminAndAccess() {
   syncStudioLocaleToCurrentUser();
   renderWorkspaceHome();
+  renderCollaborationSummary();
   renderTeamDashboard();
   renderAccessPanels();
   renderApiRegistry();
@@ -2590,6 +2628,7 @@ function bootApp() {
         await refreshCompositionFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         await refreshDetailAssetsFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+        await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         renderAllStatePanels();
         rerenderAdminAndAccess();
       }

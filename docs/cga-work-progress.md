@@ -937,3 +937,28 @@
 - `scripts/check-studio-config.js`가 operations API route, 앱 refresh/action 함수, 서버 저장 파일, 서버 handler 존재를 감시하도록 보강했다.
 - `npm run studio:validate`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 Team Dashboard 협업 상태 서버 저장/API 연결
+- `Build/Test/Operate` 운영 상태 연결 이후, `Team Dashboard`의 잠금/검수/차단 해제 동작이 브라우저 메모리 상태로만 유지되는 것을 확인했다.
+- 기존 `packages/public-core/src/collaboration-state.js`의 `createSampleCollaborationState`, `lockWorkItem`, `releaseWorkItemLock`, `submitReviewDecision`를 그대로 재사용했다.
+- `scripts/serve-studio.js`에 `/api/cga/groups/{groupId}/bots/{botId}/collaboration-state` API를 추가했다.
+  - `GET`: 선택한 `group_id + bot_id`의 Team Dashboard 협업 상태를 반환한다.
+  - `POST /work-items/{workItemId}/lock`: 작업 항목 편집 잠금을 생성하며 `bot.configure` 권한이 필요하다.
+  - `POST /work-items/{workItemId}/unlock`: 작업 항목 편집 잠금을 해제하며 `bot.configure` 권한이 필요하다.
+  - `POST /work-items/{workItemId}/approve`: 검수 항목을 승인하며 `bot.review` 권한이 필요하다.
+  - `POST /work-items/{workItemId}/request-changes`: 검수 항목을 수정 요청 상태로 돌리며 `bot.review` 권한이 필요하다.
+  - 저장 파일은 `.cga-data/collaboration-state-registry.json`이다.
+- `apps/studio/app.js`에 `refreshCollaborationStateFromServer`, `runCollaborationAction`, `applyCollaborationStateFromServer`를 추가했다.
+- Team Dashboard의 `Lock`, `Unlock`, `Approve`, `Request changes`, `Move to todo` 버튼은 서버 API를 우선 호출하고, 서버 호출 실패 시 기존 로컬 전이를 fallback으로 사용한다.
+- 앱 부팅, 그룹 변경, 봇 열기 시 collaboration state를 서버와 동기화하도록 연결했다.
+- `rerenderAdminAndAccess`에서 Team Dashboard뿐 아니라 Collaboration Summary도 함께 다시 렌더링하도록 보강했다.
+- `scripts/check-collaboration-state-api.mjs`를 추가해 다음을 검증한다.
+  - 기본 collaboration state 읽기
+  - 권한 없는 사용자 lock 차단
+  - builder의 lock/unlock 실행
+  - reviewer의 approve 실행
+  - `.cga-data/collaboration-state-registry.json` 파일 영구 저장
+- `package.json`의 `studio:validate`에 `studio:collaboration-state-check`를 추가했다.
+- `scripts/check-studio-config.js`가 collaboration API route, 앱 refresh/action 함수, 서버 저장 파일, 서버 handler 존재를 감시하도록 보강했다.
+- `npm run studio:validate`를 통과했다.
+- Aidot 코드는 수정하지 않았다.
