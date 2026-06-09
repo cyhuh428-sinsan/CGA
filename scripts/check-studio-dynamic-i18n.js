@@ -26,6 +26,8 @@ const requiredDynamicKeys = [
   "workspace.createBotToStart",
   "workspace.botCount",
   "workspace.blockedCreate",
+  "workspace.createAllowed",
+  "workspace.createBlocked",
   "top.groupPrefix",
   "top.botPrefix",
   "top.versionPrefix",

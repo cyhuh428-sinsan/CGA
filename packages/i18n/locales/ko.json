@@ -494,5 +494,7 @@
   "transfer.status.imported": "{asset} 가져오기 완료: {name}",
   "transfer.status.updated": "패키지 갱신 완료",
   "apiAnswer.manageAllowed": "API 답변 관리 가능",
-  "apiAnswer.manageBlocked": "차단됨: apiAnswer.manage"
+  "apiAnswer.manageBlocked": "차단됨: apiAnswer.manage",
+  "workspace.createAllowed": "봇 생성 가능",
+  "workspace.createBlocked": "차단: bot.create"
 }

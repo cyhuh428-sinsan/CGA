@@ -494,5 +494,7 @@
   "transfer.status.imported": "Imported {asset}: {name}",
   "transfer.status.updated": "Updated package",
   "apiAnswer.manageAllowed": "Can manage API answers",
-  "apiAnswer.manageBlocked": "Blocked: apiAnswer.manage"
+  "apiAnswer.manageBlocked": "Blocked: apiAnswer.manage",
+  "workspace.createAllowed": "Can create bots",
+  "workspace.createBlocked": "Blocked: bot.create"
 }

@@ -494,5 +494,7 @@
   "transfer.status.imported": "{asset} をインポートしました: {name}",
   "transfer.status.updated": "パッケージを更新しました",
   "apiAnswer.manageAllowed": "API回答を管理できます",
-  "apiAnswer.manageBlocked": "ブロック: apiAnswer.manage"
+  "apiAnswer.manageBlocked": "ブロック: apiAnswer.manage",
+  "workspace.createAllowed": "ボットを作成できます",
+  "workspace.createBlocked": "ブロック: bot.create"
 }
