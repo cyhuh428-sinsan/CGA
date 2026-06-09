@@ -426,5 +426,6 @@
   "placeholder.apiEndpoint": "端点URL",
   "placeholder.apiResponsePath": "响应路径",
   "placeholder.loginId": "用户ID",
-  "placeholder.password": "密码"
+  "placeholder.password": "密码",
+  "admin.logoutButton": "退出登录"
 }

@@ -426,5 +426,6 @@
   "placeholder.apiEndpoint": "URL endpoint",
   "placeholder.apiResponsePath": "đường dẫn phản hồi",
   "placeholder.loginId": "ID người dùng",
-  "placeholder.password": "mật khẩu"
+  "placeholder.password": "mật khẩu",
+  "admin.logoutButton": "Đăng xuất"
 }

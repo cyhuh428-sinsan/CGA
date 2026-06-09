@@ -426,5 +426,6 @@
   "placeholder.apiEndpoint": "URL endpoint",
   "placeholder.apiResponsePath": "chemin de réponse",
   "placeholder.loginId": "ID utilisateur",
-  "placeholder.password": "mot de passe"
+  "placeholder.password": "mot de passe",
+  "admin.logoutButton": "Déconnexion"
 }
