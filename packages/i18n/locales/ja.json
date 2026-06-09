@@ -449,5 +449,6 @@
   "errors.bot.viewForbidden": "このボットを表示する権限がありません。",
   "errors.operations.actionForbidden": "この運用操作を実行する権限がありません。",
   "errors.collaboration.actionForbidden": "この共同作業項目を更新する権限がありません。",
-  "errors.apiAnswer.manageForbidden": "グループ API 回答を管理する権限がありません。"
+  "errors.apiAnswer.manageForbidden": "グループ API 回答を管理する権限がありません。",
+  "errors.auth.required": "続行するにはログインしてください。"
 }

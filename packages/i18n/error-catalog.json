@@ -117,6 +117,13 @@
       "localeSource": "user.locale"
     },
     {
+      "code": "CGA_AUTH_REQUIRED",
+      "key": "errors.auth.required",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
       "code": "CGA_BOT_CREATE_FORBIDDEN",
       "key": "errors.bot.createForbidden",
       "domain": "bot",

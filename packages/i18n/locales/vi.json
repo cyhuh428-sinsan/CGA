@@ -449,5 +449,6 @@
   "errors.bot.viewForbidden": "Bạn không có quyền xem bot này.",
   "errors.operations.actionForbidden": "Bạn không có quyền chạy thao tác vận hành này.",
   "errors.collaboration.actionForbidden": "Bạn không có quyền cập nhật mục cộng tác này.",
-  "errors.apiAnswer.manageForbidden": "Bạn không có quyền quản lý câu trả lời API của nhóm."
+  "errors.apiAnswer.manageForbidden": "Bạn không có quyền quản lý câu trả lời API của nhóm.",
+  "errors.auth.required": "Vui lòng đăng nhập để tiếp tục."
 }

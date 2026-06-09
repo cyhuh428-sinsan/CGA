@@ -449,5 +449,6 @@
   "errors.bot.viewForbidden": "You do not have permission to view this bot.",
   "errors.operations.actionForbidden": "You do not have permission to run this operation.",
   "errors.collaboration.actionForbidden": "You do not have permission to update this collaboration item.",
-  "errors.apiAnswer.manageForbidden": "You do not have permission to manage group API answers."
+  "errors.apiAnswer.manageForbidden": "You do not have permission to manage group API answers.",
+  "errors.auth.required": "Please log in to continue."
 }
