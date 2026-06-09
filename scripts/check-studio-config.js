@@ -180,8 +180,10 @@ if (!studioAppSource.includes("persistDetailAssetsToServer")) fail("detail asset
 if (!studioAppSource.includes("cloneForSnapshot(currentIntentUtteranceAssets)")) fail("detail asset save does not capture payload at request time");
 if (!studioAppSource.includes("refreshOperationsStateFromServer")) fail("studio app does not refresh Build/Test/Operate state from server");
 if (!studioAppSource.includes("runOperationsAction")) fail("studio app does not run Build/Test/Operate actions through server API");
+if (!studioAppSource.includes("getOperationsStateUrl(groupId, botId, action)")) fail("operations action does not capture group/bot at request time");
 if (!studioAppSource.includes("refreshCollaborationStateFromServer")) fail("studio app does not refresh Team Dashboard collaboration state from server");
 if (!studioAppSource.includes("runCollaborationAction")) fail("studio app does not run Team Dashboard actions through server API");
+if (!studioAppSource.includes("getCollaborationStateUrl(groupId, botId, workItemId, action)")) fail("collaboration action does not capture group/bot at request time");
 if (!studioAppSource.includes("refreshApiRegistryFromServer")) fail("studio app does not refresh Group API Registry from server");
 if (!studioAppSource.includes("saveApiAnswerToServer")) fail("studio app does not save Group API Registry entries through server API");
 if (!studioAppSource.includes("API_REGISTRY_CACHE_TTL_MS")) fail("studio API Registry refresh does not suppress repeated screen render fetches");
