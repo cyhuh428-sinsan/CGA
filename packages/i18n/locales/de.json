@@ -424,5 +424,7 @@
   "placeholder.apiName": "API-Antwortname",
   "placeholder.signupGroup": "Gruppenname",
   "placeholder.apiEndpoint": "Endpoint-URL",
-  "placeholder.apiResponsePath": "Antwortpfad"
+  "placeholder.apiResponsePath": "Antwortpfad",
+  "placeholder.loginId": "Benutzer-ID",
+  "placeholder.password": "Passwort"
 }

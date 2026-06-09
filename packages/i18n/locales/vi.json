@@ -424,5 +424,7 @@
   "placeholder.apiName": "tên trả lời API",
   "placeholder.signupGroup": "tên nhóm",
   "placeholder.apiEndpoint": "URL endpoint",
-  "placeholder.apiResponsePath": "đường dẫn phản hồi"
+  "placeholder.apiResponsePath": "đường dẫn phản hồi",
+  "placeholder.loginId": "ID người dùng",
+  "placeholder.password": "mật khẩu"
 }

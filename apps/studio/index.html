@@ -181,6 +181,8 @@
             <h4 data-i18n="admin.loginTitle">Login Session</h4>
             <p data-i18n="admin.loginBody">Switch the active user and immediately recalculate group memberships, screen access, and user language.</p>
             <div class="admin-form-row">
+              <input data-login-id placeholder="user-id" data-i18n-placeholder="placeholder.loginId" />
+              <input data-login-password type="password" placeholder="password" data-i18n-placeholder="placeholder.password" />
               <select data-login-user></select>
               <button type="button" data-login-submit data-i18n="admin.loginButton">Login</button>
             </div>
@@ -192,6 +194,7 @@
             <div class="admin-form-grid">
               <input data-signup-id placeholder="user-id" data-i18n-placeholder="placeholder.signupId" />
               <input data-signup-name placeholder="name" data-i18n-placeholder="placeholder.signupName" />
+              <input data-signup-password type="password" placeholder="password" data-i18n-placeholder="placeholder.password" />
               <select data-signup-locale><option value="en">en</option><option value="ko">ko</option><option value="zh-CN">zh-CN</option><option value="ja">ja</option><option value="vi">vi</option><option value="de">de</option><option value="fr">fr</option></select>
               <input data-signup-group placeholder="group name" data-i18n-placeholder="placeholder.signupGroup" />
             </div>
