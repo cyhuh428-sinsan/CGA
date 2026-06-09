@@ -962,3 +962,14 @@
 - `scripts/check-studio-config.js`가 collaboration API route, 앱 refresh/action 함수, 서버 저장 파일, 서버 handler 존재를 감시하도록 보강했다.
 - `npm run studio:validate`를 통과했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 Studio 입력 placeholder 다국어 검증 보강
+- 신산님이 지적한 다국어 반응 문제의 연장선에서, Signup, Group Management, Group API Registry 입력칸의 placeholder가 locale 검증 대상에서 빠져 있음을 확인했다.
+- `apps/studio/index.html`에는 이미 `data-i18n-placeholder` 연결점이 붙어 있었으나, locale JSON과 `scripts/check-studio-config.js` 검증이 이를 충분히 감시하지 못했다.
+- `packages/i18n/locales/en.json`, `ko.json`, `de.json`, `fr.json`, `ja.json`, `vi.json`, `zh-CN.json`에 다음 placeholder 키를 추가했다.
+  - `placeholder.signupId`, `placeholder.signupName`, `placeholder.signupGroup`
+  - `placeholder.groupId`, `placeholder.groupName`
+  - `placeholder.apiName`, `placeholder.apiEndpoint`, `placeholder.apiResponsePath`
+- `apps/studio/i18n.js`를 locale JSON 기준으로 다시 동기화했다.
+- `scripts/check-studio-config.js`가 `data-i18n-placeholder` 키도 필수 locale key로 검사하도록 보강했다.
+- Aidot 코드는 수정하지 않았다.

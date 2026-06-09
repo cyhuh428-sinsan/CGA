@@ -416,5 +416,13 @@
   "collab.totalWork": "作業項目",
   "collab.reviewQueue": "レビューキュー",
   "collab.blockedItems": "ブロック項目",
-  "collab.teamReady": "チーム対応"
+  "collab.teamReady": "チーム対応",
+  "placeholder.signupId": "ユーザーID",
+  "placeholder.groupId": "グループID",
+  "placeholder.groupName": "グループ名",
+  "placeholder.signupName": "名前",
+  "placeholder.apiName": "API回答名",
+  "placeholder.signupGroup": "グループ名",
+  "placeholder.apiEndpoint": "エンドポイントURL",
+  "placeholder.apiResponsePath": "応答パス"
 }

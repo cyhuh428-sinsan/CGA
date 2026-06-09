@@ -417,7 +417,15 @@ const CGA_I18N_RESOURCES = {
     "collab.totalWork": "Arbeitselemente",
     "collab.reviewQueue": "Review-Warteschlange",
     "collab.blockedItems": "Blockierte Elemente",
-    "collab.teamReady": "Teamfähig"
+    "collab.teamReady": "Teamfähig",
+    "placeholder.signupId": "Benutzer-ID",
+    "placeholder.groupId": "Gruppen-ID",
+    "placeholder.groupName": "Gruppenname",
+    "placeholder.signupName": "Name",
+    "placeholder.apiName": "API-Antwortname",
+    "placeholder.signupGroup": "Gruppenname",
+    "placeholder.apiEndpoint": "Endpoint-URL",
+    "placeholder.apiResponsePath": "Antwortpfad"
   },
   "en": {
     "meta.localeName": "English",
@@ -837,7 +845,15 @@ const CGA_I18N_RESOURCES = {
     "collab.totalWork": "Work items",
     "collab.reviewQueue": "Review queue",
     "collab.blockedItems": "Blocked items",
-    "collab.teamReady": "Team-ready"
+    "collab.teamReady": "Team-ready",
+    "placeholder.signupId": "user-id",
+    "placeholder.groupId": "group-id",
+    "placeholder.groupName": "group name",
+    "placeholder.signupName": "name",
+    "placeholder.apiName": "api answer name",
+    "placeholder.signupGroup": "group name",
+    "placeholder.apiEndpoint": "endpoint url",
+    "placeholder.apiResponsePath": "response path"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1257,7 +1273,15 @@ const CGA_I18N_RESOURCES = {
     "collab.totalWork": "Éléments de travail",
     "collab.reviewQueue": "File de revue",
     "collab.blockedItems": "Éléments bloqués",
-    "collab.teamReady": "Prêt équipe"
+    "collab.teamReady": "Prêt équipe",
+    "placeholder.signupId": "ID utilisateur",
+    "placeholder.groupId": "ID du groupe",
+    "placeholder.groupName": "nom du groupe",
+    "placeholder.signupName": "nom",
+    "placeholder.apiName": "nom de réponse API",
+    "placeholder.signupGroup": "nom du groupe",
+    "placeholder.apiEndpoint": "URL endpoint",
+    "placeholder.apiResponsePath": "chemin de réponse"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1677,7 +1701,15 @@ const CGA_I18N_RESOURCES = {
     "collab.totalWork": "作業項目",
     "collab.reviewQueue": "レビューキュー",
     "collab.blockedItems": "ブロック項目",
-    "collab.teamReady": "チーム対応"
+    "collab.teamReady": "チーム対応",
+    "placeholder.signupId": "ユーザーID",
+    "placeholder.groupId": "グループID",
+    "placeholder.groupName": "グループ名",
+    "placeholder.signupName": "名前",
+    "placeholder.apiName": "API回答名",
+    "placeholder.signupGroup": "グループ名",
+    "placeholder.apiEndpoint": "エンドポイントURL",
+    "placeholder.apiResponsePath": "応答パス"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2097,7 +2129,15 @@ const CGA_I18N_RESOURCES = {
     "collab.totalWork": "작업 항목",
     "collab.reviewQueue": "검수 대기",
     "collab.blockedItems": "차단 항목",
-    "collab.teamReady": "팀 작업 가능"
+    "collab.teamReady": "팀 작업 가능",
+    "placeholder.signupId": "사용자 ID",
+    "placeholder.groupId": "그룹 ID",
+    "placeholder.groupName": "그룹 이름",
+    "placeholder.signupName": "이름",
+    "placeholder.apiName": "API 답변 이름",
+    "placeholder.signupGroup": "그룹 이름",
+    "placeholder.apiEndpoint": "엔드포인트 URL",
+    "placeholder.apiResponsePath": "응답 경로"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2517,7 +2557,15 @@ const CGA_I18N_RESOURCES = {
     "collab.totalWork": "Hạng mục công việc",
     "collab.reviewQueue": "Hàng đợi đánh giá",
     "collab.blockedItems": "Mục bị chặn",
-    "collab.teamReady": "Sẵn sàng cho nhóm"
+    "collab.teamReady": "Sẵn sàng cho nhóm",
+    "placeholder.signupId": "ID người dùng",
+    "placeholder.groupId": "ID nhóm",
+    "placeholder.groupName": "tên nhóm",
+    "placeholder.signupName": "tên",
+    "placeholder.apiName": "tên trả lời API",
+    "placeholder.signupGroup": "tên nhóm",
+    "placeholder.apiEndpoint": "URL endpoint",
+    "placeholder.apiResponsePath": "đường dẫn phản hồi"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -2937,7 +2985,15 @@ const CGA_I18N_RESOURCES = {
     "collab.totalWork": "工作项",
     "collab.reviewQueue": "审核队列",
     "collab.blockedItems": "阻塞项",
-    "collab.teamReady": "团队就绪"
+    "collab.teamReady": "团队就绪",
+    "placeholder.signupId": "用户ID",
+    "placeholder.groupId": "组ID",
+    "placeholder.groupName": "组名称",
+    "placeholder.signupName": "名称",
+    "placeholder.apiName": "API回答名称",
+    "placeholder.signupGroup": "组名称",
+    "placeholder.apiEndpoint": "端点URL",
+    "placeholder.apiResponsePath": "响应路径"
   }
 };
 

@@ -416,5 +416,13 @@
   "collab.totalWork": "Hạng mục công việc",
   "collab.reviewQueue": "Hàng đợi đánh giá",
   "collab.blockedItems": "Mục bị chặn",
-  "collab.teamReady": "Sẵn sàng cho nhóm"
+  "collab.teamReady": "Sẵn sàng cho nhóm",
+  "placeholder.signupId": "ID người dùng",
+  "placeholder.groupId": "ID nhóm",
+  "placeholder.groupName": "tên nhóm",
+  "placeholder.signupName": "tên",
+  "placeholder.apiName": "tên trả lời API",
+  "placeholder.signupGroup": "tên nhóm",
+  "placeholder.apiEndpoint": "URL endpoint",
+  "placeholder.apiResponsePath": "đường dẫn phản hồi"
 }
