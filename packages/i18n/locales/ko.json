@@ -416,5 +416,13 @@
   "collab.totalWork": "작업 항목",
   "collab.reviewQueue": "검수 대기",
   "collab.blockedItems": "차단 항목",
-  "collab.teamReady": "팀 작업 가능"
+  "collab.teamReady": "팀 작업 가능",
+  "placeholder.signupId": "사용자 ID",
+  "placeholder.groupId": "그룹 ID",
+  "placeholder.groupName": "그룹 이름",
+  "placeholder.signupName": "이름",
+  "placeholder.apiName": "API 답변 이름",
+  "placeholder.signupGroup": "그룹 이름",
+  "placeholder.apiEndpoint": "엔드포인트 URL",
+  "placeholder.apiResponsePath": "응답 경로"
 }

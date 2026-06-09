@@ -416,5 +416,13 @@
   "collab.totalWork": "工作项",
   "collab.reviewQueue": "审核队列",
   "collab.blockedItems": "阻塞项",
-  "collab.teamReady": "团队就绪"
+  "collab.teamReady": "团队就绪",
+  "placeholder.signupId": "用户ID",
+  "placeholder.groupId": "组ID",
+  "placeholder.groupName": "组名称",
+  "placeholder.signupName": "名称",
+  "placeholder.apiName": "API回答名称",
+  "placeholder.signupGroup": "组名称",
+  "placeholder.apiEndpoint": "端点URL",
+  "placeholder.apiResponsePath": "响应路径"
 }

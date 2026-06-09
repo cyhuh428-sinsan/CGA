@@ -416,5 +416,13 @@
   "collab.totalWork": "Arbeitselemente",
   "collab.reviewQueue": "Review-Warteschlange",
   "collab.blockedItems": "Blockierte Elemente",
-  "collab.teamReady": "Teamfähig"
+  "collab.teamReady": "Teamfähig",
+  "placeholder.signupId": "Benutzer-ID",
+  "placeholder.groupId": "Gruppen-ID",
+  "placeholder.groupName": "Gruppenname",
+  "placeholder.signupName": "Name",
+  "placeholder.apiName": "API-Antwortname",
+  "placeholder.signupGroup": "Gruppenname",
+  "placeholder.apiEndpoint": "Endpoint-URL",
+  "placeholder.apiResponsePath": "Antwortpfad"
 }

@@ -29,6 +29,7 @@ function extractLocaleKeys(source) {
   const keys = new Set();
   for (const match of source.matchAll(/data-i18n="([^"]+)"/g)) keys.add(match[1]);
   for (const match of source.matchAll(/data-error-key="([^"]+)"/g)) keys.add(match[1]);
+  for (const match of source.matchAll(/data-i18n-placeholder="([^"]+)"/g)) keys.add(match[1]);
   return keys;
 }
 
