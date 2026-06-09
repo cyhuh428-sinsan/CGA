@@ -439,5 +439,15 @@
   "errors.auth.groupCreateForbidden": "Nur ein Systemadministrator kann eine Gruppe erstellen.",
   "errors.auth.joinApprovalForbidden": "Nur der Administrator der Zielgruppe kann diese Beitrittsanfrage genehmigen.",
   "errors.auth.adminApprovalForbidden": "Nur der Systemadministrator kann Admin-Berechtigungsanfragen genehmigen.",
-  "errors.auth.sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+  "errors.auth.sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+  "message.actionFailedTitle": "Aktion fehlgeschlagen",
+  "message.actionForbiddenTitle": "Berechtigung erforderlich",
+  "message.actionFailedBody": "Die Aktion konnte nicht abgeschlossen werden.",
+  "errors.bot.createForbidden": "Sie haben keine Berechtigung, in dieser Gruppe Bots zu erstellen.",
+  "errors.bot.configureForbidden": "Sie haben keine Berechtigung, diesen Bot zu konfigurieren.",
+  "errors.bot.operateForbidden": "Sie haben keine Berechtigung, diesen Bot zu betreiben.",
+  "errors.bot.viewForbidden": "Sie haben keine Berechtigung, diesen Bot anzuzeigen.",
+  "errors.operations.actionForbidden": "Sie haben keine Berechtigung, diese Betriebsaktion auszuführen.",
+  "errors.collaboration.actionForbidden": "Sie haben keine Berechtigung, dieses Zusammenarbeitselement zu aktualisieren.",
+  "errors.apiAnswer.manageForbidden": "Sie haben keine Berechtigung, Gruppen-API-Antworten zu verwalten."
 }

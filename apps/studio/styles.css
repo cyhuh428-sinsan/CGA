@@ -148,6 +148,23 @@ button:disabled { opacity: .48; }
 .rail-note { margin-top: 18px; padding: 14px; border: 1px solid var(--muted-line); border-radius: 8px; background: #f8fafc; }
 .rail-note p { margin-top: 8px; color: var(--muted); font-size: var(--font-desc); line-height: 1.45; }
 .workspace { padding: 18px; display: grid; gap: 14px; align-content: start; }
+.global-message {
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fff7ed;
+  padding: 8px 10px;
+}
+.global-message strong {
+  display: block;
+  color: #9a3412;
+  font-size: var(--font-title);
+  margin-bottom: 3px;
+}
+.global-message span {
+  color: #7c2d12;
+  font-size: var(--font-desc);
+  line-height: 1.35;
+}
 .hero-panel, .screen-card, .check-list, .message-card { border: 1px solid var(--muted-line); border-radius: 8px; background: #fff; }
 .hero-panel { display: grid; grid-template-columns: 1fr 390px; gap: 16px; padding: 18px; background: #f8fafc; }
 .temporary-panel {

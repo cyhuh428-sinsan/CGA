@@ -439,5 +439,15 @@
   "errors.auth.groupCreateForbidden": "Seul un administrateur système peut créer un groupe.",
   "errors.auth.joinApprovalForbidden": "Seul l’administrateur du groupe cible peut approuver cette demande d’adhésion.",
   "errors.auth.adminApprovalForbidden": "Seul l’administrateur système peut approuver les demandes de droits administrateur.",
-  "errors.auth.sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
+  "errors.auth.sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+  "message.actionFailedTitle": "Action échouée",
+  "message.actionForbiddenTitle": "Autorisation requise",
+  "message.actionFailedBody": "L’action n’a pas pu être terminée.",
+  "errors.bot.createForbidden": "Vous n’avez pas l’autorisation de créer des bots dans ce groupe.",
+  "errors.bot.configureForbidden": "Vous n’avez pas l’autorisation de configurer ce bot.",
+  "errors.bot.operateForbidden": "Vous n’avez pas l’autorisation d’exploiter ce bot.",
+  "errors.bot.viewForbidden": "Vous n’avez pas l’autorisation de voir ce bot.",
+  "errors.operations.actionForbidden": "Vous n’avez pas l’autorisation d’exécuter cette opération.",
+  "errors.collaboration.actionForbidden": "Vous n’avez pas l’autorisation de mettre à jour cet élément de collaboration.",
+  "errors.apiAnswer.manageForbidden": "Vous n’avez pas l’autorisation de gérer les réponses API du groupe."
 }

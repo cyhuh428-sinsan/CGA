@@ -440,7 +440,17 @@ const CGA_I18N_RESOURCES = {
     "errors.auth.groupCreateForbidden": "Nur ein Systemadministrator kann eine Gruppe erstellen.",
     "errors.auth.joinApprovalForbidden": "Nur der Administrator der Zielgruppe kann diese Beitrittsanfrage genehmigen.",
     "errors.auth.adminApprovalForbidden": "Nur der Systemadministrator kann Admin-Berechtigungsanfragen genehmigen.",
-    "errors.auth.sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+    "errors.auth.sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "message.actionFailedTitle": "Aktion fehlgeschlagen",
+    "message.actionForbiddenTitle": "Berechtigung erforderlich",
+    "message.actionFailedBody": "Die Aktion konnte nicht abgeschlossen werden.",
+    "errors.bot.createForbidden": "Sie haben keine Berechtigung, in dieser Gruppe Bots zu erstellen.",
+    "errors.bot.configureForbidden": "Sie haben keine Berechtigung, diesen Bot zu konfigurieren.",
+    "errors.bot.operateForbidden": "Sie haben keine Berechtigung, diesen Bot zu betreiben.",
+    "errors.bot.viewForbidden": "Sie haben keine Berechtigung, diesen Bot anzuzeigen.",
+    "errors.operations.actionForbidden": "Sie haben keine Berechtigung, diese Betriebsaktion auszuführen.",
+    "errors.collaboration.actionForbidden": "Sie haben keine Berechtigung, dieses Zusammenarbeitselement zu aktualisieren.",
+    "errors.apiAnswer.manageForbidden": "Sie haben keine Berechtigung, Gruppen-API-Antworten zu verwalten."
   },
   "en": {
     "meta.localeName": "English",
@@ -883,7 +893,17 @@ const CGA_I18N_RESOURCES = {
     "errors.auth.groupCreateForbidden": "Only a system administrator can create a group.",
     "errors.auth.joinApprovalForbidden": "Only the target group administrator can approve this join request.",
     "errors.auth.adminApprovalForbidden": "Only the system administrator can approve admin permission requests.",
-    "errors.auth.sessionExpired": "Your session has expired. Please log in again."
+    "errors.auth.sessionExpired": "Your session has expired. Please log in again.",
+    "message.actionFailedTitle": "Action failed",
+    "message.actionForbiddenTitle": "Permission required",
+    "message.actionFailedBody": "The action could not be completed.",
+    "errors.bot.createForbidden": "You do not have permission to create bots in this group.",
+    "errors.bot.configureForbidden": "You do not have permission to configure this bot.",
+    "errors.bot.operateForbidden": "You do not have permission to operate this bot.",
+    "errors.bot.viewForbidden": "You do not have permission to view this bot.",
+    "errors.operations.actionForbidden": "You do not have permission to run this operation.",
+    "errors.collaboration.actionForbidden": "You do not have permission to update this collaboration item.",
+    "errors.apiAnswer.manageForbidden": "You do not have permission to manage group API answers."
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1326,7 +1346,17 @@ const CGA_I18N_RESOURCES = {
     "errors.auth.groupCreateForbidden": "Seul un administrateur système peut créer un groupe.",
     "errors.auth.joinApprovalForbidden": "Seul l’administrateur du groupe cible peut approuver cette demande d’adhésion.",
     "errors.auth.adminApprovalForbidden": "Seul l’administrateur système peut approuver les demandes de droits administrateur.",
-    "errors.auth.sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
+    "errors.auth.sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "message.actionFailedTitle": "Action échouée",
+    "message.actionForbiddenTitle": "Autorisation requise",
+    "message.actionFailedBody": "L’action n’a pas pu être terminée.",
+    "errors.bot.createForbidden": "Vous n’avez pas l’autorisation de créer des bots dans ce groupe.",
+    "errors.bot.configureForbidden": "Vous n’avez pas l’autorisation de configurer ce bot.",
+    "errors.bot.operateForbidden": "Vous n’avez pas l’autorisation d’exploiter ce bot.",
+    "errors.bot.viewForbidden": "Vous n’avez pas l’autorisation de voir ce bot.",
+    "errors.operations.actionForbidden": "Vous n’avez pas l’autorisation d’exécuter cette opération.",
+    "errors.collaboration.actionForbidden": "Vous n’avez pas l’autorisation de mettre à jour cet élément de collaboration.",
+    "errors.apiAnswer.manageForbidden": "Vous n’avez pas l’autorisation de gérer les réponses API du groupe."
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1769,7 +1799,17 @@ const CGA_I18N_RESOURCES = {
     "errors.auth.groupCreateForbidden": "グループを作成できるのはシステム管理者のみです。",
     "errors.auth.joinApprovalForbidden": "この参加リクエストを承認できるのは対象グループ管理者のみです。",
     "errors.auth.adminApprovalForbidden": "管理者権限リクエストを承認できるのはシステム管理者のみです。",
-    "errors.auth.sessionExpired": "セッションの有効期限が切れました。再度ログインしてください。"
+    "errors.auth.sessionExpired": "セッションの有効期限が切れました。再度ログインしてください。",
+    "message.actionFailedTitle": "操作失敗",
+    "message.actionForbiddenTitle": "権限が必要",
+    "message.actionFailedBody": "操作を完了できませんでした。",
+    "errors.bot.createForbidden": "このグループでボットを作成する権限がありません。",
+    "errors.bot.configureForbidden": "このボットを構成する権限がありません。",
+    "errors.bot.operateForbidden": "このボットを運用する権限がありません。",
+    "errors.bot.viewForbidden": "このボットを表示する権限がありません。",
+    "errors.operations.actionForbidden": "この運用操作を実行する権限がありません。",
+    "errors.collaboration.actionForbidden": "この共同作業項目を更新する権限がありません。",
+    "errors.apiAnswer.manageForbidden": "グループ API 回答を管理する権限がありません。"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2212,7 +2252,17 @@ const CGA_I18N_RESOURCES = {
     "errors.auth.groupCreateForbidden": "그룹 생성은 시스템 관리자만 할 수 있습니다.",
     "errors.auth.joinApprovalForbidden": "대상 그룹 관리자만 가입 요청을 승인할 수 있습니다.",
     "errors.auth.adminApprovalForbidden": "관리자 권한 요청은 시스템 관리자만 승인할 수 있습니다.",
-    "errors.auth.sessionExpired": "세션이 만료되었습니다. 다시 로그인하세요."
+    "errors.auth.sessionExpired": "세션이 만료되었습니다. 다시 로그인하세요.",
+    "message.actionFailedTitle": "작업 실패",
+    "message.actionForbiddenTitle": "권한 필요",
+    "message.actionFailedBody": "작업을 완료할 수 없습니다.",
+    "errors.bot.createForbidden": "이 그룹에서 봇을 생성할 권한이 없습니다.",
+    "errors.bot.configureForbidden": "이 봇을 구성할 권한이 없습니다.",
+    "errors.bot.operateForbidden": "이 봇을 운영할 권한이 없습니다.",
+    "errors.bot.viewForbidden": "이 봇을 볼 권한이 없습니다.",
+    "errors.operations.actionForbidden": "이 운영 작업을 실행할 권한이 없습니다.",
+    "errors.collaboration.actionForbidden": "이 협업 항목을 수정할 권한이 없습니다.",
+    "errors.apiAnswer.manageForbidden": "그룹 API 답변을 관리할 권한이 없습니다."
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2655,7 +2705,17 @@ const CGA_I18N_RESOURCES = {
     "errors.auth.groupCreateForbidden": "Chỉ quản trị viên hệ thống mới có thể tạo nhóm.",
     "errors.auth.joinApprovalForbidden": "Chỉ quản trị viên của nhóm đích mới có thể duyệt yêu cầu tham gia.",
     "errors.auth.adminApprovalForbidden": "Chỉ quản trị viên hệ thống mới có thể duyệt yêu cầu quyền quản trị.",
-    "errors.auth.sessionExpired": "Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại."
+    "errors.auth.sessionExpired": "Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại.",
+    "message.actionFailedTitle": "Thao tác thất bại",
+    "message.actionForbiddenTitle": "Cần quyền",
+    "message.actionFailedBody": "Không thể hoàn tất thao tác.",
+    "errors.bot.createForbidden": "Bạn không có quyền tạo bot trong nhóm này.",
+    "errors.bot.configureForbidden": "Bạn không có quyền cấu hình bot này.",
+    "errors.bot.operateForbidden": "Bạn không có quyền vận hành bot này.",
+    "errors.bot.viewForbidden": "Bạn không có quyền xem bot này.",
+    "errors.operations.actionForbidden": "Bạn không có quyền chạy thao tác vận hành này.",
+    "errors.collaboration.actionForbidden": "Bạn không có quyền cập nhật mục cộng tác này.",
+    "errors.apiAnswer.manageForbidden": "Bạn không có quyền quản lý câu trả lời API của nhóm."
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3098,7 +3158,17 @@ const CGA_I18N_RESOURCES = {
     "errors.auth.groupCreateForbidden": "只有系统管理员可以创建组。",
     "errors.auth.joinApprovalForbidden": "只有目标组管理员可以批准此加入请求。",
     "errors.auth.adminApprovalForbidden": "只有系统管理员可以批准管理员权限请求。",
-    "errors.auth.sessionExpired": "您的会话已过期。请重新登录。"
+    "errors.auth.sessionExpired": "您的会话已过期。请重新登录。",
+    "message.actionFailedTitle": "操作失败",
+    "message.actionForbiddenTitle": "需要权限",
+    "message.actionFailedBody": "无法完成该操作。",
+    "errors.bot.createForbidden": "您无权在此组中创建机器人。",
+    "errors.bot.configureForbidden": "您无权配置此机器人。",
+    "errors.bot.operateForbidden": "您无权运营此机器人。",
+    "errors.bot.viewForbidden": "您无权查看此机器人。",
+    "errors.operations.actionForbidden": "您无权执行此运营操作。",
+    "errors.collaboration.actionForbidden": "您无权更新此协作项目。",
+    "errors.apiAnswer.manageForbidden": "您无权管理组 API 回答。"
   }
 };
 

@@ -117,6 +117,55 @@
       "localeSource": "user.locale"
     },
     {
+      "code": "CGA_BOT_CREATE_FORBIDDEN",
+      "key": "errors.bot.createForbidden",
+      "domain": "bot",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_BOT_CONFIGURE_FORBIDDEN",
+      "key": "errors.bot.configureForbidden",
+      "domain": "bot",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_OPERATIONS_STATE_FORBIDDEN",
+      "key": "errors.bot.operateForbidden",
+      "domain": "bot",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_COLLABORATION_VIEW_FORBIDDEN",
+      "key": "errors.bot.viewForbidden",
+      "domain": "bot",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_OPERATIONS_ACTION_FORBIDDEN",
+      "key": "errors.operations.actionForbidden",
+      "domain": "operations",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_COLLABORATION_ACTION_FORBIDDEN",
+      "key": "errors.collaboration.actionForbidden",
+      "domain": "collaboration",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_API_ANSWER_MANAGE_FORBIDDEN",
+      "key": "errors.apiAnswer.manageForbidden",
+      "domain": "apiAnswer",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
       "code": "BOT_ANSWER_NOT_FOUND",
       "key": "botErrors.answer.notFound",
       "domain": "bot",
