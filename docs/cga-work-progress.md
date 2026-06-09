@@ -1453,3 +1453,24 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 이후 저장 실패/대기 상태를 화면에 어떻게 표시할지 검토한다. UI 표시 방식 변경은 화면 영향이 있으므로 신산님 확인 후 진행한다.
+
+### 2026-06-10 운영/협업 액션 stale 응답 차단
+- 화면 전환 중 Build/Test/Operate 또는 Team Dashboard 액션 응답이 늦게 도착하면, 이미 다른 그룹/봇 화면으로 이동한 뒤에도 이전 응답이 현재 화면 상태를 덮어쓸 위험을 확인했다.
+- 새 기능 추가가 아니라 기존 CGA Studio 화면 액션의 안전성 보강이다.
+- 기존 API 경로, 서버 저장 포맷, Aidot 호환 계약은 변경하지 않았다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - `runOperationsAction()`이 호출 시점의 `groupId`, `botId`를 먼저 캡처하도록 변경했다.
+  - Operations 액션 응답을 적용하기 전에 현재 선택된 그룹/봇이 요청 시점과 같은지 확인한다.
+  - `runCollaborationAction()`도 같은 방식으로 호출 시점의 `groupId`, `botId`를 캡처하고, 응답 적용 전 현재 화면과 비교한다.
+  - 응답이 현재 화면과 일치할 때만 `applyOperationsStateFromServer()`, `applyCollaborationStateFromServer()`를 실행하고 workspace snapshot을 갱신한다.
+  - 화면 전환 후 도착한 stale 응답은 화면에 적용하지 않는다.
+- `scripts/check-studio-config.js`
+  - Operations 액션이 `getOperationsStateUrl(groupId, botId, action)` 형태로 요청 시점 group/bot을 사용하지 않으면 실패하도록 검증을 추가했다.
+  - Collaboration 액션이 `getCollaborationStateUrl(groupId, botId, workItemId, action)` 형태로 요청 시점 group/bot을 사용하지 않으면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 다음 단계에서는 서버 API 호출 실패/저장 대기 상태를 화면에 표시하는 방식이 필요한지 검토한다. UI 표시 방식 변경은 화면 영향이 있으므로 신산님 확인 후 진행한다.

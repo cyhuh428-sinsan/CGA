@@ -1302,14 +1302,18 @@ async function saveCompositionToServer() {
 }
 
 async function runOperationsAction(action, body = {}) {
-  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
+  const groupId = currentWorkspaceGroupId;
+  const botId = currentWorkspaceBotId;
+  if (!groupId || !botId) return false;
   try {
-    const payload = await requestCgaJson(getOperationsStateUrl(currentWorkspaceGroupId, currentWorkspaceBotId, action), {
+    const payload = await requestCgaJson(getOperationsStateUrl(groupId, botId, action), {
       method: "POST",
       body
     });
     clearGlobalMessage();
+    if (groupId !== currentWorkspaceGroupId || botId !== currentWorkspaceBotId) return false;
     applyOperationsStateFromServer(payload.operations_state);
+    saveWorkspaceSnapshot();
     return true;
   } catch (error) {
     if (error.status) {
@@ -1322,13 +1326,17 @@ async function runOperationsAction(action, body = {}) {
 }
 
 async function runCollaborationAction(workItemId, action) {
-  if (!currentWorkspaceGroupId || !currentWorkspaceBotId || !workItemId || !action) return false;
+  const groupId = currentWorkspaceGroupId;
+  const botId = currentWorkspaceBotId;
+  if (!groupId || !botId || !workItemId || !action) return false;
   try {
-    const payload = await requestCgaJson(getCollaborationStateUrl(currentWorkspaceGroupId, currentWorkspaceBotId, workItemId, action), {
+    const payload = await requestCgaJson(getCollaborationStateUrl(groupId, botId, workItemId, action), {
       method: "POST"
     });
     clearGlobalMessage();
+    if (groupId !== currentWorkspaceGroupId || botId !== currentWorkspaceBotId) return false;
     applyCollaborationStateFromServer(payload.collaboration_state);
+    saveWorkspaceSnapshot();
     return true;
   } catch (error) {
     if (error.status) {
