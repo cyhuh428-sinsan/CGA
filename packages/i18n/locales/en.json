@@ -450,5 +450,12 @@
   "errors.operations.actionForbidden": "You do not have permission to run this operation.",
   "errors.collaboration.actionForbidden": "You do not have permission to update this collaboration item.",
   "errors.apiAnswer.manageForbidden": "You do not have permission to manage group API answers.",
-  "errors.auth.required": "Please log in to continue."
+  "errors.auth.required": "Please log in to continue.",
+  "errors.bot.exists": "A bot with this ID already exists in the group.",
+  "errors.http.methodNotAllowed": "This action is not available for the current request method.",
+  "errors.operations.actionNotFound": "The requested operation action was not found.",
+  "errors.collaboration.actionNotFound": "The requested collaboration action was not found.",
+  "errors.apiAnswer.requiredField": "API answer name and endpoint URL are required.",
+  "errors.asset.scopeNotFound": "The requested asset type is not supported.",
+  "errors.api.requestFailed": "The server could not complete the request."
 }

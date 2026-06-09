@@ -450,5 +450,12 @@
   "errors.operations.actionForbidden": "您无权执行此运营操作。",
   "errors.collaboration.actionForbidden": "您无权更新此协作项目。",
   "errors.apiAnswer.manageForbidden": "您无权管理组 API 回答。",
-  "errors.auth.required": "请先登录再继续。"
+  "errors.auth.required": "请先登录再继续。",
+  "errors.bot.exists": "该组中已存在相同 ID 的机器人。",
+  "errors.http.methodNotAllowed": "当前请求方法不能执行此操作。",
+  "errors.operations.actionNotFound": "未找到请求的运营操作。",
+  "errors.collaboration.actionNotFound": "未找到请求的协作操作。",
+  "errors.apiAnswer.requiredField": "必须填写 API 回答名称和端点 URL。",
+  "errors.asset.scopeNotFound": "不支持请求的资产类型。",
+  "errors.api.requestFailed": "服务器无法完成该请求。"
 }

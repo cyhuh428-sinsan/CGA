@@ -450,5 +450,12 @@
   "errors.operations.actionForbidden": "この運用操作を実行する権限がありません。",
   "errors.collaboration.actionForbidden": "この共同作業項目を更新する権限がありません。",
   "errors.apiAnswer.manageForbidden": "グループ API 回答を管理する権限がありません。",
-  "errors.auth.required": "続行するにはログインしてください。"
+  "errors.auth.required": "続行するにはログインしてください。",
+  "errors.bot.exists": "このグループには同じ ID のボットがすでに存在します。",
+  "errors.http.methodNotAllowed": "現在のリクエスト方式ではこの操作を実行できません。",
+  "errors.operations.actionNotFound": "要求された運用アクションが見つかりません。",
+  "errors.collaboration.actionNotFound": "要求された共同作業アクションが見つかりません。",
+  "errors.apiAnswer.requiredField": "API回答名とエンドポイントURLは必須です。",
+  "errors.asset.scopeNotFound": "要求されたアセット種別はサポートされていません。",
+  "errors.api.requestFailed": "サーバーはリクエストを完了できませんでした。"
 }

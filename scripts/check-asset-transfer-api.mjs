@@ -54,6 +54,12 @@ async function main() {
   if (manifest.request?.expected_file_format !== "txt") fail("manifest expected file format mismatch");
   if (!manifest.required_scopes?.importScopes?.includes("bot.configure")) fail("manifest import scope mismatch");
 
+  const invalidScopeResponse = await fetch(`${prefix}/assets/not-a-scope/manifest`);
+  const invalidScope = await invalidScopeResponse.json();
+  if (invalidScopeResponse.status !== 404) fail("invalid asset scope should return 404");
+  if (invalidScope.error_code !== "CGA_ASSET_SCOPE_NOT_FOUND") fail("invalid asset scope error code mismatch");
+  if (invalidScope.message_key !== "errors.asset.scopeNotFound") fail("invalid asset scope message key mismatch");
+
   const exportedText = await fetchText("/assets/dictionary/export");
   if (!exportedText.includes("대표어")) fail("dictionary export did not return Aidot TXT");
 

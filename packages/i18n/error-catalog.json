@@ -173,6 +173,55 @@
       "localeSource": "user.locale"
     },
     {
+      "code": "CGA_BOT_ALREADY_EXISTS",
+      "key": "errors.bot.exists",
+      "domain": "bot",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_METHOD_NOT_ALLOWED",
+      "key": "errors.http.methodNotAllowed",
+      "domain": "http",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_OPERATIONS_ACTION_NOT_FOUND",
+      "key": "errors.operations.actionNotFound",
+      "domain": "operations",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_COLLABORATION_ACTION_NOT_FOUND",
+      "key": "errors.collaboration.actionNotFound",
+      "domain": "collaboration",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_API_ANSWER_REQUIRED_FIELD_MISSING",
+      "key": "errors.apiAnswer.requiredField",
+      "domain": "apiAnswer",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_ASSET_SCOPE_NOT_FOUND",
+      "key": "errors.asset.scopeNotFound",
+      "domain": "asset",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_API_REQUEST_FAILED",
+      "key": "errors.api.requestFailed",
+      "domain": "api",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
       "code": "BOT_ANSWER_NOT_FOUND",
       "key": "botErrors.answer.notFound",
       "domain": "bot",

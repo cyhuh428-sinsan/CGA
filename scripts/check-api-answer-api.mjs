@@ -67,6 +67,16 @@ async function main() {
     }
   }, 403, "user without target group API answer scope should not create API answer");
 
+  const missingField = await expectStatus(registryPath, {
+    method: "POST",
+    userId: "u-builder",
+    body: {
+      name: "missing_endpoint"
+    }
+  }, 400, "API answer missing endpoint should be rejected");
+  if (missingField.error_code !== "CGA_API_ANSWER_REQUIRED_FIELD_MISSING") fail("missing API answer field error code mismatch");
+  if (missingField.message_key !== "errors.apiAnswer.requiredField") fail("missing API answer field message key mismatch");
+
   const created = await expectStatus(registryPath, {
     method: "POST",
     userId: "u-builder",
