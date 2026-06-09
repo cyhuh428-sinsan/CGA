@@ -477,5 +477,20 @@
   "authFlow.approval.label": "Approbation",
   "authFlow.approval.detail": "L’adhésion au groupe est créée après approbation",
   "authFlow.work.label": "Travail bot",
-  "authFlow.work.detail": "Les écrans s’ouvrent selon le rôle de groupe et les portées"
+  "authFlow.work.detail": "Les écrans s’ouvrent selon le rôle de groupe et les portées",
+  "transfer.asset.dictionary": "dictionnaire TXT",
+  "transfer.asset.intentUtterance": "énoncés d’intention TXT",
+  "transfer.asset.entity": "entités TXT",
+  "transfer.asset.rule": "règles TXT",
+  "transfer.asset.intentDialog": "dialogue d’intention JSON",
+  "transfer.asset.scenario": "scénario JSON",
+  "transfer.asset.apiMapping": "mappage API JSON",
+  "transfer.asset.botPackage": "paquet bot",
+  "transfer.asset.versionPackage": "paquet de version",
+  "transfer.status.downloaded": "{asset} téléchargé : {file}",
+  "transfer.status.downloadedServer": "{asset} téléchargé depuis l’API d’actifs serveur : {file}",
+  "transfer.status.uploadedRows": "{asset} téléversé : {count} ligne(s) fusionnée(s) / {sync}",
+  "transfer.status.uploadedItems": "{asset} téléversé : {count} élément(s) remplacé(s)",
+  "transfer.status.imported": "{asset} importé : {name}",
+  "transfer.status.updated": "Paquet mis à jour"
 }

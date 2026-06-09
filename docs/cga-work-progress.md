@@ -1308,3 +1308,23 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 이후 Access/Admin 화면의 실제 버튼 흐름을 브라우저 또는 별도 UI 검증 스크립트로 확인한다.
+
+### 2026-06-09 Bot 자산 전송 상태 메시지 다국어 보강
+- Bot Version / Package와 Reusable Bot Assets 영역에서 다운로드/업로드 후 표시되는 상태 메시지가 영어 문자열로 남아 있음을 확인했다.
+- 기능/API 구조는 변경하지 않고, 상태 메시지 생성만 사용자 언어 기반으로 변경했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - `formatMessage()`, `getTransferAssetLabel()`, `getTransferSyncLabel()`, `formatTransferDownloaded()`, `formatTransferUploaded()`, `appendTransferSyncStatus()` helper를 추가했다.
+  - 사전, 의도 학습문장, 개체, 규칙, 의도 대화, 시나리오, API 매핑, 봇 패키지, 버전 패키지 다운로드/업로드 상태 메시지를 i18n key 기반으로 변경했다.
+  - 서버 자산 API에서 받은 파일명, 로컬 다운로드 파일명, 업로드 row/item 수, 서버 저장/로컬 전용 상태를 `{file}`, `{count}`, `{sync}` 치환으로 표시한다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - `transfer.asset.*`, `transfer.status.*` 키를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+  - Studio 번들 i18n 리소스를 locale JSON 기준으로 다시 동기화했다.
+- `scripts/check-studio-config.js`
+  - 전송 상태 helper와 필수 locale key가 없으면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 이후 남아 있는 동적 영어 문구 후보를 계속 축소한다.

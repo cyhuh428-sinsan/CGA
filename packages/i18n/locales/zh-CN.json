@@ -477,5 +477,20 @@
   "authFlow.approval.label": "审批",
   "authFlow.approval.detail": "审批后创建组成员关系",
   "authFlow.work.label": "机器人工作",
-  "authFlow.work.detail": "根据组角色和权限范围开放屏幕"
+  "authFlow.work.detail": "根据组角色和权限范围开放屏幕",
+  "transfer.asset.dictionary": "词典 TXT",
+  "transfer.asset.intentUtterance": "意图语句 TXT",
+  "transfer.asset.entity": "实体 TXT",
+  "transfer.asset.rule": "规则 TXT",
+  "transfer.asset.intentDialog": "意图对话 JSON",
+  "transfer.asset.scenario": "场景 JSON",
+  "transfer.asset.apiMapping": "API映射 JSON",
+  "transfer.asset.botPackage": "机器人包",
+  "transfer.asset.versionPackage": "版本包",
+  "transfer.status.downloaded": "已下载 {asset}: {file}",
+  "transfer.status.downloadedServer": "已从服务器资产 API 下载 {asset}: {file}",
+  "transfer.status.uploadedRows": "已上传 {asset}: 合并 {count} 行 / {sync}",
+  "transfer.status.uploadedItems": "已上传 {asset}: 替换 {count} 个项目",
+  "transfer.status.imported": "已导入 {asset}: {name}",
+  "transfer.status.updated": "包已更新"
 }

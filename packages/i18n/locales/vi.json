@@ -477,5 +477,20 @@
   "authFlow.approval.label": "Phê duyệt",
   "authFlow.approval.detail": "Tư cách thành viên nhóm được tạo sau khi phê duyệt",
   "authFlow.work.label": "Công việc bot",
-  "authFlow.work.detail": "Màn hình mở theo vai trò nhóm và phạm vi quyền"
+  "authFlow.work.detail": "Màn hình mở theo vai trò nhóm và phạm vi quyền",
+  "transfer.asset.dictionary": "từ điển TXT",
+  "transfer.asset.intentUtterance": "câu huấn luyện ý định TXT",
+  "transfer.asset.entity": "thực thể TXT",
+  "transfer.asset.rule": "quy tắc TXT",
+  "transfer.asset.intentDialog": "hội thoại ý định JSON",
+  "transfer.asset.scenario": "kịch bản JSON",
+  "transfer.asset.apiMapping": "ánh xạ API JSON",
+  "transfer.asset.botPackage": "gói bot",
+  "transfer.asset.versionPackage": "gói phiên bản",
+  "transfer.status.downloaded": "Đã tải xuống {asset}: {file}",
+  "transfer.status.downloadedServer": "Đã tải xuống {asset} từ API tài sản máy chủ: {file}",
+  "transfer.status.uploadedRows": "Đã tải lên {asset}: gộp {count} dòng / {sync}",
+  "transfer.status.uploadedItems": "Đã tải lên {asset}: thay thế {count} mục",
+  "transfer.status.imported": "Đã nhập {asset}: {name}",
+  "transfer.status.updated": "Đã cập nhật gói"
 }

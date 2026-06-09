@@ -477,5 +477,20 @@
   "authFlow.approval.label": "Approval",
   "authFlow.approval.detail": "Group membership is created after approval",
   "authFlow.work.label": "Bot work",
-  "authFlow.work.detail": "Screens open from group role and scopes"
+  "authFlow.work.detail": "Screens open from group role and scopes",
+  "transfer.asset.dictionary": "dictionary TXT",
+  "transfer.asset.intentUtterance": "intent utterance TXT",
+  "transfer.asset.entity": "entity TXT",
+  "transfer.asset.rule": "rule TXT",
+  "transfer.asset.intentDialog": "intent dialog JSON",
+  "transfer.asset.scenario": "scenario JSON",
+  "transfer.asset.apiMapping": "API mapping JSON",
+  "transfer.asset.botPackage": "bot package",
+  "transfer.asset.versionPackage": "version package",
+  "transfer.status.downloaded": "Downloaded {asset}: {file}",
+  "transfer.status.downloadedServer": "Downloaded {asset} from server asset API: {file}",
+  "transfer.status.uploadedRows": "Uploaded {asset}: {count} row(s) merged / {sync}",
+  "transfer.status.uploadedItems": "Uploaded {asset}: {count} item(s) replaced",
+  "transfer.status.imported": "Imported {asset}: {name}",
+  "transfer.status.updated": "Updated package"
 }

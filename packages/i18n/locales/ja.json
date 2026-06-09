@@ -477,5 +477,20 @@
   "authFlow.approval.label": "承認",
   "authFlow.approval.detail": "承認後にグループメンバーシップが作成されます",
   "authFlow.work.label": "ボット作業",
-  "authFlow.work.detail": "グループロールとスコープに応じて画面が開きます"
+  "authFlow.work.detail": "グループロールとスコープに応じて画面が開きます",
+  "transfer.asset.dictionary": "辞書 TXT",
+  "transfer.asset.intentUtterance": "インテント発話 TXT",
+  "transfer.asset.entity": "エンティティ TXT",
+  "transfer.asset.rule": "ルール TXT",
+  "transfer.asset.intentDialog": "インテント対話 JSON",
+  "transfer.asset.scenario": "シナリオ JSON",
+  "transfer.asset.apiMapping": "APIマッピング JSON",
+  "transfer.asset.botPackage": "ボットパッケージ",
+  "transfer.asset.versionPackage": "バージョンパッケージ",
+  "transfer.status.downloaded": "{asset} をダウンロードしました: {file}",
+  "transfer.status.downloadedServer": "サーバー資産APIから {asset} をダウンロードしました: {file}",
+  "transfer.status.uploadedRows": "{asset} をアップロードしました: {count} 行をマージ / {sync}",
+  "transfer.status.uploadedItems": "{asset} をアップロードしました: {count} 件を置換",
+  "transfer.status.imported": "{asset} をインポートしました: {name}",
+  "transfer.status.updated": "パッケージを更新しました"
 }

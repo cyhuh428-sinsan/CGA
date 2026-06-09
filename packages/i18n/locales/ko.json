@@ -477,5 +477,20 @@
   "authFlow.approval.label": "승인",
   "authFlow.approval.detail": "승인 후 그룹 멤버십이 생성됩니다",
   "authFlow.work.label": "봇 작업",
-  "authFlow.work.detail": "그룹 역할과 scope에 따라 화면이 열립니다"
+  "authFlow.work.detail": "그룹 역할과 scope에 따라 화면이 열립니다",
+  "transfer.asset.dictionary": "사전 TXT",
+  "transfer.asset.intentUtterance": "의도 학습문장 TXT",
+  "transfer.asset.entity": "개체 TXT",
+  "transfer.asset.rule": "규칙 TXT",
+  "transfer.asset.intentDialog": "의도 대화 JSON",
+  "transfer.asset.scenario": "시나리오 JSON",
+  "transfer.asset.apiMapping": "API 매핑 JSON",
+  "transfer.asset.botPackage": "봇 패키지",
+  "transfer.asset.versionPackage": "버전 패키지",
+  "transfer.status.downloaded": "{asset} 다운로드 완료: {file}",
+  "transfer.status.downloadedServer": "서버 자산 API에서 {asset} 다운로드 완료: {file}",
+  "transfer.status.uploadedRows": "{asset} 업로드 완료: {count}행 병합 / {sync}",
+  "transfer.status.uploadedItems": "{asset} 업로드 완료: {count}개 항목 교체",
+  "transfer.status.imported": "{asset} 가져오기 완료: {name}",
+  "transfer.status.updated": "패키지 갱신 완료"
 }
