@@ -457,5 +457,14 @@
   "errors.collaboration.actionNotFound": "L’action de collaboration demandée est introuvable.",
   "errors.apiAnswer.requiredField": "Le nom de la réponse API et l’URL du point de terminaison sont obligatoires.",
   "errors.asset.scopeNotFound": "Le type de ressource demandé n’est pas pris en charge.",
-  "errors.api.requestFailed": "Le serveur n’a pas pu terminer la requête."
+  "errors.api.requestFailed": "Le serveur n’a pas pu terminer la requête.",
+  "access.roleSummary": "Rôles",
+  "access.groupCount": "Groupes",
+  "access.scopeCount": "Portées",
+  "access.userCount": "Utilisateurs",
+  "admin.reviewer": "réviseur",
+  "status.active": "actif",
+  "status.pending": "en attente",
+  "status.approved": "approuvé",
+  "status.deleted": "supprimé"
 }

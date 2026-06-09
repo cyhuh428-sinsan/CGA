@@ -457,5 +457,14 @@
   "errors.collaboration.actionNotFound": "Không tìm thấy thao tác cộng tác được yêu cầu.",
   "errors.apiAnswer.requiredField": "Tên trả lời API và URL endpoint là bắt buộc.",
   "errors.asset.scopeNotFound": "Loại tài sản được yêu cầu không được hỗ trợ.",
-  "errors.api.requestFailed": "Máy chủ không thể hoàn tất yêu cầu."
+  "errors.api.requestFailed": "Máy chủ không thể hoàn tất yêu cầu.",
+  "access.roleSummary": "Vai trò",
+  "access.groupCount": "Nhóm",
+  "access.scopeCount": "Quyền",
+  "access.userCount": "Người dùng",
+  "admin.reviewer": "người duyệt",
+  "status.active": "đang hoạt động",
+  "status.pending": "đang chờ",
+  "status.approved": "đã duyệt",
+  "status.deleted": "đã xóa"
 }

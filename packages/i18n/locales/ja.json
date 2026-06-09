@@ -457,5 +457,14 @@
   "errors.collaboration.actionNotFound": "要求された共同作業アクションが見つかりません。",
   "errors.apiAnswer.requiredField": "API回答名とエンドポイントURLは必須です。",
   "errors.asset.scopeNotFound": "要求されたアセット種別はサポートされていません。",
-  "errors.api.requestFailed": "サーバーはリクエストを完了できませんでした。"
+  "errors.api.requestFailed": "サーバーはリクエストを完了できませんでした。",
+  "access.roleSummary": "ロール",
+  "access.groupCount": "グループ",
+  "access.scopeCount": "権限",
+  "access.userCount": "ユーザー",
+  "admin.reviewer": "レビュー担当",
+  "status.active": "有効",
+  "status.pending": "保留中",
+  "status.approved": "承認済み",
+  "status.deleted": "削除済み"
 }

@@ -1264,3 +1264,27 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 pull 반영한다.
 - 이후 사용자/그룹 관리 화면을 실제 운영 UI에 가깝게 정리한다.
+
+### 2026-06-09 사용자/그룹 관리 운영 UI 1차 정리
+- 일반 작업 오류 다국어 표시 이후, System Administration의 User / Group Admin 화면을 실제 운영자가 읽기 쉬운 구조로 보강했다.
+- 새 서버 API나 Aidot 변경 없이, 기존 Access 상태와 Auth/Group API 응답을 화면에 더 명확히 표시하는 작업만 진행했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - 현재 세션 카드에 사용자 상태, 그룹/역할/권한 scope 요약 배지를 추가했다.
+  - 그룹 사용자 목록을 그룹 단위 카드로 정리하고, 그룹별 사용자 수와 사용자별 역할/언어를 칩 형태로 표시한다.
+  - 가입 요청/관리자 권한 요청 목록에 상태 배지를 표시한다.
+  - 그룹별 Bot/API 권한 scope를 읽기 쉬운 작은 배지 목록으로 표시한다.
+- `apps/studio/styles.css`
+  - 세션 헤더, access badge, status badge, scope list, group user member chip 스타일을 추가했다.
+  - 신산님이 정한 폰트 기준을 유지하기 위해 새 보조 정보는 `--font-desc` 중심으로 표시한다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - 새로 노출되는 Access/Admin 운영 문구를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+  - `access.roleSummary`, `access.groupCount`, `access.scopeCount`, `access.userCount`, `admin.reviewer`, `status.*` 키를 추가했다.
+- `scripts/check-studio-config.js`
+  - Access 운영 배지/상태 배지/멤버십 표시 helper가 누락되면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 이후 User / Group Admin 화면에서 실제 가입/로그인/그룹 생성/가입 요청/승인 흐름을 브라우저에서 확인한다.

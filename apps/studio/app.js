@@ -2566,6 +2566,19 @@ function bindWorkspaceActions() {
   });
 }
 
+function renderAccessBadge(label, value) {
+  return `<span class="access-badge"><b>${label}</b>${value}</span>`;
+}
+
+function renderStatusBadge(status) {
+  const normalized = String(status || "pending");
+  return `<span class="status-badge status-${normalized}">${t(`status.${normalized}`, normalized)}</span>`;
+}
+
+function formatMemberships(memberships) {
+  return memberships.map((item) => `${item.group_id}/${item.role}`).join(", ") || t("common.none", "None");
+}
+
 function renderAccessPanels() {
   const currentUserBadge = document.querySelector("[data-current-user-badge]");
   const accessOperations = document.querySelector("[data-access-operations]");
@@ -2596,9 +2609,18 @@ function renderAccessPanels() {
   if (loginIdInput && !loginIdInput.value) {
     loginIdInput.value = currentAccessState.currentUserId || loginUser.value || "";
   }
+  const currentRoles = [...new Set(current.memberships.map((item) => item.role))].join(", ") || t("common.noRole", "no role");
   currentSession.innerHTML = `
-    <strong>${current.user?.name || "User"}</strong>
-    <span>${current.user?.id || ""} · ${current.user?.locale || "en"} · ${current.memberships.map((item) => `${item.group_id}/${item.role}`).join(", ")}</span>
+    <div class="session-header">
+      <strong>${current.user?.name || "User"}</strong>
+      ${renderStatusBadge(current.user?.status || "active")}
+    </div>
+    <span>${current.user?.id || ""} · ${current.user?.locale || "en"} · ${formatMemberships(current.memberships)}</span>
+    <div class="access-badge-row">
+      ${renderAccessBadge(t("access.roleSummary", "Roles"), currentRoles)}
+      ${renderAccessBadge(t("access.groupCount", "Groups"), current.memberships.length)}
+      ${renderAccessBadge(t("access.scopeCount", "Scopes"), current.scopes.length)}
+    </div>
   `;
   if (authMessage) {
     authMessage.classList.toggle("auth-message", Boolean(currentAuthMessage));
@@ -2648,29 +2670,39 @@ function renderAccessPanels() {
     </div>
   `).join("");
   groupUsers.innerHTML = summarizeGroupUsers(currentAccessState).map((entry) => `
-    <div>
-      <strong>${entry.group.name}</strong>
-      <span>${entry.users.map(({ user, membership }) => `${user?.name || membership.user_id} / ${membership.role} / ${user?.locale || "en"}`).join(", ") || t("admin.noActiveUser", "No active user")}</span>
+    <div class="group-user-card">
+      <div class="session-header">
+        <strong>${entry.group.name}</strong>
+        ${renderAccessBadge(t("access.userCount", "Users"), entry.users.length)}
+      </div>
+      <div class="group-user-members">
+        ${entry.users.map(({ user, membership }) => `
+          <span>
+            <b>${user?.name || membership.user_id}</b>
+            ${membership.role} · ${user?.locale || "en"}
+          </span>
+        `).join("") || `<span>${t("admin.noActiveUser", "No active user")}</span>`}
+      </div>
     </div>
   `).join("");
   joinRequests.innerHTML = summarizeJoinRequests(currentAccessState).map((request) => `
     <div>
       <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
-      <span>${request.requested_role} · ${request.status}</span>
+      <span>${request.requested_role} · ${renderStatusBadge(request.status)}</span>
     </div>
   `).join("");
   adminRequests.innerHTML = summarizeAdminRequests(currentAccessState).map((request) => `
     <div>
       <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
-      <span>${request.requested_role} · ${request.status} · reviewer: admin</span>
+      <span>${request.requested_role} · ${renderStatusBadge(request.status)} · ${t("admin.reviewer", "reviewer")}: admin</span>
     </div>
   `).join("");
   groupAccess.innerHTML = summarizeGroupBotAccess(currentAccessState).map((access) => `
     <div><strong>${access.group?.name || "Group"}</strong><span>${access.botId}</span></div>
-    <div>${access.scopes.join(", ")}</div>
+    <div><span class="scope-list">${access.scopes.map((scope) => `<b>${scope}</b>`).join("")}</span></div>
   `).join("");
   screenAccess.innerHTML = `
-    <div class="current-user"><strong>${current.user?.name || "User"}</strong><span>${current.memberships.map((item) => item.group_id + " / " + item.role).join(", ")}</span></div>
+    <div class="current-user"><strong>${current.user?.name || "User"}</strong><span>${formatMemberships(current.memberships)}</span></div>
     ${current.screens.map((screen) => `
       <div class="${screen.allowed ? "allowed" : "denied"}">
         <strong>${screen.screenId}</strong>

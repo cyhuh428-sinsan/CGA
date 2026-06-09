@@ -457,5 +457,14 @@
   "errors.collaboration.actionNotFound": "Die angeforderte Kollaborationsaktion wurde nicht gefunden.",
   "errors.apiAnswer.requiredField": "API-Antwortname und Endpoint-URL sind erforderlich.",
   "errors.asset.scopeNotFound": "Der angeforderte Ressourcentyp wird nicht unterstützt.",
-  "errors.api.requestFailed": "Der Server konnte die Anfrage nicht abschließen."
+  "errors.api.requestFailed": "Der Server konnte die Anfrage nicht abschließen.",
+  "access.roleSummary": "Rollen",
+  "access.groupCount": "Gruppen",
+  "access.scopeCount": "Berechtigungen",
+  "access.userCount": "Benutzer",
+  "admin.reviewer": "Prüfer",
+  "status.active": "aktiv",
+  "status.pending": "ausstehend",
+  "status.approved": "genehmigt",
+  "status.deleted": "gelöscht"
 }
