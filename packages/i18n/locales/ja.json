@@ -426,5 +426,6 @@
   "placeholder.apiEndpoint": "エンドポイントURL",
   "placeholder.apiResponsePath": "応答パス",
   "placeholder.loginId": "ユーザーID",
-  "placeholder.password": "パスワード"
+  "placeholder.password": "パスワード",
+  "admin.logoutButton": "ログアウト"
 }

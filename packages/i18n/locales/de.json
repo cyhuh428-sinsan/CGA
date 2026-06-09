@@ -426,5 +426,6 @@
   "placeholder.apiEndpoint": "Endpoint-URL",
   "placeholder.apiResponsePath": "Antwortpfad",
   "placeholder.loginId": "Benutzer-ID",
-  "placeholder.password": "Passwort"
+  "placeholder.password": "Passwort",
+  "admin.logoutButton": "Abmelden"
 }

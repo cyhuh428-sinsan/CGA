@@ -31,23 +31,26 @@ async function waitForServer() {
   fail("auth API test server did not start");
 }
 
-async function requestJson(path, { method = "GET", userId = "u-builder", body } = {}) {
+async function requestJson(path, { method = "GET", userId = "u-builder", sessionToken = "", cookie = "", body } = {}) {
+  const headers = {
+    "Content-Type": "application/json; charset=utf-8",
+    "X-CGA-User-Id": userId
+  };
+  if (sessionToken) headers["X-CGA-Session-Token"] = sessionToken;
+  if (cookie) headers.Cookie = cookie;
   const response = await fetch(`${baseUrl}${path}`, {
     method,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "X-CGA-User-Id": userId
-    },
+    headers,
     body: body == null ? undefined : JSON.stringify(body)
   });
   const payload = await response.json();
-  return { response, payload };
+  return { response, payload, setCookie: response.headers.get("set-cookie") || "" };
 }
 
 async function expectOk(path, options, message) {
   const result = await requestJson(path, options);
   if (!result.response.ok) fail(`${message}: ${result.response.status}`);
-  return result.payload;
+  return result;
 }
 
 async function expectStatus(path, options, expectedStatus, message) {
@@ -59,7 +62,8 @@ async function expectStatus(path, options, expectedStatus, message) {
 async function main() {
   await waitForServer();
 
-  const me = await expectOk("/api/cga/auth/me", { userId: "u-builder" }, "me endpoint failed");
+  const meResult = await expectOk("/api/cga/auth/me", { userId: "u-builder" }, "me endpoint failed");
+  const me = meResult.payload;
   if (me.user?.id !== "u-builder") fail("me endpoint did not resolve header user");
   if (!Array.isArray(me.memberships) || !me.memberships.some((item) => item.group_id === "g-support")) fail("me endpoint did not return active memberships");
 
@@ -76,18 +80,28 @@ async function main() {
   if (signup.user?.id !== "u-api" || signup.locale !== "vi") fail("signup endpoint did not return created user session");
   if (!signup.groups?.some((group) => group.id === "g-u-api")) fail("signup endpoint did not create personal group");
 
-  const login = await expectOk("/api/cga/auth/login", {
+  const loginResult = await expectOk("/api/cga/auth/login", {
     method: "POST",
     body: { user_id: "u-api", password: "api-pass-1" }
   }, "login endpoint failed");
+  const login = loginResult.payload;
   if (login.user?.id !== "u-api") fail("login endpoint did not switch current user");
+  if (!login.session_token) fail("login endpoint did not return session token");
+  if (!loginResult.setCookie.includes("cga_session=")) fail("login endpoint did not set session cookie");
+
+  const tokenMeResult = await expectOk("/api/cga/auth/me", {
+    userId: "admin",
+    sessionToken: login.session_token
+  }, "me endpoint with session token failed");
+  if (tokenMeResult.payload.user?.id !== "u-api") fail("me endpoint did not resolve session token user");
 
   await expectStatus("/api/cga/auth/login", {
     method: "POST",
     body: { user_id: "u-api", password: "wrong-password" }
   }, 401, "wrong password should be blocked");
 
-  const groups = await expectOk("/api/cga/groups", { userId: "u-api" }, "groups endpoint failed");
+  const groupsResult = await expectOk("/api/cga/groups", { userId: "u-api" }, "groups endpoint failed");
+  const groups = groupsResult.payload;
   if (!groups.groups?.some((group) => group.id === "g-u-api")) fail("groups endpoint did not return persisted signup group");
 
   const joinRequest = await expectStatus("/api/cga/groups/join-requests", {
@@ -106,13 +120,15 @@ async function main() {
     userId: "u-builder"
   }, 403, "unauthorized join approval should be blocked");
 
-  const approvedJoin = await expectOk("/api/cga/groups/join-requests/jr-api-support/approve", {
+  const approvedJoinResult = await expectOk("/api/cga/groups/join-requests/jr-api-support/approve", {
     method: "POST",
     userId: "u-group-admin"
   }, "authorized join approval failed");
+  const approvedJoin = approvedJoinResult.payload;
   if (approvedJoin.request?.status !== "approved") fail("join request was not approved");
 
-  const joinedMe = await expectOk("/api/cga/auth/me", { userId: "u-api" }, "me after join failed");
+  const joinedMeResult = await expectOk("/api/cga/auth/me", { userId: "u-api" }, "me after join failed");
+  const joinedMe = joinedMeResult.payload;
   if (!joinedMe.memberships?.some((item) => item.group_id === "g-support" && item.role === "builder")) fail("approved join did not create group membership");
 
   await expectStatus("/api/cga/groups", {
@@ -144,11 +160,20 @@ async function main() {
     userId: "u-group-admin"
   }, 403, "group admin should not approve admin permission request");
 
-  const approvedAdmin = await expectOk("/api/cga/admin/permission-requests/ar-api-admin/approve", {
+  const approvedAdminResult = await expectOk("/api/cga/admin/permission-requests/ar-api-admin/approve", {
     method: "POST",
     userId: "admin"
   }, "system admin approval failed");
+  const approvedAdmin = approvedAdminResult.payload;
   if (approvedAdmin.request?.status !== "approved") fail("admin permission request was not approved");
+
+  const logoutResult = await expectOk("/api/cga/auth/logout", {
+    method: "POST",
+    userId: "admin",
+    sessionToken: login.session_token
+  }, "logout endpoint failed");
+  if (logoutResult.payload.status !== "logged_out") fail("logout endpoint did not return logged_out");
+  if (!logoutResult.setCookie.includes("Max-Age=0")) fail("logout endpoint did not clear session cookie");
 
   const accessStateFile = join(dataDir, "access-state.json");
   if (!existsSync(accessStateFile)) fail("access state file was not created");
@@ -163,6 +188,10 @@ async function main() {
   if (storedCredentialText.includes("api-pass-1")) fail("auth credentials file stores a raw password");
   const storedCredentials = JSON.parse(storedCredentialText);
   if (!storedCredentials.users?.["u-api"]?.hash) fail("auth credentials file did not persist password hash");
+  const authSessionsFile = join(dataDir, "auth-sessions.json");
+  if (!existsSync(authSessionsFile)) fail("auth sessions file was not created");
+  const storedSessions = JSON.parse(readFileSync(authSessionsFile, "utf8"));
+  if (storedSessions.sessions?.[login.session_token]) fail("logout did not remove the session token");
 
   console.log("OK auth and group API endpoints passed");
 }

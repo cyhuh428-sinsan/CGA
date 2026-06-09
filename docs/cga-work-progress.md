@@ -1053,3 +1053,49 @@
 #### 다음 작업
 - 로그인 1차는 완료됐지만 아직 운영형 세션은 아니다.
 - 다음 단계는 `토큰 또는 쿠키 기반 세션`, `로그아웃`, `현재 사용자 me 상태와 화면 권한의 일관성`, `운영 모드에서 로컬 fallback 제거 또는 dev-only 처리`를 순서대로 진행하는 것이 좋다.
+
+### 2026-06-09 로그인 2차: 세션 토큰/쿠키와 로그아웃 구현
+- 로그인 1차 이후 운영형 로그인에 가까워지도록 CGA 내부 인증 세션을 추가했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `packages/contracts/src/auth-api-contract.js`
+  - `/api/cga/auth/logout` route를 계약에 추가했다.
+  - `LOGOUT_CLEAR_SESSION` action을 추가했다.
+  - 인증 응답에 `session_token`, `expires_at`, `auth_scheme` 필드를 포함하도록 확장했다.
+- `scripts/serve-studio.js`
+  - `.cga-data/auth-sessions.json` 세션 저장 파일을 추가했다.
+  - 로그인/가입 성공 시 7일 TTL의 세션 토큰을 생성한다.
+  - 응답에는 `session_token`을 포함하고, 브라우저용 `cga_session` HttpOnly 쿠키도 설정한다.
+  - 요청 사용자 판정은 `Authorization: Bearer`, `X-CGA-Session-Token`, `cga_session` 쿠키를 먼저 확인하고, 없으면 기존 `X-CGA-User-Id` 헤더로 fallback 한다.
+  - `/api/cga/auth/logout`은 현재 세션 토큰을 `.cga-data/auth-sessions.json`에서 제거하고 쿠키를 만료시킨다.
+- `apps/studio/index.html`
+  - Login Session 영역에 `Logout` 버튼을 추가했다.
+- `apps/studio/app.js`
+  - 로그인/가입 성공 시 `session_token`을 `localStorage`에 저장한다.
+  - 이후 CGA 관리 API 호출에 `X-CGA-Session-Token`을 함께 보낸다.
+  - 로그아웃 시 `/api/cga/auth/logout`을 호출하고, 로컬 세션 토큰을 제거한 뒤 기본 `admin` 상태로 돌아간다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - `admin.logoutButton`을 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+- `scripts/check-auth-api.mjs`
+  - 로그인 응답에 `session_token`이 있는지 확인한다.
+  - `Set-Cookie: cga_session=...`이 내려오는지 확인한다.
+  - `X-CGA-Session-Token`만으로 `/api/cga/auth/me`가 로그인 사용자를 찾는지 확인한다.
+  - 로그아웃 후 세션 토큰이 `.cga-data/auth-sessions.json`에서 제거되는지 확인한다.
+- `scripts/check-studio-config.js`
+  - 로그아웃 버튼, logout route, 세션 토큰 저장/전송, 세션 저장 파일과 세션 생성/삭제 helper 존재를 검증한다.
+
+#### 검증 결과
+- `node --check scripts/serve-studio.js` 통과
+- `node --check apps/studio/app.js` 통과
+- `node --check scripts/check-auth-api.mjs` 통과
+- `node --check packages/contracts/src/auth-api-contract.js` 통과
+- `node scripts/check-auth-api.mjs` 통과
+- `node scripts/check-studio-config.js` 통과
+- `npm run studio:validate` 통과
+- 기존 경고 `MODULE_TYPELESS_PACKAGE_JSON`는 계속 표시되지만 실패가 아니다.
+
+#### 다음 작업
+- 지금은 기존 개발 편의를 위해 `X-CGA-User-Id` fallback을 유지한다.
+- 운영 모드에서는 이 fallback을 제거하거나 dev-only로 제한해야 한다.
+- 다음 인증 단계는 `로그인 실패 메시지 화면 표시`, `세션 만료 시 자동 로그아웃`, `권한 없는 화면 접근 시 사용자 언어 기반 오류 표시`가 적절하다.

@@ -9,6 +9,7 @@ const dataDir = path.resolve(process.env.CGA_DATA_DIR || path.join(root, ".cga-d
 const assetTransferHistoryFile = path.join(dataDir, "asset-transfer-history.json");
 const accessStateFile = path.join(dataDir, "access-state.json");
 const authCredentialsFile = path.join(dataDir, "auth-credentials.json");
+const authSessionsFile = path.join(dataDir, "auth-sessions.json");
 const apiAnswerRegistryFile = path.join(dataDir, "api-answer-registry.json");
 const workspaceBotsFile = path.join(dataDir, "workspace-bots.json");
 const studioStateRegistryFile = path.join(dataDir, "studio-state-registry.json");
@@ -59,6 +60,8 @@ function writeJsonFile(filePath, payload) {
 const PASSWORD_ITERATIONS = 120000;
 const PASSWORD_KEY_LENGTH = 32;
 const PASSWORD_DIGEST = "sha256";
+const SESSION_COOKIE = "cga_session";
+const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
   return {
@@ -114,6 +117,84 @@ function saveAuthCredentials(credentials) {
   return credentials;
 }
 
+function loadAuthSessions() {
+  const stored = loadJsonFile(authSessionsFile, null);
+  if (stored && typeof stored === "object" && stored.sessions && typeof stored.sessions === "object") return stored;
+  return { version: 1, sessions: {} };
+}
+
+function saveAuthSessions(sessions) {
+  writeJsonFile(authSessionsFile, sessions);
+  return sessions;
+}
+
+function createSessionCookie(token, maxAgeSeconds = Math.floor(SESSION_TTL_MS / 1000)) {
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
+}
+
+function createExpiredSessionCookie() {
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+}
+
+function parseCookies(headerValue = "") {
+  return Object.fromEntries(String(headerValue).split(";").map((part) => {
+    const [name, ...rest] = part.trim().split("=");
+    return [name, rest.join("=")];
+  }).filter(([name]) => name));
+}
+
+function getSessionToken(req) {
+  const auth = String(req.headers.authorization || "");
+  if (auth.toLowerCase().startsWith("bearer ")) return auth.slice(7).trim();
+  if (req.headers["x-cga-session-token"]) return String(req.headers["x-cga-session-token"]);
+  return parseCookies(req.headers.cookie || "")[SESSION_COOKIE] || "";
+}
+
+function createAuthSession(userId) {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
+  const token = crypto.randomBytes(32).toString("hex");
+  const sessions = loadAuthSessions();
+  saveAuthSessions({
+    ...sessions,
+    sessions: {
+      ...sessions.sessions,
+      [token]: {
+        user_id: userId,
+        created_at: now.toISOString(),
+        expires_at: expiresAt.toISOString()
+      }
+    }
+  });
+  return { token, expiresAt: expiresAt.toISOString() };
+}
+
+function resolveSessionUserId(req, state) {
+  const token = getSessionToken(req);
+  if (!token) return "";
+  const sessions = loadAuthSessions();
+  const session = sessions.sessions?.[token];
+  const activeUser = state.users?.some((user) => user.id === session?.user_id && user.status !== "deleted");
+  if (!session || !activeUser || new Date(session.expires_at).getTime() <= Date.now()) {
+    if (session) {
+      const { [token]: _expired, ...remaining } = sessions.sessions;
+      saveAuthSessions({ ...sessions, sessions: remaining });
+    }
+    return "";
+  }
+  return session.user_id;
+}
+
+function deleteAuthSession(req) {
+  const token = getSessionToken(req);
+  if (!token) return false;
+  const sessions = loadAuthSessions();
+  if (!sessions.sessions?.[token]) return false;
+  const { [token]: _deleted, ...remaining } = sessions.sessions;
+  saveAuthSessions({ ...sessions, sessions: remaining });
+  return true;
+}
+
 function loadAssetTransferHistory() {
   const history = loadJsonFile(assetTransferHistoryFile, []);
   return Array.isArray(history) ? history : [];
@@ -139,7 +220,7 @@ function saveAccessState(state) {
 }
 
 function getActorId(req, state) {
-  return req.headers["x-cga-user-id"] || state.currentUserId || "admin";
+  return resolveSessionUserId(req, state) || req.headers["x-cga-user-id"] || state.currentUserId || "admin";
 }
 
 function loadApiAnswerRegistry() {
@@ -429,8 +510,9 @@ function readStoredAssetBody({ groupId, botId, scope, fileFormat }) {
   return fs.readFileSync(filePath, "utf8");
 }
 
-function sendJson(res, status, payload) {
-  send(res, status, JSON.stringify(payload, null, 2), "application/json; charset=utf-8");
+function sendJson(res, status, payload, headers = {}) {
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", ...headers });
+  res.end(JSON.stringify(payload, null, 2));
 }
 
 function sendDownload(res, fileName, body, type) {
@@ -470,6 +552,7 @@ function parseAssetTransferPath(urlPath) {
 function parseAuthApiPath(urlPath) {
   if (urlPath === "/api/cga/auth/signup") return { action: "signup" };
   if (urlPath === "/api/cga/auth/login") return { action: "login" };
+  if (urlPath === "/api/cga/auth/logout") return { action: "logout" };
   if (urlPath === "/api/cga/auth/me") return { action: "me" };
   if (urlPath === "/api/cga/groups") return { action: "groups" };
   if (urlPath === "/api/cga/groups/join-requests") return { action: "joinRequests" };
@@ -994,12 +1077,19 @@ async function handleApiAnswerApi(req, res, urlPath) {
   return true;
 }
 
-async function createAccessSessionResponse(state, userId = state.currentUserId) {
+async function createAccessSessionResponse(state, userId = state.currentUserId, session = null) {
   const authContract = await import("../packages/contracts/src/auth-api-contract.js");
   const user = state.users.find((item) => item.id === userId) || null;
   const memberships = state.memberships.filter((item) => item.user_id === userId && item.status === "active");
   const groups = state.groups.filter((group) => memberships.some((membership) => membership.group_id === group.id));
-  return authContract.createAuthSessionResponse({ user, memberships, groups, locale: user?.locale });
+  return authContract.createAuthSessionResponse({
+    user,
+    memberships,
+    groups,
+    locale: user?.locale,
+    sessionToken: session?.token || null,
+    expiresAt: session?.expiresAt || null
+  });
 }
 
 async function handleAuthApi(req, res, urlPath) {
@@ -1082,7 +1172,8 @@ async function handleAuthApi(req, res, urlPath) {
         [body.user_id]: hashPassword(body.password)
       }
     });
-    sendJson(res, 201, await createAccessSessionResponse(next, body.user_id));
+    const session = createAuthSession(body.user_id);
+    sendJson(res, 201, await createAccessSessionResponse(next, body.user_id, session), { "Set-Cookie": createSessionCookie(session.token) });
     return true;
   }
 
@@ -1103,7 +1194,18 @@ async function handleAuthApi(req, res, urlPath) {
     }
     const next = accessStateModule.loginAsUser(state, { userId });
     saveAccessState(next);
-    sendJson(res, 200, await createAccessSessionResponse(next));
+    const session = createAuthSession(userId);
+    sendJson(res, 200, await createAccessSessionResponse(next, userId, session), { "Set-Cookie": createSessionCookie(session.token) });
+    return true;
+  }
+
+  if (parsed.action === "logout") {
+    if (req.method !== "POST") {
+      sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+      return true;
+    }
+    deleteAuthSession(req);
+    sendJson(res, 200, { status: "logged_out" }, { "Set-Cookie": createExpiredSessionCookie() });
     return true;
   }
 

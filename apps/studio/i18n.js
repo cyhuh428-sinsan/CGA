@@ -427,7 +427,8 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiEndpoint": "Endpoint-URL",
     "placeholder.apiResponsePath": "Antwortpfad",
     "placeholder.loginId": "Benutzer-ID",
-    "placeholder.password": "Passwort"
+    "placeholder.password": "Passwort",
+    "admin.logoutButton": "Abmelden"
   },
   "en": {
     "meta.localeName": "English",
@@ -857,7 +858,8 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiEndpoint": "endpoint url",
     "placeholder.apiResponsePath": "response path",
     "placeholder.loginId": "user-id",
-    "placeholder.password": "password"
+    "placeholder.password": "password",
+    "admin.logoutButton": "Logout"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1287,7 +1289,8 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiEndpoint": "URL endpoint",
     "placeholder.apiResponsePath": "chemin de réponse",
     "placeholder.loginId": "ID utilisateur",
-    "placeholder.password": "mot de passe"
+    "placeholder.password": "mot de passe",
+    "admin.logoutButton": "Déconnexion"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1717,7 +1720,8 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiEndpoint": "エンドポイントURL",
     "placeholder.apiResponsePath": "応答パス",
     "placeholder.loginId": "ユーザーID",
-    "placeholder.password": "パスワード"
+    "placeholder.password": "パスワード",
+    "admin.logoutButton": "ログアウト"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2147,7 +2151,8 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiEndpoint": "엔드포인트 URL",
     "placeholder.apiResponsePath": "응답 경로",
     "placeholder.loginId": "사용자 ID",
-    "placeholder.password": "비밀번호"
+    "placeholder.password": "비밀번호",
+    "admin.logoutButton": "로그아웃"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2577,7 +2582,8 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiEndpoint": "URL endpoint",
     "placeholder.apiResponsePath": "đường dẫn phản hồi",
     "placeholder.loginId": "ID người dùng",
-    "placeholder.password": "mật khẩu"
+    "placeholder.password": "mật khẩu",
+    "admin.logoutButton": "Đăng xuất"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3007,7 +3013,8 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiEndpoint": "端点URL",
     "placeholder.apiResponsePath": "响应路径",
     "placeholder.loginId": "用户ID",
-    "placeholder.password": "密码"
+    "placeholder.password": "密码",
+    "admin.logoutButton": "退出登录"
   }
 };
 

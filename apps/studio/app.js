@@ -28,6 +28,8 @@ import {
   summarizeJoinRequests
 } from "/packages/public-core/src/access-state.js";
 
+const AUTH_SESSION_STORAGE_KEY = "cga-studio-session-token";
+
 const currentStudioState = structuredClone(sampleStudioState);
 let currentCollaborationState = createSampleCollaborationState();
 let currentAccessState = createSampleAccessState();
@@ -818,10 +820,21 @@ function getFileNameFromContentDisposition(value) {
 }
 
 function getCgaAuthHeaders() {
-  return {
+  const headers = {
     "Content-Type": "application/json; charset=utf-8",
     "X-CGA-User-Id": currentAccessState.currentUserId || "admin"
   };
+  const token = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+  if (token) headers["X-CGA-Session-Token"] = token;
+  return headers;
+}
+
+function rememberAuthSession(session) {
+  if (session?.session_token) localStorage.setItem(AUTH_SESSION_STORAGE_KEY, session.session_token);
+}
+
+function clearAuthSession() {
+  localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
 }
 
 async function requestCgaJson(path, { method = "GET", body } = {}) {
@@ -2683,6 +2696,7 @@ function bindAdminActionButtons() {
 function bindAdminWorkbench() {
   const loginSubmit = document.querySelector("[data-login-submit]");
   const loginUser = document.querySelector("[data-login-user]");
+  const logoutSubmit = document.querySelector("[data-logout-submit]");
   const signupSubmit = document.querySelector("[data-signup-submit]");
   const groupCreate = document.querySelector("[data-group-create]");
   const joinSubmit = document.querySelector("[data-join-submit]");
@@ -2705,6 +2719,7 @@ function bindAdminWorkbench() {
       if (!userId || !password) return;
       try {
         const session = await requestCgaJson("/api/cga/auth/login", { method: "POST", body: { user_id: userId, password } });
+        rememberAuthSession(session);
         currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
         await refreshAccessStateFromServer();
         rerenderAdminAndAccess();
@@ -2713,6 +2728,18 @@ function bindAdminWorkbench() {
         currentAccessState = loginAsUser(currentAccessState, { userId });
         rerenderAdminAndAccess();
       }
+    });
+  }
+  if (logoutSubmit && logoutSubmit.dataset.bound !== "true") {
+    logoutSubmit.dataset.bound = "true";
+    logoutSubmit.addEventListener("click", async () => {
+      try {
+        await requestCgaJson("/api/cga/auth/logout", { method: "POST" });
+      } catch {
+      }
+      clearAuthSession();
+      currentAccessState = loginAsUser(currentAccessState, { userId: "admin" });
+      rerenderAdminAndAccess();
     });
   }
   if (signupSubmit && signupSubmit.dataset.bound !== "true") {
@@ -2735,6 +2762,7 @@ function bindAdminWorkbench() {
             group_name: groupName
           }
         });
+        rememberAuthSession(session);
         currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || id };
         await refreshAccessStateFromServer();
         rerenderAdminAndAccess();

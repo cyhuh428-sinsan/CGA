@@ -3,6 +3,7 @@ import { USER_ROLES } from "./access-contract.js";
 export const AUTH_API_ROUTES = Object.freeze({
   SIGNUP: "/api/cga/auth/signup",
   LOGIN: "/api/cga/auth/login",
+  LOGOUT: "/api/cga/auth/logout",
   ME: "/api/cga/auth/me",
   GROUPS: "/api/cga/groups",
   GROUP_JOIN_REQUESTS: "/api/cga/groups/join-requests",
@@ -12,6 +13,7 @@ export const AUTH_API_ROUTES = Object.freeze({
 export const AUTH_API_ACTIONS = Object.freeze({
   SIGNUP_CREATE_OWN_GROUP: "signup.createOwnGroup",
   LOGIN_LOAD_MEMBERSHIPS: "login.loadMemberships",
+  LOGOUT_CLEAR_SESSION: "logout.clearSession",
   REQUEST_GROUP_JOIN: "group.requestJoin",
   APPROVE_GROUP_JOIN: "group.approveJoin",
   REQUEST_ADMIN_PERMISSION: "admin.requestPermission",
@@ -50,11 +52,14 @@ export function createAdminPermissionRequestPayload({ groupId = null, requestedR
   };
 }
 
-export function createAuthSessionResponse({ user, memberships, groups, locale }) {
+export function createAuthSessionResponse({ user, memberships, groups, locale, sessionToken = null, expiresAt = null }) {
   return {
     user,
     memberships,
     groups,
-    locale: locale || user?.locale || "en"
+    locale: locale || user?.locale || "en",
+    session_token: sessionToken,
+    expires_at: expiresAt,
+    auth_scheme: sessionToken ? "cookie_or_bearer" : "header_or_existing_session"
   };
 }
