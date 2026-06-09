@@ -47,7 +47,30 @@ const requiredDynamicKeys = [
   "admin.systemAdminRequired",
   "admin.approve",
   "apiAnswer.noApiAnswer",
-  "apiAnswer.registerForBot"
+  "apiAnswer.registerForBot",
+  "team.available",
+  "team.noAssignedTask",
+  "team.noReviewWaiting",
+  "team.noBlockedItem",
+  "team.currentUser",
+  "team.unassigned",
+  "team.lockedBy",
+  "team.lock",
+  "team.unlock",
+  "team.requestChanges",
+  "team.moveToTodo",
+  "state.bot",
+  "state.locale",
+  "state.intents",
+  "state.documents",
+  "state.readiness",
+  "state.notNamed",
+  "state.ready",
+  "state.pdfAvailable",
+  "state.pdfBlockedLlm",
+  "state.kakaoAvailableKo",
+  "state.kakaoDisabledNonKo",
+  "state.noBlockingIssue"
 ];
 
 const failures = [];
