@@ -450,5 +450,12 @@
   "errors.operations.actionForbidden": "Sie haben keine Berechtigung, diese Betriebsaktion auszuführen.",
   "errors.collaboration.actionForbidden": "Sie haben keine Berechtigung, dieses Zusammenarbeitselement zu aktualisieren.",
   "errors.apiAnswer.manageForbidden": "Sie haben keine Berechtigung, Gruppen-API-Antworten zu verwalten.",
-  "errors.auth.required": "Bitte melden Sie sich an, um fortzufahren."
+  "errors.auth.required": "Bitte melden Sie sich an, um fortzufahren.",
+  "errors.bot.exists": "In dieser Gruppe gibt es bereits einen Bot mit dieser ID.",
+  "errors.http.methodNotAllowed": "Diese Aktion ist mit der aktuellen Anfragemethode nicht verfügbar.",
+  "errors.operations.actionNotFound": "Die angeforderte Betriebsaktion wurde nicht gefunden.",
+  "errors.collaboration.actionNotFound": "Die angeforderte Kollaborationsaktion wurde nicht gefunden.",
+  "errors.apiAnswer.requiredField": "API-Antwortname und Endpoint-URL sind erforderlich.",
+  "errors.asset.scopeNotFound": "Der angeforderte Ressourcentyp wird nicht unterstützt.",
+  "errors.api.requestFailed": "Der Server konnte die Anfrage nicht abschließen."
 }

@@ -450,5 +450,12 @@
   "errors.operations.actionForbidden": "Bạn không có quyền chạy thao tác vận hành này.",
   "errors.collaboration.actionForbidden": "Bạn không có quyền cập nhật mục cộng tác này.",
   "errors.apiAnswer.manageForbidden": "Bạn không có quyền quản lý câu trả lời API của nhóm.",
-  "errors.auth.required": "Vui lòng đăng nhập để tiếp tục."
+  "errors.auth.required": "Vui lòng đăng nhập để tiếp tục.",
+  "errors.bot.exists": "Nhóm này đã có bot dùng cùng ID.",
+  "errors.http.methodNotAllowed": "Phương thức yêu cầu hiện tại không thể thực hiện thao tác này.",
+  "errors.operations.actionNotFound": "Không tìm thấy thao tác vận hành được yêu cầu.",
+  "errors.collaboration.actionNotFound": "Không tìm thấy thao tác cộng tác được yêu cầu.",
+  "errors.apiAnswer.requiredField": "Tên trả lời API và URL endpoint là bắt buộc.",
+  "errors.asset.scopeNotFound": "Loại tài sản được yêu cầu không được hỗ trợ.",
+  "errors.api.requestFailed": "Máy chủ không thể hoàn tất yêu cầu."
 }

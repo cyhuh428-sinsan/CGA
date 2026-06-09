@@ -151,6 +151,7 @@ if (!studioAppSource.includes("AUTH_SESSION_STORAGE_KEY")) fail("studio app does
 if (!studioAppSource.includes("X-CGA-Session-Token")) fail("studio app does not send auth session tokens");
 if (!studioAppSource.includes("CGA_SESSION_EXPIRED")) fail("studio app does not handle expired sessions");
 if (!studioAppSource.includes("showApiErrorMessage")) fail("studio app does not show API errors to users");
+if (!studioAppSource.includes("createCgaResponseError")) fail("studio app does not convert non-JSON asset errors into localized API messages");
 if (!studioAppSource.includes("message.actionForbiddenTitle")) fail("studio app does not use localized action-forbidden messages");
 if (!studioAppSource.includes("synced === false")) fail("studio collaboration fallback does not distinguish server denial from local fallback");
 if (!studioAppSource.includes("/api/cga/auth/logout")) fail("studio app is missing logout API call");
@@ -234,6 +235,17 @@ if (!studioServerSource.includes("handleDetailAssetApi")) fail("studio server do
 if (!studioServerSource.includes("handleOperationsStateApi")) fail("studio server does not route Build/Test/Operate state API");
 if (!studioServerSource.includes("handleCollaborationStateApi")) fail("studio server does not route Team Dashboard collaboration state API");
 if (!studioServerSource.includes("handleApiAnswerApi")) fail("studio server does not route Group API Registry API");
+for (const key of [
+  "errors.bot.exists",
+  "errors.http.methodNotAllowed",
+  "errors.operations.actionNotFound",
+  "errors.collaboration.actionNotFound",
+  "errors.apiAnswer.requiredField",
+  "errors.asset.scopeNotFound",
+  "errors.api.requestFailed"
+]) {
+  if (!catalogKeys.includes(key)) fail(`error catalog missing general action error key '${key}'`);
+}
 if (process.exitCode !== 1) pass("studio auth, group, and API answer routes exist");
 
 if (!studioAppSource.includes("downloadAssetFromServer")) fail("studio app does not download reusable assets through server API");

@@ -451,7 +451,14 @@ const CGA_I18N_RESOURCES = {
     "errors.operations.actionForbidden": "Sie haben keine Berechtigung, diese Betriebsaktion auszuführen.",
     "errors.collaboration.actionForbidden": "Sie haben keine Berechtigung, dieses Zusammenarbeitselement zu aktualisieren.",
     "errors.apiAnswer.manageForbidden": "Sie haben keine Berechtigung, Gruppen-API-Antworten zu verwalten.",
-    "errors.auth.required": "Bitte melden Sie sich an, um fortzufahren."
+    "errors.auth.required": "Bitte melden Sie sich an, um fortzufahren.",
+    "errors.bot.exists": "In dieser Gruppe gibt es bereits einen Bot mit dieser ID.",
+    "errors.http.methodNotAllowed": "Diese Aktion ist mit der aktuellen Anfragemethode nicht verfügbar.",
+    "errors.operations.actionNotFound": "Die angeforderte Betriebsaktion wurde nicht gefunden.",
+    "errors.collaboration.actionNotFound": "Die angeforderte Kollaborationsaktion wurde nicht gefunden.",
+    "errors.apiAnswer.requiredField": "API-Antwortname und Endpoint-URL sind erforderlich.",
+    "errors.asset.scopeNotFound": "Der angeforderte Ressourcentyp wird nicht unterstützt.",
+    "errors.api.requestFailed": "Der Server konnte die Anfrage nicht abschließen."
   },
   "en": {
     "meta.localeName": "English",
@@ -905,7 +912,14 @@ const CGA_I18N_RESOURCES = {
     "errors.operations.actionForbidden": "You do not have permission to run this operation.",
     "errors.collaboration.actionForbidden": "You do not have permission to update this collaboration item.",
     "errors.apiAnswer.manageForbidden": "You do not have permission to manage group API answers.",
-    "errors.auth.required": "Please log in to continue."
+    "errors.auth.required": "Please log in to continue.",
+    "errors.bot.exists": "A bot with this ID already exists in the group.",
+    "errors.http.methodNotAllowed": "This action is not available for the current request method.",
+    "errors.operations.actionNotFound": "The requested operation action was not found.",
+    "errors.collaboration.actionNotFound": "The requested collaboration action was not found.",
+    "errors.apiAnswer.requiredField": "API answer name and endpoint URL are required.",
+    "errors.asset.scopeNotFound": "The requested asset type is not supported.",
+    "errors.api.requestFailed": "The server could not complete the request."
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1359,7 +1373,14 @@ const CGA_I18N_RESOURCES = {
     "errors.operations.actionForbidden": "Vous n’avez pas l’autorisation d’exécuter cette opération.",
     "errors.collaboration.actionForbidden": "Vous n’avez pas l’autorisation de mettre à jour cet élément de collaboration.",
     "errors.apiAnswer.manageForbidden": "Vous n’avez pas l’autorisation de gérer les réponses API du groupe.",
-    "errors.auth.required": "Veuillez vous connecter pour continuer."
+    "errors.auth.required": "Veuillez vous connecter pour continuer.",
+    "errors.bot.exists": "Un bot avec cet ID existe déjà dans ce groupe.",
+    "errors.http.methodNotAllowed": "Cette action n’est pas disponible avec la méthode de requête actuelle.",
+    "errors.operations.actionNotFound": "L’action d’exploitation demandée est introuvable.",
+    "errors.collaboration.actionNotFound": "L’action de collaboration demandée est introuvable.",
+    "errors.apiAnswer.requiredField": "Le nom de la réponse API et l’URL du point de terminaison sont obligatoires.",
+    "errors.asset.scopeNotFound": "Le type de ressource demandé n’est pas pris en charge.",
+    "errors.api.requestFailed": "Le serveur n’a pas pu terminer la requête."
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1813,7 +1834,14 @@ const CGA_I18N_RESOURCES = {
     "errors.operations.actionForbidden": "この運用操作を実行する権限がありません。",
     "errors.collaboration.actionForbidden": "この共同作業項目を更新する権限がありません。",
     "errors.apiAnswer.manageForbidden": "グループ API 回答を管理する権限がありません。",
-    "errors.auth.required": "続行するにはログインしてください。"
+    "errors.auth.required": "続行するにはログインしてください。",
+    "errors.bot.exists": "このグループには同じ ID のボットがすでに存在します。",
+    "errors.http.methodNotAllowed": "現在のリクエスト方式ではこの操作を実行できません。",
+    "errors.operations.actionNotFound": "要求された運用アクションが見つかりません。",
+    "errors.collaboration.actionNotFound": "要求された共同作業アクションが見つかりません。",
+    "errors.apiAnswer.requiredField": "API回答名とエンドポイントURLは必須です。",
+    "errors.asset.scopeNotFound": "要求されたアセット種別はサポートされていません。",
+    "errors.api.requestFailed": "サーバーはリクエストを完了できませんでした。"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2267,7 +2295,14 @@ const CGA_I18N_RESOURCES = {
     "errors.operations.actionForbidden": "이 운영 작업을 실행할 권한이 없습니다.",
     "errors.collaboration.actionForbidden": "이 협업 항목을 수정할 권한이 없습니다.",
     "errors.apiAnswer.manageForbidden": "그룹 API 답변을 관리할 권한이 없습니다.",
-    "errors.auth.required": "계속하려면 로그인해야 합니다."
+    "errors.auth.required": "계속하려면 로그인해야 합니다.",
+    "errors.bot.exists": "이 그룹에 같은 ID의 봇이 이미 있습니다.",
+    "errors.http.methodNotAllowed": "현재 요청 방식으로는 이 작업을 실행할 수 없습니다.",
+    "errors.operations.actionNotFound": "요청한 운영 작업을 찾을 수 없습니다.",
+    "errors.collaboration.actionNotFound": "요청한 협업 작업을 찾을 수 없습니다.",
+    "errors.apiAnswer.requiredField": "API 답변 이름과 엔드포인트 URL은 필수입니다.",
+    "errors.asset.scopeNotFound": "요청한 자산 유형은 지원되지 않습니다.",
+    "errors.api.requestFailed": "서버가 요청을 완료하지 못했습니다."
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2721,7 +2756,14 @@ const CGA_I18N_RESOURCES = {
     "errors.operations.actionForbidden": "Bạn không có quyền chạy thao tác vận hành này.",
     "errors.collaboration.actionForbidden": "Bạn không có quyền cập nhật mục cộng tác này.",
     "errors.apiAnswer.manageForbidden": "Bạn không có quyền quản lý câu trả lời API của nhóm.",
-    "errors.auth.required": "Vui lòng đăng nhập để tiếp tục."
+    "errors.auth.required": "Vui lòng đăng nhập để tiếp tục.",
+    "errors.bot.exists": "Nhóm này đã có bot dùng cùng ID.",
+    "errors.http.methodNotAllowed": "Phương thức yêu cầu hiện tại không thể thực hiện thao tác này.",
+    "errors.operations.actionNotFound": "Không tìm thấy thao tác vận hành được yêu cầu.",
+    "errors.collaboration.actionNotFound": "Không tìm thấy thao tác cộng tác được yêu cầu.",
+    "errors.apiAnswer.requiredField": "Tên trả lời API và URL endpoint là bắt buộc.",
+    "errors.asset.scopeNotFound": "Loại tài sản được yêu cầu không được hỗ trợ.",
+    "errors.api.requestFailed": "Máy chủ không thể hoàn tất yêu cầu."
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3175,7 +3217,14 @@ const CGA_I18N_RESOURCES = {
     "errors.operations.actionForbidden": "您无权执行此运营操作。",
     "errors.collaboration.actionForbidden": "您无权更新此协作项目。",
     "errors.apiAnswer.manageForbidden": "您无权管理组 API 回答。",
-    "errors.auth.required": "请先登录再继续。"
+    "errors.auth.required": "请先登录再继续。",
+    "errors.bot.exists": "该组中已存在相同 ID 的机器人。",
+    "errors.http.methodNotAllowed": "当前请求方法不能执行此操作。",
+    "errors.operations.actionNotFound": "未找到请求的运营操作。",
+    "errors.collaboration.actionNotFound": "未找到请求的协作操作。",
+    "errors.apiAnswer.requiredField": "必须填写 API 回答名称和端点 URL。",
+    "errors.asset.scopeNotFound": "不支持请求的资产类型。",
+    "errors.api.requestFailed": "服务器无法完成该请求。"
   }
 };
 

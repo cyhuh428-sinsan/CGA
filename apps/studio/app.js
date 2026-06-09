@@ -879,6 +879,19 @@ function clearAuthSession() {
   localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
 }
 
+async function createCgaResponseError(response, fallbackMessage) {
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = { fallback_message: fallbackMessage || `CGA request failed: ${response.status}` };
+  }
+  const error = new Error(payload?.error_code || payload?.message_key || fallbackMessage || `CGA request failed: ${response.status}`);
+  error.status = response.status;
+  error.payload = payload;
+  return error;
+}
+
 async function requestCgaJson(path, { method = "GET", body } = {}) {
   const response = await fetch(path, {
     method,
@@ -948,13 +961,16 @@ async function runAccessServerAction(action, fallback) {
 
 async function downloadAssetFromServer(assetKey) {
   try {
-    const response = await fetch(getAssetTransferUrl(assetKey, "export"));
-    if (!response.ok) return "";
+    const response = await fetch(getAssetTransferUrl(assetKey, "export"), {
+      headers: getCgaAuthHeaders()
+    });
+    if (!response.ok) throw await createCgaResponseError(response, "Asset download failed.");
     const fileName = getFileNameFromContentDisposition(response.headers.get("Content-Disposition")) ||
       `CGA_${getAssetTransferScope(assetKey)}_${getSafeFileName(currentWorkspaceBotId, "bot")}_${getTodayStamp()}.${getAssetTransferFileFormat(assetKey)}`;
     downloadBlobFile(fileName, await response.blob());
     return fileName;
-  } catch {
+  } catch (error) {
+    if (error.status) showApiErrorMessage(error);
     return "";
   }
 }
@@ -964,13 +980,16 @@ async function uploadAssetToServer(assetKey, body, fileName) {
     const response = await fetch(getAssetTransferUrl(assetKey, "import"), {
       method: "POST",
       headers: {
+        ...getCgaAuthHeaders(),
         "Content-Type": getAssetTransferFileFormat(assetKey) === "json" ? "application/json; charset=utf-8" : "text/plain; charset=utf-8",
         "X-CGA-File-Name": fileName || `uploaded.${getAssetTransferFileFormat(assetKey)}`
       },
       body
     });
+    if (!response.ok) throw await createCgaResponseError(response, "Asset upload failed.");
     return response.ok;
-  } catch {
+  } catch (error) {
+    if (error.status) showApiErrorMessage(error);
     return false;
   }
 }

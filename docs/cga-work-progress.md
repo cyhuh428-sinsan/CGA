@@ -1232,3 +1232,35 @@
 #### 다음 작업
 - 커밋/push 후 WSL deploy 폴더에 pull 받고 운영 compose config를 다시 확인한다.
 - 이후 일반 작업 오류(API 필드 누락, 중복, 업로드 실패)를 같은 메시지 체계로 확장한다.
+
+### 2026-06-09 일반 작업 오류 다국어 표시 보강
+- 인증/권한 오류 표시 이후, API 필드 누락/중복/지원하지 않는 자산/잘못된 액션/서버 요청 실패 같은 일반 작업 오류도 같은 i18n 오류 체계로 묶었다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `packages/i18n/error-catalog.json`
+  - 서버가 이미 반환하던 `message_key` 중 카탈로그에 없던 일반 오류를 추가했다.
+  - 추가한 오류:
+    - `CGA_BOT_ALREADY_EXISTS` → `errors.bot.exists`
+    - `CGA_METHOD_NOT_ALLOWED` → `errors.http.methodNotAllowed`
+    - `CGA_OPERATIONS_ACTION_NOT_FOUND` → `errors.operations.actionNotFound`
+    - `CGA_COLLABORATION_ACTION_NOT_FOUND` → `errors.collaboration.actionNotFound`
+    - `CGA_API_ANSWER_REQUIRED_FIELD_MISSING` → `errors.apiAnswer.requiredField`
+    - `CGA_ASSET_SCOPE_NOT_FOUND` → `errors.asset.scopeNotFound`
+    - `CGA_API_REQUEST_FAILED` → `errors.api.requestFailed`
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - 위 오류 메시지를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+  - Studio 번들 i18n 리소스를 locale JSON 기준으로 다시 동기화했다.
+- `apps/studio/app.js`
+  - 자산 다운로드/업로드 API가 실패할 때 조용히 무시하지 않고 서버의 `message_key`를 공통 메시지 영역에 표시하도록 했다.
+  - 자산 다운로드/업로드 요청에도 CGA 세션 헤더를 함께 보내도록 보강했다.
+- `scripts/check-api-answer-api.mjs`
+  - API 답변 필수 필드 누락 시 `400 CGA_API_ANSWER_REQUIRED_FIELD_MISSING`와 `errors.apiAnswer.requiredField`가 반환되는지 검증한다.
+- `scripts/check-asset-transfer-api.mjs`
+  - 지원하지 않는 자산 scope 요청 시 `404 CGA_ASSET_SCOPE_NOT_FOUND`와 `errors.asset.scopeNotFound`가 반환되는지 검증한다.
+- `scripts/check-studio-config.js`
+  - 일반 작업 오류 키가 error catalog에 누락되면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 pull 반영한다.
+- 이후 사용자/그룹 관리 화면을 실제 운영 UI에 가깝게 정리한다.
