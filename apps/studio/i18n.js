@@ -495,7 +495,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.imported": "{asset} importiert: {name}",
     "transfer.status.updated": "Paket aktualisiert",
     "apiAnswer.manageAllowed": "API-Antworten verwaltbar",
-    "apiAnswer.manageBlocked": "Blockiert: apiAnswer.manage"
+    "apiAnswer.manageBlocked": "Blockiert: apiAnswer.manage",
+    "workspace.createAllowed": "Bots können erstellt werden",
+    "workspace.createBlocked": "Blockiert: bot.create"
   },
   "en": {
     "meta.localeName": "English",
@@ -993,7 +995,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.imported": "Imported {asset}: {name}",
     "transfer.status.updated": "Updated package",
     "apiAnswer.manageAllowed": "Can manage API answers",
-    "apiAnswer.manageBlocked": "Blocked: apiAnswer.manage"
+    "apiAnswer.manageBlocked": "Blocked: apiAnswer.manage",
+    "workspace.createAllowed": "Can create bots",
+    "workspace.createBlocked": "Blocked: bot.create"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1491,7 +1495,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.imported": "{asset} importé : {name}",
     "transfer.status.updated": "Paquet mis à jour",
     "apiAnswer.manageAllowed": "Peut gérer les réponses API",
-    "apiAnswer.manageBlocked": "Bloqué : apiAnswer.manage"
+    "apiAnswer.manageBlocked": "Bloqué : apiAnswer.manage",
+    "workspace.createAllowed": "Peut créer des bots",
+    "workspace.createBlocked": "Bloqué : bot.create"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1989,7 +1995,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.imported": "{asset} をインポートしました: {name}",
     "transfer.status.updated": "パッケージを更新しました",
     "apiAnswer.manageAllowed": "API回答を管理できます",
-    "apiAnswer.manageBlocked": "ブロック: apiAnswer.manage"
+    "apiAnswer.manageBlocked": "ブロック: apiAnswer.manage",
+    "workspace.createAllowed": "ボットを作成できます",
+    "workspace.createBlocked": "ブロック: bot.create"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2487,7 +2495,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.imported": "{asset} 가져오기 완료: {name}",
     "transfer.status.updated": "패키지 갱신 완료",
     "apiAnswer.manageAllowed": "API 답변 관리 가능",
-    "apiAnswer.manageBlocked": "차단됨: apiAnswer.manage"
+    "apiAnswer.manageBlocked": "차단됨: apiAnswer.manage",
+    "workspace.createAllowed": "봇 생성 가능",
+    "workspace.createBlocked": "차단: bot.create"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2985,7 +2995,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.imported": "Đã nhập {asset}: {name}",
     "transfer.status.updated": "Đã cập nhật gói",
     "apiAnswer.manageAllowed": "Có thể quản lý trả lời API",
-    "apiAnswer.manageBlocked": "Bị chặn: apiAnswer.manage"
+    "apiAnswer.manageBlocked": "Bị chặn: apiAnswer.manage",
+    "workspace.createAllowed": "Có thể tạo bot",
+    "workspace.createBlocked": "Bị chặn: bot.create"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3483,7 +3495,9 @@ const CGA_I18N_RESOURCES = {
     "transfer.status.imported": "已导入 {asset}: {name}",
     "transfer.status.updated": "包已更新",
     "apiAnswer.manageAllowed": "可管理API回答",
-    "apiAnswer.manageBlocked": "已阻止：apiAnswer.manage"
+    "apiAnswer.manageBlocked": "已阻止：apiAnswer.manage",
+    "workspace.createAllowed": "可创建机器人",
+    "workspace.createBlocked": "已阻止：bot.create"
   }
 };
 

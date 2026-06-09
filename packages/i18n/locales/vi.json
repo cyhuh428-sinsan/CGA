@@ -494,5 +494,7 @@
   "transfer.status.imported": "Đã nhập {asset}: {name}",
   "transfer.status.updated": "Đã cập nhật gói",
   "apiAnswer.manageAllowed": "Có thể quản lý trả lời API",
-  "apiAnswer.manageBlocked": "Bị chặn: apiAnswer.manage"
+  "apiAnswer.manageBlocked": "Bị chặn: apiAnswer.manage",
+  "workspace.createAllowed": "Có thể tạo bot",
+  "workspace.createBlocked": "Bị chặn: bot.create"
 }

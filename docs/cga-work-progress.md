@@ -1346,3 +1346,22 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 이후 작업 화면에 남은 fallback 영어 문자열을 계속 줄인다.
+
+### 2026-06-09 Bot Workspace 생성 권한 상태 다국어 보강
+- Bot Workspace의 현재 그룹 카드에서 생성 가능 상태가 `bot.create` scope 코드로 직접 표시되는 것을 확인했다.
+- 권한 구조와 scope 값은 그대로 유지하고, 화면 표시 문구만 사용자 언어 기반으로 변경했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - 현재 그룹 카드의 생성 권한 상태를 `workspace.createAllowed`, `workspace.createBlocked` i18n key로 표시하도록 변경했다.
+  - `dynamicMessages`에도 7개 locale(en, ko, zh-CN, ja, vi, de, fr) 문구를 추가해 화면 언어 전환 시 즉시 반영되도록 했다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - Bot Workspace 생성 권한 상태 문구를 7개 locale에 추가했다.
+  - Studio 번들 i18n 리소스를 locale JSON 기준으로 다시 동기화했다.
+- `scripts/check-studio-config.js`, `scripts/check-studio-dynamic-i18n.js`
+  - Bot Workspace 생성 권한 상태 key가 누락되면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
+- 이후 남아 있는 화면 동적 문구 중 사용자에게 직접 보이는 권한/scope/상태 표시를 계속 축소한다.

@@ -494,5 +494,7 @@
   "transfer.status.imported": "已导入 {asset}: {name}",
   "transfer.status.updated": "包已更新",
   "apiAnswer.manageAllowed": "可管理API回答",
-  "apiAnswer.manageBlocked": "已阻止：apiAnswer.manage"
+  "apiAnswer.manageBlocked": "已阻止：apiAnswer.manage",
+  "workspace.createAllowed": "可创建机器人",
+  "workspace.createBlocked": "已阻止：bot.create"
 }

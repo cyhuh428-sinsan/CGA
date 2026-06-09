@@ -179,6 +179,8 @@ const dynamicMessages = {
     "workspace.createBotToStart": "Create a bot to start the workflow.",
     "workspace.botCount": "bot(s)",
     "workspace.blockedCreate": "blocked: bot.create",
+    "workspace.createAllowed": "Can create bots",
+    "workspace.createBlocked": "Blocked: bot.create",
     "top.groupPrefix": "Group",
     "top.botPrefix": "Bot",
     "top.versionPrefix": "Version",
@@ -253,6 +255,8 @@ const dynamicMessages = {
     "workspace.createBotToStart": "봇을 생성하면 제작 흐름을 시작할 수 있습니다.",
     "workspace.botCount": "개 봇",
     "workspace.blockedCreate": "차단: bot.create",
+    "workspace.createAllowed": "봇 생성 가능",
+    "workspace.createBlocked": "차단: bot.create",
     "top.groupPrefix": "그룹",
     "top.botPrefix": "봇",
     "top.versionPrefix": "버전",
@@ -327,6 +331,8 @@ const dynamicMessages = {
     "workspace.createBotToStart": "Erstellen Sie einen Bot, um den Workflow zu starten.",
     "workspace.botCount": " Bot(s)",
     "workspace.blockedCreate": "blockiert: bot.create",
+    "workspace.createAllowed": "Bots können erstellt werden",
+    "workspace.createBlocked": "Blockiert: bot.create",
     "top.groupPrefix": "Gruppe",
     "top.botPrefix": "Bot",
     "top.versionPrefix": "Version",
@@ -401,6 +407,8 @@ const dynamicMessages = {
     "workspace.createBotToStart": "ボットを作成するとワークフローを開始できます。",
     "workspace.botCount": "個のボット",
     "workspace.blockedCreate": "ブロック: bot.create",
+    "workspace.createAllowed": "ボットを作成できます",
+    "workspace.createBlocked": "ブロック: bot.create",
     "top.groupPrefix": "グループ",
     "top.botPrefix": "ボット",
     "top.versionPrefix": "バージョン",
@@ -475,6 +483,8 @@ const dynamicMessages = {
     "workspace.createBotToStart": "创建机器人即可开始流程。",
     "workspace.botCount": "个机器人",
     "workspace.blockedCreate": "阻止: bot.create",
+    "workspace.createAllowed": "可创建机器人",
+    "workspace.createBlocked": "已阻止：bot.create",
     "top.groupPrefix": "组",
     "top.botPrefix": "机器人",
     "top.versionPrefix": "版本",
@@ -549,6 +559,8 @@ const dynamicMessages = {
     "workspace.createBotToStart": "Tạo bot để bắt đầu quy trình.",
     "workspace.botCount": "bot",
     "workspace.blockedCreate": "bị chặn: bot.create",
+    "workspace.createAllowed": "Có thể tạo bot",
+    "workspace.createBlocked": "Bị chặn: bot.create",
     "top.groupPrefix": "Nhóm",
     "top.botPrefix": "Bot",
     "top.versionPrefix": "Phiên bản",
@@ -623,6 +635,8 @@ const dynamicMessages = {
     "workspace.createBotToStart": "Créez un bot pour démarrer le flux.",
     "workspace.botCount": "bot(s)",
     "workspace.blockedCreate": "bloqué : bot.create",
+    "workspace.createAllowed": "Peut créer des bots",
+    "workspace.createBlocked": "Bloqué : bot.create",
     "top.groupPrefix": "Groupe",
     "top.botPrefix": "Bot",
     "top.versionPrefix": "Version",
@@ -2249,7 +2263,7 @@ function renderWorkspaceHome() {
   const canCreateBot = canCreateBotInCurrentWorkspace();
   groupSelect.innerHTML = groups.map((item) => `<option value="${item.id}" ${item.id === currentWorkspaceGroupId ? "selected" : ""}>${item.name}</option>`).join("");
   summary.innerHTML = `
-    <div><strong>${group?.name || t("workspace.noGroup", "No group")}</strong><span>${bots.length}${t("workspace.botCount", " bot(s)")} · ${currentAccessState.currentUserId} · ${canCreateBot ? "bot.create" : t("workspace.blockedCreate", "blocked: bot.create")}</span></div>
+    <div><strong>${group?.name || t("workspace.noGroup", "No group")}</strong><span>${bots.length}${t("workspace.botCount", " bot(s)")} · ${currentAccessState.currentUserId} · ${canCreateBot ? t("workspace.createAllowed", "Can create bots") : t("workspace.createBlocked", "Blocked: bot.create")}</span></div>
   `;
   if (createButton) createButton.disabled = !canCreateBot;
   botList.innerHTML = bots.map((bot) => `
