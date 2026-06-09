@@ -427,5 +427,17 @@
   "placeholder.apiResponsePath": "đường dẫn phản hồi",
   "placeholder.loginId": "ID người dùng",
   "placeholder.password": "mật khẩu",
-  "admin.logoutButton": "Đăng xuất"
+  "admin.logoutButton": "Đăng xuất",
+  "admin.loginFailedTitle": "Đăng nhập thất bại",
+  "admin.signupFailedTitle": "Đăng ký thất bại",
+  "admin.sessionExpiredTitle": "Phiên đã hết hạn",
+  "admin.logoutTitle": "Đã đăng xuất",
+  "admin.logoutSuccess": "Bạn đã đăng xuất. Hãy đăng nhập lại khi cần.",
+  "errors.auth.loginFailed": "ID người dùng hoặc mật khẩu không đúng.",
+  "errors.auth.signupRequired": "Cần ID người dùng, tên và mật khẩu.",
+  "errors.auth.userExists": "ID người dùng này đã tồn tại.",
+  "errors.auth.groupCreateForbidden": "Chỉ quản trị viên hệ thống mới có thể tạo nhóm.",
+  "errors.auth.joinApprovalForbidden": "Chỉ quản trị viên của nhóm đích mới có thể duyệt yêu cầu tham gia.",
+  "errors.auth.adminApprovalForbidden": "Chỉ quản trị viên hệ thống mới có thể duyệt yêu cầu quyền quản trị.",
+  "errors.auth.sessionExpired": "Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại."
 }

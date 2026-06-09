@@ -427,5 +427,17 @@
   "placeholder.apiResponsePath": "响应路径",
   "placeholder.loginId": "用户ID",
   "placeholder.password": "密码",
-  "admin.logoutButton": "退出登录"
+  "admin.logoutButton": "退出登录",
+  "admin.loginFailedTitle": "登录失败",
+  "admin.signupFailedTitle": "注册失败",
+  "admin.sessionExpiredTitle": "会话已过期",
+  "admin.logoutTitle": "已退出登录",
+  "admin.logoutSuccess": "您已退出登录。需要时请重新登录。",
+  "errors.auth.loginFailed": "用户ID或密码不正确。",
+  "errors.auth.signupRequired": "必须填写用户ID、名称和密码。",
+  "errors.auth.userExists": "该用户ID已存在。",
+  "errors.auth.groupCreateForbidden": "只有系统管理员可以创建组。",
+  "errors.auth.joinApprovalForbidden": "只有目标组管理员可以批准此加入请求。",
+  "errors.auth.adminApprovalForbidden": "只有系统管理员可以批准管理员权限请求。",
+  "errors.auth.sessionExpired": "您的会话已过期。请重新登录。"
 }

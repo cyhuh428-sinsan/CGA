@@ -427,5 +427,17 @@
   "placeholder.apiResponsePath": "Antwortpfad",
   "placeholder.loginId": "Benutzer-ID",
   "placeholder.password": "Passwort",
-  "admin.logoutButton": "Abmelden"
+  "admin.logoutButton": "Abmelden",
+  "admin.loginFailedTitle": "Anmeldung fehlgeschlagen",
+  "admin.signupFailedTitle": "Registrierung fehlgeschlagen",
+  "admin.sessionExpiredTitle": "Sitzung abgelaufen",
+  "admin.logoutTitle": "Abgemeldet",
+  "admin.logoutSuccess": "Sie wurden abgemeldet. Melden Sie sich bei Bedarf erneut an.",
+  "errors.auth.loginFailed": "Benutzer-ID oder Passwort ist falsch.",
+  "errors.auth.signupRequired": "Benutzer-ID, Name und Passwort sind erforderlich.",
+  "errors.auth.userExists": "Diese Benutzer-ID existiert bereits.",
+  "errors.auth.groupCreateForbidden": "Nur ein Systemadministrator kann eine Gruppe erstellen.",
+  "errors.auth.joinApprovalForbidden": "Nur der Administrator der Zielgruppe kann diese Beitrittsanfrage genehmigen.",
+  "errors.auth.adminApprovalForbidden": "Nur der Systemadministrator kann Admin-Berechtigungsanfragen genehmigen.",
+  "errors.auth.sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
 }

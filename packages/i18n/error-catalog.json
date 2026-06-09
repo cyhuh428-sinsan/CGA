@@ -68,6 +68,55 @@
       "localeSource": "user.locale"
     },
     {
+      "code": "CGA_LOGIN_FAILED",
+      "key": "errors.auth.loginFailed",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_SIGNUP_REQUIRED_FIELD_MISSING",
+      "key": "errors.auth.signupRequired",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_USER_ALREADY_EXISTS",
+      "key": "errors.auth.userExists",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_GROUP_CREATE_FORBIDDEN",
+      "key": "errors.auth.groupCreateForbidden",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_GROUP_JOIN_APPROVAL_FORBIDDEN",
+      "key": "errors.auth.joinApprovalForbidden",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_ADMIN_APPROVAL_FORBIDDEN",
+      "key": "errors.auth.adminApprovalForbidden",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
+      "code": "CGA_SESSION_EXPIRED",
+      "key": "errors.auth.sessionExpired",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
       "code": "BOT_ANSWER_NOT_FOUND",
       "key": "botErrors.answer.notFound",
       "domain": "bot",

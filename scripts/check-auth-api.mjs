@@ -95,6 +95,11 @@ async function main() {
   }, "me endpoint with session token failed");
   if (tokenMeResult.payload.user?.id !== "u-api") fail("me endpoint did not resolve session token user");
 
+  await expectStatus("/api/cga/auth/me", {
+    userId: "admin",
+    sessionToken: "expired-or-invalid-token"
+  }, 401, "invalid session token should not fall back to header user");
+
   await expectStatus("/api/cga/auth/login", {
     method: "POST",
     body: { user_id: "u-api", password: "wrong-password" }

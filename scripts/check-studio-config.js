@@ -140,10 +140,12 @@ if (!studioAppSource.includes("requestCgaJson")) fail("studio app does not call 
 if (!html.includes("data-login-id")) fail("studio login form is missing a user id input");
 if (!html.includes("data-login-password")) fail("studio login form is missing a password input");
 if (!html.includes("data-logout-submit")) fail("studio login form is missing a logout button");
+if (!html.includes("data-auth-message")) fail("studio login form is missing an auth message area");
 if (!html.includes("data-signup-password")) fail("studio signup form is missing a password input");
 if (!studioAppSource.includes("password }") && !studioAppSource.includes("password,")) fail("studio app does not send a password to CGA auth APIs");
 if (!studioAppSource.includes("AUTH_SESSION_STORAGE_KEY")) fail("studio app does not store auth session tokens");
 if (!studioAppSource.includes("X-CGA-Session-Token")) fail("studio app does not send auth session tokens");
+if (!studioAppSource.includes("CGA_SESSION_EXPIRED")) fail("studio app does not handle expired sessions");
 if (!studioAppSource.includes("/api/cga/auth/logout")) fail("studio app is missing logout API call");
 if (!studioAppSource.includes("refreshAccessStateFromServer")) fail("studio app does not refresh access state from server");
 if (!studioAppSource.includes("refreshWorkspaceBotsFromServer")) fail("studio app does not refresh Bot Workspace bot list from server");
@@ -200,6 +202,8 @@ for (const route of [
 if (!studioServerSource.includes("access-state.json")) fail("studio server does not persist access state");
 if (!studioServerSource.includes("auth-credentials.json")) fail("studio server does not persist auth credentials");
 if (!studioServerSource.includes("auth-sessions.json")) fail("studio server does not persist auth sessions");
+if (!studioServerSource.includes("CGA_AUTH_HEADER_FALLBACK")) fail("studio server does not expose dev-only header fallback control");
+if (!studioServerSource.includes("CGA_SESSION_EXPIRED")) fail("studio server does not report expired sessions");
 if (!studioServerSource.includes("hashPassword")) fail("studio server does not hash passwords");
 if (!studioServerSource.includes("verifyPassword")) fail("studio server does not verify passwords");
 if (!studioServerSource.includes("createAuthSession")) fail("studio server does not create auth sessions");
