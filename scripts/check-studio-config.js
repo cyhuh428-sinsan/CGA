@@ -67,6 +67,21 @@ if (process.exitCode !== 1) pass("required workflow steps exist");
 
 const htmlLocaleKeys = extractLocaleKeys(html);
 const appSource = read(path.join(studio, "i18n.js"));
+const supportedStudioLocales = ["en", "ko", "zh-CN", "ja", "vi", "de", "fr"];
+const topLocaleSelect = html.match(/<select data-locale-select>([\s\S]*?)<\/select>/)?.[1] || "";
+const signupLocaleSelect = html.match(/<select data-signup-locale>([\s\S]*?)<\/select>/)?.[1] || "";
+for (const locale of supportedStudioLocales) {
+  if (!topLocaleSelect.includes(`value="${locale}"`)) fail(`top language selector missing locale '${locale}'`);
+  if (!signupLocaleSelect.includes(`value="${locale}"`)) fail(`signup language selector missing locale '${locale}'`);
+}
+const i18nScriptIndex = html.indexOf('/apps/studio/i18n.js');
+const appScriptIndex = html.indexOf('/apps/studio/app.js');
+if (i18nScriptIndex === -1 || appScriptIndex === -1 || i18nScriptIndex > appScriptIndex) {
+  fail("studio i18n.js must load before app.js so non-English locale switching is available before dynamic render");
+}
+if (!appSource.includes("function getSelectedLocale()")) fail("studio i18n.js must resolve the visible language selector as the current locale");
+if (!appSource.includes("select?.value || localStorage.getItem(STORAGE_KEY)")) fail("studio i18n.js must prioritize the visible language selector before stored locale");
+if (process.exitCode !== 1) pass("studio locale selectors and script order support all locales");
 for (const match of appSource.matchAll(/'([^']+)'\s*:/g)) {
   if (match[1].includes(".") && !match[1].includes("http")) htmlLocaleKeys.add(match[1]);
 }

@@ -997,3 +997,12 @@
 - Intent 후보 상태값 `answer_required`, `ready`도 기존 locale 키 `review.answerRequired`, `review.ready`를 통해 표시되도록 보강했다.
 - `scripts/check-studio-dynamic-i18n.js`에 Configure/Boundary 관련 새 동적 키를 필수 검사 대상으로 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 전체 locale 전환 기반 보강
+- 신산님이 영어/한국어 외 언어가 아직 제대로 동작하지 않는다고 지적했다.
+- 기존 리소스에는 7개 locale(en, ko, zh-CN, ja, vi, de, fr)이 들어 있었지만, 화면 실행 기준에서는 언어 전환 기반이 충분히 고정되어 있지 않았다.
+- `apps/studio/index.html`에서 `i18n.js`를 `app.js`보다 먼저 로드하도록 순서를 바꿨다. 동적 렌더링 전에 i18n API가 준비되도록 하기 위한 조치다.
+- Signup 사용자 언어 선택에 누락되어 있던 `zh-CN` 옵션을 추가했다.
+- `apps/studio/i18n.js`의 현재 locale 판단을 localStorage보다 화면의 `data-locale-select` 값을 우선하도록 변경했다. 사용자가 선택한 언어가 동적 렌더링 이후에도 유지되게 하기 위한 조치다.
+- `scripts/check-studio-config.js`에 top language selector와 signup locale selector가 7개 지원 locale을 모두 포함하는지, `i18n.js`가 `app.js`보다 먼저 로드되는지, i18n 런타임이 visible selector를 우선하는지 검사하는 회귀 검증을 추가했다.
+- Aidot 코드는 수정하지 않았다.
