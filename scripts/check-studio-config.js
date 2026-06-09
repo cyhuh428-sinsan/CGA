@@ -175,6 +175,9 @@ if (!studioAppSource.includes("renderStatusBadge")) fail("studio access UI does 
 if (!studioAppSource.includes("formatMemberships")) fail("studio access UI does not format memberships consistently");
 if (!studioAppSource.includes("getAuthFlowLabel")) fail("studio access auth flow labels are not localized by step id");
 if (!studioAppSource.includes("getAuthFlowDetail")) fail("studio access auth flow details are not localized by step id");
+if (!studioAppSource.includes("formatTransferDownloaded")) fail("studio transfer download status is not localized");
+if (!studioAppSource.includes("formatTransferUploaded")) fail("studio transfer upload status is not localized");
+if (!studioAppSource.includes("appendTransferSyncStatus")) fail("studio transfer sync suffix is not localized");
 if (!studioAppSource.includes("access.roleSummary")) fail("studio access UI does not show current user role summary");
 if (!studioAppSource.includes("access.userCount")) fail("studio group user list does not show group user counts");
 for (const key of [
@@ -191,6 +194,27 @@ for (const key of [
 ]) {
   for (const locale of locales) {
     if (!(key in locale.data)) fail(`${locale.name} missing auth flow locale key '${key}'`);
+  }
+}
+for (const key of [
+  "transfer.asset.dictionary",
+  "transfer.asset.intentUtterance",
+  "transfer.asset.entity",
+  "transfer.asset.rule",
+  "transfer.asset.intentDialog",
+  "transfer.asset.scenario",
+  "transfer.asset.apiMapping",
+  "transfer.asset.botPackage",
+  "transfer.asset.versionPackage",
+  "transfer.status.downloaded",
+  "transfer.status.downloadedServer",
+  "transfer.status.uploadedRows",
+  "transfer.status.uploadedItems",
+  "transfer.status.imported",
+  "transfer.status.updated"
+]) {
+  for (const locale of locales) {
+    if (!(key in locale.data)) fail(`${locale.name} missing transfer status locale key '${key}'`);
   }
 }
 for (const route of [
