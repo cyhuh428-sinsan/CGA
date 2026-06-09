@@ -1224,8 +1224,9 @@ function applyCollaborationStateFromServer(collaborationState) {
 }
 
 async function runQueuedSave(queueKey, saveAction) {
-  const currentQueue = saveQueues.get(queueKey) || { running: false, pending: false, promise: null };
+  const currentQueue = saveQueues.get(queueKey) || { running: false, pending: false, promise: null, saveAction: null };
   currentQueue.pending = true;
+  currentQueue.saveAction = saveAction;
   if (currentQueue.running && currentQueue.promise) {
     saveQueues.set(queueKey, currentQueue);
     return currentQueue.promise;
@@ -1236,7 +1237,7 @@ async function runQueuedSave(queueKey, saveAction) {
     try {
       while (currentQueue.pending) {
         currentQueue.pending = false;
-        lastResult = await saveAction();
+        lastResult = await currentQueue.saveAction();
       }
       return lastResult;
     } finally {
@@ -1279,23 +1280,25 @@ async function refreshCollaborationStateFromServer(groupId = currentWorkspaceGro
   return applyCollaborationStateFromServer(payload);
 }
 
-async function persistCompositionToServer() {
-  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
-  const payload = {
-    ...currentCompositionState,
-    group_id: currentWorkspaceGroupId,
-    bot_id: currentWorkspaceBotId
-  };
-  await requestCgaJson(getCompositionUrl(), {
+async function persistCompositionToServer(groupId, botId, payload) {
+  if (!groupId || !botId) return false;
+  await requestCgaJson(getCompositionUrl(groupId, botId), {
     method: "PUT",
     body: payload
   });
-  saveWorkspaceSnapshot();
+  if (groupId === currentWorkspaceGroupId && botId === currentWorkspaceBotId) saveWorkspaceSnapshot();
   return true;
 }
 
 async function saveCompositionToServer() {
-  return runQueuedSave(`composition:${currentWorkspaceGroupId}:${currentWorkspaceBotId}`, persistCompositionToServer);
+  const groupId = currentWorkspaceGroupId;
+  const botId = currentWorkspaceBotId;
+  const payload = {
+    ...cloneForSnapshot(currentCompositionState),
+    group_id: groupId,
+    bot_id: botId
+  };
+  return runQueuedSave(`composition:${groupId}:${botId}`, () => persistCompositionToServer(groupId, botId, payload));
 }
 
 async function runOperationsAction(action, body = {}) {
@@ -1337,26 +1340,29 @@ async function runCollaborationAction(workItemId, action) {
   }
 }
 
-async function persistDetailAssetsToServer() {
-  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
-  await requestCgaJson(getDetailAssetsUrl(), {
+async function persistDetailAssetsToServer(groupId, botId, payload) {
+  if (!groupId || !botId) return false;
+  await requestCgaJson(getDetailAssetsUrl(groupId, botId), {
     method: "PUT",
-    body: {
-      group_id: currentWorkspaceGroupId,
-      bot_id: currentWorkspaceBotId,
-      intent_utterances: currentIntentUtteranceAssets,
-      entities: currentEntityAssets,
-      dictionary: currentDictionaryAssets,
-      rules: currentRuleAssets,
-      scenarios: currentScenarioAssets
-    }
+    body: payload
   });
-  saveWorkspaceSnapshot();
+  if (groupId === currentWorkspaceGroupId && botId === currentWorkspaceBotId) saveWorkspaceSnapshot();
   return true;
 }
 
 async function saveDetailAssetsToServer() {
-  return runQueuedSave(`detail-assets:${currentWorkspaceGroupId}:${currentWorkspaceBotId}`, persistDetailAssetsToServer);
+  const groupId = currentWorkspaceGroupId;
+  const botId = currentWorkspaceBotId;
+  const payload = {
+    group_id: groupId,
+    bot_id: botId,
+    intent_utterances: cloneForSnapshot(currentIntentUtteranceAssets),
+    entities: cloneForSnapshot(currentEntityAssets),
+    dictionary: cloneForSnapshot(currentDictionaryAssets),
+    rules: cloneForSnapshot(currentRuleAssets),
+    scenarios: cloneForSnapshot(currentScenarioAssets)
+  };
+  return runQueuedSave(`detail-assets:${groupId}:${botId}`, () => persistDetailAssetsToServer(groupId, botId, payload));
 }
 
 function scheduleCompositionSave() {
@@ -1386,21 +1392,26 @@ async function refreshStudioStateFromServer(groupId = currentWorkspaceGroupId, b
   return applyStudioStateFromServer(payload.state);
 }
 
-async function persistStudioStateToServer() {
-  if (!currentWorkspaceGroupId || !currentWorkspaceBotId) return false;
-  await requestCgaJson(getStudioStateUrl(), {
+async function persistStudioStateToServer(groupId, botId, payload) {
+  if (!groupId || !botId) return false;
+  await requestCgaJson(getStudioStateUrl(groupId, botId), {
     method: "PUT",
-    body: {
-      state: currentStudioState
-    }
+    body: payload
   });
-  await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
-  saveWorkspaceSnapshot();
+  if (groupId === currentWorkspaceGroupId && botId === currentWorkspaceBotId) {
+    await refreshWorkspaceBotsFromServer(groupId).catch(() => false);
+    saveWorkspaceSnapshot();
+  }
   return true;
 }
 
 async function saveStudioStateToServer() {
-  return runQueuedSave(`studio-state:${currentWorkspaceGroupId}:${currentWorkspaceBotId}`, persistStudioStateToServer);
+  const groupId = currentWorkspaceGroupId;
+  const botId = currentWorkspaceBotId;
+  const payload = {
+    state: cloneForSnapshot(currentStudioState)
+  };
+  return runQueuedSave(`studio-state:${groupId}:${botId}`, () => persistStudioStateToServer(groupId, botId, payload));
 }
 
 function scheduleStudioStateSave() {

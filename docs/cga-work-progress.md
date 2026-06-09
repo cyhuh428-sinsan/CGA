@@ -1444,6 +1444,8 @@
   - `saveCompositionToServer()`는 `persistCompositionToServer()`를 감싸는 queued wrapper로 변경했다.
   - `saveDetailAssetsToServer()`는 `persistDetailAssetsToServer()`를 감싸는 queued wrapper로 변경했다.
   - `saveStudioStateToServer()`는 `persistStudioStateToServer()`를 감싸는 queued wrapper로 변경했다.
+  - 저장 요청 시점의 `groupId`, `botId`, payload를 캡처해서, 저장 실행 중 화면 전환이 발생해도 다른 봇/그룹으로 잘못 저장되지 않도록 보강했다.
+  - 같은 queue key에 새 저장 요청이 들어오면 큐가 최신 저장 action을 기억하고, 실행 중인 저장이 끝난 뒤 최신 payload를 한 번 더 저장한다.
   - 기존 API URL, payload, 저장 함수 호출부는 유지했다.
 - `scripts/check-studio-config.js`
   - `runQueuedSave`, `persistStudioStateToServer`, `persistCompositionToServer`, `persistDetailAssetsToServer`가 누락되면 실패하도록 검증을 추가했다.
