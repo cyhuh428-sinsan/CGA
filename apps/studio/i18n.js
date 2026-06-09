@@ -3037,8 +3037,13 @@ function applyLocale(locale, options = {}) {
   return normalizedLocale;
 }
 
+function getSelectedLocale() {
+  const select = document.querySelector('[data-locale-select]');
+  return normalizeLocale(select?.value || localStorage.getItem(STORAGE_KEY) || FALLBACK_LOCALE);
+}
+
 function getStoredLocale() {
-  return normalizeLocale(localStorage.getItem(STORAGE_KEY) || FALLBACK_LOCALE);
+  return getSelectedLocale();
 }
 
 function bootI18n() {
