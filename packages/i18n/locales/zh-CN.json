@@ -424,5 +424,7 @@
   "placeholder.apiName": "API回答名称",
   "placeholder.signupGroup": "组名称",
   "placeholder.apiEndpoint": "端点URL",
-  "placeholder.apiResponsePath": "响应路径"
+  "placeholder.apiResponsePath": "响应路径",
+  "placeholder.loginId": "用户ID",
+  "placeholder.password": "密码"
 }

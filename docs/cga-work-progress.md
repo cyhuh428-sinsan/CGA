@@ -1006,3 +1006,50 @@
 - `apps/studio/i18n.js`의 현재 locale 판단을 localStorage보다 화면의 `data-locale-select` 값을 우선하도록 변경했다. 사용자가 선택한 언어가 동적 렌더링 이후에도 유지되게 하기 위한 조치다.
 - `scripts/check-studio-config.js`에 top language selector와 signup locale selector가 7개 지원 locale을 모두 포함하는지, `i18n.js`가 `app.js`보다 먼저 로드되는지, i18n 런타임이 visible selector를 우선하는지 검사하는 회귀 검증을 추가했다.
 - Aidot 코드는 수정하지 않았다.
+
+### 2026-06-09 로그인 1차 구현
+- 신산님이 `로그인 기능부터 만들어야 하지 않아?`라고 지적했다.
+- 확인 결과 CGA에는 `/api/cga/auth/signup`, `/api/cga/auth/login`, `/api/cga/auth/me` 경로와 Access/Admin 화면은 있었지만, 실제 로그인은 `user_id`만으로 현재 사용자를 전환하는 시안 수준이었다.
+- 이번 작업에서는 CGA 내부에서만 비밀번호 기반 가입/로그인 1차 기능을 구현했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `scripts/serve-studio.js`
+  - `.cga-data/auth-credentials.json` 인증 저장 파일을 추가했다.
+  - 가입 시 사용자가 입력한 비밀번호를 raw text로 저장하지 않고 `pbkdf2-sha256` 해시로 저장하도록 했다.
+  - 기존 샘플 사용자(`admin`, `u-builder` 등)는 개발 초기 로그인 확인을 위해 사용자 ID와 같은 값을 초기 비밀번호로 seed 한다.
+  - `/api/cga/auth/signup`은 `user_id`, `name`, `password`가 모두 있어야 성공한다.
+  - `/api/cga/auth/login`은 `user_id + password`를 검증하고, 실패 시 `401 CGA_LOGIN_FAILED`를 반환한다.
+- `apps/studio/index.html`
+  - Login Session 화면에 `user-id`, `password` 입력칸을 추가했다.
+  - Signup 화면에 `password` 입력칸을 추가했다.
+- `apps/studio/app.js`
+  - 로그인 드롭다운은 계정 선택 보조로 유지하고, 선택 시 user-id 입력칸에 반영되도록 했다.
+  - 로그인 요청은 `{ user_id, password }`를 서버로 보낸다.
+  - 서버가 `400/401/409`처럼 명시적 오류를 반환하면 로컬 fallback 전환을 하지 않도록 수정했다. 이 부분이 중요하다. 기존 fallback을 그대로 두면 잘못된 비밀번호도 로컬 상태 전환으로 로그인처럼 보일 수 있었다.
+  - 네트워크 또는 서버 미기동 같은 비응답 상황에서는 기존 화면 시안 동작을 위해 로컬 fallback을 유지한다. 추후 토큰/쿠키 세션 도입 시 이 fallback은 운영 모드에서 제거해야 한다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - `placeholder.loginId`, `placeholder.password`를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+  - Studio 번들 i18n 리소스를 locale JSON 기준으로 다시 동기화했다.
+- `scripts/check-auth-api.mjs`
+  - 가입 시 비밀번호 입력을 포함하도록 변경했다.
+  - 정상 비밀번호 로그인 성공을 확인한다.
+  - 잘못된 비밀번호 로그인은 `401`로 차단되는지 확인한다.
+  - `.cga-data/auth-credentials.json`에 raw password가 저장되지 않고 hash가 저장되는지 확인한다.
+- `scripts/check-studio-config.js`
+  - 로그인 ID 입력, 로그인 비밀번호 입력, 가입 비밀번호 입력 존재를 검사한다.
+  - 서버에 `auth-credentials.json`, `hashPassword`, `verifyPassword`가 있는지 검사한다.
+
+#### 검증 결과
+- `node --check scripts/serve-studio.js` 통과
+- `node --check apps/studio/app.js` 통과
+- `node --check scripts/check-auth-api.mjs` 통과
+- `node --check scripts/check-studio-config.js` 통과
+- `node scripts/check-auth-api.mjs` 통과
+- `node scripts/check-studio-config.js` 통과
+- `npm run studio:validate` 통과
+- 기존 경고 `MODULE_TYPELESS_PACKAGE_JSON`는 계속 표시되지만 실패가 아니다.
+
+#### 다음 작업
+- 로그인 1차는 완료됐지만 아직 운영형 세션은 아니다.
+- 다음 단계는 `토큰 또는 쿠키 기반 세션`, `로그아웃`, `현재 사용자 me 상태와 화면 권한의 일관성`, `운영 모드에서 로컬 fallback 제거 또는 dev-only 처리`를 순서대로 진행하는 것이 좋다.

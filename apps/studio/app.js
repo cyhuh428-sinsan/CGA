@@ -832,7 +832,10 @@ async function requestCgaJson(path, { method = "GET", body } = {}) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload?.error_code || payload?.message_key || `CGA request failed: ${response.status}`);
+    const error = new Error(payload?.error_code || payload?.message_key || `CGA request failed: ${response.status}`);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
   return payload;
 }
@@ -2453,6 +2456,7 @@ function renderAccessPanels() {
   const currentUserBadge = document.querySelector("[data-current-user-badge]");
   const accessOperations = document.querySelector("[data-access-operations]");
   const loginUser = document.querySelector("[data-login-user]");
+  const loginIdInput = document.querySelector("[data-login-id]");
   const currentSession = document.querySelector("[data-current-session]");
   const joinGroup = document.querySelector("[data-join-group]");
   const joinRole = document.querySelector("[data-join-role]");
@@ -2474,6 +2478,9 @@ function renderAccessPanels() {
     .filter((user) => user.status === "active")
     .map((user) => `<option value="${user.id}" ${user.id === currentAccessState.currentUserId ? "selected" : ""}>${user.name} · ${user.id} · ${user.locale}</option>`)
     .join("");
+  if (loginIdInput && !loginIdInput.value) {
+    loginIdInput.value = currentAccessState.currentUserId || loginUser.value || "";
+  }
   currentSession.innerHTML = `
     <strong>${current.user?.name || "User"}</strong>
     <span>${current.user?.id || ""} · ${current.user?.locale || "en"} · ${current.memberships.map((item) => `${item.group_id}/${item.role}`).join(", ")}</span>
@@ -2675,25 +2682,37 @@ function bindAdminActionButtons() {
 
 function bindAdminWorkbench() {
   const loginSubmit = document.querySelector("[data-login-submit]");
+  const loginUser = document.querySelector("[data-login-user]");
   const signupSubmit = document.querySelector("[data-signup-submit]");
   const groupCreate = document.querySelector("[data-group-create]");
   const joinSubmit = document.querySelector("[data-join-submit]");
   const apiGroup = document.querySelector("[data-api-group]");
   const apiBot = document.querySelector("[data-api-bot]");
   const apiAdd = document.querySelector("[data-api-add]");
+  if (loginUser && loginUser.dataset.bound !== "true") {
+    loginUser.dataset.bound = "true";
+    loginUser.addEventListener("change", () => {
+      const loginId = document.querySelector("[data-login-id]");
+      if (loginId) loginId.value = loginUser.value || "";
+    });
+  }
   if (loginSubmit && loginSubmit.dataset.bound !== "true") {
     loginSubmit.dataset.bound = "true";
     loginSubmit.addEventListener("click", async () => {
-      const userId = document.querySelector("[data-login-user]")?.value;
-      await runAccessServerAction(
-        async () => {
-          const session = await requestCgaJson("/api/cga/auth/login", { method: "POST", body: { user_id: userId } });
-          currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
-        },
-        () => {
-          currentAccessState = loginAsUser(currentAccessState, { userId });
-        }
-      );
+      const selectedUserId = document.querySelector("[data-login-user]")?.value;
+      const userId = document.querySelector("[data-login-id]")?.value?.trim() || selectedUserId;
+      const password = document.querySelector("[data-login-password]")?.value || "";
+      if (!userId || !password) return;
+      try {
+        const session = await requestCgaJson("/api/cga/auth/login", { method: "POST", body: { user_id: userId, password } });
+        currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
+        await refreshAccessStateFromServer();
+        rerenderAdminAndAccess();
+      } catch (error) {
+        if (error.status) return;
+        currentAccessState = loginAsUser(currentAccessState, { userId });
+        rerenderAdminAndAccess();
+      }
     });
   }
   if (signupSubmit && signupSubmit.dataset.bound !== "true") {
@@ -2701,26 +2720,29 @@ function bindAdminWorkbench() {
     signupSubmit.addEventListener("click", async () => {
       const id = document.querySelector("[data-signup-id]")?.value?.trim();
       const name = document.querySelector("[data-signup-name]")?.value?.trim();
-      if (!id || !name) return;
+      const password = document.querySelector("[data-signup-password]")?.value || "";
+      if (!id || !name || !password) return;
       const locale = document.querySelector("[data-signup-locale]")?.value || "en";
       const groupName = document.querySelector("[data-signup-group]")?.value?.trim() || `${name} Group`;
-      await runAccessServerAction(
-        async () => {
-          const session = await requestCgaJson("/api/cga/auth/signup", {
-            method: "POST",
-            body: {
-              user_id: id,
-              name,
-              locale,
-              group_name: groupName
-            }
-          });
-          currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || id };
-        },
-        () => {
-          currentAccessState = applySignup(currentAccessState, { userId: id, name, locale, groupName });
-        }
-      );
+      try {
+        const session = await requestCgaJson("/api/cga/auth/signup", {
+          method: "POST",
+          body: {
+            user_id: id,
+            name,
+            password,
+            locale,
+            group_name: groupName
+          }
+        });
+        currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || id };
+        await refreshAccessStateFromServer();
+        rerenderAdminAndAccess();
+      } catch (error) {
+        if (error.status) return;
+        currentAccessState = applySignup(currentAccessState, { userId: id, name, locale, groupName });
+        rerenderAdminAndAccess();
+      }
     });
   }
   if (groupCreate && groupCreate.dataset.bound !== "true") {

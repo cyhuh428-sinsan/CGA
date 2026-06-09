@@ -424,5 +424,7 @@
   "placeholder.apiName": "API 답변 이름",
   "placeholder.signupGroup": "그룹 이름",
   "placeholder.apiEndpoint": "엔드포인트 URL",
-  "placeholder.apiResponsePath": "응답 경로"
+  "placeholder.apiResponsePath": "응답 경로",
+  "placeholder.loginId": "사용자 ID",
+  "placeholder.password": "비밀번호"
 }

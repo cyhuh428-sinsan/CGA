@@ -425,7 +425,9 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiName": "API-Antwortname",
     "placeholder.signupGroup": "Gruppenname",
     "placeholder.apiEndpoint": "Endpoint-URL",
-    "placeholder.apiResponsePath": "Antwortpfad"
+    "placeholder.apiResponsePath": "Antwortpfad",
+    "placeholder.loginId": "Benutzer-ID",
+    "placeholder.password": "Passwort"
   },
   "en": {
     "meta.localeName": "English",
@@ -853,7 +855,9 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiName": "api answer name",
     "placeholder.signupGroup": "group name",
     "placeholder.apiEndpoint": "endpoint url",
-    "placeholder.apiResponsePath": "response path"
+    "placeholder.apiResponsePath": "response path",
+    "placeholder.loginId": "user-id",
+    "placeholder.password": "password"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1281,7 +1285,9 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiName": "nom de réponse API",
     "placeholder.signupGroup": "nom du groupe",
     "placeholder.apiEndpoint": "URL endpoint",
-    "placeholder.apiResponsePath": "chemin de réponse"
+    "placeholder.apiResponsePath": "chemin de réponse",
+    "placeholder.loginId": "ID utilisateur",
+    "placeholder.password": "mot de passe"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1709,7 +1715,9 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiName": "API回答名",
     "placeholder.signupGroup": "グループ名",
     "placeholder.apiEndpoint": "エンドポイントURL",
-    "placeholder.apiResponsePath": "応答パス"
+    "placeholder.apiResponsePath": "応答パス",
+    "placeholder.loginId": "ユーザーID",
+    "placeholder.password": "パスワード"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2137,7 +2145,9 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiName": "API 답변 이름",
     "placeholder.signupGroup": "그룹 이름",
     "placeholder.apiEndpoint": "엔드포인트 URL",
-    "placeholder.apiResponsePath": "응답 경로"
+    "placeholder.apiResponsePath": "응답 경로",
+    "placeholder.loginId": "사용자 ID",
+    "placeholder.password": "비밀번호"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2565,7 +2575,9 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiName": "tên trả lời API",
     "placeholder.signupGroup": "tên nhóm",
     "placeholder.apiEndpoint": "URL endpoint",
-    "placeholder.apiResponsePath": "đường dẫn phản hồi"
+    "placeholder.apiResponsePath": "đường dẫn phản hồi",
+    "placeholder.loginId": "ID người dùng",
+    "placeholder.password": "mật khẩu"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -2993,7 +3005,9 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiName": "API回答名称",
     "placeholder.signupGroup": "组名称",
     "placeholder.apiEndpoint": "端点URL",
-    "placeholder.apiResponsePath": "响应路径"
+    "placeholder.apiResponsePath": "响应路径",
+    "placeholder.loginId": "用户ID",
+    "placeholder.password": "密码"
   }
 };
 

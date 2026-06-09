@@ -1,12 +1,14 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const root = path.resolve(__dirname, "..");
 const port = Number(process.env.PORT || 4173);
 const dataDir = path.resolve(process.env.CGA_DATA_DIR || path.join(root, ".cga-data"));
 const assetTransferHistoryFile = path.join(dataDir, "asset-transfer-history.json");
 const accessStateFile = path.join(dataDir, "access-state.json");
+const authCredentialsFile = path.join(dataDir, "auth-credentials.json");
 const apiAnswerRegistryFile = path.join(dataDir, "api-answer-registry.json");
 const workspaceBotsFile = path.join(dataDir, "workspace-bots.json");
 const studioStateRegistryFile = path.join(dataDir, "studio-state-registry.json");
@@ -52,6 +54,64 @@ function loadJsonFile(filePath, fallback) {
 function writeJsonFile(filePath, payload) {
   ensureDataDir();
   fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
+}
+
+const PASSWORD_ITERATIONS = 120000;
+const PASSWORD_KEY_LENGTH = 32;
+const PASSWORD_DIGEST = "sha256";
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  return {
+    algorithm: "pbkdf2-sha256",
+    iterations: PASSWORD_ITERATIONS,
+    digest: PASSWORD_DIGEST,
+    salt,
+    hash: crypto.pbkdf2Sync(String(password), salt, PASSWORD_ITERATIONS, PASSWORD_KEY_LENGTH, PASSWORD_DIGEST).toString("hex")
+  };
+}
+
+function verifyPassword(password, credential) {
+  if (!credential?.hash || !credential?.salt) return false;
+  const expected = Buffer.from(credential.hash, "hex");
+  const actual = crypto.pbkdf2Sync(
+    String(password),
+    credential.salt,
+    credential.iterations || PASSWORD_ITERATIONS,
+    expected.length,
+    credential.digest || PASSWORD_DIGEST
+  );
+  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+
+function createSeedCredentials(state) {
+  return {
+    version: 1,
+    note: "Seed users use their user id as the initial development password.",
+    users: Object.fromEntries((state.users || []).map((user) => [user.id, hashPassword(user.id)]))
+  };
+}
+
+function loadAuthCredentials(state) {
+  const stored = loadJsonFile(authCredentialsFile, null);
+  if (stored && typeof stored === "object" && stored.users && typeof stored.users === "object") {
+    const missingUsers = (state.users || []).filter((user) => user.status !== "deleted" && !stored.users[user.id]);
+    if (!missingUsers.length) return stored;
+    return saveAuthCredentials({
+      ...stored,
+      users: {
+        ...stored.users,
+        ...Object.fromEntries(missingUsers.map((user) => [user.id, hashPassword(user.id)]))
+      }
+    });
+  }
+  const seeded = createSeedCredentials(state);
+  writeJsonFile(authCredentialsFile, seeded);
+  return seeded;
+}
+
+function saveAuthCredentials(credentials) {
+  writeJsonFile(authCredentialsFile, credentials);
+  return credentials;
 }
 
 function loadAssetTransferHistory() {
@@ -1000,7 +1060,7 @@ async function handleAuthApi(req, res, urlPath) {
       return true;
     }
     const body = await readJsonRequest(req);
-    if (!body.user_id || !body.name) {
+    if (!body.user_id || !body.name || !body.password) {
       sendJson(res, 400, { error_code: "CGA_SIGNUP_REQUIRED_FIELD_MISSING", message_key: "errors.auth.signupRequired" });
       return true;
     }
@@ -1008,12 +1068,20 @@ async function handleAuthApi(req, res, urlPath) {
       sendJson(res, 409, { error_code: "CGA_USER_ALREADY_EXISTS", message_key: "errors.auth.userExists" });
       return true;
     }
+    const credentials = loadAuthCredentials(state);
     const next = saveAccessState(accessStateModule.applySignup(state, {
       userId: body.user_id,
       name: body.name,
       locale: body.locale || "en",
       groupName: body.group_name || body.groupName || `${body.name} Group`
     }));
+    saveAuthCredentials({
+      ...credentials,
+      users: {
+        ...credentials.users,
+        [body.user_id]: hashPassword(body.password)
+      }
+    });
     sendJson(res, 201, await createAccessSessionResponse(next, body.user_id));
     return true;
   }
@@ -1024,11 +1092,16 @@ async function handleAuthApi(req, res, urlPath) {
       return true;
     }
     const body = await readJsonRequest(req);
-    const next = accessStateModule.loginAsUser(state, { userId: body.user_id || body.userId });
-    if (next === state && state.currentUserId !== (body.user_id || body.userId)) {
+    const userId = body.user_id || body.userId;
+    const password = body.password || "";
+    const credentials = loadAuthCredentials(state);
+    const userExists = state.users.some((user) => user.id === userId && user.status !== "deleted");
+    const passwordOk = verifyPassword(password, credentials.users?.[userId]);
+    if (!userId || !password || !userExists || !passwordOk) {
       sendJson(res, 401, { error_code: "CGA_LOGIN_FAILED", message_key: "errors.auth.loginFailed" });
       return true;
     }
+    const next = accessStateModule.loginAsUser(state, { userId });
     saveAccessState(next);
     sendJson(res, 200, await createAccessSessionResponse(next));
     return true;

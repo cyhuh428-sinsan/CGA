@@ -137,6 +137,10 @@ if (!studioAppSource.includes("getCurrentAccessUser()?.locale")) fail("studio ap
 if (process.exitCode !== 1) pass("studio UI locale sync is wired to current user locale");
 
 if (!studioAppSource.includes("requestCgaJson")) fail("studio app does not call CGA management APIs");
+if (!html.includes("data-login-id")) fail("studio login form is missing a user id input");
+if (!html.includes("data-login-password")) fail("studio login form is missing a password input");
+if (!html.includes("data-signup-password")) fail("studio signup form is missing a password input");
+if (!studioAppSource.includes("password }") && !studioAppSource.includes("password,")) fail("studio app does not send a password to CGA auth APIs");
 if (!studioAppSource.includes("refreshAccessStateFromServer")) fail("studio app does not refresh access state from server");
 if (!studioAppSource.includes("refreshWorkspaceBotsFromServer")) fail("studio app does not refresh Bot Workspace bot list from server");
 if (!studioAppSource.includes("createWorkspaceBotOnServer")) fail("studio app does not create Bot Workspace bots through server API");
@@ -188,6 +192,9 @@ for (const route of [
   if (!studioServerSource.includes(route)) fail(`studio server is missing auth/group route '${route}'`);
 }
 if (!studioServerSource.includes("access-state.json")) fail("studio server does not persist access state");
+if (!studioServerSource.includes("auth-credentials.json")) fail("studio server does not persist auth credentials");
+if (!studioServerSource.includes("hashPassword")) fail("studio server does not hash passwords");
+if (!studioServerSource.includes("verifyPassword")) fail("studio server does not verify passwords");
 if (!studioServerSource.includes("workspace-bots.json")) fail("studio server does not persist Bot Workspace bots");
 if (!studioServerSource.includes("studio-state-registry.json")) fail("studio server does not persist Create Bot studio state");
 if (!studioServerSource.includes("composition-registry.json")) fail("studio server does not persist Configure Bot composition");

@@ -68,6 +68,7 @@ async function main() {
     body: {
       user_id: "u-api",
       name: "API User",
+      password: "api-pass-1",
       locale: "vi",
       group_name: "API User Group"
     }
@@ -77,9 +78,14 @@ async function main() {
 
   const login = await expectOk("/api/cga/auth/login", {
     method: "POST",
-    body: { user_id: "u-api", password: "ignored-in-public-core" }
+    body: { user_id: "u-api", password: "api-pass-1" }
   }, "login endpoint failed");
   if (login.user?.id !== "u-api") fail("login endpoint did not switch current user");
+
+  await expectStatus("/api/cga/auth/login", {
+    method: "POST",
+    body: { user_id: "u-api", password: "wrong-password" }
+  }, 401, "wrong password should be blocked");
 
   const groups = await expectOk("/api/cga/groups", { userId: "u-api" }, "groups endpoint failed");
   if (!groups.groups?.some((group) => group.id === "g-u-api")) fail("groups endpoint did not return persisted signup group");
@@ -150,6 +156,13 @@ async function main() {
   if (!stored.users?.some((user) => user.id === "u-api")) fail("access state file did not persist signup user");
   if (!stored.groups?.some((group) => group.id === "g-admin-api")) fail("access state file did not persist created group");
   if (!stored.adminRequests?.some((request) => request.id === "ar-api-admin" && request.status === "approved")) fail("access state file did not persist approved admin request");
+
+  const authCredentialsFile = join(dataDir, "auth-credentials.json");
+  if (!existsSync(authCredentialsFile)) fail("auth credentials file was not created");
+  const storedCredentialText = readFileSync(authCredentialsFile, "utf8");
+  if (storedCredentialText.includes("api-pass-1")) fail("auth credentials file stores a raw password");
+  const storedCredentials = JSON.parse(storedCredentialText);
+  if (!storedCredentials.users?.["u-api"]?.hash) fail("auth credentials file did not persist password hash");
 
   console.log("OK auth and group API endpoints passed");
 }
