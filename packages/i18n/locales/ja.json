@@ -492,5 +492,7 @@
   "transfer.status.uploadedRows": "{asset} をアップロードしました: {count} 行をマージ / {sync}",
   "transfer.status.uploadedItems": "{asset} をアップロードしました: {count} 件を置換",
   "transfer.status.imported": "{asset} をインポートしました: {name}",
-  "transfer.status.updated": "パッケージを更新しました"
+  "transfer.status.updated": "パッケージを更新しました",
+  "apiAnswer.manageAllowed": "API回答を管理できます",
+  "apiAnswer.manageBlocked": "ブロック: apiAnswer.manage"
 }

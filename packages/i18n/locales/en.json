@@ -492,5 +492,7 @@
   "transfer.status.uploadedRows": "Uploaded {asset}: {count} row(s) merged / {sync}",
   "transfer.status.uploadedItems": "Uploaded {asset}: {count} item(s) replaced",
   "transfer.status.imported": "Imported {asset}: {name}",
-  "transfer.status.updated": "Updated package"
+  "transfer.status.updated": "Updated package",
+  "apiAnswer.manageAllowed": "Can manage API answers",
+  "apiAnswer.manageBlocked": "Blocked: apiAnswer.manage"
 }

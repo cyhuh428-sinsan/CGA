@@ -492,5 +492,7 @@
   "transfer.status.uploadedRows": "{asset} 업로드 완료: {count}행 병합 / {sync}",
   "transfer.status.uploadedItems": "{asset} 업로드 완료: {count}개 항목 교체",
   "transfer.status.imported": "{asset} 가져오기 완료: {name}",
-  "transfer.status.updated": "패키지 갱신 완료"
+  "transfer.status.updated": "패키지 갱신 완료",
+  "apiAnswer.manageAllowed": "API 답변 관리 가능",
+  "apiAnswer.manageBlocked": "차단됨: apiAnswer.manage"
 }
