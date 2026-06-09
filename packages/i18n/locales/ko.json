@@ -427,5 +427,17 @@
   "placeholder.apiResponsePath": "응답 경로",
   "placeholder.loginId": "사용자 ID",
   "placeholder.password": "비밀번호",
-  "admin.logoutButton": "로그아웃"
+  "admin.logoutButton": "로그아웃",
+  "admin.loginFailedTitle": "로그인 실패",
+  "admin.signupFailedTitle": "가입 실패",
+  "admin.sessionExpiredTitle": "세션 만료",
+  "admin.logoutTitle": "로그아웃 완료",
+  "admin.logoutSuccess": "로그아웃되었습니다. 필요하면 다시 로그인하세요.",
+  "errors.auth.loginFailed": "사용자 ID 또는 비밀번호가 올바르지 않습니다.",
+  "errors.auth.signupRequired": "사용자 ID, 이름, 비밀번호가 필요합니다.",
+  "errors.auth.userExists": "이미 존재하는 사용자 ID입니다.",
+  "errors.auth.groupCreateForbidden": "그룹 생성은 시스템 관리자만 할 수 있습니다.",
+  "errors.auth.joinApprovalForbidden": "대상 그룹 관리자만 가입 요청을 승인할 수 있습니다.",
+  "errors.auth.adminApprovalForbidden": "관리자 권한 요청은 시스템 관리자만 승인할 수 있습니다.",
+  "errors.auth.sessionExpired": "세션이 만료되었습니다. 다시 로그인하세요."
 }

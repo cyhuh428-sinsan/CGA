@@ -427,5 +427,17 @@
   "placeholder.apiResponsePath": "response path",
   "placeholder.loginId": "user-id",
   "placeholder.password": "password",
-  "admin.logoutButton": "Logout"
+  "admin.logoutButton": "Logout",
+  "admin.loginFailedTitle": "Login failed",
+  "admin.signupFailedTitle": "Signup failed",
+  "admin.sessionExpiredTitle": "Session expired",
+  "admin.logoutTitle": "Logged out",
+  "admin.logoutSuccess": "You have been logged out. Please log in again when needed.",
+  "errors.auth.loginFailed": "User ID or password is incorrect.",
+  "errors.auth.signupRequired": "User ID, name, and password are required.",
+  "errors.auth.userExists": "This user ID already exists.",
+  "errors.auth.groupCreateForbidden": "Only a system administrator can create a group.",
+  "errors.auth.joinApprovalForbidden": "Only the target group administrator can approve this join request.",
+  "errors.auth.adminApprovalForbidden": "Only the system administrator can approve admin permission requests.",
+  "errors.auth.sessionExpired": "Your session has expired. Please log in again."
 }

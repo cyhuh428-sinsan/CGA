@@ -62,6 +62,7 @@ const PASSWORD_KEY_LENGTH = 32;
 const PASSWORD_DIGEST = "sha256";
 const SESSION_COOKIE = "cga_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+const HEADER_AUTH_FALLBACK_DISABLED = "disabled";
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
   return {
@@ -150,6 +151,14 @@ function getSessionToken(req) {
   return parseCookies(req.headers.cookie || "")[SESSION_COOKIE] || "";
 }
 
+function hasSessionToken(req) {
+  return Boolean(getSessionToken(req));
+}
+
+function isHeaderAuthFallbackEnabled() {
+  return process.env.CGA_AUTH_HEADER_FALLBACK !== HEADER_AUTH_FALLBACK_DISABLED;
+}
+
 function createAuthSession(userId) {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
@@ -220,7 +229,11 @@ function saveAccessState(state) {
 }
 
 function getActorId(req, state) {
-  return resolveSessionUserId(req, state) || req.headers["x-cga-user-id"] || state.currentUserId || "admin";
+  const sessionUserId = resolveSessionUserId(req, state);
+  if (sessionUserId) return sessionUserId;
+  if (hasSessionToken(req)) return "";
+  if (!isHeaderAuthFallbackEnabled()) return "";
+  return req.headers["x-cga-user-id"] || state.currentUserId || "admin";
 }
 
 function loadApiAnswerRegistry() {
@@ -1098,7 +1111,13 @@ async function handleAuthApi(req, res, urlPath) {
   const accessStateModule = await import("../packages/public-core/src/access-state.js");
   const accessContract = await import("../packages/contracts/src/access-contract.js");
   const state = await loadAccessState();
-  const actorId = getActorId(req, state);
+  const sessionWasProvided = hasSessionToken(req);
+  const sessionUserId = resolveSessionUserId(req, state);
+  if (sessionWasProvided && !sessionUserId && !["login", "signup", "logout"].includes(parsed.action)) {
+    sendJson(res, 401, { error_code: "CGA_SESSION_EXPIRED", message_key: "errors.auth.sessionExpired" }, { "Set-Cookie": createExpiredSessionCookie() });
+    return true;
+  }
+  const actorId = sessionUserId || (isHeaderAuthFallbackEnabled() ? (req.headers["x-cga-user-id"] || state.currentUserId || "admin") : "");
 
   if (parsed.action === "me") {
     if (req.method !== "GET") {

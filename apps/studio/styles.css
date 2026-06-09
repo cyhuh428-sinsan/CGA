@@ -894,6 +894,19 @@ textarea { min-height: 84px; resize: vertical; }
   line-height: 1.35;
 }
 
+.admin-result.auth-message {
+  border-color: #fecaca;
+  background: #fff7ed;
+}
+
+.admin-result.auth-message strong {
+  color: #9a3412;
+}
+
+.admin-result.auth-message span {
+  color: #7c2d12;
+}
+
 .admin-queue > div {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

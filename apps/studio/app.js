@@ -79,6 +79,7 @@ let currentApiRegistry = [
 let currentApiGroupId = "g-support";
 let currentApiBotId = "supportbot-draft";
 let currentTransferStatus = "";
+let currentAuthMessage = null;
 let studioStateSaveTimer = null;
 let compositionSaveTimer = null;
 let currentCompositionState = {
@@ -687,6 +688,20 @@ function t(key, fallback = key) {
     fallback;
 }
 
+function getCgaErrorMessage(error, fallback = "Request failed.") {
+  const payload = error?.payload || error || {};
+  const key = payload.message_key || payload.key;
+  return key ? t(key, payload.fallback_message || payload.error_code || fallback) : fallback;
+}
+
+function setAuthMessage(kind, titleKey, bodyKeyOrText) {
+  currentAuthMessage = { kind, titleKey, bodyKeyOrText };
+}
+
+function clearAuthMessage() {
+  currentAuthMessage = null;
+}
+
 function applyDynamicLocaleOverrides(locale = getCurrentLocale()) {
   const messages = dynamicMessages[locale];
   if (!messages) return;
@@ -848,6 +863,11 @@ async function requestCgaJson(path, { method = "GET", body } = {}) {
     const error = new Error(payload?.error_code || payload?.message_key || `CGA request failed: ${response.status}`);
     error.status = response.status;
     error.payload = payload;
+    if (payload?.error_code === "CGA_SESSION_EXPIRED") {
+      clearAuthSession();
+      setAuthMessage("error", "admin.sessionExpiredTitle", payload.message_key || "errors.auth.sessionExpired");
+      rerenderAdminAndAccess();
+    }
     throw error;
   }
   return payload;
@@ -2471,6 +2491,7 @@ function renderAccessPanels() {
   const loginUser = document.querySelector("[data-login-user]");
   const loginIdInput = document.querySelector("[data-login-id]");
   const currentSession = document.querySelector("[data-current-session]");
+  const authMessage = document.querySelector("[data-auth-message]");
   const joinGroup = document.querySelector("[data-join-group]");
   const joinRole = document.querySelector("[data-join-role]");
   const adminQueue = document.querySelector("[data-admin-action-queue]");
@@ -2498,6 +2519,15 @@ function renderAccessPanels() {
     <strong>${current.user?.name || "User"}</strong>
     <span>${current.user?.id || ""} · ${current.user?.locale || "en"} · ${current.memberships.map((item) => `${item.group_id}/${item.role}`).join(", ")}</span>
   `;
+  if (authMessage) {
+    authMessage.hidden = !currentAuthMessage;
+    authMessage.classList.toggle("auth-message", Boolean(currentAuthMessage));
+    const authMessageBody = currentAuthMessage?.bodyKeyOrText || "";
+    authMessage.innerHTML = currentAuthMessage ? `
+      <strong>${t(currentAuthMessage.titleKey, "Authentication")}</strong>
+      <span>${authMessageBody.includes(".") ? t(authMessageBody, authMessageBody) : authMessageBody}</span>
+    ` : "";
+  }
   joinGroup.innerHTML = currentAccessState.groups
     .filter((group) => group.status === "active")
     .map((group) => `<option value="${group.id}">${group.name}</option>`)
@@ -2720,11 +2750,16 @@ function bindAdminWorkbench() {
       try {
         const session = await requestCgaJson("/api/cga/auth/login", { method: "POST", body: { user_id: userId, password } });
         rememberAuthSession(session);
+        clearAuthMessage();
         currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
         await refreshAccessStateFromServer();
         rerenderAdminAndAccess();
       } catch (error) {
-        if (error.status) return;
+        if (error.status) {
+          setAuthMessage("error", "admin.loginFailedTitle", getCgaErrorMessage(error, t("errors.auth.loginFailed", "Login failed.")));
+          rerenderAdminAndAccess();
+          return;
+        }
         currentAccessState = loginAsUser(currentAccessState, { userId });
         rerenderAdminAndAccess();
       }
@@ -2738,6 +2773,7 @@ function bindAdminWorkbench() {
       } catch {
       }
       clearAuthSession();
+      setAuthMessage("info", "admin.logoutTitle", "admin.logoutSuccess");
       currentAccessState = loginAsUser(currentAccessState, { userId: "admin" });
       rerenderAdminAndAccess();
     });
@@ -2763,11 +2799,16 @@ function bindAdminWorkbench() {
           }
         });
         rememberAuthSession(session);
+        clearAuthMessage();
         currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || id };
         await refreshAccessStateFromServer();
         rerenderAdminAndAccess();
       } catch (error) {
-        if (error.status) return;
+        if (error.status) {
+          setAuthMessage("error", "admin.signupFailedTitle", getCgaErrorMessage(error, t("errors.auth.signupRequired", "Signup failed.")));
+          rerenderAdminAndAccess();
+          return;
+        }
         currentAccessState = applySignup(currentAccessState, { userId: id, name, locale, groupName });
         rerenderAdminAndAccess();
       }

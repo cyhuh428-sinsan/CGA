@@ -427,5 +427,17 @@
   "placeholder.apiResponsePath": "chemin de réponse",
   "placeholder.loginId": "ID utilisateur",
   "placeholder.password": "mot de passe",
-  "admin.logoutButton": "Déconnexion"
+  "admin.logoutButton": "Déconnexion",
+  "admin.loginFailedTitle": "Échec de connexion",
+  "admin.signupFailedTitle": "Échec d’inscription",
+  "admin.sessionExpiredTitle": "Session expirée",
+  "admin.logoutTitle": "Déconnecté",
+  "admin.logoutSuccess": "Vous avez été déconnecté. Reconnectez-vous si nécessaire.",
+  "errors.auth.loginFailed": "L’ID utilisateur ou le mot de passe est incorrect.",
+  "errors.auth.signupRequired": "L’ID utilisateur, le nom et le mot de passe sont requis.",
+  "errors.auth.userExists": "Cet ID utilisateur existe déjà.",
+  "errors.auth.groupCreateForbidden": "Seul un administrateur système peut créer un groupe.",
+  "errors.auth.joinApprovalForbidden": "Seul l’administrateur du groupe cible peut approuver cette demande d’adhésion.",
+  "errors.auth.adminApprovalForbidden": "Seul l’administrateur système peut approuver les demandes de droits administrateur.",
+  "errors.auth.sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
 }

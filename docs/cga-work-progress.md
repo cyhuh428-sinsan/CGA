@@ -1099,3 +1099,46 @@
 - 지금은 기존 개발 편의를 위해 `X-CGA-User-Id` fallback을 유지한다.
 - 운영 모드에서는 이 fallback을 제거하거나 dev-only로 제한해야 한다.
 - 다음 인증 단계는 `로그인 실패 메시지 화면 표시`, `세션 만료 시 자동 로그아웃`, `권한 없는 화면 접근 시 사용자 언어 기반 오류 표시`가 적절하다.
+
+### 2026-06-09 로그인 3차: 오류 메시지, 세션 만료, dev-only fallback 분리
+- 로그인 2차 이후 남아 있던 운영 품질 항목을 보완했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - Login Session 영역에 `data-auth-message` 메시지 표시 영역을 추가했다.
+- `apps/studio/styles.css`
+  - 인증 오류/상태 메시지가 기존 10px 설명 기준 안에서 보이도록 `auth-message` 스타일을 추가했다.
+- `apps/studio/app.js`
+  - `getCgaErrorMessage`, `setAuthMessage`, `clearAuthMessage`를 추가했다.
+  - 로그인 실패 시 서버의 `message_key`를 사용자 현재 언어로 해석해 화면에 표시한다.
+  - 가입 실패도 동일하게 화면 메시지로 표시한다.
+  - 로그아웃 완료 메시지를 표시한다.
+  - API 응답이 `CGA_SESSION_EXPIRED`이면 로컬 세션 토큰을 제거하고 세션 만료 메시지를 표시한다.
+- `scripts/serve-studio.js`
+  - 요청에 세션 토큰이 포함되어 있는데 해당 세션이 없거나 만료된 경우 `401 CGA_SESSION_EXPIRED`를 반환한다.
+  - 만료/잘못된 세션 토큰이 있을 때 `X-CGA-User-Id` fallback으로 우회되지 않도록 했다.
+  - `CGA_AUTH_HEADER_FALLBACK=disabled` 환경값을 추가해 운영 모드에서 헤더 기반 사용자 전환을 끌 수 있는 기준을 만들었다.
+  - 기본값은 개발 편의를 위해 기존 동작과 호환되도록 fallback enabled 상태다.
+- `packages/i18n/error-catalog.json`
+  - 인증 관련 에러 코드를 안정 카탈로그에 추가했다.
+  - `CGA_LOGIN_FAILED`, `CGA_SIGNUP_REQUIRED_FIELD_MISSING`, `CGA_USER_ALREADY_EXISTS`, `CGA_GROUP_CREATE_FORBIDDEN`, `CGA_GROUP_JOIN_APPROVAL_FORBIDDEN`, `CGA_ADMIN_APPROVAL_FORBIDDEN`, `CGA_SESSION_EXPIRED`
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - 인증 오류/상태 메시지를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가했다.
+  - Studio 번들 i18n 리소스를 locale JSON 기준으로 다시 동기화했다.
+- `scripts/check-auth-api.mjs`
+  - 잘못된 세션 토큰이 `X-CGA-User-Id: admin`과 함께 와도 `/api/cga/auth/me`가 401을 반환하는지 확인한다.
+- `scripts/check-studio-config.js`
+  - 인증 메시지 영역, 세션 만료 처리, `CGA_AUTH_HEADER_FALLBACK`, `CGA_SESSION_EXPIRED` 존재를 검증한다.
+
+#### 검증 결과
+- `node --check scripts/serve-studio.js` 통과
+- `node --check apps/studio/app.js` 통과
+- `node scripts/check-auth-api.mjs` 통과
+- `node scripts/check-studio-config.js` 통과
+- `npm run studio:validate` 통과
+- 기존 경고 `MODULE_TYPELESS_PACKAGE_JSON`는 계속 표시되지만 실패가 아니다.
+
+#### 다음 작업
+- 다음 단계는 권한 없는 화면/작업 접근 시 같은 메시지 영역 또는 화면별 상태 영역에 사용자 언어 오류를 표시하는 것이다.
+- 이후 `CGA_AUTH_HEADER_FALLBACK=disabled` 기준을 docker-compose 운영 profile에 연결하면 운영/개발 모드 분리가 더 명확해진다.

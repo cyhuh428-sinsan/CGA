@@ -427,5 +427,17 @@
   "placeholder.apiResponsePath": "応答パス",
   "placeholder.loginId": "ユーザーID",
   "placeholder.password": "パスワード",
-  "admin.logoutButton": "ログアウト"
+  "admin.logoutButton": "ログアウト",
+  "admin.loginFailedTitle": "ログイン失敗",
+  "admin.signupFailedTitle": "サインアップ失敗",
+  "admin.sessionExpiredTitle": "セッション期限切れ",
+  "admin.logoutTitle": "ログアウト完了",
+  "admin.logoutSuccess": "ログアウトしました。必要に応じて再度ログインしてください。",
+  "errors.auth.loginFailed": "ユーザーIDまたはパスワードが正しくありません。",
+  "errors.auth.signupRequired": "ユーザーID、名前、パスワードが必要です。",
+  "errors.auth.userExists": "このユーザーIDは既に存在します。",
+  "errors.auth.groupCreateForbidden": "グループを作成できるのはシステム管理者のみです。",
+  "errors.auth.joinApprovalForbidden": "この参加リクエストを承認できるのは対象グループ管理者のみです。",
+  "errors.auth.adminApprovalForbidden": "管理者権限リクエストを承認できるのはシステム管理者のみです。",
+  "errors.auth.sessionExpired": "セッションの有効期限が切れました。再度ログインしてください。"
 }

@@ -428,7 +428,19 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiResponsePath": "Antwortpfad",
     "placeholder.loginId": "Benutzer-ID",
     "placeholder.password": "Passwort",
-    "admin.logoutButton": "Abmelden"
+    "admin.logoutButton": "Abmelden",
+    "admin.loginFailedTitle": "Anmeldung fehlgeschlagen",
+    "admin.signupFailedTitle": "Registrierung fehlgeschlagen",
+    "admin.sessionExpiredTitle": "Sitzung abgelaufen",
+    "admin.logoutTitle": "Abgemeldet",
+    "admin.logoutSuccess": "Sie wurden abgemeldet. Melden Sie sich bei Bedarf erneut an.",
+    "errors.auth.loginFailed": "Benutzer-ID oder Passwort ist falsch.",
+    "errors.auth.signupRequired": "Benutzer-ID, Name und Passwort sind erforderlich.",
+    "errors.auth.userExists": "Diese Benutzer-ID existiert bereits.",
+    "errors.auth.groupCreateForbidden": "Nur ein Systemadministrator kann eine Gruppe erstellen.",
+    "errors.auth.joinApprovalForbidden": "Nur der Administrator der Zielgruppe kann diese Beitrittsanfrage genehmigen.",
+    "errors.auth.adminApprovalForbidden": "Nur der Systemadministrator kann Admin-Berechtigungsanfragen genehmigen.",
+    "errors.auth.sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
   },
   "en": {
     "meta.localeName": "English",
@@ -859,7 +871,19 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiResponsePath": "response path",
     "placeholder.loginId": "user-id",
     "placeholder.password": "password",
-    "admin.logoutButton": "Logout"
+    "admin.logoutButton": "Logout",
+    "admin.loginFailedTitle": "Login failed",
+    "admin.signupFailedTitle": "Signup failed",
+    "admin.sessionExpiredTitle": "Session expired",
+    "admin.logoutTitle": "Logged out",
+    "admin.logoutSuccess": "You have been logged out. Please log in again when needed.",
+    "errors.auth.loginFailed": "User ID or password is incorrect.",
+    "errors.auth.signupRequired": "User ID, name, and password are required.",
+    "errors.auth.userExists": "This user ID already exists.",
+    "errors.auth.groupCreateForbidden": "Only a system administrator can create a group.",
+    "errors.auth.joinApprovalForbidden": "Only the target group administrator can approve this join request.",
+    "errors.auth.adminApprovalForbidden": "Only the system administrator can approve admin permission requests.",
+    "errors.auth.sessionExpired": "Your session has expired. Please log in again."
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1290,7 +1314,19 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiResponsePath": "chemin de réponse",
     "placeholder.loginId": "ID utilisateur",
     "placeholder.password": "mot de passe",
-    "admin.logoutButton": "Déconnexion"
+    "admin.logoutButton": "Déconnexion",
+    "admin.loginFailedTitle": "Échec de connexion",
+    "admin.signupFailedTitle": "Échec d’inscription",
+    "admin.sessionExpiredTitle": "Session expirée",
+    "admin.logoutTitle": "Déconnecté",
+    "admin.logoutSuccess": "Vous avez été déconnecté. Reconnectez-vous si nécessaire.",
+    "errors.auth.loginFailed": "L’ID utilisateur ou le mot de passe est incorrect.",
+    "errors.auth.signupRequired": "L’ID utilisateur, le nom et le mot de passe sont requis.",
+    "errors.auth.userExists": "Cet ID utilisateur existe déjà.",
+    "errors.auth.groupCreateForbidden": "Seul un administrateur système peut créer un groupe.",
+    "errors.auth.joinApprovalForbidden": "Seul l’administrateur du groupe cible peut approuver cette demande d’adhésion.",
+    "errors.auth.adminApprovalForbidden": "Seul l’administrateur système peut approuver les demandes de droits administrateur.",
+    "errors.auth.sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -1721,7 +1757,19 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiResponsePath": "応答パス",
     "placeholder.loginId": "ユーザーID",
     "placeholder.password": "パスワード",
-    "admin.logoutButton": "ログアウト"
+    "admin.logoutButton": "ログアウト",
+    "admin.loginFailedTitle": "ログイン失敗",
+    "admin.signupFailedTitle": "サインアップ失敗",
+    "admin.sessionExpiredTitle": "セッション期限切れ",
+    "admin.logoutTitle": "ログアウト完了",
+    "admin.logoutSuccess": "ログアウトしました。必要に応じて再度ログインしてください。",
+    "errors.auth.loginFailed": "ユーザーIDまたはパスワードが正しくありません。",
+    "errors.auth.signupRequired": "ユーザーID、名前、パスワードが必要です。",
+    "errors.auth.userExists": "このユーザーIDは既に存在します。",
+    "errors.auth.groupCreateForbidden": "グループを作成できるのはシステム管理者のみです。",
+    "errors.auth.joinApprovalForbidden": "この参加リクエストを承認できるのは対象グループ管理者のみです。",
+    "errors.auth.adminApprovalForbidden": "管理者権限リクエストを承認できるのはシステム管理者のみです。",
+    "errors.auth.sessionExpired": "セッションの有効期限が切れました。再度ログインしてください。"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2152,7 +2200,19 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiResponsePath": "응답 경로",
     "placeholder.loginId": "사용자 ID",
     "placeholder.password": "비밀번호",
-    "admin.logoutButton": "로그아웃"
+    "admin.logoutButton": "로그아웃",
+    "admin.loginFailedTitle": "로그인 실패",
+    "admin.signupFailedTitle": "가입 실패",
+    "admin.sessionExpiredTitle": "세션 만료",
+    "admin.logoutTitle": "로그아웃 완료",
+    "admin.logoutSuccess": "로그아웃되었습니다. 필요하면 다시 로그인하세요.",
+    "errors.auth.loginFailed": "사용자 ID 또는 비밀번호가 올바르지 않습니다.",
+    "errors.auth.signupRequired": "사용자 ID, 이름, 비밀번호가 필요합니다.",
+    "errors.auth.userExists": "이미 존재하는 사용자 ID입니다.",
+    "errors.auth.groupCreateForbidden": "그룹 생성은 시스템 관리자만 할 수 있습니다.",
+    "errors.auth.joinApprovalForbidden": "대상 그룹 관리자만 가입 요청을 승인할 수 있습니다.",
+    "errors.auth.adminApprovalForbidden": "관리자 권한 요청은 시스템 관리자만 승인할 수 있습니다.",
+    "errors.auth.sessionExpired": "세션이 만료되었습니다. 다시 로그인하세요."
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -2583,7 +2643,19 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiResponsePath": "đường dẫn phản hồi",
     "placeholder.loginId": "ID người dùng",
     "placeholder.password": "mật khẩu",
-    "admin.logoutButton": "Đăng xuất"
+    "admin.logoutButton": "Đăng xuất",
+    "admin.loginFailedTitle": "Đăng nhập thất bại",
+    "admin.signupFailedTitle": "Đăng ký thất bại",
+    "admin.sessionExpiredTitle": "Phiên đã hết hạn",
+    "admin.logoutTitle": "Đã đăng xuất",
+    "admin.logoutSuccess": "Bạn đã đăng xuất. Hãy đăng nhập lại khi cần.",
+    "errors.auth.loginFailed": "ID người dùng hoặc mật khẩu không đúng.",
+    "errors.auth.signupRequired": "Cần ID người dùng, tên và mật khẩu.",
+    "errors.auth.userExists": "ID người dùng này đã tồn tại.",
+    "errors.auth.groupCreateForbidden": "Chỉ quản trị viên hệ thống mới có thể tạo nhóm.",
+    "errors.auth.joinApprovalForbidden": "Chỉ quản trị viên của nhóm đích mới có thể duyệt yêu cầu tham gia.",
+    "errors.auth.adminApprovalForbidden": "Chỉ quản trị viên hệ thống mới có thể duyệt yêu cầu quyền quản trị.",
+    "errors.auth.sessionExpired": "Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại."
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3014,7 +3086,19 @@ const CGA_I18N_RESOURCES = {
     "placeholder.apiResponsePath": "响应路径",
     "placeholder.loginId": "用户ID",
     "placeholder.password": "密码",
-    "admin.logoutButton": "退出登录"
+    "admin.logoutButton": "退出登录",
+    "admin.loginFailedTitle": "登录失败",
+    "admin.signupFailedTitle": "注册失败",
+    "admin.sessionExpiredTitle": "会话已过期",
+    "admin.logoutTitle": "已退出登录",
+    "admin.logoutSuccess": "您已退出登录。需要时请重新登录。",
+    "errors.auth.loginFailed": "用户ID或密码不正确。",
+    "errors.auth.signupRequired": "必须填写用户ID、名称和密码。",
+    "errors.auth.userExists": "该用户ID已存在。",
+    "errors.auth.groupCreateForbidden": "只有系统管理员可以创建组。",
+    "errors.auth.joinApprovalForbidden": "只有目标组管理员可以批准此加入请求。",
+    "errors.auth.adminApprovalForbidden": "只有系统管理员可以批准管理员权限请求。",
+    "errors.auth.sessionExpired": "您的会话已过期。请重新登录。"
   }
 };
 
