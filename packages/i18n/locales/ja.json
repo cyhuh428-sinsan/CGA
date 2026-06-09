@@ -466,5 +466,16 @@
   "status.active": "有効",
   "status.pending": "保留中",
   "status.approved": "承認済み",
-  "status.deleted": "削除済み"
+  "status.deleted": "削除済み",
+  "authFlow.signup.label": "サインアップ",
+  "authFlow.signup.detailWithGroup": "ユーザーと個人グループを作成します",
+  "authFlow.signup.detailUserOnly": "ユーザーのみ作成します",
+  "authFlow.login.label": "ログイン",
+  "authFlow.login.detail": "ユーザー言語と有効なメンバーシップを読み込みます",
+  "authFlow.join-request.label": "参加リクエスト",
+  "authFlow.join-request.detail": "保留中のグループリクエスト {count} 件",
+  "authFlow.approval.label": "承認",
+  "authFlow.approval.detail": "承認後にグループメンバーシップが作成されます",
+  "authFlow.work.label": "ボット作業",
+  "authFlow.work.detail": "グループロールとスコープに応じて画面が開きます"
 }

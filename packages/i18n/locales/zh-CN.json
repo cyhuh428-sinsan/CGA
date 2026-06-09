@@ -466,5 +466,16 @@
   "status.active": "活跃",
   "status.pending": "待处理",
   "status.approved": "已批准",
-  "status.deleted": "已删除"
+  "status.deleted": "已删除",
+  "authFlow.signup.label": "注册",
+  "authFlow.signup.detailWithGroup": "创建用户和个人组",
+  "authFlow.signup.detailUserOnly": "仅创建用户",
+  "authFlow.login.label": "登录",
+  "authFlow.login.detail": "加载用户语言和有效成员关系",
+  "authFlow.join-request.label": "加入请求",
+  "authFlow.join-request.detail": "{count} 个待处理组请求",
+  "authFlow.approval.label": "审批",
+  "authFlow.approval.detail": "审批后创建组成员关系",
+  "authFlow.work.label": "机器人工作",
+  "authFlow.work.detail": "根据组角色和权限范围开放屏幕"
 }

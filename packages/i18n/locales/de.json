@@ -466,5 +466,16 @@
   "status.active": "aktiv",
   "status.pending": "ausstehend",
   "status.approved": "genehmigt",
-  "status.deleted": "gelöscht"
+  "status.deleted": "gelöscht",
+  "authFlow.signup.label": "Registrierung",
+  "authFlow.signup.detailWithGroup": "Erstellt Benutzer und persönliche Gruppe",
+  "authFlow.signup.detailUserOnly": "Erstellt nur den Benutzer",
+  "authFlow.login.label": "Anmeldung",
+  "authFlow.login.detail": "Lädt Benutzersprache und aktive Mitgliedschaften",
+  "authFlow.join-request.label": "Beitrittsanfrage",
+  "authFlow.join-request.detail": "{count} ausstehende Gruppenanfrage(n)",
+  "authFlow.approval.label": "Freigabe",
+  "authFlow.approval.detail": "Nach der Freigabe wird die Gruppenmitgliedschaft erstellt",
+  "authFlow.work.label": "Bot-Arbeit",
+  "authFlow.work.detail": "Bildschirme öffnen sich nach Gruppenrolle und Scopes"
 }

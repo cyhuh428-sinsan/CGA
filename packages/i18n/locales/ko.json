@@ -466,5 +466,16 @@
   "status.active": "활성",
   "status.pending": "대기",
   "status.approved": "승인됨",
-  "status.deleted": "삭제됨"
+  "status.deleted": "삭제됨",
+  "authFlow.signup.label": "가입",
+  "authFlow.signup.detailWithGroup": "사용자와 개인 그룹을 생성합니다",
+  "authFlow.signup.detailUserOnly": "사용자만 생성합니다",
+  "authFlow.login.label": "로그인",
+  "authFlow.login.detail": "사용자 언어와 활성 멤버십을 불러옵니다",
+  "authFlow.join-request.label": "그룹 가입 요청",
+  "authFlow.join-request.detail": "대기 중인 그룹 요청 {count}건",
+  "authFlow.approval.label": "승인",
+  "authFlow.approval.detail": "승인 후 그룹 멤버십이 생성됩니다",
+  "authFlow.work.label": "봇 작업",
+  "authFlow.work.detail": "그룹 역할과 scope에 따라 화면이 열립니다"
 }
