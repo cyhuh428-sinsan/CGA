@@ -192,6 +192,9 @@ if (!studioAppSource.includes("currentIntentFilter")) fail("studio app does not 
 if (!studioCssSource.includes("option-dots")) fail("studio CSS does not render Aidot-style T/R/F option markers");
 if (!studioAppSource.includes("refreshOperationsStateFromServer")) fail("studio app does not refresh Build/Test/Operate state from server");
 if (!studioAppSource.includes("runOperationsAction")) fail("studio app does not run Build/Test/Operate actions through server API");
+if (!html.includes("data-test-aidot-result")) fail("Test screen does not expose Aidot-style simulator result panel");
+if (!html.includes("data-test-runtime")) fail("Test screen does not expose simulator runtime variables panel");
+if (!studioAppSource.includes("renderSimulatorDetailPanels")) fail("studio app does not render Aidot-style simulator detail panels");
 if (!studioAppSource.includes("getOperationsStateUrl(groupId, botId, action)")) fail("operations action does not capture group/bot at request time");
 if (!studioAppSource.includes("refreshCollaborationStateFromServer")) fail("studio app does not refresh Team Dashboard collaboration state from server");
 if (!studioAppSource.includes("runCollaborationAction")) fail("studio app does not run Team Dashboard actions through server API");
