@@ -1549,3 +1549,28 @@
 #### 다음 작업
 - Detail 화면의 의도 추가/삭제, 대화카드 편집, 기타옵션(T/R/F) 표시를 Aidot 화면 기준으로 계속 보강한다.
 - Test 화면의 simulator 결과 항목을 Aidot 화면 기준으로 더 촘촘히 맞춘다.
+
+### 2026-06-10 Aidot식 의도관리 목록 컨트롤 보강
+- 신산님 지시대로 의도 생성 이후 관리/수정 화면은 Aidot 화면의 목록 중심 작업 방식에 더 가깝게 맞춘다.
+- 이번 변경은 기능을 새로 설계하는 것이 아니라 CGA Detail Settings 안에서 Aidot식 의도 목록 조작을 노출하는 보강이다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - Detail Settings의 Add Intent 버튼을 실제 화면 액션으로 연결할 수 있도록 `data-aidot-intent-add`를 명시했다.
+- `apps/studio/app.js`
+  - 의도 검색어 상태와 의도 필터 상태를 분리해서 관리한다.
+  - 검색은 의도 ID, 표시명, 대표 학습문장을 기준으로 동작한다.
+  - 필터는 현재 전체/의도 기준으로 동작하며, 이후 Aidot 모듈/의도 구분이 늘어도 같은 구조로 확장할 수 있게 했다.
+  - Add Intent 실행 시 매번 최신 의도 목록을 다시 읽어 중복 ID가 생기지 않도록 했다.
+  - 새 의도 추가 후 Detail Assets 저장 API를 호출하고, 상태 요약과 운영 패널을 다시 계산한다.
+  - Aidot 화면의 기타옵션 표시 형태를 따라 목록에 T/R/F 마커를 노출했다.
+- `apps/studio/styles.css`
+  - T/R/F 옵션 마커와 빈 검색 결과 표시 스타일을 추가했다.
+  - 작은 화면에서 의도 목록, 툴바, 그룹 역할 관리 행이 깨지지 않도록 반응형 grid 기준을 보강했다.
+- `scripts/check-studio-config.js`
+  - Add Intent 액션, 의도 검색/필터 상태, T/R/F 옵션 마커가 빠지면 검증 실패하도록 guard를 추가했다.
+
+#### 다음 작업
+- Detail 화면에서 선택 의도의 대화카드/답변 편집 저장 구조를 Aidot 기준으로 더 맞춘다.
+- Test 화면의 simulator 결과 항목을 Aidot 화면 기준으로 보강한다.

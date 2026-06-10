@@ -94,6 +94,8 @@ let apiRegistryRefreshPromise = null;
 const apiRegistryLoadedAtByKey = new Map();
 const API_REGISTRY_CACHE_TTL_MS = 15000;
 const MANAGED_GROUP_ROLES = ["group_admin", "builder", "reviewer", "operator", "viewer"];
+let currentIntentSearch = "";
+let currentIntentFilter = "all";
 let currentCompositionState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
@@ -2129,10 +2131,21 @@ function renderAidotIntentManager() {
   const table = document.querySelector("[data-aidot-intent-table]");
   const editor = document.querySelector("[data-aidot-intent-editor]");
   const side = document.querySelector("[data-aidot-intent-side]");
+  const search = document.querySelector("[data-aidot-intent-search]");
+  const filter = document.querySelector("[data-aidot-intent-filter]");
+  const addIntent = document.querySelector("[data-aidot-intent-add]");
   if (!summary || !table || !editor || !side) return;
   const rows = getAidotIntentRows();
+  const filteredRows = rows.filter((row) => {
+    const matchesType = currentIntentFilter === "all" || row.type === currentIntentFilter;
+    const searchText = `${row.id} ${row.displayName} ${row.utterances.map((item) => item.utterance).join(" ")}`.toLowerCase();
+    const matchesSearch = !currentIntentSearch || searchText.includes(currentIntentSearch.toLowerCase());
+    return matchesType && matchesSearch;
+  });
   if (!rows.some((row) => row.id === currentSelectedIntentId)) currentSelectedIntentId = rows[0]?.id || "";
   const selected = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || null;
+  if (search && document.activeElement !== search) search.value = currentIntentSearch;
+  if (filter) filter.value = currentIntentFilter;
   summary.innerHTML = `
     <div><strong>${t("detail.intentTotal", "Total intents")}</strong><span>${rows.length}</span></div>
     <div><strong>${t("detail.utterances", "Representative Utterances")}</strong><span>${currentIntentUtteranceAssets.length}</span></div>
@@ -2143,13 +2156,13 @@ function renderAidotIntentManager() {
   `;
   table.innerHTML = `
     <div class="aidot-intent-head">
-      <span>ID</span><span>${t("detail.intentModule", "Intent / Module")}</span><span>${t("detail.displayName", "Display name")}</span><span>${t("detail.utteranceCount", "Utterances")}</span><span>${t("detail.dialogCards", "Dialog cards")}</span><span>${t("detail.tags", "Tags")}</span><span>${t("detail.updatedAt", "Updated at")}</span><span>${t("detail.updatedBy", "Updated by")}</span>
+      <span>ID</span><span>${t("detail.intentModule", "Intent / Module")}</span><span>${t("detail.displayName", "Display name")}</span><span>${t("detail.utteranceCount", "Utterances")}</span><span>${t("detail.dialogCards", "Dialog cards")}</span><span>T/R/F</span><span>${t("detail.updatedAt", "Updated at")}</span><span>${t("detail.updatedBy", "Updated by")}</span>
     </div>
-    ${rows.map((row) => `
+    ${filteredRows.map((row) => `
       <button type="button" class="aidot-intent-row ${row.id === currentSelectedIntentId ? "selected" : ""}" data-select-intent="${row.id}">
-        <span>${row.rowId}</span><strong>${row.id}</strong><span>${row.displayName}</span><span>${row.utteranceCount}</span><span>${row.dialogCardCount}</span><span>${row.tagCount}</span><span>${row.updatedAt}</span><span>${row.updatedBy}</span>
+        <span>${row.rowId}</span><strong>${row.id}</strong><span>${row.displayName}</span><span>${row.utteranceCount}</span><span>${row.dialogCardCount}</span><span class="option-dots"><b>T</b><b>R</b><b>F</b></span><span>${row.updatedAt}</span><span>${row.updatedBy}</span>
       </button>
-    `).join("")}
+    `).join("") || `<div class="aidot-intent-empty">${t("review.noIntentCandidate", "No intent candidate")}</div>`}
   `;
   if (!selected) {
     editor.innerHTML = `<strong>${t("review.noIntentCandidate", "No intent candidate")}</strong>`;
@@ -2175,6 +2188,44 @@ function renderAidotIntentManager() {
       renderAidotIntentManager();
     });
   });
+  if (search && search.dataset.bound !== "true") {
+    search.dataset.bound = "true";
+    search.addEventListener("input", () => {
+      currentIntentSearch = search.value.trim();
+      renderAidotIntentManager();
+    });
+  }
+  if (filter && filter.dataset.bound !== "true") {
+    filter.dataset.bound = "true";
+    filter.addEventListener("change", () => {
+      currentIntentFilter = filter.value || "all";
+      renderAidotIntentManager();
+    });
+  }
+  if (addIntent && addIntent.dataset.bound !== "true") {
+    addIntent.dataset.bound = "true";
+    addIntent.addEventListener("click", () => {
+      const latestRows = getAidotIntentRows();
+      let nextNumber = latestRows.length + 1;
+      let id = `new_intent_${nextNumber}`;
+      const usedIds = new Set(latestRows.map((row) => row.id));
+      while (usedIds.has(id)) {
+        nextNumber += 1;
+        id = `new_intent_${nextNumber}`;
+      }
+      currentScenarioAssets = [...currentScenarioAssets, { id, type: "intent", displayName: id }];
+      currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: `sample utterance ${nextNumber}`, division: id }];
+      currentSelectedIntentId = id;
+      currentIntentSearch = "";
+      currentIntentFilter = "all";
+      currentStudioState.counts.intents = getAidotIntentRows().length;
+      currentStudioState.counts.utterances = currentIntentUtteranceAssets.length;
+      saveDetailAssetsToServer().catch(() => false);
+      renderAidotIntentManager();
+      renderStateSummary();
+      renderOperationsPanels();
+    });
+  }
   const nameInput = editor.querySelector("[data-intent-edit-name]");
   const displayInput = editor.querySelector("[data-intent-edit-display]");
   const utteranceInput = editor.querySelector("[data-intent-edit-utterances]");
