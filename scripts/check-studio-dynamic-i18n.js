@@ -80,7 +80,17 @@ const requiredDynamicKeys = [
   "review.manualResultRequired",
   "module.screen",
   "module.publicCore",
-  "module.commercialCandidate"
+  "module.commercialCandidate",
+  "test.dialogCard",
+  "test.entities",
+  "test.runtimeVariables",
+  "test.apiAnswer",
+  "test.trainingSample",
+  "test.processingLog",
+  "test.answerSource",
+  "test.noEntity",
+  "test.noApi",
+  "test.aidotCompatible"
 ];
 
 const failures = [];

@@ -247,7 +247,17 @@ const dynamicMessages = {
     "review.manualResultRequired": "Manual handoff or PDF Q&A result required",
     "module.screen": "Screen",
     "module.publicCore": "Public Core",
-    "module.commercialCandidate": "Commercial Candidate"
+    "module.commercialCandidate": "Commercial Candidate",
+    "test.dialogCard": "Dialog card",
+    "test.entities": "Entities",
+    "test.runtimeVariables": "Runtime variables",
+    "test.apiAnswer": "API answer",
+    "test.trainingSample": "Training sample",
+    "test.processingLog": "Processing log",
+    "test.answerSource": "Answer source",
+    "test.noEntity": "No detected entity",
+    "test.noApi": "No API answer",
+    "test.aidotCompatible": "Aidot-compatible simulator view"
   },
   ko: {
     "common.allowed": "허용",
@@ -325,7 +335,17 @@ const dynamicMessages = {
     "review.manualResultRequired": "수동 Handoff 또는 PDF Q&A 결과가 필요합니다",
     "module.screen": "화면",
     "module.publicCore": "Public Core",
-    "module.commercialCandidate": "상용 후보"
+    "module.commercialCandidate": "상용 후보",
+    "test.dialogCard": "대화카드",
+    "test.entities": "개체",
+    "test.runtimeVariables": "런타임 변수",
+    "test.apiAnswer": "API 답변",
+    "test.trainingSample": "학습문장",
+    "test.processingLog": "처리 로그",
+    "test.answerSource": "답변 출처",
+    "test.noEntity": "감지된 개체 없음",
+    "test.noApi": "API 답변 없음",
+    "test.aidotCompatible": "Aidot 호환 시뮬레이터 보기"
   },
   de: {
     "common.allowed": "Erlaubt",
@@ -403,7 +423,17 @@ const dynamicMessages = {
     "review.manualResultRequired": "Manuelles Handoff oder PDF-Q&A-Ergebnis erforderlich",
     "module.screen": "Bildschirm",
     "module.publicCore": "Public Core",
-    "module.commercialCandidate": "Kommerzieller Kandidat"
+    "module.commercialCandidate": "Kommerzieller Kandidat",
+    "test.dialogCard": "Dialogkarte",
+    "test.entities": "Entitäten",
+    "test.runtimeVariables": "Laufzeitvariablen",
+    "test.apiAnswer": "API-Antwort",
+    "test.trainingSample": "Trainingsbeispiel",
+    "test.processingLog": "Verarbeitungslog",
+    "test.answerSource": "Antwortquelle",
+    "test.noEntity": "Keine Entität erkannt",
+    "test.noApi": "Keine API-Antwort",
+    "test.aidotCompatible": "Aidot-kompatible Simulatoransicht"
   },
   ja: {
     "common.allowed": "許可",
@@ -481,7 +511,17 @@ const dynamicMessages = {
     "review.manualResultRequired": "手動HandoffまたはPDF Q&A結果が必要です",
     "module.screen": "画面",
     "module.publicCore": "Public Core",
-    "module.commercialCandidate": "商用候補"
+    "module.commercialCandidate": "商用候補",
+    "test.dialogCard": "対話カード",
+    "test.entities": "エンティティ",
+    "test.runtimeVariables": "ランタイム変数",
+    "test.apiAnswer": "API回答",
+    "test.trainingSample": "学習文",
+    "test.processingLog": "処理ログ",
+    "test.answerSource": "回答元",
+    "test.noEntity": "検出されたエンティティなし",
+    "test.noApi": "API回答なし",
+    "test.aidotCompatible": "Aidot互換シミュレーター表示"
   },
   "zh-CN": {
     "common.allowed": "允许",
@@ -559,7 +599,17 @@ const dynamicMessages = {
     "review.manualResultRequired": "需要手动Handoff或PDF Q&A结果",
     "module.screen": "屏幕",
     "module.publicCore": "Public Core",
-    "module.commercialCandidate": "商业候选"
+    "module.commercialCandidate": "商业候选",
+    "test.dialogCard": "对话卡片",
+    "test.entities": "实体",
+    "test.runtimeVariables": "运行时变量",
+    "test.apiAnswer": "API 答案",
+    "test.trainingSample": "训练语句",
+    "test.processingLog": "处理日志",
+    "test.answerSource": "答案来源",
+    "test.noEntity": "未检测到实体",
+    "test.noApi": "无 API 答案",
+    "test.aidotCompatible": "Aidot 兼容模拟器视图"
   },
   vi: {
     "common.allowed": "Được phép",
@@ -637,7 +687,17 @@ const dynamicMessages = {
     "review.manualResultRequired": "Cần kết quả Handoff thủ công hoặc PDF Q&A",
     "module.screen": "Màn hình",
     "module.publicCore": "Public Core",
-    "module.commercialCandidate": "Ứng viên thương mại"
+    "module.commercialCandidate": "Ứng viên thương mại",
+    "test.dialogCard": "Thẻ hội thoại",
+    "test.entities": "Thực thể",
+    "test.runtimeVariables": "Biến runtime",
+    "test.apiAnswer": "Câu trả lời API",
+    "test.trainingSample": "Mẫu huấn luyện",
+    "test.processingLog": "Nhật ký xử lý",
+    "test.answerSource": "Nguồn trả lời",
+    "test.noEntity": "Không phát hiện thực thể",
+    "test.noApi": "Không có câu trả lời API",
+    "test.aidotCompatible": "Chế độ mô phỏng tương thích Aidot"
   },
   fr: {
     "common.allowed": "Autorisé",
@@ -715,7 +775,17 @@ const dynamicMessages = {
     "review.manualResultRequired": "Résultat Handoff manuel ou PDF Q&A requis",
     "module.screen": "Écran",
     "module.publicCore": "Public Core",
-    "module.commercialCandidate": "Candidat commercial"
+    "module.commercialCandidate": "Candidat commercial",
+    "test.dialogCard": "Carte de dialogue",
+    "test.entities": "Entités",
+    "test.runtimeVariables": "Variables d'exécution",
+    "test.apiAnswer": "Réponse API",
+    "test.trainingSample": "Exemple d'entraînement",
+    "test.processingLog": "Journal de traitement",
+    "test.answerSource": "Source de réponse",
+    "test.noEntity": "Aucune entité détectée",
+    "test.noApi": "Aucune réponse API",
+    "test.aidotCompatible": "Vue simulateur compatible Aidot"
   }
 };
 
@@ -2041,6 +2111,35 @@ function renderCreateSummary() {
   `;
 }
 
+function getSimulatorIntentRow(test) {
+  const intentId = test.matched_intent || currentSelectedIntentId;
+  return getAidotIntentRows().find((row) => row.id === intentId) || getAidotIntentRows()[0] || null;
+}
+
+function renderSimulatorDetailPanels(test) {
+  const aidotResult = document.querySelector("[data-test-aidot-result]");
+  const runtime = document.querySelector("[data-test-runtime]");
+  if (!aidotResult || !runtime) return;
+  const selectedIntent = getSimulatorIntentRow(test);
+  const matchedApi = currentApiRegistry.find((item) => item.group_id === currentWorkspaceGroupId && item.bot_id === currentWorkspaceBotId);
+  const entityLabel = currentEntityAssets.length
+    ? currentEntityAssets.slice(0, 3).map((item) => item.name || item.value).join(", ")
+    : t("test.noEntity", "No detected entity");
+  const utteranceLabel = selectedIntent?.utterances?.[0]?.utterance || test.last_user_message || "-";
+  aidotResult.innerHTML = `
+    <article><strong>${t("test.aidotCompatible", "Aidot-compatible simulator view")}</strong><span>${test.matched_intent || "-"}</span></article>
+    <article><strong>${t("test.dialogCard", "Dialog card")}</strong><span>${selectedIntent?.dialogCardCount ?? 0}</span></article>
+    <article><strong>${t("test.trainingSample", "Training sample")}</strong><span>${utteranceLabel}</span></article>
+    <article><strong>${t("test.answerSource", "Answer source")}</strong><span>${matchedApi ? t("test.apiAnswer", "API answer") : t("detail.answer", "Answer")}</span></article>
+  `;
+  runtime.innerHTML = `
+    <article><strong>${t("test.entities", "Entities")}</strong><span>${entityLabel}</span></article>
+    <article><strong>${t("test.runtimeVariables", "Runtime variables")}</strong><span>locale=${currentStudioState.bot.defaultLocale} · group=${currentWorkspaceGroupId}</span></article>
+    <article class="${matchedApi ? "" : "warn"}"><strong>${t("test.apiAnswer", "API answer")}</strong><span>${matchedApi?.name || t("test.noApi", "No API answer")}</span></article>
+    <article><strong>${t("test.processingLog", "Processing log")}</strong><span>${test.method || "-"} · ${Number(test.latency_ms ?? 0)}ms</span></article>
+  `;
+}
+
 function renderOperationsPanels() {
   const build = currentOperationsState.build || {};
   const test = currentOperationsState.test || {};
@@ -2074,6 +2173,7 @@ function renderOperationsPanels() {
   if (testMethod) testMethod.textContent = test.method || "-";
   if (testSimilarity) testSimilarity.textContent = Number(test.similarity ?? 0).toFixed(2);
   if (testLatency) testLatency.textContent = `${Number(test.latency_ms ?? 0)}ms`;
+  renderSimulatorDetailPanels(test);
   if (channel) channel.textContent = operate.channel_status === "web_ok" ? t("operate.webOk", "Web OK") : operate.channel_status || "-";
   if (channelDetail) channelDetail.textContent = operate.channel_detail === "desktop_kakao_pending" ? t("operate.kakaoPending", "Desktop and Kakao KR pending") : operate.channel_detail || "-";
   if (volume) volume.textContent = Number(operate.conversation_volume ?? 0).toLocaleString();

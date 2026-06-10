@@ -1574,3 +1574,24 @@
 #### 다음 작업
 - Detail 화면에서 선택 의도의 대화카드/답변 편집 저장 구조를 Aidot 기준으로 더 맞춘다.
 - Test 화면의 simulator 결과 항목을 Aidot 화면 기준으로 보강한다.
+
+### 2026-06-10 Aidot식 시뮬레이터 결과 화면 보강
+- 신산님 지시대로 의도 관리 이후 Test 화면도 Aidot의 simulator 결과 확인 흐름에 더 가깝게 보이도록 보강했다.
+- 기존 operations state API와 `run-test` 동작은 유지하고, 화면에 표시하는 결과 항목을 확장했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - Test 화면에 Aidot 호환 시뮬레이터 결과 패널과 런타임 변수 패널을 추가했다.
+- `apps/studio/app.js`
+  - `renderSimulatorDetailPanels()`를 추가했다.
+  - 기존 simulator 결과의 matched intent, method, similarity, latency에 더해 대화카드 수, 대표 학습문장, 답변 출처, 개체, 런타임 변수, API 답변 연결, 처리 로그를 렌더링한다.
+  - Detail Assets의 의도/학습문장/개체/API registry 데이터를 그대로 사용해 Test 화면을 구성한다.
+- `apps/studio/styles.css`
+  - 시뮬레이터 결과/런타임 패널을 1920x1080 기준의 작은 폰트 체계 안에서 표시하도록 grid 스타일을 추가했다.
+- `scripts/check-studio-config.js`, `scripts/check-studio-dynamic-i18n.js`
+  - Test 화면의 Aidot식 simulator 상세 패널과 새 동적 다국어 키가 빠지면 검증 실패하도록 guard를 추가했다.
+
+#### 다음 작업
+- Detail 화면에서 선택 의도의 답변/대화카드 편집 저장 구조를 더 직접적으로 연결한다.
+- 필요한 경우 Test 화면에 Aidot의 대화 단계별 로그와 변수 치환 결과를 추가로 붙인다.

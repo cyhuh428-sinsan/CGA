@@ -463,7 +463,15 @@
         </div>
         <div class="simulator-layout">
           <div class="chat-box"><p class="user-msg" data-test-user-message>I forgot my password.</p><p class="bot-msg" data-test-bot-message>Open Account Settings and choose Reset Password.</p><input placeholder="Type a test message" data-test-input data-i18n-placeholder="test.simPlaceholder" /></div>
-          <aside class="analysis-box"><h4 data-i18n="test.analysis">Conversation Analysis</h4><p><b data-i18n="test.matched">Matched intent</b><span data-test-intent>password_reset</span></p><p><b data-i18n="test.method">Method</b><span data-test-method>LLM intent classification</span></p><p><b>Similarity</b><span data-test-similarity>0.94</span></p><p><b>Latency</b><span data-test-latency>14ms</span></p></aside>
+          <aside class="analysis-box">
+            <h4 data-i18n="test.analysis">Conversation Analysis</h4>
+            <p><b data-i18n="test.matched">Matched intent</b><span data-test-intent>password_reset</span></p>
+            <p><b data-i18n="test.method">Method</b><span data-test-method>LLM intent classification</span></p>
+            <p><b>Similarity</b><span data-test-similarity>0.94</span></p>
+            <p><b>Latency</b><span data-test-latency>14ms</span></p>
+          </aside>
+          <div class="simulator-result-grid" data-test-aidot-result></div>
+          <div class="simulator-runtime-grid" data-test-runtime></div>
         </div>
       </section>
 
