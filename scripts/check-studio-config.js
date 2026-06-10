@@ -305,6 +305,8 @@ for (const route of [
   if (!studioServerSource.includes(route)) fail(`studio server is missing auth/group route '${route}'`);
 }
 if (!studioServerSource.includes("access-state.json")) fail("studio server does not persist access state");
+if (!studioServerSource.includes("const tmpPath = `${filePath}.${process.pid}.tmp`;")) fail("studio server does not write JSON through a temporary file first");
+if (!studioServerSource.includes("fs.renameSync(tmpPath, filePath)")) fail("studio server does not atomically replace JSON files after writing");
 if (!studioServerSource.includes("auth-credentials.json")) fail("studio server does not persist auth credentials");
 if (!studioServerSource.includes("auth-sessions.json")) fail("studio server does not persist auth sessions");
 if (!studioServerSource.includes("CGA_AUTH_HEADER_FALLBACK")) fail("studio server does not expose dev-only header fallback control");

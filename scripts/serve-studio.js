@@ -54,7 +54,9 @@ function loadJsonFile(filePath, fallback) {
 
 function writeJsonFile(filePath, payload) {
   ensureDataDir();
-  fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
+  const tmpPath = `${filePath}.${process.pid}.tmp`;
+  fs.writeFileSync(tmpPath, JSON.stringify(payload, null, 2), "utf8");
+  fs.renameSync(tmpPath, filePath);
 }
 
 const PASSWORD_ITERATIONS = 120000;
