@@ -499,5 +499,16 @@
   "workspace.createAllowed": "Bots können erstellt werden",
   "workspace.createBlocked": "Blockiert: bot.create",
   "common.user": "Benutzer",
-  "common.group": "Gruppe"
+  "common.group": "Gruppe",
+  "common.all": "Alle",
+  "placeholder.intentSearch": "Intent / Äußerung / Kennzeichnung",
+  "detail.addIntent": "Intent hinzufügen",
+  "detail.intentTotal": "Intents gesamt",
+  "detail.dialogCards": "Dialogkarten",
+  "detail.intentModule": "Intent / Modul",
+  "detail.displayName": "Anzeigename",
+  "detail.utteranceCount": "Trainingssätze",
+  "detail.tags": "Kennzeichnungen",
+  "detail.updatedAt": "Zuletzt geändert",
+  "detail.updatedBy": "Geändert von"
 }

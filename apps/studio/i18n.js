@@ -500,7 +500,18 @@ const CGA_I18N_RESOURCES = {
     "workspace.createAllowed": "Bots können erstellt werden",
     "workspace.createBlocked": "Blockiert: bot.create",
     "common.user": "Benutzer",
-    "common.group": "Gruppe"
+    "common.group": "Gruppe",
+    "common.all": "Alle",
+    "placeholder.intentSearch": "Intent / Äußerung / Kennzeichnung",
+    "detail.addIntent": "Intent hinzufügen",
+    "detail.intentTotal": "Intents gesamt",
+    "detail.dialogCards": "Dialogkarten",
+    "detail.intentModule": "Intent / Modul",
+    "detail.displayName": "Anzeigename",
+    "detail.utteranceCount": "Trainingssätze",
+    "detail.tags": "Kennzeichnungen",
+    "detail.updatedAt": "Zuletzt geändert",
+    "detail.updatedBy": "Geändert von"
   },
   "en": {
     "meta.localeName": "English",
@@ -1003,7 +1014,18 @@ const CGA_I18N_RESOURCES = {
     "workspace.createAllowed": "Can create bots",
     "workspace.createBlocked": "Blocked: bot.create",
     "common.user": "User",
-    "common.group": "Group"
+    "common.group": "Group",
+    "common.all": "All",
+    "placeholder.intentSearch": "intent / utterance / tag",
+    "detail.addIntent": "Add Intent",
+    "detail.intentTotal": "Total intents",
+    "detail.dialogCards": "Dialog cards",
+    "detail.intentModule": "Intent / Module",
+    "detail.displayName": "Display name",
+    "detail.utteranceCount": "Utterances",
+    "detail.tags": "Tags",
+    "detail.updatedAt": "Updated at",
+    "detail.updatedBy": "Updated by"
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1506,7 +1528,18 @@ const CGA_I18N_RESOURCES = {
     "workspace.createAllowed": "Peut créer des bots",
     "workspace.createBlocked": "Bloqué : bot.create",
     "common.user": "Utilisateur",
-    "common.group": "Groupe"
+    "common.group": "Groupe",
+    "common.all": "Tout",
+    "placeholder.intentSearch": "intention / énoncé / étiquette",
+    "detail.addIntent": "Ajouter une intention",
+    "detail.intentTotal": "Total intentions",
+    "detail.dialogCards": "Cartes de dialogue",
+    "detail.intentModule": "Intention / Module",
+    "detail.displayName": "Nom affiché",
+    "detail.utteranceCount": "Énoncés",
+    "detail.tags": "Étiquettes",
+    "detail.updatedAt": "Mis à jour le",
+    "detail.updatedBy": "Mis à jour par"
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -2009,7 +2042,18 @@ const CGA_I18N_RESOURCES = {
     "workspace.createAllowed": "ボットを作成できます",
     "workspace.createBlocked": "ブロック: bot.create",
     "common.user": "ユーザー",
-    "common.group": "グループ"
+    "common.group": "グループ",
+    "common.all": "すべて",
+    "placeholder.intentSearch": "インテント / 発話 / タグ",
+    "detail.addIntent": "インテント追加",
+    "detail.intentTotal": "全インテント",
+    "detail.dialogCards": "対話カード",
+    "detail.intentModule": "インテント / モジュール",
+    "detail.displayName": "表示名",
+    "detail.utteranceCount": "学習文",
+    "detail.tags": "タグ",
+    "detail.updatedAt": "最終更新日時",
+    "detail.updatedBy": "最終更新者"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2512,7 +2556,18 @@ const CGA_I18N_RESOURCES = {
     "workspace.createAllowed": "봇 생성 가능",
     "workspace.createBlocked": "차단: bot.create",
     "common.user": "사용자",
-    "common.group": "그룹"
+    "common.group": "그룹",
+    "common.all": "전체",
+    "placeholder.intentSearch": "의도 / 학습문장 / 태그",
+    "detail.addIntent": "의도 추가",
+    "detail.intentTotal": "전체 의도",
+    "detail.dialogCards": "대화카드",
+    "detail.intentModule": "의도 / 모듈",
+    "detail.displayName": "표시명",
+    "detail.utteranceCount": "학습문장",
+    "detail.tags": "태그",
+    "detail.updatedAt": "최종수정일시",
+    "detail.updatedBy": "최종수정자"
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -3015,7 +3070,18 @@ const CGA_I18N_RESOURCES = {
     "workspace.createAllowed": "Có thể tạo bot",
     "workspace.createBlocked": "Bị chặn: bot.create",
     "common.user": "Người dùng",
-    "common.group": "Nhóm"
+    "common.group": "Nhóm",
+    "common.all": "Tất cả",
+    "placeholder.intentSearch": "intent / câu mẫu / nhãn",
+    "detail.addIntent": "Thêm intent",
+    "detail.intentTotal": "Tổng intent",
+    "detail.dialogCards": "Thẻ hội thoại",
+    "detail.intentModule": "Ý định / Mô-đun",
+    "detail.displayName": "Tên hiển thị",
+    "detail.utteranceCount": "Câu huấn luyện",
+    "detail.tags": "Nhãn",
+    "detail.updatedAt": "Cập nhật lúc",
+    "detail.updatedBy": "Người cập nhật"
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3518,7 +3584,18 @@ const CGA_I18N_RESOURCES = {
     "workspace.createAllowed": "可创建机器人",
     "workspace.createBlocked": "已阻止：bot.create",
     "common.user": "用户",
-    "common.group": "组"
+    "common.group": "组",
+    "common.all": "全部",
+    "placeholder.intentSearch": "意图 / 语句 / 标签",
+    "detail.addIntent": "添加意图",
+    "detail.intentTotal": "全部意图",
+    "detail.dialogCards": "对话卡",
+    "detail.intentModule": "意图 / 模块",
+    "detail.displayName": "显示名称",
+    "detail.utteranceCount": "训练语句",
+    "detail.tags": "标签",
+    "detail.updatedAt": "最后修改时间",
+    "detail.updatedBy": "最后修改者"
   }
 };
 

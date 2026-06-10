@@ -499,5 +499,16 @@
   "workspace.createAllowed": "Có thể tạo bot",
   "workspace.createBlocked": "Bị chặn: bot.create",
   "common.user": "Người dùng",
-  "common.group": "Nhóm"
+  "common.group": "Nhóm",
+  "common.all": "Tất cả",
+  "placeholder.intentSearch": "intent / câu mẫu / nhãn",
+  "detail.addIntent": "Thêm intent",
+  "detail.intentTotal": "Tổng intent",
+  "detail.dialogCards": "Thẻ hội thoại",
+  "detail.intentModule": "Ý định / Mô-đun",
+  "detail.displayName": "Tên hiển thị",
+  "detail.utteranceCount": "Câu huấn luyện",
+  "detail.tags": "Nhãn",
+  "detail.updatedAt": "Cập nhật lúc",
+  "detail.updatedBy": "Người cập nhật"
 }

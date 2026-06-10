@@ -499,5 +499,16 @@
   "workspace.createAllowed": "可创建机器人",
   "workspace.createBlocked": "已阻止：bot.create",
   "common.user": "用户",
-  "common.group": "组"
+  "common.group": "组",
+  "common.all": "全部",
+  "placeholder.intentSearch": "意图 / 语句 / 标签",
+  "detail.addIntent": "添加意图",
+  "detail.intentTotal": "全部意图",
+  "detail.dialogCards": "对话卡",
+  "detail.intentModule": "意图 / 模块",
+  "detail.displayName": "显示名称",
+  "detail.utteranceCount": "训练语句",
+  "detail.tags": "标签",
+  "detail.updatedAt": "最后修改时间",
+  "detail.updatedBy": "最后修改者"
 }

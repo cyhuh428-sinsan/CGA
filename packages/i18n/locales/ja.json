@@ -499,5 +499,16 @@
   "workspace.createAllowed": "ボットを作成できます",
   "workspace.createBlocked": "ブロック: bot.create",
   "common.user": "ユーザー",
-  "common.group": "グループ"
+  "common.group": "グループ",
+  "common.all": "すべて",
+  "placeholder.intentSearch": "インテント / 発話 / タグ",
+  "detail.addIntent": "インテント追加",
+  "detail.intentTotal": "全インテント",
+  "detail.dialogCards": "対話カード",
+  "detail.intentModule": "インテント / モジュール",
+  "detail.displayName": "表示名",
+  "detail.utteranceCount": "学習文",
+  "detail.tags": "タグ",
+  "detail.updatedAt": "最終更新日時",
+  "detail.updatedBy": "最終更新者"
 }

@@ -499,5 +499,16 @@
   "workspace.createAllowed": "Can create bots",
   "workspace.createBlocked": "Blocked: bot.create",
   "common.user": "User",
-  "common.group": "Group"
+  "common.group": "Group",
+  "common.all": "All",
+  "placeholder.intentSearch": "intent / utterance / tag",
+  "detail.addIntent": "Add Intent",
+  "detail.intentTotal": "Total intents",
+  "detail.dialogCards": "Dialog cards",
+  "detail.intentModule": "Intent / Module",
+  "detail.displayName": "Display name",
+  "detail.utteranceCount": "Utterances",
+  "detail.tags": "Tags",
+  "detail.updatedAt": "Updated at",
+  "detail.updatedBy": "Updated by"
 }
