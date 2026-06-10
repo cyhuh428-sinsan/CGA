@@ -131,8 +131,8 @@ let currentRuleAssets = [
   { name: "Billing priority", description: "Route billing requests", expression: "intent == billing_question", target: "billing_question", enabled: "Y" }
 ];
 let currentScenarioAssets = [
-  { id: "password_reset", type: "intent", displayName: "password_reset" },
-  { id: "account_update", type: "intent", displayName: "account_update" }
+  { id: "password_reset", type: "intent", displayName: "password_reset", answer: "Open Account Settings and choose Reset Password.", dialogCards: ["Open Account Settings and choose Reset Password."] },
+  { id: "account_update", type: "intent", displayName: "account_update", answer: "Open Profile Settings and update your account information.", dialogCards: ["Open Profile Settings and update your account information."] }
 ];
 let currentSelectedIntentId = "password_reset";
 let currentOperationsState = {
@@ -2126,11 +2126,12 @@ function renderSimulatorDetailPanels(test) {
     ? currentEntityAssets.slice(0, 3).map((item) => item.name || item.value).join(", ")
     : t("test.noEntity", "No detected entity");
   const utteranceLabel = selectedIntent?.utterances?.[0]?.utterance || test.last_user_message || "-";
+  const answerLabel = selectedIntent?.answer || selectedIntent?.dialogCards?.[0] || test.last_bot_message || "-";
   aidotResult.innerHTML = `
     <article><strong>${t("test.aidotCompatible", "Aidot-compatible simulator view")}</strong><span>${test.matched_intent || "-"}</span></article>
     <article><strong>${t("test.dialogCard", "Dialog card")}</strong><span>${selectedIntent?.dialogCardCount ?? 0}</span></article>
     <article><strong>${t("test.trainingSample", "Training sample")}</strong><span>${utteranceLabel}</span></article>
-    <article><strong>${t("test.answerSource", "Answer source")}</strong><span>${matchedApi ? t("test.apiAnswer", "API answer") : t("detail.answer", "Answer")}</span></article>
+    <article><strong>${t("test.answerSource", "Answer source")}</strong><span>${matchedApi ? t("test.apiAnswer", "API answer") : answerLabel}</span></article>
   `;
   runtime.innerHTML = `
     <article><strong>${t("test.entities", "Entities")}</strong><span>${entityLabel}</span></article>
@@ -2216,8 +2217,10 @@ function getAidotIntentRows() {
       rowId: String(100001 + index),
       type: scenario.type || "intent",
       displayName: scenario.displayName || intentId,
+      answer: scenario.answer || "",
+      dialogCards: Array.isArray(scenario.dialogCards) ? scenario.dialogCards : [],
       utteranceCount: utterances.length,
-      dialogCardCount: Math.max(1, scenario.type === "module" ? 0 : 1),
+      dialogCardCount: Math.max(Array.isArray(scenario.dialogCards) ? scenario.dialogCards.length : 0, scenario.type === "module" ? 0 : 1),
       tagCount: 0,
       updatedAt: scenario.updated_at || "2026-05-30 12:44",
       updatedBy: "cyhuh",
@@ -2272,7 +2275,8 @@ function renderAidotIntentManager() {
   editor.innerHTML = `
     <label>${t("detail.intentModule", "Intent / Module")}<input data-intent-edit-name value="${selected.id}" /></label>
     <label>${t("detail.displayName", "Display name")}<input data-intent-edit-display value="${selected.displayName}" /></label>
-    <label>${t("detail.answer", "Answer")}<textarea data-intent-edit-answer>${t("detail.simpleAnswer", "Simple answer")}: ${selected.displayName}</textarea></label>
+    <label>${t("detail.answer", "Answer")}<textarea data-intent-edit-answer>${selected.answer || `${t("detail.simpleAnswer", "Simple answer")}: ${selected.displayName}`}</textarea></label>
+    <label>${t("detail.dialogCards", "Dialog cards")}<textarea data-intent-edit-dialog>${selected.dialogCards?.join("\n") || selected.answer || ""}</textarea></label>
     <label>${t("detail.utterances", "Representative Utterances")}<textarea data-intent-edit-utterances>${selected.utterances.map((item) => item.utterance).join("\n")}</textarea></label>
   `;
   side.innerHTML = `
@@ -2313,7 +2317,7 @@ function renderAidotIntentManager() {
         nextNumber += 1;
         id = `new_intent_${nextNumber}`;
       }
-      currentScenarioAssets = [...currentScenarioAssets, { id, type: "intent", displayName: id }];
+      currentScenarioAssets = [...currentScenarioAssets, { id, type: "intent", displayName: id, answer: "", dialogCards: [] }];
       currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: `sample utterance ${nextNumber}`, division: id }];
       currentSelectedIntentId = id;
       currentIntentSearch = "";
@@ -2328,13 +2332,17 @@ function renderAidotIntentManager() {
   }
   const nameInput = editor.querySelector("[data-intent-edit-name]");
   const displayInput = editor.querySelector("[data-intent-edit-display]");
+  const answerInput = editor.querySelector("[data-intent-edit-answer]");
+  const dialogInput = editor.querySelector("[data-intent-edit-dialog]");
   const utteranceInput = editor.querySelector("[data-intent-edit-utterances]");
   const saveSelectedIntent = () => {
     const nextId = nameInput.value.trim() || selected.id;
     const nextDisplay = displayInput.value.trim() || nextId;
+    const nextAnswer = answerInput.value.trim();
+    const nextDialogCards = dialogInput.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
     currentScenarioAssets = [
       ...currentScenarioAssets.filter((item) => item.id !== selected.id && item.displayName !== selected.id),
-      { id: nextId, type: "intent", displayName: nextDisplay }
+      { id: nextId, type: "intent", displayName: nextDisplay, answer: nextAnswer, dialogCards: nextDialogCards }
     ];
     const otherUtterances = currentIntentUtteranceAssets.filter((item) => item.division !== selected.id);
     const nextUtterances = utteranceInput.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean).map((utterance) => ({ utterance, division: nextId }));
@@ -2346,7 +2354,7 @@ function renderAidotIntentManager() {
     renderStateSummary();
     renderOperationsPanels();
   };
-  [nameInput, displayInput, utteranceInput].forEach((input) => input.addEventListener("change", () => {
+  [nameInput, displayInput, answerInput, dialogInput, utteranceInput].forEach((input) => input.addEventListener("change", () => {
     saveSelectedIntent();
     renderAidotIntentManager();
   }));

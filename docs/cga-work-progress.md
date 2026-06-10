@@ -1595,3 +1595,26 @@
 #### 다음 작업
 - Detail 화면에서 선택 의도의 답변/대화카드 편집 저장 구조를 더 직접적으로 연결한다.
 - 필요한 경우 Test 화면에 Aidot의 대화 단계별 로그와 변수 치환 결과를 추가로 붙인다.
+
+### 2026-06-10 Detail 의도 답변/대화카드 저장 연결
+- Detail Settings에서 보이는 답변 textarea가 단순 표시로 끝나지 않고, 선택 의도의 scenario asset에 저장되도록 연결했다.
+- CGA는 Aidot의 의도/답변/대화카드 묶음을 유지해야 하므로, 의도 row 단위에 `answer`, `dialogCards`를 포함해 저장한다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - 기본 scenario sample에 `answer`, `dialogCards`를 추가했다.
+  - `getAidotIntentRows()`가 scenario의 답변과 대화카드 목록을 함께 반환한다.
+  - 선택 의도 편집 영역에 Dialog cards textarea를 추가했다.
+  - 의도 ID, 표시명, 답변, 대화카드, 대표 학습문장 변경 시 기존 Detail Assets 저장 API로 함께 저장한다.
+  - Test 화면의 답변 출처도 선택 의도의 answer/dialogCards를 우선 표시한다.
+- `scripts/serve-studio.js`
+  - 서버 기본 Detail Assets scenario sample에도 `answer`, `dialogCards`를 포함했다.
+- `scripts/check-detail-assets-api.mjs`
+  - Detail Assets API가 scenario answer와 dialogCards를 보존하는지 검증한다.
+- `scripts/check-studio-config.js`
+  - 선택 의도의 대화카드 편집 필드가 빠지면 검증 실패하도록 guard를 추가했다.
+
+#### 다음 작업
+- Detail 화면에서 Synonym/Entity/Dictionary/Scenario/API Tools 탭이 실제 화면 전환처럼 보이도록 단계적으로 재배치한다.
+- Test 화면에 대화 단계별 로그와 변수 치환 결과를 더 붙일지 검토한다.

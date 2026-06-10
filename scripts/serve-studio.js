@@ -440,8 +440,8 @@ function createDefaultDetailAssetsForBot(groupId, botId) {
       { name: "Billing priority", description: "Route billing requests", expression: "intent == billing_question", target: "billing_question", enabled: "Y" }
     ],
     scenarios: [
-      { id: "password_reset", type: "intent", displayName: "password_reset" },
-      { id: "account_update", type: "intent", displayName: "account_update" }
+      { id: "password_reset", type: "intent", displayName: "password_reset", answer: "Open Account Settings and choose Reset Password.", dialogCards: ["Open Account Settings and choose Reset Password."] },
+      { id: "account_update", type: "intent", displayName: "account_update", answer: "Open Profile Settings and update your account information.", dialogCards: ["Open Profile Settings and update your account information."] }
     ],
     updated_at: null
   };
