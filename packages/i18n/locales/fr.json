@@ -510,5 +510,8 @@
   "detail.utteranceCount": "Énoncés",
   "detail.tags": "Étiquettes",
   "detail.updatedAt": "Mis à jour le",
-  "detail.updatedBy": "Mis à jour par"
+  "detail.updatedBy": "Mis à jour par",
+  "access.roleManagement": "Gestion des rôles de groupe",
+  "access.roleManagementBody": "Les administrateurs de groupe gèrent le rôle de chaque utilisateur dans le groupe. L’accès aux écrans change immédiatement selon le rôle choisi.",
+  "errors.auth.roleUpdateForbidden": "Vous n’avez pas l’autorisation de modifier ce rôle de groupe."
 }

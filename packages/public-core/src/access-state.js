@@ -99,6 +99,38 @@ export function canCreateManagedGroup(state, userId = state?.currentUserId) {
   return isSystemAdmin(state, userId);
 }
 
+export function canManageGroupMembership(state, { actorId = state?.currentUserId, groupId }) {
+  return isSystemAdmin(state, actorId) || isGroupAdminForGroup(state, actorId, groupId);
+}
+
+export function updateGroupMembershipRole(state, { actorId = state?.currentUserId, userId, groupId, role }) {
+  if (!userId || !groupId || !role || !canManageGroupMembership(state, { actorId, groupId })) return state;
+  const membership = state.memberships.find((item) => item.user_id === userId && item.group_id === groupId && item.status === "active");
+  if (!membership || membership.role === USER_ROLES.SYSTEM_ADMIN) return state;
+  if (role === USER_ROLES.SYSTEM_ADMIN && !isSystemAdmin(state, actorId)) return state;
+  const activeGroupAdmins = state.memberships.filter((item) => (
+    item.group_id === groupId &&
+    item.status === "active" &&
+    [USER_ROLES.GROUP_ADMIN, USER_ROLES.OWNER, USER_ROLES.SYSTEM_ADMIN].includes(item.role)
+  ));
+  if (
+    state.policy?.oneGroupAdminRequired &&
+    [USER_ROLES.GROUP_ADMIN, USER_ROLES.OWNER].includes(membership.role) &&
+    ![USER_ROLES.GROUP_ADMIN, USER_ROLES.OWNER].includes(role) &&
+    activeGroupAdmins.length <= 1
+  ) {
+    return state;
+  }
+  return {
+    ...state,
+    memberships: state.memberships.map((item) => (
+      item.user_id === userId && item.group_id === groupId && item.status === "active"
+        ? { ...item, role }
+        : item
+    ))
+  };
+}
+
 export function canApproveGroupJoinRequest(state, { requestId, reviewerId = state?.currentUserId }) {
   const request = state.joinRequests.find((item) => item.id === requestId);
   if (!request || request.status !== "pending") return false;

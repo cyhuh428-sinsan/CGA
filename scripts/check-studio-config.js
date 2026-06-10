@@ -142,6 +142,8 @@ if (process.exitCode !== 1) pass("studio UI locale sync is wired to current user
 if (!studioAppSource.includes("requestCgaJson")) fail("studio app does not call CGA management APIs");
 if (!html.includes("data-login-id")) fail("studio login form is missing a user id input");
 if (!html.includes("data-login-password")) fail("studio login form is missing a password input");
+if (!html.includes("data-top-login-submit")) fail("studio top bar is missing quick login action");
+if (!html.includes("data-role-management")) fail("studio access screen is missing group role management table");
 if (!html.includes("data-logout-submit")) fail("studio login form is missing a logout button");
 if (!html.includes("data-auth-message")) fail("studio login form is missing an auth message area");
 if (!html.includes("data-global-message")) fail("studio workspace is missing a global action message area");
@@ -156,6 +158,8 @@ if (!studioAppSource.includes("message.actionForbiddenTitle")) fail("studio app 
 if (!studioAppSource.includes("synced === false")) fail("studio collaboration fallback does not distinguish server denial from local fallback");
 if (!studioAppSource.includes("/api/cga/auth/logout")) fail("studio app is missing logout API call");
 if (!studioAppSource.includes("refreshAccessStateFromServer")) fail("studio app does not refresh access state from server");
+if (!studioAppSource.includes("updateGroupMembershipRole")) fail("studio app does not update group membership roles");
+if (!studioAppSource.includes("/members/")) fail("studio app is missing group member role API call");
 if (!studioAppSource.includes("refreshWorkspaceBotsFromServer")) fail("studio app does not refresh Bot Workspace bot list from server");
 if (!studioAppSource.includes("refreshWorkspaceDataFromServer")) fail("studio app does not use a bounded workspace refresh coordinator");
 if (!studioAppSource.includes("Promise.allSettled")) fail("studio app workspace refresh must not serialize every screen API");
@@ -275,6 +279,7 @@ for (const route of [
   "/api/cga/auth/login",
   "/api/cga/auth/logout",
   "/api/cga/groups",
+  "/members/",
   "/api/cga/groups/join-requests",
   "/api/cga/admin/permission-requests",
   "/bots",
@@ -330,6 +335,7 @@ if (!studioServerSource.includes("operations-state-registry.json")) fail("studio
 if (!studioServerSource.includes("collaboration-state-registry.json")) fail("studio server does not persist Team Dashboard collaboration state");
 if (!studioServerSource.includes("api-answer-registry.json")) fail("studio server does not persist group API answer registry");
 if (!studioServerSource.includes("handleAuthApi")) fail("studio server does not route CGA auth API");
+if (!studioServerSource.includes("membershipRole")) fail("studio server does not route group membership role updates");
 if (!studioServerSource.includes("handleWorkspaceBotApi")) fail("studio server does not route Bot Workspace API");
 if (!studioServerSource.includes("handleStudioStateApi")) fail("studio server does not route Create Bot studio state API");
 if (!studioServerSource.includes("handleCompositionApi")) fail("studio server does not route Configure Bot composition API");
@@ -397,6 +403,10 @@ async function checkAccessTransitions() {
   if (state.memberships.length !== beforeUnauthorizedJoin) fail("builder should not approve group join request");
   state = accessState.approveGroupJoinRequest(state, { requestId: "jr-new-support", reviewerId: "u-group-admin" });
   if (!state.memberships.some((membership) => membership.user_id === "u-new" && membership.group_id === "g-support" && membership.role === "builder")) fail("join approval transition did not create membership");
+  state = accessState.updateGroupMembershipRole(state, { actorId: "u-builder", userId: "u-new", groupId: "g-support", role: "reviewer" });
+  if (!state.memberships.some((membership) => membership.user_id === "u-new" && membership.group_id === "g-support" && membership.role === "builder")) fail("builder should not update group membership role");
+  state = accessState.updateGroupMembershipRole(state, { actorId: "u-group-admin", userId: "u-new", groupId: "g-support", role: "reviewer" });
+  if (!state.memberships.some((membership) => membership.user_id === "u-new" && membership.group_id === "g-support" && membership.role === "reviewer")) fail("group admin should update group membership role");
   const supportScopes = accessState.getEffectiveGroupScopes(state, "u-new", "g-support", "supportbot-draft");
   const ownGroupScopes = accessState.getEffectiveGroupScopes(state, "u-new", "g-u-new", "supportbot-draft");
   const pendingOpsScopes = accessState.getEffectiveGroupScopes(state, "u-builder", "g-ops", "supportbot-draft");

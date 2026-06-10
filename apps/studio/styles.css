@@ -38,6 +38,11 @@ h1 { font-size: var(--font-brand); letter-spacing: 0; }
 .context-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .context-bar span, .contract-stack span { border: 1px solid var(--muted-line); border-radius: 8px; background: #f8fafc; padding: 7px 10px; font-size: var(--font-body); color: #334155; }
 .context-bar .status-ok { background: var(--green-soft); color: #047857; }
+.quick-auth { display: grid; grid-template-columns: auto 120px; align-items: center; gap: 6px; margin: 0; border: 1px solid var(--muted-line); border-radius: 8px; background: #f8fafc; padding: 4px 8px; }
+.quick-auth span { border: 0; background: transparent; padding: 0; font-weight: 800; }
+.quick-auth select, .quick-password { height: 34px; padding: 6px 8px; font-size: var(--font-body); }
+.quick-password { width: 120px; }
+.quick-auth-button { height: 34px; padding: 6px 10px; }
 
 .language-picker {
   display: inline-flex;
@@ -1062,6 +1067,13 @@ textarea { min-height: 84px; resize: vertical; }
   background: #ffffff;
   padding: 10px 12px;
 }
+
+.role-management-panel { border: 1px solid var(--muted-line); border-radius: 8px; background: #f8fafc; padding: 14px; margin-top: 16px; }
+.role-management-panel p { margin-top: 6px; color: var(--muted); font-size: var(--font-desc); }
+.role-management-table { margin-top: 12px; border: 1px solid var(--muted-line); border-radius: 8px; background: #fff; overflow: hidden; }
+.role-management-row { display: grid; grid-template-columns: 1.1fr 1fr 150px 150px; gap: 8px; align-items: center; padding: 9px 10px; border-bottom: 1px solid var(--muted-line); }
+.role-management-row.head { background: #f8fafc; font-weight: 800; color: #475569; font-size: var(--font-desc); }
+.role-management-row select { height: 34px; }
 
 .group-user-list > div.group-user-card {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);

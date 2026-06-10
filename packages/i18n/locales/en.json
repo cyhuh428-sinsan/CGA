@@ -510,5 +510,8 @@
   "detail.utteranceCount": "Utterances",
   "detail.tags": "Tags",
   "detail.updatedAt": "Updated at",
-  "detail.updatedBy": "Updated by"
+  "detail.updatedBy": "Updated by",
+  "access.roleManagement": "Group Role Management",
+  "access.roleManagementBody": "Group administrators manage each user role inside the group. Screen access changes immediately from the selected role.",
+  "errors.auth.roleUpdateForbidden": "You do not have permission to change this group role."
 }

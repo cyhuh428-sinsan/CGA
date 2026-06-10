@@ -117,6 +117,13 @@
       "localeSource": "user.locale"
     },
     {
+      "code": "CGA_MEMBERSHIP_ROLE_UPDATE_FORBIDDEN",
+      "key": "errors.auth.roleUpdateForbidden",
+      "domain": "auth",
+      "audience": "cga_user",
+      "localeSource": "user.locale"
+    },
+    {
       "code": "CGA_AUTH_REQUIRED",
       "key": "errors.auth.required",
       "domain": "auth",

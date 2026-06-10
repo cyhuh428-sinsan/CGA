@@ -510,5 +510,8 @@
   "detail.utteranceCount": "学習文",
   "detail.tags": "タグ",
   "detail.updatedAt": "最終更新日時",
-  "detail.updatedBy": "最終更新者"
+  "detail.updatedBy": "最終更新者",
+  "access.roleManagement": "グループ役割管理",
+  "access.roleManagementBody": "グループ管理者はグループ内のユーザー役割を管理します。選択した役割に応じて画面アクセスがすぐに変わります。",
+  "errors.auth.roleUpdateForbidden": "このグループ役割を変更する権限がありません。"
 }
