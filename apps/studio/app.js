@@ -96,6 +96,7 @@ const API_REGISTRY_CACHE_TTL_MS = 15000;
 const MANAGED_GROUP_ROLES = ["group_admin", "builder", "reviewer", "operator", "viewer"];
 let currentIntentSearch = "";
 let currentIntentFilter = "all";
+let currentDetailTab = "intent";
 let currentCompositionState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
@@ -2196,6 +2197,7 @@ function renderAllStatePanels() {
   renderTopContext();
   renderConfigureComposition();
   renderAidotIntentManager();
+  renderDetailTabs();
   renderErrorSamples();
   renderStateSummary();
   renderReadinessIssues();
@@ -2227,6 +2229,85 @@ function getAidotIntentRows() {
       utterances
     };
   });
+}
+
+function escapeText(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderDetailAssetRows(items, columns) {
+  if (!items.length) {
+    return `<div class="aidot-intent-empty">${t("common.none", "None")}</div>`;
+  }
+  return `
+    <div class="detail-asset-table">
+      <div class="detail-asset-row head">${columns.map((column) => `<span>${escapeText(column.label)}</span>`).join("")}</div>
+      ${items.map((item) => `
+        <div class="detail-asset-row">
+          ${columns.map((column) => {
+            const value = column.value(item);
+            const text = Array.isArray(value) ? value.join(", ") : value;
+            return column.strong ? `<strong>${escapeText(text)}</strong>` : `<span>${escapeText(text)}</span>`;
+          }).join("")}
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderDetailTabs() {
+  const intentPanel = document.querySelector("[data-detail-intent-panel]");
+  const detailPanel = document.querySelector("[data-detail-tab-panel]");
+  const buttons = document.querySelectorAll("[data-detail-tab]");
+  if (!intentPanel || !detailPanel || !buttons.length) return;
+  buttons.forEach((button) => {
+    button.classList.toggle("active-tab", button.dataset.detailTab === currentDetailTab);
+    if (button.dataset.bound !== "true") {
+      button.dataset.bound = "true";
+      button.addEventListener("click", () => {
+        currentDetailTab = button.dataset.detailTab || "intent";
+        if (currentDetailTab === "intent") renderAidotIntentManager();
+        renderDetailTabs();
+      });
+    }
+  });
+  intentPanel.hidden = currentDetailTab !== "intent";
+  detailPanel.hidden = currentDetailTab === "intent";
+  if (currentDetailTab === "intent") return;
+
+  const tabRenderers = {
+    synonyms: () => renderDetailAssetRows(currentDictionaryAssets, [
+      { label: t("detail.synonyms", "Synonyms"), value: (item) => item.word, strong: true },
+      { label: t("detail.dictionary", "Dictionary"), value: (item) => item.synonyms || [] },
+      { label: t("common.enabled", "Enabled"), value: () => "Y" }
+    ]),
+    entities: () => renderDetailAssetRows(currentEntityAssets, [
+      { label: t("detail.entities", "Entities"), value: (item) => item.name, strong: true },
+      { label: "Value", value: (item) => item.value || item.detail || "" },
+      { label: "Type", value: (item) => item.rowType || "S" }
+    ]),
+    dictionary: () => renderDetailAssetRows(currentDictionaryAssets, [
+      { label: t("detail.dictionary", "Dictionary"), value: (item) => item.word, strong: true },
+      { label: t("detail.synonyms", "Synonyms"), value: (item) => item.synonyms || [] },
+      { label: t("detail.updatedBy", "Updated by"), value: () => currentAccessState.currentUserId }
+    ]),
+    scenario: () => renderDetailAssetRows(getAidotIntentRows(), [
+      { label: t("detail.scenario", "Scenario"), value: (item) => item.id, strong: true },
+      { label: t("detail.answer", "Answer"), value: (item) => item.answer || item.dialogCards?.[0] || "" },
+      { label: t("detail.dialogCards", "Dialog cards"), value: (item) => item.dialogCardCount }
+    ]),
+    api: () => renderDetailAssetRows(currentApiRegistry.filter((item) => item.group_id === currentWorkspaceGroupId && item.bot_id === currentWorkspaceBotId), [
+      { label: t("detail.apiTools", "API Tools"), value: (item) => item.name, strong: true },
+      { label: "Endpoint", value: (item) => item.endpoint_url },
+      { label: "Response", value: (item) => item.response_path || item.response_mapping?.answer_text_path || "data.answer" }
+    ])
+  };
+  detailPanel.innerHTML = tabRenderers[currentDetailTab]?.() || "";
 }
 
 function renderAidotIntentManager() {
@@ -3778,6 +3859,7 @@ function bootApp() {
   renderCreateSummary();
   renderConfigureComposition();
   renderAidotIntentManager();
+  renderDetailTabs();
   renderStateSummary();
   renderReadinessIssues();
   renderCommercialAvailability();

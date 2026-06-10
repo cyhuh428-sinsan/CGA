@@ -1618,3 +1618,26 @@
 #### 다음 작업
 - Detail 화면에서 Synonym/Entity/Dictionary/Scenario/API Tools 탭이 실제 화면 전환처럼 보이도록 단계적으로 재배치한다.
 - Test 화면에 대화 단계별 로그와 변수 치환 결과를 더 붙일지 검토한다.
+
+### 2026-06-10 Detail Assets 탭 전환 1차 연결
+- Detail Settings의 탭들이 장식으로만 보이지 않도록 실제 화면 전환 패널을 연결했다.
+- 이번 변경은 Aidot 기능을 새로 만드는 것이 아니라, 이미 CGA가 보유한 Detail Assets 데이터를 Aidot식 탭 구분으로 재배치한 것이다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - Intent & Answer, Synonyms, Entities, Dictionary, Scenario, API Tools 탭에 `data-detail-tab`을 부여했다.
+  - Intent & Answer 영역과 기타 Detail Assets 탭 패널을 분리했다.
+- `apps/studio/app.js`
+  - `currentDetailTab` 상태와 `renderDetailTabs()`를 추가했다.
+  - Intent & Answer 탭은 기존 Aidot식 의도 목록/편집 화면을 유지한다.
+  - Synonyms, Entities, Dictionary, Scenario, API Tools 탭은 현재 Detail Assets와 Group API Registry 데이터를 목록 형태로 표시한다.
+  - 화면 갱신 시 현재 탭 상태가 유지되도록 `renderAllStatePanels()`와 boot 흐름에 연결했다.
+- `apps/studio/styles.css`
+  - Detail Assets 탭 목록 패널과 행 스타일을 추가했다.
+- `scripts/check-studio-config.js`
+  - Detail 탭 패널과 렌더러가 빠지면 검증 실패하도록 guard를 추가했다.
+
+#### 다음 작업
+- Synonyms/Entities/Dictionary/Scenario/API Tools 각 탭에서 편집 가능한 항목을 단계적으로 연결한다.
+- Test 화면의 대화 단계 로그와 변수 치환 표시를 추가한다.

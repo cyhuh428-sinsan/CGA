@@ -260,6 +260,12 @@ textarea { min-height: 84px; resize: vertical; }
 .option-dots { display: inline-flex; gap: 4px; align-items: center; }
 .option-dots b { width: 18px; height: 18px; display: inline-grid; place-items: center; border: 1px solid #cbd5e1; border-radius: 50%; background: #fff; color: #64748b; font-size: var(--font-desc); font-weight: 800; }
 .aidot-intent-empty { padding: 12px; color: var(--muted); font-size: var(--font-body); }
+.detail-tab-panel { border: 1px solid var(--muted-line); border-radius: 8px; background: #f8fafc; padding: 14px; }
+.detail-asset-table { border: 1px solid var(--muted-line); border-radius: 8px; background: #fff; overflow: hidden; }
+.detail-asset-row { display: grid; grid-template-columns: 180px minmax(0, 1fr) 120px; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--muted-line); }
+.detail-asset-row.head { background: #f8fafc; color: #475569; font-size: var(--font-desc); font-weight: 800; }
+.detail-asset-row strong { color: #0f172a; font-size: var(--font-body); }
+.detail-asset-row span { color: #475569; font-size: var(--font-body); line-height: 1.35; }
 .status-panel.compact { background: #f8fafc; }
 .workspace-transfer-card {
   grid-column: 1 / 3;
@@ -1532,7 +1538,7 @@ textarea { min-height: 84px; resize: vertical; }
 }
 
 @media (max-width: 1300px) { .app-shell { grid-template-columns: 240px 1fr; } .approval { grid-column: 1 / -1; position: static; } .topbar { grid-template-columns: 1fr; height: auto; position: static; } .context-bar { justify-content: flex-start; } .hero-panel, .two-column, .simulator-layout, .editor-layout, .aidot-intent-layout, .permission-layout, .auth-policy-layout, .auth-flow-layout, .request-layout, .access-ops-panel, .workspace-home-layout, .team-dashboard-layout { grid-template-columns: 1fr; } .workspace-transfer-card { grid-column: auto; } }
-@media (max-width: 820px) { .app-shell { grid-template-columns: 1fr; padding: 12px; } .workflow { position: static; } .input-paths, .readiness-grid, .ops-grid, .module-layout, .boundary-table, .i18n-grid, .error-samples, .contract-grid, .state-grid, .decision-grid, .lock-runtime-grid, .access-grid, .access-ops-grid, .api-answer-layout, .metric-example, .coverage-grid, .collab-grid, .collab-summary, .permission-table, .screen-access-list > div, .policy-list p, .bot-list-row, .team-status-strip, .asset-transfer-grid, .version-strip, .transfer-history-list > div, .aidot-intent-toolbar, .role-management-row, .simulator-result-grid, .simulator-runtime-grid { grid-template-columns: 1fr; } .screen-heading { grid-template-columns: 42px 1fr; } .screen-heading em { grid-column: 1 / -1; max-width: none; } .intent-row, .aidot-intent-head, .aidot-intent-row { grid-template-columns: 1fr; } .aidot-intent-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mini-flow { white-space: normal; flex-wrap: wrap; } }
+@media (max-width: 820px) { .app-shell { grid-template-columns: 1fr; padding: 12px; } .workflow { position: static; } .input-paths, .readiness-grid, .ops-grid, .module-layout, .boundary-table, .i18n-grid, .error-samples, .contract-grid, .state-grid, .decision-grid, .lock-runtime-grid, .access-grid, .access-ops-grid, .api-answer-layout, .metric-example, .coverage-grid, .collab-grid, .collab-summary, .permission-table, .screen-access-list > div, .policy-list p, .bot-list-row, .team-status-strip, .asset-transfer-grid, .version-strip, .transfer-history-list > div, .aidot-intent-toolbar, .role-management-row, .simulator-result-grid, .simulator-runtime-grid, .detail-asset-row { grid-template-columns: 1fr; } .screen-heading { grid-template-columns: 42px 1fr; } .screen-heading em { grid-column: 1 / -1; max-width: none; } .intent-row, .aidot-intent-head, .aidot-intent-row { grid-template-columns: 1fr; } .aidot-intent-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mini-flow { white-space: normal; flex-wrap: wrap; } }
 
 .status-panel [data-create-summary] {
   display: block;
