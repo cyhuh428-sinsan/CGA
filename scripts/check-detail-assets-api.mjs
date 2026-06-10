@@ -83,16 +83,18 @@ async function main() {
         { name: "Revenue API route", description: "Use group API answer", expression: "intent == revenue_lookup", target: "api.revenue", enabled: "Y" }
       ],
       scenarios: [
-        { id: "revenue_lookup", type: "intent", displayName: "revenue_lookup" }
+        { id: "revenue_lookup", type: "intent", displayName: "revenue_lookup", answer: "Revenue comes from the financial API.", dialogCards: ["Revenue comes from the financial API."] }
       ]
     }
   }, 200, "builder should save detail assets");
   if (saved.detail_assets?.dictionary?.[0]?.word !== "revenue") fail("saved detail dictionary mismatch");
   if (saved.detail_assets?.rules?.[0]?.target !== "api.revenue") fail("saved detail rule mismatch");
+  if (saved.detail_assets?.scenarios?.[0]?.answer !== "Revenue comes from the financial API.") fail("saved detail scenario answer mismatch");
 
   const afterSave = await expectStatus(detailPath, { userId: "u-builder" }, 200, "detail assets read after save failed");
   if (afterSave.intent_utterances?.[0]?.division !== "revenue_lookup") fail("detail assets did not persist intent utterance");
   if (afterSave.entities?.[0]?.name !== "period") fail("detail assets did not persist entity");
+  if (afterSave.scenarios?.[0]?.dialogCards?.[0] !== "Revenue comes from the financial API.") fail("detail assets did not persist dialog card");
 
   const detailFile = join(dataDir, "detail-asset-registry.json");
   if (!existsSync(detailFile)) fail("detail asset registry file was not created");

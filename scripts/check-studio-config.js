@@ -187,6 +187,7 @@ if (!html.includes("data-aidot-intent-table")) fail("Detail Settings does not ex
 if (!html.includes("data-aidot-intent-add")) fail("Detail Settings does not expose Aidot-style Add Intent action");
 if (!studioAppSource.includes("renderAidotIntentManager")) fail("studio app does not render Aidot-style intent management from detail assets");
 if (!studioAppSource.includes("data-intent-edit-utterances")) fail("studio app does not expose representative utterance editing for selected intent");
+if (!studioAppSource.includes("data-intent-edit-dialog")) fail("studio app does not expose dialog card editing for selected intent");
 if (!studioAppSource.includes("currentIntentSearch")) fail("studio app does not keep Aidot-style intent search state");
 if (!studioAppSource.includes("currentIntentFilter")) fail("studio app does not keep Aidot-style intent filter state");
 if (!studioCssSource.includes("option-dots")) fail("studio CSS does not render Aidot-style T/R/F option markers");
