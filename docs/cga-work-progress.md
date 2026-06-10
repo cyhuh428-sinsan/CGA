@@ -1491,3 +1491,31 @@
 #### 다음 작업
 - 검증 통과 후 커밋/push하고 WSL 컨테이너에 반영한다.
 - 이후 컨테이너 운영 기준에서 data volume 백업/복구 정책을 문서화할지 검토한다.
+
+### 2026-06-10 Aidot식 의도관리/시뮬레이터 재배치 1차 반영
+- 신산님 지시로 봇과 의도가 생성된 이후의 의도 관리/수정 기능은 새로 설계하지 않고 Aidot의 기존 기능 흐름을 그대로 가져오는 기준으로 확정했다.
+- CGA는 기능을 새로 만드는 것이 아니라, Aidot의 의도/학습문장/대화카드/개체/사전/시나리오/API/시뮬레이터 기능을 봇 제작 순서에 맞게 재배치한다.
+- 이번 변경은 Detail Settings 화면을 Aidot식 목록 중심 의도 관리 화면으로 바꾸는 1차 화면 재배치다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - 기존 카드형 Detail Settings 영역을 Aidot식 의도 관리 구조로 재배치했다.
+  - 의도 검색/필터/추가 영역, 의도 요약, 의도 목록 테이블, 선택 의도 편집 영역, 고급 상태 패널을 추가했다.
+- `apps/studio/app.js`
+  - `renderAidotIntentManager()`를 추가했다.
+  - 기존 Detail Assets의 `intent_utterances`, `scenarios`, `dictionary`, `entities`, `rules`, API registry 데이터를 사용해 의도 목록과 요약을 렌더링한다.
+  - 선택한 의도의 표시명과 대표 학습문장을 화면에서 수정할 수 있고, 변경 시 기존 Detail Assets 저장 API로 저장한다.
+  - Test 화면은 기존 `operations-state/run-test` 기반 simulator 결과 표시를 유지한다.
+- `apps/studio/styles.css`
+  - Aidot식 의도 목록 테이블과 요약 카드 스타일을 추가했다.
+  - 기존 폰트 기준 24/14/12/10/9px는 유지했다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - 새 Detail 화면 문구를 7개 locale(en, ko, zh-CN, ja, vi, de, fr)에 추가하고 Studio 번들 i18n과 동기화했다.
+- `scripts/check-studio-config.js`
+  - Detail Settings가 Aidot식 의도관리 테이블과 선택 의도 학습문장 편집을 제공하지 않으면 실패하도록 검증을 추가했다.
+
+#### 다음 작업
+- 로그인/그룹/역할 설정을 상단과 Access 화면에 더 직접 노출한다.
+- Detail 화면의 의도 추가/삭제, 대화카드 편집, 기타옵션(T/R/F) 표시를 Aidot 화면 기준으로 계속 보강한다.
+- 시뮬레이터는 현재 Test 화면에 연결되어 있으므로, 다음 단계에서 Aidot의 simulator 결과 항목을 더 촘촘히 맞춘다.

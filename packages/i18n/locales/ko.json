@@ -499,5 +499,16 @@
   "workspace.createAllowed": "봇 생성 가능",
   "workspace.createBlocked": "차단: bot.create",
   "common.user": "사용자",
-  "common.group": "그룹"
+  "common.group": "그룹",
+  "common.all": "전체",
+  "placeholder.intentSearch": "의도 / 학습문장 / 태그",
+  "detail.addIntent": "의도 추가",
+  "detail.intentTotal": "전체 의도",
+  "detail.dialogCards": "대화카드",
+  "detail.intentModule": "의도 / 모듈",
+  "detail.displayName": "표시명",
+  "detail.utteranceCount": "학습문장",
+  "detail.tags": "태그",
+  "detail.updatedAt": "최종수정일시",
+  "detail.updatedBy": "최종수정자"
 }

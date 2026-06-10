@@ -342,11 +342,17 @@
           <div><h3 data-i18n="detail.title">Detail Settings</h3><p data-i18n="detail.body">Beginner flow stays guided, and all Aidot detail screens remain available in this step.</p></div>
           <em data-i18n="detail.map">Maps to Aidot: Intent / Entity / Dictionary / Scenario / API cards</em>
         </div>
-        <div class="tab-strip"><button class="active-tab">Intent &amp; Answer</button><button data-i18n="detail.synonyms">Synonyms</button><button data-i18n="detail.entities">Entities</button><button data-i18n="detail.dictionary">Dictionary</button><button data-i18n="detail.scenario">Scenario</button><button data-i18n="detail.apiTools">API Tools</button></div>
-        <div class="editor-layout">
-          <div class="intent-list"><strong data-i18n="detail.intents">Intents</strong><p class="active-item">password_reset</p><p>account_update</p><p>billing_question</p></div>
-          <div class="answer-editor"><label>Answer<textarea>To reset your password, open Account Settings and choose Reset Password.</textarea></label><label>Representative Utterances<textarea>How do I reset my password?\nI forgot my login password.</textarea></label></div>
-          <aside class="status-panel compact"><h4 data-i18n="detail.advancedStatus">Advanced status</h4><p><b data-i18n="detail.synonyms">Synonyms</b><span data-i18n="detail.available">Available</span></p><p><b data-i18n="detail.entities">Entities</b><span data-i18n="detail.availableWhenNeeded">Available when needed</span></p><p><b data-i18n="detail.scenario">Scenario</b><span data-i18n="detail.simpleAnswer">Simple answer</span></p></aside>
+        <div class="tab-strip"><button class="active-tab" data-i18n="detail.intentAnswer">Intent &amp; Answer</button><button data-i18n="detail.synonyms">Synonyms</button><button data-i18n="detail.entities">Entities</button><button data-i18n="detail.dictionary">Dictionary</button><button data-i18n="detail.scenario">Scenario</button><button data-i18n="detail.apiTools">API Tools</button></div>
+        <div class="aidot-intent-toolbar">
+          <input data-aidot-intent-search placeholder="intent / utterance / tag" data-i18n-placeholder="placeholder.intentSearch" />
+          <select data-aidot-intent-filter><option value="all" data-i18n="common.all">All</option><option value="intent" data-i18n="detail.intents">Intents</option></select>
+          <button type="button" data-i18n="detail.addIntent">Add Intent</button>
+        </div>
+        <div class="aidot-intent-summary" data-aidot-intent-summary></div>
+        <div class="aidot-intent-layout">
+          <div class="aidot-intent-table" data-aidot-intent-table></div>
+          <div class="answer-editor" data-aidot-intent-editor></div>
+          <aside class="status-panel compact" data-aidot-intent-side></aside>
         </div>
         <div class="asset-transfer-panel">
           <div>

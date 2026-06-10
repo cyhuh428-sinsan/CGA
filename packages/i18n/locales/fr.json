@@ -499,5 +499,16 @@
   "workspace.createAllowed": "Peut créer des bots",
   "workspace.createBlocked": "Bloqué : bot.create",
   "common.user": "Utilisateur",
-  "common.group": "Groupe"
+  "common.group": "Groupe",
+  "common.all": "Tout",
+  "placeholder.intentSearch": "intention / énoncé / étiquette",
+  "detail.addIntent": "Ajouter une intention",
+  "detail.intentTotal": "Total intentions",
+  "detail.dialogCards": "Cartes de dialogue",
+  "detail.intentModule": "Intention / Module",
+  "detail.displayName": "Nom affiché",
+  "detail.utteranceCount": "Énoncés",
+  "detail.tags": "Étiquettes",
+  "detail.updatedAt": "Mis à jour le",
+  "detail.updatedBy": "Mis à jour par"
 }

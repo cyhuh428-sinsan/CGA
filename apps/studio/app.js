@@ -130,6 +130,7 @@ let currentScenarioAssets = [
   { id: "password_reset", type: "intent", displayName: "password_reset" },
   { id: "account_update", type: "intent", displayName: "account_update" }
 ];
+let currentSelectedIntentId = "password_reset";
 let currentOperationsState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
@@ -2089,11 +2090,113 @@ function renderAllStatePanels() {
   renderCreateSummary();
   renderTopContext();
   renderConfigureComposition();
+  renderAidotIntentManager();
   renderErrorSamples();
   renderStateSummary();
   renderReadinessIssues();
   renderOperationsPanels();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+}
+
+function getAidotIntentRows() {
+  const intentIds = new Set([
+    ...currentScenarioAssets.map((item) => item.id || item.displayName).filter(Boolean),
+    ...currentIntentUtteranceAssets.map((item) => item.division).filter(Boolean),
+    ...(currentCompositionState.intent_candidates || []).map((item) => item.intent).filter(Boolean)
+  ]);
+  return [...intentIds].map((intentId, index) => {
+    const scenario = currentScenarioAssets.find((item) => item.id === intentId || item.displayName === intentId) || {};
+    const utterances = currentIntentUtteranceAssets.filter((item) => item.division === intentId);
+    return {
+      id: intentId,
+      rowId: String(100001 + index),
+      type: scenario.type || "intent",
+      displayName: scenario.displayName || intentId,
+      utteranceCount: utterances.length,
+      dialogCardCount: Math.max(1, scenario.type === "module" ? 0 : 1),
+      tagCount: 0,
+      updatedAt: scenario.updated_at || "2026-05-30 12:44",
+      updatedBy: "cyhuh",
+      utterances
+    };
+  });
+}
+
+function renderAidotIntentManager() {
+  const summary = document.querySelector("[data-aidot-intent-summary]");
+  const table = document.querySelector("[data-aidot-intent-table]");
+  const editor = document.querySelector("[data-aidot-intent-editor]");
+  const side = document.querySelector("[data-aidot-intent-side]");
+  if (!summary || !table || !editor || !side) return;
+  const rows = getAidotIntentRows();
+  if (!rows.some((row) => row.id === currentSelectedIntentId)) currentSelectedIntentId = rows[0]?.id || "";
+  const selected = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || null;
+  summary.innerHTML = `
+    <div><strong>${t("detail.intentTotal", "Total intents")}</strong><span>${rows.length}</span></div>
+    <div><strong>${t("detail.utterances", "Representative Utterances")}</strong><span>${currentIntentUtteranceAssets.length}</span></div>
+    <div><strong>${t("detail.dialogCards", "Dialog cards")}</strong><span>${rows.reduce((sum, row) => sum + row.dialogCardCount, 0)}</span></div>
+    <div><strong>${t("detail.dictionary", "Dictionary")}</strong><span>${currentDictionaryAssets.length}</span></div>
+    <div><strong>${t("detail.entities", "Entities")}</strong><span>${currentEntityAssets.length}</span></div>
+    <div><strong>${t("coverage.ruleTitle", "Rule")}</strong><span>${currentRuleAssets.length}</span></div>
+  `;
+  table.innerHTML = `
+    <div class="aidot-intent-head">
+      <span>ID</span><span>${t("detail.intentModule", "Intent / Module")}</span><span>${t("detail.displayName", "Display name")}</span><span>${t("detail.utteranceCount", "Utterances")}</span><span>${t("detail.dialogCards", "Dialog cards")}</span><span>${t("detail.tags", "Tags")}</span><span>${t("detail.updatedAt", "Updated at")}</span><span>${t("detail.updatedBy", "Updated by")}</span>
+    </div>
+    ${rows.map((row) => `
+      <button type="button" class="aidot-intent-row ${row.id === currentSelectedIntentId ? "selected" : ""}" data-select-intent="${row.id}">
+        <span>${row.rowId}</span><strong>${row.id}</strong><span>${row.displayName}</span><span>${row.utteranceCount}</span><span>${row.dialogCardCount}</span><span>${row.tagCount}</span><span>${row.updatedAt}</span><span>${row.updatedBy}</span>
+      </button>
+    `).join("")}
+  `;
+  if (!selected) {
+    editor.innerHTML = `<strong>${t("review.noIntentCandidate", "No intent candidate")}</strong>`;
+    side.innerHTML = "";
+    return;
+  }
+  editor.innerHTML = `
+    <label>${t("detail.intentModule", "Intent / Module")}<input data-intent-edit-name value="${selected.id}" /></label>
+    <label>${t("detail.displayName", "Display name")}<input data-intent-edit-display value="${selected.displayName}" /></label>
+    <label>${t("detail.answer", "Answer")}<textarea data-intent-edit-answer>${t("detail.simpleAnswer", "Simple answer")}: ${selected.displayName}</textarea></label>
+    <label>${t("detail.utterances", "Representative Utterances")}<textarea data-intent-edit-utterances>${selected.utterances.map((item) => item.utterance).join("\n")}</textarea></label>
+  `;
+  side.innerHTML = `
+    <h4>${t("detail.advancedStatus", "Advanced status")}</h4>
+    <p><b>${t("detail.synonyms", "Synonyms")}</b><span>${currentDictionaryAssets.length}</span></p>
+    <p><b>${t("detail.entities", "Entities")}</b><span>${currentEntityAssets.length}</span></p>
+    <p><b>${t("detail.scenario", "Scenario")}</b><span>${selected.dialogCardCount}</span></p>
+    <p><b>${t("detail.apiTools", "API Tools")}</b><span>${currentApiRegistry.filter((item) => item.group_id === currentWorkspaceGroupId && item.bot_id === currentWorkspaceBotId).length}</span></p>
+  `;
+  table.querySelectorAll("[data-select-intent]").forEach((button) => {
+    button.addEventListener("click", () => {
+      currentSelectedIntentId = button.dataset.selectIntent;
+      renderAidotIntentManager();
+    });
+  });
+  const nameInput = editor.querySelector("[data-intent-edit-name]");
+  const displayInput = editor.querySelector("[data-intent-edit-display]");
+  const utteranceInput = editor.querySelector("[data-intent-edit-utterances]");
+  const saveSelectedIntent = () => {
+    const nextId = nameInput.value.trim() || selected.id;
+    const nextDisplay = displayInput.value.trim() || nextId;
+    currentScenarioAssets = [
+      ...currentScenarioAssets.filter((item) => item.id !== selected.id && item.displayName !== selected.id),
+      { id: nextId, type: "intent", displayName: nextDisplay }
+    ];
+    const otherUtterances = currentIntentUtteranceAssets.filter((item) => item.division !== selected.id);
+    const nextUtterances = utteranceInput.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean).map((utterance) => ({ utterance, division: nextId }));
+    currentIntentUtteranceAssets = [...otherUtterances, ...nextUtterances];
+    currentSelectedIntentId = nextId;
+    currentStudioState.counts.intents = getAidotIntentRows().length;
+    currentStudioState.counts.utterances = currentIntentUtteranceAssets.length;
+    saveDetailAssetsToServer().catch(() => false);
+    renderStateSummary();
+    renderOperationsPanels();
+  };
+  [nameInput, displayInput, utteranceInput].forEach((input) => input.addEventListener("change", () => {
+    saveSelectedIntent();
+    renderAidotIntentManager();
+  }));
 }
 
 function normalizeIntentCandidate(item, index = 0) {
@@ -3428,6 +3531,7 @@ function bootApp() {
   bindConfigureComposition();
   renderCreateSummary();
   renderConfigureComposition();
+  renderAidotIntentManager();
   renderStateSummary();
   renderReadinessIssues();
   renderCommercialAvailability();

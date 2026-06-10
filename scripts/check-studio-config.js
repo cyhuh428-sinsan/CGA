@@ -115,7 +115,7 @@ for (const locale of locales) {
 }
 if (process.exitCode !== 1) pass("all locale files match English key coverage");
 
-const resourceMatch = appSource.match(/const CGA_I18N_RESOURCES = ([\s\S]*?);\n\nconst FALLBACK_LOCALE/);
+const resourceMatch = appSource.match(/const CGA_I18N_RESOURCES = ([\s\S]*?);\r?\n\r?\nconst FALLBACK_LOCALE/);
 if (!resourceMatch) {
   fail("studio i18n.js does not expose parseable CGA_I18N_RESOURCES");
 } else {
@@ -178,6 +178,9 @@ if (!studioAppSource.includes("refreshDetailAssetsFromServer")) fail("studio app
 if (!studioAppSource.includes("saveDetailAssetsToServer")) fail("studio app does not save Detail Settings assets through server API");
 if (!studioAppSource.includes("persistDetailAssetsToServer")) fail("detail asset save is not split into queued wrapper and persist action");
 if (!studioAppSource.includes("cloneForSnapshot(currentIntentUtteranceAssets)")) fail("detail asset save does not capture payload at request time");
+if (!html.includes("data-aidot-intent-table")) fail("Detail Settings does not expose Aidot-style intent management table");
+if (!studioAppSource.includes("renderAidotIntentManager")) fail("studio app does not render Aidot-style intent management from detail assets");
+if (!studioAppSource.includes("data-intent-edit-utterances")) fail("studio app does not expose representative utterance editing for selected intent");
 if (!studioAppSource.includes("refreshOperationsStateFromServer")) fail("studio app does not refresh Build/Test/Operate state from server");
 if (!studioAppSource.includes("runOperationsAction")) fail("studio app does not run Build/Test/Operate actions through server API");
 if (!studioAppSource.includes("getOperationsStateUrl(groupId, botId, action)")) fail("operations action does not capture group/bot at request time");
