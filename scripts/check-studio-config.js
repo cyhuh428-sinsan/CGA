@@ -185,7 +185,9 @@ if (!studioAppSource.includes("persistDetailAssetsToServer")) fail("detail asset
 if (!studioAppSource.includes("cloneForSnapshot(currentIntentUtteranceAssets)")) fail("detail asset save does not capture payload at request time");
 if (!html.includes("data-aidot-intent-table")) fail("Detail Settings does not expose Aidot-style intent management table");
 if (!html.includes("data-aidot-intent-add")) fail("Detail Settings does not expose Aidot-style Add Intent action");
+if (!html.includes("data-detail-tab-panel")) fail("Detail Settings does not expose Aidot-style detail tab panel");
 if (!studioAppSource.includes("renderAidotIntentManager")) fail("studio app does not render Aidot-style intent management from detail assets");
+if (!studioAppSource.includes("renderDetailTabs")) fail("studio app does not render Aidot-style detail asset tabs");
 if (!studioAppSource.includes("data-intent-edit-utterances")) fail("studio app does not expose representative utterance editing for selected intent");
 if (!studioAppSource.includes("data-intent-edit-dialog")) fail("studio app does not expose dialog card editing for selected intent");
 if (!studioAppSource.includes("currentIntentSearch")) fail("studio app does not keep Aidot-style intent search state");

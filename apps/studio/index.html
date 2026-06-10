@@ -351,18 +351,28 @@
           <div><h3 data-i18n="detail.title">Detail Settings</h3><p data-i18n="detail.body">Beginner flow stays guided, and all Aidot detail screens remain available in this step.</p></div>
           <em data-i18n="detail.map">Maps to Aidot: Intent / Entity / Dictionary / Scenario / API cards</em>
         </div>
-        <div class="tab-strip"><button class="active-tab" data-i18n="detail.intentAnswer">Intent &amp; Answer</button><button data-i18n="detail.synonyms">Synonyms</button><button data-i18n="detail.entities">Entities</button><button data-i18n="detail.dictionary">Dictionary</button><button data-i18n="detail.scenario">Scenario</button><button data-i18n="detail.apiTools">API Tools</button></div>
-        <div class="aidot-intent-toolbar">
-          <input data-aidot-intent-search placeholder="intent / utterance / tag" data-i18n-placeholder="placeholder.intentSearch" />
-          <select data-aidot-intent-filter><option value="all" data-i18n="common.all">All</option><option value="intent" data-i18n="detail.intents">Intents</option></select>
-          <button type="button" data-aidot-intent-add data-i18n="detail.addIntent">Add Intent</button>
+        <div class="tab-strip">
+          <button class="active-tab" data-detail-tab="intent" data-i18n="detail.intentAnswer">Intent &amp; Answer</button>
+          <button data-detail-tab="synonyms" data-i18n="detail.synonyms">Synonyms</button>
+          <button data-detail-tab="entities" data-i18n="detail.entities">Entities</button>
+          <button data-detail-tab="dictionary" data-i18n="detail.dictionary">Dictionary</button>
+          <button data-detail-tab="scenario" data-i18n="detail.scenario">Scenario</button>
+          <button data-detail-tab="api" data-i18n="detail.apiTools">API Tools</button>
         </div>
-        <div class="aidot-intent-summary" data-aidot-intent-summary></div>
-        <div class="aidot-intent-layout">
-          <div class="aidot-intent-table" data-aidot-intent-table></div>
-          <div class="answer-editor" data-aidot-intent-editor></div>
-          <aside class="status-panel compact" data-aidot-intent-side></aside>
+        <div data-detail-intent-panel>
+          <div class="aidot-intent-toolbar">
+            <input data-aidot-intent-search placeholder="intent / utterance / tag" data-i18n-placeholder="placeholder.intentSearch" />
+            <select data-aidot-intent-filter><option value="all" data-i18n="common.all">All</option><option value="intent" data-i18n="detail.intents">Intents</option></select>
+            <button type="button" data-aidot-intent-add data-i18n="detail.addIntent">Add Intent</button>
+          </div>
+          <div class="aidot-intent-summary" data-aidot-intent-summary></div>
+          <div class="aidot-intent-layout">
+            <div class="aidot-intent-table" data-aidot-intent-table></div>
+            <div class="answer-editor" data-aidot-intent-editor></div>
+            <aside class="status-panel compact" data-aidot-intent-side></aside>
+          </div>
         </div>
+        <div class="detail-tab-panel" data-detail-tab-panel hidden></div>
         <div class="asset-transfer-panel">
           <div>
             <h4 data-i18n="transfer.assetsTitle">Reusable Bot Assets</h4>
