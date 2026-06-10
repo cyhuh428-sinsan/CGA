@@ -510,5 +510,8 @@
   "detail.utteranceCount": "Câu huấn luyện",
   "detail.tags": "Nhãn",
   "detail.updatedAt": "Cập nhật lúc",
-  "detail.updatedBy": "Người cập nhật"
+  "detail.updatedBy": "Người cập nhật",
+  "access.roleManagement": "Quản lý vai trò nhóm",
+  "access.roleManagementBody": "Quản trị viên nhóm quản lý vai trò của từng người dùng trong nhóm. Quyền truy cập màn hình thay đổi ngay theo vai trò đã chọn.",
+  "errors.auth.roleUpdateForbidden": "Bạn không có quyền thay đổi vai trò nhóm này."
 }

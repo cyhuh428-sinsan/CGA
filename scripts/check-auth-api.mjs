@@ -146,6 +146,19 @@ async function main() {
   const joinedMe = joinedMeResult.payload;
   if (!joinedMe.memberships?.some((item) => item.group_id === "g-support" && item.role === "builder")) fail("approved join did not create group membership");
 
+  await expectStatus("/api/cga/groups/g-support/members/u-api/role", {
+    method: "PATCH",
+    userId: "u-builder",
+    body: { role: "operator" }
+  }, 403, "builder should not change group member roles");
+
+  const roleUpdate = await expectStatus("/api/cga/groups/g-support/members/u-api/role", {
+    method: "PATCH",
+    userId: "u-group-admin",
+    body: { role: "reviewer" }
+  }, 200, "group admin should update group member role");
+  if (roleUpdate.membership?.role !== "reviewer") fail("role update endpoint did not return updated membership");
+
   await expectStatus("/api/cga/groups", {
     method: "POST",
     userId: "u-api",

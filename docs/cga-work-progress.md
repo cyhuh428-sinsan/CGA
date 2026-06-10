@@ -1519,3 +1519,33 @@
 - 로그인/그룹/역할 설정을 상단과 Access 화면에 더 직접 노출한다.
 - Detail 화면의 의도 추가/삭제, 대화카드 편집, 기타옵션(T/R/F) 표시를 Aidot 화면 기준으로 계속 보강한다.
 - 시뮬레이터는 현재 Test 화면에 연결되어 있으므로, 다음 단계에서 Aidot의 simulator 결과 항목을 더 촘촘히 맞춘다.
+
+### 2026-06-10 상단 로그인과 그룹별 역할 관리 1차 반영
+- 신산님 지시로 로그인/그룹/사용자별 역할 설정을 더 빨리 화면에 노출하도록 우선순위를 올렸다.
+- 기존 가입/로그인/그룹 가입/승인 API는 유지하고, 그룹 관리자가 사용자 역할을 직접 변경하는 CGA 관리 API를 추가했다.
+- Aidot 런타임 API, webchat 계약, Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`, `apps/studio/styles.css`
+  - 상단 context bar에 빠른 로그인 사용자 선택, 비밀번호 입력, Login/Logout 버튼을 노출했다.
+  - Access 화면에 Group Role Management 테이블을 추가했다.
+- `packages/public-core/src/access-state.js`
+  - `canManageGroupMembership()`, `updateGroupMembershipRole()`를 추가했다.
+  - 시스템 admin 또는 해당 그룹의 group_admin/owner만 역할을 변경할 수 있다.
+  - 마지막 그룹 관리자 강등을 막아 그룹에 관리자가 사라지는 위험을 줄였다.
+- `scripts/serve-studio.js`
+  - `PATCH /api/cga/groups/:groupId/members/:userId/role` 관리 API를 추가했다.
+  - 권한이 없으면 `CGA_MEMBERSHIP_ROLE_UPDATE_FORBIDDEN`을 반환한다.
+- `apps/studio/app.js`
+  - 상단 빠른 로그인/로그아웃이 기존 auth API를 호출하도록 연결했다.
+  - 그룹별 사용자 역할 테이블을 렌더링하고, 저장 시 새 membership role API를 호출한다.
+  - 역할 변경 후 화면 접근 권한과 좌측 메뉴 허용/차단 상태가 즉시 다시 계산된다.
+- `packages/i18n/error-catalog.json`, `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - 역할 변경 권한 오류와 역할 관리 화면 문구를 7개 locale에 추가했다.
+- `scripts/check-auth-api.mjs`, `scripts/check-studio-config.js`
+  - 일반 builder는 역할 변경이 차단되고 group_admin은 변경 가능한지 검증을 추가했다.
+  - 상단 빠른 로그인과 역할 관리 화면/API route가 빠지면 실패하도록 guard를 추가했다.
+
+#### 다음 작업
+- Detail 화면의 의도 추가/삭제, 대화카드 편집, 기타옵션(T/R/F) 표시를 Aidot 화면 기준으로 계속 보강한다.
+- Test 화면의 simulator 결과 항목을 Aidot 화면 기준으로 더 촘촘히 맞춘다.

@@ -21,6 +21,10 @@
         <span data-current-group-badge></span>
         <span data-current-bot-badge></span>
         <span data-current-version-badge></span>
+        <label class="quick-auth"><span data-i18n="admin.loginButton">Login</span><select data-top-login-user></select></label>
+        <input class="quick-password" data-top-login-password type="password" placeholder="password" data-i18n-placeholder="placeholder.password" />
+        <button type="button" class="ghost quick-auth-button" data-top-login-submit data-i18n="admin.loginButton">Login</button>
+        <button type="button" class="ghost quick-auth-button" data-top-logout-submit data-i18n="admin.logoutButton">Logout</button>
         <label class="language-picker"><span data-i18n="top.language">Language</span><select data-locale-select><option value="en">English</option><option value="ko">한국어</option><option value="zh-CN">简体中文</option><option value="ja">日本語</option><option value="vi">Tiếng Việt</option><option value="de">Deutsch</option><option value="fr">Français</option></select></label>
         <span class="status-ok" data-i18n="top.apiUnchanged">Aidot API unchanged</span>
       </div>
@@ -234,6 +238,11 @@
             <p data-i18n="access.groupUsersBody">A group owns bots and APIs. Users receive roles inside the group, and those roles decide screen access.</p>
             <div class="group-user-list" data-group-users></div>
           </article>
+        </div>
+        <div class="role-management-panel">
+          <h4 data-i18n="access.roleManagement">Group Role Management</h4>
+          <p data-i18n="access.roleManagementBody">Group administrators manage each user's role inside the group. Screen access changes immediately from the selected role.</p>
+          <div class="role-management-table" data-role-management></div>
         </div>
         <div class="request-layout">
           <article>

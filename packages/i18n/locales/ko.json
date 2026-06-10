@@ -510,5 +510,8 @@
   "detail.utteranceCount": "학습문장",
   "detail.tags": "태그",
   "detail.updatedAt": "최종수정일시",
-  "detail.updatedBy": "최종수정자"
+  "detail.updatedBy": "최종수정자",
+  "access.roleManagement": "그룹 역할 관리",
+  "access.roleManagementBody": "그룹 관리자는 그룹 안의 사용자 역할을 관리합니다. 선택한 역할에 따라 화면 접근 권한이 즉시 변경됩니다.",
+  "errors.auth.roleUpdateForbidden": "이 그룹 역할을 변경할 권한이 없습니다."
 }

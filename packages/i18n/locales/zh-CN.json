@@ -510,5 +510,8 @@
   "detail.utteranceCount": "训练语句",
   "detail.tags": "标签",
   "detail.updatedAt": "最后修改时间",
-  "detail.updatedBy": "最后修改者"
+  "detail.updatedBy": "最后修改者",
+  "access.roleManagement": "组角色管理",
+  "access.roleManagementBody": "组管理员管理组内每个用户的角色。屏幕访问权限会根据所选角色立即变化。",
+  "errors.auth.roleUpdateForbidden": "您无权更改此组角色。"
 }

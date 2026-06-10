@@ -25,7 +25,8 @@ import {
   summarizeAuthWorkflow,
   summarizeGroupBotAccess,
   summarizeGroupUsers,
-  summarizeJoinRequests
+  summarizeJoinRequests,
+  updateGroupMembershipRole
 } from "/packages/public-core/src/access-state.js";
 
 const AUTH_SESSION_STORAGE_KEY = "cga-studio-session-token";
@@ -92,6 +93,7 @@ let apiRegistryRefreshKey = "";
 let apiRegistryRefreshPromise = null;
 const apiRegistryLoadedAtByKey = new Map();
 const API_REGISTRY_CACHE_TTL_MS = 15000;
+const MANAGED_GROUP_ROLES = ["group_admin", "builder", "reviewer", "operator", "viewer"];
 let currentCompositionState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
@@ -2973,6 +2975,7 @@ function getAuthFlowDetail(step, state) {
 
 function renderAccessPanels() {
   const currentUserBadge = document.querySelector("[data-current-user-badge]");
+  const topLoginUser = document.querySelector("[data-top-login-user]");
   const accessOperations = document.querySelector("[data-access-operations]");
   const loginUser = document.querySelector("[data-login-user]");
   const loginIdInput = document.querySelector("[data-login-id]");
@@ -2983,6 +2986,7 @@ function renderAccessPanels() {
   const adminQueue = document.querySelector("[data-admin-action-queue]");
   const authFlow = document.querySelector("[data-auth-flow]");
   const groupUsers = document.querySelector("[data-group-users]");
+  const roleManagement = document.querySelector("[data-role-management]");
   const joinRequests = document.querySelector("[data-join-requests]");
   const adminRequests = document.querySelector("[data-admin-requests]");
   const groupAccess = document.querySelector("[data-group-access]");
@@ -2998,6 +3002,7 @@ function renderAccessPanels() {
     .filter((user) => user.status === "active")
     .map((user) => `<option value="${user.id}" ${user.id === currentAccessState.currentUserId ? "selected" : ""}>${user.name} · ${user.id} · ${user.locale}</option>`)
     .join("");
+  if (topLoginUser) topLoginUser.innerHTML = loginUser.innerHTML;
   if (loginIdInput && !loginIdInput.value) {
     loginIdInput.value = currentAccessState.currentUserId || loginUser.value || "";
   }
@@ -3077,6 +3082,34 @@ function renderAccessPanels() {
       </div>
     </div>
   `).join("");
+  if (roleManagement) {
+    const canManageGroup = (groupId) => current.scopes.includes("user.manage") || currentAccessState.memberships.some((item) => (
+      item.user_id === currentAccessState.currentUserId &&
+      item.group_id === groupId &&
+      item.status === "active" &&
+      ["system_admin", "owner", "group_admin"].includes(item.role)
+    ));
+    roleManagement.innerHTML = `
+      <div class="role-management-row head">
+        <span>${t("common.user", "User")}</span><span>${t("common.group", "Group")}</span><span>${t("access.roleSummary", "Roles")}</span><span>${t("common.save", "Save")}</span>
+      </div>
+      ${currentAccessState.memberships.filter((membership) => membership.status === "active").map((membership) => {
+        const user = currentAccessState.users.find((item) => item.id === membership.user_id);
+        const group = currentAccessState.groups.find((item) => item.id === membership.group_id);
+        const allowed = canManageGroup(membership.group_id) && membership.role !== "system_admin";
+        return `
+          <div class="role-management-row">
+            <strong>${user?.name || membership.user_id}<small>${membership.user_id}</small></strong>
+            <span>${group?.name || membership.group_id}</span>
+            <select data-role-user="${membership.user_id}" data-role-group="${membership.group_id}" ${allowed ? "" : "disabled"}>
+              ${MANAGED_GROUP_ROLES.map((role) => `<option value="${role}" ${role === membership.role ? "selected" : ""}>${role}</option>`).join("")}
+            </select>
+            <button type="button" data-role-save="${membership.user_id}" data-role-group-save="${membership.group_id}" ${allowed ? "" : "disabled"}>${t("common.save", "Save")}</button>
+          </div>
+        `;
+      }).join("")}
+    `;
+  }
   joinRequests.innerHTML = summarizeJoinRequests(currentAccessState).map((request) => `
     <div>
       <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
@@ -3119,6 +3152,7 @@ function renderAccessPanels() {
     <p><strong data-i18n="access.groupsWithoutAdmin">Groups without group admin</strong><span>${policy.groupsWithoutAdmin.join(", ") || t("common.none", "None")}</span></p>
   `;
   bindAdminActionButtons();
+  bindRoleManagementButtons();
   applyAccessToNavigation(current);
 }
 
@@ -3227,10 +3261,40 @@ function bindAdminActionButtons() {
   });
 }
 
+function bindRoleManagementButtons() {
+  document.querySelectorAll("[data-role-save]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.roleSave;
+      const groupId = button.dataset.roleGroupSave;
+      const role = document.querySelector(`[data-role-user="${userId}"][data-role-group="${groupId}"]`)?.value;
+      if (!userId || !groupId || !role) return;
+      await runAccessServerAction(
+        () => requestCgaJson(`/api/cga/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(userId)}/role`, {
+          method: "PATCH",
+          body: { role }
+        }),
+        () => {
+          currentAccessState = updateGroupMembershipRole(currentAccessState, {
+            actorId: currentAccessState.currentUserId,
+            userId,
+            groupId,
+            role
+          });
+        }
+      );
+    });
+  });
+}
+
 function bindAdminWorkbench() {
   const loginSubmit = document.querySelector("[data-login-submit]");
+  const topLoginSubmit = document.querySelector("[data-top-login-submit]");
   const loginUser = document.querySelector("[data-login-user]");
+  const topLoginUser = document.querySelector("[data-top-login-user]");
   const logoutSubmit = document.querySelector("[data-logout-submit]");
+  const topLogoutSubmit = document.querySelector("[data-top-logout-submit]");
   const signupSubmit = document.querySelector("[data-signup-submit]");
   const groupCreate = document.querySelector("[data-group-create]");
   const joinSubmit = document.querySelector("[data-join-submit]");
@@ -3244,43 +3308,66 @@ function bindAdminWorkbench() {
       if (loginId) loginId.value = loginUser.value || "";
     });
   }
+  if (topLoginUser && topLoginUser.dataset.bound !== "true") {
+    topLoginUser.dataset.bound = "true";
+    topLoginUser.addEventListener("change", () => {
+      const loginId = document.querySelector("[data-login-id]");
+      if (loginId) loginId.value = topLoginUser.value || "";
+    });
+  }
+  const runLogin = async ({ userId, password }) => {
+    if (!userId || !password) return;
+    try {
+      const session = await requestCgaJson("/api/cga/auth/login", { method: "POST", body: { user_id: userId, password } });
+      rememberAuthSession(session);
+      clearAuthMessage();
+      currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
+      await refreshAccessStateFromServer();
+      rerenderAdminAndAccess();
+    } catch (error) {
+      if (error.status) {
+        setAuthMessage("error", "admin.loginFailedTitle", getCgaErrorMessage(error, t("errors.auth.loginFailed", "Login failed.")));
+        rerenderAdminAndAccess();
+        return;
+      }
+      currentAccessState = loginAsUser(currentAccessState, { userId });
+      rerenderAdminAndAccess();
+    }
+  };
   if (loginSubmit && loginSubmit.dataset.bound !== "true") {
     loginSubmit.dataset.bound = "true";
     loginSubmit.addEventListener("click", async () => {
       const selectedUserId = document.querySelector("[data-login-user]")?.value;
       const userId = document.querySelector("[data-login-id]")?.value?.trim() || selectedUserId;
       const password = document.querySelector("[data-login-password]")?.value || "";
-      if (!userId || !password) return;
-      try {
-        const session = await requestCgaJson("/api/cga/auth/login", { method: "POST", body: { user_id: userId, password } });
-        rememberAuthSession(session);
-        clearAuthMessage();
-        currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
-        await refreshAccessStateFromServer();
-        rerenderAdminAndAccess();
-      } catch (error) {
-        if (error.status) {
-          setAuthMessage("error", "admin.loginFailedTitle", getCgaErrorMessage(error, t("errors.auth.loginFailed", "Login failed.")));
-          rerenderAdminAndAccess();
-          return;
-        }
-        currentAccessState = loginAsUser(currentAccessState, { userId });
-        rerenderAdminAndAccess();
-      }
+      await runLogin({ userId, password });
     });
   }
+  if (topLoginSubmit && topLoginSubmit.dataset.bound !== "true") {
+    topLoginSubmit.dataset.bound = "true";
+    topLoginSubmit.addEventListener("click", async () => {
+      const userId = document.querySelector("[data-top-login-user]")?.value;
+      const password = document.querySelector("[data-top-login-password]")?.value || "";
+      await runLogin({ userId, password });
+    });
+  }
+  const runLogout = async () => {
+    try {
+      await requestCgaJson("/api/cga/auth/logout", { method: "POST" });
+    } catch {
+    }
+    clearAuthSession();
+    setAuthMessage("info", "admin.logoutTitle", "admin.logoutSuccess");
+    currentAccessState = loginAsUser(currentAccessState, { userId: "admin" });
+    rerenderAdminAndAccess();
+  };
   if (logoutSubmit && logoutSubmit.dataset.bound !== "true") {
     logoutSubmit.dataset.bound = "true";
-    logoutSubmit.addEventListener("click", async () => {
-      try {
-        await requestCgaJson("/api/cga/auth/logout", { method: "POST" });
-      } catch {
-      }
-      clearAuthSession();
-      setAuthMessage("info", "admin.logoutTitle", "admin.logoutSuccess");
-      currentAccessState = loginAsUser(currentAccessState, { userId: "admin" });
-      rerenderAdminAndAccess();
-    });
+    logoutSubmit.addEventListener("click", runLogout);
+  }
+  if (topLogoutSubmit && topLogoutSubmit.dataset.bound !== "true") {
+    topLogoutSubmit.dataset.bound = "true";
+    topLogoutSubmit.addEventListener("click", runLogout);
   }
   if (signupSubmit && signupSubmit.dataset.bound !== "true") {
     signupSubmit.dataset.bound = "true";

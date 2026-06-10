@@ -510,5 +510,8 @@
   "detail.utteranceCount": "Trainingssätze",
   "detail.tags": "Kennzeichnungen",
   "detail.updatedAt": "Zuletzt geändert",
-  "detail.updatedBy": "Geändert von"
+  "detail.updatedBy": "Geändert von",
+  "access.roleManagement": "Gruppenrollen verwalten",
+  "access.roleManagementBody": "Gruppenadministratoren verwalten die Rolle jedes Benutzers in der Gruppe. Der Bildschirmzugriff ändert sich sofort entsprechend der ausgewählten Rolle.",
+  "errors.auth.roleUpdateForbidden": "Sie haben keine Berechtigung, diese Gruppenrolle zu ändern."
 }

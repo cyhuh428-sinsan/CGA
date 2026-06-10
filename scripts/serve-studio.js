@@ -570,6 +570,8 @@ function parseAuthApiPath(urlPath) {
   if (urlPath === "/api/cga/auth/logout") return { action: "logout" };
   if (urlPath === "/api/cga/auth/me") return { action: "me" };
   if (urlPath === "/api/cga/groups") return { action: "groups" };
+  const membershipRole = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/members\/([^/]+)\/role$/);
+  if (membershipRole) return { action: "membershipRole", groupId: membershipRole[1], userId: membershipRole[2] };
   if (urlPath === "/api/cga/groups/join-requests") return { action: "joinRequests" };
   const joinApprove = urlPath.match(/^\/api\/cga\/groups\/join-requests\/([^/]+)\/approve$/);
   if (joinApprove) return { action: "approveJoinRequest", requestId: joinApprove[1] };
@@ -1166,6 +1168,30 @@ async function handleAuthApi(req, res, urlPath) {
       return true;
     }
     sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+    return true;
+  }
+
+  if (parsed.action === "membershipRole") {
+    if (req.method !== "PATCH") {
+      sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+      return true;
+    }
+    const body = await readJsonRequest(req);
+    const next = accessStateModule.updateGroupMembershipRole(state, {
+      actorId,
+      userId: parsed.userId,
+      groupId: parsed.groupId,
+      role: body.role || body.requested_role
+    });
+    if (next === state) {
+      sendJson(res, 403, { error_code: "CGA_MEMBERSHIP_ROLE_UPDATE_FORBIDDEN", message_key: "errors.auth.roleUpdateForbidden" });
+      return true;
+    }
+    saveAccessState(next);
+    sendJson(res, 200, {
+      status: "updated",
+      membership: next.memberships.find((item) => item.user_id === parsed.userId && item.group_id === parsed.groupId && item.status === "active")
+    });
     return true;
   }
 

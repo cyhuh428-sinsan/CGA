@@ -511,7 +511,10 @@ const CGA_I18N_RESOURCES = {
     "detail.utteranceCount": "Trainingssätze",
     "detail.tags": "Kennzeichnungen",
     "detail.updatedAt": "Zuletzt geändert",
-    "detail.updatedBy": "Geändert von"
+    "detail.updatedBy": "Geändert von",
+    "access.roleManagement": "Gruppenrollen verwalten",
+    "access.roleManagementBody": "Gruppenadministratoren verwalten die Rolle jedes Benutzers in der Gruppe. Der Bildschirmzugriff ändert sich sofort entsprechend der ausgewählten Rolle.",
+    "errors.auth.roleUpdateForbidden": "Sie haben keine Berechtigung, diese Gruppenrolle zu ändern."
   },
   "en": {
     "meta.localeName": "English",
@@ -1025,7 +1028,10 @@ const CGA_I18N_RESOURCES = {
     "detail.utteranceCount": "Utterances",
     "detail.tags": "Tags",
     "detail.updatedAt": "Updated at",
-    "detail.updatedBy": "Updated by"
+    "detail.updatedBy": "Updated by",
+    "access.roleManagement": "Group Role Management",
+    "access.roleManagementBody": "Group administrators manage each user role inside the group. Screen access changes immediately from the selected role.",
+    "errors.auth.roleUpdateForbidden": "You do not have permission to change this group role."
   },
   "fr": {
     "meta.localeName": "Français",
@@ -1539,7 +1545,10 @@ const CGA_I18N_RESOURCES = {
     "detail.utteranceCount": "Énoncés",
     "detail.tags": "Étiquettes",
     "detail.updatedAt": "Mis à jour le",
-    "detail.updatedBy": "Mis à jour par"
+    "detail.updatedBy": "Mis à jour par",
+    "access.roleManagement": "Gestion des rôles de groupe",
+    "access.roleManagementBody": "Les administrateurs de groupe gèrent le rôle de chaque utilisateur dans le groupe. L’accès aux écrans change immédiatement selon le rôle choisi.",
+    "errors.auth.roleUpdateForbidden": "Vous n’avez pas l’autorisation de modifier ce rôle de groupe."
   },
   "ja": {
     "meta.localeName": "日本語",
@@ -2053,7 +2062,10 @@ const CGA_I18N_RESOURCES = {
     "detail.utteranceCount": "学習文",
     "detail.tags": "タグ",
     "detail.updatedAt": "最終更新日時",
-    "detail.updatedBy": "最終更新者"
+    "detail.updatedBy": "最終更新者",
+    "access.roleManagement": "グループ役割管理",
+    "access.roleManagementBody": "グループ管理者はグループ内のユーザー役割を管理します。選択した役割に応じて画面アクセスがすぐに変わります。",
+    "errors.auth.roleUpdateForbidden": "このグループ役割を変更する権限がありません。"
   },
   "ko": {
     "meta.localeName": "한국어",
@@ -2567,7 +2579,10 @@ const CGA_I18N_RESOURCES = {
     "detail.utteranceCount": "학습문장",
     "detail.tags": "태그",
     "detail.updatedAt": "최종수정일시",
-    "detail.updatedBy": "최종수정자"
+    "detail.updatedBy": "최종수정자",
+    "access.roleManagement": "그룹 역할 관리",
+    "access.roleManagementBody": "그룹 관리자는 그룹 안의 사용자 역할을 관리합니다. 선택한 역할에 따라 화면 접근 권한이 즉시 변경됩니다.",
+    "errors.auth.roleUpdateForbidden": "이 그룹 역할을 변경할 권한이 없습니다."
   },
   "vi": {
     "meta.localeName": "Tiếng Việt",
@@ -3081,7 +3096,10 @@ const CGA_I18N_RESOURCES = {
     "detail.utteranceCount": "Câu huấn luyện",
     "detail.tags": "Nhãn",
     "detail.updatedAt": "Cập nhật lúc",
-    "detail.updatedBy": "Người cập nhật"
+    "detail.updatedBy": "Người cập nhật",
+    "access.roleManagement": "Quản lý vai trò nhóm",
+    "access.roleManagementBody": "Quản trị viên nhóm quản lý vai trò của từng người dùng trong nhóm. Quyền truy cập màn hình thay đổi ngay theo vai trò đã chọn.",
+    "errors.auth.roleUpdateForbidden": "Bạn không có quyền thay đổi vai trò nhóm này."
   },
   "zh-CN": {
     "meta.localeName": "简体中文",
@@ -3595,7 +3613,10 @@ const CGA_I18N_RESOURCES = {
     "detail.utteranceCount": "训练语句",
     "detail.tags": "标签",
     "detail.updatedAt": "最后修改时间",
-    "detail.updatedBy": "最后修改者"
+    "detail.updatedBy": "最后修改者",
+    "access.roleManagement": "组角色管理",
+    "access.roleManagementBody": "组管理员管理组内每个用户的角色。屏幕访问权限会根据所选角色立即变化。",
+    "errors.auth.roleUpdateForbidden": "您无权更改此组角色。"
   }
 };
 
