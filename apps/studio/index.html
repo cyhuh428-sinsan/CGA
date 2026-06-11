@@ -4,16 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CGA Studio</title>
-  <link rel="stylesheet" href="/apps/studio/styles.css" />
+  <link rel="stylesheet" href="/apps/studio/styles.css?v=20260611-8" />
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
+  <div class="app-shell unauthenticated">
+    <header class="topbar" hidden>
       <div class="brand-group">
         <div class="brand-mark">CGA</div>
         <div>
           <h1>CGA Studio</h1>
-          <p data-i18n="app.subtitle">Aidot Workflow Shell · screen-first implementation draft</p>
+          <p data-i18n="app.subtitle">Bot Production Studio</p>
         </div>
       </div>
       <div class="context-bar" aria-label="Current bot context">
@@ -21,10 +21,8 @@
         <span data-current-group-badge></span>
         <span data-current-bot-badge></span>
         <span data-current-version-badge></span>
-        <label class="quick-auth"><span data-i18n="admin.loginButton">Login</span><select data-top-login-user></select></label>
-        <input class="quick-password" data-top-login-password type="password" placeholder="password" data-i18n-placeholder="placeholder.password" />
-        <button type="button" class="ghost quick-auth-button" data-top-login-submit data-i18n="admin.loginButton">Login</button>
         <button type="button" class="ghost quick-auth-button" data-top-logout-submit data-i18n="admin.logoutButton">Logout</button>
+        <span class="top-auth-status" data-top-auth-status></span>
         <label class="language-picker"><span data-i18n="top.language">Language</span><select data-locale-select><option value="en">English</option><option value="ko">한국어</option><option value="zh-CN">简体中文</option><option value="ja">日本語</option><option value="vi">Tiếng Việt</option><option value="de">Deutsch</option><option value="fr">Français</option></select></label>
         <span class="status-ok" data-i18n="top.apiUnchanged">Aidot API unchanged</span>
       </div>
@@ -35,46 +33,113 @@
       </div>
     </header>
 
-    <aside class="workflow" aria-label="Bot build workflow">
-      <div class="section-title management-title">
-        <strong data-i18n="production.title">Bot Production</strong>
-        <span data-i18n="production.subtitle">Workspace · tasks · bot assets</span>
-      </div>
-      <nav class="management-nav production-nav" data-production-nav></nav>
-      <div class="section-title">
-        <strong data-i18n="workflow.title">Bot Build Workflow</strong>
-        <span data-i18n="workflow.subtitle">6 visible steps · Aidot functions reused</span>
-      </div>
-      <nav data-workflow-nav></nav>
-      <div class="section-title system-admin-title">
-        <strong data-i18n="systemAdmin.title">System Administration</strong>
-        <span data-i18n="systemAdmin.subtitle">Users · groups · permissions</span>
-      </div>
-      <nav class="management-nav system-admin-nav" data-system-admin-nav></nav>
-      <div class="section-title reference-title">
-        <strong data-i18n="reference.title">Reference</strong>
-        <span data-i18n="reference.subtitle">Temporary design checks</span>
-      </div>
-      <nav class="management-nav reference-nav" data-reference-nav></nav>
-      <div class="rail-note">
-        <strong data-i18n="rule.title">Rule</strong>
-        <p data-i18n="rule.body">No new backend, API, runtime, simulator, or webchat contract.</p>
-      </div>
+    <aside class="workflow" aria-label="Bot build workflow" hidden>
+      <details class="menu-group menu-group--production" open>
+        <summary class="section-title management-title">
+          <strong data-i18n="production.title">Bot Production</strong>
+          <span data-i18n="production.subtitle">Workspace · tasks · bot assets</span>
+        </summary>
+        <nav class="management-nav production-nav" data-query-nav></nav>
+      </details>
+      <details class="menu-group menu-group--workflow" open>
+        <summary class="section-title">
+          <strong data-i18n="workflow.title">Bot Build Workflow</strong>
+          <span data-i18n="workflow.subtitle">6 visible steps · Aidot functions reused</span>
+        </summary>
+        <nav data-workflow-nav></nav>
+      </details>
+      <details class="menu-group menu-group--operation" open>
+        <summary class="section-title operation-title">
+          <strong data-i18n="operation.title">Bot Operation</strong>
+          <span data-i18n="operation.subtitle">Retrain · analysis</span>
+        </summary>
+        <nav class="management-nav operation-nav" data-operation-nav></nav>
+      </details>
+      <details class="menu-group menu-group--system-admin" open>
+        <summary class="section-title system-admin-title">
+          <strong data-i18n="systemAdmin.title">System Administration</strong>
+          <span data-i18n="systemAdmin.subtitle">Users · groups · permissions</span>
+        </summary>
+        <div class="server-sub-nav system-admin-subnav" data-system-admin-subnav></div>
+        <nav class="management-nav system-admin-nav" data-management-nav></nav>
+      </details>
     </aside>
 
     <main class="workspace">
       <div class="global-message" data-global-message hidden></div>
-      <section class="hero-panel temporary-panel" data-screen-id="hero">
-        <div>
-          <p class="eyebrow" data-i18n="hero.eyebrow">Implementation direction</p>
-          <h2 data-i18n="hero.title">Show each CGA screen, wire it to existing Aidot functions</h2>
-          <p data-i18n="hero.body">We proceed screen by screen without retesting every Aidot feature. Each screen states which Aidot function it reuses and what requires approval.</p>
+      <section id="login-entry" class="login-entry" data-login-entry>
+        <div class="login-form-card" data-entry-login-panel>
+          <div class="brand-wordmark">
+            <span data-i18n="app.brandEyebrow">CGA STUDIO</span>
+            <strong>CGA Studio</strong>
+          </div>
+          <div class="login-fields">
+            <input class="input-control" data-entry-login-id placeholder="아이디" autocomplete="username" />
+            <input class="input-control" data-entry-login-password type="password" placeholder="비밀번호" autocomplete="current-password" />
+            <button type="button" class="primary-action primary-action--full" data-entry-login-submit>로그인</button>
+          </div>
+          <div class="login-meta">
+            <label class="check-row"><input type="checkbox" data-entry-remember-id /><span>아이디 저장</span></label>
+            <select class="login-select" data-entry-locale>
+              <option value="ko">한국어</option>
+              <option value="en">English</option>
+              <option value="zh-CN">简体中文</option>
+              <option value="ja">日本語</option>
+              <option value="vi">Tiếng Việt</option>
+              <option value="de">Deutsch</option>
+              <option value="fr">Français</option>
+            </select>
+          </div>
+          <div class="login-signup-row">
+            <span>아직 계정이 없으신가요?</span>
+            <button type="button" class="ghost-pill" data-entry-open-signup>회원가입</button>
+          </div>
+          <div class="entry-login-message" data-entry-auth-message hidden></div>
         </div>
-        <div class="contract-stack">
-          <span data-i18n="contract.aidotUntouched">Aidot code untouched</span>
-          <span data-i18n="contract.cgaOnly">CGA folder only</span>
-          <span data-i18n="contract.noNewFeature">No new feature without approval</span>
-          <span data-i18n="contract.webchat">Webchat compatibility preserved</span>
+        <div class="auth-form-card" data-entry-signup-panel hidden>
+          <div class="auth-form-card__header">
+            <h1>회원 가입</h1>
+            <p>관리자 승인 후 로그인할 수 있습니다.</p>
+          </div>
+          <div class="auth-form-card__body">
+            <label class="field-block">
+              <span>아이디</span>
+              <input class="input-control" data-entry-signup-id placeholder="아이디를 입력하세요." />
+            </label>
+            <label class="field-block">
+              <span>비밀번호</span>
+              <input class="input-control" data-entry-signup-password type="password" placeholder="비밀번호를 입력하세요." />
+            </label>
+            <label class="field-block">
+              <span>비밀번호 확인</span>
+              <input class="input-control" data-entry-signup-password-confirm type="password" placeholder="비밀번호를 다시 입력하세요." />
+            </label>
+            <label class="field-block">
+              <span>이름</span>
+              <input class="input-control" data-entry-signup-name placeholder="이름을 입력하세요." />
+            </label>
+            <label class="field-block">
+              <span>코멘트</span>
+              <textarea class="textarea-control" data-entry-signup-comment placeholder="코멘트를 입력하세요."></textarea>
+            </label>
+            <label class="field-block">
+              <span>서버</span>
+              <input class="input-control" value="기본 서버" readonly disabled />
+            </label>
+            <label class="field-block">
+              <span>그룹</span>
+              <select class="login-select" data-entry-signup-group>
+                <option value="g-support">기본그룹</option>
+              </select>
+            </label>
+            <input type="hidden" data-entry-signup-locale value="ko" />
+            <button type="button" class="primary-action primary-action--full" data-entry-signup-submit>회원가입 신청</button>
+          </div>
+          <div class="auth-form-card__footer">
+            <span>이미 계정이 있으신가요?</span>
+            <button type="button" class="ghost-pill" data-entry-open-login>로그인</button>
+          </div>
+          <div class="admin-result auth-message" data-entry-auth-message hidden></div>
         </div>
       </section>
 
@@ -82,7 +147,6 @@
         <div class="screen-heading">
           <span>AF</span>
           <div><h3 data-i18n="coverage.title">Aidot Feature Coverage</h3><p data-i18n="coverage.body">CGA does not remove Aidot feature screens. It relocates every needed Aidot screen into the bot-building workflow.</p></div>
-          <em data-i18n="coverage.map">Coverage rule: all Aidot feature screens are preserved, reorganized, and mapped</em>
         </div>
         <div class="coverage-grid">
           <article><h4 data-i18n="coverage.create">Create / Setup</h4><p data-i18n="coverage.createBody">Bot create, bot setup, version, language, channel defaults, user/login/roles.</p></article>
@@ -90,7 +154,7 @@
           <article><h4 data-i18n="coverage.detail">Detail Settings</h4><p data-i18n="coverage.detailBody">Intent, answer, synonym, entity, dictionary, scenario, API card, variables, Talk cards.</p></article>
           <article><h4 data-i18n="coverage.build">Build / Test</h4><p data-i18n="coverage.buildBody">NLU training, LLM NLU, RAG embedding, simulator, runtime variables, logs.</p></article>
           <article><h4 data-i18n="coverage.operate">Operate / Improve</h4><p data-i18n="coverage.operateBody">Deploy, webchat, channels, operation version, analysis, evaluation, retrain.</p></article>
-          <article><h4 data-i18n="coverage.ruleTitle">Rule</h4><p data-i18n="coverage.ruleBody">No Aidot feature screen is removed. If a screen is not in the beginner path, it must appear in the mapped advanced or operation area.</p></article>
+          <article><h4 data-i18n="coverage.ruleTitle">Rule</h4><p data-i18n="coverage.ruleBody">Aidot feature screens are preserved.</p></article>
         </div>
       </section>
 
@@ -98,7 +162,6 @@
         <div class="screen-heading">
           <span>CO</span>
           <div><h3 data-i18n="collab.title">Collaboration Platform</h3><p data-i18n="collab.body">CGA is optimized for one person to build a bot in 1-2 days, while still allowing multiple people to collaborate on the same bot when needed.</p></div>
-          <em data-i18n="collab.map">Maps to Public Core: fast solo workflow + optional team collaboration</em>
         </div>
         <div class="collab-grid">
           <article><h4 data-i18n="collab.roles">Fast solo first</h4><p data-i18n="collab.rolesBody">The default flow should let one builder create, configure, test, and deploy a bot quickly without collaboration overhead.</p></article>
@@ -114,7 +177,6 @@
         <div class="screen-heading">
           <span aria-label="Bot Workspace">BW</span>
           <div><h3 data-i18n="workspace.title">Bot Workspace</h3><p data-i18n="workspace.body">After login, users first choose a group and open or create a bot inside that group.</p></div>
-          <em data-i18n="workspace.map">Server SaaS entry: user session → group workspace → bot build workflow</em>
         </div>
         <div class="workspace-home-layout">
           <article class="workspace-selector">
@@ -130,7 +192,6 @@
             </div>
             <div class="bot-list" data-workspace-bots></div>
           </article>
-          <article class="workspace-transfer-card" data-workspace-transfer></article>
           <aside class="status-panel compact">
             <h4 data-i18n="workspace.nextTitle">Next Action</h4>
             <p><b data-i18n="workspace.currentBot">Current bot</b><span data-current-bot-name>SupportBot Draft</span></p>
@@ -140,11 +201,18 @@
         </div>
       </section>
 
+      <section id="bot-management" data-screen-id="bot-management" class="screen-card bot-management-card">
+        <div class="screen-heading">
+          <span aria-label="Bot Management">BM</span>
+          <div><h3 data-i18n="botManagement.title">Bot Management</h3><p data-i18n="botManagement.body">Manage upload, download, operation version, copy, and delete for the selected bot.</p></div>
+        </div>
+        <article class="workspace-transfer-card bot-management-transfer" data-workspace-transfer></article>
+      </section>
+
       <section id="team-dashboard" data-screen-id="team-dashboard" class="screen-card team-dashboard-card">
         <div class="screen-heading">
           <span aria-label="Team Dashboard">TD</span>
           <div><h3 data-i18n="team.title">Team Dashboard</h3><p data-i18n="team.body">Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.</p></div>
-          <em data-i18n="team.map">Public Core collaboration state: assignments, review, locks, and blocked work</em>
         </div>
         <div class="team-dashboard-layout">
           <article>
@@ -166,148 +234,135 @@
       <section id="access-management" data-screen-id="access-management" class="screen-card access-card">
         <div class="screen-heading">
           <span>AC</span>
-          <div><h3 data-i18n="access.title">Users, Login, and Access</h3><p data-i18n="access.body">CGA is an operating system for bot production, so user identity and permission boundaries are part of the Public Core.</p></div>
-          <em data-i18n="access.map">Maps to Public Core: login state / roles / scopes / audit-ready actions</em>
+          <div><h3><span data-access-heading-title>사용자 관리</span><button type="button" class="help-icon" data-help-topic="access">?</button></h3><p data-access-heading-body></p></div>
+
         </div>
-        <div class="access-grid">
-          <article><h4 data-i18n="access.login">Login</h4><p data-i18n="access.loginBody">Authenticated users can create, configure, review, deploy, or operate bots based on role.</p></article>
-          <article><h4 data-i18n="access.roles">Roles</h4><p data-i18n="access.rolesBody">Owner, Admin, Builder, Reviewer, Operator, and Viewer roles separate responsibilities.</p></article>
-          <article><h4 data-i18n="access.scopes">Permission Scopes</h4><p data-i18n="access.scopesBody">Create, configure, review, deploy, user management, and API answer management scopes are explicit.</p></article>
+        <div hidden>
+          <input data-login-id />
+          <input data-login-password type="password" />
+          <select data-login-user></select>
+          <button type="button" data-login-submit>Login</button>
+          <button type="button" data-logout-submit>Logout</button>
+          <div data-current-session></div>
+          <div data-auth-message hidden></div>
+          <select data-join-group></select>
+          <select data-join-role></select>
+          <div data-access-operations></div>
+          <div data-screen-access></div>
+          <div data-auth-policy></div>
+          <div data-admin-policy></div>
+          <div data-join-requests></div>
+          <div data-admin-requests></div>
+          <div data-admin-action-queue></div>
+          <input data-group-id />
+          <input data-group-name />
+          <button type="button" data-group-create></button>
         </div>
-        <div class="access-ops-panel">
-          <div>
-            <h4 data-i18n="access.opsTitle">Access Operations Snapshot</h4>
-            <p data-i18n="access.opsBody">The operator should see group, user, approval, and language status without opening a database or command line.</p>
-          </div>
-          <div class="access-ops-grid" data-access-operations></div>
-        </div>
-        <div class="admin-workbench">
-          <article>
-            <h4 data-i18n="admin.loginTitle">Login Session</h4>
-            <p data-i18n="admin.loginBody">Switch the active user and immediately recalculate group memberships, screen access, and user language.</p>
-            <div class="admin-form-row">
-              <input data-login-id placeholder="user-id" data-i18n-placeholder="placeholder.loginId" />
-              <input data-login-password type="password" placeholder="password" data-i18n-placeholder="placeholder.password" />
-              <select data-login-user></select>
-              <button type="button" data-login-submit data-i18n="admin.loginButton">Login</button>
-              <button type="button" class="ghost-btn" data-logout-submit data-i18n="admin.logoutButton">Logout</button>
+        <div class="access-management-grid">
+          <article class="access-list-panel access-list-panel--wide" data-admin-panel="users">
+            <h4>사용자 관리</h4>
+            <div class="access-toolbar access-toolbar--users">
+              <input data-user-search placeholder="사용자 계정 또는 사용자 이름을 검색하세요." />
+              <select data-user-group-filter></select>
+              <select data-user-role-filter></select>
+              <select data-user-status-filter></select>
+              <select data-user-signup-filter></select>
+              <button type="button" data-user-search-submit>조회</button>
             </div>
-            <div class="admin-result" data-current-session></div>
-            <div class="admin-result auth-message" data-auth-message hidden></div>
-          </article>
-          <article>
-            <h4 data-i18n="admin.signupTitle">Signup</h4>
-            <p data-i18n="admin.signupBody">A new user receives a personal group and becomes that group’s administrator.</p>
-            <div class="admin-form-grid">
-              <input data-signup-id placeholder="user-id" data-i18n-placeholder="placeholder.signupId" />
-              <input data-signup-name placeholder="name" data-i18n-placeholder="placeholder.signupName" />
-              <input data-signup-password type="password" placeholder="password" data-i18n-placeholder="placeholder.password" />
-              <select data-signup-locale><option value="en">en</option><option value="ko">ko</option><option value="zh-CN">zh-CN</option><option value="ja">ja</option><option value="vi">vi</option><option value="de">de</option><option value="fr">fr</option></select>
-              <input data-signup-group placeholder="group name" data-i18n-placeholder="placeholder.signupGroup" />
-            </div>
-            <button type="button" data-signup-submit data-i18n="admin.signupButton">Create user</button>
-          </article>
-          <article>
-            <h4 data-i18n="admin.groupTitle">Group Management</h4>
-            <p data-i18n="admin.groupBody">Create groups and request membership using the current user session.</p>
-            <div class="admin-form-grid">
-              <input data-group-id placeholder="group-id" data-i18n-placeholder="placeholder.groupId" />
-              <input data-group-name placeholder="group name" data-i18n-placeholder="placeholder.groupName" />
-              <select data-join-group></select>
-              <select data-join-role></select>
-            </div>
-            <div class="admin-form-row">
-              <button type="button" data-group-create data-i18n="admin.groupCreate">Create group</button>
-              <button type="button" data-join-submit data-i18n="admin.joinRequest">Request join</button>
-            </div>
-          </article>
-          <article>
-            <h4 data-i18n="admin.approvalTitle">Approval Queue</h4>
-            <p data-i18n="admin.approvalBody">Group join requests are approved by the target group administrator. Admin permission requests are approved by system admin.</p>
-            <div class="admin-queue" data-admin-action-queue></div>
-          </article>
-        </div>
-        <div class="auth-flow-layout">
-          <article>
-            <h4 data-i18n="access.authFlow">Signup / Login Flow</h4>
-            <p data-i18n="access.authFlowBody">The first access path is explicit: sign up, receive a personal group, log in, then request access to another group when needed.</p>
-            <div class="auth-flow" data-auth-flow></div>
-          </article>
-          <article>
-            <h4 data-i18n="access.groupUsers">Group Users</h4>
-            <p data-i18n="access.groupUsersBody">A group owns bots and APIs. Users receive roles inside the group, and those roles decide screen access.</p>
             <div class="group-user-list" data-group-users></div>
           </article>
+          <article class="access-list-panel access-list-panel--wide" data-admin-panel="groups">
+            <h4>그룹 관리</h4>
+            <div class="access-toolbar access-toolbar--group">
+              <input data-group-search placeholder="그룹 아이디 또는 그룹 이름을 검색하세요." />
+              <select data-group-status-filter></select>
+              <button type="button" data-group-search-submit>조회</button>
+            </div>
+            <div class="group-management-list" data-group-access></div>
+          </article>
+          <article class="access-list-panel access-list-panel--wide" data-admin-panel="roles">
+            <h4>역할 관리</h4>
+            <div class="group-user-list" data-role-management></div>
+          </article>
+          <article class="access-list-panel" data-admin-panel="login-history"><div data-admin-surface="login-history"></div></article>
+          <article class="access-list-panel" data-admin-panel="ops-dashboard"><div data-admin-surface="ops-dashboard"></div></article>
+          <article class="access-list-panel" data-admin-panel="system-log"><div data-admin-surface="system-log"></div></article>
+          <article class="access-list-panel" data-admin-panel="bot-status"><div data-admin-surface="bot-status"></div></article>
+          <article class="access-list-panel" data-admin-panel="training-history"><div data-admin-surface="training-history"></div></article>
+          <article class="access-list-panel" data-admin-panel="conversation-history"><div data-admin-surface="conversation-history"></div></article>
+          <article class="access-list-panel" data-admin-panel="api-call-history"><div data-admin-surface="api-call-history"></div></article>
+          <article class="access-list-panel" data-admin-panel="queue-history"><div data-admin-surface="queue-history"></div></article>
+          <article class="access-list-panel" data-admin-panel="intent-feedback"><div data-admin-surface="intent-feedback"></div></article>
+          <article class="access-list-panel" data-admin-panel="common-variable"><div data-admin-surface="common-variable"></div></article>
+          <article class="access-list-panel" data-admin-panel="default-message"><div data-admin-surface="default-message"></div></article>
+          <article class="access-list-panel" data-admin-panel="channel-management"><div data-admin-surface="channel-management"></div></article>
+          <article class="access-list-panel" data-admin-panel="botstation-link"><div data-admin-surface="botstation-link"></div></article>
+          <article class="access-list-panel" data-admin-panel="template-list"><div data-admin-surface="template-list"></div></article>
+          <article class="access-list-panel" data-admin-panel="license-status"><div data-admin-surface="license-status"></div></article>
         </div>
-        <div class="role-management-panel">
-          <h4 data-i18n="access.roleManagement">Group Role Management</h4>
-          <p data-i18n="access.roleManagementBody">Group administrators manage each user's role inside the group. Screen access changes immediately from the selected role.</p>
-          <div class="role-management-table" data-role-management></div>
+        <div class="detail-modal" data-user-modal hidden>
+          <section class="detail-modal__panel">
+            <header><div><h4>사용자 상세</h4><p>선택한 사용자의 기본 정보와 권한을 수정합니다.</p></div><button type="button" data-user-modal-close>닫기</button></header>
+            <div class="detail-modal__body"><article data-user-detail></article><aside data-user-edit></aside></div>
+          </section>
         </div>
-        <div class="request-layout">
-          <article>
-            <h4 data-i18n="access.joinRequests">Group Join Requests</h4>
-            <p data-i18n="access.joinRequestsBody">Users can request access to another group. Approval creates a membership for that group.</p>
-            <div class="request-list" data-join-requests></div>
-          </article>
-          <article>
-            <h4 data-i18n="access.adminRequests">Admin Permission Requests</h4>
-            <p data-i18n="access.adminRequestsBody">Admin permission requests are visible to the system admin and must be approved before privilege changes.</p>
-            <div class="request-list" data-admin-requests></div>
-          </article>
+        <div class="detail-modal" data-group-modal hidden>
+          <section class="detail-modal__panel">
+            <header><div><h4>그룹 상세</h4><p>선택한 그룹의 기본 정보를 확인합니다.</p></div><button type="button" data-group-modal-close>닫기</button></header>
+            <div class="detail-modal__body"><article data-group-detail></article><aside data-group-edit></aside></div>
+          </section>
         </div>
-        <div class="permission-layout">
-          <article>
-            <h4 data-i18n="access.groupAccess">Group Bot Access</h4>
-            <p data-i18n="access.groupAccessBody">Bots and APIs are managed by group. Users in the same group can access the group bot according to group scopes and their role.</p>
-            <div class="permission-table" data-group-access></div>
-          </article>
-          <article>
-            <h4 data-i18n="access.screenAccess">Current User Screen Access</h4>
-            <p data-i18n="access.screenAccessBody">Screens and actions are resolved from group membership, group scopes, role scopes, and user overrides.</p>
-            <div class="screen-access-list" data-screen-access></div>
-          </article>
-        </div>
-        <div class="auth-policy-layout">
-          <article>
-            <h4 data-i18n="access.authPolicy">Signup and Group Policy</h4>
-            <p data-i18n="access.authPolicyBody">Every new user signs up into their own group first. Users can request to join another group, and empty groups are deleted automatically.</p>
-            <div class="policy-list" data-auth-policy></div>
-          </article>
-          <article>
-            <h4 data-i18n="access.adminPolicy">Admin Approval Policy</h4>
-            <p data-i18n="access.adminPolicyBody">The base admin user cannot be deleted. Group creation and admin permission requests require approval by the system admin.</p>
-            <div class="policy-list" data-admin-policy></div>
-          </article>
+        <div class="detail-modal" data-admin-resource-modal hidden>
+          <section class="detail-modal__panel admin-resource-modal__panel">
+            <header><div><h4 data-admin-resource-modal-title>상세</h4><p>선택한 항목을 수정합니다.</p></div><button type="button" data-admin-resource-modal-close>닫기</button></header>
+            <div class="detail-modal__body admin-resource-modal__body"><article data-admin-resource-detail></article><aside data-admin-resource-edit></aside></div>
+          </section>
         </div>
       </section>
 
       <section id="create" data-screen-id="create" class="screen-card">
         <div class="screen-heading">
           <span>01</span>
-          <div><h3 data-i18n="create.title">Create Bot</h3><p data-i18n="create.body">Set bot-level structural choices before any later configuration screen.</p></div>
-          <em data-i18n="create.map">Maps to Aidot: Bot create / Bot setup / Version / channel defaults</em>
+          <div><h3 data-i18n="create.title">Bot Creation</h3><p data-i18n="create.body">Decide bot-level structural settings before entering the detailed bot setup screen.</p></div>
         </div>
-        <div class="two-column">
-          <div class="form-panel">
-            <div class="notice info" data-i18n="create.info">Structural choices are decided here. Anything that cannot be changed after Aidot training must be set in Create Bot.</div>
-            <div class="training-lock-list"><strong data-i18n="create.locked">Locked after training</strong><span data-i18n="create.lock.llm">LLM usage</span><span data-i18n="create.lock.input">Input type</span><span data-i18n="create.lock.pdf">PDF allowance</span><span data-i18n="create.lock.orchestrator">Orchestrator mode</span><span data-i18n="create.lock.server">Bot Server location</span><span data-i18n="create.lock.channels">Base channels</span></div>
-            <label><span data-i18n="field.botName">Bot Name</span><input data-structural-field="bot.name" value="SupportBot Draft" /></label>
-            <label><span data-i18n="field.description">Description</span><textarea data-structural-field="bot.description">Customer support chatbot draft for web and messenger channels.</textarea></label>
-            <div class="row-fields">
-              <label><span data-i18n="field.defaultLanguage">Default Language</span><select data-structural-field="bot.defaultLocale"><option value="en">English</option><option value="ko">Korean</option><option value="ja">Japanese</option><option value="de">German</option><option value="fr">French</option></select></label>
-              <label><span data-i18n="field.versionName">Version Name</span><input data-structural-field="bot.version" value="v0.1" /></label>
+        <div class="create-layout">
+          <article class="create-form-panel">
+            <div class="notice info">구조 선택은 여기에서 결정합니다. Aidot 학습 이후 변경할 수 없는 항목은 모두 Bot Creation에서 설정해야 합니다.</div>
+            <div class="lock-pill-row">
+              <span>학습 이후 잠금</span>
+              <b aria-label="static">LLM 사용 여부</b>
+              <b>입력 방식</b>
+              <b aria-label="static">PDF 허용</b>
+              <b>오케스트레이터 모드</b>
+              <b aria-label="static">Bot Server 위치</b>
+              <b>기본 채널</b>
             </div>
-            <div class="decision-grid">
-              <label><span data-i18n="field.useLlm">Use LLM for bot composition</span><select data-structural-field="structuralChoices.useLlm"><option value="false" data-i18n="option.llm.no">No - utterance handoff/manual composition</option><option value="true" data-i18n="option.llm.yes">Yes - connected LLM composition</option></select></label>
-              <label><span data-i18n="field.compositionInput">Composition input type</span><select data-structural-field="structuralChoices.compositionInput"><option value="utterances" data-i18n="option.input.utterances">Training utterances only</option><option value="pdf" data-i18n="option.input.pdf">PDF documents only</option><option value="both" data-i18n="option.input.both">Training utterances + PDF documents</option></select></label>
-              <label><span data-i18n="field.orchestratorMode">Orchestrator mode</span><select data-structural-field="structuralChoices.orchestratorMode"><option value="decide_later" data-i18n="option.orchestrator.decide">Decide later</option><option value="connect_existing" data-i18n="option.orchestrator.connect">Connect existing orchestrator</option><option value="deploy_new" data-i18n="option.orchestrator.deploy">Deploy new orchestrator container</option></select></label>
-              <label><span data-i18n="field.botServerLocation">Bot Server location</span><select data-structural-field="structuralChoices.botServerLocation"><option value="decide_later" data-i18n="option.server.decide">Decide later</option><option value="orchestrator_server" data-i18n="option.server.orchestrator">Same server as orchestrator</option><option value="separate_server" data-i18n="option.server.separate">Separate bot server</option></select></label>
+            <label>봇 이름<input data-structural-field="bot.name" /></label>
+            <label>설명<textarea data-structural-field="bot.description"></textarea></label>
+            <div class="form-grid two">
+              <label>기본 언어<select data-structural-field="bot.defaultLocale"><option value="ko">Korean</option><option value="en">English</option><option value="ja">Japanese</option><option value="zh-CN">Chinese</option><option value="vi">Vietnamese</option><option value="de">German</option><option value="fr">French</option></select></label>
+              <label>버전 이름<input data-structural-field="bot.version" /></label>
             </div>
-            <label data-i18n="field.deploymentChannel">Deployment Channel</label>
-            <div class="choice-row"><button>Web</button><button>Desktop Messenger</button><button>Kakao KR</button></div>
-          </div>
-          <aside class="status-panel">
+            <div class="button-row">
+              <button type="button" data-create-version-add>버전 추가</button>
+              <button type="button" data-create-bot-copy>봇 복사</button>
+              <button type="button" data-create-version-manage>버전 관리</button>
+              <button type="button" data-create-version-upload>버전 업로드</button>
+            </div>
+            <div class="form-grid two">
+              <label>봇 구성에 LLM 사용<select data-structural-field="structuralChoices.useLlm"><option value="false">아니오 - 학습문장 전달/수동 구성</option><option value="true">예 - LLM으로 봇 구성</option></select></label>
+              <label>구성 입력 방식<select data-structural-field="structuralChoices.compositionInput"><option value="utterances">학습문장만 사용</option><option value="pdf">PDF만 사용</option><option value="both">학습문장 + PDF</option></select></label>
+              <label>오케스트레이터 모드<select data-structural-field="structuralChoices.orchestratorMode"><option value="decide_later">나중에 결정</option><option value="embedded">내장 오케스트레이터</option><option value="external">외부 오케스트레이터 연결</option></select></label>
+              <label>Bot Server 위치<select data-structural-field="structuralChoices.botServerLocation"><option value="decide_later">나중에 결정</option><option value="orchestrator">오케스트레이터 서버</option><option value="separate">별도 서버</option></select></label>
+            </div>
+            <div class="channel-choice-row">
+              <strong>배포 채널</strong>
+              <button type="button">Web</button>
+              <button type="button">Desktop Messenger</button>
+              <button type="button">Kakao KR</button>
+            </div>
+          </article>
+          <aside class="status-panel compact">
             <h4 data-i18n="summary.structure">Structure Summary</h4>
             <div data-create-summary></div>
             <div class="next-action">Next: configure using the selected input structure.</div>
@@ -315,33 +370,61 @@
         </div>
       </section>
 
-      <section id="configure" data-screen-id="configure" class="screen-card selected">
+      <section id="configure" data-screen-id="configure" class="screen-card">
         <div class="screen-heading">
           <span>02</span>
-          <div><h3 data-i18n="configure.title">Configure Bot</h3><p data-i18n="configure.body">LLM-first bot composition flow. Aidot ML/Semantic screens remain available in their mapped advanced areas.</p></div>
-          <em data-i18n="configure.map">Maps to Aidot: Training utterances / PDF-RAG / Intent draft</em>
+          <div><h3 data-i18n="configure.title">Configure Bot</h3><p data-i18n="configure.body">LLM-first bot composition flow.</p></div>
         </div>
-        <div class="notice warning">Bot composition in CGA uses LLM flow only. PDF Q&amp;A generation requires an LLM connection.</div>
-        <div class="input-paths">
-          <article>
-            <span class="path-label blue" data-i18n="configure.pathA">Path A · LLM optional</span>
-            <h4 data-i18n="configure.pathA.title">Training utterances → intent classification</h4>
-            <p data-i18n="configure.pathA.body">Input question-style utterances and requested intent count. Without connected LLM, use Manual LLM Handoff.</p>
-            <textarea class="mock-textarea" data-config-utterances></textarea>
-            <label class="inline-field"><span data-i18n="build.intentCount">Intent count</span><input type="number" min="1" value="2" data-config-intent-count /></label>
-            <div class="button-row"><button type="button" data-config-export-handoff data-i18n="configure.export">Export Handoff File</button><button type="button" class="ghost-btn" data-config-import-result data-i18n="configure.import">Import LLM Result</button></div>
-          </article>
-          <article>
-            <span class="path-label green" data-i18n="configure.pathB">Path B · LLM required</span>
-            <h4 data-i18n="configure.pathB.title">PDF → Q&amp;A intent candidates</h4>
-            <p data-i18n="configure.pathB.body">Upload PDF now. Generation stays disabled until LLM connection is configured.</p>
-            <button type="button" class="upload-box" data-config-pdf-select data-i18n="configure.upload">Drop PDF here or choose file</button>
-            <div class="button-row"><button type="button" data-config-generate-qa disabled data-i18n="configure.generateQa">Generate Q&amp;A Intents</button><button type="button" class="ghost-btn" data-config-save-pdf data-i18n="configure.savePdf">Save PDF</button></div>
-          </article>
-        </div>
-        <div class="review-board">
-          <h4 data-i18n="review.preview">Intent Review Preview</h4>
-          <div data-config-preview></div>
+        <div class="aidot-settings-screen">
+          <aside class="aidot-settings-side">
+            <div class="bot-avatar-small"></div>
+            <strong aria-label="static">테스트봇 - 시멘틱 RAG</strong>
+            <span class="star-mark">★</span>
+            <div class="button-row"><button type="button">수정</button><button type="button" class="ghost-btn">삭제</button></div>
+            <nav>
+              <strong>설정</strong>
+              <a class="active">AI 모델 설정</a>
+              <a>기본값 설정</a>
+              <a>메시지 설정</a>
+              <a>메신저 편의 기능</a>
+              <strong>기본 대화</strong>
+              <a>제외/무시 목록 설정</a>
+              <a>룰 설정</a>
+              <a>스몰토크</a>
+              <strong>연계</strong>
+              <a>봇스테이션</a>
+            </nav>
+          </aside>
+          <section class="aidot-settings-main">
+            <div class="aidot-field-grid">
+              <label>봇 이름 *<input value="테스트봇 - 시멘틱 RAG" /></label>
+              <label>유형<input value="텍스트형" readonly /></label>
+              <label>봇 ID<input value="828971ea-ec13-4f1b-944a-60f39936d9c3" readonly /></label>
+              <label>최근 수정<input value="2026. 06. 02 19:01" readonly /></label>
+            </div>
+            <div class="aidot-field-grid five">
+              <label>언어 *<input value="한국어" readonly /></label>
+              <label>NLU 방식<input value="Semantic - Vector Worker" readonly /></label>
+              <label>NLU 모델 *<input value="Aidot Vector Worker 기본 모델" readonly /></label>
+              <label>답변 방식<input value="Semantic Engine RAG 답변" readonly /></label>
+              <div class="profile-dots"><span></span><b></b><span></span></div>
+            </div>
+            <section class="aidot-setting-block">
+              <header><strong aria-label="static">Intent Vector DB 연결</strong><span aria-label="static">Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</span></header>
+              <div class="rag-form-grid"><label>사용 여부<select><option>사용</option></select></label><label>Index 이름<input value="aidot-intent" /></label></div>
+            </section>
+            <section class="aidot-setting-block">
+              <header><strong aria-label="static">Answer Vector DB 연결</strong><span aria-label="static">Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 Answer Vector DB에 저장합니다.</span></header>
+              <div class="rag-form-grid"><label>사용 여부<select><option>사용</option></select></label><label>Index 이름<input value="aidot-answer" /></label></div>
+            </section>
+            <section class="aidot-setting-block">
+              <header><strong>구성 자동분류 가중치</strong><span>구성 화면의 의도 후보 분류에서 사전, 개체, 단어, 글자 조각, 조사/어미 반영 비율을 조정합니다.</span></header>
+              <div class="aidot-weight-grid">
+                <label>사전 대표어<input value="1.2" /></label><label>개체<input value="1.2" /></label><label>명사/동사<input value="1" /></label><label>글자 조각<input value="0.2" /></label><label>조사/어미<input value="0.05" /></label><label>대표어 일치 최소점수<input value="0.82" /></label>
+              </div>
+            </section>
+            <label>소개<textarea>봇을 설명할 수 있는 소개 문장을 입력하세요.</textarea></label>
+          </section>
         </div>
       </section>
 
@@ -349,30 +432,32 @@
         <div class="screen-heading">
           <span>03</span>
           <div><h3 data-i18n="detail.title">Detail Settings</h3><p data-i18n="detail.body">Beginner flow stays guided, and all Aidot detail screens remain available in this step.</p></div>
-          <em data-i18n="detail.map">Maps to Aidot: Intent / Entity / Dictionary / Scenario / API cards</em>
         </div>
-        <div class="tab-strip">
-          <button class="active-tab" data-detail-tab="intent" data-i18n="detail.intentAnswer">Intent &amp; Answer</button>
-          <button data-detail-tab="synonyms" data-i18n="detail.synonyms">Synonyms</button>
-          <button data-detail-tab="entities" data-i18n="detail.entities">Entities</button>
-          <button data-detail-tab="dictionary" data-i18n="detail.dictionary">Dictionary</button>
-          <button data-detail-tab="scenario" data-i18n="detail.scenario">Scenario</button>
-          <button data-detail-tab="api" data-i18n="detail.apiTools">API Tools</button>
+        <div class="aidot-rag-config">
+          <section class="aidot-rag-left">
+            <header>
+              <strong aria-label="static">RAG 답변 문서 구성</strong>
+              <span aria-label="static">구성용 엔진 : Semantic - Vector Worker · Aidot Vector Worker 기본 모델</span>
+            </header>
+            <div class="rag-form-grid">
+              <label>구성 엔진<select><option value="Semantic - Vector Worker">Semantic - Vector Worker</option></select></label>
+              <label>구성 모델<select><option value="Aidot Vector Worker 기본 모델">Aidot Vector Worker 기본 모델</option></select></label>
+            </div>
+            <div class="rag-info-line">자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.</div>
+            <div class="rag-radio-row"><label><input type="radio" checked /> 텍스트</label><label><input type="radio" /> PDF</label></div>
+            <label>답변 텍스트<textarea data-config-utterances></textarea></label>
+            <label>문서 제목<input value="입력하지 않으면 답변 문서로 저장됩니다." /></label>
+            <div class="rag-info-line"><span>선택한 구성 모델 기준으로 답변 문서를 임베딩합니다.</span><b aria-label="static">Aidot Vector Worker 기본 모델</b></div>
+            <div class="rag-target-row"><label>목표 의도 수<input type="number" min="1" value="50" data-config-intent-count /></label><button type="button" data-config-generate-qa disabled>RAG 문서 구성</button></div>
+            <div class="rag-radio-row"><label><input type="radio" /> 50개 이하로 최대한 적게</label><label><input type="radio" checked /> 50개에 가깝게</label><label><input type="radio" /> 무조건 50개</label></div>
+            <div class="button-row"><button type="button" data-config-export-handoff data-i18n="configure.export">Export Handoff File</button><button type="button" class="ghost-btn" data-config-import-result data-i18n="configure.import">Import LLM Result</button><button type="button" class="ghost-btn" data-config-save-pdf data-i18n="configure.savePdf">Save PDF</button></div>
+            <button type="button" class="ghost-btn">NLU 기준 / 가중치 설정</button>
+          </section>
+          <section class="aidot-rag-right">
+            <header><strong>의도 후보</strong><div><button type="button">선택 병합</button><button type="button" class="primary-action-small">현재 버전 덮어쓰기</button></div></header>
+            <div data-config-preview class="rag-candidate-box"></div>
+          </section>
         </div>
-        <div data-detail-intent-panel>
-          <div class="aidot-intent-toolbar">
-            <input data-aidot-intent-search placeholder="intent / utterance / tag" data-i18n-placeholder="placeholder.intentSearch" />
-            <select data-aidot-intent-filter><option value="all" data-i18n="common.all">All</option><option value="intent" data-i18n="detail.intents">Intents</option></select>
-            <button type="button" data-aidot-intent-add data-i18n="detail.addIntent">Add Intent</button>
-          </div>
-          <div class="aidot-intent-summary" data-aidot-intent-summary></div>
-          <div class="aidot-intent-layout">
-            <div class="aidot-intent-table" data-aidot-intent-table></div>
-            <div class="answer-editor" data-aidot-intent-editor></div>
-            <aside class="status-panel compact" data-aidot-intent-side></aside>
-          </div>
-        </div>
-        <div class="detail-tab-panel" data-detail-tab-panel hidden></div>
         <div class="asset-transfer-panel">
           <div>
             <h4 data-i18n="transfer.assetsTitle">Reusable Bot Assets</h4>
@@ -395,7 +480,6 @@
         <div class="screen-heading">
           <span>API</span>
           <div><h3 data-i18n="apiAnswer.title">External API Answer Source</h3><p data-i18n="apiAnswer.body">API answers are used when the response is not fixed text but comes from an external business system.</p></div>
-          <em data-i18n="apiAnswer.map">Maps to Aidot: API card / response mapping / runtime variables</em>
         </div>
         <div class="api-answer-layout">
           <div class="api-owner-card">
@@ -451,25 +535,13 @@
       </section>
 
       <section id="build" data-screen-id="build" class="screen-card">
-        <div class="screen-heading">
-          <span>04</span>
-          <div><h3 data-i18n="build.title">Build</h3><p data-i18n="build.body">Run Aidot-compatible training/build readiness actions.</p></div>
-          <em data-i18n="build.map">Maps to Aidot: NLU training / LLM NLU / RAG embedding / deploy readiness</em>
-        </div>
-        <div class="readiness-grid" data-build-readiness>
-          <div class="ready"><strong data-i18n="build.botInfo">Bot info</strong><span data-build-bot-info data-i18n="build.complete">Complete</span></div>
-          <div class="ready"><strong data-i18n="build.intentCount">Intent count</strong><span data-build-intent-count>12 intents</span></div>
-          <div class="warn-card"><strong data-i18n="build.llmConnection">LLM connection</strong><span data-build-llm-status data-i18n="build.pdfNeeded">Needed for PDF path</span></div>
-          <div class="ready"><strong data-i18n="build.webchatContract">Webchat contract</strong><span data-build-webchat-status data-i18n="build.unchanged">Unchanged</span></div>
-        </div>
-        <div class="button-row"><button data-build-run data-i18n="build.run">Run Build</button><button class="ghost-btn" data-build-refresh data-i18n="build.trainingStatus">View Aidot Training Status</button></div>
+        <div data-build-aidot-screen></div>
       </section>
 
       <section id="test" data-screen-id="test" class="screen-card">
         <div class="screen-heading">
           <span>05</span>
           <div><h3 data-i18n="test.title">Test</h3><p data-i18n="test.body">Show Aidot simulator results in a builder-friendly layout.</p></div>
-          <em data-i18n="test.map">Maps to Aidot: Simulator / intent result / runtime variables</em>
         </div>
         <div class="simulator-layout">
           <div class="chat-box"><p class="user-msg" data-test-user-message>I forgot my password.</p><p class="bot-msg" data-test-bot-message>Open Account Settings and choose Reset Password.</p><input placeholder="Type a test message" data-test-input data-i18n-placeholder="test.simPlaceholder" /></div>
@@ -485,11 +557,23 @@
         </div>
       </section>
 
-      <section id="operate" data-screen-id="operate" class="screen-card">
+      <section id="evaluate" data-screen-id="evaluate" class="screen-card">
         <div class="screen-heading">
           <span>06</span>
-          <div><h3 data-i18n="operate.title">Operate</h3><p data-i18n="operate.body">Deploy and monitor using Aidot-compatible channel and runtime contracts.</p></div>
-          <em data-i18n="operate.map">Maps to Aidot: Webchat / channel / operation version / analysis / retrain</em>
+          <div><h3 data-i18n="evaluate.title">Bot Evaluation</h3><p data-i18n="evaluate.body">Evaluate bot quality before moving it to operation.</p></div>
+        </div>
+        <div class="readiness-grid">
+          <div class="ready"><strong data-i18n="evaluate.intentCoverage">Intent coverage</strong><span data-i18n="evaluate.ready">Ready</span></div>
+          <div class="ready"><strong data-i18n="evaluate.answerQuality">Answer quality</strong><span data-i18n="evaluate.ready">Ready</span></div>
+          <div class="warn-card"><strong data-i18n="evaluate.regression">Regression check</strong><span data-i18n="evaluate.pending">Pending</span></div>
+          <div class="ready"><strong data-i18n="evaluate.aidotCompatibility">Aidot compatibility</strong><span data-i18n="evaluate.preserved">Preserved</span></div>
+        </div>
+      </section>
+
+      <section id="operate" data-screen-id="operate" class="screen-card">
+        <div class="screen-heading">
+          <span data-i18n="operation.retrain.code">RT</span>
+          <div><h3 data-i18n="operate.title">Retraining</h3><p data-i18n="operate.body">Improve the running bot through Aidot-compatible retraining flow.</p></div>
         </div>
         <div class="ops-grid">
           <article><h4 data-i18n="operate.channelStatus">Channel Status</h4><strong data-operate-channel data-i18n="operate.webOk">Web OK</strong><p data-operate-channel-detail data-i18n="operate.kakaoPending">Desktop and Kakao KR pending</p></article>
@@ -500,11 +584,21 @@
           <article><h4 data-i18n="operate.compatibility">Compatibility</h4><strong data-operate-compatibility data-i18n="operate.preserved">Preserved</strong><p data-i18n="operate.clients">Aidot clients can connect unchanged</p></article>
         </div>
       </section>
+      <section id="analysis" data-screen-id="analysis" class="screen-card">
+        <div class="screen-heading">
+          <span data-i18n="operation.analysis.code">AN</span>
+          <div><h3 data-i18n="analysis.title">Analysis</h3><p data-i18n="analysis.body">Review operation data, unanswered questions, and improvement targets.</p></div>
+        </div>
+        <div class="ops-grid">
+          <article><h4 data-i18n="analysis.unanswered">Unanswered questions</h4><strong>12</strong><p data-i18n="analysis.unansweredBody">Review candidates for retraining.</p></article>
+          <article><h4 data-i18n="analysis.topIntents">Top intents</h4><strong>17</strong><p data-i18n="analysis.topIntentsBody">Monitor high-volume intents.</p></article>
+          <article><h4 data-i18n="analysis.apiFailures">API failures</h4><strong>0</strong><p data-i18n="analysis.apiFailuresBody">Check external answer sources.</p></article>
+        </div>
+      </section>
       <section id="locked-vs-runtime" data-screen-id="locked-vs-runtime" class="screen-card lock-policy-card">
         <div class="screen-heading">
           <span>LK</span>
           <div><h3 data-i18n="lock.title">Locked Structure vs Runtime Options</h3><p data-i18n="lock.body">Create Bot owns structural choices. Later screens only adjust runtime-safe options.</p></div>
-          <em data-i18n="lock.map">Locked after Aidot training vs adjustable during operation</em>
         </div>
         <div class="lock-runtime-grid">
           <article>
@@ -522,7 +616,6 @@
         <div class="screen-heading">
           <span>ST</span>
           <div><h3 data-i18n="state.title">Studio State and Readiness</h3><p data-i18n="state.body">Screen status is derived from Public Core state, not hardcoded per panel.</p></div>
-          <em data-i18n="state.map">Uses packages/public-core/src/studio-state.js</em>
         </div>
         <div class="state-grid" data-state-summary></div>
         <div class="readiness-issues">
@@ -561,7 +654,6 @@
         <div class="screen-heading">
           <span>CM</span>
           <div><h3 data-i18n="commercial.title">Commercial Module Availability</h3><p data-i18n="commercial.body">Public Core can render commercial feature states without loading private implementations.</p></div>
-          <em data-i18n="commercial.map">Default registry: all commercial modules not installed</em>
         </div>
         <div class="feature-list" data-commercial-availability></div>
       </section>
@@ -570,7 +662,6 @@
         <div class="screen-heading">
           <span>MB</span>
           <div><h3 data-i18n="module.title">Module Boundary Matrix</h3><p data-i18n="module.body">Each screen shows what stays public and what becomes a commercial module candidate.</p></div>
-          <em data-i18n="module.map">Public Core must run without commercial modules</em>
         </div>
         <div class="boundary-table" data-boundary-table role="table" aria-label="Public and commercial module boundary"></div>
       </section>
@@ -579,7 +670,6 @@
         <div class="screen-heading">
           <span>CT</span>
           <div><h3 data-i18n="contracts.title">Public Core Contracts</h3><p data-i18n="contracts.body">Stable contracts for errors, workflow mapping, and commercial module availability.</p></div>
-          <em data-i18n="contracts.map">Contracts are public. Commercial implementations stay separate.</em>
         </div>
         <div class="contract-grid">
           <article>
@@ -609,7 +699,6 @@
         <div class="screen-heading">
           <span>OC</span>
           <div><h3 data-i18n="openCore.title">Open Core Strategy</h3><p data-i18n="openCore.body">Public CGA remains useful, while high-value commercial modules are separated.</p></div>
-          <em data-i18n="openCore.map">Public Core + Advanced Builder / Operations Monitor / Entitlement modules</em>
         </div>
         <div class="module-layout">
           <article class="core-module">
@@ -639,34 +728,22 @@
       </section>
 
     </main>
-
-    <aside class="approval temporary-panel" aria-label="Approval checklist">
-      <div class="section-title">
-        <strong data-i18n="approval.title">Approval Checklist</strong>
-        <span data-i18n="approval.subtitle">Before implementation</span>
-      </div>
-      <div class="check-list confirmed">
-        <h3 data-i18n="approval.confirmed">Confirmed</h3>
-        <p data-i18n="approval.aidot">Aidot modification prohibited</p>
-        <p data-i18n="approval.cga">CGA folder only</p>
-        <p data-i18n="approval.compat">API / webchat compatibility preserved</p>
-        <p data-i18n="approval.noRetest">No repeated Aidot feature testing per step</p>
-      </div>
-      <div class="check-list pending">
-        <h3 data-i18n="approval.pending">Needs approval</h3>
-        <p data-i18n="approval.createFirst">Create first or bot list first</p>
-        <p data-i18n="approval.handoff">Manual LLM Handoff implementation scope</p>
-        <p data-i18n="approval.dynamic">Dynamic intent expansion excluded or approved</p>
-        <p data-i18n="approval.serverClient">Bot Server and client selection exposure</p>
-        <p data-i18n="approval.license">Public Core license and commercial module packaging</p>
-      </div>
-      <div class="message-card">
-        <strong data-i18n="workingRule.title">Working rule</strong>
-        <p data-i18n="workingRule.body">Proceed through all CGA screens, show what they do, and only request approval for new functionality.</p>
-      </div>
-    </aside>
+    <div class="help-modal" data-help-modal hidden>
+      <div class="help-backdrop" data-help-close></div>
+      <section class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title">
+        <header>
+          <h2 id="help-title" data-help-title></h2>
+          <button type="button" data-help-close>×</button>
+        </header>
+        <div class="help-body" data-help-body></div>
+      </section>
+    </div>
   </div>
   <script src="/apps/studio/i18n.js"></script>
-  <script type="module" src="/apps/studio/app.js"></script>
+  <script src="/apps/studio/entry-auth.js?v=20260610-5"></script>
+  <script type="module" src="/apps/studio/app.js?v=20260611-8"></script>
 </body>
 </html>
+
+
+

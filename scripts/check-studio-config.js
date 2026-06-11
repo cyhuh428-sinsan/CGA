@@ -64,7 +64,7 @@ for (const id of screenIds) {
 if (process.exitCode !== 1) pass("layout ids match screen sections");
 
 const workflowIds = [...workflowSource.matchAll(/id:\s*"([^"]+)"/g)].map((match) => match[1]);
-for (const id of ["create", "configure", "detail", "build", "test", "operate"]) {
+for (const id of ["create", "configure", "detail", "build", "test", "evaluate"]) {
   if (!workflowIds.includes(id)) fail(`workflow step '${id}' is missing`);
 }
 if (process.exitCode !== 1) pass("required workflow steps exist");
@@ -73,7 +73,7 @@ const htmlLocaleKeys = extractLocaleKeys(html);
 const appSource = read(path.join(studio, "i18n.js"));
 const supportedStudioLocales = ["en", "ko", "zh-CN", "ja", "vi", "de", "fr"];
 const topLocaleSelect = html.match(/<select data-locale-select>([\s\S]*?)<\/select>/)?.[1] || "";
-const signupLocaleSelect = html.match(/<select data-signup-locale>([\s\S]*?)<\/select>/)?.[1] || "";
+const signupLocaleSelect = html.match(/<select class="login-select" data-entry-locale>([\s\S]*?)<\/select>/)?.[1] || "";
 for (const locale of supportedStudioLocales) {
   if (!topLocaleSelect.includes(`value="${locale}"`)) fail(`top language selector missing locale '${locale}'`);
   if (!signupLocaleSelect.includes(`value="${locale}"`)) fail(`signup language selector missing locale '${locale}'`);
@@ -143,12 +143,13 @@ if (process.exitCode !== 1) pass("studio UI locale sync is wired to current user
 if (!studioAppSource.includes("requestCgaJson")) fail("studio app does not call CGA management APIs");
 if (!html.includes("data-login-id")) fail("studio login form is missing a user id input");
 if (!html.includes("data-login-password")) fail("studio login form is missing a password input");
-if (!html.includes("data-top-login-submit")) fail("studio top bar is missing quick login action");
-if (!html.includes("data-role-management")) fail("studio access screen is missing group role management table");
+if (!html.includes("data-login-entry")) fail("studio is missing first-visit login entry screen");
+if (!studioAppSource.includes("applyAuthGate")) fail("studio app does not gate workspace screens behind login");
+if (!studioCssSource.includes(".app-shell.unauthenticated")) fail("studio CSS does not define first-visit login layout");
 if (!html.includes("data-logout-submit")) fail("studio login form is missing a logout button");
 if (!html.includes("data-auth-message")) fail("studio login form is missing an auth message area");
 if (!html.includes("data-global-message")) fail("studio workspace is missing a global action message area");
-if (!html.includes("data-signup-password")) fail("studio signup form is missing a password input");
+if (!html.includes("data-entry-signup-password")) fail("studio signup form is missing a password input");
 if (!studioAppSource.includes("password }") && !studioAppSource.includes("password,")) fail("studio app does not send a password to CGA auth APIs");
 if (!studioAppSource.includes("AUTH_SESSION_STORAGE_KEY")) fail("studio app does not store auth session tokens");
 if (!studioAppSource.includes("X-CGA-Session-Token")) fail("studio app does not send auth session tokens");
@@ -183,11 +184,14 @@ if (!studioAppSource.includes("refreshDetailAssetsFromServer")) fail("studio app
 if (!studioAppSource.includes("saveDetailAssetsToServer")) fail("studio app does not save Detail Settings assets through server API");
 if (!studioAppSource.includes("persistDetailAssetsToServer")) fail("detail asset save is not split into queued wrapper and persist action");
 if (!studioAppSource.includes("cloneForSnapshot(currentIntentUtteranceAssets)")) fail("detail asset save does not capture payload at request time");
-if (!html.includes("data-aidot-intent-table")) fail("Detail Settings does not expose Aidot-style intent management table");
-if (!html.includes("data-aidot-intent-add")) fail("Detail Settings does not expose Aidot-style Add Intent action");
-if (!html.includes("data-detail-tab-panel")) fail("Detail Settings does not expose Aidot-style detail tab panel");
-if (!studioAppSource.includes("renderAidotIntentManager")) fail("studio app does not render Aidot-style intent management from detail assets");
-if (!studioAppSource.includes("renderDetailTabs")) fail("studio app does not render Aidot-style detail asset tabs");
+if (!html.includes("aidot-rag-config")) fail("Bot Composition does not expose Aidot-style RAG document composition screen");
+if (!html.includes("aidot-settings-screen")) fail("Bot Settings does not expose Aidot-style bot settings screen");
+if (!html.includes("data-build-aidot-screen")) fail("Bot Production does not expose Aidot-style intent main screen mount");
+if (!studioAppSource.includes("renderBuildAidotScreen")) fail("studio app does not render Aidot-style intent list and dialog design from build screen");
+if (!studioAppSource.includes("data-build-intent-open")) fail("Bot Production intent rows do not open conversation start");
+if (!studioAppSource.includes("data-open-dialog-design")) fail("Bot Production conversation start does not open dialog design");
+if (!studioAppSource.includes("data-aidot-intent-add")) fail("Bot Production does not expose Aidot-style Add Intent action");
+if (!studioAppSource.includes("renderAidotIntentManager")) fail("studio app does not keep detail asset rendering for Aidot-compatible asset data");
 if (!studioAppSource.includes("data-intent-edit-utterances")) fail("studio app does not expose representative utterance editing for selected intent");
 if (!studioAppSource.includes("data-intent-edit-dialog")) fail("studio app does not expose dialog card editing for selected intent");
 if (!studioAppSource.includes("currentIntentSearch")) fail("studio app does not keep Aidot-style intent search state");
@@ -404,10 +408,11 @@ if (process.exitCode !== 1) pass("contract files exist");
 async function checkAccessTransitions() {
   const accessState = await import("../packages/public-core/src/access-state.js");
   let state = accessState.createSampleAccessState();
-  state = accessState.applySignup(state, { userId: "u-new", name: "New User", locale: "vi", groupName: "New User Group" });
+  state = accessState.applySignup(state, { userId: "u-new", name: "New User", locale: "vi", groupId: "g-support", requestedRole: "viewer" });
   if (!state.users.some((user) => user.id === "u-new" && user.locale === "vi")) fail("signup transition did not create user with locale");
-  if (!state.groups.some((group) => group.id === "g-u-new")) fail("signup transition did not create user group");
-  if (!state.memberships.some((membership) => membership.user_id === "u-new" && membership.group_id === "g-u-new" && membership.role === "group_admin")) fail("signup transition did not assign group admin");
+  if (state.groups.some((group) => group.id === "g-u-new")) fail("signup transition should not create a personal user group");
+  if (state.memberships.some((membership) => membership.user_id === "u-new" && membership.role === "group_admin")) fail("signup transition should not assign group admin");
+  if (!state.joinRequests.some((request) => request.user_id === "u-new" && request.group_id === "g-support" && request.requested_role === "viewer")) fail("signup transition should create a viewer join request");
   state = accessState.requestGroupJoin(state, { id: "jr-new-support", userId: "u-new", groupId: "g-support", requestedRole: "builder" });
   const beforeUnauthorizedJoin = state.memberships.length;
   state = accessState.approveGroupJoinRequest(state, { requestId: "jr-new-support", reviewerId: "u-builder" });
@@ -419,11 +424,9 @@ async function checkAccessTransitions() {
   state = accessState.updateGroupMembershipRole(state, { actorId: "u-group-admin", userId: "u-new", groupId: "g-support", role: "reviewer" });
   if (!state.memberships.some((membership) => membership.user_id === "u-new" && membership.group_id === "g-support" && membership.role === "reviewer")) fail("group admin should update group membership role");
   const supportScopes = accessState.getEffectiveGroupScopes(state, "u-new", "g-support", "supportbot-draft");
-  const ownGroupScopes = accessState.getEffectiveGroupScopes(state, "u-new", "g-u-new", "supportbot-draft");
   const pendingOpsScopes = accessState.getEffectiveGroupScopes(state, "u-builder", "g-ops", "supportbot-draft");
   const operatorScopes = accessState.getEffectiveGroupScopes(state, "u-operator", "g-ops", "supportbot-draft");
   if (!supportScopes.includes("bot.create")) fail("group-scoped builder should have bot.create in approved group");
-  if (!ownGroupScopes.includes("bot.create")) fail("signup owner group admin should have bot.create in own group");
   if (pendingOpsScopes.includes("bot.create")) fail("pending group join should not grant bot.create in target group");
   if (pendingOpsScopes.includes("bot.operate")) fail("pending group join should not grant group access scopes in target group");
   if (operatorScopes.includes("bot.create")) fail("operator should not get bot.create in operations group");
@@ -437,8 +440,7 @@ async function checkAccessTransitions() {
   if (state.memberships.find((membership) => membership.user_id === "u-reviewer" && membership.group_id === "g-support")?.role !== beforeUnauthorizedAdmin) fail("group admin should not approve admin permission request");
   state = accessState.approveAdminPermissionRequest(state, { requestId: "ar-reviewer-admin", reviewerId: "admin" });
   if (!state.memberships.some((membership) => membership.user_id === "u-reviewer" && membership.group_id === "g-support" && membership.role === "group_admin")) fail("system admin should approve admin permission request");
-  state = accessState.removeMembershipAndDeleteEmptyGroups(state, { userId: "u-new", groupId: "g-u-new" });
-  if (!state.groups.some((group) => group.id === "g-u-new" && group.status === "deleted")) fail("empty group was not deleted after removing last user");
+  if (state.groups.some((group) => group.id === "g-u-new")) fail("signup personal group should not exist after access transitions");
   if (process.exitCode !== 1) pass("access transition rules work");
 }
 

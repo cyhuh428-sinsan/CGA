@@ -11,7 +11,7 @@ export const AUTH_API_ROUTES = Object.freeze({
 });
 
 export const AUTH_API_ACTIONS = Object.freeze({
-  SIGNUP_CREATE_OWN_GROUP: "signup.createOwnGroup",
+  SIGNUP_CREATE_VIEWER_REQUEST: "signup.createViewerRequest",
   LOGIN_LOAD_MEMBERSHIPS: "login.loadMemberships",
   LOGOUT_CLEAR_SESSION: "logout.clearSession",
   REQUEST_GROUP_JOIN: "group.requestJoin",
@@ -21,13 +21,14 @@ export const AUTH_API_ACTIONS = Object.freeze({
   REMOVE_MEMBERSHIP: "group.removeMembership"
 });
 
-export function createSignupRequest({ userId, name, password, locale = "en", groupName }) {
+export function createSignupRequest({ userId, name, password, locale = "en", groupId, requestedRole = USER_ROLES.VIEWER }) {
   return {
     user_id: userId,
     name,
     password,
     locale,
-    group_name: groupName
+    group_id: groupId,
+    requested_role: requestedRole
   };
 }
 

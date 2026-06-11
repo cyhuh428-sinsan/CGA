@@ -63,6 +63,14 @@ async function expectOk(path, options, message) {
   return result;
 }
 
+async function expectOkUnder(path, options, maxMs, message) {
+  const started = performance.now();
+  const result = await expectOk(path, options, message);
+  const elapsed = performance.now() - started;
+  if (elapsed > maxMs) fail(`${message}: ${elapsed.toFixed(1)}ms exceeded ${maxMs}ms`);
+  return { ...result, elapsed };
+}
+
 async function expectStatus(path, options, expectedStatus, message) {
   const result = await requestJson(path, options);
   if (result.response.status !== expectedStatus) fail(`${message}: expected ${expectedStatus}, got ${result.response.status}`);
@@ -84,11 +92,13 @@ async function main() {
       name: "API User",
       password: "api-pass-1",
       locale: "vi",
-      group_name: "API User Group"
+      group_id: "g-support",
+      requested_role: "viewer"
     }
   }, 201, "signup endpoint failed");
   if (signup.user?.id !== "u-api" || signup.locale !== "vi") fail("signup endpoint did not return created user session");
-  if (!signup.groups?.some((group) => group.id === "g-u-api")) fail("signup endpoint did not create personal group");
+  if (signup.groups?.some((group) => group.id === "g-u-api")) fail("signup endpoint should not create personal group");
+  if (signup.memberships?.some((membership) => membership.group_id === "g-u-api")) fail("signup endpoint should not assign personal group membership");
 
   const loginResult = await expectOk("/api/cga/auth/login", {
     method: "POST",
@@ -105,6 +115,16 @@ async function main() {
   }, "me endpoint with session token failed");
   if (tokenMeResult.payload.user?.id !== "u-api") fail("me endpoint did not resolve session token user");
 
+  const timedGroupsResult = await expectOkUnder("/api/cga/groups", {
+    userId: "admin",
+    sessionToken: login.session_token
+  }, 5000, "groups endpoint with login history was too slow");
+  const loginHistoryAfterLogin = timedGroupsResult.payload.login_history || [];
+  const loginRecord = loginHistoryAfterLogin.find((entry) => entry.session_token === login.session_token);
+  if (!loginRecord) fail("groups endpoint did not return real login history");
+  if (!loginRecord.login_at || loginRecord.login_at === "-") fail("login history did not include login_at");
+  if (loginRecord.logout_at) fail("active login history should not include logout_at before logout");
+
   await expectStatus("/api/cga/auth/me", {
     userId: "admin",
     sessionToken: "expired-or-invalid-token"
@@ -117,7 +137,8 @@ async function main() {
 
   const groupsResult = await expectOk("/api/cga/groups", { userId: "u-api" }, "groups endpoint failed");
   const groups = groupsResult.payload;
-  if (!groups.groups?.some((group) => group.id === "g-u-api")) fail("groups endpoint did not return persisted signup group");
+  if (groups.groups?.some((group) => group.id === "g-u-api")) fail("groups endpoint should not return a personal signup group");
+  if (!groups.join_requests?.some((request) => request.user_id === "u-api" && request.group_id === "g-support" && request.requested_role === "viewer")) fail("signup endpoint did not create default viewer join request");
 
   const joinRequest = await expectStatus("/api/cga/groups/join-requests", {
     method: "POST",
@@ -209,6 +230,10 @@ async function main() {
   if (!stored.users?.some((user) => user.id === "u-api")) fail("access state file did not persist signup user");
   if (!stored.groups?.some((group) => group.id === "g-admin-api")) fail("access state file did not persist created group");
   if (!stored.adminRequests?.some((request) => request.id === "ar-api-admin" && request.status === "approved")) fail("access state file did not persist approved admin request");
+  const storedLoginRecord = stored.loginHistory?.find((entry) => entry.session_token === login.session_token);
+  if (!storedLoginRecord?.login_at) fail("access state file did not persist login time");
+  if (!storedLoginRecord?.logout_at) fail("access state file did not persist logout time");
+  console.log(`OK groups query with login history ${timedGroupsResult.elapsed.toFixed(1)}ms`);
 
   const authCredentialsFile = join(dataDir, "auth-credentials.json");
   if (!existsSync(authCredentialsFile)) fail("auth credentials file was not created");

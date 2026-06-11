@@ -171,12 +171,19 @@ export function createAdminPermissionRequest({ id, userId, groupId = null, reque
   };
 }
 
-export function createSignupDraft({ userId, name, locale = "en", groupName }) {
-  const groupId = `g-${userId}`;
+export function createSignupDraft({ userId, name, locale = "en", groupId = null, requestedRole = USER_ROLES.VIEWER }) {
   return {
     user: createUser({ id: userId, name, locale, status: USER_STATUS.ACTIVE }),
-    group: createGroup({ id: groupId, name: groupName || `${name} Group` }),
-    membership: createGroupMembership({ userId, groupId, role: USER_ROLES.GROUP_ADMIN })
+    group: null,
+    membership: null,
+    joinRequest: groupId
+      ? createGroupJoinRequest({
+          id: `jr-${userId}-${groupId}`,
+          userId,
+          groupId,
+          requestedRole
+        })
+      : null
   };
 }
 
