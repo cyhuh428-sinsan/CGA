@@ -3506,7 +3506,7 @@ const AIDOT_ADMIN_SURFACE_TITLES = {
   users: "사용자 관리",
   "login-history": "로그인 이력",
   groups: "그룹 관리",
-  roles: "그룹 역할 관리",
+  roles: "사용자 관리",
   dashboard: "운영 대시보드",
   "system-logs": "운영/시스템 로그 조회",
   "bot-status": "봇 현황 조회",
@@ -3932,7 +3932,6 @@ function renderAccessPanels() {
   const joinRole = document.querySelector("[data-join-role]");
   const adminQueue = document.querySelector("[data-admin-action-queue]");
   const groupUsers = document.querySelector("[data-group-users]");
-  const roleManagement = document.querySelector("[data-role-management]");
   const userSearch = document.querySelector("[data-user-search]");
   const userGroupFilter = document.querySelector("[data-user-group-filter]");
   const userRoleFilter = document.querySelector("[data-user-role-filter]");
@@ -4199,18 +4198,7 @@ function renderAccessPanels() {
         <span>가입상태</span>
         <span>계정상태</span>
       </div>
-      ${activeUserRows.join("") || `
-        <div class="management-table-row">
-          <span></span>
-          <strong>${t("common.none", "None")}</strong>
-          <span>${t("admin.noActiveUser", "No active user")}</span>
-          <span>-</span>
-          <span>-</span>
-          <span>-</span>
-          <span>-</span>
-          <span>-</span>
-        </div>
-      `}
+      ${activeUserRows.join("")}
     </div>
     <div class="management-pagination">
       <button type="button" data-user-page-prev ${userListPage <= 1 ? "disabled" : ""}>이전</button>
@@ -4324,48 +4312,6 @@ function renderAccessPanels() {
       <button type="button" data-group-page-next ${groupListPage >= totalGroupPages ? "disabled" : ""}>다음</button>
     </div>
   `;
-  if (roleManagement) {
-    const roleRows = activeUserRecords.filter((record) => record.membership);
-    roleManagement.innerHTML = `
-      <div class="management-list-meta">
-        <strong>전체 ${roleRows.length}건</strong>
-        <span>그룹별 사용자 역할</span>
-      </div>
-      <div class="management-table management-table--roles management-table--paged">
-        <div class="management-table-row head">
-          <span>사용자 계정</span>
-          <span>사용자 이름</span>
-          <span>그룹</span>
-          <span>역할</span>
-          <span>저장</span>
-        </div>
-        ${roleRows.map((record) => {
-          const userId = record.user?.id || "";
-          const groupId = record.group?.id || "";
-          const roleChoices = record.role === "system_admin" ? ["system_admin"] : MANAGED_GROUP_ROLES;
-          const disabled = record.role === "system_admin" ? "disabled" : "";
-          return `
-            <div class="management-table-row">
-              <strong>${userId}</strong>
-              <span>${record.user?.name || userId}</span>
-              <span>${record.group?.name || groupId}</span>
-              <span><select data-role-user="${userId}" data-role-group="${groupId}" ${disabled}>${roleChoices.map((role) => `<option value="${role}" ${role === record.role ? "selected" : ""}>${role}</option>`).join("")}</select></span>
-              <span><button type="button" data-role-save="${userId}" data-role-group-save="${groupId}" ${disabled}>저장</button></span>
-            </div>
-          `;
-        }).join("") || `
-          <div class="management-table-row">
-            <strong>${t("common.none", "None")}</strong>
-            <span>-</span>
-            <span>-</span>
-            <span>-</span>
-            <span>-</span>
-          </div>
-        `}
-      </div>
-    `;
-  }
-
   const selectedGroupRecord = currentAccessState.groups.find((group) => group.id === selectedAccessGroupId) || visibleGroups[0];
   if (groupModal) groupModal.hidden = !accessGroupModalOpen;
   if (groupDetail) {
@@ -4421,7 +4367,6 @@ function renderAccessPanels() {
     <p><strong data-i18n="access.groupsWithoutAdmin">Groups without group admin</strong><span>${policy.groupsWithoutAdmin.join(", ") || t("common.none", "None")}</span></p>
   `;
   bindAdminActionButtons();
-  bindRoleManagementButtons();
   applyAccessToNavigation(current);
 }
 
@@ -4718,33 +4663,6 @@ function bindAdminActionButtons() {
             reviewerId: currentAccessState.currentUserId,
             groupId,
             requestedRole
-          });
-        }
-      );
-    });
-  });
-}
-
-function bindRoleManagementButtons() {
-  document.querySelectorAll("[data-role-save]").forEach((button) => {
-    if (button.dataset.bound === "true") return;
-    button.dataset.bound = "true";
-    button.addEventListener("click", async () => {
-      const userId = button.dataset.roleSave;
-      const groupId = button.dataset.roleGroupSave;
-      const role = document.querySelector(`[data-role-user="${userId}"][data-role-group="${groupId}"]`)?.value;
-      if (!userId || !groupId || !role) return;
-      await runAccessServerAction(
-        () => requestCgaJson(`/api/cga/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(userId)}/role`, {
-          method: "PATCH",
-          body: { role }
-        }),
-        () => {
-          currentAccessState = updateGroupMembershipRole(currentAccessState, {
-            actorId: currentAccessState.currentUserId,
-            userId,
-            groupId,
-            role
           });
         }
       );

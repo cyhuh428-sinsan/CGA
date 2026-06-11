@@ -2472,3 +2472,31 @@
 - 기존 `.cga-data/admin-resources.json`가 남아 있는 환경에서 예전 CGA 임시 기본 메시지(`dm-no-desired`, `dm-runtime-flow`)가 다시 병합되지 않도록 normalize 로직을 보강함.
 - 기본 메시지 신규 등록/수정 검증이 깨지지 않도록 임시 seed ID만 제거하고, 사용자 추가 항목은 유지하도록 조정함.
 - 재검증: `npm run studio:validate` 통과, `/api/cga/admin/resources` 조회 27ms, templates 20 / default_messages 14 / licenses 3 확인.
+
+## 2026-06-11 사용자/그룹 상세 팝업 복구 및 역할 관리 정리
+
+- 작업 범위: CGA만 수정. Aidot 저장소/소스는 수정하지 않음.
+- 수정 목적:
+  - 사용자/그룹 목록에서 행을 선택하면 상세/수정 화면이 페이지 하단이나 별도 화면처럼 붙지 않고 팝업으로 열리도록 복구.
+  - 별도 `역할 관리` 화면은 제거하고, 사용자 역할/그룹 변경은 사용자 상세 팝업과 가입 승인 흐름에서 처리하도록 정리.
+  - 목록 조회 화면에서 데이터가 없을 때 임시 문구 행을 만들지 않고 빈 목록으로 유지.
+- 적용 내용:
+  - `apps/studio/styles.css`
+    - `.detail-modal` 고정 오버레이 스타일 추가.
+    - 사용자/그룹 상세 팝업 패널, 헤더, 본문 2단 레이아웃, 입력 영역 스타일 추가.
+    - 삭제된 별도 역할 관리 화면 관련 CSS 제거.
+  - `apps/studio/index.html`
+    - 별도 `역할 관리` 패널 제거.
+    - 브라우저 캐시 회피를 위해 `styles.css`와 `app.js` 버전을 `20260611-12`로 갱신.
+  - `apps/studio/app.js`
+    - 별도 역할 관리 렌더링/저장 바인딩 제거.
+    - 사용자 목록에 임시 `No active user` 행을 만들던 처리 제거.
+  - `apps/studio/data/workflow.js`
+    - System Administration > 사용자 관리 하위 메뉴에서 `역할 관리` 제거.
+- 검증:
+  - `node --check apps/studio/app.js` 통과.
+  - `npm run studio:validate` 통과.
+  - `npm run studio:admin-resources-check` 단독 재실행 통과.
+  - 관리자 기초 데이터 조회 결과: templates 20, common_variables 8, default_messages 14, channels 4.
+  - 조회 시간: resources 14ms, list 1ms, templates 73ms, common-variables 22ms, default-messages 57ms, channels 17ms.
+  - 별도 역할 관리 잔여 코드 검색 결과: `data-role-management`, `role-management`, `management-table--roles`, `data-role-save`, `subview: "roles"` 없음.
