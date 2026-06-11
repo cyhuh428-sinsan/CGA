@@ -2442,3 +2442,28 @@
 ### Aidot 수정 여부
 - Aidot 원본은 수정하지 않음.
 - CGA 쪽 Studio 화면/캐시 버전만 수정함.
+
+## 2026-06-11 Admin 기초데이터 Aidot 기준 보정
+
+- 작업 범위: CGA만 수정. Aidot 저장소/소스는 수정하지 않음.
+- 수정 목적: System Administration 하위의 기초데이터 화면이 CGA 임시/가짜 데이터가 아니라 Aidot 기준 데이터와 동일한 값으로 조회되도록 보정.
+- 적용 내용:
+  - 템플릿 목록 기본 seed를 Aidot 기준 20건으로 확장.
+    - Simulator 10건: 기본 메시지, Html, Card, Table, Button, Link Button, Form(Rich), Carousel, DTMF, Form(A Card)
+    - Webchat 10건: 기본메시지, Html, Card, Table, Button, Link Button, Form(Rich), Carousel, DTMF, Form(A Card)
+  - 기본 메시지 관리 기본 seed를 Aidot 기준 14건으로 교체.
+    - 오류 4건, 입력 3건, 의도 4건, 세션 3건
+  - 라이선스 조회 기본 seed를 Aidot 기준 값으로 교체.
+    - 사용자 120 / 사용중 4 / 잔여 116 / 만료일 2026-12-31
+    - 봇 30 / 사용중 13 / 잔여 17 / 만료일 2026-12-31
+    - API 50 / 사용중 5 / 잔여 45 / 만료일 2026-12-31
+  - 기존 런타임 데이터 파일 `.cga-data/admin-resources.json`에도 동일 기준 적용.
+  - 서버 응답에서 라이선스를 임의 계산값이 아니라 저장된 Admin 리소스 기준으로 우선 반환하도록 수정.
+- 검증:
+  - 4173 서버 재시작 후 `/api/cga/admin/resources` 조회 확인.
+  - 조회 시간 34ms.
+  - 응답 카운트: templates 20, default_messages 14, licenses 3.
+  - `npm run studio:validate` 통과.
+  - `studio:admin-resources-check` 기준 조회 시간: resources 13ms, templates 41ms, default-messages 67ms.
+- 남은 확인:
+  - Codex 번들 Playwright 의존성 문제로 화면 자동 캡처 검증은 실행하지 못함. API와 서버 검증은 완료.

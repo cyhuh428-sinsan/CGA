@@ -71,20 +71,30 @@ function createAdminId(prefix) {
 function createDefaultAdminResources() {
   const stamp = "2026-05-04T17:55:35.000Z";
   const templates = [
-    ["tpl-basic-text", 1, "기본 메시지", 1, "text", "text"],
-    ["tpl-html", 2, "Html", 1, "html", "html"],
-    ["tpl-card", 3, "Card", 3, "title, imageUrl, description", "card"],
-    ["tpl-table", 4, "Table", 1, "table", "table"],
-    ["tpl-button", 5, "Button", 1, "button", "button"],
-    ["tpl-link-button", 6, "Link Button", 2, "label, url", "link-button"],
-    ["tpl-form-rich", 7, "Form(Rich)", 1, "formMessage", "form"],
-    ["tpl-carousel", 8, "Carousel", 1, "carousel", "carousel"],
-    ["tpl-dtmf", 9, "DTMF", 3, "shortText, stepper, stepper", "dtmf"],
-    ["tpl-form-acard", 10, "Form(A Card)", 1, "adaptiveCard", "form-a-card"]
-  ].map(([id, order, name, item_count, item_types, renderer_type]) => ({
-    id, order, channel_code: "Simulator", channel_name: "Simulator", name,
+    ["tpl-basic-text", 1, "Simulator", "Simulator", "기본 메시지", 1, "text", "text", "2026-05-04T17:55:35.000Z"],
+    ["tpl-html", 2, "Simulator", "Simulator", "Html", 1, "html", "html", "2026-05-04T17:55:35.000Z"],
+    ["tpl-card", 3, "Simulator", "Simulator", "Card", 3, "title, imageUrl, description", "card", "2026-05-04T17:55:35.000Z"],
+    ["tpl-table", 4, "Simulator", "Simulator", "Table", 1, "table", "table", "2026-05-04T17:55:35.000Z"],
+    ["tpl-button", 5, "Simulator", "Simulator", "Button", 1, "button", "button", "2026-05-04T17:55:35.000Z"],
+    ["tpl-link-button", 6, "Simulator", "Simulator", "Link Button", 2, "label, url", "link-button", "2026-05-04T17:55:35.000Z"],
+    ["tpl-form-rich", 7, "Simulator", "Simulator", "Form(Rich)", 1, "formMessage", "form", "2026-05-04T17:55:35.000Z"],
+    ["tpl-carousel", 8, "Simulator", "Simulator", "Carousel", 1, "carousel", "carousel", "2026-05-04T17:55:35.000Z"],
+    ["tpl-dtmf", 9, "Simulator", "Simulator", "DTMF", 3, "shortText, stepper, stepper", "dtmf", "2026-05-04T17:55:35.000Z"],
+    ["tpl-form-acard", 10, "Simulator", "Simulator", "Form(A Card)", 1, "adaptiveCard", "form-a-card", "2026-05-04T17:55:35.000Z"],
+    ["tpl-webchat-basic-text", 11, "Webchat", "Webchat", "기본메시지", 1, "text", "text", "2026-05-05T23:38:00.000Z"],
+    ["tpl-webchat-html", 12, "Webchat", "Webchat", "Html", 1, "html", "html", "2026-05-05T23:41:06.000Z"],
+    ["tpl-webchat-card", 13, "Webchat", "Webchat", "Card", 3, "title, imageUrl, description", "card", "2026-05-05T23:40:57.000Z"],
+    ["tpl-webchat-table", 14, "Webchat", "Webchat", "Table", 1, "table", "table", "2026-05-05T23:41:32.000Z"],
+    ["tpl-webchat-button", 15, "Webchat", "Webchat", "Button", 1, "button", "button", "2026-05-05T23:42:15.000Z"],
+    ["tpl-webchat-link-button", 16, "Webchat", "Webchat", "Link Button", 2, "label, url", "link-button", "2026-05-05T23:43:12.000Z"],
+    ["tpl-webchat-form-rich", 17, "Webchat", "Webchat", "Form(Rich)", 1, "formMessage", "form", "2026-05-05T23:44:21.000Z"],
+    ["tpl-webchat-carousel", 18, "Webchat", "Webchat", "Carousel", 1, "carousel", "carousel", "2026-05-05T23:45:06.000Z"],
+    ["tpl-webchat-dtmf", 19, "Webchat", "Webchat", "DTMF", 3, "shortText, stepper, stepper", "dtmf", "2026-05-05T23:45:52.000Z"],
+    ["tpl-webchat-form-acard", 20, "Webchat", "Webchat", "Form(A Card)", 1, "adaptiveCard", "form-a-card", "2026-05-05T23:46:28.000Z"]
+  ].map(([id, order, channel_code, channel_name, name, item_count, item_types, renderer_type, updated_at]) => ({
+    id, order, channel_code, channel_name, name,
     item_count, item_types, renderer_type, status: "Y", status_label: "사용",
-    updated_at: stamp, updated_by: "SYSTEM", protected: true
+    updated_at, updated_by: "SYSTEM", protected: true
   }));
   const common_variables = [
     ["cv-bot-hub-id", "_bot_hub_id", "봇 허브 소속일 때의 허브 ID"],
@@ -96,23 +106,48 @@ function createDefaultAdminResources() {
     ["cv-user-id", "_user_id", "사용자 ID"],
     ["cv-user-name", "_user_name", "사용자 이름"]
   ].map(([id, name, description]) => ({ id, name, category: "시스템", value: "", description, updated_at: stamp, updated_by: "SYSTEM" }));
+  const defaultMessageStamp = "2026-06-11T07:02:10.000Z";
   const default_messages = [
-    ["dm-intent-fallback", "Intent", "의도 미분류", "intent_fallback", "질문을 이해하지 못했습니다. 다시 말씀해주세요."],
-    ["dm-multi-intent", "Intent", "다중 의도 안내", "multi_intent_guide", "원하시는 항목을 선택해주세요."],
-    ["dm-no-desired", "Intent", "원하는 의도 없음", "no_desired_intent", "원하시는 답변을 찾지 못했습니다."],
-    ["dm-invalid-button", "Button", "잘못된 버튼", "invalid_button", "선택할 수 없는 항목입니다."],
-    ["dm-system-error", "System", "시스템 오류", "system_error", "일시적인 오류가 발생했습니다."],
-    ["dm-runtime-flow", "System", "플로우 오류", "runtime_flow_error", "대화 흐름 처리 중 오류가 발생했습니다."],
-    ["dm-timeout", "System", "타임아웃", "timeout", "응답 시간이 초과되었습니다."],
-    ["dm-session-end", "System", "세션 종료", "session_end", "대화를 종료합니다."]
-  ].map(([id, category, name, key, message]) => ({ id, category, name, key, message, status: "Y", status_label: "사용", updated_at: stamp, updated_by: "SYSTEM" }));
+    ["dm-dialog-config-error", "오류", "대화 흐름 설정 오류 메시지", "dialog_flow_config_error", "대화 흐름 설정 오류로 대화를 계속할 수 없습니다.", "SYSTEM"],
+    ["dm-dialog-limit-exceeded", "오류", "대화 흐름 실행 한도 초과 메시지", "dialog_flow_limit_exceeded", "대화 흐름 실행 한도를 초과했습니다.", "SYSTEM"],
+    ["dm-dialog-module-link-error", "오류", "대화 모듈 연결 오류 메시지", "dialog_module_link_error", "연결할 대화 모듈을 찾지 못했습니다.", "SYSTEM"],
+    ["dm-system-error", "오류", "시스템 오류 메시지", "system_error", "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요. 부탁합니다", "cyhuh"],
+    ["dm-default-select-guide", "입력", "기본 선택 안내", "default_select_guide", "선택하세요.", "SYSTEM"],
+    ["dm-invalid-button", "입력", "버튼 오류 메시지", "invalid_button", "선택할 수 없는 항목입니다. 다시 선택해주세요.", "SYSTEM"],
+    ["dm-table-select-guide", "입력", "테이블 선택 안내", "table_select_guide", "아래 중 선택하세요.", "SYSTEM"],
+    ["dm-intent-fallback", "의도", "의도 미분류 메시지", "intent_fallback", "질문을 이해하지 못했습니다. 다시 말씀해주세요.", "SYSTEM"],
+    ["dm-intent-received", "의도", "의도 접수 메시지", "intent_received", "{intentName} 의도로 접수되었습니다.", "SYSTEM"],
+    ["dm-multi-intent", "의도", "다중 의도 선택 안내", "multi_intent_guide", "아래 후보 중 원하는 의도를 선택해주세요.", "SYSTEM"],
+    ["dm-no-desired-intent", "의도", "원하는 의도 없음 메시지", "no_desired_intent", "원하는 의도가 없습니다. 다시 말씀해주세요.", "SYSTEM"],
+    ["dm-active-dialog-guide", "세션", "진행 중 대화 안내", "active_dialog_guide", "진행 중인 대화가 있습니다. 현재 대화를 먼저 완료해주세요.", "SYSTEM"],
+    ["dm-session-end", "세션", "세션 종료 메시지", "session_end", "대화가 종료되었습니다.", "SYSTEM"],
+    ["dm-timeout", "세션", "타임아웃 메시지", "timeout", "응답 시간이 초과되었습니다. 처음부터 다시 진행해주세요.", "SYSTEM"]
+  ].map(([id, category, name, key, message, updated_by]) => ({
+    id, category, name, key, language: "ko", scope: "전체", message, status: "Y", status_label: "사용",
+    updated_at: defaultMessageStamp, updated_by
+  }));
   const channels = [
     ["ch-sm-chat", "SM_CHAT", "Simulator", "simulator", "simulator", "none"],
     ["ch-webchat", "WEBCHAT", "Webchat", "webchat", "webchat", "none"],
     ["ch-kakao", "KAKAO", "Kakao", "kakao", "kakao", "token"],
     ["ch-teams", "TEAMS", "MS Teams", "ms_teams", "adaptive_card", "oauth"]
   ].map(([id, channel_code, channel_name, provider, renderer_type, auth_type]) => ({ id, channel_code, channel_name, provider, renderer_type, auth_type, status: "Y", status_label: "사용", updated_at: stamp, updated_by: "SYSTEM" }));
-  return { version: 1, templates, common_variables, default_messages, channels, botstation_links: [], licenses: [] };
+  const licenses = [
+    { id: "lic-user", category: "사용자", total: 120, used: 4, remaining: 116, expires_at: "2026-12-31", status: "정상" },
+    { id: "lic-bot", category: "봇", total: 30, used: 13, remaining: 17, expires_at: "2026-12-31", status: "정상" },
+    { id: "lic-api", category: "API", total: 50, used: 5, remaining: 45, expires_at: "2026-12-31", status: "정상" }
+  ];
+  return { version: 1, templates, common_variables, default_messages, channels, botstation_links: [], licenses };
+}
+
+function mergeDefaultCollection(existing, defaults, key = "id") {
+  if (!Array.isArray(existing) || !existing.length) return defaults;
+  const existingByKey = new Map(existing.filter((item) => item && item[key]).map((item) => [item[key], item]));
+  const defaultKeys = new Set(defaults.map((item) => item[key]));
+  return [
+    ...defaults.map((item) => existingByKey.has(item[key]) ? { ...item, ...existingByKey.get(item[key]) } : item),
+    ...existing.filter((item) => item && item[key] && !defaultKeys.has(item[key]))
+  ];
 }
 
 function normalizeAdminResources(resources) {
@@ -120,12 +155,12 @@ function normalizeAdminResources(resources) {
   const next = resources && typeof resources === "object" ? resources : {};
   return {
     version: 1,
-    templates: Array.isArray(next.templates) && next.templates.length ? next.templates : defaults.templates,
-    common_variables: Array.isArray(next.common_variables) && next.common_variables.length ? next.common_variables : defaults.common_variables,
-    default_messages: Array.isArray(next.default_messages) && next.default_messages.length ? next.default_messages : defaults.default_messages,
-    channels: Array.isArray(next.channels) && next.channels.length ? next.channels : defaults.channels,
+    templates: mergeDefaultCollection(next.templates, defaults.templates),
+    common_variables: mergeDefaultCollection(next.common_variables, defaults.common_variables),
+    default_messages: mergeDefaultCollection(next.default_messages, defaults.default_messages),
+    channels: mergeDefaultCollection(next.channels, defaults.channels),
     botstation_links: Array.isArray(next.botstation_links) ? next.botstation_links : defaults.botstation_links,
-    licenses: Array.isArray(next.licenses) ? next.licenses : defaults.licenses
+    licenses: mergeDefaultCollection(next.licenses, defaults.licenses)
   };
 }
 
@@ -1727,7 +1762,7 @@ async function handleAdminResourceApi(req, res, urlPath, query) {
     }
     sendJson(res, 200, {
       ...adminResources,
-      licenses: buildLicenseUsage(state),
+      licenses: Array.isArray(adminResources.licenses) && adminResources.licenses.length ? adminResources.licenses : buildLicenseUsage(state),
       login_history: Array.isArray(state.loginHistory) ? state.loginHistory : []
     });
     return true;
