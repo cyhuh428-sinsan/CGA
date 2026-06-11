@@ -98,8 +98,7 @@ export const systemAdminSections = [
     links: [
       { id: "access-management", subview: "users", label: "사용자 관리" },
       { id: "access-management", subview: "login-history", label: "로그인 이력" },
-      { id: "access-management", subview: "groups", label: "그룹 관리" },
-      { id: "access-management", subview: "roles", label: "역할 관리" }
+      { id: "access-management", subview: "groups", label: "그룹 관리" }
     ]
   },
   {
