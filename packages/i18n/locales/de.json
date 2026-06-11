@@ -30,7 +30,7 @@
   "i18n.cgaErrorGroup": "CGA-Fehler",
   "i18n.botErrorGroup": "Bot-Fehler",
   "i18n.noHardcode": "Keine fest codierten Benutzer-Fehlermeldungen",
-  "app.subtitle": "Aidot Workflow Shell · screen-first Implementierungsentwurf",
+  "app.subtitle": "Bot-Produktionsstudio",
   "top.bot": "Bot: SupportBot-Entwurf",
   "top.version": "Fassung: v0.1",
   "top.apiUnchanged": "Aidot API unverändert",
@@ -553,3 +553,6 @@
   "create.versionManage": "Versionsverwaltung",
   "common.status": "Zustand"
 }
+
+
+

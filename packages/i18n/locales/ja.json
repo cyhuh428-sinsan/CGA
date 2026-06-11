@@ -30,7 +30,7 @@
   "i18n.cgaErrorGroup": "CGAエラー",
   "i18n.botErrorGroup": "ボットエラー",
   "i18n.noHardcode": "ユーザー向けエラー文をハードコードしない",
-  "app.subtitle": "Aidot Workflow Shell · 画面優先の実装ドラフト",
+  "app.subtitle": "ボット制作スタジオ",
   "top.bot": "ボット: SupportBot Draft",
   "top.version": "バージョン: v0.1",
   "top.apiUnchanged": "Aidot API変更なし",
@@ -553,3 +553,5 @@
   "create.versionManage": "バージョン管理",
   "common.status": "状態"
 }
+
+

@@ -2892,3 +2892,178 @@ button.management-table-row:hover,
   gap: 8px;
   padding-top: 4px;
 }
+
+/* 1920x1080 viewport compaction: keep page fixed, table areas internal. */
+.app-shell {
+  grid-template-rows: 58px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 10px;
+}
+.topbar {
+  grid-template-columns: 300px minmax(0, 1fr) auto;
+  gap: 8px;
+  min-height: 58px;
+  padding: 6px 10px;
+}
+.brand-group { gap: 8px; }
+.brand-mark { width: 34px; height: 34px; }
+h1 { line-height: 1; }
+.brand-group p { margin-top: 2px; }
+.context-bar { gap: 5px; }
+.context-bar span,
+.contract-stack span {
+  padding: 5px 7px;
+}
+.language-picker {
+  gap: 6px;
+  padding: 3px 6px;
+}
+.language-picker select {
+  min-height: 26px;
+  padding: 2px 7px;
+}
+.actions { gap: 6px; }
+.actions button,
+.button-row button,
+.choice-row button {
+  min-height: 30px;
+  padding: 0 11px;
+}
+.workflow,
+.approval {
+  padding: 8px;
+  overflow: auto;
+}
+.menu-group {
+  padding-bottom: 7px;
+  margin-bottom: 7px;
+}
+.menu-group:not([open]) {
+  padding-bottom: 6px;
+}
+.section-title {
+  margin-bottom: 6px;
+}
+.system-admin-title,
+.reference-title {
+  margin-top: 12px;
+}
+.workflow nav,
+.management-nav {
+  gap: 5px;
+}
+.workflow a,
+.management-nav a {
+  min-height: 38px;
+  grid-template-rows: 14px 12px;
+  padding: 5px 7px;
+}
+.workflow a span {
+  font-size: var(--font-title);
+}
+.subnav-section {
+  padding: 6px 7px;
+}
+.subnav-section strong {
+  margin-bottom: 3px;
+}
+.subnav-section a {
+  min-height: 16px;
+  padding: 2px 0 2px 30px;
+}
+.subnav-feature-group .subnav-feature {
+  min-height: 34px;
+  margin-bottom: 3px;
+  padding: 3px 0;
+}
+.workspace {
+  padding: 10px;
+  gap: 10px;
+  overflow: hidden;
+}
+.screen-card {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+.screen-heading {
+  grid-template-columns: 34px 1fr auto;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.screen-heading > span {
+  width: 32px;
+  height: 32px;
+}
+.screen-heading p {
+  margin-top: 2px;
+}
+.access-management-grid {
+  height: calc(100vh - 172px);
+  overflow: hidden;
+}
+.access-list-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+.access-list-panel--wide {
+  height: 100%;
+}
+.admin-page {
+  height: calc(100vh - 188px);
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+  overflow: hidden;
+}
+.admin-page h2 {
+  line-height: 1.2;
+}
+.admin-page__search-row {
+  gap: 8px;
+}
+.admin-page__search,
+.admin-page__filter,
+.admin-page__ghost,
+.admin-page__primary {
+  min-height: 30px;
+}
+.admin-page__filter,
+.admin-page__ghost,
+.admin-page__primary {
+  padding: 0 12px;
+}
+.admin-page__toolbar {
+  min-height: 30px;
+}
+.admin-page__toolbar select {
+  min-height: 30px;
+}
+.admin-page__grid-scroll {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+}
+.data-grid__row {
+  min-height: 30px;
+}
+.data-grid__cell {
+  padding: 0 12px;
+}
+.admin-page__pagination {
+  height: 28px;
+}
+.management-table--paged {
+  min-height: 0;
+  max-height: calc(100vh - 330px);
+}
+.detail-modal__panel,
+.management-modal {
+  max-height: calc(100vh - 80px);
+}
+.access-detail-layout--modal {
+  max-height: calc(100vh - 165px);
+}
+

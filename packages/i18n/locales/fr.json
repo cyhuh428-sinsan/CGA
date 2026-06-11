@@ -30,7 +30,7 @@
   "i18n.cgaErrorGroup": "Erreur CGA",
   "i18n.botErrorGroup": "Erreur bot",
   "i18n.noHardcode": "Ne jamais coder en dur les erreurs utilisateur",
-  "app.subtitle": "Aidot Workflow Shell · brouillon d'implémentation orienté écran",
+  "app.subtitle": "Studio de production de bots",
   "top.bot": "Bot : SupportBot Draft",
   "top.version": "Version : v0.1",
   "top.apiUnchanged": "Aidot API inchangée",
@@ -553,3 +553,5 @@
   "create.versionManage": "Gestion des versions",
   "common.status": "Statut"
 }
+
+
