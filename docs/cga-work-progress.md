@@ -2467,3 +2467,8 @@
   - `studio:admin-resources-check` 기준 조회 시간: resources 13ms, templates 41ms, default-messages 67ms.
 - 남은 확인:
   - Codex 번들 Playwright 의존성 문제로 화면 자동 캡처 검증은 실행하지 못함. API와 서버 검증은 완료.
+
+### 추가 보정
+- 기존 `.cga-data/admin-resources.json`가 남아 있는 환경에서 예전 CGA 임시 기본 메시지(`dm-no-desired`, `dm-runtime-flow`)가 다시 병합되지 않도록 normalize 로직을 보강함.
+- 기본 메시지 신규 등록/수정 검증이 깨지지 않도록 임시 seed ID만 제거하고, 사용자 추가 항목은 유지하도록 조정함.
+- 재검증: `npm run studio:validate` 통과, `/api/cga/admin/resources` 조회 27ms, templates 20 / default_messages 14 / licenses 3 확인.

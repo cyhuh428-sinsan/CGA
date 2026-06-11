@@ -140,13 +140,21 @@ function createDefaultAdminResources() {
   return { version: 1, templates, common_variables, default_messages, channels, botstation_links: [], licenses };
 }
 
-function mergeDefaultCollection(existing, defaults, key = "id") {
+function mergeDefaultCollection(existing, defaults, key = "id", options = {}) {
   if (!Array.isArray(existing) || !existing.length) return defaults;
   const existingByKey = new Map(existing.filter((item) => item && item[key]).map((item) => [item[key], item]));
   const defaultKeys = new Set(defaults.map((item) => item[key]));
+  const replaceSeedItems = Boolean(options.replaceSeedItems);
+  const keepExtraItems = options.keepExtraItems !== false;
+  const dropExtraKeys = new Set(options.dropExtraKeys || []);
   return [
-    ...defaults.map((item) => existingByKey.has(item[key]) ? { ...item, ...existingByKey.get(item[key]) } : item),
-    ...existing.filter((item) => item && item[key] && !defaultKeys.has(item[key]))
+    ...defaults.map((item) => {
+      const existingItem = existingByKey.get(item[key]);
+      if (!existingItem) return item;
+      const looksLikeSeed = existingItem.protected || existingItem.updated_by === "SYSTEM" || !existingItem.updated_by;
+      return replaceSeedItems && looksLikeSeed ? item : { ...item, ...existingItem };
+    }),
+    ...(keepExtraItems ? existing.filter((item) => item && item[key] && !defaultKeys.has(item[key]) && !dropExtraKeys.has(item[key])) : [])
   ];
 }
 
@@ -157,10 +165,10 @@ function normalizeAdminResources(resources) {
     version: 1,
     templates: mergeDefaultCollection(next.templates, defaults.templates),
     common_variables: mergeDefaultCollection(next.common_variables, defaults.common_variables),
-    default_messages: mergeDefaultCollection(next.default_messages, defaults.default_messages),
+    default_messages: mergeDefaultCollection(next.default_messages, defaults.default_messages, "id", { replaceSeedItems: true, dropExtraKeys: ["dm-no-desired", "dm-runtime-flow"] }),
     channels: mergeDefaultCollection(next.channels, defaults.channels),
     botstation_links: Array.isArray(next.botstation_links) ? next.botstation_links : defaults.botstation_links,
-    licenses: mergeDefaultCollection(next.licenses, defaults.licenses)
+    licenses: mergeDefaultCollection(next.licenses, defaults.licenses, "id", { replaceSeedItems: true, keepExtraItems: false })
   };
 }
 
