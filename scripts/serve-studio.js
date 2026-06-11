@@ -17,6 +17,8 @@ const compositionRegistryFile = path.join(dataDir, "composition-registry.json");
 const detailAssetRegistryFile = path.join(dataDir, "detail-asset-registry.json");
 const operationsStateRegistryFile = path.join(dataDir, "operations-state-registry.json");
 const collaborationStateRegistryFile = path.join(dataDir, "collaboration-state-registry.json");
+const webchatRoomsFile = path.join(dataDir, "webchat-rooms.json");
+const adminResourcesFile = path.join(dataDir, "admin-resources.json");
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
 let apiAnswerRegistry = loadApiAnswerRegistry();
@@ -26,6 +28,8 @@ let compositionRegistry = loadCompositionRegistry();
 let detailAssetRegistry = loadDetailAssetRegistry();
 let operationsStateRegistry = loadOperationsStateRegistry();
 let collaborationStateRegistry = loadCollaborationStateRegistry();
+let webchatRooms = loadWebchatRooms();
+let adminResources = loadAdminResources();
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -57,6 +61,84 @@ function writeJsonFile(filePath, payload) {
   const tmpPath = `${filePath}.${process.pid}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(payload, null, 2), "utf8");
   fs.renameSync(tmpPath, filePath);
+}
+
+
+function createAdminId(prefix) {
+  return `${prefix}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
+}
+
+function createDefaultAdminResources() {
+  const stamp = "2026-05-04T17:55:35.000Z";
+  const templates = [
+    ["tpl-basic-text", 1, "기본 메시지", 1, "text", "text"],
+    ["tpl-html", 2, "Html", 1, "html", "html"],
+    ["tpl-card", 3, "Card", 3, "title, imageUrl, description", "card"],
+    ["tpl-table", 4, "Table", 1, "table", "table"],
+    ["tpl-button", 5, "Button", 1, "button", "button"],
+    ["tpl-link-button", 6, "Link Button", 2, "label, url", "link-button"],
+    ["tpl-form-rich", 7, "Form(Rich)", 1, "formMessage", "form"],
+    ["tpl-carousel", 8, "Carousel", 1, "carousel", "carousel"],
+    ["tpl-dtmf", 9, "DTMF", 3, "shortText, stepper, stepper", "dtmf"],
+    ["tpl-form-acard", 10, "Form(A Card)", 1, "adaptiveCard", "form-a-card"]
+  ].map(([id, order, name, item_count, item_types, renderer_type]) => ({
+    id, order, channel_code: "Simulator", channel_name: "Simulator", name,
+    item_count, item_types, renderer_type, status: "Y", status_label: "사용",
+    updated_at: stamp, updated_by: "SYSTEM", protected: true
+  }));
+  const common_variables = [
+    ["cv-bot-hub-id", "_bot_hub_id", "봇 허브 소속일 때의 허브 ID"],
+    ["cv-bot-hub-name", "_bot_hub_name", "봇 허브 소속일 때의 허브 이름"],
+    ["cv-bot-id", "_bot_id", "현재 Bot ID"],
+    ["cv-bot-name", "_bot_name", "현재 Bot 이름"],
+    ["cv-dialog-id", "_dialog_id", "현재 대화 ID"],
+    ["cv-msg", "_msg", "사용자 입력 메시지"],
+    ["cv-user-id", "_user_id", "사용자 ID"],
+    ["cv-user-name", "_user_name", "사용자 이름"]
+  ].map(([id, name, description]) => ({ id, name, category: "시스템", value: "", description, updated_at: stamp, updated_by: "SYSTEM" }));
+  const default_messages = [
+    ["dm-intent-fallback", "Intent", "의도 미분류", "intent_fallback", "질문을 이해하지 못했습니다. 다시 말씀해주세요."],
+    ["dm-multi-intent", "Intent", "다중 의도 안내", "multi_intent_guide", "원하시는 항목을 선택해주세요."],
+    ["dm-no-desired", "Intent", "원하는 의도 없음", "no_desired_intent", "원하시는 답변을 찾지 못했습니다."],
+    ["dm-invalid-button", "Button", "잘못된 버튼", "invalid_button", "선택할 수 없는 항목입니다."],
+    ["dm-system-error", "System", "시스템 오류", "system_error", "일시적인 오류가 발생했습니다."],
+    ["dm-runtime-flow", "System", "플로우 오류", "runtime_flow_error", "대화 흐름 처리 중 오류가 발생했습니다."],
+    ["dm-timeout", "System", "타임아웃", "timeout", "응답 시간이 초과되었습니다."],
+    ["dm-session-end", "System", "세션 종료", "session_end", "대화를 종료합니다."]
+  ].map(([id, category, name, key, message]) => ({ id, category, name, key, message, status: "Y", status_label: "사용", updated_at: stamp, updated_by: "SYSTEM" }));
+  const channels = [
+    ["ch-sm-chat", "SM_CHAT", "Simulator", "simulator", "simulator", "none"],
+    ["ch-webchat", "WEBCHAT", "Webchat", "webchat", "webchat", "none"],
+    ["ch-kakao", "KAKAO", "Kakao", "kakao", "kakao", "token"],
+    ["ch-teams", "TEAMS", "MS Teams", "ms_teams", "adaptive_card", "oauth"]
+  ].map(([id, channel_code, channel_name, provider, renderer_type, auth_type]) => ({ id, channel_code, channel_name, provider, renderer_type, auth_type, status: "Y", status_label: "사용", updated_at: stamp, updated_by: "SYSTEM" }));
+  return { version: 1, templates, common_variables, default_messages, channels, botstation_links: [], licenses: [] };
+}
+
+function normalizeAdminResources(resources) {
+  const defaults = createDefaultAdminResources();
+  const next = resources && typeof resources === "object" ? resources : {};
+  return {
+    version: 1,
+    templates: Array.isArray(next.templates) && next.templates.length ? next.templates : defaults.templates,
+    common_variables: Array.isArray(next.common_variables) && next.common_variables.length ? next.common_variables : defaults.common_variables,
+    default_messages: Array.isArray(next.default_messages) && next.default_messages.length ? next.default_messages : defaults.default_messages,
+    channels: Array.isArray(next.channels) && next.channels.length ? next.channels : defaults.channels,
+    botstation_links: Array.isArray(next.botstation_links) ? next.botstation_links : defaults.botstation_links,
+    licenses: Array.isArray(next.licenses) ? next.licenses : defaults.licenses
+  };
+}
+
+function loadAdminResources() {
+  const resources = normalizeAdminResources(loadJsonFile(adminResourcesFile, null));
+  writeJsonFile(adminResourcesFile, resources);
+  return resources;
+}
+
+function saveAdminResources(resources) {
+  adminResources = normalizeAdminResources(resources);
+  writeJsonFile(adminResourcesFile, adminResources);
+  return adminResources;
 }
 
 const PASSWORD_ITERATIONS = 120000;
@@ -206,6 +288,51 @@ function deleteAuthSession(req) {
   return true;
 }
 
+function getRequestIp(req) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const raw = forwarded || req.socket?.remoteAddress || "";
+  if (raw === "::1") return "127.0.0.1";
+  if (raw.startsWith("::ffff:")) return raw.slice(7);
+  return raw || "-";
+}
+
+function createLoginHistoryEntry(req, state, userId, sessionToken) {
+  const membership = (state.memberships || []).find((item) => item.user_id === userId && item.status === "active") || null;
+  const group = membership ? (state.groups || []).find((item) => item.id === membership.group_id) : null;
+  const user = (state.users || []).find((item) => item.id === userId) || null;
+  const now = new Date().toISOString();
+  return {
+    id: `lh-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`,
+    session_token: sessionToken,
+    user_id: userId,
+    user_name: user?.name || userId,
+    group_id: membership?.group_id || "",
+    group_name: group?.name || "",
+    role: membership?.role || "",
+    ip_address: getRequestIp(req),
+    user_agent: String(req.headers["user-agent"] || ""),
+    login_at: now,
+    logout_at: null,
+    status: "active"
+  };
+}
+
+function appendLoginHistory(state, entry) {
+  const history = Array.isArray(state.loginHistory) ? state.loginHistory : [];
+  return { ...state, loginHistory: [entry, ...history].slice(0, 5000) };
+}
+
+function markLoginHistoryLoggedOut(state, sessionToken) {
+  if (!sessionToken || !Array.isArray(state.loginHistory)) return state;
+  const logoutAt = new Date().toISOString();
+  let changed = false;
+  const loginHistory = state.loginHistory.map((entry) => {
+    if (entry.session_token !== sessionToken || entry.logout_at) return entry;
+    changed = true;
+    return { ...entry, logout_at: logoutAt, status: "logged_out" };
+  });
+  return changed ? { ...state, loginHistory } : state;
+}
 function loadAssetTransferHistory() {
   const history = loadJsonFile(assetTransferHistoryFile, []);
   return Array.isArray(history) ? history : [];
@@ -220,7 +347,10 @@ async function loadAccessState() {
   if (accessState) return accessState;
   const accessStateModule = await import("../packages/public-core/src/access-state.js");
   const stored = loadJsonFile(accessStateFile, null);
-  accessState = stored && typeof stored === "object" ? stored : accessStateModule.createSampleAccessState();
+  const loaded = stored && typeof stored === "object" ? stored : accessStateModule.createSampleAccessState();
+  const normalized = accessStateModule.normalizeAccessState(loaded);
+  accessState = normalized;
+  if (JSON.stringify(normalized) !== JSON.stringify(loaded)) writeJsonFile(accessStateFile, normalized);
   return accessState;
 }
 
@@ -397,6 +527,17 @@ function saveCollaborationStateRegistry(registry) {
   return registry;
 }
 
+function loadWebchatRooms() {
+  const rooms = loadJsonFile(webchatRoomsFile, []);
+  return Array.isArray(rooms) ? rooms : [];
+}
+
+function saveWebchatRooms(rooms) {
+  webchatRooms = rooms;
+  writeJsonFile(webchatRoomsFile, rooms);
+  return rooms;
+}
+
 function createDefaultCompositionForBot(groupId, botId) {
   return {
     group_id: groupId,
@@ -530,6 +671,32 @@ function sendJson(res, status, payload, headers = {}) {
   res.end(JSON.stringify(payload, null, 2));
 }
 
+function getWebchatCorsHeaders(req) {
+  const origin = String(req.headers.origin || "");
+  const allowedOrigins = new Set([
+    "http://localhost:3330",
+    "http://127.0.0.1:3330",
+    ...(process.env.CGA_WEBCHAT_ALLOWED_ORIGINS || "").split(",").map((item) => item.trim()).filter(Boolean)
+  ]);
+  if (!allowedOrigins.has(origin)) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Aidot-Webchat-Key",
+    "Vary": "Origin"
+  };
+}
+
+function sendAidotSuccess(req, res, data) {
+  sendJson(res, 200, {
+    data,
+    meta: {
+      path: (req.url || "/").split("?")[0],
+      timestamp: new Date().toISOString()
+    }
+  }, getWebchatCorsHeaders(req));
+}
+
 function sendDownload(res, fileName, body, type) {
   res.writeHead(200, {
     "Content-Type": type,
@@ -562,6 +729,30 @@ function parseAssetTransferPath(urlPath) {
     scope: match[3] || null,
     action: match[4] || "history"
   };
+}
+
+function parseWebchatChannelPath(urlPath) {
+  if (urlPath === "/api/v1/channels/webchat/connect") return { action: "connect" };
+  if (urlPath === "/api/v1/channels/webchat/bots") return { action: "bots" };
+  if (urlPath === "/api/v1/channels/webchat/rooms") return { action: "rooms" };
+  const roomDetail = urlPath.match(/^\/api\/v1\/channels\/webchat\/rooms\/([^/]+)$/);
+  if (roomDetail) return { action: "roomDetail", roomId: roomDetail[1] };
+  const roomMessage = urlPath.match(/^\/api\/v1\/channels\/webchat\/rooms\/([^/]+)\/messages$/);
+  if (roomMessage) return { action: "roomMessage", roomId: roomMessage[1] };
+  const legacyRoomMessage = urlPath.match(/^\/api\/v1\/webchat\/bots\/([^/]+)\/rooms\/([^/]+)\/messages$/);
+  if (legacyRoomMessage) return { action: "legacyRoomMessage", botSlug: legacyRoomMessage[1], roomId: legacyRoomMessage[2] };
+  if (urlPath === "/api/v1/webchat/bootstrap") return { action: "legacyBootstrap" };
+  return null;
+}
+
+
+function parseAdminResourcePath(urlPath) {
+  if (urlPath === "/api/cga/admin/resources") return { resource: "all" };
+  const collectionMatch = urlPath.match(/^\/api\/cga\/admin\/(templates|common-variables|default-messages|channels|botstation-links)$/);
+  if (collectionMatch) return { resource: collectionMatch[1] };
+  const itemMatch = urlPath.match(/^\/api\/cga\/admin\/(templates|common-variables|default-messages|channels|botstation-links)\/([^/]+)$/);
+  if (itemMatch) return { resource: itemMatch[1], id: itemMatch[2] };
+  return null;
 }
 
 function parseAuthApiPath(urlPath) {
@@ -1147,6 +1338,7 @@ async function handleAuthApi(req, res, urlPath) {
         user_overrides: state.userOverrides,
         join_requests: state.joinRequests,
         admin_requests: state.adminRequests,
+        login_history: Array.isArray(state.loginHistory) ? state.loginHistory : [],
         policy: state.policy,
         bot_id: state.botId
       });
@@ -1214,7 +1406,8 @@ async function handleAuthApi(req, res, urlPath) {
       userId: body.user_id,
       name: body.name,
       locale: body.locale || "en",
-      groupName: body.group_name || body.groupName || `${body.name} Group`
+      groupId: body.group_id || body.groupId || state.policy?.signupDefaultGroupId,
+      requestedRole: body.requested_role || body.requestedRole || accessContract.USER_ROLES.VIEWER
     }));
     saveAuthCredentials({
       ...credentials,
@@ -1243,9 +1436,12 @@ async function handleAuthApi(req, res, urlPath) {
       sendJson(res, 401, { error_code: "CGA_LOGIN_FAILED", message_key: "errors.auth.loginFailed" });
       return true;
     }
-    const next = accessStateModule.loginAsUser(state, { userId });
-    saveAccessState(next);
     const session = createAuthSession(userId);
+    const loggedInState = accessStateModule.loginAsUser(state, { userId });
+    const next = saveAccessState(appendLoginHistory(
+      loggedInState,
+      createLoginHistoryEntry(req, loggedInState, userId, session.token)
+    ));
     sendJson(res, 200, await createAccessSessionResponse(next, userId, session), { "Set-Cookie": createSessionCookie(session.token) });
     return true;
   }
@@ -1254,6 +1450,10 @@ async function handleAuthApi(req, res, urlPath) {
     if (req.method !== "POST") {
       sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
       return true;
+    }
+    const sessionToken = getSessionToken(req);
+    if (sessionToken) {
+      saveAccessState(markLoginHistoryLoggedOut(state, sessionToken));
     }
     deleteAuthSession(req);
     sendJson(res, 200, { status: "logged_out" }, { "Set-Cookie": createExpiredSessionCookie() });
@@ -1282,7 +1482,13 @@ async function handleAuthApi(req, res, urlPath) {
       sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
       return true;
     }
-    const next = accessStateModule.approveGroupJoinRequest(state, { requestId: parsed.requestId, reviewerId: actorId });
+    const body = await readJsonRequest(req);
+    const next = accessStateModule.approveGroupJoinRequest(state, {
+      requestId: parsed.requestId,
+      reviewerId: actorId,
+      groupId: body.group_id,
+      requestedRole: body.requested_role
+    });
     if (next === state) {
       sendJson(res, 403, { error_code: "CGA_GROUP_JOIN_APPROVAL_FORBIDDEN", message_key: "errors.auth.joinApprovalForbidden" });
       return true;
@@ -1315,13 +1521,511 @@ async function handleAuthApi(req, res, urlPath) {
       sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
       return true;
     }
-    const next = accessStateModule.approveAdminPermissionRequest(state, { requestId: parsed.requestId, reviewerId: actorId });
+    const body = await readJsonRequest(req);
+    const next = accessStateModule.approveAdminPermissionRequest(state, {
+      requestId: parsed.requestId,
+      reviewerId: actorId,
+      groupId: body.group_id,
+      requestedRole: body.requested_role
+    });
     if (next === state) {
       sendJson(res, 403, { error_code: "CGA_ADMIN_APPROVAL_FORBIDDEN", message_key: "errors.auth.adminApprovalForbidden" });
       return true;
     }
     saveAccessState(next);
     sendJson(res, 200, { status: "approved", request: next.adminRequests.find((item) => item.id === parsed.requestId) });
+    return true;
+  }
+
+  return false;
+}
+
+
+function getAdminCollectionKey(resource) {
+  return {
+    templates: "templates",
+    "common-variables": "common_variables",
+    "default-messages": "default_messages",
+    channels: "channels",
+    "botstation-links": "botstation_links"
+  }[resource] || "";
+}
+
+function getAdminResourcePrefix(resource) {
+  return {
+    templates: "tpl",
+    "common-variables": "cv",
+    "default-messages": "dm",
+    channels: "ch",
+    "botstation-links": "bs"
+  }[resource] || "adm";
+}
+
+function getAdminResourceNameField(resource) {
+  return {
+    templates: "name",
+    "common-variables": "name",
+    "default-messages": "name",
+    channels: "channel_name",
+    "botstation-links": "station_name"
+  }[resource] || "name";
+}
+
+function getAdminResourceRequiredError(resource) {
+  return {
+    templates: "CGA_TEMPLATE_NAME_REQUIRED",
+    "common-variables": "CGA_COMMON_VARIABLE_NAME_REQUIRED",
+    "default-messages": "CGA_DEFAULT_MESSAGE_NAME_REQUIRED",
+    channels: "CGA_CHANNEL_NAME_REQUIRED",
+    "botstation-links": "CGA_BOTSTATION_NAME_REQUIRED"
+  }[resource] || "CGA_ADMIN_RESOURCE_NAME_REQUIRED";
+}
+
+function getAdminResourceNotFoundError(resource) {
+  return {
+    templates: "CGA_TEMPLATE_NOT_FOUND",
+    "common-variables": "CGA_COMMON_VARIABLE_NOT_FOUND",
+    "default-messages": "CGA_DEFAULT_MESSAGE_NOT_FOUND",
+    channels: "CGA_CHANNEL_NOT_FOUND",
+    "botstation-links": "CGA_BOTSTATION_NOT_FOUND"
+  }[resource] || "CGA_ADMIN_RESOURCE_NOT_FOUND";
+}
+
+function filterAdminResourceItems(resource, query) {
+  const collectionKey = getAdminCollectionKey(resource);
+  const items = Array.isArray(adminResources[collectionKey]) ? adminResources[collectionKey] : [];
+  const keyword = String(query.get("q") || query.get("keyword") || "").trim().toLowerCase();
+  const channel = String(query.get("channel") || "").trim().toLowerCase();
+  const status = String(query.get("status") || "").trim();
+  return items.filter((item) => {
+    const haystack = [
+      item.name,
+      item.key,
+      item.category,
+      item.description,
+      item.message,
+      item.channel_code,
+      item.channel_name,
+      item.provider,
+      item.renderer_type,
+      item.station_name,
+      item.endpoint_url
+    ].filter(Boolean).join(" ").toLowerCase();
+    const matchesKeyword = !keyword || haystack.includes(keyword);
+    const matchesChannel = !channel || String(item.channel_name || item.channel_code || "").toLowerCase().includes(channel);
+    const matchesStatus = !status || status === "all" || item.status === status || item.status_label === status;
+    return matchesKeyword && matchesChannel && matchesStatus;
+  });
+}
+
+function normalizeAdminResourcePayload(resource, body, existing = null) {
+  const now = new Date().toISOString();
+  if (resource === "templates") {
+    const name = String(body.name ?? existing?.name ?? "").trim();
+    return {
+      ...(existing || {}),
+      ...body,
+      id: existing?.id || body.id || createAdminId("tpl"),
+      order: Number(body.order ?? existing?.order ?? ((adminResources.templates || []).length + 1)),
+      channel_code: body.channel_code || body.channel_name || existing?.channel_code || "Simulator",
+      channel_name: body.channel_name || body.channel_code || existing?.channel_name || "Simulator",
+      name,
+      item_count: Number(body.item_count ?? existing?.item_count ?? 1),
+      item_types: body.item_types || existing?.item_types || "text",
+      renderer_type: body.renderer_type || existing?.renderer_type || "text",
+      status: body.status || existing?.status || "Y",
+      status_label: body.status_label || (body.status === "N" ? "미사용" : "사용"),
+      created_at: existing?.created_at || body.created_at || now,
+      updated_at: now,
+      created_by: existing?.created_by || body.created_by || "admin",
+      updated_by: body.updated_by || "admin",
+      protected: Boolean(existing?.protected)
+    };
+  }
+  if (resource === "common-variables") {
+    const name = String(body.name ?? existing?.name ?? "").trim();
+    return {
+      ...(existing || {}),
+      ...body,
+      id: existing?.id || body.id || createAdminId("cv"),
+      name,
+      category: body.category || existing?.category || "사용자",
+      value: body.value ?? existing?.value ?? "",
+      description: body.description || existing?.description || "",
+      updated_at: now,
+      updated_by: body.updated_by || "admin"
+    };
+  }
+  if (resource === "default-messages") {
+    const name = String(body.name ?? existing?.name ?? "").trim();
+    return {
+      ...(existing || {}),
+      ...body,
+      id: existing?.id || body.id || createAdminId("dm"),
+      category: body.category || existing?.category || "System",
+      name,
+      key: body.key || existing?.key || name,
+      message: body.message || existing?.message || "",
+      status: body.status || existing?.status || "Y",
+      status_label: body.status_label || (body.status === "N" ? "미사용" : "사용"),
+      updated_at: now,
+      updated_by: body.updated_by || "admin"
+    };
+  }
+  if (resource === "channels") {
+    const channelName = String(body.channel_name ?? body.name ?? existing?.channel_name ?? "").trim();
+    const channelCode = String(body.channel_code ?? existing?.channel_code ?? channelName).trim();
+    return {
+      ...(existing || {}),
+      ...body,
+      id: existing?.id || body.id || createAdminId("ch"),
+      channel_code: channelCode,
+      channel_name: channelName,
+      provider: body.provider || existing?.provider || "webchat",
+      renderer_type: body.renderer_type || existing?.renderer_type || "text",
+      auth_type: body.auth_type || existing?.auth_type || "none",
+      status: body.status || existing?.status || "Y",
+      status_label: body.status_label || (body.status === "N" ? "미사용" : "사용"),
+      updated_at: now,
+      updated_by: body.updated_by || "admin"
+    };
+  }
+  const stationName = String(body.station_name ?? body.name ?? existing?.station_name ?? "").trim();
+  return {
+    ...(existing || {}),
+    ...body,
+    id: existing?.id || body.id || createAdminId(getAdminResourcePrefix(resource)),
+    station_name: stationName,
+    endpoint_url: body.endpoint_url || existing?.endpoint_url || "",
+    status: body.status || existing?.status || "Y",
+    status_label: body.status_label || (body.status === "N" ? "미사용" : "사용"),
+    updated_at: now,
+    updated_by: body.updated_by || "admin"
+  };
+}
+
+function buildLicenseUsage(state) {
+  const users = (state.users || []).filter((user) => user.status !== "deleted").length;
+  const bots = workspaceBots.filter((bot) => bot.status !== "deleted").length;
+  const apis = apiAnswerRegistry.filter((api) => api.status !== "deleted").length;
+  return [
+    { id: "lic-bot", category: "봇", total: "무제한", used: bots, remaining: "-", expires_at: "-", status: "정상" },
+    { id: "lic-user", category: "사용자", total: "무제한", used: users, remaining: "-", expires_at: "-", status: "정상" },
+    { id: "lic-api", category: "API", total: "무제한", used: apis, remaining: "-", expires_at: "-", status: "정상" }
+  ];
+}
+
+async function handleAdminResourceApi(req, res, urlPath, query) {
+  const parsed = parseAdminResourcePath(urlPath);
+  if (!parsed) return false;
+  const state = await loadAccessState();
+
+  if (parsed.resource === "all") {
+    if (req.method !== "GET") {
+      sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+      return true;
+    }
+    sendJson(res, 200, {
+      ...adminResources,
+      licenses: buildLicenseUsage(state),
+      login_history: Array.isArray(state.loginHistory) ? state.loginHistory : []
+    });
+    return true;
+  }
+
+  const collectionKey = getAdminCollectionKey(parsed.resource);
+  if (!collectionKey) return false;
+  const collection = Array.isArray(adminResources[collectionKey]) ? adminResources[collectionKey] : [];
+
+  if (!parsed.id) {
+    if (req.method === "GET") {
+      const items = filterAdminResourceItems(parsed.resource, query);
+      sendJson(res, 200, { items, total: items.length });
+      return true;
+    }
+    if (req.method === "POST") {
+      const body = await readJsonRequest(req);
+      const nameField = getAdminResourceNameField(parsed.resource);
+      const name = String(body[nameField] ?? body.name ?? "").trim();
+      if (!name) {
+        sendJson(res, 400, { error_code: getAdminResourceRequiredError(parsed.resource), message_key: "errors.admin.resourceNameRequired" });
+        return true;
+      }
+      const item = normalizeAdminResourcePayload(parsed.resource, body);
+      saveAdminResources({ ...adminResources, [collectionKey]: [item, ...collection] });
+      sendJson(res, 201, item);
+      return true;
+    }
+    sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+    return true;
+  }
+
+  const target = collection.find((item) => item.id === parsed.id);
+  if (!target) {
+    sendJson(res, 404, { error_code: getAdminResourceNotFoundError(parsed.resource), message_key: "errors.admin.resourceNotFound" });
+    return true;
+  }
+  if (req.method === "PUT" || req.method === "PATCH") {
+    const body = await readJsonRequest(req);
+    const nextItems = collection.map((item) => item.id === parsed.id ? normalizeAdminResourcePayload(parsed.resource, body, item) : item);
+    saveAdminResources({ ...adminResources, [collectionKey]: nextItems });
+    sendJson(res, 200, nextItems.find((item) => item.id === parsed.id));
+    return true;
+  }
+  if (req.method === "DELETE") {
+    saveAdminResources({ ...adminResources, [collectionKey]: collection.filter((item) => item.id !== parsed.id) });
+    sendJson(res, 200, { deleted: true, id: parsed.id });
+    return true;
+  }
+  sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+  return true;
+}
+
+function getWebchatBotBySlug(botSlug) {
+  return workspaceBots.find((bot) => bot.id === botSlug || bot.slug === botSlug || sanitizePathSegment(bot.name, bot.id) === botSlug) || null;
+}
+
+function getBotGroupName(groupId) {
+  if (!accessState?.groups) return null;
+  return accessState.groups.find((group) => group.id === groupId)?.name || null;
+}
+
+function serializeWebchatBot(bot) {
+  return {
+    id: bot.id,
+    name: bot.name,
+    slug: bot.slug || bot.id,
+    groupId: bot.group_id,
+    groupName: getBotGroupName(bot.group_id),
+    activeVersionId: `${bot.id}:${bot.version || "v0.1"}`,
+    activeVersionName: bot.version || "v0.1",
+    activeVersionNo: Number(String(bot.version || "v0.1").match(/\d+/)?.[0] || 1),
+    activatedAt: bot.updated_at || null,
+    initialMessages: [
+      { type: "text", text: `${bot.name}에 연결되었습니다.` }
+    ]
+  };
+}
+
+function getWebchatBots() {
+  return workspaceBots
+    .filter((bot) => bot.status !== "deleted")
+    .map((bot) => ({ ...bot, slug: bot.slug || bot.id }));
+}
+
+function serializeWebchatRoom(room) {
+  const bot = getWebchatBotBySlug(room.bot_slug) || workspaceBots.find((item) => item.id === room.bot_id) || workspaceBots[0];
+  return {
+    id: room.id,
+    clientRoomId: room.client_room_id || room.id,
+    channelType: "webchat",
+    status: room.status || "open",
+    bot: serializeWebchatBot(bot),
+    createdAt: room.created_at,
+    updatedAt: room.updated_at
+  };
+}
+
+function createStoredChannelMessage({ participantKind, participantId, participantName, text, payload = null }) {
+  return {
+    id: crypto.randomUUID(),
+    participantId,
+    participantKind,
+    participantName,
+    messageType: "text",
+    text,
+    payload: payload || undefined,
+    createdAt: new Date().toISOString()
+  };
+}
+
+function getDetailAssetsForWebchatBot(bot) {
+  return detailAssetRegistry.find((item) => item.group_id === bot.group_id && item.bot_id === bot.id) || createDefaultDetailAssetsForBot(bot.group_id, bot.id);
+}
+
+function selectWebchatIntent(bot, message) {
+  const assets = getDetailAssetsForWebchatBot(bot);
+  const text = String(message || "").toLowerCase();
+  const scenarios = Array.isArray(assets.scenarios) ? assets.scenarios : [];
+  const utterances = Array.isArray(assets.intent_utterances) ? assets.intent_utterances : [];
+  const matchedUtterance = utterances.find((item) => {
+    const utterance = String(item.utterance || "").toLowerCase();
+    return utterance && (text.includes(utterance) || utterance.includes(text));
+  });
+  const scenarioId = matchedUtterance?.division || scenarios[0]?.id || null;
+  const scenario = scenarios.find((item) => item.id === scenarioId) || scenarios[0] || null;
+  const score = matchedUtterance ? 100 : scenario ? 94 : 0;
+  return { scenario, score };
+}
+
+async function handleWebchatChannelApi(req, res, urlPath, query) {
+  const parsed = parseWebchatChannelPath(urlPath);
+  if (!parsed) return false;
+  const state = await loadAccessState();
+  const bots = getWebchatBots();
+
+  if (req.method === "OPTIONS") {
+    sendAidotSuccess(req, res, parsed.action === "rooms" ? { channelType: "webchat", room: null } : { channelType: "webchat", connected: true });
+    return true;
+  }
+
+  if (parsed.action === "connect") {
+    if (req.method !== "POST") {
+      sendJson(res, 405, { detail: "Method Not Allowed" });
+      return true;
+    }
+    const body = await readJsonRequest(req);
+    sendAidotSuccess(req, res, {
+      channelType: "webchat",
+      connected: true,
+      clientId: body.client_id || "webchat-client",
+      bots: bots.map(serializeWebchatBot)
+    });
+    return true;
+  }
+
+  if (parsed.action === "bots" || parsed.action === "legacyBootstrap") {
+    if (req.method !== "GET") {
+      sendJson(res, 405, { detail: "Method Not Allowed" });
+      return true;
+    }
+    const data = {
+      channelType: "webchat",
+      bots: bots.map(serializeWebchatBot),
+      participants: [
+        { id: "visitor", kind: "user", name: "사용자" },
+        ...bots.map((bot) => ({ id: bot.id, kind: "bot", name: bot.name, botSlug: bot.slug || bot.id }))
+      ]
+    };
+    sendAidotSuccess(req, res, parsed.action === "legacyBootstrap" ? { bots: data.bots, participants: data.participants } : data);
+    return true;
+  }
+
+  if (parsed.action === "rooms") {
+    if (req.method === "GET") {
+      const participantId = query.get("participant_id") || "";
+      const rooms = participantId ? webchatRooms.filter((room) => room.participant_id === participantId) : webchatRooms;
+      sendAidotSuccess(req, res, { channelType: "webchat", rooms: rooms.map(serializeWebchatRoom) });
+      return true;
+    }
+    if (req.method === "POST") {
+      const body = await readJsonRequest(req);
+      const bot = getWebchatBotBySlug(body.bot_slug) || bots[0];
+      if (!bot) {
+        sendJson(res, 404, { detail: "webchat 봇을 찾을 수 없습니다." });
+        return true;
+      }
+      const now = new Date().toISOString();
+      const room = {
+        id: crypto.randomUUID(),
+        client_room_id: body.client_room_id || crypto.randomUUID(),
+        channel_type: "webchat",
+        bot_id: bot.id,
+        bot_slug: bot.slug || bot.id,
+        participant_id: body.participant_id || "visitor",
+        participant_name: body.participant_name || "사용자",
+        status: "open",
+        messages: [],
+        created_at: now,
+        updated_at: now
+      };
+      const botMessage = createStoredChannelMessage({
+        participantKind: "bot",
+        participantId: bot.id,
+        participantName: bot.name,
+        text: `${bot.name}에 연결되었습니다.`
+      });
+      room.messages = [botMessage];
+      saveWebchatRooms([room, ...webchatRooms]);
+      sendAidotSuccess(req, res, { room: serializeWebchatRoom(room), messages: room.messages, initialMessages: [] });
+      return true;
+    }
+  }
+
+  if (parsed.action === "roomDetail") {
+    if (req.method === "DELETE") {
+      const room = webchatRooms.find((item) => item.id === parsed.roomId);
+      if (room) {
+        room.status = "closed";
+        room.updated_at = new Date().toISOString();
+        saveWebchatRooms([...webchatRooms]);
+      }
+      sendAidotSuccess(req, res, { roomId: parsed.roomId, deleted: true });
+      return true;
+    }
+    if (req.method !== "GET") {
+      sendJson(res, 405, { detail: "Method Not Allowed" });
+      return true;
+    }
+    const room = webchatRooms.find((item) => item.id === parsed.roomId);
+    if (!room) {
+      sendJson(res, 404, { detail: "채팅방을 찾을 수 없습니다." });
+      return true;
+    }
+    sendAidotSuccess(req, res, { room: serializeWebchatRoom(room), messages: room.messages || [] });
+    return true;
+  }
+
+  if (parsed.action === "roomMessage" || parsed.action === "legacyRoomMessage") {
+    if (req.method !== "POST") {
+      sendJson(res, 405, { detail: "Method Not Allowed" });
+      return true;
+    }
+    const body = await readJsonRequest(req);
+    let room = webchatRooms.find((item) => item.id === parsed.roomId);
+    const bot = parsed.botSlug ? getWebchatBotBySlug(parsed.botSlug) : room ? getWebchatBotBySlug(room.bot_slug) : bots[0];
+    if (!bot) {
+      sendJson(res, 404, { detail: "webchat 봇을 찾을 수 없습니다." });
+      return true;
+    }
+    if (!room) {
+      const now = new Date().toISOString();
+      room = {
+        id: parsed.roomId,
+        client_room_id: parsed.roomId,
+        channel_type: "webchat",
+        bot_id: bot.id,
+        bot_slug: bot.slug || bot.id,
+        participant_id: body.participant_id || "visitor",
+        participant_name: "사용자",
+        status: "open",
+        messages: [],
+        created_at: now,
+        updated_at: now
+      };
+      webchatRooms = [room, ...webchatRooms];
+    }
+    const userMessage = createStoredChannelMessage({
+      participantKind: "user",
+      participantId: body.participant_id || room.participant_id || "visitor",
+      participantName: room.participant_name || "사용자",
+      text: body.message || ""
+    });
+    const { scenario, score } = selectWebchatIntent(bot, body.message || "");
+    const answer = scenario?.answer || scenario?.dialogCards?.[0] || "질문을 이해하지 못했습니다. 다시 말씀해주세요.";
+    const botMessage = createStoredChannelMessage({
+      participantKind: "bot",
+      participantId: bot.id,
+      participantName: bot.name,
+      text: answer
+    });
+    room.messages = [...(room.messages || []), userMessage, botMessage];
+    room.updated_at = botMessage.createdAt;
+    saveWebchatRooms([...webchatRooms.filter((item) => item.id !== room.id), room]);
+    sendAidotSuccess(req, res, {
+      botMessage,
+      botMessages: [botMessage],
+      intent: {
+        id: scenario?.id || null,
+        name: scenario?.displayName || scenario?.id || null,
+        score
+      },
+      runtime: {
+        dialogEnded: true,
+        sessionEnded: false,
+        completionReason: "matched"
+      }
+    });
     return true;
   }
 
@@ -1512,6 +2216,7 @@ const server = http.createServer(async (req, res) => {
   const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
   const query = new URL(req.url || "/", "http://localhost").searchParams;
   try {
+    if (await handleWebchatChannelApi(req, res, urlPath, query)) return;
     if (await handleAuthApi(req, res, urlPath)) return;
     if (await handleStudioStateApi(req, res, urlPath)) return;
     if (await handleCompositionApi(req, res, urlPath)) return;
@@ -1520,6 +2225,7 @@ const server = http.createServer(async (req, res) => {
     if (await handleCollaborationStateApi(req, res, urlPath)) return;
     if (await handleWorkspaceBotApi(req, res, urlPath)) return;
     if (await handleApiAnswerApi(req, res, urlPath)) return;
+    if (await handleAdminResourceApi(req, res, urlPath, query)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;
   } catch (error) {
     sendJson(res, 500, {
@@ -1542,3 +2248,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(port, () => {
   console.log(`CGA Studio running at http://localhost:${port}`);
 });
+
+

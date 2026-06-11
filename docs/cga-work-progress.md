@@ -1,5 +1,36 @@
 # CGA 작업 진행 기록
 
+## 2026-06-11
+
+### 실제 로그인 이력 전환 및 조회 성능 검증
+
+- CGA Studio의 로그인 이력 화면에서 임시/가짜 데이터(`전체 1건`, `127.0.0.1`, `로그인 시간 -`)를 제거했다.
+- `scripts/serve-studio.js`에서 로그인 성공 시 실제 세션 토큰, 사용자, 그룹, 역할, IP, 로그인 시각을 `access-state.json`의 `loginHistory`에 저장하도록 연결했다.
+- 로그아웃 시 해당 세션의 `logout_at`을 기록하고 세션 토큰을 제거하도록 연결했다.
+- `/api/cga/groups` 응답에 `login_history`를 포함해 화면이 서버 저장 데이터를 그대로 렌더링하도록 했다.
+- `packages/public-core/src/access-state.js`의 상태 정규화에 `loginHistory`를 포함해 서버 저장/로드 과정에서 이력이 사라지지 않게 했다.
+- 로그인 이력 조회 화면은 실제 `login_history` 행만 표시하며, 데이터가 없을 때 별도의 “데이터 없음” 문구를 표시하지 않는다.
+- 모든 조회 화면 기본 원칙에 맞춰 Aidot형 하단 중앙 페이지 이동 UI(`◀ ‹ 1 › ▶`)를 공통 스타일로 추가했다.
+- `apps/studio/app.js`의 `adminSurfaceSamples` 하드코딩 샘플 행을 제거했다.
+- 실제 API가 아직 연결되지 않은 System Administration 하위 화면은 가짜 행을 보여주지 않고 Aidot형 검색/표/페이저 골격만 렌더링하도록 바꿨다.
+
+검증:
+
+- `npm run studio:auth-api-check`
+  - 실제 로그인 → `/api/cga/groups` 조회 → 로그아웃 → 저장 파일 확인 통과
+  - 로그인 이력 포함 그룹 조회 시간: 1.4ms
+- `npm run studio:validate`
+  - 전체 CGA Studio 검증 통과
+  - 로그인 이력 포함 그룹 조회 시간: 1.5ms
+- 현재 실행 중인 `http://127.0.0.1:4173` 서버 재시작 후 실제 로그인/로그아웃 확인
+  - 로그인 이력 포함 그룹 조회 시간: 6ms
+  - `login_at`, `logout_at` 저장 확인
+
+다음 작업:
+
+- System Administration 하위 화면은 CGA식 임시 화면을 제거하고 Aidot Admin 화면 구조/문구/표/검색/버튼 배치를 원본 기준으로 복사한다.
+- Aidot에 없는 `그룹 역할 관리`만 CGA 추가 화면으로 분리하되, 사용자 관리/그룹 관리/로그인 이력은 Aidot 기준을 유지한다.
+
 ## 2026-06-03
 
 ### 현재 작업 목적
@@ -1641,3 +1672,662 @@
 #### 다음 작업
 - Synonyms/Entities/Dictionary/Scenario/API Tools 각 탭에서 편집 가능한 항목을 단계적으로 연결한다.
 - Test 화면의 대화 단계 로그와 변수 치환 표시를 추가한다.
+
+### 2026-06-10 첫 접속 로그인 화면과 실제 제품 화면 기준 정리
+- 신산님 지시로 `http://localhost:4173/` 첫 접속 화면을 작업공간이 아니라 로그인 화면으로 변경했다.
+- 사용자 선택 드롭다운에서 사용자 언어(en/ko/ja/fr 등)를 함께 표시하던 부분을 제거했다. 사용자 언어와 화면 언어 선택은 별도 개념이므로 로그인 계정 선택에는 계정명과 ID만 표시한다.
+- 우측 승인 체크리스트, 작업 규칙, 레퍼런스 내비게이션 등 실제 제품 사용 화면이 아닌 임시 요소는 화면에서 제거했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - 첫 접속용 `login-entry` 화면을 추가했다.
+  - 상단과 로그인 화면의 사용자 선택은 계정/ID 기준으로만 보이도록 정리했다.
+  - Reference 내비게이션과 임시 안내 영역을 제거했다.
+- `apps/studio/app.js`
+  - `hasAuthSession()`, `applyAuthGate()`를 추가했다.
+  - 세션 토큰이 없으면 작업공간/좌측 메뉴/상단 작업 버튼을 숨기고 로그인 화면만 보여준다.
+  - 로그인 성공 후에만 작업공간 화면이 표시된다.
+  - 로그인 버튼 클릭 시 사용자나 비밀번호가 없으면 조용히 무시하지 않고 오류 메시지를 표시한다.
+- `apps/studio/styles.css`
+  - 첫 접속 로그인 레이아웃과 비로그인 상태 화면 스타일을 추가했다.
+- `apps/studio/data/layout.js`
+  - 실제 운영 화면이 아닌 설명/참조 성격의 섹션은 숨김 처리했다.
+- `scripts/check-studio-config.js`
+  - 첫 접속 로그인 화면과 auth gate가 빠지면 검증 실패하도록 guard를 추가했다.
+
+#### 다음 작업
+- 첫 화면 로그인 후 그룹 선택 → 봇 작업공간 진입 흐름을 실제 제품 화면 기준으로 더 정리한다.
+- 좌측 메뉴와 상단 바의 불필요한 설명 문구를 계속 제거한다.
+
+### 2026-06-10 Aidot 100% 호환 기준 재확정 및 첫 화면 재정리
+- 신산님 지시로 CGA의 기준을 다시 확정했다.
+- CGA는 Aidot와 100% 호환되어야 하며 내부 기능, API 구조, 파일 구조, Table 구조, 봇 패키지 구조를 변경하지 않는다.
+- CGA 작업 범위는 Aidot 화면/기능을 봇 작업 순서대로 재배치하는 화면 구조 변경이다.
+- Aidot는 ML/Semantic/LLM 구성이 가능하지만, CGA 화면의 봇 구성 흐름은 LLM 방식만 노출한다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 바로잡은 내용
+- CGA 전용 저장소/Table 구조 정의 및 검증으로 보일 수 있는 신규 파일을 제거했다.
+- `package.json`의 `studio:storage-schema-check` 검증 연결을 제거했다.
+- `http://127.0.0.1:4173/` 첫 접속 화면이 작업공간이 아니라 로그인 화면으로 나오도록 정리했다.
+- 첫 로그인 화면은 Aidot 로그인 화면 구조를 기준으로 중앙 카드, 아이디/비밀번호, 로그인, 아이디 저장, 언어 선택, 회원가입 진입으로 구성했다.
+- 폰트 기준은 신산님이 지정한 24/14/12/10/9px 규칙을 유지했다.
+- 다국어 번들(`apps/studio/i18n.js`)과 locale JSON 동기화를 맞췄다.
+
+#### 확인 결과
+- `node --check apps\studio\app.js` 통과.
+- `node --check apps\studio\data\layout.js` 통과.
+- `npm run studio:validate` 통과.
+- Studio 서버 응답 확인: `http://127.0.0.1:4173/` HTTP 200.
+
+#### 다음 작업
+- 로그인 후 Aidot admin 기준의 사용자/그룹/권한 화면을 먼저 배치한다.
+- 그 다음 봇 생성 → 봇 설정 → 봇 구성 → 봇 수정 → 봇 테스트 → 봇 운영 순서로 Aidot 기존 화면을 재배치한다.
+- 새 API, 새 Table, 새 파일 구조가 필요해 보이는 경우 작업하지 않고 먼저 신산님에게 “새 구조 변경”으로 명시해 승인 요청한다.
+
+### 2026-06-10 1920x1080 기준 3영역 화면 구조 반영
+- 신산님 지시에 따라 CGA Studio 화면 기준을 Aidot와 동일한 1920x1080 기준으로 확정했다.
+- 화면은 상단 상태바, 좌측 메뉴, 중앙 작업영역 3개 영역으로 구성한다.
+- 좌측 메뉴는 실제 메뉴로 동작해야 하며, 클릭한 메뉴의 화면 하나만 중앙 작업영역에 표시한다.
+- 여러 화면이 아래로 이어서 보이는 기존 방식은 실제 제품 화면 기준에 맞지 않으므로 제거했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/app.js`
+  - `activeScreenId`를 추가해 현재 선택된 화면 하나만 표시하도록 변경했다.
+  - 좌측 메뉴 클릭 시 기본 anchor scroll이 아니라 중앙 작업영역의 화면 전환으로 처리한다.
+  - 선택된 메뉴에만 `active` 상태를 적용한다.
+- `apps/studio/styles.css`
+  - 전체 화면을 1920x1080 기준의 상단/좌측/중앙 3영역으로 고정했다.
+  - 좌측 메뉴와 중앙 작업영역이 각각 내부 스크롤을 가지도록 변경했다.
+  - 상단 상태바는 한 줄 안에 상태/언어/저장/미리보기/배포 영역이 들어가도록 압축했다.
+- `scripts/check-studio-config.js`
+  - 더 이상 필요 없는 상단 빠른 로그인 검증을 제거했다.
+
+#### 확인 결과
+- `npm run studio:validate` 통과.
+- 현재 화면은 로그인 후 `사용자 / 그룹 관리` 단일 화면이 중앙 작업영역에 표시되는 상태다.
+
+### 2026-06-10 실제 관리 화면 기준 재정리
+- 신산님 지시로 본문에 보이던 정책 설명/가이드/예제성 패널을 실제 제품 화면 기준에서 제거했다.
+- 설명이나 예제는 Aidot처럼 화면 제목 옆 `?` 도움말 아이콘을 눌렀을 때 모달로 확인하는 방식으로 정리했다.
+- 좌측 메뉴는 `서버 메뉴`, `관리`, `조회`, `운영` 기준으로 구분한다.
+- 사용자의 그룹 내 역할과 scope에 따라 접근할 수 없는 메뉴는 `허용/차단` 라벨로 표시하지 않고 메뉴에서 숨긴다.
+- 사용자가 접근 중인 화면이 권한 변경으로 숨겨지면 첫 번째 허용 메뉴로 자동 이동한다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - Access 화면에서 정책 설명 패널과 운영 흐름 설명 패널을 화면 본문에서 제거했다.
+  - 사용자 조회, 그룹 조회, 역할 관리, 가입/관리자 승인 대기 영역을 실제 관리 화면 블록으로 재배치했다.
+  - Access 화면 제목 옆에 도움말 `?` 버튼을 유지했다.
+- `apps/studio/app.js`
+  - 도움말 모달 열기/닫기 동작을 추가했다.
+  - 좌측 메뉴 접근 제어를 `차단 표시`에서 `권한 없는 메뉴 숨김`으로 변경했다.
+  - 그룹 조회 영역은 정책 설명 대신 현재 그룹 목록과 사용자 수/상태를 표시하도록 변경했다.
+- `apps/studio/styles.css`
+  - 서버 하위 메뉴, 관리 화면 조회/등록 블록, 도움말 모달 스타일을 추가했다.
+  - 메뉴 카드의 `허용/차단` 표시 영역은 실제 제품 화면 기준에 맞지 않아 숨겼다.
+
+#### 확인 결과
+- `node --check apps\studio\app.js` 통과.
+- `npm run studio:validate` 통과.
+- Studio 서버 응답 확인: `http://127.0.0.1:4173/` HTTP 200.
+
+#### 다음 작업
+- 서버 메뉴의 하위 항목을 `사용자 관리`, `로그인 이력`, `그룹 관리`처럼 실제 하위 화면 단위로 더 분리한다.
+- 사용자 조회/사용자 등록, 그룹 조회/그룹 등록 화면을 더 명확히 분리한다.
+- 로그인 이력 화면은 Aidot admin 화면 기준으로 별도 조회 화면처럼 구성한다.
+
+### 2026-06-10 로그인 입력 초기화 및 전환 실패 수정
+- 신산님이 `로그인이 안되고 아이디/비밀번호가 초기화된다`고 지적한 문제를 우선 수정했다.
+- 원인은 첫 접속 로그인 화면의 전용 로그인 스크립트가 로그인 성공 후 `window.location.reload()`를 실행하는 흐름이었다.
+- 이 상태에서 로그인 후 앱 화면 전환이 즉시 완료되지 않으면 다시 로그인 카드가 보이고, 사용자가 입력한 아이디/비밀번호가 사라진 것처럼 보였다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/entry-auth.js`
+  - 로그인 성공 후 페이지를 새로고침하지 않고, 세션 토큰을 저장한 뒤 즉시 인증된 화면으로 전환하도록 변경했다.
+  - 성공 시 로그인 카드 숨김, 상단 상태바 표시, 좌측 메뉴 표시, `#access-management` 진입을 수행한다.
+  - 로그인 성공 이벤트 `cga:entry-login-success`를 발생시켜 메인 앱이 세션 기반 사용자/그룹 상태를 다시 읽도록 했다.
+  - 로그인 실패 시 아이디/비밀번호 입력값을 유지하고, 로그인 카드 안에 오류 메시지를 표시하도록 했다.
+- `apps/studio/app.js`
+  - `cga:entry-login-success` 이벤트를 받아 access state와 workspace data를 다시 읽고, 현재 화면과 메뉴를 다시 렌더링하도록 연결했다.
+- `apps/studio/index.html`
+  - 브라우저 캐시가 이전 로그인 스크립트를 잡지 않도록 `entry-auth.js` 버전을 `20260610-2`로 올렸다.
+
+#### 확인 결과
+- `node --check apps\studio\entry-auth.js` 통과.
+- `node --check apps\studio\app.js` 통과.
+- `npm run studio:validate` 통과.
+- 실제 API 확인: `POST /api/cga/auth/login`에 `admin/admin` 요청 시 HTTP 200과 `session_token` 발급 확인.
+- 로그인 화면 스크립트 동작 재현 테스트:
+  - 성공 시 `cga-studio-session-token-v2` 저장 확인.
+  - 성공 시 `.app-shell`의 `unauthenticated` 상태 제거 확인.
+  - 성공 시 상단바/좌측 메뉴 표시 확인.
+  - 성공 시 로그인 카드 숨김 확인.
+  - 실패 시 아이디와 비밀번호 입력값 유지 확인.
+  - 실패 시 `아이디 또는 비밀번호가 올바르지 않습니다.` 메시지 표시 확인.
+
+#### 다음 작업
+- 실제 브라우저 자동 연결은 현재 Codex 브라우저 런타임 연결 실패로 사용하지 못했다.
+- 대신 서버 API와 화면 로그인 스크립트의 DOM 동작을 직접 재현해 검증했다.
+- 다음 화면 수정부터도 수정 후 자체 검증을 먼저 수행한 뒤 신산님에게 보고한다.
+
+### 2026-06-10 좌측 메뉴 카드형 복구 및 로그아웃 동작 수정
+- 신산님 지시로 좌측 메뉴를 `서버 메뉴 / 관리 / 조회 / 운영` 텍스트 목록형에서 이전 카드형 메뉴 구조로 되돌렸다.
+- 좌측 메뉴 기준은 `시스템 관리`, `봇 제작`, `봇 제작 워크플로우` 3개 그룹이다.
+- 상단 로그아웃 버튼이 동작하지 않는 문제를 함께 수정했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - 좌측 메뉴를 이전 카드형 그룹 구조로 복구했다.
+  - `System Administration`, `Bot Production`, `Bot Build Workflow` 섹션과 카드형 nav를 사용한다.
+  - 캐시 방지를 위해 `entry-auth.js` 버전을 `20260610-3`으로 올렸다.
+- `apps/studio/data/workflow.js`
+  - `User / Group Admin`은 시스템 관리 그룹에 배치했다.
+  - `Bot Workspace`, `Team Dashboard`, `Group API Registry`는 봇 제작 그룹에 배치했다.
+  - `Bot Creation`부터 `Bot Operation`까지 6단계는 봇 제작 워크플로우 카드로 표시한다.
+- `apps/studio/entry-auth.js`
+  - 상단 로그아웃 버튼을 전용 스크립트에서도 직접 처리하도록 연결했다.
+  - 로그아웃 시 `/api/cga/auth/logout`을 호출하고, 로컬 세션 토큰을 제거한 뒤 로그인 화면으로 복귀한다.
+
+#### 확인 결과
+- `node --check apps\studio\entry-auth.js` 통과.
+- `node --check apps\studio\app.js` 통과.
+- `node --check apps\studio\data\workflow.js` 통과.
+- `npm run studio:validate` 통과.
+- 실제 API 확인:
+  - `POST /api/cga/auth/login`은 HTTP 200과 `session_token` 발급 확인.
+  - `POST /api/cga/auth/logout`은 HTTP 200과 `cga_session` 쿠키 삭제 확인.
+- 화면 스크립트 동작 재현 테스트:
+  - 로그인 성공 후 세션 토큰 저장, 상단/좌측 표시, 로그인 카드 숨김 확인.
+  - 로그아웃 클릭 후 세션 토큰 제거, 상단/좌측 숨김, 로그인 카드 표시 확인.
+
+### 2026-06-10 봇 제작 워크플로우와 봇 운영 메뉴 재정리
+- 신산님이 확정한 기준에 맞춰 `봇 제작 워크플로우`와 `봇 운영`을 분리했다.
+- `봇 제작 워크플로우`는 아래 6단계로 고정한다.
+  - `봇 생성`
+  - `봇 설정`
+  - `봇 구성`
+  - `봇 제작`
+  - `봇 테스트`
+  - `봇 평가`
+- `봇 운영`은 제작 단계가 아니라 제작 이후 운영 영역으로 분리한다.
+  - `재학습`
+  - `분석`
+- `봇 관리`는 워크플로우 단계가 아니라 별도 관리 기능으로 분리한다.
+  - 업로드
+  - 다운로드
+  - 운영버전 설정
+  - 복사
+  - 삭제
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/data/workflow.js`
+  - 제작 워크플로우의 6번째 단계를 `operate`에서 `evaluate`로 변경했다.
+  - `build` 단계 명칭을 `Bot Edit`에서 `Bot Production` 기준으로 변경했다.
+  - `operationLinks`를 추가해 `재학습`, `분석`을 별도 운영 메뉴로 렌더링하도록 했다.
+  - `bot-management` 메뉴를 `Bot Production` 그룹에 추가했다.
+- `apps/studio/index.html`
+  - 좌측 메뉴에 `Bot Operation` 섹션을 추가했다.
+  - `봇 관리` 화면을 별도 화면으로 추가하고, 기존 작업공간 안에 섞여 있던 버전/패키지 관리 영역을 이 화면으로 이동했다.
+  - `봇 평가` 화면을 제작 워크플로우 6번째 화면으로 추가했다.
+  - `재학습`, `분석` 화면을 운영 영역으로 분리했다.
+- `apps/studio/data/layout.js`
+  - `bot-management`, `evaluate`, `analysis` 화면을 레이아웃 정의에 추가했다.
+  - `operate`는 `workflow` 그룹에서 `operation` 그룹으로 이동했다.
+  - `api-answer-source`는 제작 워크플로우가 아니라 봇 제작/자산 영역으로 이동했다.
+- `packages/contracts/src/workflow-contract.js`
+  - 공개 워크플로우 정의의 6번째 단계를 `Evaluate`로 변경했다.
+  - Aidot API나 Table 구조가 아니라 CGA 화면 단계 정의만 변경했다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - 새 메뉴와 화면 키를 7개 언어에 추가했다.
+  - `봇 제작`, `봇 평가`, `봇 운영`, `재학습`, `분석`, `봇 관리` 관련 문구를 번들 i18n에 동기화했다.
+- `scripts/check-studio-config.js`
+  - 제작 워크플로우 필수 단계 검증 기준을 `create/configure/detail/build/test/evaluate`로 변경했다.
+
+#### 확인 결과
+- `node --check apps\studio\data\workflow.js` 통과.
+- `node --check apps\studio\i18n.js` 통과.
+- `node --check apps\studio\app.js` 통과.
+- `node --check scripts\check-studio-config.js` 통과.
+- `npm run studio:validate` 통과.
+- `http://127.0.0.1:4173/` 서버 HTML 응답에서 아래 구조 확인.
+  - `Bot Production`
+  - `Bot Build Workflow`
+  - `Bot Operation`
+  - `System Administration`
+  - `bot-management`
+  - `evaluate`
+  - `analysis`
+
+#### 다음 작업
+- 로그인 후 작업 중인 봇이 있을 때 Aidot 메인 화면처럼 현재 봇의 의도 목록/상태가 첫 화면으로 보이도록 정리한다.
+- 작업 중인 봇이 없을 때는 `봇 작업공간` 또는 `봇 생성`으로 유도한다.
+- `봇 관리` 화면의 버전 테이블을 Aidot의 버전 관리 화면 형태에 더 가깝게 정리한다.
+
+### 2026-06-10 봇 생성 화면에 봇 관리 빠른 액션 추가
+- 신산님 의견에 따라 `봇 생성` 화면에서도 버전/패키지 관련 주요 작업으로 바로 진입할 수 있게 했다.
+- 단, 기능을 새로 중복 개발하지 않고 기존 `봇 관리`와 기존 업로드 흐름을 재사용한다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - `봇 생성` 화면의 기본 언어/버전 입력 아래에 빠른 액션 버튼을 추가했다.
+    - `버전 추가`
+    - `봇 복사`
+    - `버전 관리`
+    - `버전 업로드`
+- `apps/studio/app.js`
+  - `버전 추가`는 현재 생성 화면의 버전 입력값을 다음 draft 버전명으로 갱신한다.
+  - `봇 복사`와 `버전 관리`는 별도 `봇 관리` 화면으로 이동한다.
+  - `버전 업로드`는 `봇 관리` 화면으로 이동한 뒤 기존 `data-upload-version-package` 업로드 핸들러를 호출한다.
+  - 따라서 Aidot 호환 패키지 업로드 구조를 새로 만들지 않고 기존 경로를 재사용한다.
+- `apps/studio/styles.css`
+  - 빠른 액션 버튼을 기존 10px 본문 기준과 카드 밀도에 맞게 정리했다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - `create.versionAdd`, `create.versionManage` 키를 7개 언어에 추가하고 Studio 번들과 동기화했다.
+
+#### 확인 결과
+- `node --check apps\studio\app.js` 통과.
+- `node --check apps\studio\i18n.js` 통과.
+- `node --check apps\studio\entry-auth.js` 통과.
+- `npm run studio:validate` 통과.
+
+### 2026-06-10 가입 시 개인 그룹 자동 생성 제거 및 그룹/역할 관리 기준 정리
+- 신산님 지시에 따라 신규 가입자가 `사용자명 Group` 같은 개인 그룹을 자동으로 받는 구조를 제거했다.
+- 신규 가입자는 개인 그룹의 `group_admin`이 되는 것이 아니라, 기본 대상 그룹에 `viewer` 가입 신청으로 생성된다.
+- 최종 그룹과 역할은 가입/권한 승인 단계에서 관리자 또는 그룹 관리자가 결정한다.
+- 기존 CGA 개발 데이터에 이미 생성된 `g-사용자ID` 형태의 자동 개인 그룹은 로드 시 `deleted` 상태로 정리하고, 해당 사용자는 기본 그룹 `viewer` 가입 신청 상태로 전환한다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `packages/public-core/src/access-state.js`
+  - `policy.signupCreatesOwnGroup` 기본값을 `false`로 변경했다.
+  - `signupDefaultGroupId: "g-support"`, `signupDefaultRole: "viewer"`를 추가했다.
+  - `applySignup()`이 더 이상 그룹과 멤버십을 생성하지 않고, 사용자 생성 + viewer 가입 신청만 생성하도록 변경했다.
+  - `normalizeAccessState()`를 추가해 기존 개발 데이터의 자동 개인 그룹을 정리한다.
+- `packages/contracts/src/access-contract.js`
+  - `createSignupDraft()`가 개인 그룹/멤버십을 만들지 않고, 필요 시 가입 신청 draft만 만들도록 변경했다.
+- `packages/contracts/src/auth-api-contract.js`
+  - signup 요청 계약을 `group_name` 중심에서 `group_id`, `requested_role` 중심으로 변경했다.
+- `scripts/serve-studio.js`
+  - `/api/cga/auth/signup`이 `group_id`와 `requested_role`을 받아 viewer 가입 신청을 생성하도록 변경했다.
+  - access state 로드 시 `normalizeAccessState()`를 적용해 기존 개인 그룹 생성 흔적을 정리한다.
+- `apps/studio/index.html`
+  - 관리 화면의 사용자 생성 폼을 제거했다.
+  - 그룹 관리 블록은 그룹 생성 전용으로 정리했다.
+  - 첫 접속 회원가입 화면의 그룹 선택 값은 실제 그룹 ID(`g-support`)를 사용하도록 수정했다.
+- `apps/studio/app.js`
+  - 가입 처리 fallback도 viewer 가입 신청 기준으로 변경했다.
+  - 사용자 조회/그룹 조회를 카드 나열에서 대량 데이터에 대응 가능한 표 형태로 변경했다.
+  - `그룹 역할 관리`는 `system_admin` 또는 `group_admin`에게만 보이도록 제한했다.
+- `apps/studio/styles.css`
+  - 대량 사용자/그룹 조회용 `management-table` 스타일을 추가했다.
+- `packages/i18n/locales/*.json`, `apps/studio/i18n.js`
+  - “개인 그룹 생성” 기준 문구를 “viewer 가입 신청 + 관리자 승인” 기준으로 수정했다.
+- `scripts/check-auth-api.mjs`, `scripts/check-studio-config.js`
+  - 가입 시 개인 그룹이 생성되면 검증 실패하도록 변경했다.
+  - 가입 시 viewer 가입 신청이 생성되는지 검증한다.
+
+#### 확인 결과
+- `npm run studio:validate` 통과.
+- 실제 4173 서버를 재시작했다.
+- `http://127.0.0.1:4173/` HTTP 200 확인.
+- `GET /api/cga/groups` 확인 결과:
+  - `policy.signupCreatesOwnGroup`은 `false`.
+  - 기존 `g-cyhuh / 허철영 Group`은 `deleted` 상태.
+  - `cyhuh -> g-support / viewer` 가입 신청이 `pending` 상태로 생성됨.
+
+#### 다음 작업
+- `사용자 관리`, `로그인 이력`, `그룹 관리`를 실제 하위 화면으로 분리한다.
+- 그룹 관리 화면에서 그룹 생성, 그룹 조회, 사용자 배정/역할 변경, 승인 대기열을 명확히 나눈다.
+- 일반 역할(`builder/reviewer/operator/viewer`)은 자기 소속 그룹만 조회하고, 역할 변경 화면은 보이지 않도록 실제 화면에서 한 번 더 확인한다.
+
+### 2026-06-10 Aidot식 사용자/그룹 관리 화면과 3단 좌측 메뉴 1차 반영
+- 신산님 지시에 따라 관리 화면을 카드 설명형 시안에서 Aidot admin에 가까운 목록/상세/수정 구조로 바꿨다.
+- 사용자 수가 늘어나는 상황을 고려해 로그인 세션의 사용자 전체 드롭다운 의존을 제거하고, 사용자 관리는 검색/필터/표 중심으로 정리했다.
+- 좌측 메뉴는 2단 카드가 아니라 `대분류 -> 중분류 -> 실제 메뉴` 형태의 3단 구조를 기준으로 재정리했다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - `사용자, 로그인, 권한` 화면에서 로그인 세션 카드를 화면 밖 hidden 영역으로 이동했다.
+  - 사용자 관리는 검색/필터/목록/기본 정보/정보 수정 영역으로 재배치했다.
+  - 그룹 관리는 검색/필터/목록/기본 정보/그룹 수정 영역으로 재배치했다.
+  - 좌측 메뉴의 각 대분류를 `details/summary` 기반 접기/펼치기 구조로 변경했다.
+  - 시스템 관리 아래에 Aidot admin식 하위 메뉴 영역을 추가했다.
+- `apps/studio/data/workflow.js`
+  - 시스템 관리 3단 메뉴 데이터(`사용자 관리`, `현황 조회`, `대화 관리`, `시스템 연계`, `기타 관리`)를 추가했다.
+  - 아직 실제 화면이 분리되지 않은 항목은 `access-management`로 임시 매핑했다.
+- `apps/studio/app.js`
+  - 시스템 관리 하위 메뉴 렌더링을 추가했다.
+  - 메뉴 권한/클릭 처리 대상에 시스템 관리 하위 메뉴를 포함했다.
+  - 사용자 조회를 Aidot식 표 형태로 변경하고, 검색어/그룹/역할/계정상태 필터를 추가했다.
+  - 가입 대기 사용자도 사용자 목록에 표시되도록 유지했다. 예: `cyhuh`가 `viewer` 가입 대기 상태로 보임.
+  - 사용자 행 선택 시 아래 기본 정보/정보 수정 패널이 갱신되도록 했다.
+  - 그룹 조회를 Aidot식 표 형태로 변경하고, 검색어/사용여부 필터를 추가했다.
+  - 그룹 행 선택 시 아래 기본 정보/그룹 수정 패널이 갱신되도록 했다.
+  - 승인 대기열은 단순 `승인` 버튼이 아니라, 승인 전에 그룹과 역할을 선택할 수 있도록 변경했다.
+- `packages/public-core/src/access-state.js`
+  - `approveGroupJoinRequest()`와 `approveAdminPermissionRequest()`가 승인 시 선택한 `groupId`, `requestedRole`을 반영할 수 있게 했다.
+- `scripts/serve-studio.js`
+  - 가입 승인/관리자 권한 승인 API가 선택된 `group_id`, `requested_role`을 받아 상태에 반영하도록 변경했다.
+- `apps/studio/styles.css`
+  - 좌측 메뉴 폭을 줄이고 카드 높이/상하 패딩을 낮췄다.
+  - 시스템 관리 하위 메뉴를 Aidot admin 메뉴처럼 조밀한 텍스트 목록 형태로 스타일링했다.
+  - 사용자/그룹 관리 표, 검색/필터 툴바, 상세/수정 2분할 영역 스타일을 추가했다.
+
+#### 확인 결과
+- `node --check apps\studio\app.js` 통과.
+- `node --check scripts\serve-studio.js` 통과.
+- `npm run studio:validate` 통과.
+
+#### 남은 작업
+- `사용자 관리`, `로그인 이력`, `그룹 관리`를 실제 개별 화면으로 분리한다.
+- 시스템 관리 하위 메뉴 중 아직 실제 구현 화면이 없는 항목은 Aidot admin 기능을 기준으로 순차 연결한다.
+- 그룹 수정 저장/삭제는 현재 화면만 배치했고, Aidot 호환 관리 API 연결 후 활성화한다.
+
+### 2026-06-10 시스템 관리 3단 메뉴와 AD 사용자/그룹 관리 위치 조정
+- 신산님 지시에 따라 `시스템 관리 -> 사용자 관리` 아래에 `AD 사용자/그룹 관리` 카드형 상위 항목을 배치했다.
+- `사용자 관리` 하위 메뉴에 `그룹 역할 관리`를 추가했다.
+- 오른쪽 화면은 하위 메뉴 선택에 따라 한 종류만 보이도록 바꿨다.
+  - `사용자 관리`: Aidot식 사용자 목록, 검색/필터, 기본 정보, 사용자 정보 수정
+  - `로그인 이력`: Aidot식 로그인 이력 표 영역
+  - `그룹 관리`: Aidot식 그룹 목록, 검색/필터, 기본 정보, 그룹 수정
+  - `그룹 역할 관리`: 그룹 역할 변경 테이블
+- Aidot 코드는 수정하지 않았다.
+
+#### 확인 결과
+- `node --check apps\studio\app.js` 통과.
+- `node --check apps\studio\data\workflow.js` 통과.
+- `npm run studio:validate` 통과.
+
+### 2026-06-10 Aidot 화면 기준 봇 제작 흐름 재정렬 및 Webchat 호환 API 추가
+- 신산님이 다시 확정한 대전제를 기준으로 정리했다.
+  - CGA는 Aidot와 봇 단위 100% 호환되어야 한다.
+  - Aidot와 CGA는 상호 업로드/다운로드가 가능해야 한다.
+  - Webchat은 수정 없이 Aidot와 CGA 양쪽에 접속할 수 있어야 한다.
+  - CGA는 새 내부 구조를 만드는 것이 아니라 Aidot 기능/데이터/API 구조를 유지하고 화면 흐름만 봇 제작 순서로 재배치한다.
+- Aidot 코드는 수정하지 않았다.
+
+#### 구현 내용
+- `apps/studio/index.html`
+  - `01 봇 생성`
+    - Aidot 봇 설정 중 봇 생성 이후 바꾸면 안 되는 구조 선택 항목을 배치했다.
+    - 기본 언어, LLM 사용 여부, 입력 방식, PDF 허용, 오케스트레이터 모드, Bot Server 위치, 기본 채널을 생성 단계에 둔다.
+  - `02 봇 설정`
+    - Aidot의 봇 설정 화면 형태를 기준으로 다시 배치했다.
+    - 봇 생성 이후 변경 가능한 기본 정보, 생성 정보, Vector DB 연결, 자동분류 가중치, 소개 영역을 둔다.
+  - `03 봇 구성`
+    - Aidot의 RAG 답변 문서 구성 화면 형태를 기준으로 다시 배치했다.
+    - 좌측은 텍스트/PDF 입력과 RAG 문서 구성, 우측은 의도 후보 영역으로 둔다.
+  - `04 봇 제작`
+    - Aidot의 의도 메인 화면을 기준으로 다시 배치했다.
+    - 의도/구성/개체/사전/평가/재학습/분석 카운트 탭, 검색, 의도 목록 표, 의도 추가 버튼을 둔다.
+    - 의도 클릭 시 Aidot의 `대화 시작` 화면으로 이동하고, `대화 설계` 화면으로 이어지도록 흐름을 만들었다.
+- `apps/studio/app.js`
+  - `renderBuildAidotScreen()`을 추가해 `04 봇 제작` 화면을 Aidot 의도 화면 흐름으로 렌더링한다.
+  - 의도 목록 -> 대화 시작 -> 대화 설계 전환을 지원한다.
+  - 기존 CGA 화면 설명성 카드가 아니라 실제 제품 화면 기준으로 우측 본문을 한 화면씩 보여주도록 맞췄다.
+- `apps/studio/styles.css`
+  - Aidot식 봇 설정, RAG 구성, 의도 목록, 대화 시작, 대화 설계 화면 스타일을 추가했다.
+  - 폰트 기준은 기존 합의 기준을 유지한다.
+    - 제품명 24
+    - 최상위 제목 14
+    - 제목/메뉴 12
+    - 본문 10
+    - 설명 9
+- `scripts/serve-studio.js`
+  - Aidot Webchat이 호출하는 채널 API 경로를 CGA 서버에 추가했다.
+  - 추가된 호환 경로:
+    - `POST /api/v1/channels/webchat/connect`
+    - `GET /api/v1/channels/webchat/bots`
+    - `GET /api/v1/channels/webchat/rooms`
+    - `POST /api/v1/channels/webchat/rooms`
+    - `GET /api/v1/channels/webchat/rooms/{room_id}`
+    - `DELETE /api/v1/channels/webchat/rooms/{room_id}`
+    - `POST /api/v1/channels/webchat/rooms/{room_id}/messages`
+    - `GET /api/v1/webchat/bootstrap`
+    - `POST /api/v1/webchat/bots/{bot_slug}/rooms/{room_id}/messages`
+  - 응답은 Aidot Webchat이 기대하는 `data` envelope와 `botMessage`, `botMessages`, `intent`, `runtime` 구조를 따른다.
+  - 현재는 CGA의 bot/detail asset 데이터를 읽어 `password_reset` 같은 의도 답변을 반환한다.
+  - Webchat 개발 서버 접속을 위해 `http://localhost:3330`, `http://127.0.0.1:3330` origin만 제한적으로 허용한다.
+  - 전역 `Access-Control-Allow-Origin: *`는 적용하지 않았다.
+- `scripts/check-webchat-channel-api.mjs`
+  - Aidot Webchat 호환 검증 스크립트를 추가했다.
+  - connect, room 생성, message 전송, legacy webchat message 경로까지 검증한다.
+- `package.json`
+  - `studio:webchat-channel-check`를 추가했다.
+  - `studio:validate`에 Webchat 호환 검증을 포함했다.
+
+#### 확인 결과
+- `node --check scripts\serve-studio.js` 통과.
+- `npm run studio:validate` 통과.
+- `http://127.0.0.1:4173/` HTTP 200 확인.
+- Aidot Webchat 호환 API 직접 검증:
+  - `POST /api/v1/channels/webchat/connect` 성공.
+  - `GET /api/v1/channels/webchat/bots` 성공.
+  - `POST /api/v1/channels/webchat/rooms` 성공.
+  - `POST /api/v1/channels/webchat/rooms/{room_id}/messages` 성공.
+  - `GET /api/v1/webchat/bootstrap` 성공.
+- `POST /api/v1/webchat/bots/supportbot-draft/rooms/{room_id}/messages` 성공.
+- `OPTIONS /api/v1/channels/webchat/connect`에서 `Origin: http://localhost:3330` preflight 성공.
+- 메시지 테스트 결과:
+  - 입력: `I need to reset my password`
+  - 매칭 의도: `password_reset`
+  - 답변: `Open Account Settings and choose Reset Password.`
+
+#### 남은 작업
+- 실제 Aidot Webchat 앱을 CGA 서버 URL(`http://127.0.0.1:4173`)로 연결해 브라우저 화면에서 최종 확인한다.
+  - 현재 API 레벨 검증은 통과했다.
+  - Webchat 앱을 `localhost:3330` 또는 `127.0.0.1:3330`에서 띄우는 경우 필요한 preflight는 통과했다.
+- `05 봇 테스트`는 Aidot 시뮬레이터 화면과 더 가깝게 정렬한다.
+- `06 봇 평가`는 Aidot 평가 화면 기준으로 정렬한다.
+- 봇 관리의 버전 관리/업로드/다운로드/운영버전 설정/복사/삭제를 Aidot 버전 관리 화면 기준으로 계속 정리한다.
+
+### 2026-06-11 - System Administration 좌측 메뉴 정리
+
+#### 작업 목적
+- `System Administration` 아래에 남아 있던 `AD User / Group Admin` 카드형 상위 메뉴가 실제 Aidot Admin 하위 메뉴와 중복되어 제거했다.
+- 좌측 메뉴는 Aidot Admin의 실제 하위 메뉴(`사용자 관리`, `로그인 이력`, `그룹 관리`, `그룹 역할 관리`, 현황 조회, 대화 관리, 시스템 연계, 기타 관리)만 보이도록 정리했다.
+
+#### 변경 내용
+- `apps/studio/data/workflow.js`
+  - `managementLinks`를 비워 중복 AD 상위 카드 렌더링을 제거했다.
+  - `systemAdminSections`의 `feature` 카드 정의를 제거하고 하위 메뉴 목록만 남겼다.
+- `apps/studio/app.js`
+  - `renderSystemAdminSubnav()`가 카드형 상위 항목을 만들지 않고 섹션 제목과 하위 메뉴만 렌더링하도록 수정했다.
+  - 하위 메뉴 선택 시 오른쪽 화면 제목이 선택한 메뉴명으로 바뀌도록 보강했다.
+  - 아직 Aidot Admin 상세 화면을 붙이지 않은 하위 메뉴는 사용자 관리 화면을 잘못 보여주지 않고 해당 메뉴 전용 준비 패널을 보여주도록 분리했다.
+- `apps/studio/index.html`
+  - System Administration 하위 메뉴별 오른쪽 패널 영역을 분리했다.
+- `apps/studio/styles.css`
+  - 미연결 하위 메뉴용 준비 패널 스타일을 추가했다.
+
+#### 기준
+- Aidot 소스는 수정하지 않았다.
+- CGA 화면 구조만 정리했다.
+- 이후 각 System Administration 하위 메뉴의 실제 오른쪽 내용은 Aidot Admin 화면 기준으로 순차 매핑한다.
+
+#### 추가 수정
+- 같은 `#access-management` 화면 안에서 하위 메뉴만 바뀌는 경우 오른쪽 패널이 다시 렌더링되지 않던 문제를 수정했다.
+  - `applyScreenLayout()`에서 활성 화면이 `access-management`이면 `renderAccessPanels()`를 호출하도록 보강했다.
+- 브라우저가 이전 `app.js`와 메뉴 데이터 모듈을 캐시해 수정이 반영되지 않는 문제를 막기 위해 Studio 모듈 URL 버전을 갱신했다.
+  - `index.html`: `/apps/studio/app.js?v=20260611-1`
+  - `app.js`: `workflow.js`, `layout.js` import에 `v=20260611-1` 적용
+- `npm run studio:validate` 통과.
+
+### 2026-06-11 - System Administration 하위 화면 실제 Admin 형태로 교체
+
+#### 작업 목적
+- `Aidot Admin의 ... 화면이 이 위치에 연결됩니다.`처럼 임시 안내 문구가 제품 화면에 남아 있던 문제를 제거했다.
+- System Administration 하위 메뉴를 Aidot Admin 화면 패턴에 맞춰 목록/상세/수정 구조로 바로 표시하도록 변경했다.
+
+#### 변경 내용
+- `apps/studio/index.html`
+  - 임시 placeholder 영역을 `data-admin-surface` 기반 실제 화면 컨테이너로 교체했다.
+- `apps/studio/app.js`
+  - `adminSurfaceSamples`와 `renderAdminSurface()`를 추가했다.
+  - 운영 대시보드, 운영/시스템 로그, 봇 현황, 학습 이력, 대화 이력, API 호출 이력, Queue 이력, 의도별 피드백, 공통 변수, 기본 메시지, 채널 관리, 봇스테이션 연계, 템플릿 목록, 라이선스 조회 화면을 테이블/기본정보/수정 패널 구조로 렌더링한다.
+  - 임시 문구 렌더링을 제거했다.
+- `apps/studio/styles.css`
+  - Aidot Admin형 테이블, 툴바, 상세/수정 패널 스타일을 추가했다.
+  - 임시 placeholder 스타일을 제거했다.
+- 캐시 무효화
+  - `styles.css?v=20260611-2`
+  - `app.js?v=20260611-2`
+  - 내부 `workflow.js`, `layout.js` import도 `v=20260611-2`로 갱신했다.
+
+#### 확인 결과
+- `rg -n "연결됩니다|admin-placeholder|data-admin-placeholder|이 위치에" apps/studio` 결과 없음.
+- `npm run studio:validate` 통과.
+- `http://127.0.0.1:4173/`에서 새 CSS/JS 버전 응답 확인.
+- Aidot 저장소는 수정하지 않았다.
+
+### 2026-06-11 - 사용자/그룹 관리 화면 운영형 목록/팝업 구조 적용
+
+#### 작업 목적
+- 사용자와 그룹이 많아질 때 관리 화면이 한 화면에 모든 행을 계속 늘려 보여주는 문제를 해결한다.
+- CGA 전체 화면 기준을 `상단 버튼/조회 조건`, `중앙 목록`, `상세/수정 팝업`, `기본 화면 스크롤 지양`으로 잡는다.
+
+#### 변경 내용
+- `apps/studio/index.html`
+  - 사용자 관리 상단 툴바에 `상세/수정` 버튼을 추가했다.
+  - 사용자 상세/수정 영역을 목록 아래 고정 패널에서 팝업 모달로 이동했다.
+  - 그룹 관리 상단 툴바에도 `상세/수정` 버튼을 추가했다.
+  - 그룹 상세/수정 영역도 목록 아래 고정 패널에서 팝업 모달로 이동했다.
+- `apps/studio/app.js`
+  - 사용자 목록에 페이지 크기(`20/50/100개씩 보기`)와 이전/다음 페이징을 추가했다.
+  - 사용자 검색/필터 변경 시 1페이지로 돌아가도록 했다.
+  - 사용자 행 클릭 또는 상단 `상세/수정` 버튼 클릭 시 사용자 상세 팝업이 열리도록 했다.
+  - 팝업 바깥 클릭 또는 닫기 버튼으로 팝업을 닫도록 했다.
+  - 그룹 목록도 페이지 크기(`20/50/100개씩 보기`)와 이전/다음 페이징을 사용하도록 맞췄다.
+  - 그룹 검색/필터 변경 시 1페이지로 돌아가도록 했다.
+  - 그룹 행 클릭 또는 상단 `상세/수정` 버튼 클릭 시 그룹 상세 팝업이 열리도록 했다.
+- `apps/studio/styles.css`
+  - 사용자/그룹 목록 고정 높이, sticky 헤더, 페이징 바, 상세 팝업 스타일을 추가했다.
+- 캐시 무효화
+  - `styles.css?v=20260611-3`
+  - `app.js?v=20260611-3`
+  - 내부 `workflow.js`, `layout.js` import도 `v=20260611-3`으로 갱신했다.
+
+#### 기준
+- Aidot 소스는 수정하지 않았다.
+- 이 패턴은 사용자/그룹 관리에 먼저 적용했고, 이후 봇 관리/운영 화면에도 같은 원칙으로 확장한다.
+
+## 2026-06-11 어울 작업 기록 - Aidot Admin 원본 기준 재정렬
+
+### 사용자 지시 핵심
+- Aidot는 수정 금지. CGA에서만 작업한다.
+- CGA Studio의 System Administration은 CGA식 재해석이 아니라 Aidot Admin 화면을 원본 기준으로 옮긴다.
+- 글자, 폰트, 화면 흐름도 Aidot 기준을 우선한다.
+- 사용자/그룹/로그인 이력은 Aidot Admin의 목록 중심 UX를 따른다.
+- 상세/수정은 목록 아래에 늘어놓지 않고 상세 화면 또는 팝업으로 처리한다.
+- 1920x1080 기준, 스크롤을 최소화하고 버튼은 상단에 둔다.
+
+### 이번 정리 내용
+- `그룹 역할 관리` CGA 전용 메뉴 제거.
+- `CGA식`, `이 위치에 연결됩니다` 같은 placeholder/설명성 문구 잔여 확인 및 제거.
+- 사용자 관리 목록을 Aidot Admin 사용자 관리 컬럼 기준으로 정렬했다.
+  - 체크박스, 사용자 계정, 사용자 이름, 그룹, 역할, 신청일시, 가입상태, 계정상태
+- 사용자 목록 필터를 Aidot 기준으로 맞췄다.
+  - 전체 그룹, 전체 역할, 전체 계정상태, 전체 가입상태, 조회
+- 로그인 이력 화면을 Aidot Admin 로그인 이력 컬럼 기준으로 정렬했다.
+  - 사용자 계정, 사용자 이름, 그룹, 역할, 접속한 IP, 로그인 시간, 로그아웃 시간
+- 신청일시에 `jr-*` 같은 내부 request id가 보이지 않도록 `-` 처리했다.
+- 사용자 계정상태는 내부값 대신 Aidot식 라벨로 표시한다.
+  - 활성, 비활성, 잠김, 비밀번호 초기화
+- 미구현 `반려` 버튼은 화면에서 제거했다. 서버/API 계약 없이 버튼만 보이면 안 되기 때문이다.
+- 사용자 승인은 기존 approve 흐름만 유지한다.
+- Aidot 원본 참조 위치를 확인했다.
+  - `D:\Project\Aidot\apps\web\components\admin-console-layout.tsx`
+  - `D:\Project\Aidot\apps\web\components\admin-interactive-table-page.tsx`
+  - `D:\Project\Aidot\apps\web\app\admin\users\page.tsx`
+  - `D:\Project\Aidot\apps\web\app\admin\groups\page.tsx`
+  - `D:\Project\Aidot\apps\web\app\admin\login-history\page.tsx`
+
+### 검증
+- `node --check apps\studio\app.js` 통과.
+- `npm run studio:validate` 최종 통과.
+- `http://127.0.0.1:4173/` 응답 200 확인.
+- Studio 번들 버전 `20260611-4` 제공 확인.
+- `admin/admin` 로그인 API 응답 확인.
+- Aidot 작업 트리에는 수정 목록 없음. 단, 홈 git ignore 접근 경고는 발생했으나 Aidot 파일 변경은 출력되지 않았다.
+
+### 남은 작업
+- `adminSurfaceSamples` 기반 임시 Admin 화면을 제거하고 Aidot Admin 원본 페이지 구조로 계속 대체해야 한다.
+- 우선순위:
+  1. 사용자 관리 상세/수정 팝업을 Aidot 상세 화면 기준으로 완성
+  2. 그룹 관리 목록/상세/수정 Aidot 기준 완성
+  3. 로그인 이력 Aidot 기준 완성
+  4. 현황 조회/대화 관리/시스템 연계/기타 관리 하위 메뉴를 Aidot 원본 화면 기준으로 이식
+- 반려 기능은 Aidot API에는 존재하지만 현재 CGA `serve-studio.js`에는 reject endpoint가 없다. 새 API를 만들지 말라는 지시가 있으므로, 승인/반려를 완성하려면 Aidot의 `/api/v1/admin/signup-requests/{id}/reject`와 호환되는 형태로 CGA API를 맞추는지 먼저 결정해야 한다.
+
+## 2026-06-11 어울 작업 기록 - Aidot Admin 메뉴 복사 기준 재확정
+
+### 사용자 지시 핵심
+- "복사"는 CGA식 재해석이 아니라 Aidot Admin 메뉴명, 순서, 화면 흐름을 그대로 가져오는 의미다.
+- Aidot에는 없는 `역할 관리`만 CGA 운영에 필요한 추가 메뉴로 둔다.
+- System Administration 하위 메뉴는 Aidot Admin 원본 메뉴를 기준으로 유지한다.
+- 큰 하단 버튼형 `조회`, `상세/수정`은 제거하고 Aidot처럼 조회 조건 우측의 `조회` 버튼만 둔다.
+- 사용자 상세/수정은 목록 아래 고정 패널이 아니라 팝업으로 연다.
+- `그룹 가입신청`, `관리자 권한 요청` 같은 설명/요청 블록은 사용자 관리 본문에 노출하지 않는다.
+
+### 이번 반영 내용
+- `apps/studio/data/workflow.js`
+  - Aidot Admin 메뉴 순서를 다시 확인했다.
+  - 사용자 관리: 사용자 관리, 로그인 이력, 그룹 관리 순서를 유지했다.
+  - CGA 전용으로만 `역할 관리`를 사용자 관리 하위에 추가했다.
+  - 현황 조회, 대화 관리, 시스템 연계, 기타 관리는 Aidot Admin 원본 메뉴명과 순서를 유지했다.
+- `apps/studio/index.html`
+  - 누락된 `Bot Creation` 화면 섹션을 복구했다.
+  - `access-management` 본문을 하위 메뉴별 패널 구조로 정리했다.
+  - 사용자 관리, 그룹 관리, 역할 관리, 로그인 이력, Aidot Admin 나머지 하위 메뉴가 각각 선택된 메뉴에서만 보이도록 정리했다.
+  - `상세/수정` 큰 버튼과 잘못된 요청 블록 노출을 제거했다.
+  - 사용자/그룹 상세는 팝업 모달로 유지했다.
+- `apps/studio/app.js`
+  - 기존 사용자/그룹/역할 데이터 렌더링을 유지하고, 선택한 System Administration 하위 메뉴 하나만 보이도록 연결했다.
+- Aidot 저장소는 수정하지 않았다.
+
+### 검증
+- `node --check apps\\studio\\app.js` 통과.
+- `node --check apps\\studio\\data\\workflow.js` 통과.
+- `npm run studio:validate` 통과.
+- `http://127.0.0.1:4173/` 서버 응답 `200 OK` 확인.
+
+### 다음 작업 기준
+- System Administration의 나머지 하위 화면은 placeholder 문구가 아니라 Aidot Admin 원본 화면 구조를 기준으로 계속 교체한다.
+- 봇 제작 워크플로우는 `봇 생성 -> 봇 설정 -> 봇 구성 -> 봇 제작 -> 봇 테스트 -> 봇 평가` 순서로 유지한다.
+- 봇 제작은 Aidot 의도 목록/대화 시작/대화 설계 화면을 기준으로 붙인다.
+- 봇 구성은 Aidot RAG 문서 구성 화면을 기준으로 붙인다.
+- Aidot와 CGA는 봇 패키지/API/Webchat 호환을 깨지 않도록 CGA 쪽에서 맞춘다.
+
+
+## 2026-06-11 Admin 원본 복사/실데이터 전환
+
+- Aidot 원본 Admin의 템플릿 목록, 공통 변수, 기본 메시지, 채널, 라이선스 조회 화면 구조를 CGA System Administration 하위 메뉴에 맞춰 복사하는 방향으로 정리했습니다.
+- CGA 서버에 `admin-resources.json` 기반 실제 Admin 기초 데이터 저장소를 추가했습니다. 이 데이터는 화면 가짜 데이터가 아니라 서버 API가 읽고 쓰는 저장 데이터입니다.
+- `/api/cga/admin/resources` API를 추가해 템플릿, 공통 변수, 기본 메시지, 채널, 라이선스, 로그인 이력을 한 번에 조회하도록 했습니다.
+- `/api/cga/admin/templates` API에 목록 조회, 등록, 수정, 삭제를 추가했습니다.
+- Studio Admin 렌더러는 빈 플레이스홀더 대신 서버 API의 실제 데이터를 사용하도록 변경했습니다.
+- 템플릿 목록은 Aidot 원본의 검색 조건, 상단 버튼, 컬럼, 하단 페이지네이션 구조를 기준으로 렌더링합니다.
+- 로그인 이력은 서버 로그인/로그아웃 API에서 기록한 실제 이력을 사용합니다.
+- 검증 스크립트 `scripts/check-admin-resources-api.cjs`를 추가했습니다. 임시 서버에서 Admin 리소스 조회와 템플릿 등록/수정/삭제를 실행하며, 5초 초과 요청은 실패로 처리합니다.
+- 검증 결과: 리소스 조회 15ms, 템플릿 목록 2ms, 템플릿 등록 66ms로 모두 5초 기준 안쪽입니다.
+- Aidot 저장소는 수정하지 않았고, CGA 폴더에서만 작업했습니다.
+
+## 2026-06-11 Admin 실제 데이터/복사 화면 정리
+
+- System Administration 하위 화면에서 임시 설명/placeholder 문구를 제거하고 Aidot Admin 원본 화면 흐름 기준으로 정리했다.
+- Admin 기초데이터는 서버 저장 데이터(.cga-data/admin-resources.json)를 사용한다. 가짜 데이터는 사용하지 않는다.
+- 실제 실행 서버 http://127.0.0.1:4173 기준 데이터: 템플릿 10건, 공통변수 8건, 기본 메시지 8건, 채널 4건, 라이선스 3건, 로그인 이력 2건.
+- 실제 실행 서버 응답 시간: templates 49ms, common-variables 3ms, default-messages 2ms, channels 2ms, resources 1ms, 템플릿 생성/수정/삭제 원복 1741ms.
+- 검증: node --check apps/studio/app.js 통과, node --check scripts/serve-studio.js 통과, npm run studio:admin-resources-check 통과, npm run studio:auth-api-check 통과, npm run studio:validate 통과.
+- 실행 서버 HTML 확인: app.js?v=20260611-8, styles.css?v=20260611-8 반영. 화면용 map/draft 임시 문구 제거 확인.
+- Aidot 저장소는 수정하지 않았다.
+- 다음 작업: Aidot Admin 각 화면의 상세/등록/수정 UX를 계속 원본 기준으로 맞추고, 모든 조회 화면은 실제 API 응답만 표시한다.

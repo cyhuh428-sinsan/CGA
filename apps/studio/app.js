@@ -1,5 +1,5 @@
-import { workflowSteps, productionLinks, systemAdminLinks, referenceLinks, errorSamples } from "./data/workflow.js";
-import { getVisibleLayout } from "./data/layout.js";
+import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260611-5";
+import { getVisibleLayout } from "./data/layout.js?v=20260611-5";
 import { sampleStudioState } from "./data/sample-state.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
@@ -15,7 +15,9 @@ import {
   canCreateManagedGroup,
   createManagedGroup,
   createSampleAccessState,
+  isSystemAdmin,
   loginAsUser,
+  normalizeAccessState,
   getEffectiveGroupScopes,
   requestGroupJoin,
   summarizeAccess,
@@ -29,14 +31,25 @@ import {
   updateGroupMembershipRole
 } from "/packages/public-core/src/access-state.js";
 
-const AUTH_SESSION_STORAGE_KEY = "cga-studio-session-token";
+const AUTH_SESSION_STORAGE_KEY = "cga-studio-session-token-v2";
+const LAST_SCREEN_STORAGE_KEY = "cga-studio-last-screen";
 const WORKSPACE_SNAPSHOT_STORAGE_PREFIX = "cga-studio-workspace-snapshot";
 const WORKSPACE_SNAPSHOT_VERSION = 1;
 const WORKSPACE_SNAPSHOT_TTL_MS = 60000;
+const LOGIN_ID_STORAGE_KEY = "cga-studio-login-id";
 
 const currentStudioState = structuredClone(sampleStudioState);
 let currentCollaborationState = createSampleCollaborationState();
-let currentAccessState = createSampleAccessState();
+let currentAccessState = normalizeAccessState(createSampleAccessState());
+let currentAdminResources = {
+  templates: [],
+  common_variables: [],
+  default_messages: [],
+  channels: [],
+  botstation_links: [],
+  licenses: [],
+  login_history: []
+};
 let currentWorkspaceGroupId = "g-support";
 let currentWorkspaceBotId = "supportbot-draft";
 let currentWorkspaceBots = [
@@ -94,9 +107,20 @@ let apiRegistryRefreshPromise = null;
 const apiRegistryLoadedAtByKey = new Map();
 const API_REGISTRY_CACHE_TTL_MS = 15000;
 const MANAGED_GROUP_ROLES = ["group_admin", "builder", "reviewer", "operator", "viewer"];
+let currentSystemAdminSubview = "users";
+let currentAdminResourceModal = null;
+let selectedAccessUserId = "admin";
+let selectedAccessGroupId = "g-admin";
+let userListPage = 1;
+let userListPageSize = 100;
+let accessUserModalOpen = false;
+let groupListPage = 1;
+let groupListPageSize = 20;
+let accessGroupModalOpen = false;
 let currentIntentSearch = "";
 let currentIntentFilter = "all";
 let currentDetailTab = "intent";
+let currentBuildAidotView = "list";
 let currentCompositionState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
@@ -169,6 +193,28 @@ let currentOperationsState = {
     last_deployed_at: null
   },
   updated_at: null
+};
+const DEFAULT_ACTIVE_SCREEN_ID = "detail";
+let activeScreenId = "";
+
+const HELP_TOPICS = {
+  access: {
+    title: "사용자 / 그룹 관리 안내",
+    body: `
+      <section>
+        <h4>관리 기준</h4>
+        <p>사용자는 그룹 안에서 역할을 받고, 그 역할에 따라 메뉴와 화면 접근 권한이 결정됩니다.</p>
+      </section>
+      <section>
+        <h4>가입 / 승인</h4>
+        <p>신규 사용자는 개인 그룹을 자동 생성하지 않습니다. 가입 후 viewer 역할로 가입 신청이 생성되고, 관리자가 그룹과 역할을 확정합니다.</p>
+      </section>
+      <section>
+        <h4>언어</h4>
+        <p>CGA 화면과 오류 메시지는 사용자 언어를 따르고, 봇 오류 메시지는 봇 언어를 따릅니다.</p>
+      </section>
+    `
+  }
 };
 
 const dynamicMessages = {
@@ -791,7 +837,7 @@ const dynamicMessages = {
 };
 
 function getCurrentLocale() {
-  return document.querySelector("[data-locale-select]")?.value || getCurrentAccessUser()?.locale || window.cgaStudioI18n?.getLocale?.() || document.documentElement.lang || "en";
+  return document.querySelector("[data-locale-select]")?.value || window.cgaStudioI18n?.getLocale?.() || localStorage.getItem("cga.studio.locale") || getCurrentAccessUser()?.locale || document.documentElement.lang || "en";
 }
 
 function t(key, fallback = key) {
@@ -1099,6 +1145,48 @@ function clearAuthSession() {
   localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
 }
 
+function hasAuthSession() {
+  return Boolean(localStorage.getItem(AUTH_SESSION_STORAGE_KEY));
+}
+
+function getEntryAuthMode() {
+  return document.querySelector(".login-form-card")?.dataset.entryMode || "login";
+}
+
+function setEntryAuthMode(mode) {
+  const nextMode = mode === "signup" ? "signup" : "login";
+  const card = document.querySelector(".login-form-card");
+  const signupPanel = document.querySelector("[data-entry-signup-panel]");
+  if (card) card.dataset.entryMode = nextMode;
+  document.querySelectorAll("[data-entry-login-panel]").forEach((loginPanel) => {
+    loginPanel.hidden = nextMode !== "login";
+  });
+  if (signupPanel) signupPanel.hidden = nextMode !== "signup";
+  document.querySelectorAll("[data-entry-auth-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.entryAuthTab === nextMode);
+  });
+}
+
+function renderEntryAuthMessage() {
+  renderMessageNode(document.querySelector("[data-entry-auth-message]"), currentAuthMessage, t("admin.authentication", "Authentication"));
+}
+
+function applyAuthGate() {
+  const authenticated = hasAuthSession();
+  const shell = document.querySelector(".app-shell");
+  const topbar = document.querySelector(".topbar");
+  const workflow = document.querySelector(".workflow");
+  const loginEntry = document.querySelector("[data-login-entry]");
+  if (shell) shell.classList.toggle("unauthenticated", !authenticated);
+  if (topbar) topbar.hidden = !authenticated;
+  if (workflow) workflow.hidden = !authenticated;
+  if (loginEntry) loginEntry.hidden = authenticated;
+  document.querySelectorAll("[data-screen-id]").forEach((section) => {
+    if (!authenticated) section.hidden = true;
+  });
+  return authenticated;
+}
+
 async function createCgaResponseError(response, fallbackMessage) {
   let payload = null;
   try {
@@ -1147,6 +1235,7 @@ function applyAccessStatePayload(payload) {
     userOverrides: Array.isArray(payload.user_overrides) ? payload.user_overrides : currentAccessState.userOverrides,
     joinRequests: Array.isArray(payload.join_requests) ? payload.join_requests : currentAccessState.joinRequests,
     adminRequests: Array.isArray(payload.admin_requests) ? payload.admin_requests : currentAccessState.adminRequests,
+    loginHistory: Array.isArray(payload.login_history) ? payload.login_history : (currentAccessState.loginHistory || []),
     policy: payload.policy || currentAccessState.policy
   };
   return true;
@@ -1520,6 +1609,25 @@ async function refreshWorkspaceBotsFromServer(groupId = currentWorkspaceGroupId)
     if (nextBot) applyCurrentBotToStudioState(nextBot);
   }
   return true;
+}
+
+
+async function refreshAdminResourcesFromServer() {
+  try {
+    const payload = await requestCgaJson("/api/cga/admin/resources");
+    currentAdminResources = {
+      templates: Array.isArray(payload.templates) ? payload.templates : [],
+      common_variables: Array.isArray(payload.common_variables) ? payload.common_variables : [],
+      default_messages: Array.isArray(payload.default_messages) ? payload.default_messages : [],
+      channels: Array.isArray(payload.channels) ? payload.channels : [],
+      botstation_links: Array.isArray(payload.botstation_links) ? payload.botstation_links : [],
+      licenses: Array.isArray(payload.licenses) ? payload.licenses : [],
+      login_history: Array.isArray(payload.login_history) ? payload.login_history : []
+    };
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function refreshWorkspaceDataFromServer({ includeBots = false } = {}) {
@@ -2048,7 +2156,7 @@ function getCurrentAccessUser() {
 }
 
 function syncStudioLocaleToCurrentUser() {
-  const locale = getCurrentLocale();
+  const locale = window.cgaStudioI18n?.getLocale?.() || localStorage.getItem("cga.studio.locale") || getCurrentLocale();
   if (window.cgaStudioI18n?.setLocale) {
     window.cgaStudioI18n.setLocale(locale);
     applyDynamicLocaleOverrides(locale);
@@ -2184,10 +2292,124 @@ function renderOperationsPanels() {
   if (containerHealth) containerHealth.textContent = operate.container_health === "healthy" ? t("operate.healthy", "Healthy") : operate.container_health || "-";
   if (cost) cost.textContent = operate.llm_cost_status === "below_threshold" ? t("operate.below", "Below threshold") : operate.llm_cost_status || "-";
   if (compatibility) compatibility.textContent = operate.compatibility === "preserved" ? t("operate.preserved", "Preserved") : operate.compatibility || "-";
+  renderBuildAidotScreen();
+}
+
+function renderBuildAidotScreen() {
+  const container = document.querySelector("[data-build-aidot-screen]");
+  if (!container) return;
+  const rows = getAidotIntentRows();
+  if (!rows.some((row) => row.id === currentSelectedIntentId)) currentSelectedIntentId = rows[0]?.id || "";
+  const selected = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || {};
+  const botName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "테스트봇";
+  const renderHeader = () => `
+    <div class="aidot-bot-main-head">
+      <div class="aidot-bot-title">
+        <div class="bot-avatar-large"></div>
+        <div>
+          <div class="aidot-title-row"><h2>${escapeText(botName)} - 시멘틱 RAG</h2><select><option>Ver. 1 · 테스트형</option><option>Ver. 1 · 운영</option></select><span class="test-badge">테스트형</span><span class="star-mark">★</span><button type="button" class="icon-button">⋮</button></div>
+          <strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: Semantic Engine RAG 답변</strong>
+          <div class="train-row"><button type="button" data-build-run>학습하기</button><span>학습성공 2026-05-31 02:15 cyhuh</span></div>
+        </div>
+      </div>
+      <div class="aidot-count-tabs">
+        <button class="active"><span>☞ 의도</span><b>${rows.length || 0}</b></button>
+        <button><span>☷ 구성</span><b>-</b></button>
+        <button><span>⊙ 개체</span><b>${currentEntityAssets.length}</b></button>
+        <button><span>▣ 사전</span><b>${currentDictionaryAssets.length}</b></button>
+        <button><span>⌁ 평가</span><b>-</b></button>
+        <button><span>↔ 재학습</span><b>0</b></button>
+        <button><span>⌁ 분석</span><b>-</b></button>
+      </div>
+    </div>
+  `;
+  const renderList = () => `
+    ${renderHeader()}
+    <div class="aidot-intent-main-toolbar">
+      <div class="aidot-search-line"><input data-build-intent-search placeholder="의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색해주세요." /><select><option>전체</option></select></div>
+      <div class="aidot-list-actions"><button type="button" data-aidot-intent-add>+ 의도/모듈 추가</button><button type="button" class="icon-button">⋮</button></div>
+    </div>
+    <div class="aidot-list-control"><strong>전체 ${rows.length}건</strong><select><option>10개씩 보기</option></select><button type="button" disabled>삭제</button></div>
+    <div class="aidot-main-table">
+      <div class="aidot-main-table-head">
+        <span><input type="checkbox" /></span><span>ID ⇅</span><span>오...</span><span>구분 ⇅</span><span>의도/모듈명 ⇅</span><span>표시명 ⇅</span><span>학습문장 ⇅</span><span>대화카드 ⇅</span><span>태그 ⇅</span><span>기타옵션</span><span>최종수정일시 ⇅</span><span>최종수정자 ⇅</span><span></span>
+      </div>
+      ${rows.map((row) => `
+        <button type="button" class="aidot-main-table-row" data-build-intent-open="${escapeText(row.id)}">
+          <span><input type="checkbox" /></span><span>${escapeText(row.rowId)}</span><span></span><span>의도</span><strong>${escapeText(row.id)}</strong><span>${escapeText(row.displayName)}</span><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${row.tagCount || 0}</span><span class="option-dots"><b>T</b><b>R</b><b>F</b></span><span>${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span><span>⋮</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+  const utterances = selected.utterances?.length ? selected.utterances : currentIntentUtteranceAssets.filter((item) => item.division === selected.id);
+  const renderStart = () => `
+    <div class="aidot-dialog-head">
+      <strong>의도 (${escapeText(selected.id || "")}) &gt; 대화 시작</strong><button type="button" class="help-icon">?</button><span>&gt; 대화 설계</span>
+      <div><button type="button">저장하기</button><button type="button" data-open-dialog-design>저장 후 대화설계</button></div>
+    </div>
+    <div class="aidot-dialog-start">
+      <section>
+        <div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><input placeholder="학습문장을 검색하세요." /><button type="button">학습 문장 추천</button><button type="button">삭제</button><button type="button" class="icon-button">⋮</button></div>
+        <div class="aidot-add-row"><span>구분</span><span>학습문장</span><button type="button">추가</button></div>
+        <p class="muted-line">Validation Set 상태: Random</p>
+        <div class="aidot-utterance-table">
+          <div><span><input type="checkbox" /></span><strong>구분</strong><strong>학습문장</strong></div>
+          ${(utterances.length ? utterances : [{ utterance: "해약한다고요" }, { utterance: "이미 해지했어요" }, { utterance: "나 이거 해지해달라고 했는데요" }]).map((item) => `
+            <div><span><input type="checkbox" /></span><span class="round-token">T</span><span>${escapeText(item.utterance)}</span></div>
+          `).join("")}
+        </div>
+      </section>
+      <section>
+        <div class="aidot-section-title"><strong>추출할 개체 0</strong><button type="button">선택 개체 추가</button><button type="button">삭제</button></div>
+        <input placeholder="대화에서 사용할 개체를 검색하여 파라미터로 등록하세요." />
+        <div class="aidot-empty-face">··</div>
+        <p class="empty-help">아직 추출할 개체가 선택되지 않았습니다.<br />개체를 검색한 뒤 선택해서 변수로 등록해주세요.</p>
+      </section>
+    </div>
+  `;
+  const renderDesign = () => `
+    <div class="aidot-dialog-head">
+      <strong>의도 (${escapeText(selected.id || "")}) &gt; 대화 시작 &gt; 대화 설계</strong><button type="button" class="help-icon">?</button>
+      <div><input placeholder="봇 메시지를 검색하세요." /><button type="button">저장</button><button type="button" class="icon-button">⋮</button></div>
+    </div>
+    <div class="dialog-design-layout">
+      <div class="dialog-canvas">
+        <div class="canvas-tools"><button>의도 카드 2개</button><button>링크 2개</button><button>필수 변수 기본 반복 3회</button></div>
+        <div class="node-row">
+          <div class="flow-node start">▶<strong>대화 시작</strong><span>대화 시작</span></div><i></i>
+          <div class="flow-node talk">“ ”<strong>답변</strong><span>Talk</span></div><i></i>
+          <div class="flow-node end">■<strong>End</strong><span>End</span></div>
+        </div>
+        <div class="zoom-row"><button>-</button><strong>100%</strong><button>+</button></div>
+      </div>
+      <aside class="dialog-property">
+        <div class="card-tabs"><button class="active">대화 테스트</button><button>속성</button><button>변수</button></div>
+        <label>카드 이름<input value="답변" /></label>
+        <section><strong>기본 메시지</strong><textarea>{{$_rag_answer_text}}
+{{$_rag_answers}}</textarea><button type="button">+ 메시지 추가</button></section>
+        <section><strong>템플릿 메시지</strong><button type="button">템플릿 메시지 설정</button></section>
+        <section><strong>사용자 응답 처리</strong><p><label><input type="radio" checked /> 사용 안함</label> <label><input type="radio" /> 단일 선택</label> <label><input type="radio" /> 응답 전달</label></p></section>
+      </aside>
+    </div>
+  `;
+  container.innerHTML = currentBuildAidotView === "design" ? renderDesign() : currentBuildAidotView === "start" ? renderStart() : renderList();
+  container.querySelectorAll("[data-build-intent-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      currentSelectedIntentId = button.dataset.buildIntentOpen;
+      currentBuildAidotView = "start";
+      renderBuildAidotScreen();
+    });
+  });
+  container.querySelector("[data-open-dialog-design]")?.addEventListener("click", () => {
+    currentBuildAidotView = "design";
+    renderBuildAidotScreen();
+  });
 }
 
 function renderAllStatePanels() {
   renderGlobalMessage();
+  renderNavigationRails();
+  renderWorkflowRail();
   renderCreateSummary();
   renderTopContext();
   bindCreateControls();
@@ -2202,6 +2424,7 @@ function renderAllStatePanels() {
   renderStateSummary();
   renderReadinessIssues();
   renderOperationsPanels();
+  bindAccessNavigationGuard();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }
 
@@ -2624,22 +2847,35 @@ function bindCreateControls() {
 function applyScreenLayout() {
   const workspace = document.querySelector(".workspace");
   if (!workspace) return;
+  if (!applyAuthGate()) return;
+  const visibleLayout = getVisibleLayout();
+  const visibleIds = visibleLayout.map((item) => item.id);
+  if (!activeScreenId || !visibleIds.includes(activeScreenId)) {
+    const hashId = window.location.hash.replace("#", "");
+    activeScreenId = visibleIds.includes(hashId) ? hashId : DEFAULT_ACTIVE_SCREEN_ID;
+  }
   const sectionsById = new Map(
     Array.from(workspace.querySelectorAll("[data-screen-id]")).map((section) => [section.dataset.screenId, section])
   );
-  getVisibleLayout().forEach((item) => {
+  visibleLayout.forEach((item) => {
     const section = sectionsById.get(item.id);
     if (!section) return;
     section.dataset.layoutGroup = item.group;
     section.dataset.layoutMode = item.mode;
-    section.hidden = false;
+    section.hidden = item.id !== activeScreenId;
+    section.classList.toggle("selected", item.id === activeScreenId);
     workspace.appendChild(section);
   });
   sectionsById.forEach((section, id) => {
-    if (!getVisibleLayout().some((item) => item.id === id)) {
+    if (!visibleIds.includes(id)) {
       section.hidden = true;
+      section.classList.remove("selected");
     }
   });
+  updateNavigationActiveState();
+  if (activeScreenId === "access-management") {
+    renderAccessPanels();
+  }
 }
 
 function htmlList(items) {
@@ -3030,9 +3266,20 @@ function renderTopContext() {
   const currentGroupBadge = document.querySelector("[data-current-group-badge]");
   const currentBotBadge = document.querySelector("[data-current-bot-badge]");
   const currentVersionBadge = document.querySelector("[data-current-version-badge]");
+  const topAuthStatus = document.querySelector("[data-top-auth-status]");
   if (currentUserBadge) {
     const roles = current.memberships.map((item) => item.role).join(", ") || t("common.noRole", "no role");
-    currentUserBadge.textContent = `${current.user?.name || t("common.user", "User")} · ${current.user?.locale || "en"} · ${roles}`;
+    currentUserBadge.classList.add("login-state");
+    currentUserBadge.textContent = `${t("admin.authentication", "Authentication")}: ${current.user?.name || t("common.user", "User")} · ${roles}`;
+  }
+  if (topAuthStatus) {
+    topAuthStatus.classList.toggle("error", currentAuthMessage?.kind === "error");
+    if (currentAuthMessage) {
+      const body = currentAuthMessage.bodyKeyOrText || "";
+      topAuthStatus.textContent = `${t(currentAuthMessage.titleKey, t("admin.authentication", "Authentication"))}: ${body.includes(".") ? t(body, body) : body}`;
+    } else {
+      topAuthStatus.textContent = `${current.user?.id || ""}`;
+    }
   }
   if (currentGroupBadge) currentGroupBadge.textContent = `${t("top.groupPrefix", "Group")}: ${group?.name || t("common.none", "None")}`;
   if (currentBotBadge) currentBotBadge.textContent = `${t("top.botPrefix", "Bot")}: ${currentStudioState.bot.name || bot?.name || t("common.none", "None")}`;
@@ -3042,6 +3289,10 @@ function renderTopContext() {
 function bindWorkspaceActions() {
   const groupSelect = document.querySelector("[data-workspace-group]");
   const createButton = document.querySelector("[data-workspace-create]");
+  const createVersionAdd = document.querySelector("[data-create-version-add]");
+  const createBotCopy = document.querySelector("[data-create-bot-copy]");
+  const createVersionManage = document.querySelector("[data-create-version-manage]");
+  const createVersionUpload = document.querySelector("[data-create-version-upload]");
   const downloadBot = document.querySelector("[data-download-bot-package]");
   const uploadBot = document.querySelector("[data-upload-bot-package]");
   const downloadVersion = document.querySelector("[data-download-version-package]");
@@ -3096,6 +3347,37 @@ function bindWorkspaceActions() {
       renderWorkspaceHome();
       renderAllStatePanels();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  }
+  if (createVersionAdd && createVersionAdd.dataset.bound !== "true") {
+    createVersionAdd.dataset.bound = "true";
+    createVersionAdd.addEventListener("click", () => {
+      const versionInput = document.querySelector('[data-structural-field="bot.version"]');
+      const current = String(versionInput?.value || currentStudioState.bot.version || "v0.1");
+      const match = current.match(/^v?(\d+)(?:\.(\d+))?$/i);
+      const next = match ? `v${match[1]}.${Number(match[2] || 0) + 1}` : `${current}-copy`;
+      if (versionInput) {
+        versionInput.value = next;
+        versionInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      currentStudioState.bot.version = next;
+      renderTopContext();
+      renderCreateSummary();
+    });
+  }
+  if (createBotCopy && createBotCopy.dataset.bound !== "true") {
+    createBotCopy.dataset.bound = "true";
+    createBotCopy.addEventListener("click", () => setActiveScreen("bot-management"));
+  }
+  if (createVersionManage && createVersionManage.dataset.bound !== "true") {
+    createVersionManage.dataset.bound = "true";
+    createVersionManage.addEventListener("click", () => setActiveScreen("bot-management"));
+  }
+  if (createVersionUpload && createVersionUpload.dataset.bound !== "true") {
+    createVersionUpload.dataset.bound = "true";
+    createVersionUpload.addEventListener("click", () => {
+      setActiveScreen("bot-management");
+      window.setTimeout(() => document.querySelector("[data-upload-version-package]")?.click(), 0);
     });
   }
   if (downloadBot && downloadBot.dataset.bound !== "true") {
@@ -3203,8 +3485,8 @@ function getAuthFlowLabel(stepId, fallback) {
 function getAuthFlowDetail(step, state) {
   if (step.id === "signup") {
     return state.policy.signupCreatesOwnGroup
-      ? t("authFlow.signup.detailWithGroup", "Creates user and personal group")
-      : t("authFlow.signup.detailUserOnly", "Creates user only");
+      ? t("authFlow.signup.detailWithGroup", "Creates user and viewer join request")
+      : t("authFlow.signup.detailUserOnly", "Creates user and viewer join request");
   }
   if (step.id === "join-request") {
     const count = state.joinRequests.filter((request) => request.status === "pending").length;
@@ -3213,9 +3495,417 @@ function getAuthFlowDetail(step, state) {
   return t(`authFlow.${step.id}.detail`, step.detail);
 }
 
+function getSystemAdminSubviewLabel(subview) {
+  return systemAdminSections
+    .flatMap((section) => section.links)
+    .find((link) => link.subview === subview)?.label || t("access.title", "Users, Login, and Access");
+}
+
+
+const AIDOT_ADMIN_SURFACE_TITLES = {
+  users: "사용자 관리",
+  "login-history": "로그인 이력",
+  groups: "그룹 관리",
+  roles: "그룹 역할 관리",
+  dashboard: "운영 대시보드",
+  "system-logs": "운영/시스템 로그 조회",
+  "bot-status": "봇 현황 조회",
+  "training-history": "학습 이력 조회",
+  "conversation-history": "대화 이력 조회",
+  "api-call-history": "API 호출 이력 조회",
+  "queue-history": "Queue 이력 조회",
+  "intent-feedback": "의도별 피드백 조회",
+  "common-variables": "공통 변수 관리하기",
+  "default-messages": "기본 메시지 관리",
+  channels: "채널 관리",
+  "botstation-links": "봇스테이션 연계 현황",
+  templates: "템플릿 목록",
+  license: "라이선스 조회"
+};
+
+function escapeCell(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
+}
+
+function formatAidotAdminDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return escapeCell(value);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  const ss = String(date.getSeconds()).padStart(2, "0");
+  return `${y}. ${m}. ${d}. ${hh}:${mm}:${ss}`;
+}
+
+function formatLoginHistoryDate(value) {
+  return formatAidotAdminDate(value);
+}
+
+function renderPager(total) {
+  return `
+    <div class="admin-page__pagination" aria-label="pagination">
+      <button type="button" ${total ? "" : "disabled"}>◀</button>
+      <button type="button" ${total ? "" : "disabled"}>‹</button>
+      <strong class="is-active">1</strong>
+      <button type="button" ${total ? "" : "disabled"}>›</button>
+      <button type="button" ${total ? "" : "disabled"}>▶</button>
+    </div>
+  `;
+}
+
+function renderDataGrid(columns, rows, template) {
+  return `
+    <div class="admin-page__grid-scroll">
+      <div class="data-grid data-grid--admin" style="--data-grid-template:${template}">
+        <div class="data-grid__row data-grid__row--header">
+          ${columns.map((column) => `<span class="data-grid__cell">${column} ↕</span>`).join("")}
+        </div>
+        ${rows.join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderAidotInteractiveTable(surface, config) {
+  const rows = Array.isArray(config.rows) ? config.rows : [];
+  surface.innerHTML = `
+    <section class="admin-page ${config.className || ""}" data-admin-resource="${config.resource || ""}">
+      <h2>${config.title}</h2>
+      <div class="admin-page__search-row ${config.searchClass || ""}">
+        <label class="admin-page__search"><span>⌕</span><input data-admin-query-input value="" placeholder="${config.placeholder || "검색어를 입력하세요."}" /></label>
+        ${config.filters || ""}
+        <button type="button" class="admin-page__filter admin-page__filter--text">초기화</button>
+        <div class="admin-page__search-actions">${config.topRight || `<button type="button" class="admin-page__primary">조회</button>`}</div>
+      </div>
+      <div class="admin-page__toolbar">
+        <div class="admin-page__toolbar-left"><strong>전체 ${rows.length}건</strong><select><option>10개씩 보기</option><option>50개씩 보기</option><option>100개씩 보기</option></select>${config.download === false ? "" : `<button type="button" class="admin-page__ghost">다운로드</button>`}</div>
+      </div>
+      ${renderDataGrid(config.columns, rows, config.template)}
+      ${renderPager(rows.length)}
+    </section>
+  `;
+}
+
+function renderTemplateListSurface(surface) {
+  const resource = "templates";
+  const rows = currentAdminResources.templates.map((template, index) => `
+    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(template.id)}">
+      <span class="data-grid__cell">${index + 1}</span>
+      <span class="data-grid__cell">${escapeCell(template.channel_name || template.channel_code)}</span>
+      <a class="data-grid__cell table-link" href="#">${escapeCell(template.name)}</a>
+      <span class="data-grid__cell">${escapeCell(template.item_count)}</span>
+      <span class="data-grid__cell">${escapeCell(template.item_types)}</span>
+      <span class="data-grid__cell">${escapeCell(template.renderer_type)}</span>
+      <span class="data-grid__cell">${escapeCell(template.status_label || (template.status === "N" ? "미사용" : "사용"))}</span>
+      <span class="data-grid__cell">${formatAidotAdminDate(template.updated_at)}</span>
+    </div>
+  `);
+  renderAidotInteractiveTable(surface, {
+    resource,
+    title: "템플릿 목록",
+    placeholder: "템플릿 이름을 검색하세요.",
+    searchClass: "admin-template-list__search-row",
+    filters: `<input class="admin-page__filter" data-admin-channel-filter placeholder="채널" /><select class="admin-page__filter" data-admin-status-filter><option value="all">전체 사용여부</option><option value="Y">사용</option><option value="N">미사용</option></select>`,
+    topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button><button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 템플릿 등록</button>`,
+    columns: ["순서", "채널", "템플릿 이름", "아이템 개수", "아이템 타입", "렌더러 타입", "사용여부", "최종수정일시"],
+    template: "80px 150px 220px 120px 1fr 160px 120px 180px",
+    rows
+  });
+}
+
+function renderLoginHistorySurface(surface) {
+  const rows = (currentAdminResources.login_history || currentAccessState.loginHistory || []).map((entry) => `
+    <div class="data-grid__row">
+      <span class="data-grid__cell">${escapeCell(entry.user_id)}</span>
+      <span class="data-grid__cell">${escapeCell(entry.user_name)}</span>
+      <span class="data-grid__cell">${escapeCell(entry.group_name)}</span>
+      <span class="data-grid__cell">${escapeCell(entry.role)}</span>
+      <span class="data-grid__cell">${escapeCell(entry.ip_address)}</span>
+      <span class="data-grid__cell">${formatLoginHistoryDate(entry.login_at)}</span>
+      <span class="data-grid__cell">${formatLoginHistoryDate(entry.logout_at)}</span>
+    </div>
+  `);
+  renderAidotInteractiveTable(surface, {
+    title: "로그인 이력",
+    placeholder: "사용자 계정 또는 사용자 이름을 검색하세요.",
+    searchClass: "admin-login-history__search-row",
+    filters: `<span class="admin-page__date-label">시작일</span><input class="admin-page__filter" type="date" /><span class="admin-page__date-label">종료일</span><input class="admin-page__filter" type="date" />`,
+    download: false,
+    columns: ["사용자 계정", "사용자 이름", "그룹", "역할", "접속한 IP", "로그인 시간", "로그아웃 시간"],
+    template: "200px 160px 180px 160px 190px 190px 190px",
+    rows
+  });
+}
+
+function renderCommonVariableSurface(surface) {
+  const resource = "common-variables";
+  const rows = currentAdminResources.common_variables.map((item) => `
+    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}"><a class="data-grid__cell table-link" href="#">${escapeCell(item.name)}</a><span class="data-grid__cell">${escapeCell(item.category)}</span><span class="data-grid__cell">${escapeCell(item.value)}</span><span class="data-grid__cell">${escapeCell(item.description)}</span><span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span><span class="data-grid__cell">${escapeCell(item.updated_by)}</span></div>
+  `);
+  renderAidotInteractiveTable(surface, { resource, title: "공통 변수 관리하기", placeholder: "변수명을 검색하세요.", topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button><button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 변수 등록</button>`, columns: ["변수명", "구분", "변수값", "설명", "최종수정일시", "최종수정자"], template: "180px 120px 180px 1fr 180px 140px", rows });
+}
+
+function renderDefaultMessageSurface(surface) {
+  const resource = "default-messages";
+  const rows = currentAdminResources.default_messages.map((item) => `
+    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}"><span class="data-grid__cell">${escapeCell(item.category)}</span><a class="data-grid__cell table-link" href="#">${escapeCell(item.name)}</a><span class="data-grid__cell">${escapeCell(item.key)}</span><span class="data-grid__cell">${escapeCell(item.message)}</span><span class="data-grid__cell">${escapeCell(item.status_label)}</span><span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span></div>
+  `);
+  renderAidotInteractiveTable(surface, { resource, title: "기본 메시지 관리", placeholder: "메시지 이름을 검색하세요.", topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button><button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 메시지 등록</button>`, columns: ["카테고리", "메시지 이름", "메시지 키", "메시지", "사용여부", "최종수정일시"], template: "140px 180px 190px 1fr 120px 180px", rows });
+}
+
+function renderChannelSurface(surface) {
+  const resource = "channels";
+  const rows = currentAdminResources.channels.map((item) => `
+    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}"><a class="data-grid__cell table-link" href="#">${escapeCell(item.channel_code)}</a><span class="data-grid__cell">${escapeCell(item.channel_name)}</span><span class="data-grid__cell">${escapeCell(item.provider)}</span><span class="data-grid__cell">${escapeCell(item.renderer_type)}</span><span class="data-grid__cell">${escapeCell(item.auth_type)}</span><span class="data-grid__cell">${escapeCell(item.status_label)}</span><span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span></div>
+  `);
+  renderAidotInteractiveTable(surface, { resource, title: "채널 관리", placeholder: "채널 이름을 검색하세요.", topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button><button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 채널 등록</button>`, columns: ["채널 코드", "채널명", "제공자", "렌더러 타입", "인증 방식", "사용여부", "최종수정일시"], template: "150px 170px 160px 180px 130px 120px 180px", rows });
+}
+
+function renderLicenseSurface(surface) {
+  const rows = currentAdminResources.licenses.map((item) => `
+    <div class="data-grid__row"><span class="data-grid__cell">${escapeCell(item.category)}</span><span class="data-grid__cell">${escapeCell(item.total)}</span><span class="data-grid__cell">${escapeCell(item.used)}</span><span class="data-grid__cell">${escapeCell(item.remaining)}</span><span class="data-grid__cell">${escapeCell(item.expires_at)}</span></div>
+  `);
+  renderAidotInteractiveTable(surface, { title: "라이선스 조회", placeholder: "라이선스 이름을 검색하세요.", topRight: `<button type="button" class="admin-page__primary">라이선스 업로드</button>`, columns: ["구분", "전체 수", "사용중", "잔여", "만료일"], template: "220px 220px 220px 220px 220px", rows });
+}
+
+function renderSimpleHistorySurface(surface, key) {
+  const title = AIDOT_ADMIN_SURFACE_TITLES[key] || "";
+  const columns = key === "botstation-links" ? ["봇스테이션", "연계 상태", "최종수정일시"] : ["순서", "구분", "내용", "상태", "최종수정일시"];
+  renderAidotInteractiveTable(surface, { title, placeholder: "검색어를 입력하세요.", download: false, columns, template: key === "botstation-links" ? "220px 180px 180px" : "80px 180px 1fr 120px 180px", rows: [] });
+}
+const ADMIN_RESOURCE_UI = {
+  templates: {
+    collectionKey: "templates",
+    endpoint: "/api/cga/admin/templates",
+    title: "템플릿",
+    label: (item) => item?.name || "",
+    fields: [
+      ["name", "템플릿 이름", "text"],
+      ["channel_name", "채널", "text"],
+      ["item_count", "아이템 개수", "number"],
+      ["item_types", "아이템 타입", "text"],
+      ["renderer_type", "렌더러 타입", "text"],
+      ["status", "사용여부", "status"]
+    ]
+  },
+  "common-variables": {
+    collectionKey: "common_variables",
+    endpoint: "/api/cga/admin/common-variables",
+    title: "공통 변수",
+    label: (item) => item?.name || "",
+    fields: [["name", "변수명", "text"], ["category", "구분", "text"], ["value", "변수값", "text"], ["description", "설명", "textarea"]]
+  },
+  "default-messages": {
+    collectionKey: "default_messages",
+    endpoint: "/api/cga/admin/default-messages",
+    title: "기본 메시지",
+    label: (item) => item?.name || "",
+    fields: [["category", "카테고리", "text"], ["name", "메시지 이름", "text"], ["key", "메시지 키", "text"], ["message", "메시지", "textarea"], ["status", "사용여부", "status"]]
+  },
+  channels: {
+    collectionKey: "channels",
+    endpoint: "/api/cga/admin/channels",
+    title: "채널",
+    label: (item) => item?.channel_name || item?.channel_code || "",
+    fields: [["channel_code", "채널 코드", "text"], ["channel_name", "채널명", "text"], ["provider", "제공자", "text"], ["renderer_type", "렌더러 타입", "text"], ["auth_type", "인증 방식", "text"], ["status", "사용여부", "status"]]
+  },
+  "botstation-links": {
+    collectionKey: "botstation_links",
+    endpoint: "/api/cga/admin/botstation-links",
+    title: "봇스테이션 연계",
+    label: (item) => item?.station_name || "",
+    fields: [["station_name", "봇스테이션", "text"], ["endpoint_url", "연계 URL", "text"], ["status", "사용여부", "status"]]
+  }
+};
+
+function getAdminResourceUi(resource) {
+  return ADMIN_RESOURCE_UI[resource] || null;
+}
+
+function getAdminResourceItems(resource) {
+  const config = getAdminResourceUi(resource);
+  return config ? (currentAdminResources[config.collectionKey] || []) : [];
+}
+
+function getAdminResourceItem(resource, id) {
+  return getAdminResourceItems(resource).find((item) => item.id === id) || null;
+}
+
+function renderAdminResourceField([name, label, type], value = "") {
+  if (type === "status") {
+    return `<label><span>${label}</span><select data-admin-field="${name}"><option value="Y" ${value !== "N" ? "selected" : ""}>사용</option><option value="N" ${value === "N" ? "selected" : ""}>미사용</option></select></label>`;
+  }
+  if (type === "textarea") {
+    return `<label><span>${label}</span><textarea data-admin-field="${name}">${escapeCell(value)}</textarea></label>`;
+  }
+  return `<label><span>${label}</span><input type="${type || "text"}" data-admin-field="${name}" value="${escapeCell(value)}" /></label>`;
+}
+
+function collectAdminResourceForm() {
+  const modal = document.querySelector("[data-admin-resource-modal]");
+  const body = {};
+  modal?.querySelectorAll("[data-admin-field]").forEach((field) => {
+    body[field.dataset.adminField] = field.value;
+  });
+  if (body.status) body.status_label = body.status === "N" ? "미사용" : "사용";
+  return body;
+}
+
+function closeAdminResourceModal() {
+  currentAdminResourceModal = null;
+  const modal = document.querySelector("[data-admin-resource-modal]");
+  if (modal) modal.hidden = true;
+}
+
+function renderAdminResourceModal() {
+  const modal = document.querySelector("[data-admin-resource-modal]");
+  if (!modal || !currentAdminResourceModal) return;
+  const { resource, id, mode } = currentAdminResourceModal;
+  const config = getAdminResourceUi(resource);
+  if (!config) return;
+  const item = mode === "create" ? {} : getAdminResourceItem(resource, id);
+  const title = modal.querySelector("[data-admin-resource-modal-title]");
+  const detail = modal.querySelector("[data-admin-resource-detail]");
+  const edit = modal.querySelector("[data-admin-resource-edit]");
+  if (title) title.textContent = `${config.title} ${mode === "create" ? "등록" : "상세"}`;
+  if (detail) {
+    detail.innerHTML = `
+      <h4>기본 정보</h4>
+      <dl class="admin-resource-detail-list">
+        <div><dt>ID</dt><dd>${escapeCell(item?.id || "신규")}</dd></div>
+        <div><dt>이름</dt><dd>${escapeCell(config.label(item))}</dd></div>
+        <div><dt>사용여부</dt><dd>${escapeCell(item?.status_label || (item?.status === "N" ? "미사용" : item?.status ? "사용" : ""))}</dd></div>
+        <div><dt>최종수정일시</dt><dd>${formatAidotAdminDate(item?.updated_at)}</dd></div>
+      </dl>
+    `;
+  }
+  if (edit) {
+    edit.innerHTML = `
+      <h4>${config.title} 수정</h4>
+      <div class="admin-resource-form">
+        ${config.fields.map((field) => renderAdminResourceField(field, item?.[field[0]] ?? "")).join("")}
+        <div class="admin-resource-actions">
+          <button type="button" class="admin-page__primary" data-admin-resource-save>저장</button>
+          ${mode === "create" ? "" : `<button type="button" class="admin-page__ghost" data-admin-resource-delete>삭제</button>`}
+        </div>
+      </div>
+    `;
+  }
+  bindAdminResourceModalControls();
+  modal.hidden = false;
+}
+
+async function saveAdminResourceFromModal() {
+  if (!currentAdminResourceModal) return;
+  const { resource, id, mode } = currentAdminResourceModal;
+  const config = getAdminResourceUi(resource);
+  if (!config) return;
+  const body = collectAdminResourceForm();
+  const url = mode === "create" ? config.endpoint : `${config.endpoint}/${encodeURIComponent(id)}`;
+  await requestCgaJson(url, { method: mode === "create" ? "POST" : "PATCH", body });
+  await refreshAdminResourcesFromServer();
+  closeAdminResourceModal();
+  renderAccessPanels();
+}
+
+async function deleteAdminResourceFromModal() {
+  if (!currentAdminResourceModal || currentAdminResourceModal.mode === "create") return;
+  const { resource, id } = currentAdminResourceModal;
+  const config = getAdminResourceUi(resource);
+  if (!config) return;
+  await requestCgaJson(`${config.endpoint}/${encodeURIComponent(id)}`, { method: "DELETE" });
+  await refreshAdminResourcesFromServer();
+  closeAdminResourceModal();
+  renderAccessPanels();
+}
+
+function bindAdminResourceModalControls() {
+  document.querySelectorAll("[data-admin-resource-modal-close]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", closeAdminResourceModal);
+  });
+  document.querySelector("[data-admin-resource-save]")?.addEventListener("click", () => {
+    saveAdminResourceFromModal().catch((error) => setGlobalMessage("error", "저장 실패", error.message || "저장에 실패했습니다."));
+  });
+  document.querySelector("[data-admin-resource-delete]")?.addEventListener("click", () => {
+    deleteAdminResourceFromModal().catch((error) => setGlobalMessage("error", "삭제 실패", error.message || "삭제에 실패했습니다."));
+  });
+}
+
+function openAdminResourceModal(resource, id = "", mode = "edit") {
+  currentAdminResourceModal = { resource, id, mode };
+  renderAdminResourceModal();
+}
+
+async function queryAdminResource(surface, resource) {
+  const config = getAdminResourceUi(resource);
+  if (!config) return;
+  const q = surface.querySelector("[data-admin-query-input]")?.value || "";
+  const channel = surface.querySelector("[data-admin-channel-filter]")?.value || "";
+  const status = surface.querySelector("[data-admin-status-filter]")?.value || "";
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (channel) params.set("channel", channel);
+  if (status && status !== "all") params.set("status", status);
+  const started = performance.now();
+  const result = await requestCgaJson(`${config.endpoint}${params.toString() ? `?${params}` : ""}`);
+  const elapsed = performance.now() - started;
+  if (elapsed > 5000) setGlobalMessage("error", "조회 지연", `${config.title} 조회가 ${Math.round(elapsed)}ms 걸렸습니다. 보완이 필요합니다.`);
+  currentAdminResources = { ...currentAdminResources, [config.collectionKey]: result.items || [] };
+  renderAccessPanels();
+}
+
+function bindAdminSurfaceControls(surface) {
+  surface.querySelectorAll("[data-admin-row]").forEach((row) => {
+    if (row.dataset.bound === "true") return;
+    row.dataset.bound = "true";
+    row.addEventListener("click", (event) => {
+      event.preventDefault();
+      openAdminResourceModal(row.dataset.adminResource, row.dataset.adminId, "edit");
+    });
+  });
+  surface.querySelectorAll("[data-admin-create]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => openAdminResourceModal(button.dataset.adminCreate, "", "create"));
+  });
+  surface.querySelectorAll("[data-admin-query]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => queryAdminResource(surface, button.dataset.adminQuery).catch((error) => setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다.")));
+  });
+}
+
+
+function renderAdminSurface(surface, key) {
+  const normalizedKey = {
+    "template-list": "templates",
+    "license-status": "license",
+    "common-variable": "common-variables",
+    "default-message": "default-messages",
+    "channel-management": "channels",
+    "botstation-link": "botstation-links"
+  }[key] || key;
+  if (normalizedKey === "login-history") renderLoginHistorySurface(surface);
+  else if (normalizedKey === "templates") renderTemplateListSurface(surface);
+  else if (normalizedKey === "common-variables") renderCommonVariableSurface(surface);
+  else if (normalizedKey === "default-messages") renderDefaultMessageSurface(surface);
+  else if (normalizedKey === "channels") renderChannelSurface(surface);
+  else if (normalizedKey === "license") renderLicenseSurface(surface);
+  else renderSimpleHistorySurface(surface, normalizedKey);
+  bindAdminSurfaceControls(surface);
+}
+
+
 function renderAccessPanels() {
+  const headingTitle = document.querySelector("[data-access-heading-title]");
+  const headingBody = document.querySelector("[data-access-heading-body]");
   const currentUserBadge = document.querySelector("[data-current-user-badge]");
-  const topLoginUser = document.querySelector("[data-top-login-user]");
+  const entryLoginUser = document.querySelector("[data-entry-login-user]");
   const accessOperations = document.querySelector("[data-access-operations]");
   const loginUser = document.querySelector("[data-login-user]");
   const loginIdInput = document.querySelector("[data-login-id]");
@@ -3224,25 +3914,46 @@ function renderAccessPanels() {
   const joinGroup = document.querySelector("[data-join-group]");
   const joinRole = document.querySelector("[data-join-role]");
   const adminQueue = document.querySelector("[data-admin-action-queue]");
-  const authFlow = document.querySelector("[data-auth-flow]");
   const groupUsers = document.querySelector("[data-group-users]");
   const roleManagement = document.querySelector("[data-role-management]");
+  const userSearch = document.querySelector("[data-user-search]");
+  const userGroupFilter = document.querySelector("[data-user-group-filter]");
+  const userRoleFilter = document.querySelector("[data-user-role-filter]");
+  const userStatusFilter = document.querySelector("[data-user-status-filter]");
+  const userSignupFilter = document.querySelector("[data-user-signup-filter]");
+  const userDetail = document.querySelector("[data-user-detail]");
+  const userEdit = document.querySelector("[data-user-edit]");
+  const userModal = document.querySelector("[data-user-modal]");
+  const groupSearch = document.querySelector("[data-group-search]");
+  const groupStatusFilter = document.querySelector("[data-group-status-filter]");
+  const groupDetail = document.querySelector("[data-group-detail]");
+  const groupEdit = document.querySelector("[data-group-edit]");
+  const groupModal = document.querySelector("[data-group-modal]");
+  const loginHistory = document.querySelector("[data-login-history]");
   const joinRequests = document.querySelector("[data-join-requests]");
   const adminRequests = document.querySelector("[data-admin-requests]");
   const groupAccess = document.querySelector("[data-group-access]");
   const screenAccess = document.querySelector("[data-screen-access]");
   const authPolicy = document.querySelector("[data-auth-policy]");
   const adminPolicy = document.querySelector("[data-admin-policy]");
-  if (!accessOperations || !loginUser || !currentSession || !joinGroup || !joinRole || !adminQueue || !authFlow || !groupUsers || !joinRequests || !adminRequests || !groupAccess || !screenAccess || !authPolicy || !adminPolicy) return;
+  if (!accessOperations || !loginUser || !currentSession || !joinGroup || !joinRole || !adminQueue || !groupUsers || !joinRequests || !adminRequests || !groupAccess || !screenAccess || !authPolicy || !adminPolicy) return;
+  document.querySelectorAll("[data-admin-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.adminPanel !== currentSystemAdminSubview;
+  });
+  const subviewLabel = getSystemAdminSubviewLabel(currentSystemAdminSubview);
+  if (headingTitle) headingTitle.textContent = subviewLabel;
+  if (headingBody) headingBody.textContent = "";
+  document.querySelectorAll("[data-admin-surface]").forEach((surface) => renderAdminSurface(surface, surface.dataset.adminSurface));
   const current = summarizeAccess(currentAccessState);
   const operations = summarizeAccessOperations(currentAccessState);
   const policy = summarizeAccessPolicy(currentAccessState);
   renderTopContext();
-  loginUser.innerHTML = currentAccessState.users
+  const activeUsers = currentAccessState.users.filter((user) => user.status === "active");
+  loginUser.innerHTML = activeUsers
     .filter((user) => user.status === "active")
-    .map((user) => `<option value="${user.id}" ${user.id === currentAccessState.currentUserId ? "selected" : ""}>${user.name} · ${user.id} · ${user.locale}</option>`)
+    .map((user) => `<option value="${user.id}" ${user.id === currentAccessState.currentUserId ? "selected" : ""}>${user.name} · ${user.id}</option>`)
     .join("");
-  if (topLoginUser) topLoginUser.innerHTML = loginUser.innerHTML;
+  if (entryLoginUser) entryLoginUser.innerHTML = loginUser.innerHTML;
   if (loginIdInput && !loginIdInput.value) {
     loginIdInput.value = currentAccessState.currentUserId || loginUser.value || "";
   }
@@ -3263,20 +3974,69 @@ function renderAccessPanels() {
     authMessage.classList.toggle("auth-message", Boolean(currentAuthMessage));
     renderMessageNode(authMessage, currentAuthMessage, t("admin.authentication", "Authentication"));
   }
+  if (loginHistory) {
+    const loginRows = Array.isArray(currentAccessState.loginHistory) ? currentAccessState.loginHistory : [];
+    const visibleRows = loginRows.slice(0, 100);
+    loginHistory.innerHTML = `
+      <header class="aidot-admin-toolbar aidot-admin-toolbar--history">
+        <div class="aidot-admin-actions aidot-admin-actions--right">
+          <input type="date" aria-label="시작일" />
+          <input type="date" aria-label="종료일" />
+          <button type="button" class="ghost-btn">초기화</button>
+          <button type="button" class="primary-action-small">조회</button>
+        </div>
+      </header>
+      <div class="management-list-meta">
+        <strong>전체 ${loginRows.length}건</strong>
+        <select aria-label="페이지 크기"><option>100개씩 보기</option></select>
+      </div>
+      <div class="management-table management-table--login-history management-table--paged">
+        <div class="management-table-row head">
+          <span>사용자 계정</span>
+          <span>사용자 이름</span>
+          <span>그룹</span>
+          <span>역할</span>
+          <span>접속한 IP</span>
+          <span>로그인 시간</span>
+          <span>로그아웃 시간</span>
+        </div>
+        ${visibleRows.map((record) => `
+          <div class="management-table-row">
+            <strong>${escapeCell(record.user_id)}</strong>
+            <span>${escapeCell(record.user_name)}</span>
+            <span>${escapeCell(record.group_name || record.group_id)}</span>
+            <span>${escapeCell(record.role)}</span>
+            <span>${escapeCell(record.ip_address)}</span>
+            <span>${formatLoginHistoryDate(record.login_at)}</span>
+            <span>${formatLoginHistoryDate(record.logout_at)}</span>
+          </div>
+        `).join("")}
+      </div>
+      ${renderPager(loginRows.length)}
+    `;
+  }
+  renderEntryAuthMessage();
   joinGroup.innerHTML = currentAccessState.groups
     .filter((group) => group.status === "active")
     .map((group) => `<option value="${group.id}">${group.name}</option>`)
     .join("");
-  joinRole.innerHTML = ["viewer", "builder", "reviewer", "operator", "group_admin"]
+  joinRole.innerHTML = MANAGED_GROUP_ROLES
     .map((role) => `<option value="${role}">${role}</option>`)
     .join("");
+  const activeGroups = currentAccessState.groups.filter((group) => group.status === "active");
+  const groupOptions = activeGroups.map((group) => `<option value="${group.id}">${group.name}</option>`).join("");
+  const roleOptions = MANAGED_GROUP_ROLES.map((role) => `<option value="${role}">${role}</option>`).join("");
   adminQueue.innerHTML = [
     ...summarizeJoinRequests(currentAccessState).filter((request) => request.status === "pending").map((request) => {
       const canApprove = canApproveGroupJoinRequest(currentAccessState, { requestId: request.id, reviewerId: currentAccessState.currentUserId });
       return `
       <div class="${canApprove ? "" : "blocked-action"}">
         <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
-        <span>${request.requested_role} · ${t("admin.groupJoin", "group join")} · ${canApprove ? t("admin.groupAdminApproval", "group admin approval") : t("admin.requiresGroupAdmin", "requires group admin")}</span>
+        <span>${t("admin.groupJoin", "group join")} · ${canApprove ? t("admin.groupAdminApproval", "group admin approval") : t("admin.requiresGroupAdmin", "requires group admin")}</span>
+        <div class="approval-controls">
+          <select data-approval-group="${request.id}" ${canApprove ? "" : "disabled"}>${activeGroups.map((group) => `<option value="${group.id}" ${group.id === request.group_id ? "selected" : ""}>${group.name}</option>`).join("")}</select>
+          <select data-approval-role="${request.id}" ${canApprove ? "" : "disabled"}>${MANAGED_GROUP_ROLES.map((role) => `<option value="${role}" ${role === request.requested_role ? "selected" : ""}>${role}</option>`).join("")}</select>
+        </div>
         <button type="button" data-approve-join="${request.id}" ${canApprove ? "" : "disabled"}>${t("admin.approve", "Approve")}</button>
       </div>
     `;
@@ -3286,7 +4046,11 @@ function renderAccessPanels() {
       return `
       <div class="${canApprove ? "" : "blocked-action"}">
         <strong>${request.user?.name || request.user_id} -> ${request.group?.name || request.group_id}</strong>
-        <span>${request.requested_role} · ${t("admin.adminPermission", "admin permission")} · ${canApprove ? t("admin.systemAdminApproval", "system admin approval") : t("admin.requiresSystemAdmin", "requires system admin")}</span>
+        <span>${t("admin.adminPermission", "admin permission")} · ${canApprove ? t("admin.systemAdminApproval", "system admin approval") : t("admin.requiresSystemAdmin", "requires system admin")}</span>
+        <div class="approval-controls">
+          <select data-admin-approval-group="${request.id}" ${canApprove ? "" : "disabled"}>${activeGroups.map((group) => `<option value="${group.id}" ${group.id === request.group_id ? "selected" : ""}>${group.name}</option>`).join("")}</select>
+          <select data-admin-approval-role="${request.id}" ${canApprove ? "" : "disabled"}>${MANAGED_GROUP_ROLES.map((role) => `<option value="${role}" ${role === request.requested_role ? "selected" : ""}>${role}</option>`).join("")}</select>
+        </div>
         <button type="button" data-approve-admin="${request.id}" ${canApprove ? "" : "disabled"}>${t("admin.approve", "Approve")}</button>
       </div>
     `;
@@ -3300,54 +4064,178 @@ function renderAccessPanels() {
     <div><strong data-i18n="access.protectedAdmin">Protected admin</strong><span>${operations.protectedAdmin ? t("common.yes", "Yes") : t("common.no", "No")}</span></div>
     <div><strong data-i18n="access.userLanguages">User languages</strong><span>${operations.multilingualUsers}</span></div>
   `;
-  authFlow.innerHTML = summarizeAuthWorkflow(currentAccessState).map((step, index) => `
-    <div>
-      <strong>${String(index + 1).padStart(2, "0")} · ${getAuthFlowLabel(step.id, step.label)}</strong>
-      <span>${getAuthFlowDetail(step, currentAccessState)}</span>
-    </div>
-  `).join("");
-  groupUsers.innerHTML = summarizeGroupUsers(currentAccessState).map((entry) => `
-    <div class="group-user-card">
-      <div class="session-header">
-        <strong>${entry.group.name}</strong>
-        ${renderAccessBadge(t("access.userCount", "Users"), entry.users.length)}
-      </div>
-      <div class="group-user-members">
-        ${entry.users.map(({ user, membership }) => `
-          <span>
-            <b>${user?.name || membership.user_id}</b>
-            ${membership.role} · ${user?.locale || "en"}
-          </span>
-        `).join("") || `<span>${t("admin.noActiveUser", "No active user")}</span>`}
-      </div>
-    </div>
-  `).join("");
-  if (roleManagement) {
-    const canManageGroup = (groupId) => current.scopes.includes("user.manage") || currentAccessState.memberships.some((item) => (
-      item.user_id === currentAccessState.currentUserId &&
-      item.group_id === groupId &&
-      item.status === "active" &&
-      ["system_admin", "owner", "group_admin"].includes(item.role)
+  const canViewAllUserGroups = isSystemAdmin(currentAccessState, currentAccessState.currentUserId)
+    || currentAccessState.memberships.some((membership) => (
+      membership.user_id === currentAccessState.currentUserId
+      && membership.status === "active"
+      && membership.role === "group_admin"
     ));
-    roleManagement.innerHTML = `
-      <div class="role-management-row head">
-        <span>${t("common.user", "User")}</span><span>${t("common.group", "Group")}</span><span>${t("access.roleSummary", "Roles")}</span><span>${t("common.save", "Save")}</span>
+  const visibleGroupIds = new Set(
+    canViewAllUserGroups
+      ? currentAccessState.groups.filter((group) => group.status === "active").map((group) => group.id)
+      : currentAccessState.memberships
+          .filter((membership) => membership.user_id === currentAccessState.currentUserId && membership.status === "active")
+          .map((membership) => membership.group_id)
+  );
+  const activeUserRecords = summarizeGroupUsers(currentAccessState)
+    .filter((entry) => visibleGroupIds.has(entry.group.id))
+    .flatMap((entry) => entry.users.map(({ user, membership }) => ({
+      user,
+      group: entry.group,
+      membership,
+      role: membership.role,
+      rowStatus: user?.status || "active",
+      request: null
+    })));
+  const pendingUserRecords = summarizeJoinRequests(currentAccessState)
+    .filter((request) => request.status === "pending" && visibleGroupIds.has(request.group_id))
+    .map((request) => ({
+      user: request.user,
+      group: request.group,
+      membership: null,
+      role: request.requested_role,
+      rowStatus: request.status,
+      request
+    }));
+  const userRecords = [...activeUserRecords, ...pendingUserRecords];
+  const userSearchText = (userSearch?.value || "").trim().toLowerCase();
+  const selectedGroupFilter = userGroupFilter?.value || "all";
+  const selectedRoleFilter = userRoleFilter?.value || "all";
+  const selectedStatusFilter = userStatusFilter?.value || "all";
+  const selectedSignupFilter = userSignupFilter?.value || "all";
+  if (userGroupFilter) {
+    userGroupFilter.innerHTML = `<option value="all">전체 그룹</option>${activeGroups
+      .filter((group) => visibleGroupIds.has(group.id))
+      .map((group) => `<option value="${group.id}" ${group.id === selectedGroupFilter ? "selected" : ""}>${group.name}</option>`)
+      .join("")}`;
+  }
+  if (userRoleFilter) {
+    userRoleFilter.innerHTML = `<option value="all">전체 역할</option>${["system_admin", ...MANAGED_GROUP_ROLES]
+      .map((role) => `<option value="${role}" ${role === selectedRoleFilter ? "selected" : ""}>${role}</option>`)
+      .join("")}`;
+  }
+  if (userStatusFilter) {
+    userStatusFilter.innerHTML = [
+      ["all", "전체 계정상태"],
+      ["active", "활성"],
+      ["locked", "잠김"],
+      ["password_reset", "비밀번호 초기화"],
+      ["inactive", "비활성"]
+    ].map(([status, label]) => `<option value="${status}" ${status === selectedStatusFilter ? "selected" : ""}>${label}</option>`).join("");
+  }
+  if (userSignupFilter) {
+    userSignupFilter.innerHTML = [
+      ["all", "전체 가입상태"],
+      ["approved", "계정 승인"],
+      ["pending", "승인 요청"],
+      ["rejected", "승인 반려"]
+    ].map(([status, label]) => `<option value="${status}" ${status === selectedSignupFilter ? "selected" : ""}>${label}</option>`).join("");
+  }
+  const filteredUserRecords = userRecords.filter((record) => {
+    const text = `${record.user?.id || record.request?.user_id || ""} ${record.user?.name || ""} ${record.group?.name || ""}`.toLowerCase();
+    return (!userSearchText || text.includes(userSearchText))
+      && (selectedGroupFilter === "all" || record.group?.id === selectedGroupFilter)
+      && (selectedRoleFilter === "all" || record.role === selectedRoleFilter)
+      && (selectedStatusFilter === "all" || (record.user?.status || "active") === selectedStatusFilter)
+      && (selectedSignupFilter === "all" || (selectedSignupFilter === "approved" ? record.rowStatus !== "pending" : record.rowStatus === selectedSignupFilter));
+  });
+  const totalUserRows = filteredUserRecords.length;
+  const totalUserPages = Math.max(1, Math.ceil(totalUserRows / userListPageSize));
+  userListPage = Math.min(Math.max(1, userListPage), totalUserPages);
+  const userPageStart = (userListPage - 1) * userListPageSize;
+  const pagedUserRecords = filteredUserRecords.slice(userPageStart, userPageStart + userListPageSize);
+  if (!filteredUserRecords.some((record) => (record.user?.id || record.request?.user_id) === selectedAccessUserId)) {
+    selectedAccessUserId = filteredUserRecords[0]?.user?.id || filteredUserRecords[0]?.request?.user_id || selectedAccessUserId;
+  }
+  const activeUserRows = pagedUserRecords.map((record) => {
+    const userId = record.user?.id || record.request?.user_id || "";
+    const userName = record.user?.name || userId;
+    const requestDate = formatAidotAdminDate(record.request?.created_at || record.request?.requested_at || record.request?.id);
+    return `
+      <button type="button" class="management-table-row ${userId === selectedAccessUserId ? "selected-row" : ""} ${record.rowStatus === "pending" ? "pending-row" : ""}" data-select-user="${userId}">
+        <span><input type="checkbox" tabindex="-1" /></span>
+        <strong>${userId}</strong>
+        <span>${userName}</span>
+        <span>${record.group?.name || record.request?.group_id || ""}</span>
+        <span>${record.role}</span>
+        <span>${requestDate}</span>
+        <span>${formatAidotSignupStatus(record)}</span>
+        <span><span class="status-badge status-${record.user?.status || "active"}">${formatAidotAccountStatus(record.user?.status || "active")}</span></span>
+      </button>
+    `;
+  });
+  groupUsers.innerHTML = `
+    <div class="management-list-meta">
+      <strong>전체 ${totalUserRows}건</strong>
+      <select data-user-page-size aria-label="페이지 크기">
+        <option value="100" ${100 === userListPageSize ? "selected" : ""}>100개씩 보기</option>
+      </select>
+    </div>
+    <div class="management-table management-table--users management-table--paged">
+      <div class="management-table-row head">
+        <span></span>
+        <span>사용자 계정</span>
+        <span>사용자 이름</span>
+        <span>그룹</span>
+        <span>역할</span>
+        <span>신청일시</span>
+        <span>가입상태</span>
+        <span>계정상태</span>
       </div>
-      ${currentAccessState.memberships.filter((membership) => membership.status === "active").map((membership) => {
-        const user = currentAccessState.users.find((item) => item.id === membership.user_id);
-        const group = currentAccessState.groups.find((item) => item.id === membership.group_id);
-        const allowed = canManageGroup(membership.group_id) && membership.role !== "system_admin";
-        return `
-          <div class="role-management-row">
-            <strong>${user?.name || membership.user_id}<small>${membership.user_id}</small></strong>
-            <span>${group?.name || membership.group_id}</span>
-            <select data-role-user="${membership.user_id}" data-role-group="${membership.group_id}" ${allowed ? "" : "disabled"}>
-              ${MANAGED_GROUP_ROLES.map((role) => `<option value="${role}" ${role === membership.role ? "selected" : ""}>${role}</option>`).join("")}
-            </select>
-            <button type="button" data-role-save="${membership.user_id}" data-role-group-save="${membership.group_id}" ${allowed ? "" : "disabled"}>${t("common.save", "Save")}</button>
-          </div>
-        `;
-      }).join("")}
+      ${activeUserRows.join("") || `
+        <div class="management-table-row">
+          <span></span>
+          <strong>${t("common.none", "None")}</strong>
+          <span>${t("admin.noActiveUser", "No active user")}</span>
+          <span>-</span>
+          <span>-</span>
+          <span>-</span>
+          <span>-</span>
+          <span>-</span>
+        </div>
+      `}
+    </div>
+    <div class="management-pagination">
+      <button type="button" data-user-page-prev ${userListPage <= 1 ? "disabled" : ""}>이전</button>
+      <span>${userListPage} / ${totalUserPages}</span>
+      <button type="button" data-user-page-next ${userListPage >= totalUserPages ? "disabled" : ""}>다음</button>
+    </div>
+  `;
+  const selectedUserRecord = userRecords.find((record) => (record.user?.id || record.request?.user_id) === selectedAccessUserId) || userRecords[0];
+  if (userModal) userModal.hidden = !accessUserModalOpen;
+  if (userDetail) {
+    userDetail.innerHTML = selectedUserRecord ? `
+      <h4>기본 정보</h4>
+      <dl class="detail-definition">
+        <dt>사용자 계정</dt><dd>${selectedUserRecord.user?.id || selectedUserRecord.request?.user_id || ""}</dd>
+        <dt>사용자 이름</dt><dd>${selectedUserRecord.user?.name || "-"}</dd>
+        <dt>서버</dt><dd>기본 서버</dd>
+        <dt>그룹</dt><dd>${selectedUserRecord.group?.name || "-"}</dd>
+        <dt>신청일시</dt><dd>${formatAidotAdminDate(selectedUserRecord.request?.created_at || selectedUserRecord.request?.requested_at || selectedUserRecord.request?.id)}</dd>
+        <dt>가입상태</dt><dd>${formatAidotSignupStatus(selectedUserRecord)}</dd>
+        <dt>계정상태</dt><dd>${formatAidotAccountStatus(selectedUserRecord.user?.status || "active")}</dd>
+        <dt>언어</dt><dd>${selectedUserRecord.user?.locale || "en"}</dd>
+      </dl>
+    ` : `<h4>기본 정보</h4><p>${t("common.none", "None")}</p>`;
+  }
+  if (userEdit) {
+    const userId = selectedUserRecord?.user?.id || selectedUserRecord?.request?.user_id || "";
+    const groupId = selectedUserRecord?.group?.id || "";
+    const isPendingUser = selectedUserRecord?.rowStatus === "pending" && selectedUserRecord?.request?.id;
+    const editable = Boolean((selectedUserRecord?.membership || isPendingUser) && selectedUserRecord.role !== "system_admin");
+    userEdit.innerHTML = `
+      <h4>${isPendingUser ? "사용자 승인" : "사용자 정보 수정"}</h4>
+      <label><span>사용자 이름</span><input value="${selectedUserRecord?.user?.name || ""}" /></label>
+      <label><span>역할</span><select data-inline-role-user="${userId}" data-inline-role-group="${groupId}" ${editable ? "" : "disabled"}>${MANAGED_GROUP_ROLES.map((role) => `<option value="${role}" ${role === selectedUserRecord?.role ? "selected" : ""}>${role}</option>`).join("")}</select></label>
+      <label><span>그룹</span><select data-inline-group-user="${userId}" ${editable ? "" : "disabled"}>${activeGroups.map((group) => `<option value="${group.id}" ${group.id === groupId ? "selected" : ""}>${group.name}</option>`).join("")}</select></label>
+      <label><span>계정 상태</span><select data-inline-account-status="${userId}" ${selectedUserRecord?.user ? "" : "disabled"}>
+        <option value="active" ${(selectedUserRecord?.user?.status || "active") === "active" ? "selected" : ""}>활성</option>
+        <option value="inactive" ${selectedUserRecord?.user?.status === "inactive" ? "selected" : ""}>비활성</option>
+        <option value="locked" ${selectedUserRecord?.user?.status === "locked" ? "selected" : ""}>잠김</option>
+        <option value="password_reset" ${selectedUserRecord?.user?.status === "password_reset" ? "selected" : ""}>비밀번호 초기화</option>
+      </select></label>
+      <button type="button" data-inline-role-save="${userId}" data-inline-role-group-save="${groupId}" data-inline-request-save="${selectedUserRecord?.request?.id || ""}" ${editable ? "" : "disabled"}>${isPendingUser ? "승인" : t("common.save", "Save")}</button>
+      ${isPendingUser ? "" : `<button type="button" disabled>삭제</button>`}
     `;
   }
   joinRequests.innerHTML = summarizeJoinRequests(currentAccessState).map((request) => `
@@ -3362,10 +4250,134 @@ function renderAccessPanels() {
       <span>${request.requested_role} · ${renderStatusBadge(request.status)} · ${t("admin.reviewer", "reviewer")}: admin</span>
     </div>
   `).join("");
-  groupAccess.innerHTML = summarizeGroupBotAccess(currentAccessState).map((access) => `
-    <div><strong>${access.group?.name || t("common.group", "Group")}</strong><span>${access.botId}</span></div>
-    <div><span class="scope-list">${access.scopes.map((scope) => `<b>${scope}</b>`).join("")}</span></div>
-  `).join("");
+  const groupSearchText = (groupSearch?.value || "").trim().toLowerCase();
+  const selectedGroupStatusFilter = groupStatusFilter?.value || "active";
+  if (groupStatusFilter) {
+    groupStatusFilter.innerHTML = ["all", "active", "deleting", "deleted"]
+      .map((status) => `<option value="${status}" ${status === selectedGroupStatusFilter ? "selected" : ""}>${status === "all" ? "전체 사용여부" : status}</option>`)
+      .join("");
+  }
+  const visibleGroups = currentAccessState.groups
+    .filter((group) => visibleGroupIds.has(group.id))
+    .filter((group) => {
+      const status = group.status || "active";
+      const text = `${group.id} ${group.name}`.toLowerCase();
+      return (!groupSearchText || text.includes(groupSearchText))
+        && (selectedGroupStatusFilter === "all" || status === selectedGroupStatusFilter);
+    });
+  const totalGroupRows = visibleGroups.length;
+  const totalGroupPages = Math.max(1, Math.ceil(totalGroupRows / groupListPageSize));
+  groupListPage = Math.min(Math.max(1, groupListPage), totalGroupPages);
+  const groupPageStart = (groupListPage - 1) * groupListPageSize;
+  const pagedGroups = visibleGroups.slice(groupPageStart, groupPageStart + groupListPageSize);
+  if (!visibleGroups.some((group) => group.id === selectedAccessGroupId)) {
+    selectedAccessGroupId = visibleGroups[0]?.id || selectedAccessGroupId;
+  }
+  groupAccess.innerHTML = `
+    <div class="management-list-meta">
+      <strong>전체 ${totalGroupRows}건</strong>
+      <select data-group-page-size aria-label="페이지 크기">
+        ${[20, 50, 100].map((size) => `<option value="${size}" ${size === groupListPageSize ? "selected" : ""}>${size}개씩 보기</option>`).join("")}
+      </select>
+    </div>
+    <div class="management-table management-table--groups management-table--paged">
+      <div class="management-table-row head">
+        <span>그룹 아이디</span>
+        <span>그룹 이름</span>
+        <span>사용여부</span>
+        <span>생성자</span>
+        <span>최종수정자</span>
+      </div>
+      ${pagedGroups.map((group) => {
+    const members = currentAccessState.memberships.filter((membership) => membership.group_id === group.id && membership.status === "active");
+    return `
+      <button type="button" class="management-table-row ${group.id === selectedAccessGroupId ? "selected-row" : ""}" data-select-group="${group.id}">
+        <strong>${group.id}</strong>
+        <span>${group.name}<small>사용자 ${members.length}</small></span>
+        <span>${renderStatusBadge(group.status || "active")}</span>
+        <span>SYSTEM</span>
+        <span>SYSTEM</span>
+      </button>
+    `;
+  }).join("")}
+    </div>
+    <div class="management-pagination">
+      <button type="button" data-group-page-prev ${groupListPage <= 1 ? "disabled" : ""}>이전</button>
+      <span>${groupListPage} / ${totalGroupPages}</span>
+      <button type="button" data-group-page-next ${groupListPage >= totalGroupPages ? "disabled" : ""}>다음</button>
+    </div>
+  `;
+  if (roleManagement) {
+    const roleRows = activeUserRecords.filter((record) => record.membership);
+    roleManagement.innerHTML = `
+      <div class="management-list-meta">
+        <strong>전체 ${roleRows.length}건</strong>
+        <span>그룹별 사용자 역할</span>
+      </div>
+      <div class="management-table management-table--roles management-table--paged">
+        <div class="management-table-row head">
+          <span>사용자 계정</span>
+          <span>사용자 이름</span>
+          <span>그룹</span>
+          <span>역할</span>
+          <span>저장</span>
+        </div>
+        ${roleRows.map((record) => {
+          const userId = record.user?.id || "";
+          const groupId = record.group?.id || "";
+          const roleChoices = record.role === "system_admin" ? ["system_admin"] : MANAGED_GROUP_ROLES;
+          const disabled = record.role === "system_admin" ? "disabled" : "";
+          return `
+            <div class="management-table-row">
+              <strong>${userId}</strong>
+              <span>${record.user?.name || userId}</span>
+              <span>${record.group?.name || groupId}</span>
+              <span><select data-role-user="${userId}" data-role-group="${groupId}" ${disabled}>${roleChoices.map((role) => `<option value="${role}" ${role === record.role ? "selected" : ""}>${role}</option>`).join("")}</select></span>
+              <span><button type="button" data-role-save="${userId}" data-role-group-save="${groupId}" ${disabled}>저장</button></span>
+            </div>
+          `;
+        }).join("") || `
+          <div class="management-table-row">
+            <strong>${t("common.none", "None")}</strong>
+            <span>-</span>
+            <span>-</span>
+            <span>-</span>
+            <span>-</span>
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  const selectedGroupRecord = currentAccessState.groups.find((group) => group.id === selectedAccessGroupId) || visibleGroups[0];
+  if (groupModal) groupModal.hidden = !accessGroupModalOpen;
+  if (groupDetail) {
+    const members = selectedGroupRecord
+      ? currentAccessState.memberships.filter((membership) => membership.group_id === selectedGroupRecord.id && membership.status === "active")
+      : [];
+    groupDetail.innerHTML = selectedGroupRecord ? `
+      <h4>기본 정보</h4>
+      <dl class="detail-definition detail-definition--two">
+        <dt>그룹 아이디</dt><dd>${selectedGroupRecord.id}</dd>
+        <dt>${t("access.userCount", "Users")}</dt><dd>${members.length}</dd>
+        <dt>그룹 이름</dt><dd>${selectedGroupRecord.name}</dd>
+        <dt>사용 여부</dt><dd>${selectedGroupRecord.status || "active"}</dd>
+        <dt>생성자</dt><dd>SYSTEM</dd>
+        <dt>최종수정자</dt><dd>SYSTEM</dd>
+      </dl>
+    ` : `<h4>기본 정보</h4><p>${t("common.none", "None")}</p>`;
+  }
+  if (groupEdit) {
+    groupEdit.innerHTML = selectedGroupRecord ? `
+      <h4>그룹 수정</h4>
+      <label><span>그룹 이름</span><input value="${selectedGroupRecord.name}" disabled /></label>
+      <label><span>사용 여부</span><select disabled><option selected>${selectedGroupRecord.status || "active"}</option></select></label>
+      <button type="button" disabled>${t("common.save", "Save")}</button>
+      <button type="button" disabled>삭제</button>
+      <p class="edit-note">그룹 수정 저장은 Aidot admin API 연결 후 활성화합니다.</p>
+    ` : "";
+  }
+  bindAccessManagementControls();
   screenAccess.innerHTML = `
     <div class="current-user"><strong>${current.user?.name || t("common.user", "User")}</strong><span>${formatMemberships(current.memberships)}</span></div>
     ${current.screens.map((screen) => `
@@ -3376,7 +4388,7 @@ function renderAccessPanels() {
     `).join("")}
   `;
   authPolicy.innerHTML = `
-    <p><strong data-i18n="access.signupGroup">Signup creates own group</strong><span>${policy.signupCreatesOwnGroup ? t("common.enabled", "Enabled") : t("common.disabled", "Disabled")}</span></p>
+    <p><strong data-i18n="access.signupGroup">Personal group auto creation</strong><span>${policy.signupCreatesOwnGroup ? t("common.enabled", "Enabled") : t("common.disabled", "Disabled")}</span></p>
     <p><strong data-i18n="access.userLocale">User language setting</strong><span>${current.user?.locale || "en"}</span></p>
     <p><strong data-i18n="access.errorLocale">Error message language</strong><span>${policy.errorLocaleSource}</span></p>
     <p><strong data-i18n="access.pendingJoin">Pending group join requests</strong><span>${policy.pendingJoinRequests}</span></p>
@@ -3398,15 +4410,29 @@ function renderAccessPanels() {
 
 function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) {
   const screenAccess = new Map(current.screens.map((screen) => [screen.screenId, screen]));
-  document.querySelectorAll(".management-nav a, [data-workflow-nav] a").forEach((link) => {
+  const links = [...document.querySelectorAll(".management-nav a, .server-sub-nav a, .system-admin-subnav a, [data-workflow-nav] a")];
+  links.forEach((link) => {
     const id = link.getAttribute("href")?.replace("#", "");
     const access = screenAccess.get(id);
     const allowed = access ? access.allowed : true;
     link.classList.toggle("access-blocked", !allowed);
     link.classList.toggle("access-allowed", allowed);
     link.setAttribute("aria-disabled", allowed ? "false" : "true");
-    link.dataset.accessLabel = allowed ? t("common.allowed", "Allowed") : `${t("common.blocked", "Blocked")} · ${access?.scope || t("common.noScope", "no scope")}`;
+    link.hidden = access ? !allowed : false;
+    link.dataset.accessLabel = "";
   });
+  const activeLink = links.find((link) => link.getAttribute("href") === `#${activeScreenId}`);
+  let activeScreenChanged = false;
+  if (activeLink?.hidden) {
+    const firstAllowed = links.find((link) => !link.hidden);
+    const firstAllowedId = firstAllowed?.getAttribute("href")?.replace("#", "");
+    if (firstAllowedId) {
+      activeScreenId = firstAllowedId;
+      activeScreenChanged = true;
+    }
+  }
+  updateNavigationActiveState();
+  if (activeScreenChanged) applyScreenLayout();
 }
 
 function renderApiRegistry() {
@@ -3470,8 +4496,163 @@ function rerenderAdminAndAccess() {
   renderCollaborationSummary();
   renderTeamDashboard();
   renderAccessPanels();
+  refreshAdminResourcesFromServer().then(() => renderAccessPanels()).catch(() => {});
   renderApiRegistry();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+}
+
+function bindAccessManagementControls() {
+  document.querySelectorAll("[data-select-user]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      selectedAccessUserId = button.dataset.selectUser;
+      accessUserModalOpen = true;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-user-modal-close]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      accessUserModalOpen = false;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-user-modal]").forEach((modal) => {
+    if (modal.dataset.bound === "true") return;
+    modal.dataset.bound = "true";
+    modal.addEventListener("click", (event) => {
+      if (event.target !== modal) return;
+      accessUserModalOpen = false;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-user-page-size]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      userListPageSize = Number(select.value) || 20;
+      userListPage = 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-user-page-prev]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      userListPage = Math.max(1, userListPage - 1);
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-user-page-next]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      userListPage += 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-select-group]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      selectedAccessGroupId = button.dataset.selectGroup;
+      accessGroupModalOpen = true;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-modal-close]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      accessGroupModalOpen = false;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-modal]").forEach((modal) => {
+    if (modal.dataset.bound === "true") return;
+    modal.dataset.bound = "true";
+    modal.addEventListener("click", (event) => {
+      if (event.target !== modal) return;
+      accessGroupModalOpen = false;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-page-size]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      groupListPageSize = Number(select.value) || 20;
+      groupListPage = 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-page-prev]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      groupListPage = Math.max(1, groupListPage - 1);
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-page-next]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      groupListPage += 1;
+      renderAccessPanels();
+    });
+  });
+  [
+    "[data-user-search]",
+    "[data-user-group-filter]",
+    "[data-user-role-filter]",
+    "[data-user-status-filter]",
+    "[data-user-signup-filter]",
+    "[data-group-search]",
+    "[data-group-status-filter]"
+  ].forEach((selector) => {
+    const control = document.querySelector(selector);
+    if (!control || control.dataset.bound === "true") return;
+    control.dataset.bound = "true";
+    control.addEventListener("change", () => {
+      if (selector.startsWith("[data-user-")) userListPage = 1;
+      if (selector.startsWith("[data-group-")) groupListPage = 1;
+      renderAccessPanels();
+    });
+    control.addEventListener("input", () => {
+      if (control.tagName === "INPUT") {
+        if (selector.startsWith("[data-user-")) userListPage = 1;
+        if (selector.startsWith("[data-group-")) groupListPage = 1;
+        renderAccessPanels();
+      }
+    });
+  });
+  document.querySelectorAll("[data-inline-role-save]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.inlineRoleSave;
+      const groupId = button.dataset.inlineRoleGroupSave;
+      const requestId = button.dataset.inlineRequestSave || "";
+      const targetGroupId = document.querySelector(`[data-inline-group-user="${userId}"]`)?.value || groupId;
+      const role = document.querySelector(`[data-inline-role-user="${userId}"][data-inline-role-group="${groupId}"]`)?.value;
+      if (!userId || !targetGroupId || !role) return;
+      await runAccessServerAction(
+        () => requestCgaJson(requestId ? `/api/cga/groups/join-requests/${encodeURIComponent(requestId)}/approve` : `/api/cga/groups/${encodeURIComponent(targetGroupId)}/members/${encodeURIComponent(userId)}/role`, {
+          method: requestId ? "POST" : "PATCH",
+          body: requestId ? { group_id: targetGroupId, requested_role: role } : { role }
+        }),
+        () => {
+          currentAccessState = requestId
+            ? approveGroupJoinRequest(currentAccessState, { requestId, reviewerId: currentAccessState.currentUserId, groupId: targetGroupId, requestedRole: role })
+            : updateGroupMembershipRole(currentAccessState, { actorId: currentAccessState.currentUserId, userId, groupId: targetGroupId, role });
+          accessUserModalOpen = false;
+        }
+      );
+    });
+  });
 }
 
 function bindAdminActionButtons() {
@@ -3479,10 +4660,23 @@ function bindAdminActionButtons() {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
     button.addEventListener("click", async () => {
+      const groupId = document.querySelector(`[data-approval-group="${button.dataset.approveJoin}"]`)?.value;
+      const requestedRole = document.querySelector(`[data-approval-role="${button.dataset.approveJoin}"]`)?.value;
       await runAccessServerAction(
-        () => requestCgaJson(`/api/cga/groups/join-requests/${encodeURIComponent(button.dataset.approveJoin)}/approve`, { method: "POST" }),
+        () => requestCgaJson(`/api/cga/groups/join-requests/${encodeURIComponent(button.dataset.approveJoin)}/approve`, {
+          method: "POST",
+          body: {
+            group_id: groupId,
+            requested_role: requestedRole
+          }
+        }),
         () => {
-          currentAccessState = approveGroupJoinRequest(currentAccessState, { requestId: button.dataset.approveJoin, reviewerId: currentAccessState.currentUserId });
+          currentAccessState = approveGroupJoinRequest(currentAccessState, {
+            requestId: button.dataset.approveJoin,
+            reviewerId: currentAccessState.currentUserId,
+            groupId,
+            requestedRole
+          });
         }
       );
     });
@@ -3491,10 +4685,23 @@ function bindAdminActionButtons() {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
     button.addEventListener("click", async () => {
+      const groupId = document.querySelector(`[data-admin-approval-group="${button.dataset.approveAdmin}"]`)?.value;
+      const requestedRole = document.querySelector(`[data-admin-approval-role="${button.dataset.approveAdmin}"]`)?.value;
       await runAccessServerAction(
-        () => requestCgaJson(`/api/cga/admin/permission-requests/${encodeURIComponent(button.dataset.approveAdmin)}/approve`, { method: "POST" }),
+        () => requestCgaJson(`/api/cga/admin/permission-requests/${encodeURIComponent(button.dataset.approveAdmin)}/approve`, {
+          method: "POST",
+          body: {
+            group_id: groupId,
+            requested_role: requestedRole
+          }
+        }),
         () => {
-          currentAccessState = approveAdminPermissionRequest(currentAccessState, { requestId: button.dataset.approveAdmin, reviewerId: currentAccessState.currentUserId });
+          currentAccessState = approveAdminPermissionRequest(currentAccessState, {
+            requestId: button.dataset.approveAdmin,
+            reviewerId: currentAccessState.currentUserId,
+            groupId,
+            requestedRole
+          });
         }
       );
     });
@@ -3530,9 +4737,13 @@ function bindRoleManagementButtons() {
 
 function bindAdminWorkbench() {
   const loginSubmit = document.querySelector("[data-login-submit]");
-  const topLoginSubmit = document.querySelector("[data-top-login-submit]");
+  const entryLoginSubmit = document.querySelector("[data-entry-login-submit]");
+  const entrySignupSubmit = document.querySelector("[data-entry-signup-submit]");
   const loginUser = document.querySelector("[data-login-user]");
-  const topLoginUser = document.querySelector("[data-top-login-user]");
+  const entryLoginId = document.querySelector("[data-entry-login-id]");
+  const entryRememberId = document.querySelector("[data-entry-remember-id]");
+  const entryLocale = document.querySelector("[data-entry-locale]");
+  const entrySignupLocale = document.querySelector("[data-entry-signup-locale]");
   const logoutSubmit = document.querySelector("[data-logout-submit]");
   const topLogoutSubmit = document.querySelector("[data-top-logout-submit]");
   const signupSubmit = document.querySelector("[data-signup-submit]");
@@ -3548,21 +4759,56 @@ function bindAdminWorkbench() {
       if (loginId) loginId.value = loginUser.value || "";
     });
   }
-  if (topLoginUser && topLoginUser.dataset.bound !== "true") {
-    topLoginUser.dataset.bound = "true";
-    topLoginUser.addEventListener("change", () => {
-      const loginId = document.querySelector("[data-login-id]");
-      if (loginId) loginId.value = topLoginUser.value || "";
+  if (entryLoginId && !entryLoginId.value) entryLoginId.value = localStorage.getItem(LOGIN_ID_STORAGE_KEY) || "";
+  if (entryLocale) entryLocale.value = getCurrentLocale();
+  if (entrySignupLocale) entrySignupLocale.value = getCurrentLocale();
+  document.querySelectorAll("[data-entry-auth-tab]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => setEntryAuthMode(button.dataset.entryAuthTab));
+  });
+  const openSignup = document.querySelector("[data-entry-open-signup]");
+  if (openSignup && openSignup.dataset.bound !== "true") {
+    openSignup.dataset.bound = "true";
+    openSignup.addEventListener("click", () => setEntryAuthMode("signup"));
+  }
+  const openLogin = document.querySelector("[data-entry-open-login]");
+  if (openLogin && openLogin.dataset.bound !== "true") {
+    openLogin.dataset.bound = "true";
+    openLogin.addEventListener("click", () => setEntryAuthMode("login"));
+  }
+  if (entryLocale && entryLocale.dataset.bound !== "true") {
+    entryLocale.dataset.bound = "true";
+    entryLocale.addEventListener("change", () => {
+      document.querySelector("[data-locale-select]").value = entryLocale.value;
+      window.cgaStudioI18n?.setLocale?.(entryLocale.value);
+      applyDynamicLocaleOverrides(entryLocale.value);
+    });
+  }
+  if (entrySignupLocale && entrySignupLocale.dataset.bound !== "true") {
+    entrySignupLocale.dataset.bound = "true";
+    entrySignupLocale.addEventListener("change", () => {
+      document.querySelector("[data-locale-select]").value = entrySignupLocale.value;
+      window.cgaStudioI18n?.setLocale?.(entrySignupLocale.value);
+      applyDynamicLocaleOverrides(entrySignupLocale.value);
     });
   }
   const runLogin = async ({ userId, password }) => {
-    if (!userId || !password) return;
+    if (!userId || !password) {
+      setAuthMessage("error", "admin.loginFailedTitle", "errors.auth.loginFailed");
+      rerenderAdminAndAccess();
+      applyScreenLayout();
+      return;
+    }
     try {
       const session = await requestCgaJson("/api/cga/auth/login", { method: "POST", body: { user_id: userId, password } });
       rememberAuthSession(session);
+      if (entryRememberId?.checked) localStorage.setItem(LOGIN_ID_STORAGE_KEY, userId);
+      if (entryRememberId && !entryRememberId.checked) localStorage.removeItem(LOGIN_ID_STORAGE_KEY);
       clearAuthMessage();
       currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
       await refreshAccessStateFromServer();
+      applyScreenLayout();
       rerenderAdminAndAccess();
     } catch (error) {
       if (error.status) {
@@ -3571,6 +4817,7 @@ function bindAdminWorkbench() {
         return;
       }
       currentAccessState = loginAsUser(currentAccessState, { userId });
+      applyScreenLayout();
       rerenderAdminAndAccess();
     }
   };
@@ -3583,11 +4830,21 @@ function bindAdminWorkbench() {
       await runLogin({ userId, password });
     });
   }
-  if (topLoginSubmit && topLoginSubmit.dataset.bound !== "true") {
-    topLoginSubmit.dataset.bound = "true";
-    topLoginSubmit.addEventListener("click", async () => {
-      const userId = document.querySelector("[data-top-login-user]")?.value;
-      const password = document.querySelector("[data-top-login-password]")?.value || "";
+  if (entryLoginSubmit && entryLoginSubmit.dataset.bound !== "true") {
+    entryLoginSubmit.dataset.bound = "true";
+    entryLoginSubmit.addEventListener("click", async () => {
+      const userId = document.querySelector("[data-entry-login-id]")?.value?.trim();
+      const password = document.querySelector("[data-entry-login-password]")?.value || "";
+      await runLogin({ userId, password });
+    });
+  }
+  const entryLoginPassword = document.querySelector("[data-entry-login-password]");
+  if (entryLoginPassword && entryLoginPassword.dataset.bound !== "true") {
+    entryLoginPassword.dataset.bound = "true";
+    entryLoginPassword.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
+      const userId = document.querySelector("[data-entry-login-id]")?.value?.trim();
+      const password = document.querySelector("[data-entry-login-password]")?.value || "";
       await runLogin({ userId, password });
     });
   }
@@ -3599,6 +4856,7 @@ function bindAdminWorkbench() {
     clearAuthSession();
     setAuthMessage("info", "admin.logoutTitle", "admin.logoutSuccess");
     currentAccessState = loginAsUser(currentAccessState, { userId: "admin" });
+    applyScreenLayout();
     rerenderAdminAndAccess();
   };
   if (logoutSubmit && logoutSubmit.dataset.bound !== "true") {
@@ -3617,7 +4875,7 @@ function bindAdminWorkbench() {
       const password = document.querySelector("[data-signup-password]")?.value || "";
       if (!id || !name || !password) return;
       const locale = document.querySelector("[data-signup-locale]")?.value || "en";
-      const groupName = document.querySelector("[data-signup-group]")?.value?.trim() || `${name} Group`;
+      const groupId = currentAccessState.policy?.signupDefaultGroupId || "g-support";
       try {
         const session = await requestCgaJson("/api/cga/auth/signup", {
           method: "POST",
@@ -3626,7 +4884,8 @@ function bindAdminWorkbench() {
             name,
             password,
             locale,
-            group_name: groupName
+            group_id: groupId,
+            requested_role: "viewer"
           }
         });
         rememberAuthSession(session);
@@ -3640,9 +4899,63 @@ function bindAdminWorkbench() {
           rerenderAdminAndAccess();
           return;
         }
-        currentAccessState = applySignup(currentAccessState, { userId: id, name, locale, groupName });
+        currentAccessState = applySignup(currentAccessState, { userId: id, name, locale, groupId, requestedRole: "viewer" });
         rerenderAdminAndAccess();
       }
+    });
+  }
+  const runSignup = async ({ id, name, password, locale, groupId }) => {
+    if (!id || !name || !password) {
+      setAuthMessage("error", "admin.signupFailedTitle", "errors.auth.signupRequired");
+      renderEntryAuthMessage();
+      return;
+    }
+    try {
+      const session = await requestCgaJson("/api/cga/auth/signup", {
+        method: "POST",
+        body: {
+          user_id: id,
+          name,
+          password,
+          locale,
+          group_id: groupId || currentAccessState.policy?.signupDefaultGroupId || "g-support",
+          requested_role: "viewer"
+        }
+      });
+      rememberAuthSession(session);
+      clearAuthMessage();
+      currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || id };
+      await refreshAccessStateFromServer();
+      applyScreenLayout();
+      rerenderAdminAndAccess();
+    } catch (error) {
+      if (error.status) {
+        setAuthMessage("error", "admin.signupFailedTitle", getCgaErrorMessage(error, t("errors.auth.signupRequired", "Signup failed.")));
+        renderEntryAuthMessage();
+        rerenderAdminAndAccess();
+        return;
+      }
+      currentAccessState = applySignup(currentAccessState, {
+        userId: id,
+        name,
+        locale,
+        groupId: groupId || currentAccessState.policy?.signupDefaultGroupId || "g-support",
+        requestedRole: "viewer"
+      });
+      applyScreenLayout();
+      rerenderAdminAndAccess();
+    }
+  };
+  if (entrySignupSubmit && entrySignupSubmit.dataset.bound !== "true") {
+    entrySignupSubmit.dataset.bound = "true";
+    entrySignupSubmit.addEventListener("click", async () => {
+      await runSignup({
+        id: document.querySelector("[data-entry-signup-id]")?.value?.trim(),
+        name: document.querySelector("[data-entry-signup-name]")?.value?.trim(),
+        password: document.querySelector("[data-entry-signup-password]")?.value || "",
+        locale: document.querySelector("[data-entry-signup-locale]")?.value || getCurrentLocale(),
+        groupId: document.querySelector("[data-entry-signup-group]")?.value || currentAccessState.policy?.signupDefaultGroupId || "g-support"
+      });
     });
   }
   if (groupCreate && groupCreate.dataset.bound !== "true") {
@@ -3732,14 +5045,42 @@ function bindAdminWorkbench() {
 }
 
 function bindAccessNavigationGuard() {
-  document.querySelectorAll(".management-nav a, [data-workflow-nav] a").forEach((link) => {
+  document.querySelectorAll(".management-nav a, .server-sub-nav a, .system-admin-subnav a, [data-workflow-nav] a").forEach((link) => {
     if (link.dataset.guardBound === "true") return;
     link.dataset.guardBound = "true";
     link.addEventListener("click", (event) => {
+      event.preventDefault();
       if (link.classList.contains("access-blocked")) {
-        event.preventDefault();
+        return;
       }
+      if (link.dataset.adminSubview) {
+        currentSystemAdminSubview = link.dataset.adminSubview;
+      }
+      const nextScreenId = link.getAttribute("href")?.replace("#", "");
+      if (!nextScreenId) return;
+      setActiveScreen(nextScreenId);
     });
+  });
+}
+
+function setActiveScreen(screenId, { replaceHash = false } = {}) {
+  const visibleIds = getVisibleLayout().map((item) => item.id);
+  if (!visibleIds.includes(screenId)) return;
+  activeScreenId = screenId;
+  localStorage.setItem(LAST_SCREEN_STORAGE_KEY, activeScreenId);
+  if (replaceHash) {
+    history.replaceState(null, "", `#${screenId}`);
+  } else {
+    history.pushState(null, "", `#${screenId}`);
+  }
+  applyScreenLayout();
+}
+
+function updateNavigationActiveState() {
+  document.querySelectorAll(".management-nav a, .server-sub-nav a, .system-admin-subnav a, [data-workflow-nav] a").forEach((link) => {
+    const linkScreenId = link.getAttribute("href")?.replace("#", "");
+    const subviewMatches = !link.dataset.adminSubview || link.dataset.adminSubview === currentSystemAdminSubview;
+    link.classList.toggle("active", linkScreenId === activeScreenId && subviewMatches);
   });
 }
 
@@ -3776,8 +5117,8 @@ function renderReadinessIssues() {
 function renderWorkflowRail() {
   const nav = document.querySelector("[data-workflow-nav]");
   if (!nav) return;
-  nav.innerHTML = workflowSteps.map((step, index) => `
-    <a href="#${step.id}" class="${index === 1 ? "active" : ""}">
+  nav.innerHTML = workflowSteps.map((step) => `
+    <a href="#${step.id}" class="${step.id === activeScreenId ? "active" : ""}">
       <span>${step.number}</span>
       <strong data-i18n="workflow.${step.id}.title">${step.title}</strong>
       <small data-i18n="workflow.${step.id}.subtitle">${step.subtitle}</small>
@@ -3789,7 +5130,7 @@ function renderLinkRail(selector, links) {
   const nav = document.querySelector(selector);
   if (!nav) return;
   nav.innerHTML = links.map((link) => `
-    <a href="#${link.id}">
+    <a href="#${link.id}" class="${link.id === activeScreenId ? "active" : ""}">
       <span>${link.code}</span>
       <strong data-i18n="${link.titleKey}">${link.title}</strong>
       <small data-i18n="${link.subtitleKey}">${link.subtitle}</small>
@@ -3797,10 +5138,26 @@ function renderLinkRail(selector, links) {
   `).join("");
 }
 
+function renderSystemAdminSubnav() {
+  const container = document.querySelector("[data-system-admin-subnav]");
+  if (!container) return;
+  container.innerHTML = systemAdminSections.map((section) => `
+    <div class="subnav-section">
+      <strong>${section.title}</strong>
+      ${section.links.map((link) => `
+        <a href="#${link.id}" class="${link.id === activeScreenId && (!link.subview || link.subview === currentSystemAdminSubview) ? "active" : ""}" ${link.subview ? `data-admin-subview="${link.subview}"` : ""}>
+          <span>${link.label}</span>
+        </a>
+      `).join("")}
+    </div>
+  `).join("");
+}
+
 function renderNavigationRails() {
-  renderLinkRail("[data-production-nav]", productionLinks);
-  renderLinkRail("[data-system-admin-nav]", systemAdminLinks);
-  renderLinkRail("[data-reference-nav]", referenceLinks);
+  renderLinkRail("[data-query-nav]", queryLinks);
+  renderLinkRail("[data-management-nav]", managementLinks);
+  renderLinkRail("[data-operation-nav]", operationLinks);
+  renderSystemAdminSubnav();
 }
 
 function renderBoundaryMatrix() {
@@ -3847,11 +5204,44 @@ function renderErrorSamples() {
   `;
 }
 
+function openHelpTopic(topicId) {
+  const topic = HELP_TOPICS[topicId];
+  const modal = document.querySelector("[data-help-modal]");
+  const title = document.querySelector("[data-help-title]");
+  const body = document.querySelector("[data-help-body]");
+  if (!topic || !modal || !title || !body) return;
+  title.textContent = topic.title;
+  body.innerHTML = topic.body;
+  modal.hidden = false;
+}
+
+function closeHelpModal() {
+  const modal = document.querySelector("[data-help-modal]");
+  if (modal) modal.hidden = true;
+}
+
+function bindHelpModal() {
+  document.querySelectorAll("[data-help-topic]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => openHelpTopic(button.dataset.helpTopic));
+  });
+  document.querySelectorAll("[data-help-close]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", closeHelpModal);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeHelpModal();
+  });
+}
+
 function bootApp() {
   applyScreenLayout();
   renderNavigationRails();
   renderWorkflowRail();
   bindAccessNavigationGuard();
+  bindHelpModal();
   renderBoundaryMatrix();
   renderErrorSamples();
   bindCreateControls();
@@ -3867,6 +5257,7 @@ function bootApp() {
   renderWorkspaceHome();
   renderTeamDashboard();
   renderAccessPanels();
+  refreshAdminResourcesFromServer().then(() => renderAccessPanels()).catch(() => {});
   renderApiRegistry();
   bindAdminWorkbench();
   renderLockPolicy();
@@ -3878,6 +5269,7 @@ function bootApp() {
     .then(async (loaded) => {
       if (loaded) {
         await refreshWorkspaceDataFromServer({ includeBots: true }).catch(() => false);
+        await refreshAdminResourcesFromServer().catch(() => false);
         renderAllStatePanels();
         rerenderAdminAndAccess();
       }
@@ -3886,6 +5278,21 @@ function bootApp() {
 }
 
 document.addEventListener("DOMContentLoaded", bootApp);
+window.addEventListener("cga:entry-login-success", async () => {
+  clearAuthMessage();
+  const loaded = await refreshAccessStateFromServer().catch(() => false);
+  if (loaded) {
+    await refreshWorkspaceDataFromServer({ includeBots: true }).catch(() => false);
+    await refreshAdminResourcesFromServer().catch(() => false);
+  }
+  applyScreenLayout();
+  renderAllStatePanels();
+  rerenderAdminAndAccess();
+});
+window.addEventListener("hashchange", () => {
+  const hashId = window.location.hash.replace("#", "");
+  if (hashId) setActiveScreen(hashId, { replaceHash: true });
+});
 document.addEventListener("cga:i18n-ready", syncStudioLocaleToCurrentUser);
 document.addEventListener("cga:content-rendered", syncStudioLocaleToCurrentUser);
 document.addEventListener("change", (event) => {
@@ -3897,3 +5304,6 @@ document.addEventListener("change", (event) => {
     }, 0);
   }
 });
+
+
+
