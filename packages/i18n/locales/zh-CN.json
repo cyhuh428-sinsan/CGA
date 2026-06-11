@@ -30,7 +30,7 @@
   "i18n.cgaErrorGroup": "CGA错误",
   "i18n.botErrorGroup": "机器人错误",
   "i18n.noHardcode": "不要硬编码面向用户的错误消息",
-  "app.subtitle": "Aidot Workflow Shell · 屏幕优先实现草案",
+  "app.subtitle": "机器人制作工作室",
   "top.bot": "机器人: SupportBot Draft",
   "top.version": "版本: v0.1",
   "top.apiUnchanged": "Aidot API未改变",
@@ -553,3 +553,5 @@
   "create.versionManage": "版本管理",
   "common.status": "状态"
 }
+
+

@@ -2331,3 +2331,44 @@
 - 실행 서버 HTML 확인: app.js?v=20260611-8, styles.css?v=20260611-8 반영. 화면용 map/draft 임시 문구 제거 확인.
 - Aidot 저장소는 수정하지 않았다.
 - 다음 작업: Aidot Admin 각 화면의 상세/등록/수정 UX를 계속 원본 기준으로 맞추고, 모든 조회 화면은 실제 API 응답만 표시한다.
+
+## 2026-06-11 13:45 - 1920x1080 화면 높이/스크롤 보정
+
+### 작업 배경
+- 신산님 지시: CGA Studio 기본 해상도는 1920x1080이며, 현재 화면은 상하 여백과 카드 높이가 커서 브라우저 세로 스크롤이 생김.
+- 기준: Aidot를 수정하지 않고 CGA에서만 조정. 본문 조회 화면은 전체 페이지 스크롤을 지양하고, 필요한 경우 목록 영역 내부에서만 스크롤한다.
+
+### 진행 내용
+- `apps/studio/styles.css`에 1920x1080 기준 compact override를 추가했다.
+  - 상단바 높이와 패딩 축소.
+  - 좌측 메뉴 카드/서브메뉴 상하 간격 축소.
+  - 본문 workspace/screen-card를 고정 높이 영역으로 정리.
+  - Admin 조회 화면은 검색/툴바/목록/페이지네이션 구성을 유지하되 목록 영역만 내부 스크롤되도록 조정.
+- `apps/studio/i18n.js`의 언어 초기화 흐름을 보정했다.
+  - 화면 선택값 우선 규칙은 유지.
+  - 초기 부팅 시 저장된 사용자 언어가 먼저 select에 반영되도록 `getStoredLocale()`을 분리.
+  - 한국어로 로그인/저장된 경우 첫 화면이 영어로 돌아가는 문제를 보완.
+- `apps/studio/index.html`의 CSS/앱 캐시 버전을 `20260611-10`으로 갱신했다.
+
+### 검증 결과
+- `npm run studio:validate` 통과.
+- 인증/그룹 API 검증: 로그인 이력 포함 그룹 조회 1.3ms.
+- Admin 리소스 검증:
+  - resources 12ms
+  - template create 24ms
+  - common-variable create 75ms
+  - default-message create 26ms
+  - channel create 68ms
+  - seed counts: templates 10, common_variables 8, default_messages 8, channels 4
+- Webchat 호환 검증 통과: `OK Aidot-compatible webchat channel endpoints passed`.
+- 실제 Chrome 1920x1080 검증:
+  - `detail`: body/workspace vertical scroll 없음, lang=ko
+  - `login-history`: body/workspace vertical scroll 없음, lang=ko
+  - `templates`: body/workspace vertical scroll 없음, lang=ko
+  - `license-status`: body/workspace vertical scroll 없음, lang=ko
+
+### 주의 / 다음 작업
+- 이번 작업은 CGA Studio 화면 밀도와 언어 유지 보정만 수행했다.
+- Aidot 파일은 수정하지 않았다.
+- 다음 작업자는 조회 화면을 추가/수정할 때 1920x1080에서 전체 페이지 스크롤이 생기지 않는지 실제 브라우저로 확인해야 한다.
+- 실제 조회 API는 5초 기준을 반드시 넘기지 않아야 하며, 5초 이상이면 목록 페이징/필터/캐시를 먼저 검토한다.

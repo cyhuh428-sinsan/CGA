@@ -31,7 +31,7 @@ const CGA_I18N_RESOURCES = {
     "i18n.cgaErrorGroup": "CGA-Fehler",
     "i18n.botErrorGroup": "Bot-Fehler",
     "i18n.noHardcode": "Keine fest codierten Benutzer-Fehlermeldungen",
-    "app.subtitle": "Aidot Workflow Shell · screen-first Implementierungsentwurf",
+    "app.subtitle": "Bot-Produktionsstudio",
     "top.bot": "Bot: SupportBot-Entwurf",
     "top.version": "Fassung: v0.1",
     "top.apiUnchanged": "Aidot API unverändert",
@@ -636,7 +636,7 @@ const CGA_I18N_RESOURCES = {
     "contract.webchat": "Webchat compatibility preserved",
     "create.title": "Bot Creation",
     "create.body": "Set bot-level structural choices before any later configuration screen.",
-    "create.map": "Maps to Aidot: Bot create / Bot setup / Version / channel defaults",
+    "create.map": "Aidot compatible bot creation",
     "create.info": "Structural choices are decided here. Anything that cannot be changed after Aidot training must be set in Create Bot.",
     "create.locked": "Locked after training",
     "create.lock.llm": "LLM usage",
@@ -707,7 +707,7 @@ const CGA_I18N_RESOURCES = {
     "team.blockedItems": "Blocked Items",
     "configure.title": "Bot Settings",
     "configure.body": "LLM-first bot composition flow.",
-    "configure.map": "Maps to Aidot: Training utterances / PDF-RAG / Intent draft",
+    "configure.map": "Aidot compatible composition",
     "configure.notice": "Bot composition in CGA uses LLM flow only. PDF Q&A generation requires an LLM connection.",
     "configure.pathA": "Path A · LLM optional",
     "configure.pathA.title": "Training utterances → intent classification",
@@ -727,7 +727,7 @@ const CGA_I18N_RESOURCES = {
     "review.review": "Review",
     "detail.title": "Bot Composition",
     "detail.body": "Beginner flow stays guided, and all Aidot detail screens remain available in this step.",
-    "detail.map": "Maps to Aidot: Intent / Entity / Dictionary / Scenario / API cards",
+    "detail.map": "Aidot compatible detail assets",
     "detail.intentAnswer": "Intent & Answer",
     "detail.synonyms": "Synonyms",
     "detail.entities": "Entities",
@@ -773,7 +773,7 @@ const CGA_I18N_RESOURCES = {
     "transfer.upload": "Upload",
     "build.title": "Bot Edit",
     "build.body": "Run Aidot-compatible training/build readiness actions.",
-    "build.map": "Maps to Aidot: NLU training / LLM NLU / RAG embedding / deploy readiness",
+    "build.map": "Aidot compatible build",
     "build.botInfo": "Bot info",
     "build.complete": "Complete",
     "build.intentCount": "Intent count",
@@ -785,14 +785,14 @@ const CGA_I18N_RESOURCES = {
     "build.trainingStatus": "View Aidot Training Status",
     "test.title": "Bot Test",
     "test.body": "Show Aidot simulator results in a builder-friendly layout.",
-    "test.map": "Maps to Aidot: Simulator / intent result / runtime variables",
+    "test.map": "Aidot compatible simulator",
     "test.analysis": "Conversation Analysis",
     "test.matched": "Matched intent",
     "test.method": "Method",
     "test.simPlaceholder": "Type a test message",
     "operate.title": "Retraining",
     "operate.body": "Improve the running bot through Aidot-compatible retraining flow.",
-    "operate.map": "Maps to Aidot: Webchat / channel / operation version / analysis / retrain",
+    "operate.map": "Aidot compatible operation",
     "operate.channelStatus": "Channel Status",
     "operate.webOk": "Web OK",
     "operate.kakaoPending": "Desktop and Kakao KR pending",
@@ -851,7 +851,7 @@ const CGA_I18N_RESOURCES = {
     "openCore.private": "Private Implementation",
     "access.title": "Users, Login, and Access",
     "access.body": "CGA is an operating system for bot production, so user identity and permission boundaries are part of the Public Core.",
-    "access.map": "Maps to Public Core: login state / roles / scopes / audit-ready actions",
+    "access.map": "Access control",
     "access.login": "Login",
     "access.loginBody": "Authenticated users can create, configure, review, deploy, or operate bots based on role.",
     "access.roles": "Group User Roles",
@@ -909,7 +909,7 @@ const CGA_I18N_RESOURCES = {
     "admin.approvalBody": "Group join requests are approved by the target group administrator. Admin permission requests are approved by system admin.",
     "apiAnswer.title": "External API Answer Source",
     "apiAnswer.body": "API answers are used when the response is not fixed text but comes from an external business system.",
-    "apiAnswer.map": "Maps to Aidot: API card / response mapping / runtime variables",
+    "apiAnswer.map": "Aidot compatible API answers",
     "apiAnswer.flowTitle": "Answer flow",
     "apiAnswer.userQuestion": "User question",
     "apiAnswer.intent": "Matched intent",
@@ -955,7 +955,7 @@ const CGA_I18N_RESOURCES = {
     "coverage.ruleBody": "Aidot feature screens are preserved.",
     "collab.title": "Collaboration Platform",
     "collab.body": "CGA is optimized for one person to build a bot in 1-2 days, while still allowing multiple people to collaborate on the same bot when needed.",
-    "collab.map": "Maps to Public Core: fast solo workflow + optional team collaboration",
+    "collab.map": "Collaboration workflow",
     "collab.roles": "Fast solo first",
     "collab.rolesBody": "The default flow should let one builder create, configure, test, and deploy a bot quickly without collaboration overhead.",
     "collab.assignments": "Team expansion",
@@ -1083,10 +1083,10 @@ const CGA_I18N_RESOURCES = {
     "workflow.evaluate.subtitle": "Evaluate",
     "botManagement.title": "Bot Management",
     "botManagement.body": "Manage upload, download, operation version, copy, and delete for the selected bot.",
-    "botManagement.map": "Maps to Aidot: version management / bot package exchange",
+    "botManagement.map": "Aidot compatible bot packages",
     "evaluate.title": "Bot Evaluation",
     "evaluate.body": "Evaluate bot quality before moving it to operation.",
-    "evaluate.map": "Maps to Aidot: evaluation / quality result / readiness check",
+    "evaluate.map": "Aidot compatible evaluation",
     "evaluate.intentCoverage": "Intent coverage",
     "evaluate.answerQuality": "Answer quality",
     "evaluate.regression": "Regression check",
@@ -1096,7 +1096,7 @@ const CGA_I18N_RESOURCES = {
     "evaluate.preserved": "Preserved",
     "analysis.title": "Analysis",
     "analysis.body": "Review operation data, unanswered questions, and improvement targets.",
-    "analysis.map": "Maps to Aidot: analysis / undefined intent / operation report",
+    "analysis.map": "Aidot compatible analysis",
     "analysis.unanswered": "Unanswered questions",
     "analysis.unansweredBody": "Review candidates for retraining.",
     "analysis.topIntents": "Top intents",
@@ -1141,7 +1141,7 @@ const CGA_I18N_RESOURCES = {
     "i18n.cgaErrorGroup": "Erreur CGA",
     "i18n.botErrorGroup": "Erreur bot",
     "i18n.noHardcode": "Ne jamais coder en dur les erreurs utilisateur",
-    "app.subtitle": "Aidot Workflow Shell · brouillon d'implémentation orienté écran",
+    "app.subtitle": "Studio de production de bots",
     "top.bot": "Bot : SupportBot Draft",
     "top.version": "Version : v0.1",
     "top.apiUnchanged": "Aidot API inchangée",
@@ -1696,7 +1696,7 @@ const CGA_I18N_RESOURCES = {
     "i18n.cgaErrorGroup": "CGAエラー",
     "i18n.botErrorGroup": "ボットエラー",
     "i18n.noHardcode": "ユーザー向けエラー文をハードコードしない",
-    "app.subtitle": "Aidot Workflow Shell · 画面優先の実装ドラフト",
+    "app.subtitle": "ボット制作スタジオ",
     "top.bot": "ボット: SupportBot Draft",
     "top.version": "バージョン: v0.1",
     "top.apiUnchanged": "Aidot API変更なし",
@@ -2806,7 +2806,7 @@ const CGA_I18N_RESOURCES = {
     "i18n.cgaErrorGroup": "Lỗi CGA",
     "i18n.botErrorGroup": "Lỗi bot",
     "i18n.noHardcode": "Không hardcode lỗi hiển thị cho người dùng",
-    "app.subtitle": "Aidot Workflow Shell · bản nháp triển khai ưu tiên màn hình",
+    "app.subtitle": "Studio sản xuất bot",
     "top.bot": "Bot hiện tại: SupportBot Draft",
     "top.version": "Phiên bản: v0.1",
     "top.apiUnchanged": "Aidot API không đổi",
@@ -3361,7 +3361,7 @@ const CGA_I18N_RESOURCES = {
     "i18n.cgaErrorGroup": "CGA错误",
     "i18n.botErrorGroup": "机器人错误",
     "i18n.noHardcode": "不要硬编码面向用户的错误消息",
-    "app.subtitle": "Aidot Workflow Shell · 屏幕优先实现草案",
+    "app.subtitle": "机器人制作工作室",
     "top.bot": "机器人: SupportBot Draft",
     "top.version": "版本: v0.1",
     "top.apiUnchanged": "Aidot API未改变",
@@ -3932,7 +3932,7 @@ function getSelectedLocale() {
 }
 
 function getStoredLocale() {
-  return getSelectedLocale();
+  return normalizeLocale(localStorage.getItem(STORAGE_KEY) || getSelectedLocale());
 }
 
 function bootI18n() {
@@ -3957,4 +3957,9 @@ document.addEventListener('cga:content-rendered', () => {
   const select = document.querySelector('[data-locale-select]');
   applyLocale(select?.value || getStoredLocale());
 });
+
+
+
+
+
 
