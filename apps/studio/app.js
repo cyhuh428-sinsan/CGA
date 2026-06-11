@@ -3543,6 +3543,23 @@ function formatAidotAdminDate(value) {
 function formatLoginHistoryDate(value) {
   return formatAidotAdminDate(value);
 }
+function formatAidotSignupStatus(record) {
+  if (!record) return "-";
+  if (record.rowStatus === "pending" || record.request?.status === "pending") return "가입 대기";
+  if (record.rowStatus === "rejected" || record.request?.status === "rejected") return "승인 반려";
+  return "계정 승인";
+}
+
+function formatAidotAccountStatus(status) {
+  const labels = {
+    active: "활성",
+    inactive: "비활성",
+    locked: "잠김",
+    password_reset: "비밀번호 초기화",
+    pending: "대기"
+  };
+  return labels[status] || status || "-";
+}
 
 function renderPager(total) {
   return `
@@ -4150,7 +4167,7 @@ function renderAccessPanels() {
   const activeUserRows = pagedUserRecords.map((record) => {
     const userId = record.user?.id || record.request?.user_id || "";
     const userName = record.user?.name || userId;
-    const requestDate = formatAidotAdminDate(record.request?.created_at || record.request?.requested_at || record.request?.id);
+    const requestDate = formatAidotAdminDate(record.request?.created_at || record.request?.requested_at);
     return `
       <button type="button" class="management-table-row ${userId === selectedAccessUserId ? "selected-row" : ""} ${record.rowStatus === "pending" ? "pending-row" : ""}" data-select-user="${userId}">
         <span><input type="checkbox" tabindex="-1" /></span>
@@ -5304,6 +5321,3 @@ document.addEventListener("change", (event) => {
     }, 0);
   }
 });
-
-
-

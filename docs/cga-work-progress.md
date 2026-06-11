@@ -2372,3 +2372,73 @@
 - Aidot 파일은 수정하지 않았다.
 - 다음 작업자는 조회 화면을 추가/수정할 때 1920x1080에서 전체 페이지 스크롤이 생기지 않는지 실제 브라우저로 확인해야 한다.
 - 실제 조회 API는 5초 기준을 반드시 넘기지 않아야 하며, 5초 이상이면 목록 페이징/필터/캐시를 먼저 검토한다.
+
+## 2026-06-11 Admin 표 레이아웃/실데이터 표시 수정
+
+### 작업 배경
+- System Administration 하위의 `템플릿 목록`, `라이선스 조회` 등 Aidot Admin 복사 대상 화면에서 표가 화면 하단으로 밀리고 데이터 행이 보이지 않는 문제가 확인됨.
+- 사용자는 가짜 데이터가 아니라 Aidot에 등록된 기초 데이터를 CGA에서도 실제 조회해야 하며, 수정 후 개발자가 먼저 테스트해야 한다고 지시함.
+
+### 원인
+- `renderAidotInteractiveTable()`은 제목, 검색행, 툴바, 표, 페이지네이션의 5개 영역을 렌더링한다.
+- 하지만 compact Admin CSS의 `.admin-page`가 `grid-template-rows: auto auto minmax(0, 1fr) auto` 4행으로 정의되어 툴바와 표 영역 배치가 깨졌다.
+- 그 결과 검색/툴바 이후 큰 빈 공간이 생기고 표가 화면 아래쪽으로 밀렸다.
+- 추가로 사용자 목록 렌더링에서 `formatAidotSignupStatus`, `formatAidotAccountStatus` 함수가 누락되어 브라우저 page error가 발생할 수 있었다.
+
+### 수정 내용
+- `apps/studio/styles.css`
+  - `.admin-page` compact grid를 5행 구조로 수정했다.
+  - 변경: `auto auto auto minmax(0, 1fr) auto`
+  - 목적: 검색행, 툴바, 표, 페이지네이션이 1920x1080 화면 안에서 순서대로 배치되도록 고정.
+- `apps/studio/app.js`
+  - `formatAidotSignupStatus()` 추가.
+  - `formatAidotAccountStatus()` 추가.
+  - 신청일시에 가입 요청 ID(`jr-*`)가 표시되지 않도록 실제 요청 일시 필드만 날짜 포맷에 사용.
+- `apps/studio/index.html`
+  - 브라우저 캐시 회피를 위해 `styles.css`와 `app.js` 버전을 `20260611-11`로 갱신.
+
+### 실제 데이터 확인
+- `/api/cga/admin/resources` 기준 실제 Admin 기초 데이터가 반환됨을 확인했다.
+- 확인된 데이터 수:
+  - 템플릿 목록: 10건
+  - 공통 변수 관리하기: 8건
+  - 기본 메시지 관리: 8건
+  - 채널 관리: 4건
+  - 라이선스 조회: 3건
+  - 로그인 이력: 7건
+  - 봇스테이션 연계 현황: 현재 0건
+
+### 성능 확인
+- `npm run studio:validate`의 Admin 리소스 API 측정 결과:
+  - resources: 12ms
+  - list: 2ms
+  - `/api/cga/admin/templates`: 29ms
+  - `/api/cga/admin/common-variables`: 77ms
+  - `/api/cga/admin/default-messages`: 16ms
+  - `/api/cga/admin/channels`: 64ms
+- 5초 초과 조회 없음.
+
+### 브라우저 검증
+- Playwright + Chrome, viewport 1920x1080에서 직접 확인.
+- 절차:
+  1. `http://127.0.0.1:4173/` 접속
+  2. `admin / admin` 로그인
+  3. System Administration → `템플릿 목록` 클릭
+- 결과:
+  - 활성 hash: `#access-management`
+  - 템플릿 실제 행: 10건
+  - 첫 행: `1 Simulator 기본 메시지 1 text text 사용 2026. 05. 05. 02:55:35`
+  - 전체 건수: `전체 10건`
+  - 화면 전체 스크롤: 없음
+  - workspace 스크롤: 없음
+  - 화면 안에 보이는 행: 10건
+  - 브라우저 page error: 없음
+
+### 검증 명령
+- `node --check apps/studio/app.js`
+- `npm run studio:validate`
+- Playwright 1920x1080 실제 로그인/메뉴/데이터 표시 확인
+
+### Aidot 수정 여부
+- Aidot 원본은 수정하지 않음.
+- CGA 쪽 Studio 화면/캐시 버전만 수정함.
