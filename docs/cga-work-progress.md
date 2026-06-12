@@ -2500,3 +2500,26 @@
   - 관리자 기초 데이터 조회 결과: templates 20, common_variables 8, default_messages 14, channels 4.
   - 조회 시간: resources 14ms, list 1ms, templates 73ms, common-variables 22ms, default-messages 57ms, channels 17ms.
   - 별도 역할 관리 잔여 코드 검색 결과: `data-role-management`, `role-management`, `management-table--roles`, `data-role-save`, `subview: "roles"` 없음.
+
+## 2026-06-12 목록 건수/페이지 크기 배치 Aidot 기준 보정
+
+- 작업 범위: CGA만 수정. Aidot 저장소/소스는 수정하지 않음.
+- 수정 목적:
+  - 목록 화면의 `전체 n건`과 `n개씩 보기` 선택 상자가 양끝으로 벌어지지 않고 Aidot처럼 왼쪽에 붙어서 표시되도록 보정.
+  - 사용자/그룹/로그인 이력 목록의 페이지 크기 기본값과 선택지를 Aidot 목록 UI에 맞게 정리.
+- 적용 내용:
+  - `apps/studio/styles.css`
+    - `.management-list-meta` 정렬을 `space-between`에서 `flex-start`로 변경.
+    - 건수/페이지 크기 간격과 select 폭을 Aidot형 목록 컨트롤에 맞게 축소.
+  - `apps/studio/app.js`
+    - 사용자 목록 기본 페이지 크기: 10건.
+    - 그룹 목록 기본 페이지 크기: 10건.
+    - 페이지 크기 선택지: 10 / 25 / 50 / 100.
+  - `apps/studio/index.html`
+    - 브라우저 캐시 회피를 위해 `styles.css`와 `app.js` 버전을 `20260612-1`로 갱신.
+- 검증:
+  - `node --check apps/studio/app.js` 통과.
+  - `npm run studio:validate` 통과.
+  - 4173 서버 응답 확인: HTTP 200, 0.003478초.
+  - 현재 서버가 `app.js?v=20260612-1`, `styles.css?v=20260612-1`을 서빙하는 것 확인.
+  - 현재 서버 CSS에서 `justify-content: flex-start`, `width: 126px` 반영 확인.

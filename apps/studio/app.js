@@ -112,10 +112,10 @@ let currentAdminResourceModal = null;
 let selectedAccessUserId = "admin";
 let selectedAccessGroupId = "g-admin";
 let userListPage = 1;
-let userListPageSize = 100;
+let userListPageSize = 10;
 let accessUserModalOpen = false;
 let groupListPage = 1;
-let groupListPageSize = 20;
+let groupListPageSize = 10;
 let accessGroupModalOpen = false;
 let currentIntentSearch = "";
 let currentIntentFilter = "all";
@@ -4004,7 +4004,7 @@ function renderAccessPanels() {
       </header>
       <div class="management-list-meta">
         <strong>전체 ${loginRows.length}건</strong>
-        <select aria-label="페이지 크기"><option>100개씩 보기</option></select>
+        <select aria-label="페이지 크기"><option>10개씩 보기</option><option>25개씩 보기</option><option>50개씩 보기</option><option>100개씩 보기</option></select>
       </div>
       <div class="management-table management-table--login-history management-table--paged">
         <div class="management-table-row head">
@@ -4184,7 +4184,7 @@ function renderAccessPanels() {
     <div class="management-list-meta">
       <strong>전체 ${totalUserRows}건</strong>
       <select data-user-page-size aria-label="페이지 크기">
-        <option value="100" ${100 === userListPageSize ? "selected" : ""}>100개씩 보기</option>
+        ${[10, 25, 50, 100].map((size) => `<option value="${size}" ${size === userListPageSize ? "selected" : ""}>${size}개씩 보기</option>`).join("")}
       </select>
     </div>
     <div class="management-table management-table--users management-table--paged">
@@ -4282,7 +4282,7 @@ function renderAccessPanels() {
     <div class="management-list-meta">
       <strong>전체 ${totalGroupRows}건</strong>
       <select data-group-page-size aria-label="페이지 크기">
-        ${[20, 50, 100].map((size) => `<option value="${size}" ${size === groupListPageSize ? "selected" : ""}>${size}개씩 보기</option>`).join("")}
+        ${[10, 25, 50, 100].map((size) => `<option value="${size}" ${size === groupListPageSize ? "selected" : ""}>${size}개씩 보기</option>`).join("")}
       </select>
     </div>
     <div class="management-table management-table--groups management-table--paged">
