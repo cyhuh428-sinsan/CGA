@@ -2001,17 +2001,18 @@ button.management-table-row:hover,
 .management-table--login-history .management-table-row { grid-template-columns: 200px 160px 180px 160px 190px 190px 190px; }
 .management-list-meta {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin: 0 0 8px;
 }
 .management-list-meta strong {
   color: #0f172a;
   font-size: var(--font-body);
+  white-space: nowrap;
 }
 .management-list-meta select {
-  width: 130px;
+  width: 126px;
   height: 30px;
   border: 1px solid var(--line);
   border-radius: 6px;
