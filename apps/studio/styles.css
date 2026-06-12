@@ -1960,7 +1960,7 @@ textarea { min-height: 84px; resize: vertical; }
 
 .management-table {
   border: 1px solid var(--muted-line);
-  border-radius: 8px;
+  border-radius: 0;
   background: #fff;
   overflow-x: auto;
   width: 100%;
@@ -1970,7 +1970,8 @@ textarea { min-height: 84px; resize: vertical; }
   display: grid;
   gap: 8px;
   align-items: center;
-  padding: 9px 10px;
+  min-height: 36px;
+  padding: 7px 10px;
   border-bottom: 1px solid var(--muted-line);
 }
 
@@ -2004,6 +2005,7 @@ button.management-table-row:hover,
   justify-content: flex-start;
   align-items: center;
   gap: 12px;
+  height: 36px;
   margin: 0 0 8px;
 }
 .management-list-meta strong {
@@ -2021,8 +2023,9 @@ button.management-table-row:hover,
   font-size: var(--font-body);
 }
 .management-table--paged {
-  max-height: calc(100vh - 375px);
-  min-height: 360px;
+  height: calc(100vh - 390px);
+  min-height: 320px;
+  max-height: none;
   overflow: auto;
 }
 .management-table--paged .management-table-row.head {
@@ -2057,24 +2060,34 @@ button.management-table-row:hover,
 }
 .management-pagination {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: 18px;
+  height: 32px;
   margin-top: 8px;
-  color: #334155;
+  border-top: 1px solid var(--line);
+  color: #8a9ab0;
   font-size: var(--font-body);
 }
 .management-pagination button {
-  min-width: 62px;
-  height: 30px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #ffffff;
-  color: #0f172a;
+  min-width: 18px;
+  width: 18px;
+  height: 22px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #8a9ab0;
+  padding: 0;
+  line-height: 1;
+}
+.management-pagination strong {
+  color: #0087b8;
+  font-size: var(--font-caption);
+  font-weight: 500;
 }
 .management-pagination button:disabled {
-  color: #94a3b8;
-  background: #f8fafc;
+  color: #b9c4d2;
+  background: transparent;
 }
 .modal-backdrop {
   position: fixed;
@@ -2658,9 +2671,21 @@ button.management-table-row:hover,
   display: block;
 }
 
-.access-toolbar--users { grid-template-columns: minmax(260px, 1fr) 160px 160px 160px 160px 70px; }
-.access-toolbar--group { grid-template-columns: minmax(260px, 1fr) 160px 70px; }
-.access-toolbar button { width: 70px; min-width: 70px; white-space: nowrap; padding-left: 0; padding-right: 0; justify-self: end; }
+.access-toolbar--users { grid-template-columns: minmax(340px, 1fr) 150px 150px 150px 150px 52px 52px; }
+.access-toolbar--group { grid-template-columns: minmax(340px, 1fr) 150px 52px 52px; }
+.access-toolbar button {
+  width: 52px;
+  min-width: 52px;
+  white-space: nowrap;
+  padding-left: 0;
+  padding-right: 0;
+  justify-self: end;
+}
+.access-toolbar .access-toolbar-reset {
+  border-color: var(--line);
+  background: #ffffff;
+  color: #64748b;
+}
 
 
 /* Aidot Admin copied list surface */
@@ -3047,8 +3072,9 @@ h1 { line-height: 1; }
   height: 28px;
 }
 .management-table--paged {
-  min-height: 0;
-  max-height: calc(100vh - 330px);
+  min-height: 320px;
+  height: calc(100vh - 390px);
+  max-height: none;
 }
 .detail-modal {
   position: fixed;
@@ -3060,14 +3086,16 @@ h1 { line-height: 1; }
   padding: 30px;
   background: rgba(15, 23, 42, .28);
 }
-.detail-modal__panel,
-.management-modal {
-  width: min(1600px, calc(100vw - 60px));
+.detail-modal__panel {
+  width: min(980px, calc(100vw - 120px));
   max-height: calc(100vh - 80px);
   background: #ffffff;
   border: 1px solid var(--line);
   box-shadow: 0 18px 45px rgba(15, 23, 42, .18);
   overflow: hidden;
+}
+.detail-modal__panel.admin-resource-modal__panel {
+  width: min(1540px, calc(100vw - 60px));
 }
 .detail-modal__panel > header {
   display: flex;
@@ -3088,17 +3116,17 @@ h1 { line-height: 1; }
 }
 .detail-modal__body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
   max-height: calc(100vh - 155px);
   overflow: auto;
-  padding: 18px;
+  padding: 14px;
 }
 .detail-modal__body > article,
 .detail-modal__body > aside {
   border: 1px solid var(--muted-line);
   background: #ffffff;
-  padding: 16px;
+  padding: 14px;
 }
 .detail-modal__body label {
   display: grid;

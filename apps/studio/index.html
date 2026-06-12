@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CGA Studio</title>
-  <link rel="stylesheet" href="/apps/studio/styles.css?v=20260612-1" />
+  <link rel="stylesheet" href="/apps/studio/styles.css?v=20260612-2" />
 </head>
 <body>
   <div class="app-shell unauthenticated">
@@ -267,6 +267,7 @@
               <select data-user-role-filter></select>
               <select data-user-status-filter></select>
               <select data-user-signup-filter></select>
+              <button type="button" class="access-toolbar-reset" data-user-search-reset>초기화</button>
               <button type="button" data-user-search-submit>조회</button>
             </div>
             <div class="group-user-list" data-group-users></div>
@@ -276,6 +277,7 @@
             <div class="access-toolbar access-toolbar--group">
               <input data-group-search placeholder="그룹 아이디 또는 그룹 이름을 검색하세요." />
               <select data-group-status-filter></select>
+              <button type="button" class="access-toolbar-reset" data-group-search-reset>초기화</button>
               <button type="button" data-group-search-submit>조회</button>
             </div>
             <div class="group-management-list" data-group-access></div>
@@ -737,6 +739,6 @@
   </div>
   <script src="/apps/studio/i18n.js"></script>
   <script src="/apps/studio/entry-auth.js?v=20260610-5"></script>
-  <script type="module" src="/apps/studio/app.js?v=20260612-1"></script>
+  <script type="module" src="/apps/studio/app.js?v=20260612-2"></script>
 </body>
 </html>
