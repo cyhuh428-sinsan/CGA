@@ -2329,7 +2329,7 @@ function renderBuildAidotScreen() {
       <div class="aidot-search-line"><input data-build-intent-search placeholder="의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색해주세요." /><select><option>전체</option></select></div>
       <div class="aidot-list-actions"><button type="button" data-aidot-intent-add>+ 의도/모듈 추가</button><button type="button" class="icon-button">⋮</button></div>
     </div>
-    <div class="aidot-list-control"><strong>전체 ${rows.length}건</strong><select><option>10개씩 보기</option></select><button type="button" disabled>삭제</button></div>
+    <div class="aidot-list-control"><strong>전체 ${rows.length}건</strong><select><option>10개씩 보기</option><option>25개씩 보기</option><option>50개씩 보기</option><option>100개씩 보기</option></select><button type="button" disabled>삭제</button></div>
     <div class="aidot-main-table">
       <div class="aidot-main-table-head">
         <span><input type="checkbox" /></span><span>ID ⇅</span><span>오...</span><span>구분 ⇅</span><span>의도/모듈명 ⇅</span><span>표시명 ⇅</span><span>학습문장 ⇅</span><span>대화카드 ⇅</span><span>태그 ⇅</span><span>기타옵션</span><span>최종수정일시 ⇅</span><span>최종수정자 ⇅</span><span></span>
@@ -3598,7 +3598,7 @@ function renderAidotInteractiveTable(surface, config) {
         <div class="admin-page__search-actions">${config.topRight || `<button type="button" class="admin-page__primary">조회</button>`}</div>
       </div>
       <div class="admin-page__toolbar">
-        <div class="admin-page__toolbar-left"><strong>전체 ${rows.length}건</strong><select><option>10개씩 보기</option><option>50개씩 보기</option><option>100개씩 보기</option></select>${config.download === false ? "" : `<button type="button" class="admin-page__ghost">다운로드</button>`}</div>
+        <div class="admin-page__toolbar-left"><strong>전체 ${rows.length}건</strong><select><option>10개씩 보기</option><option>25개씩 보기</option><option>50개씩 보기</option><option>100개씩 보기</option></select>${config.download === false ? "" : `<button type="button" class="admin-page__ghost">다운로드</button>`}</div>
       </div>
       ${renderDataGrid(config.columns, rows, config.template)}
       ${renderPager(rows.length)}
@@ -4201,9 +4201,11 @@ function renderAccessPanels() {
       ${activeUserRows.join("")}
     </div>
     <div class="management-pagination">
-      <button type="button" data-user-page-prev ${userListPage <= 1 ? "disabled" : ""}>이전</button>
-      <span>${userListPage} / ${totalUserPages}</span>
-      <button type="button" data-user-page-next ${userListPage >= totalUserPages ? "disabled" : ""}>다음</button>
+      <button type="button" data-user-page-first ${userListPage <= 1 ? "disabled" : ""}>◀</button>
+      <button type="button" data-user-page-prev ${userListPage <= 1 ? "disabled" : ""}>‹</button>
+      <strong>${userListPage}</strong>
+      <button type="button" data-user-page-next ${userListPage >= totalUserPages ? "disabled" : ""}>›</button>
+      <button type="button" data-user-page-last="${totalUserPages}" ${userListPage >= totalUserPages ? "disabled" : ""}>▶</button>
     </div>
   `;
   const selectedUserRecord = userRecords.find((record) => (record.user?.id || record.request?.user_id) === selectedAccessUserId) || userRecords[0];
@@ -4307,9 +4309,11 @@ function renderAccessPanels() {
   }).join("")}
     </div>
     <div class="management-pagination">
-      <button type="button" data-group-page-prev ${groupListPage <= 1 ? "disabled" : ""}>이전</button>
-      <span>${groupListPage} / ${totalGroupPages}</span>
-      <button type="button" data-group-page-next ${groupListPage >= totalGroupPages ? "disabled" : ""}>다음</button>
+      <button type="button" data-group-page-first ${groupListPage <= 1 ? "disabled" : ""}>◀</button>
+      <button type="button" data-group-page-prev ${groupListPage <= 1 ? "disabled" : ""}>‹</button>
+      <strong>${groupListPage}</strong>
+      <button type="button" data-group-page-next ${groupListPage >= totalGroupPages ? "disabled" : ""}>›</button>
+      <button type="button" data-group-page-last="${totalGroupPages}" ${groupListPage >= totalGroupPages ? "disabled" : ""}>▶</button>
     </div>
   `;
   const selectedGroupRecord = currentAccessState.groups.find((group) => group.id === selectedAccessGroupId) || visibleGroups[0];
@@ -4494,7 +4498,15 @@ function bindAccessManagementControls() {
     if (select.dataset.bound === "true") return;
     select.dataset.bound = "true";
     select.addEventListener("change", () => {
-      userListPageSize = Number(select.value) || 20;
+      userListPageSize = Number(select.value) || 10;
+      userListPage = 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-user-page-first]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
       userListPage = 1;
       renderAccessPanels();
     });
@@ -4512,6 +4524,14 @@ function bindAccessManagementControls() {
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
       userListPage += 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-user-page-last]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      userListPage = Number(button.dataset.userPageLast) || 1;
       renderAccessPanels();
     });
   });
@@ -4545,7 +4565,15 @@ function bindAccessManagementControls() {
     if (select.dataset.bound === "true") return;
     select.dataset.bound = "true";
     select.addEventListener("change", () => {
-      groupListPageSize = Number(select.value) || 20;
+      groupListPageSize = Number(select.value) || 10;
+      groupListPage = 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-page-first]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
       groupListPage = 1;
       renderAccessPanels();
     });
@@ -4563,6 +4591,44 @@ function bindAccessManagementControls() {
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
       groupListPage += 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-page-last]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      groupListPage = Number(button.dataset.groupPageLast) || 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-user-search-reset]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const search = document.querySelector("[data-user-search]");
+      const groupFilter = document.querySelector("[data-user-group-filter]");
+      const roleFilter = document.querySelector("[data-user-role-filter]");
+      const statusFilter = document.querySelector("[data-user-status-filter]");
+      const signupFilter = document.querySelector("[data-user-signup-filter]");
+      if (search) search.value = "";
+      if (groupFilter) groupFilter.value = "all";
+      if (roleFilter) roleFilter.value = "all";
+      if (statusFilter) statusFilter.value = "all";
+      if (signupFilter) signupFilter.value = "all";
+      userListPage = 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-search-reset]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const search = document.querySelector("[data-group-search]");
+      const statusFilter = document.querySelector("[data-group-status-filter]");
+      if (search) search.value = "";
+      if (statusFilter) statusFilter.value = "active";
+      groupListPage = 1;
       renderAccessPanels();
     });
   });
