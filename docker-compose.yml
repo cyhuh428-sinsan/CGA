@@ -1,5 +1,9 @@
+name: cga
+
 services:
-  cga-studio:
+  studio:
+    container_name: cga-studio
+    image: cga-studio
     build:
       context: .
     working_dir: /workspace

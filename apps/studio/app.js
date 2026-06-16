@@ -117,6 +117,9 @@ let accessUserModalOpen = false;
 let groupListPage = 1;
 let groupListPageSize = 10;
 let accessGroupModalOpen = false;
+let accessGroupCreateMode = false;
+const adminTablePageByKey = {};
+const adminTablePageSizeByKey = {};
 let currentIntentSearch = "";
 let currentIntentFilter = "all";
 let currentDetailTab = "intent";
@@ -196,6 +199,7 @@ let currentOperationsState = {
 };
 const DEFAULT_ACTIVE_SCREEN_ID = "detail";
 let activeScreenId = "";
+let screenLayoutApplying = false;
 
 const HELP_TOPICS = {
   access: {
@@ -1181,9 +1185,14 @@ function applyAuthGate() {
   if (topbar) topbar.hidden = !authenticated;
   if (workflow) workflow.hidden = !authenticated;
   if (loginEntry) loginEntry.hidden = authenticated;
-  document.querySelectorAll("[data-screen-id]").forEach((section) => {
+  getWorkspaceScreenSections().forEach((section) => {
     if (!authenticated) section.hidden = true;
   });
+  if (authenticated) {
+    document.querySelectorAll("aside [data-screen-id]").forEach((item) => {
+      item.hidden = false;
+    });
+  }
   return authenticated;
 }
 
@@ -1658,7 +1667,7 @@ async function refreshWorkspaceDataFromServer({ includeBots = false } = {}) {
 }
 
 async function createWorkspaceBotOnServer(bot) {
-  return requestCgaJson(getWorkspaceBotsUrl(bot.group_id), {
+  const payload = await requestCgaJson(getWorkspaceBotsUrl(bot.group_id), {
     method: "POST",
     body: {
       id: bot.id,
@@ -1668,6 +1677,7 @@ async function createWorkspaceBotOnServer(bot) {
       locale: bot.locale || "en"
     }
   });
+  return payload?.bot || payload;
 }
 
 function getApiAnswerRegistryUrl(groupId = currentApiGroupId, botId = currentApiBotId) {
@@ -1736,6 +1746,7 @@ function renderTransferHistoryItems(container, items) {
 async function refreshTransferHistory() {
   const container = document.querySelector("[data-transfer-history]");
   if (!container) return;
+  container.innerHTML = `<div><strong data-i18n="transfer.historyLoadingTitle">Loading history</strong><span data-i18n="transfer.historyTitle">Server Transfer History</span></div>`;
   try {
     const response = await fetch(getAssetTransferHistoryUrl());
     if (!response.ok) throw new Error("History request failed");
@@ -2295,115 +2306,261 @@ function renderOperationsPanels() {
   renderBuildAidotScreen();
 }
 
-function renderBuildAidotScreen() {
-  const container = document.querySelector("[data-build-aidot-screen]");
-  if (!container) return;
-  const rows = getAidotIntentRows();
-  if (!rows.some((row) => row.id === currentSelectedIntentId)) currentSelectedIntentId = rows[0]?.id || "";
-  const selected = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || {};
-  const botName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "테스트봇";
-  const renderHeader = () => `
-    <div class="aidot-bot-main-head">
-      <div class="aidot-bot-title">
-        <div class="bot-avatar-large"></div>
-        <div>
-          <div class="aidot-title-row"><h2>${escapeText(botName)} - 시멘틱 RAG</h2><select><option>Ver. 1 · 테스트형</option><option>Ver. 1 · 운영</option></select><span class="test-badge">테스트형</span><span class="star-mark">★</span><button type="button" class="icon-button">⋮</button></div>
-          <strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: Semantic Engine RAG 답변</strong>
-          <div class="train-row"><button type="button" data-build-run>학습하기</button><span>학습성공 2026-05-31 02:15 cyhuh</span></div>
-        </div>
-      </div>
-      <div class="aidot-count-tabs">
-        <button class="active"><span>☞ 의도</span><b>${rows.length || 0}</b></button>
-        <button><span>☷ 구성</span><b>-</b></button>
-        <button><span>⊙ 개체</span><b>${currentEntityAssets.length}</b></button>
-        <button><span>▣ 사전</span><b>${currentDictionaryAssets.length}</b></button>
-        <button><span>⌁ 평가</span><b>-</b></button>
-        <button><span>↔ 재학습</span><b>0</b></button>
-        <button><span>⌁ 분석</span><b>-</b></button>
-      </div>
+function getCurrentIntentRowsForWorkflow() {
+  return getAidotIntentRows().map((row, index) => ({
+    ...row,
+    rowId: row.rowId || String(100001 + index),
+    updatedAt: row.updatedAt && row.updatedAt !== "2026-05-30 12:44" ? row.updatedAt : "-",
+    updatedBy: row.updatedBy || currentAccessState.currentUserId || "SYSTEM"
+  }));
+}
+
+function renderWorkflowPager(total, tableKey, currentPage, totalPages) {
+  return `
+    <div class="workflow-pager" aria-label="pagination">
+      <button type="button" data-workflow-page-first="${escapeCell(tableKey)}" ${total && currentPage > 1 ? "" : "disabled"}>◀</button>
+      <button type="button" data-workflow-page-prev="${escapeCell(tableKey)}" ${total && currentPage > 1 ? "" : "disabled"}>‹</button>
+      <strong>${currentPage}</strong>
+      <button type="button" data-workflow-page-next="${escapeCell(tableKey)}" ${total && currentPage < totalPages ? "" : "disabled"}>›</button>
+      <button type="button" data-workflow-page-last="${escapeCell(tableKey)}" data-workflow-total-pages="${totalPages}" ${total && currentPage < totalPages ? "" : "disabled"}>▶</button>
     </div>
   `;
-  const renderList = () => `
-    ${renderHeader()}
-    <div class="aidot-intent-main-toolbar">
-      <div class="aidot-search-line"><input data-build-intent-search placeholder="의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색해주세요." /><select><option>전체</option></select></div>
-      <div class="aidot-list-actions"><button type="button" data-aidot-intent-add>+ 의도/모듈 추가</button><button type="button" class="icon-button">⋮</button></div>
-    </div>
-    <div class="aidot-list-control"><strong>전체 ${rows.length}건</strong><select><option>10개씩 보기</option><option>25개씩 보기</option><option>50개씩 보기</option><option>100개씩 보기</option></select><button type="button" disabled>삭제</button></div>
-    <div class="aidot-main-table">
-      <div class="aidot-main-table-head">
-        <span><input type="checkbox" /></span><span>ID ⇅</span><span>오...</span><span>구분 ⇅</span><span>의도/모듈명 ⇅</span><span>표시명 ⇅</span><span>학습문장 ⇅</span><span>대화카드 ⇅</span><span>태그 ⇅</span><span>기타옵션</span><span>최종수정일시 ⇅</span><span>최종수정자 ⇅</span><span></span>
+}
+
+function getWorkflowPagedRows(tableKey, rows) {
+  const pageSize = adminTablePageSizeByKey[tableKey] || 10;
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const currentPage = Math.min(Math.max(1, adminTablePageByKey[tableKey] || 1), totalPages);
+  adminTablePageByKey[tableKey] = currentPage;
+  const start = (currentPage - 1) * pageSize;
+  return { pageSize, totalPages, currentPage, rows: rows.slice(start, start + pageSize) };
+}
+
+function renderWorkflowPageSize(tableKey, pageSize) {
+  return `<select data-workflow-page-size="${escapeCell(tableKey)}" aria-label="페이지 크기">${[10, 25, 50, 100].map((size) => `<option value="${size}" ${size === pageSize ? "selected" : ""}>${size}개씩 보기</option>`).join("")}</select>`;
+}
+
+function renderWorkflowTablePage(section, tableKey, rows, columns, rowRenderer, options = {}) {
+  const page = getWorkflowPagedRows(tableKey, rows);
+  section.innerHTML = `
+    <div class="workflow-lookup" data-workflow-table-key="${escapeText(tableKey)}">
+      <div class="workflow-lookup__search">
+        <label><span>⌕</span><input data-workflow-query="${escapeText(tableKey)}" placeholder="${escapeText(options.placeholder || "검색어를 입력하세요.")}" /></label>
+        ${options.filters || ""}
+        <button type="button" class="admin-page__filter admin-page__filter--text" data-workflow-reset="${escapeText(tableKey)}">초기화</button>
+        <div class="workflow-lookup__actions">${options.actions || `<button type="button" class="admin-page__primary" data-workflow-search="${escapeText(tableKey)}">조회</button>`}</div>
       </div>
-      ${rows.map((row) => `
-        <button type="button" class="aidot-main-table-row" data-build-intent-open="${escapeText(row.id)}">
-          <span><input type="checkbox" /></span><span>${escapeText(row.rowId)}</span><span></span><span>의도</span><strong>${escapeText(row.id)}</strong><span>${escapeText(row.displayName)}</span><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${row.tagCount || 0}</span><span class="option-dots"><b>T</b><b>R</b><b>F</b></span><span>${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span><span>⋮</span>
-        </button>
-      `).join("")}
-    </div>
-  `;
-  const utterances = selected.utterances?.length ? selected.utterances : currentIntentUtteranceAssets.filter((item) => item.division === selected.id);
-  const renderStart = () => `
-    <div class="aidot-dialog-head">
-      <strong>의도 (${escapeText(selected.id || "")}) &gt; 대화 시작</strong><button type="button" class="help-icon">?</button><span>&gt; 대화 설계</span>
-      <div><button type="button">저장하기</button><button type="button" data-open-dialog-design>저장 후 대화설계</button></div>
-    </div>
-    <div class="aidot-dialog-start">
-      <section>
-        <div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><input placeholder="학습문장을 검색하세요." /><button type="button">학습 문장 추천</button><button type="button">삭제</button><button type="button" class="icon-button">⋮</button></div>
-        <div class="aidot-add-row"><span>구분</span><span>학습문장</span><button type="button">추가</button></div>
-        <p class="muted-line">Validation Set 상태: Random</p>
-        <div class="aidot-utterance-table">
-          <div><span><input type="checkbox" /></span><strong>구분</strong><strong>학습문장</strong></div>
-          ${(utterances.length ? utterances : [{ utterance: "해약한다고요" }, { utterance: "이미 해지했어요" }, { utterance: "나 이거 해지해달라고 했는데요" }]).map((item) => `
-            <div><span><input type="checkbox" /></span><span class="round-token">T</span><span>${escapeText(item.utterance)}</span></div>
-          `).join("")}
-        </div>
-      </section>
-      <section>
-        <div class="aidot-section-title"><strong>추출할 개체 0</strong><button type="button">선택 개체 추가</button><button type="button">삭제</button></div>
-        <input placeholder="대화에서 사용할 개체를 검색하여 파라미터로 등록하세요." />
-        <div class="aidot-empty-face">··</div>
-        <p class="empty-help">아직 추출할 개체가 선택되지 않았습니다.<br />개체를 검색한 뒤 선택해서 변수로 등록해주세요.</p>
-      </section>
-    </div>
-  `;
-  const renderDesign = () => `
-    <div class="aidot-dialog-head">
-      <strong>의도 (${escapeText(selected.id || "")}) &gt; 대화 시작 &gt; 대화 설계</strong><button type="button" class="help-icon">?</button>
-      <div><input placeholder="봇 메시지를 검색하세요." /><button type="button">저장</button><button type="button" class="icon-button">⋮</button></div>
-    </div>
-    <div class="dialog-design-layout">
-      <div class="dialog-canvas">
-        <div class="canvas-tools"><button>의도 카드 2개</button><button>링크 2개</button><button>필수 변수 기본 반복 3회</button></div>
-        <div class="node-row">
-          <div class="flow-node start">▶<strong>대화 시작</strong><span>대화 시작</span></div><i></i>
-          <div class="flow-node talk">“ ”<strong>답변</strong><span>Talk</span></div><i></i>
-          <div class="flow-node end">■<strong>End</strong><span>End</span></div>
-        </div>
-        <div class="zoom-row"><button>-</button><strong>100%</strong><button>+</button></div>
+      <div class="workflow-lookup__toolbar">
+        <strong>전체 ${rows.length}건</strong>
+        ${renderWorkflowPageSize(tableKey, page.pageSize)}
+        ${options.download ? `<button type="button" class="admin-page__ghost">다운로드</button>` : ""}
       </div>
-      <aside class="dialog-property">
-        <div class="card-tabs"><button class="active">대화 테스트</button><button>속성</button><button>변수</button></div>
-        <label>카드 이름<input value="답변" /></label>
-        <section><strong>기본 메시지</strong><textarea>{{$_rag_answer_text}}
-{{$_rag_answers}}</textarea><button type="button">+ 메시지 추가</button></section>
-        <section><strong>템플릿 메시지</strong><button type="button">템플릿 메시지 설정</button></section>
-        <section><strong>사용자 응답 처리</strong><p><label><input type="radio" checked /> 사용 안함</label> <label><input type="radio" /> 단일 선택</label> <label><input type="radio" /> 응답 전달</label></p></section>
-      </aside>
+      <div class="workflow-grid" style="--workflow-grid-template:${options.template || columns.map(() => "1fr").join(" ")}">
+        <div class="workflow-grid__row workflow-grid__row--header">${columns.map((column) => `<span>${escapeText(column)} ↕</span>`).join("")}</div>
+        ${page.rows.map(rowRenderer).join("")}
+      </div>
+      ${renderWorkflowPager(rows.length, tableKey, page.currentPage, page.totalPages)}
     </div>
   `;
-  container.innerHTML = currentBuildAidotView === "design" ? renderDesign() : currentBuildAidotView === "start" ? renderStart() : renderList();
-  container.querySelectorAll("[data-build-intent-open]").forEach((button) => {
-    button.addEventListener("click", () => {
-      currentSelectedIntentId = button.dataset.buildIntentOpen;
-      currentBuildAidotView = "start";
-      renderBuildAidotScreen();
+  bindWorkflowTableControls(section, tableKey);
+}
+
+function bindWorkflowTableControls(section, tableKey) {
+  section.querySelectorAll("[data-workflow-page-size]").forEach((select) => {
+    select.addEventListener("change", () => {
+      adminTablePageSizeByKey[tableKey] = Number(select.value) || 10;
+      adminTablePageByKey[tableKey] = 1;
+      renderWorkflowScreens();
     });
   });
-  container.querySelector("[data-open-dialog-design]")?.addEventListener("click", () => {
-    currentBuildAidotView = "design";
+  section.querySelectorAll("[data-workflow-page-first]").forEach((button) => button.addEventListener("click", () => { adminTablePageByKey[tableKey] = 1; renderWorkflowScreens(); }));
+  section.querySelectorAll("[data-workflow-page-prev]").forEach((button) => button.addEventListener("click", () => { adminTablePageByKey[tableKey] = Math.max(1, (adminTablePageByKey[tableKey] || 1) - 1); renderWorkflowScreens(); }));
+  section.querySelectorAll("[data-workflow-page-next]").forEach((button) => button.addEventListener("click", () => { adminTablePageByKey[tableKey] = (adminTablePageByKey[tableKey] || 1) + 1; renderWorkflowScreens(); }));
+  section.querySelectorAll("[data-workflow-page-last]").forEach((button) => button.addEventListener("click", () => { adminTablePageByKey[tableKey] = Number(button.dataset.workflowTotalPages) || 1; renderWorkflowScreens(); }));
+}
+
+function getWorkspaceScreenSections(workspace = document.querySelector(".workspace")) {
+  if (!workspace) return [];
+  return Array.from(workspace.children).filter(
+    (section) => section instanceof HTMLElement && section.hasAttribute("data-screen-id")
+  );
+}
+
+function renderWorkflowScreenShell(sectionId, code, title, subtitle, bodyHtml) {
+  const section = getWorkspaceScreenSections().find((item) => item.dataset.screenId === sectionId);
+  if (!section) return null;
+  section.innerHTML = `
+    <div class="screen-heading aidot-screen-heading">
+      <span>${escapeText(code)}</span>
+      <div><h3>${escapeText(title)}</h3>${subtitle ? `<p>${escapeText(subtitle)}</p>` : ""}</div>
+    </div>
+    ${bodyHtml || ""}
+  `;
+  return section;
+}
+
+
+function renderTestAidotScreen() {
+  const test = currentOperationsState.test || {};
+  const rows = [["매칭 의도", test.matched_intent || "-"], ["처리 방식", test.method || "-"], ["Similarity", Number(test.similarity ?? 0).toFixed(2)], ["Latency", `${Number(test.latency_ms ?? 0)}ms`]];
+  renderWorkflowScreenShell("test", "05", "봇 테스트", "Aidot 시뮬레이터 기준으로 테스트 결과를 확인합니다.", `<div class="aidot-simulator-screen"><div class="aidot-simulator-chat"><p class="user-msg">${escapeText(test.last_user_message || "")}</p><p class="bot-msg">${escapeText(test.last_bot_message || "")}</p><input placeholder="테스트 메시지를 입력하세요" /></div><aside class="aidot-simulator-side"><h4>대화 분석</h4>${rows.map(([label, value]) => `<p><b>${escapeText(label)}</b><span>${escapeText(value)}</span></p>`).join("")}</aside></div>`);
+}
+
+function renderEvaluateAidotScreen() {
+  const rows = getCurrentIntentRowsForWorkflow().map((row) => ({
+    ...row,
+    status: row.utteranceCount > 0 && row.dialogCardCount > 0 ? "준비 완료" : "점검 필요"
+  }));
+  const page = getWorkflowPagedRows("evaluate", rows);
+  const selected = page.rows[0] || rows[0] || {};
+  const section = renderWorkflowScreenShell("evaluate", "06", "봇 평가", "운영으로 넘기기 전에 Aidot 평가 화면 기준으로 품질을 확인합니다.", `
+    <div class="aidot-evaluate-screen">
+      <div class="aidot-evaluate-list workflow-lookup" data-workflow-table-key="evaluate">
+        <div class="workflow-lookup__search">
+          <label><span>⌕</span><input data-workflow-query="evaluate" placeholder="의도/평가상태를 검색하세요." /></label>
+          <button type="button" class="admin-page__filter admin-page__filter--text" data-workflow-reset="evaluate">초기화</button>
+          <div class="workflow-lookup__actions"><button type="button" class="admin-page__primary" data-workflow-search="evaluate">조회</button></div>
+        </div>
+        <div class="workflow-lookup__toolbar">
+          <strong>전체 ${rows.length}건</strong>
+          ${renderWorkflowPageSize("evaluate", page.pageSize)}
+        </div>
+        <div class="workflow-grid aidot-evaluate-grid" style="--workflow-grid-template:.7fr 1.5fr .8fr .8fr 1fr 1fr .8fr">
+          <div class="workflow-grid__row workflow-grid__row--header"><span>ID ↕</span><span>의도/모듈명 ↕</span><span>학습문장 ↕</span><span>대화카드 ↕</span><span>평가상태 ↕</span><span>최종수정일시 ↕</span><span>최종수정자 ↕</span></div>
+          ${page.rows.map((row, index) => `<button type="button" class="workflow-grid__row ${index === 0 ? "selected" : ""}" data-evaluate-intent="${escapeText(row.id)}"><span>${escapeText(row.rowId)}</span><strong>${escapeText(row.id)}</strong><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${escapeText(row.status)}</span><span>${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span></button>`).join("")}
+        </div>
+        ${renderWorkflowPager(rows.length, "evaluate", page.currentPage, page.totalPages)}
+      </div>
+      <div class="aidot-evaluation-detail">
+        <div class="aidot-evaluation-detail__head"><strong>Overview › 의도 상세</strong><button type="button" class="admin-page__ghost">평가정보 내보내기</button></div>
+        <div class="aidot-evaluation-summary">
+          <section><h4>Vector DB 상태</h4><p><span>연결</span><b>정상</b></p><p><span>Index</span><b>aidot-intent</b></p><p><span>검색 API</span><b>http://localhost:8350/intent/search</b></p><p><span>임베딩 모델</span><b>Aidot Vector Worker 기본 모델</b></p></section>
+          <section class="aidot-score-panel"><h4>Top-K 검색 정확도</h4><div><b class="score-ring">91.7%<span>Top-1</span></b><strong>61.2%<span>평균 Score</span></strong><b class="score-ring">89.6%<span>Top-3</span></b></div></section>
+          <section><h4>9:1 Split 평가</h4><div class="split-grid"><p><span>Random</span><b>70.8%</b></p><p><span>Fixed</span><b>91.7%</b></p><p><span>차이</span><b>20.83%</b></p><p><span>평가 문장</span><b>48</b></p><p><span>학습문장</span><b>228</b></p><p><span>최근 이력</span><b>11</b></p></div></section>
+        </div>
+        <div class="aidot-evaluation-tables">
+          <section><h4>오류문장</h4><div class="aidot-mini-table"><div><b>문장</b><b>정답 의도</b><b>예측 의도 / Score</b></div>${[
+            ["무슨 일로 하는 거에요", "통화 독려", "용어 설명 / 25.00%"],
+            ["다음에 전화해", "콜백 예약", "인콜 진행 예정 / 92.00%"],
+            ["이런 지옥 왜 합니까", "통화 독려", "통화 거부 / 29.49%"],
+            ["안됩니다", "콜백 예약", "발화속도 조절 / 33.33%"],
+            ["내가 혼자 할테니까 전화 안줘도 됩니다", "인콜 진행 예정", "콜백 예약 / 33.33%"]
+          ].map((item) => `<div><span>${escapeText(item[0])}</span><span>${escapeText(item[1])}</span><strong>${escapeText(item[2])}</strong></div>`).join("")}</div></section>
+          <section><h4>낮은 Score 문장</h4><div class="aidot-mini-table"><div><b>문장</b><b>의도</b><b>Score</b></div>${[
+            ["해약한다고요", "해지 요청", "25.72%"],
+            ["중국에 있어요", "통화 불가", "42.16%"],
+            ["무슨 일로 하는 거에요", "통화 독려", "25.00%"],
+            ["안합니다", "통화 거부", "35.36%"],
+            ["나중에 하면 안되나", "콜백 예약", "33.33%"]
+          ].map((item) => `<div><span>${escapeText(item[0])}</span><span>${escapeText(item[1])}</span><strong>${escapeText(item[2])}</strong></div>`).join("")}</div></section>
+        </div>
+        <div class="aidot-conflict-row"><strong>유사 의도 충돌</strong><span>통화 독려 <b>용어 설명 1건</b></span><span>콜백 예약 <b>인콜 진행 예정 1건</b></span><span>통화 거부 <b>발화속도 조절 1건</b></span><span>인콜 진행 예정 <b>콜백 예약 1건</b></span></div>
+      </div>
+    </div>
+  `);
+  if (!section) return;
+  bindWorkflowTableControls(section, "evaluate");
+  section.querySelectorAll("[data-evaluate-intent]").forEach((button) => button.addEventListener("click", () => {
+    section.querySelectorAll("[data-evaluate-intent]").forEach((row) => row.classList.remove("selected"));
+    button.classList.add("selected");
+  }));
+}
+
+function renderOperateAidotScreen() {
+  const rows = [];
+  const page = getWorkflowPagedRows("operate", rows);
+  const botName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "테스트봇";
+  const section = renderWorkflowScreenShell("operate", "RT", "재학습", "Aidot 재학습 화면 기준으로 개선 대상을 확인합니다.", `
+    <div class="aidot-retrain-screen">
+      <div class="aidot-bot-main-head aidot-bot-main-head--compact"><div class="aidot-bot-title"><div class="bot-avatar-large"></div><div><div class="aidot-title-row"><h2>${escapeText(botName)}</h2><select><option>Ver. 1 · 운영</option></select><span class="test-badge">테스트형</span><span class="star-mark">★</span><button type="button" class="icon-button">⋮</button></div><strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: 정해진 답변</strong><div class="train-row"><button type="button" data-build-run>학습하기</button><span>학습성공 2026-05-12 02:12 cyhuh</span></div></div></div><div class="aidot-count-tabs"><button><span>☞ 의도</span><b>17</b></button><button><span>☷ 구성</span><b>-</b></button><button><span>⊙ 개체</span><b>6</b></button><button><span>▣ 사전</span><b>7</b></button><button><span>⌁ 평가</span><b>-</b></button><button class="active"><span>↔ 재학습</span><b>0</b></button><button><span>⌁ 분석</span><b>-</b></button></div></div>
+      <div class="aidot-retrain-filter"><input placeholder="의도명/지식명 또는 사용자 발화를 검색하세요." /><select><option>전체</option></select><select><option>전체</option></select><select><option>전체</option></select><select><option>전체</option></select><input type="date" value="2026-03-12" /><input type="date" value="2026-06-12" /><button type="button" class="admin-page__ghost">초기화</button><button type="button" class="admin-page__primary">확인</button></div>
+      <div class="aidot-retrain-actions"><strong>전체 ${rows.length}</strong><button type="button">대화이력 동기화</button><button type="button" class="admin-page__primary">재학습</button><button type="button" disabled>의도 생성</button><button type="button" disabled>보류</button><button type="button" disabled>재학습 제외</button><button type="button" disabled>삭제</button><b>0개 선택</b></div>
+      <div class="workflow-grid aidot-retrain-grid" style="--workflow-grid-template:2fr 1.4fr .8fr .8fr .8fr .9fr"><div class="workflow-grid__row workflow-grid__row--header"><span>사용자 발화 ↕</span><span>의도명/지식명 ↕</span><span>채널 ↕</span><span>실행결과 ↕</span><span>분류방식 ↕</span><span>학습상태 ↕</span><span>발생시간 ↕</span></div>${page.rows.map((row) => `<div class="workflow-grid__row"><span>${escapeText(row.utterance || "")}</span><span>${escapeText(row.intent || "")}</span><span>${escapeText(row.channel || "")}</span><span>${escapeText(row.result || "")}</span><span>${escapeText(row.method || "")}</span><span>${escapeText(row.status || "")}</span><span>${escapeText(row.createdAt || "")}</span></div>`).join("")}</div>
+    </div>
+  `);
+  if (!section) return;
+}
+
+function renderAnalysisAidotScreen() {
+  const operate = currentOperationsState.operate || {};
+  const botName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "테스트봇";
+  const history = [
+    ["2026-06-12 13:55", "-", "-", "completed"],
+    ["2026-06-12 12:12", "-", "-", "completed"],
+    ["2026-06-12 12:12", "-", "-", "completed"],
+    ["2026-06-12 06:12", "-", "-", "completed"],
+    ["2026-06-12 06:12", "-", "-", "completed"]
+  ];
+  const section = renderWorkflowScreenShell("analysis", "AN", "분석", "Aidot 분석 화면 기준으로 운영 지표를 조회합니다.", `
+    <div class="aidot-analysis-screen">
+      <div class="aidot-bot-main-head aidot-bot-main-head--compact"><div class="aidot-bot-title"><div class="bot-avatar-large"></div><div><div class="aidot-title-row"><h2>${escapeText(botName)}</h2><select><option>Ver. 1 · 운영</option></select><span class="test-badge">테스트형</span><span class="star-mark">★</span><button type="button" class="icon-button">⋮</button></div><strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: 정해진 답변</strong><div class="train-row"><button type="button" data-build-run>학습하기</button><span>학습성공 2026-05-12 02:12 cyhuh</span></div></div></div><div class="aidot-count-tabs"><button><span>☞ 의도</span><b>17</b></button><button><span>☷ 구성</span><b>-</b></button><button><span>⊙ 개체</span><b>6</b></button><button><span>▣ 사전</span><b>7</b></button><button><span>⌁ 평가</span><b>-</b></button><button><span>↔ 재학습</span><b>0</b></button><button class="active"><span>⌁ 분석</span><b>-</b></button></div></div>
+      <div class="aidot-analysis-filter"><select><option>webchat</option></select><button type="button">‹</button><strong>2026-06</strong><button type="button">›</button></div>
+      <div class="aidot-analysis-legend"><strong>누적 대화량</strong><span class="dot teal"></span>M/L 7% (22건)<span class="dot green"></span>Rule 0% (0건)<span class="dot orange"></span>Small Talk 0% (0건)<span class="dot blue"></span>Exact Matching 0% (0건)<span class="dot red"></span>미응답 93% (277건)</div>
+      <div class="aidot-analysis-grid">
+        <section><h4>기간내 대화량</h4><div class="donut-panel"><div class="donut-ring"><b>100%</b><span>응답률</span><em>6 / 6</em></div><div class="donut-legend"><p><b>응답</b></p><p><span class="dot teal"></span>M/L <b>100% 6</b></p><p><span class="dot green"></span>Rule <b>0% 0</b></p><p><span class="dot orange"></span>Small Talk <b>0% 0</b></p><p><span class="dot blue"></span>Exact Matching <b>0% 0</b></p><p><span class="dot red"></span>대화 Queue <b>0% 0</b></p><p><b>미응답</b><span>0% 0</span></p></div></div></section>
+        <section><h4>기간별 대화량</h4><div class="line-chart-mock"><div class="chart-legend"><span>사용자 발화</span><span>문의</span><span>응답</span><span>사용자수</span></div><div class="chart-grid"><span>01일</span><span>02일</span><span>03일</span><span>04일</span><span>05일</span><span>06일</span><span>07일</span></div><button type="button" class="admin-page__ghost">선택일자 대화 전체보기</button></div></section>
+        <section><h4>가장 많은 문의 Top 5</h4><div class="aidot-mini-table"><div><b>순위 ↕</b><b>의도/모듈명 ↕</b><b>분류방식 ↕</b><b>건수 ↕</b><b>응답률 ↕</b></div><div><span>1</span><span>-</span><span>미응답</span><span>${Number(operate.undefined_intents ?? 6)}</span><span>100%</span></div></div></section>
+        <section><h4>선택일자 대화 이력</h4><div class="aidot-mini-table"><div><b>발화일시 ↕</b><b>사용자 발화 ↕</b><b>의도/모듈명 ↕</b><b>실행 결과 ↕</b></div>${history.map((row) => `<div><span>${escapeText(row[0])}</span><span>${escapeText(row[1])}</span><span>${escapeText(row[2])}</span><span>${escapeText(row[3])}</span></div>`).join("")}</div></section>
+      </div>
+    </div>
+  `);
+  if (!section) return;
+}
+
+function renderDetailAidotScreen() {
+  const rows = getCurrentIntentRowsForWorkflow();
+  const body = document.createElement("div");
+
+  renderWorkflowTablePage(
+    body,
+    "detail",
+    rows,
+    ["", "ID", "구분", "의도/모듈명", "표시명", "학습문장", "대화카드", "태그", "기타옵션", "최종수정일시", "최종수정자", ""],
+    (row) => `
+      <div class="workflow-grid__row workflow-grid__row--body">
+        <span><input type="checkbox" aria-label="${escapeText(row.name || row.intentName || row.rowId || "intent")} 선택" /></span>
+        <span>${escapeCell(row.rowId || row.id || "-")}</span>
+        <span>${escapeCell(row.type || "의도")}</span>
+        <span><button type="button" class="link-button" data-open-dialog-start="${escapeText(row.rowId || row.id || "")}">${escapeText(row.name || row.intentName || row.intent || "-")}</button></span>
+        <span>${escapeCell(row.displayName || row.name || row.intentName || "-")}</span>
+        <span>${escapeCell(row.utteranceCount ?? row.trainingCount ?? row.examples ?? 0)}</span>
+        <span>${escapeCell(row.dialogCardCount ?? row.cardCount ?? 0)}</span>
+        <span>${escapeCell(row.tagCount ?? 0)}</span>
+        <span class="workflow-grid__option-badges"><i>T</i><i>R</i><i>F</i></span>
+        <span>${escapeCell(row.updatedAt || "-")}</span>
+        <span>${escapeCell(row.updatedBy || "-")}</span>
+        <span>⋮</span>
+      </div>`,
+    {
+      placeholder: "의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색하세요.",
+      filters: `<select data-workflow-filter="detail"><option>전체</option><option>의도</option><option>모듈</option></select>`,
+      actions: `<button type="button" class="admin-page__primary" data-workflow-search="detail">조회</button><button type="button" class="admin-page__primary" data-open-intent-create>+ 의도/모듈 추가</button>`,
+      template: "40px 84px 72px 1.25fr 1.25fr 92px 92px 72px 100px 150px 120px 36px"
+    }
+  );
+
+  renderWorkflowScreenShell(
+    "detail",
+    "04",
+    "봇 제작",
+    "Aidot 의도 화면 기준으로 의도/모듈을 제작하고 대화 설계로 연결합니다.",
+    body.innerHTML
+  );
+}
+function renderWorkflowScreens() {
+  try {
+    renderWorkspaceHome();
+    renderDetailAidotScreen();
     renderBuildAidotScreen();
-  });
+    renderTestAidotScreen();
+    renderEvaluateAidotScreen();
+    renderOperateAidotScreen();
+    renderAnalysisAidotScreen();
+  } catch (error) {
+    console.error("CGA workflow render failed", error);
+  } finally {
+    enforceActiveScreenVisibility();
+  }
 }
 
 function renderAllStatePanels() {
@@ -2424,7 +2581,9 @@ function renderAllStatePanels() {
   renderStateSummary();
   renderReadinessIssues();
   renderOperationsPanels();
+  renderWorkflowScreens();
   bindAccessNavigationGuard();
+  enforceActiveScreenVisibility();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }
 
@@ -2844,46 +3003,280 @@ function bindCreateControls() {
   });
 }
 
+function getVisibleExistingScreenIds(workspace = document.querySelector(".workspace")) {
+  const existingIds = new Set(
+    getWorkspaceScreenSections(workspace)
+      .map((section) => section.dataset.screenId)
+      .filter(Boolean)
+  );
+  return getVisibleLayout()
+    .map((item) => item.id)
+    .filter((id) => existingIds.has(id));
+}
+
+function getSelectableScreenIds(workspace = document.querySelector(".workspace")) {
+  if (!workspace) return [];
+  const visibleExistingIds = getVisibleExistingScreenIds(workspace);
+  if (visibleExistingIds.length) return visibleExistingIds;
+  return getWorkspaceScreenSections(workspace)
+    .map((section) => section.dataset.screenId)
+    .filter(Boolean);
+}
+
+function setScreenSectionVisible(section, visible) {
+  section.classList.toggle("selected", visible);
+  section.setAttribute("aria-hidden", visible ? "false" : "true");
+  if (visible) {
+    section.hidden = false;
+    section.style.display = "block";
+  } else {
+    section.hidden = true;
+    section.style.display = "none";
+  }
+}
+
+function resolveActiveScreenId() {
+  const workspace = document.querySelector(".workspace");
+  if (!workspace) return "";
+  const selectableIds = getSelectableScreenIds(workspace);
+  const hashId = window.location.hash.replace("#", "");
+  const candidates = [hashId, activeScreenId, DEFAULT_ACTIVE_SCREEN_ID, selectableIds[0]].filter(Boolean);
+  return candidates.find((id) => selectableIds.includes(id)) || selectableIds[0] || "";
+}
+
+function enforceActiveScreenVisibility() {
+  const workspace = document.querySelector(".workspace");
+  if (!workspace) return;
+  const sections = getWorkspaceScreenSections(workspace);
+  if (!hasAuthSession()) {
+    sections.forEach((section) => setScreenSectionVisible(section, false));
+    return;
+  }
+  const nextActiveScreenId = resolveActiveScreenId();
+  activeScreenId = nextActiveScreenId;
+  sections.forEach((section) => {
+    const selected = Boolean(nextActiveScreenId) && section.dataset.screenId === nextActiveScreenId;
+    setScreenSectionVisible(section, selected);
+  });
+}
+function scheduleActiveScreenVisibility() {
+  enforceActiveScreenVisibility();
+  window.requestAnimationFrame?.(() => enforceActiveScreenVisibility());
+  window.setTimeout(() => enforceActiveScreenVisibility(), 0);
+  window.setTimeout(() => enforceActiveScreenVisibility(), 100);
+}
 function applyScreenLayout() {
+  if (screenLayoutApplying) return;
   const workspace = document.querySelector(".workspace");
   if (!workspace) return;
   if (!applyAuthGate()) return;
-  const visibleLayout = getVisibleLayout();
-  const visibleIds = visibleLayout.map((item) => item.id);
-  if (!activeScreenId || !visibleIds.includes(activeScreenId)) {
-    const hashId = window.location.hash.replace("#", "");
-    activeScreenId = visibleIds.includes(hashId) ? hashId : DEFAULT_ACTIVE_SCREEN_ID;
-  }
-  const sectionsById = new Map(
-    Array.from(workspace.querySelectorAll("[data-screen-id]")).map((section) => [section.dataset.screenId, section])
-  );
-  visibleLayout.forEach((item) => {
-    const section = sectionsById.get(item.id);
-    if (!section) return;
-    section.dataset.layoutGroup = item.group;
-    section.dataset.layoutMode = item.mode;
-    section.hidden = item.id !== activeScreenId;
-    section.classList.toggle("selected", item.id === activeScreenId);
-    workspace.appendChild(section);
-  });
-  sectionsById.forEach((section, id) => {
-    if (!visibleIds.includes(id)) {
-      section.hidden = true;
-      section.classList.remove("selected");
+  screenLayoutApplying = true;
+  try {
+    const visibleLayout = getVisibleLayout();
+    const visibleIds = visibleLayout.map((item) => item.id);
+    const sectionsById = new Map(
+      getWorkspaceScreenSections(workspace).map((section) => [section.dataset.screenId, section])
+    );
+    sectionsById.forEach((section) => setScreenSectionVisible(section, false));
+    const visibleExistingIds = visibleIds.filter((id) => sectionsById.has(id));
+    if (!visibleExistingIds.includes(activeScreenId)) {
+      activeScreenId = resolveActiveScreenId();
     }
-  });
-  updateNavigationActiveState();
-  if (activeScreenId === "access-management") {
-    renderAccessPanels();
+    visibleLayout.forEach((item) => {
+      const section = sectionsById.get(item.id);
+      if (!section) return;
+      section.dataset.layoutGroup = item.group;
+      section.dataset.layoutMode = item.mode;
+      workspace.appendChild(section);
+    });
+    enforceActiveScreenVisibility();
+    updateNavigationActiveState();
+    if (activeScreenId === "access-management") {
+      renderAccessPanels();
+    }
+    if (activeScreenId === "bot-management" && typeof renderBotManagement === "function") {
+      renderBotManagement();
+      refreshWorkspaceBotsFromServer(currentWorkspaceGroupId)
+        .then(() => { renderBotManagement(); enforceActiveScreenVisibility(); })
+        .catch(() => { renderBotManagement(); enforceActiveScreenVisibility(); });
+    }
+    if (["workspace-home", "detail", "build", "test", "evaluate", "operate", "analysis"].includes(activeScreenId)) {
+      renderWorkflowScreens();
+    }
+  } catch (error) {
+    console.error("CGA screen layout failed", error);
+  } finally {
+    screenLayoutApplying = false;
+    enforceActiveScreenVisibility();
+    updateNavigationActiveState();
   }
 }
+function updateNavigationActiveState() {
+  document.querySelectorAll(".management-nav a, .server-sub-nav a, .system-admin-subnav a, [data-workflow-nav] a").forEach((link) => {
+    const linkScreenId = link.getAttribute("href")?.replace("#", "");
+    const subviewMatches = !link.dataset.adminSubview || link.dataset.adminSubview === currentSystemAdminSubview;
+    link.classList.toggle("active", linkScreenId === activeScreenId && subviewMatches);
+  });
+}
 
+function renderStateSummary() {
+  const container = document.querySelector("[data-state-summary]");
+  if (!container) return;
+  const readiness = deriveReadiness(currentStudioState)
+  const pdfStatus = canGeneratePdfQa(currentStudioState) ? t("state.pdfAvailable", "Available") : t("state.pdfBlockedLlm", "Blocked: LLM required");
+  const kakaoStatus = canUseKakaoChannel(currentStudioState) ? t("state.kakaoAvailableKo", "Available for Korean locale") : t("state.kakaoDisabledNonKo", "Disabled outside Korean locale");
+  container.innerHTML = `
+    <div class="state-metric"><strong>${t("state.bot", "Bot")}</strong><span>${currentStudioState.bot.name || t("state.notNamed", "Not named")}</span></div>
+    <div class="state-metric"><strong>${t("state.locale", "Locale")}</strong><span>${currentStudioState.bot.defaultLocale}</span></div>
+    <div class="state-metric"><strong>${t("state.intents", "Intents")}</strong><span>${currentStudioState.counts.intents}</span></div>
+    <div class="state-metric"><strong>${t("state.documents", "Documents")}</strong><span>${currentStudioState.counts.documents}</span></div>
+    <div class="state-metric ${readiness.ready ? "ok" : "blocked"}"><strong>${t("state.readiness", "Readiness")}</strong><span>${readiness.ready ? t("state.ready", "Ready") : t("common.blocked", "Blocked")}</span></div>
+    <div class="state-metric blocked"><strong>PDF Q&A</strong><span>${pdfStatus}</span></div>
+    <div class="state-metric"><strong>Kakao KR</strong><span>${kakaoStatus}</span></div>
+  `;
+}
+
+function renderReadinessIssues() {
+  const container = document.querySelector("[data-readiness-issues]");
+  if (!container) return;
+  const readiness = deriveReadiness(currentStudioState)
+  if (readiness.ready) {
+    container.innerHTML = `<p class="issue-ok">${t("state.noBlockingIssue", "No blocking issue.")}</p>`;
+    return;
+  }
+  container.innerHTML = readiness.issues.map((issue) => `
+    <p><b>${issue.code}</b><span data-error-key="${issue.key}">${issue.code}</span></p>
+  `).join("");
+}
+
+function renderWorkflowRail() {
+  const nav = document.querySelector("[data-workflow-nav]");
+  if (!nav) return;
+  nav.innerHTML = workflowSteps.map((step) => `
+    <a href="#${step.id}" class="${step.id === activeScreenId ? "active" : ""}">
+      <span>${step.number}</span>
+      <strong data-i18n="workflow.${step.id}.title">${step.title}</strong>
+      <small data-i18n="workflow.${step.id}.subtitle">${step.subtitle}</small>
+    </a>
+  `).join("");
+}
+
+function renderLinkRail(selector, links) {
+  const nav = document.querySelector(selector);
+  if (!nav) return;
+  nav.innerHTML = links.map((link) => `
+    <a href="#${link.id}" class="${link.id === activeScreenId ? "active" : ""}">
+      <span>${link.code}</span>
+      <strong data-i18n="${link.titleKey}">${link.title}</strong>
+      <small data-i18n="${link.subtitleKey}">${link.subtitle}</small>
+    </a>
+  `).join("");
+}
+
+function renderSystemAdminSubnav() {
+  const container = document.querySelector("[data-system-admin-subnav]");
+  if (!container) return;
+  container.innerHTML = systemAdminSections.map((section) => `
+    <div class="subnav-section">
+      <strong>${section.title}</strong>
+      ${section.links.map((link) => `
+        <a href="#${link.id}" class="${link.id === activeScreenId && (!link.subview || link.subview === currentSystemAdminSubview) ? "active" : ""}" ${link.subview ? `data-admin-subview="${link.subview}"` : ""}>
+          <span>${link.label}</span>
+        </a>
+      `).join("")}
+    </div>
+  `).join("");
+}
+
+function renderNavigationRails() {
+  renderLinkRail("[data-query-nav]", queryLinks);
+  renderLinkRail("[data-management-nav]", managementLinks);
+  renderLinkRail("[data-operation-nav]", operationLinks);
+  renderSystemAdminSubnav();
+}
+
+function renderBoundaryMatrix() {
+  const table = document.querySelector("[data-boundary-table]");
+  if (!table) return;
+  table.innerHTML = `
+    <div class="boundary-head">${t("module.screen", "Screen")}</div>
+    <div class="boundary-head">${t("module.publicCore", "Public Core")}</div>
+    <div class="boundary-head">${t("module.commercialCandidate", "Commercial Candidate")}</div>
+    ${workflowSteps.map((step) => `
+      <div>${step.number} ${step.title}</div>
+      <div>${step.publicCore.join(", ")}</div>
+      <div>${step.commercial.join(", ")}</div>
+    `).join("")}
+  `;
+}
+
+function renderErrorSamples() {
+  const container = document.querySelector("[data-error-samples]");
+  if (!container) return;
+  const cgaErrors = errorSamples.filter((sample) => sample.localeSource === "user.locale");
+  const botErrors = errorSamples.filter((sample) => sample.localeSource === "bot.defaultLocale");
+  const botLocale = currentStudioState.bot.defaultLocale || "en";
+  const resolveBotMessage = (sample) => window.cgaStudioI18n?.resolveMessage(botLocale, sample.key, sample.code) || sample.code;
+  container.innerHTML = `
+    <div class="error-sample-group">
+      <strong><span data-i18n="i18n.cgaErrorGroup">CGA Error</span> · user.locale</strong>
+      ${cgaErrors.map((sample) => `
+        <p>
+          <b>${sample.code}</b>
+          <span data-error-key="${sample.key}">${sample.code}</span>
+        </p>
+      `).join("")}
+    </div>
+    <div class="error-sample-group">
+      <strong><span data-i18n="i18n.botErrorGroup">Bot Error</span> · ${botLocale}</strong>
+      ${botErrors.map((sample) => `
+        <p>
+          <b>${sample.code}</b>
+          <span data-bot-error-key="${sample.key}">${resolveBotMessage(sample)}</span>
+        </p>
+      `).join("")}
+    </div>
+  `;
+}
+
+function openHelpTopic(topicId) {
+  const topic = HELP_TOPICS[topicId];
+  const modal = document.querySelector("[data-help-modal]");
+  const title = document.querySelector("[data-help-title]");
+  const body = document.querySelector("[data-help-body]");
+  if (!topic || !modal || !title || !body) return;
+  title.textContent = topic.title;
+  body.innerHTML = topic.body;
+  modal.hidden = false;
+}
+
+function closeHelpModal() {
+  const modal = document.querySelector("[data-help-modal]");
+  if (modal) modal.hidden = true;
+}
+
+function bindHelpModal() {
+  document.querySelectorAll("[data-help-topic]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => openHelpTopic(button.dataset.helpTopic));
+  });
+  document.querySelectorAll("[data-help-close]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", closeHelpModal);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeHelpModal();
+  });
+}
+
+
+// Final workflow overrides. Keep these after legacy screen helpers so the bot production
+// workflow always uses the Aidot-compatible screen order and compact lookup layout.
 function htmlList(items) {
   return items.map((item) => `<li>${item}</li>`).join("");
 }
-
-
-
 
 function labelFieldPath(fieldPath) {
   const labels = {
@@ -3032,71 +3425,6 @@ function bindTeamDashboardActions() {
       renderGlobalMessage();
     });
   });
-}
-
-function renderWorkspaceHome() {
-  const groupSelect = document.querySelector("[data-workspace-group]");
-  const summary = document.querySelector("[data-workspace-summary]");
-  const botList = document.querySelector("[data-workspace-bots]");
-  const createButton = document.querySelector("[data-workspace-create]");
-  const transfer = document.querySelector("[data-workspace-transfer]");
-  const currentBotName = document.querySelector("[data-current-bot-name]");
-  const currentGroupName = document.querySelector("[data-current-group-name]");
-  if (!groupSelect || !summary || !botList) return;
-  const groups = getActiveGroupsForCurrentUser();
-  if (!groups.some((group) => group.id === currentWorkspaceGroupId)) {
-    currentWorkspaceGroupId = groups[0]?.id || currentWorkspaceGroupId;
-  }
-  const group = getCurrentWorkspaceGroup();
-  const bots = currentWorkspaceBots.filter((bot) => bot.group_id === currentWorkspaceGroupId);
-  const currentBot = getCurrentWorkspaceBot();
-  const canCreateBot = canCreateBotInCurrentWorkspace();
-  groupSelect.innerHTML = groups.map((item) => `<option value="${item.id}" ${item.id === currentWorkspaceGroupId ? "selected" : ""}>${item.name}</option>`).join("");
-  summary.innerHTML = `
-    <div><strong>${group?.name || t("workspace.noGroup", "No group")}</strong><span>${bots.length}${t("workspace.botCount", " bot(s)")} · ${currentAccessState.currentUserId} · ${canCreateBot ? t("workspace.createAllowed", "Can create bots") : t("workspace.createBlocked", "Blocked: bot.create")}</span></div>
-  `;
-  if (createButton) createButton.disabled = !canCreateBot;
-  botList.innerHTML = bots.map((bot) => `
-    <button type="button" class="bot-list-row ${bot.id === currentWorkspaceBotId ? "selected" : ""}" data-open-bot="${bot.id}">
-      <strong>${bot.name}</strong>
-      <span>${bot.status} · ${bot.locale} · ${bot.updated_at}</span>
-    </button>
-  `).join("") || `<div class="empty-list"><strong>${t("workspace.noBotInGroup", "No bot in this group")}</strong><span>${t("workspace.createBotToStart", "Create a bot to start the workflow.")}</span></div>`;
-  if (transfer) {
-    const currentVersion = currentStudioState.bot.version || currentBot?.version || "v0.1";
-    transfer.innerHTML = `
-      <div class="workspace-list-head">
-        <h4 data-i18n="transfer.botPackageTitle">Bot Version / Package</h4>
-        <button type="button" ${canCreateBot ? "" : "disabled"} data-i18n="transfer.copyBot">Copy Bot</button>
-      </div>
-      <p data-i18n="transfer.botPackageBody">Manage the current bot by version, and exchange Aidot-compatible bot packages with Aidot or CGA.</p>
-      <p class="compat-note" data-i18n="transfer.aidotLocaleBoundary">Aidot upload compatibility uses a single selected bot language. CGA multilingual packages require a CGA-only import path or an Aidot compatibility update.</p>
-      <p class="transfer-status">${currentTransferStatus || `<span data-i18n="transfer.readyStatus">Ready for Aidot-compatible package exchange.</span>`}</p>
-      <div class="version-strip">
-        <span><b data-i18n="transfer.currentVersion">Current version</b>${currentVersion}</span>
-        <span><b data-i18n="transfer.compatibility">Compatibility</b>Aidot / CGA</span>
-        <span><b data-i18n="transfer.botPackageFormat">Bot package</b>${t("transfer.jsonReplace", "JSON · replace")}</span>
-        <span><b data-i18n="transfer.assetPackageFormat">Text assets</b>${t("transfer.txtMergeShort", "TXT · merge")}</span>
-      </div>
-      <div class="button-row">
-        <button type="button" data-download-bot-package data-i18n="transfer.downloadBot">Download Bot</button>
-        <button type="button" class="ghost-btn" data-upload-bot-package data-i18n="transfer.uploadBot">Upload Bot</button>
-        <button type="button" class="ghost-btn" data-download-version-package data-i18n="transfer.downloadVersion">Download Version</button>
-        <button type="button" class="ghost-btn" data-upload-version-package data-i18n="transfer.uploadVersion">Upload Version</button>
-      </div>
-      <div class="transfer-history-panel">
-        <h5 data-i18n="transfer.historyTitle">Server Transfer History</h5>
-        <div class="transfer-history-list" data-transfer-history>
-          <div><strong data-i18n="transfer.historyLoadingTitle">Loading history</strong><span data-i18n="transfer.historyLoadingBody">Reading server records...</span></div>
-        </div>
-      </div>
-    `;
-  }
-  if (currentBotName) currentBotName.textContent = currentBot?.name || t("workspace.noBotSelected", "No bot selected");
-  if (currentGroupName) currentGroupName.textContent = group?.name || t("workspace.noGroupSelected", "No group selected");
-  renderTopContext();
-  bindWorkspaceActions();
-  refreshTransferHistory();
 }
 
 function bindAssetTransferActions() {
@@ -3543,6 +3871,7 @@ function formatAidotAdminDate(value) {
 function formatLoginHistoryDate(value) {
   return formatAidotAdminDate(value);
 }
+
 function formatAidotSignupStatus(record) {
   if (!record) return "-";
   if (record.rowStatus === "pending" || record.request?.status === "pending") return "가입 대기";
@@ -3897,7 +4226,6 @@ function bindAdminSurfaceControls(surface) {
   });
 }
 
-
 function renderAdminSurface(surface, key) {
   const normalizedKey = {
     "template-list": "templates",
@@ -3916,7 +4244,6 @@ function renderAdminSurface(surface, key) {
   else renderSimpleHistorySurface(surface, normalizedKey);
   bindAdminSurfaceControls(surface);
 }
-
 
 function renderAccessPanels() {
   const headingTitle = document.querySelector("[data-access-heading-title]");
@@ -4424,10 +4751,9 @@ function renderApiRegistry() {
     .map((bot) => `<option value="${bot.id}" ${bot.id === currentApiBotId ? "selected" : ""}>${bot.name}</option>`)
     .join("");
   if (apiOwnerMeta) {
-    const accessLabel = canManageApi
-      ? t("apiAnswer.manageAllowed", "Can manage API answers")
-      : t("apiAnswer.manageBlocked", "Blocked: apiAnswer.manage");
-    apiOwnerMeta.textContent = `group_id: ${currentApiGroupId} · bot_id: ${currentApiBotId || t("common.none", "None")} · ${accessLabel}`;
+    apiOwnerMeta.textContent = `group_id: ${currentApiGroupId} · bot_id: ${currentApiBotId || t("common.none", "None")}`;
+    apiOwnerMeta.dataset.manageAllowedLabel = t("apiAnswer.manageAllowed", "Can manage API answers");
+    apiOwnerMeta.dataset.manageBlockedLabel = t("apiAnswer.manageBlocked", "Blocked: apiAnswer.manage");
   }
   if (apiAdd) {
     apiAdd.disabled = !canManageApi || !currentApiBotId;
@@ -5077,164 +5403,91 @@ function setActiveScreen(screenId, { replaceHash = false } = {}) {
   applyScreenLayout();
 }
 
-function updateNavigationActiveState() {
-  document.querySelectorAll(".management-nav a, .server-sub-nav a, .system-admin-subnav a, [data-workflow-nav] a").forEach((link) => {
-    const linkScreenId = link.getAttribute("href")?.replace("#", "");
-    const subviewMatches = !link.dataset.adminSubview || link.dataset.adminSubview === currentSystemAdminSubview;
-    link.classList.toggle("active", linkScreenId === activeScreenId && subviewMatches);
+function renderWorkspaceHome() {
+  const section = document.querySelector('[data-screen-id="workspace-home"]');
+  if (!section) return;
+  const groups = getActiveGroupsForCurrentUser();
+  if (!groups.some((group) => group.id === currentWorkspaceGroupId)) currentWorkspaceGroupId = groups[0]?.id || currentWorkspaceGroupId;
+  const groupOptions = groups.map((group) => `<option value="${escapeText(group.id)}" ${group.id === currentWorkspaceGroupId ? "selected" : ""}>${escapeText(group.name)}</option>`).join("");
+  const rows = currentWorkspaceBots.filter((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
+  const shell = renderWorkflowScreenShell("workspace-home", "BOT", "봇 작업공간", "그룹을 선택하고 해당 그룹의 봇을 엽니다.", `<div data-workspace-list-surface></div>`);
+  const surface = shell?.querySelector("[data-workspace-list-surface]");
+  if (!surface) return;
+  renderWorkflowTablePage(surface, "workspace-home", rows, ["봇 ID", "봇 이름", "버전", "상태", "언어", "최종수정일시", "최종수정자"], (bot) => `
+    <button type="button" class="workflow-grid__row ${bot.id === currentWorkspaceBotId ? "selected" : ""}" data-open-bot="${escapeText(bot.id)}">
+      <strong>${escapeText(bot.id)}</strong><span>${escapeText(bot.name)}</span><span>${escapeText(bot.version || "-")}</span><span>${escapeText(bot.status || "-")}</span><span>${escapeText(bot.locale || "-")}</span><span>${escapeText(bot.updated_at || bot.created_at || "-")}</span><span>${escapeText(bot.updated_by || "SYSTEM")}</span>
+    </button>
+  `, {
+    placeholder: "봇 ID 또는 봇 이름을 검색하세요.",
+    template: "1.15fr 1.5fr .7fr .7fr .6fr 1fr .8fr",
+    filters: `<select data-workspace-group>${groupOptions}</select>`,
+    actions: `<button type="button" class="admin-page__primary" data-workspace-create ${canCreateBotInCurrentWorkspace() ? "" : "disabled"}>+ 봇 생성</button>`
+  });
+  surface.querySelector("[data-workspace-group]")?.addEventListener("change", (event) => {
+    currentWorkspaceGroupId = event.target.value;
+    renderWorkspaceHome();
+    renderTopContext();
+  });
+  surface.querySelectorAll("[data-open-bot]").forEach((button) => button.addEventListener("click", () => {
+    currentWorkspaceBotId = button.dataset.openBot;
+    selectedBotManagementId = currentWorkspaceBotId;
+    const bot = getCurrentWorkspaceBot();
+    if (bot) {
+      currentStudioState.bot.name = bot.name || currentStudioState.bot.name;
+      currentStudioState.bot.version = bot.version || currentStudioState.bot.version;
+      currentStudioState.bot.defaultLocale = bot.locale || currentStudioState.bot.defaultLocale;
+    }
+    renderWorkspaceHome();
+    renderTopContext();
+  }));
+  surface.querySelector("[data-workspace-create]")?.addEventListener("click", () => {
+    activeScreenId = "create";
+    window.location.hash = "create";
+    applyScreenLayout();
   });
 }
 
-function renderStateSummary() {
-  const container = document.querySelector("[data-state-summary]");
+function renderBuildAidotScreen() {
+  const container = document.querySelector("[data-build-aidot-screen]");
   if (!container) return;
-  const readiness = deriveReadiness(currentStudioState)
-  const pdfStatus = canGeneratePdfQa(currentStudioState) ? t("state.pdfAvailable", "Available") : t("state.pdfBlockedLlm", "Blocked: LLM required");
-  const kakaoStatus = canUseKakaoChannel(currentStudioState) ? t("state.kakaoAvailableKo", "Available for Korean locale") : t("state.kakaoDisabledNonKo", "Disabled outside Korean locale");
-  container.innerHTML = `
-    <div class="state-metric"><strong>${t("state.bot", "Bot")}</strong><span>${currentStudioState.bot.name || t("state.notNamed", "Not named")}</span></div>
-    <div class="state-metric"><strong>${t("state.locale", "Locale")}</strong><span>${currentStudioState.bot.defaultLocale}</span></div>
-    <div class="state-metric"><strong>${t("state.intents", "Intents")}</strong><span>${currentStudioState.counts.intents}</span></div>
-    <div class="state-metric"><strong>${t("state.documents", "Documents")}</strong><span>${currentStudioState.counts.documents}</span></div>
-    <div class="state-metric ${readiness.ready ? "ok" : "blocked"}"><strong>${t("state.readiness", "Readiness")}</strong><span>${readiness.ready ? t("state.ready", "Ready") : t("common.blocked", "Blocked")}</span></div>
-    <div class="state-metric blocked"><strong>PDF Q&A</strong><span>${pdfStatus}</span></div>
-    <div class="state-metric"><strong>Kakao KR</strong><span>${kakaoStatus}</span></div>
+  const rows = getCurrentIntentRowsForWorkflow();
+  if (!rows.some((row) => row.id === currentSelectedIntentId)) currentSelectedIntentId = rows[0]?.id || "";
+  const selected = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || {};
+  const page = getWorkflowPagedRows("build-intents", rows);
+  const botName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "테스트봇";
+  const renderHeader = () => `
+    <div class="aidot-bot-main-head">
+      <div class="aidot-bot-title">
+        <div class="bot-avatar-large"></div>
+        <div>
+          <div class="aidot-title-row"><h2>${escapeText(botName)} - 시멘틱 RAG</h2><select><option>${escapeText(currentStudioState.bot.version || "Ver. 1")} · 테스트형</option><option>${escapeText(currentStudioState.bot.version || "Ver. 1")} · 운영</option></select><span class="test-badge">테스트형</span><span class="star-mark">★</span><button type="button" class="icon-button">⋮</button></div>
+          <strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: Semantic Engine RAG 답변</strong>
+          <div class="train-row"><button type="button" data-build-run>학습하기</button><span>${currentOperationsState.build?.last_run_at ? `학습성공 ${escapeText(currentOperationsState.build.last_run_at)} ${escapeText(currentAccessState.currentUserId)}` : "학습 전"}</span></div>
+        </div>
+      </div>
+      <div class="aidot-count-tabs"><button class="active"><span>☞ 의도</span><b>${rows.length}</b></button><button><span>☷ 구성</span><b>-</b></button><button><span>⊙ 개체</span><b>${currentEntityAssets.length}</b></button><button><span>▣ 사전</span><b>${currentDictionaryAssets.length}</b></button><button><span>⌁ 평가</span><b>-</b></button><button><span>↔ 재학습</span><b>0</b></button><button><span>⌁ 분석</span><b>-</b></button></div>
+    </div>`;
+  const renderList = () => `
+    ${renderHeader()}
+    <div class="aidot-intent-main-toolbar"><div class="aidot-search-line"><input placeholder="의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색해주세요." /><select><option>전체</option></select></div><div class="aidot-list-actions"><button type="button" data-aidot-intent-add>+ 의도/모듈 추가</button><button type="button" class="icon-button">⋮</button></div></div>
+    <div class="aidot-list-control"><strong>전체 ${rows.length}건</strong>${renderWorkflowPageSize("build-intents", page.pageSize)}<button type="button" disabled>삭제</button></div>
+    <div class="aidot-main-table"><div class="aidot-main-table-head"><span><input type="checkbox" /></span><span>ID ⇅</span><span>오...</span><span>구분 ⇅</span><span>의도/모듈명 ⇅</span><span>표시명 ⇅</span><span>학습문장 ⇅</span><span>대화카드 ⇅</span><span>태그 ⇅</span><span>기타옵션</span><span>최종수정일시 ⇅</span><span>최종수정자 ⇅</span><span></span></div>${page.rows.map((row) => `<button type="button" class="aidot-main-table-row" data-build-intent-open="${escapeText(row.id)}"><span><input type="checkbox" /></span><span>${escapeText(row.rowId)}</span><span></span><span>의도</span><strong>${escapeText(row.id)}</strong><span>${escapeText(row.displayName)}</span><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${row.tagCount || 0}</span><span class="option-dots"><b>T</b><b>R</b><b>F</b></span><span>${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span><span>⋮</span></button>`).join("")}</div>
+    ${renderWorkflowPager(rows.length, "build-intents", page.currentPage, page.totalPages)}
   `;
-}
-
-function renderReadinessIssues() {
-  const container = document.querySelector("[data-readiness-issues]");
-  if (!container) return;
-  const readiness = deriveReadiness(currentStudioState)
-  if (readiness.ready) {
-    container.innerHTML = `<p class="issue-ok">${t("state.noBlockingIssue", "No blocking issue.")}</p>`;
-    return;
-  }
-  container.innerHTML = readiness.issues.map((issue) => `
-    <p><b>${issue.code}</b><span data-error-key="${issue.key}">${issue.code}</span></p>
-  `).join("");
-}
-
-function renderWorkflowRail() {
-  const nav = document.querySelector("[data-workflow-nav]");
-  if (!nav) return;
-  nav.innerHTML = workflowSteps.map((step) => `
-    <a href="#${step.id}" class="${step.id === activeScreenId ? "active" : ""}">
-      <span>${step.number}</span>
-      <strong data-i18n="workflow.${step.id}.title">${step.title}</strong>
-      <small data-i18n="workflow.${step.id}.subtitle">${step.subtitle}</small>
-    </a>
-  `).join("");
-}
-
-function renderLinkRail(selector, links) {
-  const nav = document.querySelector(selector);
-  if (!nav) return;
-  nav.innerHTML = links.map((link) => `
-    <a href="#${link.id}" class="${link.id === activeScreenId ? "active" : ""}">
-      <span>${link.code}</span>
-      <strong data-i18n="${link.titleKey}">${link.title}</strong>
-      <small data-i18n="${link.subtitleKey}">${link.subtitle}</small>
-    </a>
-  `).join("");
-}
-
-function renderSystemAdminSubnav() {
-  const container = document.querySelector("[data-system-admin-subnav]");
-  if (!container) return;
-  container.innerHTML = systemAdminSections.map((section) => `
-    <div class="subnav-section">
-      <strong>${section.title}</strong>
-      ${section.links.map((link) => `
-        <a href="#${link.id}" class="${link.id === activeScreenId && (!link.subview || link.subview === currentSystemAdminSubview) ? "active" : ""}" ${link.subview ? `data-admin-subview="${link.subview}"` : ""}>
-          <span>${link.label}</span>
-        </a>
-      `).join("")}
-    </div>
-  `).join("");
-}
-
-function renderNavigationRails() {
-  renderLinkRail("[data-query-nav]", queryLinks);
-  renderLinkRail("[data-management-nav]", managementLinks);
-  renderLinkRail("[data-operation-nav]", operationLinks);
-  renderSystemAdminSubnav();
-}
-
-function renderBoundaryMatrix() {
-  const table = document.querySelector("[data-boundary-table]");
-  if (!table) return;
-  table.innerHTML = `
-    <div class="boundary-head">${t("module.screen", "Screen")}</div>
-    <div class="boundary-head">${t("module.publicCore", "Public Core")}</div>
-    <div class="boundary-head">${t("module.commercialCandidate", "Commercial Candidate")}</div>
-    ${workflowSteps.map((step) => `
-      <div>${step.number} ${step.title}</div>
-      <div>${step.publicCore.join(", ")}</div>
-      <div>${step.commercial.join(", ")}</div>
-    `).join("")}
+  const utterances = selected.utterances?.length ? selected.utterances : currentIntentUtteranceAssets.filter((item) => item.division === selected.id);
+  const renderStart = () => `
+    <div class="aidot-dialog-head"><strong>의도 (${escapeText(selected.id || "")}) &gt; 대화 시작</strong><button type="button" class="help-icon">?</button><span>&gt; 대화 설계</span><div><button type="button" data-return-build-list>목록으로</button><button type="button">저장하기</button><button type="button" data-open-dialog-design>저장 후 대화설계</button></div></div>
+    <div class="aidot-dialog-start"><section><div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><input placeholder="학습문장을 검색하세요." /><button type="button">학습 문장 추천</button><button type="button">삭제</button><button type="button" class="icon-button">⋮</button></div><div class="aidot-add-row"><span>구분</span><span>학습문장</span><button type="button">추가</button></div><p class="muted-line">Validation Set 상태: Random</p><div class="aidot-utterance-table"><div><span><input type="checkbox" /></span><strong>구분</strong><strong>학습문장</strong></div>${utterances.map((item) => `<div><span><input type="checkbox" /></span><span class="round-token">T</span><span>${escapeText(item.utterance)}</span></div>`).join("")}</div></section><section><div class="aidot-section-title"><strong>추출할 개체 0</strong><button type="button">선택 개체 추가</button><button type="button">삭제</button></div><input placeholder="대화에서 사용할 개체를 검색하여 파라미터로 등록하세요." /><div class="aidot-empty-face">··</div><p class="empty-help">아직 추출할 개체가 선택되지 않았습니다.<br />개체를 검색한 뒤 선택해서 변수로 등록해주세요.</p></section></div>
   `;
-}
-
-function renderErrorSamples() {
-  const container = document.querySelector("[data-error-samples]");
-  if (!container) return;
-  const cgaErrors = errorSamples.filter((sample) => sample.localeSource === "user.locale");
-  const botErrors = errorSamples.filter((sample) => sample.localeSource === "bot.defaultLocale");
-  const botLocale = currentStudioState.bot.defaultLocale || "en";
-  const resolveBotMessage = (sample) => window.cgaStudioI18n?.resolveMessage(botLocale, sample.key, sample.code) || sample.code;
-  container.innerHTML = `
-    <div class="error-sample-group">
-      <strong><span data-i18n="i18n.cgaErrorGroup">CGA Error</span> · user.locale</strong>
-      ${cgaErrors.map((sample) => `
-        <p>
-          <b>${sample.code}</b>
-          <span data-error-key="${sample.key}">${sample.code}</span>
-        </p>
-      `).join("")}
-    </div>
-    <div class="error-sample-group">
-      <strong><span data-i18n="i18n.botErrorGroup">Bot Error</span> · ${botLocale}</strong>
-      ${botErrors.map((sample) => `
-        <p>
-          <b>${sample.code}</b>
-          <span data-bot-error-key="${sample.key}">${resolveBotMessage(sample)}</span>
-        </p>
-      `).join("")}
-    </div>
+  const renderDesign = () => `
+    <div class="aidot-dialog-head"><strong>의도 (${escapeText(selected.id || "")}) &gt; 대화 시작 &gt; 대화 설계</strong><button type="button" class="help-icon">?</button><div><button type="button" data-return-build-list>목록으로</button><input placeholder="봇 메시지를 검색하세요." /><button type="button">저장</button><button type="button" class="icon-button">⋮</button></div></div>
+    <div class="dialog-design-layout"><div class="dialog-canvas"><div class="canvas-tools"><button>의도 카드 2개</button><button>링크 2개</button><button>필수 변수 기본 반복 3회</button></div><div class="node-row"><div class="flow-node start">▶<strong>대화 시작</strong><span>대화 시작</span></div><i></i><div class="flow-node talk">“ ”<strong>답변</strong><span>Talk</span></div><i></i><div class="flow-node end">■<strong>End</strong><span>End</span></div></div><div class="zoom-row"><button>-</button><strong>100%</strong><button>+</button></div></div><aside class="dialog-property"><div class="card-tabs"><button class="active">대화 테스트</button><button>속성</button><button>변수</button></div><label>카드 이름<input value="답변" /></label><section><strong>기본 메시지</strong><textarea>{{$_rag_answer_text}}&#10;{{$_rag_answers}}</textarea><button type="button">+ 메시지 추가</button></section><section><strong>템플릿 메시지</strong><button type="button">템플릿 메시지 설정</button></section><section><strong>사용자 응답 처리</strong><p><label><input type="radio" checked /> 사용 안함</label> <label><input type="radio" /> 단일 선택</label> <label><input type="radio" /> 응답 전달</label></p></section></aside></div>
   `;
-}
-
-function openHelpTopic(topicId) {
-  const topic = HELP_TOPICS[topicId];
-  const modal = document.querySelector("[data-help-modal]");
-  const title = document.querySelector("[data-help-title]");
-  const body = document.querySelector("[data-help-body]");
-  if (!topic || !modal || !title || !body) return;
-  title.textContent = topic.title;
-  body.innerHTML = topic.body;
-  modal.hidden = false;
-}
-
-function closeHelpModal() {
-  const modal = document.querySelector("[data-help-modal]");
-  if (modal) modal.hidden = true;
-}
-
-function bindHelpModal() {
-  document.querySelectorAll("[data-help-topic]").forEach((button) => {
-    if (button.dataset.bound === "true") return;
-    button.dataset.bound = "true";
-    button.addEventListener("click", () => openHelpTopic(button.dataset.helpTopic));
-  });
-  document.querySelectorAll("[data-help-close]").forEach((button) => {
-    if (button.dataset.bound === "true") return;
-    button.dataset.bound = "true";
-    button.addEventListener("click", closeHelpModal);
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeHelpModal();
-  });
+  container.innerHTML = currentBuildAidotView === "design" ? renderDesign() : currentBuildAidotView === "start" ? renderStart() : renderList();
+  bindWorkflowTableControls(container, "build-intents");
+  container.querySelectorAll("[data-build-intent-open]").forEach((button) => button.addEventListener("click", () => { currentSelectedIntentId = button.dataset.buildIntentOpen; currentBuildAidotView = "start"; renderBuildAidotScreen(); }));
+  container.querySelector("[data-open-dialog-design]")?.addEventListener("click", () => { currentBuildAidotView = "design"; renderBuildAidotScreen(); });
+  container.querySelectorAll("[data-return-build-list]").forEach((button) => button.addEventListener("click", () => { currentBuildAidotView = "list"; renderBuildAidotScreen(); }));
 }
 
 function bootApp() {
@@ -5265,6 +5518,7 @@ function bootApp() {
   bindAssetTransferActions();
   bindOperationsActions();
   syncStudioLocaleToCurrentUser();
+  enforceActiveScreenVisibility();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
   refreshAccessStateFromServer()
     .then(async (loaded) => {
@@ -5273,12 +5527,17 @@ function bootApp() {
         await refreshAdminResourcesFromServer().catch(() => false);
         renderAllStatePanels();
         rerenderAdminAndAccess();
+        enforceActiveScreenVisibility();
       }
     })
     .catch(() => {});
 }
 
-document.addEventListener("DOMContentLoaded", bootApp);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootApp, { once: true });
+} else {
+  bootApp();
+}
 window.addEventListener("cga:entry-login-success", async () => {
   clearAuthMessage();
   const loaded = await refreshAccessStateFromServer().catch(() => false);
@@ -5289,13 +5548,17 @@ window.addEventListener("cga:entry-login-success", async () => {
   applyScreenLayout();
   renderAllStatePanels();
   rerenderAdminAndAccess();
+  enforceActiveScreenVisibility();
 });
 window.addEventListener("hashchange", () => {
   const hashId = window.location.hash.replace("#", "");
   if (hashId) setActiveScreen(hashId, { replaceHash: true });
 });
 document.addEventListener("cga:i18n-ready", syncStudioLocaleToCurrentUser);
-document.addEventListener("cga:content-rendered", syncStudioLocaleToCurrentUser);
+document.addEventListener("cga:content-rendered", () => {
+  syncStudioLocaleToCurrentUser();
+  scheduleActiveScreenVisibility();
+});
 document.addEventListener("change", (event) => {
   if (event.target?.matches?.("[data-locale-select]")) {
     window.setTimeout(() => {
@@ -5305,3 +5568,13 @@ document.addEventListener("change", (event) => {
     }, 0);
   }
 });
+
+
+
+
+
+
+
+
+
+

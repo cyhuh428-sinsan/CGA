@@ -5,6 +5,7 @@ const crypto = require("crypto");
 
 const root = path.resolve(__dirname, "..");
 const port = Number(process.env.PORT || 4173);
+const host = process.env.HOST || "0.0.0.0";
 const dataDir = path.resolve(process.env.CGA_DATA_DIR || path.join(root, ".cga-data"));
 const assetTransferHistoryFile = path.join(dataDir, "asset-transfer-history.json");
 const accessStateFile = path.join(dataDir, "access-state.json");
@@ -101,10 +102,40 @@ function createDefaultAdminResources() {
     ["cv-bot-hub-name", "_bot_hub_name", "봇 허브 소속일 때의 허브 이름"],
     ["cv-bot-id", "_bot_id", "현재 Bot ID"],
     ["cv-bot-name", "_bot_name", "현재 Bot 이름"],
-    ["cv-dialog-id", "_dialog_id", "현재 대화 ID"],
-    ["cv-msg", "_msg", "사용자 입력 메시지"],
-    ["cv-user-id", "_user_id", "사용자 ID"],
-    ["cv-user-name", "_user_name", "사용자 이름"]
+    ["cv-channel-id", "_channel_id", "메신저 채널 ID"],
+    ["cv-date-time", "_date_time", "현재 날짜시각"],
+    ["cv-dialog-id", "_dialog_id", "현재 Dialog ID"],
+    ["cv-dialog-start-time", "_dialog_start_time", "현재 대화 시작시간"],
+    ["cv-id", "_id", "현재 대화 컨텍스트 ID"],
+    ["cv-msg", "_msg", "마지막 사용자 발화 메시지"],
+    ["cv-session-id", "_session_id", "Session ID"],
+    ["cv-today", "_today", "오늘 날짜"],
+    ["cv-user-id", "_user_id", "메신저에서 제공하는 사용자 ID"],
+    ["cv-user-name", "_user_name", "메신저에서 제공하는 사용자 이름"],
+    ["cv-semantic-answers", "_semantic_answers", "Semantic RAG 답변 후보 목록"],
+    ["cv-semantic-answer-text", "_semantic_answer_text", "Semantic RAG 최상위 답변 본문"],
+    ["cv-semantic-answer-score", "_semantic_answer_score", "Semantic RAG 최상위 답변 Score"],
+    ["cv-semantic-answer-intent-id", "_semantic_answer_intent_id", "Semantic RAG 답변 의도 ID"],
+    ["cv-semantic-answer-intent-name", "_semantic_answer_intent_name", "Semantic RAG 답변 의도명"],
+    ["cv-semantic-answer-source-type", "_semantic_answer_source_type", "Semantic RAG 답변 출처 유형"],
+    ["cv-semantic-answer-source-title", "_semantic_answer_source_title", "Semantic RAG 답변 출처 제목"],
+    ["cv-semantic-answer-page", "_semantic_answer_page", "Semantic RAG PDF 페이지"],
+    ["cv-rag-answers", "_rag_answers", "Semantic RAG 답변 후보 목록(호환)"],
+    ["cv-rag-answer-text", "_rag_answer_text", "Semantic RAG 최상위 답변 본문(호환)"],
+    ["cv-rag-answer-score", "_rag_answer_score", "Semantic RAG 최상위 답변 Score(호환)"],
+    ["cv-rag-answer-intent-id", "_rag_answer_intent_id", "Semantic RAG 답변 의도 ID(호환)"],
+    ["cv-rag-answer-intent-name", "_rag_answer_intent_name", "Semantic RAG 답변 의도명(호환)"],
+    ["cv-rag-answer-source-type", "_rag_answer_source_type", "Semantic RAG 답변 출처 유형(호환)"],
+    ["cv-rag-answer-source-title", "_rag_answer_source_title", "Semantic RAG 답변 출처 제목(호환)"],
+    ["cv-rag-answer-page", "_rag_answer_page", "Semantic RAG PDF 페이지(호환)"],
+    ["cv-llm-answers", "_llm_answers", "LLM RAG 답변 후보 목록"],
+    ["cv-llm-answer-text", "_llm_answer_text", "LLM RAG 최상위 답변 본문"],
+    ["cv-llm-answer-score", "_llm_answer_score", "LLM RAG 최상위 답변 Score"],
+    ["cv-llm-answer-intent-id", "_llm_answer_intent_id", "LLM RAG 답변 의도 ID"],
+    ["cv-llm-answer-intent-name", "_llm_answer_intent_name", "LLM RAG 답변 의도명"],
+    ["cv-llm-answer-source-type", "_llm_answer_source_type", "LLM RAG 답변 출처 유형"],
+    ["cv-llm-answer-source-title", "_llm_answer_source_title", "LLM RAG 답변 출처 제목"],
+    ["cv-llm-answer-page", "_llm_answer_page", "LLM RAG PDF 페이지"]
   ].map(([id, name, description]) => ({ id, name, category: "시스템", value: "", description, updated_at: stamp, updated_by: "SYSTEM" }));
   const defaultMessageStamp = "2026-06-11T07:02:10.000Z";
   const default_messages = [
@@ -825,10 +856,18 @@ function parseApiAnswerPath(urlPath) {
 }
 
 function parseWorkspaceBotPath(urlPath) {
+  const itemMatch = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)$/);
+  if (itemMatch) {
+    return {
+      groupId: itemMatch[1],
+      botId: itemMatch[2]
+    };
+  }
   const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots$/);
   if (!match) return null;
   return {
-    groupId: match[1]
+    groupId: match[1],
+    botId: null
   };
 }
 
@@ -907,10 +946,66 @@ async function handleWorkspaceBotApi(req, res, urlPath) {
   const { groupId } = parsed;
 
   if (req.method === "GET") {
+    if (parsed.botId) {
+      const bot = workspaceBots.find((item) => item.group_id === groupId && item.id === parsed.botId && item.status !== "deleted");
+      if (!bot) {
+        sendJson(res, 404, { error_code: "CGA_BOT_NOT_FOUND", message_key: "errors.bot.notFound" });
+        return true;
+      }
+      sendJson(res, 200, bot);
+      return true;
+    }
     sendJson(res, 200, {
       group_id: groupId,
-      items: workspaceBots.filter((bot) => bot.group_id === groupId)
+      items: workspaceBots.filter((bot) => bot.group_id === groupId && bot.status !== "deleted")
     });
+    return true;
+  }
+
+  if (parsed.botId && req.method === "PUT") {
+    if (!(await canConfigureWorkspaceBot(req, groupId, parsed.botId))) {
+      sendJson(res, 403, { error_code: "CGA_BOT_CONFIGURE_FORBIDDEN", message_key: "errors.bot.configureForbidden" });
+      return true;
+    }
+    const body = await readJsonRequest(req);
+    const index = workspaceBots.findIndex((bot) => bot.group_id === groupId && bot.id === parsed.botId && bot.status !== "deleted");
+    if (index === -1) {
+      sendJson(res, 404, { error_code: "CGA_BOT_NOT_FOUND", message_key: "errors.bot.notFound" });
+      return true;
+    }
+    const updated = {
+      ...workspaceBots[index],
+      name: typeof body.name === "string" && body.name.trim() ? body.name.trim() : workspaceBots[index].name,
+      version: typeof body.version === "string" && body.version.trim() ? body.version.trim() : workspaceBots[index].version,
+      status: typeof body.status === "string" && body.status.trim() ? body.status.trim() : workspaceBots[index].status,
+      locale: typeof body.locale === "string" && body.locale.trim() ? body.locale.trim() : workspaceBots[index].locale,
+      updated_at: new Date().toISOString().slice(0, 10),
+      updated_by: typeof body.updated_by === "string" && body.updated_by.trim() ? body.updated_by.trim() : getActorId(req, await loadAccessState())
+    };
+    saveWorkspaceBots(workspaceBots.map((bot, botIndex) => botIndex === index ? updated : bot));
+    sendJson(res, 200, updated);
+    return true;
+  }
+
+  if (parsed.botId && req.method === "DELETE") {
+    if (!(await canConfigureWorkspaceBot(req, groupId, parsed.botId))) {
+      sendJson(res, 403, { error_code: "CGA_BOT_CONFIGURE_FORBIDDEN", message_key: "errors.bot.configureForbidden" });
+      return true;
+    }
+    const index = workspaceBots.findIndex((bot) => bot.group_id === groupId && bot.id === parsed.botId && bot.status !== "deleted");
+    if (index === -1) {
+      sendJson(res, 404, { error_code: "CGA_BOT_NOT_FOUND", message_key: "errors.bot.notFound" });
+      return true;
+    }
+    const updated = {
+      ...workspaceBots[index],
+      status: "deleted",
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString().slice(0, 10),
+      updated_by: getActorId(req, await loadAccessState())
+    };
+    saveWorkspaceBots(workspaceBots.map((bot, botIndex) => botIndex === index ? updated : bot));
+    sendJson(res, 200, { ok: true });
     return true;
   }
 
@@ -1389,6 +1484,10 @@ async function handleAuthApi(req, res, urlPath) {
     }
     if (req.method === "POST") {
       const body = await readJsonRequest(req);
+      if (!(body.group_id || body.id) || !body.name) {
+        sendJson(res, 400, { error_code: "CGA_GROUP_REQUIRED_FIELD_MISSING", message_key: "errors.auth.groupRequired" });
+        return true;
+      }
       const next = accessStateModule.createManagedGroup(state, {
         id: body.group_id || body.id,
         name: body.name,
@@ -2288,8 +2387,20 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(port, () => {
-  console.log(`CGA Studio running at http://localhost:${port}`);
+server.on("error", (error) => {
+  if (error && error.code === "EADDRINUSE") {
+    console.log(`CGA Studio is already running at http://${host}:${port}`);
+    process.exit(0);
+  }
+  console.error(error);
+  process.exit(1);
 });
+
+server.listen(port, host, () => {
+  console.log(`CGA Studio running at http://${host}:${port}`);
+});
+
+
+
 
 

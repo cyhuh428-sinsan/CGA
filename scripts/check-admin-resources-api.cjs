@@ -55,7 +55,7 @@ async function main() {
     const ready = await waitReady();
     const resources = ready.json;
     if (!Array.isArray(resources.templates) || resources.templates.length < 10) throw new Error("templates seed missing");
-    if (!Array.isArray(resources.common_variables) || resources.common_variables.length < 8) throw new Error("common variables seed missing");
+    if (!Array.isArray(resources.common_variables) || resources.common_variables.length < 38) throw new Error("common variables seed missing");
     if (!Array.isArray(resources.default_messages) || resources.default_messages.length < 5) throw new Error("default messages seed missing");
     if (!Array.isArray(resources.channels) || resources.channels.length < 4) throw new Error("channels seed missing");
 
@@ -112,3 +112,4 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+

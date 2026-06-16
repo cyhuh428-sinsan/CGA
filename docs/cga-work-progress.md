@@ -2,6 +2,18 @@
 
 ## 2026-06-12
 
+### 그룹 관리와 공통 조회 페이징 보완
+
+- 그룹 관리 화면에 Aidot형 상단 우측 버튼으로 `+ 그룹 생성`을 추가했다.
+- 그룹 관리 화면에서 다운로드 버튼은 기본 동작에서 제외한다.
+- 그룹 생성은 목록 화면 안에서 직접 수정하지 않고, 그룹 상세/수정 팝업을 열어 `그룹 아이디`, `그룹 이름`, `사용 여부`를 확인한 뒤 저장하는 흐름으로 정리했다.
+- System Administration의 공통 조회 테이블에 페이지 크기 `10, 25, 50, 100`을 적용했다.
+- 공통 조회 테이블은 선택한 페이지 크기만큼만 행을 보여주도록 수정했다. 예: `10개씩 보기` 선택 시 10건만 표시한다.
+- 공통 조회 테이블의 하단 페이지 이동 UI는 Aidot 기준인 `◀ ‹ 1 › ▶` 형태를 유지한다.
+- 사용자 목록의 `신청일시`는 가입 요청/멤버십/사용자 생성일이 없을 때 실제 로그인 이력의 최초 `login_at`을 보조 기준으로 표시한다.
+- 로그인 이력과 사용자 신청일시 보조 기준은 CGA의 실제 `access-state`/admin resource 데이터만 사용하며, 가짜 행은 추가하지 않는다.
+- 브라우저 캐시 방지를 위해 Studio 정적 리소스 버전을 `20260612-3`으로 올렸다.
+
 ### Aidot형 조회 화면 기본 인터페이스 정렬
 
 - CGA Studio의 사용자 관리/그룹 관리 조회 화면을 Aidot 조회 화면 기준으로 정렬했다.
@@ -2541,3 +2553,302 @@
   - 4173 서버 응답 확인: HTTP 200, 0.003478초.
   - 현재 서버가 `app.js?v=20260612-1`, `styles.css?v=20260612-1`을 서빙하는 것 확인.
   - 현재 서버 CSS에서 `justify-content: flex-start`, `width: 126px` 반영 확인.
+
+## 2026-06-12 그룹 관리 생성 버튼 및 다운로드 제거 확인
+
+- 작업 범위: CGA만 수정. Aidot 저장소/소스는 수정하지 않음.
+- 수정 목적:
+  - 그룹 관리 화면에서 `+ 그룹 생성` 기능을 명확히 노출.
+  - 그룹 관리 화면에서는 다운로드 버튼을 사용하지 않도록 정리.
+  - 그룹 생성 시 필수값이 비어 있으면 조용히 실패하지 않고 오류를 표시.
+- 적용 내용:
+  - `apps/studio/index.html`
+    - 그룹 관리 검색 영역 오른쪽에 `+ 그룹 생성` 버튼 유지.
+    - 그룹 관리 영역에는 다운로드 버튼을 두지 않음.
+    - 브라우저 캐시 회피를 위해 `styles.css`와 `app.js` 버전을 `20260612-4`로 갱신.
+  - `apps/studio/app.js`
+    - 그룹 생성 팝업에서 그룹 아이디 또는 그룹 이름이 비어 있으면 `그룹 아이디와 그룹 이름을 입력하세요.` 오류를 표시.
+  - `scripts/serve-studio.js`
+    - 그룹 생성 API에서 그룹 아이디/그룹 이름 누락 시 `400 CGA_GROUP_REQUIRED_FIELD_MISSING` 응답을 반환.
+- 검증:
+  - `node --check apps/studio/app.js` 통과.
+  - `node --check scripts/serve-studio.js` 통과.
+  - `npm run studio:validate` 통과.
+  - 4173 서버 응답 확인: HTTP 200, 0.009245초.
+  - 현재 서버가 `app.js?v=20260612-4`, `styles.css?v=20260612-4`를 서빙하는 것 확인.
+  - 현재 서버 HTML에 `data-open-group-create` 버튼 노출 확인.
+  - 그룹 관리 HTML 블록 확인: 그룹 생성 버튼 있음, 다운로드 버튼 없음.
+  - `/api/cga/groups` 실제 데이터 조회 확인: 0.003902초.
+  - 그룹 생성 필수값 누락 API 확인: HTTP 400, 1.720846초.
+  - 서버 재시작 직후가 아닌 상태에서 재확인: 그룹 생성 필수값 누락 0.004335초, 그룹 조회 0.003863초.
+  - 그룹 관리 툴바 배치 재보정:
+    - 그룹 검색 입력, 상태, 초기화, 조회, `+ 그룹 생성`이 한 줄에 표시되도록 5칸 그리드로 수정.
+    - `+ 그룹 생성` 버튼은 52px 공통 버튼 폭이 아니라 92px 전용 폭을 사용하도록 수정.
+    - 브라우저 캐시 회피를 위해 Studio 정적 리소스 버전을 `20260612-5`로 갱신.
+    - 4173 서버 응답 확인: HTTP 200, 0.003052초.
+    - 현재 서버 CSS에서 5칸 그리드와 `data-open-group-create` 92px 폭 반영 확인.
+    - `npm run studio:validate` 통과.
+## 2026-06-12 역할별 권한 기준 확정 기록
+
+- 작업 범위: 문서 기록. Aidot 저장소/소스는 수정하지 않음.
+- 신산님 결정 사항:
+  - `system_admin`: 모든 작업 가능. 소속 그룹은 `System Admin Group`이며, 이 그룹에는 `system_admin` 역할만 둔다.
+  - `group_admin`: 자기 그룹 안에서는 모든 작업 가능, 다른 그룹은 조회 불가.
+  - `builder`: 시스템 관리 제외 모든 기능 가능. 시스템 관리는 조회만 가능.
+  - `operator`: 봇 운영 + 현황 조회 가능.
+  - `reviewer`: 봇 제작 + 봇 제작 워크플로우 + 봇 운영 + 현황 조회 가능. 단, API 답변은 조회만 가능.
+  - `viewer`: 현황 조회만 가능.
+  - 봇 제작의 API 답변 생성/수정/삭제는 `builder` 이상만 가능하고, `reviewer`는 조회만 가능하다.
+- 반영 문서:
+  - `docs/CGA_Studio_설계서_완성본.md`
+  - `docs/cga-access-and-api-answer-policy.md`
+  - `docs/cga-work-progress.md`
+- 기록 시각: 2026-06-12 19:12:13
+
+## 2026-06-12 공통 변수 Aidot 기준 38건 반영
+- 요청: Aidot 공통 변수 관리하기 화면 기준의 38건을 CGA에 등록.
+- 기준: `D:\Project\Aidot\apps\web\components\flow-designer-page.tsx`의 `COMMON_FLOW_VARIABLES` 38건.
+- 반영: `scripts/serve-studio.js` 기본 seed와 `.cga-data/admin-resources.json` 런타임 데이터의 `common_variables`를 동일한 38건으로 정렬.
+- 검증 예정: 서버 문법 검사, admin resources API seed 검증, 실제 API 조회 건수/응답시간 확인.
+
+### 공통 변수 38건 반영 검증 완료
+
+- Aidot 기준: `apps/web/components/flow-designer-page.tsx`의 `COMMON_FLOW_VARIABLES` 38건.
+- CGA 반영 위치:
+  - `scripts/serve-studio.js` 기본 seed `common_variables` 38건.
+  - `.cga-data/admin-resources.json` 실제 런타임 데이터 `common_variables` 38건.
+  - `scripts/check-admin-resources-api.cjs` 검증 기준 38건으로 상향.
+- 추가 수정:
+  - `packages/public-core/src/access-state.js`에서 `SYSTEM_ADMIN_GROUP_ID` import 누락으로 `/api/cga/admin/resources`가 500을 반환하던 문제를 수정.
+- 검증 결과:
+  - `node --check scripts/serve-studio.js` 통과.
+  - `node --check packages/public-core/src/access-state.js` 통과.
+  - `node --check scripts/check-admin-resources-api.cjs` 통과.
+  - `npm run studio:admin-resources-check` 통과.
+  - 검증 스크립트 결과: templates 20건, common_variables 38건, default_messages 14건, channels 4건.
+  - 4173 서버 재시작 후 실제 API 확인: `/api/cga/admin/resources` common_variables 38건.
+  - 실제 4173 API 응답 시간: 첫 요청 1608ms, 재조회 30ms.
+- Aidot 수정 여부: 없음. Aidot는 읽기 참조만 수행.
+
+## 2026-06-12 - 봇 제작 > 봇 관리 실제 화면 전환
+- 범위: CGA Studio `봇 제작 > 봇 관리` 화면만 수정. Aidot 소스는 수정하지 않음.
+- 목적: 기존 작업공간 카드형 임시 UI를 제거하고 Aidot형 조회 화면 기준으로 봇 목록/선택/상세/버전관리/다운로드/업로드/복사/삭제 흐름을 시작.
+- 반영 내용:
+  - 봇 관리 화면을 조회형 기본 인터페이스로 교체: 검색, 상태 필터, 10/25/50/100 페이지 크기, 표, 하단 페이지 이동.
+  - 선택한 봇 상세/수정은 팝업으로 분리.
+  - 버전 관리는 Aidot 버전관리 팝업 형태로 분리.
+  - 서버 API에 단일 봇 조회/수정/삭제를 추가하되 CGA 전용 화면 동작용이며 Aidot API/파일 구조는 수정하지 않음.
+- 다음 확인: 실제 브라우저에서 봇 관리 목록, 상세 팝업, 버전관리 팝업, 임시 봇 생성/수정/삭제 API 검증.
+
+### 검증 결과
+- `node --check apps/studio/app.js`: 통과.
+- `node --check scripts/serve-studio.js`: 통과.
+- `npm run studio:workspace-bots-check`: 통과.
+- `npm run studio:admin-resources-check`: 통과. common variables 38건, templates 20건, default messages 14건, channels 4건 확인.
+- `npm run studio:style-check`: 통과. 폰트 기준 유지.
+- 실제 봇 관리 API 테스트:
+  - 임시 봇 생성: 성공.
+  - 임시 봇 수정: 성공.
+  - 임시 봇 삭제: 성공.
+  - 삭제 후 목록 미노출: 성공.
+  - 응답 시간: 생성 63ms, 수정 221ms, 삭제 45ms, 목록 40ms.
+- 제한: 현재 작업 환경에는 Playwright가 없어 브라우저 자동 스크린샷 검증은 수행하지 못함. 서버는 `http://127.0.0.1:4173/`에서 정상 응답 200 확인.
+
+## 2026-06-12 - 봇 제작/운영 화면 재배치 진행
+- 작업 범위: CGA `apps/studio`만 수정. Aidot 소스는 수정하지 않음.
+- 대상 메뉴: 봇 제작(BM/BOT/TM/API), 봇 제작 워크플로우(봇 생성/설정/구성/제작/테스트/평가), 봇 운영(재학습/분석).
+- 원칙: Aidot 봇/버전/API/Webchat 호환 구조 유지. 화면은 Aidot 기능을 작업 순서대로 재배치.
+- 반영: 봇 작업공간, 봇 제작 의도 목록, 대화 시작, 대화 설계, 테스트, 평가, 재학습, 분석 화면을 Aidot 조회형 화면 기준으로 정렬.
+- 조회 기준: 1920x1080 기준, 10/25/50/100 페이지 크기, 하단 페이지 네비게이션, 빈 결과는 빈 테이블 유지.
+- 권한 기준 기록: system_admin 전체 권한, group_admin 해당 그룹 전체 권한, builder 시스템 관리는 조회만/그 외 가능, operator 봇 운영+현황 조회, reviewer 봇 제작+워크플로우+운영+현황 조회, viewer 현황 조회만.
+
+### 2026-06-12 검증 결과 - 봇 제작/운영 재배치
+- `node --check apps/studio/app.js`: 통과.
+- `node --check scripts/check-operations-state-api.mjs`: 통과.
+- `npm run studio:style-check`: 통과. 24/14/12/10/9px 폰트 기준 유지.
+- `npm run studio:workspace-bots-check`: 통과.
+- `npm run studio:admin-resources-check`: 통과. common variables 38건, templates 20건, default messages 14건, channels 4건 확인.
+- `npm run studio:operations-state-check`: 통과. 최신 권한 기준에 맞춰 builder 배포 가능 검증으로 수정.
+- `http://127.0.0.1:4173/`: HTTP 200 확인.
+- 서버 asset 확인: `app.js?v=20260612-6`, `styles.css?v=20260612-6` 응답 확인.
+- 남은 확인: 실제 브라우저에서 좌측 메뉴별 화면 표시, 봇 제작 의도 클릭 시 대화 시작/대화 설계 전환 확인.
+
+
+## 2026-06-12 화면 단일 표시 오류 수정
+
+- 요청/문제: `#detail` 진입 시 선택한 화면 하나만 보여야 하는데 여러 `screen-card` 섹션이 동시에 표시되어 압축된 목록처럼 보임.
+- 원인: `renderAllStatePanels()`와 워크플로우 렌더링 후 현재 선택 화면의 hidden/display 상태를 다시 강제하지 않아, 렌더링 순서에 따라 여러 `data-screen-id` 섹션이 동시에 노출될 수 있었음.
+- 조치: `apps/studio/app.js`에 `enforceActiveScreenVisibility()`를 추가하고, `applyScreenLayout()` 마지막 및 `renderAllStatePanels()` 마지막에 적용하여 현재 active/hash 화면 1개만 표시되도록 고정함.
+- 캐시: `apps/studio/index.html`의 `styles.css/app.js` 캐시 버전을 `20260612-7`로 갱신함.
+- 검증: `node --check apps/studio/app.js` 통과, `http://127.0.0.1:4173/` HTTP 200 확인.
+- 영향 범위: CGA Studio 화면 표시 제어만 변경. Aidot 소스 수정 없음.
+
+## 2026-06-13 화면 선택 렌더링 오류 수정
+
+### 문제
+- `http://127.0.0.1:4173/#detail` 접속 시 로그인/화면 전환 후 여러 `[data-screen-id]` 화면이 한꺼번에 얇은 행처럼 겹쳐 보이는 문제가 발생했다.
+- 사용자가 지적한 화면은 실제 제품 화면으로 볼 수 없는 상태였으며, 보고 전 기본 브라우저 검증이 부족했다.
+
+### 원인
+- 로그인/콘텐츠 재렌더 이후 현재 hash에 맞는 화면을 `.selected`로 다시 확정하는 처리가 충분히 강하지 않았다.
+- CSS에서는 선택 화면만 보여야 하는데, 선택 상태가 비어 있으면 화면 표시 상태가 깨질 수 있었다.
+
+### 조치
+- `apps/studio/app.js`
+  - 현재 hash, 기존 active screen, 기본 화면(`detail`), 실제 존재하는 첫 화면 순서로 활성 화면을 결정하도록 보강했다.
+  - `cga:content-rendered` 이후 화면 선택을 즉시/지연 재적용하도록 보강했다.
+- `apps/studio/index.html`
+  - 캐시 버전을 `20260613-7`로 올렸다.
+  - 앱 렌더 타이밍이 어긋나도 인증 상태와 hash 기준으로 한 화면만 표시하는 라우팅 가드를 추가했다.
+- `apps/studio/styles.css`
+  - `.workspace > [data-screen-id]`는 기본 숨김, `.selected`만 표시하도록 안전장치를 유지했다.
+
+### 검증
+- `node --check apps\studio\app.js`: 성공
+- `curl http://127.0.0.1:4173/`: HTTP 200
+- 브라우저 직접 검증
+  - 비로그인 `#detail`: 로그인 화면만 표시, visible screen 0개
+  - `u-builder` 로그인 후 `#detail`: visible screen `detail` 1개, active height 616px
+  - 로그인 상태에서 `#create`: visible screen `create` 1개, active height 616px
+
+### 금지사항 준수
+- Aidot 소스는 수정하지 않았다.
+- CGA(`D:\Project\cga`) 안에서만 작업했다.
+
+## 2026-06-13 04:59:34 - 좌측 메뉴 미표시/미동작 오류 수정
+
+### 상황
+- 사용자 화면에서 좌측 메뉴 그룹(봇 제작, 봇 제작 워크플로우, 봇 운영, 시스템 관리)은 보이지만 하위 메뉴 카드가 렌더링되지 않았음.
+- #detail 접근 시 우측 본문도 정상 선택되지 않고, 메뉴 클릭이 동작하지 않는 상태였음.
+
+### 원인
+- pps/studio/app.js 안에 동일 함수가 여러 번 선언되어 모듈 파싱이 중단됨.
+- 확인된 중복 함수:
+  - enderBuildAidotScreen
+  - enderWorkspaceHome
+- 브라우저 탭에는 이전 pp.js?v=20260613-8 캐시가 남아 있어, 서버 파일과 브라우저 적용 파일이 다르게 보였음.
+
+### 조치
+- CGA 전용 파일만 수정함. Aidot 저장소/소스는 수정하지 않음.
+- pps/studio/app.js에서 중복된 구버전 enderWorkspaceHome 선언 블록을 제거하고 최종 구현만 남김.
+- 기존에 중복 제거한 enderBuildAidotScreen 최종 구현만 유지됨.
+- pps/studio/index.html의 Studio 스크립트 캐시 버전을 pp.js?v=20260613-9로 갱신함.
+
+### 검증
+- 
+ode --check D:\Project\cga\apps\studio\app.js 통과.
+- 중복 함수 선언 검사 결과: 
+o duplicate function declarations.
+- 브라우저에서 http://127.0.0.1:4173/?cache=20260613-9#detail 로드 확인.
+- 적용 스크립트: /apps/studio/app.js?v=20260613-9.
+- 좌측 메뉴 링크 수 확인:
+  - 전체 메뉴 링크 29개
+  - 봇 제작 워크플로우 6개
+  - 봇 운영 2개
+  - 시스템 관리 17개
+- 메뉴 클릭 검증:
+  - #create 클릭 시 create 화면 선택 및 표시 확인.
+  - #detail 클릭 시 detail 화면 선택 및 표시 확인.
+
+### 남은 주의사항
+- 기존 브라우저 탭에 오래된 HTML/JS 캐시가 남아 있으면 v8을 계속 볼 수 있음. 서버 응답은 v9로 확인됨.
+- 다음 작업자는 메뉴가 다시 비어 보이면 먼저 브라우저 캐시 적용 여부와 index.html의 pp.js 버전을 확인할 것.
+
+## 2026-06-13 - 봇 제작 detail 화면 복구
+- CGA 전용 작업만 수행. Aidot 소스는 수정하지 않음.
+- #detail 화면이 전체 섹션 목록처럼 깨지던 문제를 수정하고, Aidot 의도 목록 기준의 봇 제작 화면으로 다시 렌더링하도록 연결.
+- 봇 제작 목록은 실제 CGA/Aidot 호환 의도 데이터 소스를 사용하며, 표준 조회/페이지 크기/페이지네이션 구조를 유지.
+- 권한 기준은 system_admin, group_admin, builder, operator, reviewer, viewer 기준으로 유지하며 이후 화면별 표시/수정 권한에 반영 예정.
+
+
+## 2026-06-13 12:51:45 작업 진행 기록
+- 작업 범위: CGA Studio만 수정. Aidot 소스는 수정하지 않음.
+- 수정 내용: 로그인/인증 게이트가 좌측 메뉴 카드까지 숨기던 문제를 워크스페이스 화면만 숨기도록 제한.
+- 수정 내용: 워크플로우 화면 재렌더링 후 현재 선택 화면을 다시 적용하도록 enderWorkflowScreens()에 화면 가시성 재적용 추가.
+- 목적: #detail 등에서 여러 화면이 얇게 겹쳐 보이고 좌측 메뉴가 열리지 않는 문제를 먼저 제거.
+- 다음 확인: 1920x1080 기준으로 detail/evaluate/operate/analysis 화면이 각각 1개만 표시되는지 브라우저 검증.
+
+## 2026-06-13 - Studio 접속 거부 및 화면 접힘 확인
+- 작업 범위: CGA `apps/studio` 확인. Aidot 수정 없음.
+- 사용자 보고 현상: `127.0.0.1:4173` 접속 거부 화면, `#detail` 등에서 화면 카드가 얇은 줄로 접힘.
+- 확인 결과: `http://127.0.0.1:4173/`는 현재 HTTP 200 응답. `apps/studio/app.js`는 `node --check` 통과.
+- 확인 결과: 실제 로드 CSS `/apps/studio/styles.css?v=20260613-7`에 `.workspace > .screen-card.selected`, `.workspace > .screen-card:not(.selected)`, `overflow: visible` 규칙 반영 확인.
+- 원인 판단: 서버가 내려간 시점의 브라우저 탭은 접속 거부가 남을 수 있고, 화면 접힘은 후반 CSS의 `.screen-card` 표시/높이/overflow 규칙 충돌로 발생.
+- 조치 방향: CGA 화면 표시 규칙은 선택된 화면만 `display:block`, 나머지는 숨김으로 유지. 화면 접힘 방지를 위해 selected 화면은 auto height/visible overflow 기준 유지.
+- 다음 작업: 봇 관리부터 봇 생성, 봇 설정, 봇 구성, 봇 제작, 봇 테스트, 봇 평가, 재학습, 분석 순서로 Aidot 화면/데이터/API 호환 기준 재배치 계속.
+
+## 2026-06-14 - 화면 전환 중복 표시 제어 버그 수정
+- 작업 범위: CGA `apps/studio`만 수정. Aidot 소스는 수정하지 않음.
+- 사용자 보고 현상: `#detail` 등 화면 전환 시 여러 화면 카드가 얇은 줄처럼 겹쳐 보이고, 메뉴가 정상적으로 열리지 않음.
+- 원인: `applyScreenLayout()`과 `enforceActiveScreenVisibility()`가 각각 화면 표시/숨김을 따로 처리해 해시 변경, 권한 필터, 재렌더링 순서에 따라 선택 화면 상태가 충돌할 수 있었음.
+- 조치: `applyScreenLayout()`은 화면 재배치만 담당하고, 실제 화면 표시/숨김은 `enforceActiveScreenVisibility()`로 단일화.
+- 조치: `hidden` 상태의 화면 섹션은 `.selected` 클래스가 남아 있어도 CSS에서 강제로 숨기도록 안전 규칙 추가.
+- 영향: CGA Studio 프런트엔드 화면 표시 제어만 변경. Aidot 호환 데이터/API 구조 변경 없음.
+- 다음 확인: `node --check`, Studio 정적 점검, 로컬 서버 HTTP 응답, 주요 해시 화면 단일 표시 확인.
+
+## 2026-06-14 화면 전환 깨짐 및 서버 상태 점검
+
+### 현상
+- `http://127.0.0.1:4173` 접속 시 간헐적으로 `ERR_CONNECTION_REFUSED`가 발생함.
+- `#detail` 등 화면 이동 시 여러 화면 섹션이 동시에 얇은 줄처럼 표시되는 화면 깨짐이 발생함.
+
+### 원인
+- `ERR_CONNECTION_REFUSED`는 Studio dev server 프로세스가 죽었거나 4173 포트를 listen하지 않을 때 발생하는 서버 실행 상태 문제임.
+- 화면 깨짐은 `apps/studio/styles.css` 안에 `.workspace > [data-screen-id]` 표시/숨김 규칙이 중복되어 있고, 화면 전환 시 JS의 표시 상태와 CSS 우선순위가 충돌해 선택되지 않은 화면까지 레이아웃에 남는 CSS/렌더링 버그였음.
+
+### 조치
+- `.workspace > [data-screen-id]` 표시 규칙을 단일 규칙으로 정리함.
+- 선택된 화면만 `.selected:not([hidden])` 상태에서 표시되도록 정리함.
+- Aidot 원본은 수정하지 않음. 작업은 CGA Studio(`D:\Project\cga`)에서만 수행함.
+
+### 확인
+- `node --check apps/studio/app.js` 통과.
+- `curl http://127.0.0.1:4173/` 응답 `200`, 응답 시간 약 0.003초 확인.
+- 인앱 브라우저에서 `http://127.0.0.1:4173/#detail` 실제 렌더링 확인: 화면 줄무늬 깨짐 없이 `봇 구성` 화면이 정상 표시됨.
+
+### 다음 작업
+- 봇 제작 영역(`봇 관리`, `봇 작업공간`, `팀 대시보드`, `그룹 API 레지스트리`)과 봇 제작 워크플로우(`봇 생성`~`봇 평가`), 봇 운영(`재학습`, `분석`)을 Aidot 화면 기준으로 계속 재배치한다.
+
+## 2026-06-14 서버 연결 거부 재확인
+- 증상: 브라우저에서 http://127.0.0.1:4173 접속 시 ERR_CONNECTION_REFUSED 발생.
+- 확인 결과: 4173 포트에 LISTEN 프로세스가 없었음. 즉 화면 코드 렌더링 문제가 아니라 CGA Studio dev 서버 프로세스가 내려간 상태.
+- 조치: D:\Project\cga 에서 node scripts\serve-studio.js 를 숨김 백그라운드 프로세스로 재기동.
+- 검증: 127.0.0.1:4173 LISTEN pid=297992 확인, HTTP 200 확인, 재확인 응답 시간 0.018초.
+- 추측: 이전에는 서버가 터미널/도구 세션에 묶여 있었거나 작업 중 프로세스가 종료되어 브라우저만 남은 상태로 보임. 반복 방지를 위해 서버 시작/상태 확인 절차를 작업 완료 전 필수 확인 항목으로 둔다.
+- Aidot 수정 여부: 없음. CGA 서버 상태 확인 및 재기동만 수행.
+
+## 2026-06-15 Aidot 참조 경로 고정 및 화면 초기화 버그 복구
+- 작업 범위: `D:\Project\cga`만 수정. 원본 `D:\Project\Aidot` 및 참조 복사본 `D:\Project\cga\Aidot`은 수정하지 않음.
+- 참조 기준: 앞으로 Aidot 화면/기능/데이터 구조 참조는 `D:\Project\cga\Aidot`을 사용하며 참조 전용으로 유지.
+- Git 제외: 루트 `.gitignore`에 `/Aidot/` 규칙을 추가했고 `git check-ignore`로 `D:\Project\cga\Aidot` 제외를 확인함.
+
+### 사용자 보고 현상
+- `#access-management` 등 시스템 관리 화면이 실제 내용 없이 여러 개의 빈 골격 줄로 표시됨.
+- 화면 전환 과정에서 일부 화면 전체가 중단될 수 있었음.
+
+### 확인된 직접 원인
+- 현재 `apps/studio/app.js`에서 화면 렌더 함수 다수가 누락된 상태인데 호출부는 남아 있었음.
+- `applyScreenLayout()` 실행 중 `renderAccessPanels()`가 다시 `applyScreenLayout()`을 호출하는 재진입 경로가 있어 화면 초기화가 반복될 수 있었음.
+- `renderBotManagement()`는 현재 파일과 Git 이력에 구현이 없지만 호출되고 있어 다른 정상 화면까지 중단시키는 호출-구현 불일치가 있었음.
+
+### 조치
+- Git 기준 파일에 존재하던 누락 렌더 함수들을 현재 파일에 복구함.
+- `applyScreenLayout()`에 최소 범위 재진입 방지 가드를 추가함.
+- 구현이 존재하지 않는 `renderBotManagement()` 호출은 구현 존재 시에만 실행하도록 제한해 다른 화면의 중단을 방지함.
+- 데이터/API 계약, Aidot 호환 구조, 참조 Aidot 소스는 변경하지 않음.
+
+### 검증
+- `node --check apps/studio/app.js` 통과.
+- `npm run studio:validate` 실제 API 조회 성능 확인: 그룹+로그인 이력 1.7ms, 템플릿 77ms, 공통 변수 27ms, 기본 메시지 153ms, 채널 19ms. 모두 5초 미만.
+- 전체 검증 실패 원인은 이번 변경과 무관한 기존 전송 이력 다국어 키 2건(`transfer.historyTitle`, `transfer.historyLoadingTitle`)만 남음.
+- Chrome headless 1920x1080 실제 로그인(`admin`) 후 직접 화면 전환 확인:
+  - `#access-management`: 사용자 관리 실제 콘텐츠 표시, skeleton 0개.
+  - `#detail`: 봇 제작 실제 콘텐츠 표시, skeleton 0개.
+  - `#evaluate`: 평가 목록 및 Aidot 평가 상세 콘텐츠 표시, skeleton 0개.
+  - `#operate`: 재학습 콘텐츠 표시, skeleton 0개.
+  - `#analysis`: 분석 콘텐츠 표시, skeleton 0개.
+- 위 화면 모두 문서 크기 1920x1080, 네트워크 실패 0건, 화면 중단 콘솔 오류 0건 확인.
+
+### 남은 작업
+- `renderBotManagement()` 실제 구현은 별도 작업으로 남아 있음. 구현 없는 호출이 다른 화면을 깨뜨리지 않도록 현재는 보호 처리됨.
+- 기존 전송 이력 다국어 키 2건 보완 필요.

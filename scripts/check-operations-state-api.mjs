@@ -84,10 +84,11 @@ async function main() {
   }, 200, "reviewer should run simulator test");
   if (tested.operations_state?.test?.matched_intent !== "password_reset") fail("test action did not classify password reset preview");
 
-  await expectStatus(`${operationsPath}/deploy`, {
+  const deployedByBuilder = await expectStatus(`${operationsPath}/deploy`, {
     method: "POST",
     userId: "u-builder"
-  }, 403, "builder should not deploy");
+  }, 200, "builder should deploy under latest role policy");
+  if (deployedByBuilder.operations_state?.operate?.deployment_status !== "deployed") fail("builder deploy action did not update deployment status");
 
   const deployed = await expectStatus(`${operationsPath}/deploy`, {
     method: "POST",

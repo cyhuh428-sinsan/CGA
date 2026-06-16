@@ -241,3 +241,36 @@ API: GET /financials/{company_id}/net-income
 - API key나 secret은 public config에 저장하지 않는다.
 - 최신성이 중요한 값은 cache 정책을 별도로 지정한다.
 - 재무 데이터처럼 기준일이 중요한 값은 `as_of` 또는 기준일을 함께 표시한다.
+
+## 6. 2026-06-12 역할별 권한 확정 기준
+
+### 6.1 역할 정의
+
+| 역할 | 접근 범위 |
+|---|---|
+| system_admin | 모든 그룹, 모든 화면, 모든 기능 접근 가능 |
+| group_admin | 자기 그룹 내 모든 기능 가능, 다른 그룹 조회 불가 |
+| builder | 시스템 관리 제외 모든 봇 제작/운영 기능 가능, 시스템 관리는 조회만 가능 |
+| reviewer | 봇 제작, 봇 제작 워크플로우, 봇 운영, 현황 조회 가능. API 답변은 조회만 가능 |
+| operator | 봇 운영, 현황 조회 가능 |
+| viewer | 현황 조회만 가능 |
+
+### 6.2 System Admin Group 원칙
+
+- `System Admin Group`은 시스템 전체 관리를 위한 특수 그룹이다.
+- `System Admin Group`에는 `system_admin` 역할만 존재한다.
+- `system_admin` 사용자는 모든 그룹과 모든 기능을 볼 수 있다.
+- 일반 그룹에는 `system_admin` 역할을 부여하지 않는다.
+
+### 6.3 그룹 가시성 원칙
+
+- `system_admin`은 모든 그룹을 볼 수 있다.
+- `group_admin`은 자기 그룹만 볼 수 있다.
+- `builder`, `reviewer`, `operator`, `viewer`는 자기 소속 그룹만 볼 수 있다.
+- 그룹별 컨텐츠, 봇, API 답변, 운영 데이터는 기본적으로 같은 그룹 안에서만 공유한다.
+
+### 6.4 API 답변 권한
+
+- API 답변 등록, 수정, 삭제는 `builder` 이상에서만 가능하다.
+- `reviewer`는 API 답변 화면 조회만 가능하다.
+- `operator`와 `viewer`는 API 답변 관리 기능을 사용할 수 없다.
