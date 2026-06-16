@@ -4,8 +4,8 @@ export const workflowSteps = [
     number: "01",
     title: "Bot Creation",
     subtitle: "Create bot",
-    mapsTo: "Aidot: Bot create / Bot setup / Version / channel defaults",
-    publicCore: ["Bot name", "Description", "Default language", "LLM usage", "Composition input", "Bot Server location", "Orchestrator mode", "Basic channel", "Bot version", "Bot copy", "Aidot-compatible download/upload", "User / login / roles"],
+    mapsTo: "Aidot: locked bot setup fields after bot creation",
+    publicCore: ["Bot name", "Description", "Default language", "Bot type", "Initial version", "Initial channel target"],
     commercial: ["Organization limits", "Template recommendation"]
   },
   {
@@ -13,26 +13,26 @@ export const workflowSteps = [
     number: "02",
     title: "Bot Settings",
     subtitle: "Base settings",
-    mapsTo: "Aidot: Training utterances / PDF-RAG / Intent draft",
-    publicCore: ["Utterance input", "PDF upload", "Basic intent draft", "Review board"],
+    mapsTo: "Aidot: editable bot setup fields after bot creation",
+    publicCore: ["LLM provider", "LLM model", "LLM base URL", "Answer mode", "Channel defaults", "Runtime-safe settings"],
     commercial: ["PDF Q&A quality", "Intent merge recommendation", "Handoff validation"]
   },
   {
     id: "detail",
     number: "03",
     title: "Bot Composition",
-    subtitle: "Intents / answers",
-    mapsTo: "Aidot: Intent / Entity / Dictionary / Scenario / API cards",
-    publicCore: ["Intent", "Answer", "Synonym", "Entity", "Dictionary", "Scenario", "External API answer source", "Asset download/upload"],
+    subtitle: "LLM composition",
+    mapsTo: "Aidot: Configure screen / training utterances / PDF-RAG / intent draft",
+    publicCore: ["Training utterance input", "Manual LLM handoff", "PDF Q&A generation when LLM is connected", "Intent draft", "Review board"],
     commercial: ["Scenario suggestion", "API mapping automation"]
   },
   {
     id: "build",
     number: "04",
     title: "Bot Production",
-    subtitle: "Build bot",
-    mapsTo: "Aidot: NLU training / LLM NLU / RAG embedding / deploy readiness",
-    publicCore: ["Training status", "Readiness checklist", "Webchat contract check"],
+    subtitle: "Make bot",
+    mapsTo: "Aidot: Intent / utterance / entity / dictionary / dialog design",
+    publicCore: ["Intent", "Utterance", "Answer", "Entity", "Dictionary", "Dialog start", "Dialog design", "API cards"],
     commercial: ["Quality score", "Risk prediction", "Auto-fix suggestions"]
   },
   {

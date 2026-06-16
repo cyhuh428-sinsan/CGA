@@ -382,7 +382,7 @@ button:disabled { opacity: .48; }
 .check-row { display: inline-flex; grid-template-columns: none; align-items: center; gap: 8px; margin: 0; color: #64748b; font-size: var(--font-title); font-weight: 400; }
 .check-row input { width: 14px; height: 14px; padding: 0; }
 .login-signup-row { margin-top: 42px; display: flex; align-items: center; justify-content: center; gap: 10px; color: #64748b; font-size: var(--font-title); }
-.ghost-pill { min-height: 34px; border: 1px solid #cbd5e1; border-radius: 18px; background: #fff; color: #475569; padding: 0 14px; font-size: 12px; }
+.ghost-pill { min-height: 34px; border: 1px solid #cbd5e1; border-radius: 18px; background: #fff; color: #475569; padding: 0 14px; font-size: var(--font-title); }
 .signup-form .ghost-pill { justify-self: center; min-width: 86px; }
 .entry-login-message {
   border: 1px solid #fecaca;
@@ -438,6 +438,15 @@ button:disabled { opacity: .48; }
 .hero-panel h2 { font-size: var(--font-top); margin-top: 8px; letter-spacing: 0; }
 .hero-panel p:last-child { margin-top: 8px; color: #475569; line-height: 1.5; }
 .contract-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: center; }
+.workspace > [data-screen-id],
+.workspace > [data-screen-id][hidden] {
+  display: none !important;
+}
+
+.workspace > [data-screen-id].selected:not([hidden]) {
+  display: block !important;
+}
+
 .screen-card { padding: 16px; scroll-margin-top: 0; }
 .screen-card.selected { border-color: var(--muted-line); box-shadow: none; }
 .screen-heading { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; margin-bottom: 14px; }
@@ -2672,7 +2681,7 @@ button.management-table-row:hover,
 }
 
 .access-toolbar--users { grid-template-columns: minmax(340px, 1fr) 150px 150px 150px 150px 52px 52px; }
-.access-toolbar--group { grid-template-columns: minmax(340px, 1fr) 150px 52px 52px; }
+.access-toolbar--group { grid-template-columns: minmax(340px, 1fr) 150px 52px 52px 92px; }
 .access-toolbar button {
   width: 52px;
   min-width: 52px;
@@ -2685,6 +2694,10 @@ button.management-table-row:hover,
   border-color: var(--line);
   background: #ffffff;
   color: #64748b;
+}
+.access-toolbar [data-open-group-create] {
+  width: 92px;
+  min-width: 92px;
 }
 
 
@@ -2995,12 +3008,11 @@ h1 { line-height: 1; }
 .workspace {
   padding: 10px;
   gap: 10px;
-  overflow: hidden;
+  overflow: auto;
 }
 .screen-card {
-  height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   padding: 12px;
 }
 .screen-heading {
@@ -3148,4 +3160,322 @@ h1 { line-height: 1; }
 }
 .access-detail-layout--modal {
   max-height: calc(100vh - 165px);
+}
+
+.bot-management-page__search-row {
+  grid-template-columns: minmax(320px, 1fr) 160px auto minmax(720px, auto);
+}
+
+.bot-management-page__actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-page tbody tr.is-selected {
+  background: #eaf3ff;
+}
+
+.bot-management-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 56px 32px 32px;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.bot-management-modal__panel {
+  width: min(1120px, calc(100vw - 64px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #cfd8e3;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+}
+
+.bot-management-modal__panel--wide {
+  width: min(1480px, calc(100vw - 64px));
+}
+
+.bot-management-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #d9e2ec;
+}
+
+.bot-management-modal__header h2 {
+  margin: 0 0 6px;
+  font-size: var(--font-top);
+}
+
+.bot-management-modal__header p,
+.bot-management-modal__note {
+  margin: 0;
+  color: #5b6b82;
+  font-size: var(--font-body);
+}
+
+.bot-management-modal__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bot-management-modal__body {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  padding: 20px;
+}
+
+.bot-management-modal__info,
+.bot-management-modal__edit,
+.bot-management-modal__table {
+  border: 1px solid #d9e2ec;
+  padding: 18px;
+}
+
+.bot-management-modal__info h3,
+.bot-management-modal__edit h3 {
+  margin: 0 0 14px;
+  font-size: var(--font-title);
+}
+
+.bot-management-modal__info dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px 20px;
+  margin: 0;
+}
+
+.bot-management-modal__info dt {
+  color: #52657a;
+  font-weight: 700;
+}
+
+.bot-management-modal__info dd {
+  margin: 0;
+}
+
+.bot-management-modal__edit label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  color: #31435a;
+  font-weight: 700;
+}
+
+.bot-management-modal__edit input,
+.bot-management-modal__edit select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #c9d5e4;
+  background: #fff;
+  font: inherit;
+}
+
+.bot-management-modal__table {
+  margin: 20px;
+}
+
+.bot-management-modal__note {
+  padding: 0 20px 20px;
+}
+
+/* Aidot-compatible workflow lookup screens */
+.workflow-lookup {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) 30px;
+  gap: 8px;
+  min-height: calc(100vh - 230px);
+  padding: 14px;
+  border: 1px solid #d9e2ec;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.workflow-lookup__search {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.workflow-lookup__search label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border-bottom: 1px solid #b8c6d8;
+}
+
+.workflow-lookup__search input,
+.workflow-lookup__search select,
+.workflow-lookup__toolbar select {
+  height: 36px;
+  border: 1px solid #c9d5e4;
+  background: #fff;
+  padding: 0 12px;
+  font: inherit;
+}
+
+.workflow-lookup__search label input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.workflow-lookup__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workflow-lookup__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.workflow-grid {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+}
+
+.workflow-grid__row {
+  display: grid;
+  grid-template-columns: var(--workflow-grid-template);
+  align-items: center;
+  min-height: 33px;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #e5ebf2;
+  background: #fff;
+  color: #24364f;
+  text-align: left;
+}
+
+.workflow-grid__row--header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.workflow-grid__row.selected,
+.workflow-grid__row:hover {
+  background: #eaf3ff;
+}
+
+.workflow-grid__row span,
+.workflow-grid__row strong {
+  min-width: 0;
+  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-body);
+}
+
+.workflow-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  height: 30px;
+  border-top: 1px solid #d9e2ec;
+  color: #8a9ab0;
+}
+
+.workflow-pager button {
+  border: 0;
+  background: transparent;
+  color: #8a9ab0;
+  font: inherit;
+}
+
+.workflow-pager button:not(:disabled) {
+  cursor: pointer;
+  color: #52657a;
+}
+
+.aidot-simulator-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 14px;
+  min-height: calc(100vh - 260px);
+}
+
+.aidot-simulator-chat,
+.aidot-simulator-side {
+  border: 1px solid #d9e2ec;
+  background: #f8fafc;
+  padding: 18px;
+}
+
+.aidot-simulator-chat {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 12px;
+}
+
+.aidot-simulator-chat input {
+  height: 36px;
+  border: 1px solid #c9d5e4;
+  padding: 0 12px;
+}
+
+.aidot-simulator-chat .user-msg,
+.aidot-simulator-chat .bot-msg {
+  display: inline-block;
+  max-width: 60%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 0;
+}
+
+.aidot-simulator-chat .user-msg {
+  justify-self: end;
+  background: #0f8277;
+  color: #fff;
+}
+
+.aidot-simulator-chat .bot-msg {
+  align-self: end;
+  background: #fff;
+  border: 1px solid #d9e2ec;
+}
+
+.aidot-simulator-side h4 {
+  margin: 0 0 12px;
+  font-size: var(--font-title);
+}
+
+.aidot-simulator-side p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 9px 0;
+  border-bottom: 1px solid #e5ebf2;
+}
+
+.screen-section[hidden],
+.screen-section:not(.selected) {
+  display: none !important;
+}
+
+.screen-section.selected {
+  display: block !important;
 }

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CGA Studio</title>
-  <link rel="stylesheet" href="/apps/studio/styles.css?v=20260612-2" />
+  <link rel="stylesheet" href="/apps/studio/styles.css?v=20260617-1" />
 </head>
 <body>
   <div class="app-shell unauthenticated">
@@ -24,7 +24,6 @@
         <button type="button" class="ghost quick-auth-button" data-top-logout-submit data-i18n="admin.logoutButton">Logout</button>
         <span class="top-auth-status" data-top-auth-status></span>
         <label class="language-picker"><span data-i18n="top.language">Language</span><select data-locale-select><option value="en">English</option><option value="ko">한국어</option><option value="zh-CN">简体中文</option><option value="ja">日本語</option><option value="vi">Tiếng Việt</option><option value="de">Deutsch</option><option value="fr">Français</option></select></label>
-        <span class="status-ok" data-i18n="top.apiUnchanged">Aidot API unchanged</span>
       </div>
       <div class="actions">
         <button type="button" class="ghost" data-i18n="common.save">Save</button>
@@ -143,36 +142,6 @@
         </div>
       </section>
 
-      <section id="aidot-feature-coverage" data-screen-id="aidot-feature-coverage" class="screen-card coverage-card">
-        <div class="screen-heading">
-          <span>AF</span>
-          <div><h3 data-i18n="coverage.title">Aidot Feature Coverage</h3><p data-i18n="coverage.body">CGA does not remove Aidot feature screens. It relocates every needed Aidot screen into the bot-building workflow.</p></div>
-        </div>
-        <div class="coverage-grid">
-          <article><h4 data-i18n="coverage.create">Create / Setup</h4><p data-i18n="coverage.createBody">Bot create, bot setup, version, language, channel defaults, user/login/roles.</p></article>
-          <article><h4 data-i18n="coverage.configure">Configure / Review</h4><p data-i18n="coverage.configureBody">Training utterances, PDF/RAG, intent draft, intent review, answer draft.</p></article>
-          <article><h4 data-i18n="coverage.detail">Detail Settings</h4><p data-i18n="coverage.detailBody">Intent, answer, synonym, entity, dictionary, scenario, API card, variables, Talk cards.</p></article>
-          <article><h4 data-i18n="coverage.build">Build / Test</h4><p data-i18n="coverage.buildBody">NLU training, LLM NLU, RAG embedding, simulator, runtime variables, logs.</p></article>
-          <article><h4 data-i18n="coverage.operate">Operate / Improve</h4><p data-i18n="coverage.operateBody">Deploy, webchat, channels, operation version, analysis, evaluation, retrain.</p></article>
-          <article><h4 data-i18n="coverage.ruleTitle">Rule</h4><p data-i18n="coverage.ruleBody">Aidot feature screens are preserved.</p></article>
-        </div>
-      </section>
-
-      <section id="collaboration-platform" data-screen-id="collaboration-platform" class="screen-card collaboration-card">
-        <div class="screen-heading">
-          <span>CO</span>
-          <div><h3 data-i18n="collab.title">Collaboration Platform</h3><p data-i18n="collab.body">CGA is optimized for one person to build a bot in 1-2 days, while still allowing multiple people to collaborate on the same bot when needed.</p></div>
-        </div>
-        <div class="collab-grid">
-          <article><h4 data-i18n="collab.roles">Fast solo first</h4><p data-i18n="collab.rolesBody">The default flow should let one builder create, configure, test, and deploy a bot quickly without collaboration overhead.</p></article>
-          <article><h4 data-i18n="collab.assignments">Team expansion</h4><p data-i18n="collab.assignmentsBody">When a bot grows, intents, answers, scenarios, API answers, deployments, and evaluations can be assigned to different users.</p></article>
-          <article><h4 data-i18n="collab.review">Review workflow</h4><p data-i18n="collab.reviewBody">Generated or edited content moves through review before it becomes approved bot content.</p></article>
-          <article><h4 data-i18n="collab.locks">Edit locks</h4><p data-i18n="collab.locksBody">When multiple users edit, short-lived locks prevent conflicting changes on the same item.</p></article>
-          <article><h4 data-i18n="collab.history">Change history</h4><p data-i18n="collab.historyBody">Every important change should keep actor, time, target, before/after summary, and review result.</p></article>
-          <article><h4 data-i18n="collab.dashboard">Team dashboard</h4><p data-i18n="collab.dashboardBody">The dashboard shows my tasks, waiting reviews, blocked items, and deployment readiness.</p></article>
-        </div>
-      </section>
-
       <section id="workspace-home" data-screen-id="workspace-home" class="screen-card workspace-home-card">
         <div class="screen-heading">
           <span aria-label="Bot Workspace">BW</span>
@@ -201,12 +170,15 @@
         </div>
       </section>
 
-      <section id="bot-management" data-screen-id="bot-management" class="screen-card bot-management-card">
+            <section id="bot-management" data-screen-id="bot-management" class="screen-card bot-management-card">
         <div class="screen-heading">
           <span aria-label="Bot Management">BM</span>
-          <div><h3 data-i18n="botManagement.title">Bot Management</h3><p data-i18n="botManagement.body">Manage upload, download, operation version, copy, and delete for the selected bot.</p></div>
+          <div>
+            <h3 data-i18n="botManagement.title">Bot Management</h3>
+            <p data-i18n="botManagement.body">Manage upload, download, operation version, copy, and delete for the selected bot.</p>
+          </div>
         </div>
-        <article class="workspace-transfer-card bot-management-transfer" data-workspace-transfer></article>
+        <div data-bot-management-surface></div>
       </section>
 
       <section id="team-dashboard" data-screen-id="team-dashboard" class="screen-card team-dashboard-card">
@@ -279,6 +251,7 @@
               <select data-group-status-filter></select>
               <button type="button" class="access-toolbar-reset" data-group-search-reset>초기화</button>
               <button type="button" data-group-search-submit>조회</button>
+              <button type="button" data-open-group-create>+ 그룹 생성</button>
             </div>
             <div class="group-management-list" data-group-access></div>
           </article>
@@ -593,137 +566,6 @@
           <article><h4 data-i18n="analysis.apiFailures">API failures</h4><strong>0</strong><p data-i18n="analysis.apiFailuresBody">Check external answer sources.</p></article>
         </div>
       </section>
-      <section id="locked-vs-runtime" data-screen-id="locked-vs-runtime" class="screen-card lock-policy-card">
-        <div class="screen-heading">
-          <span>LK</span>
-          <div><h3 data-i18n="lock.title">Locked Structure vs Runtime Options</h3><p data-i18n="lock.body">Create Bot owns structural choices. Later screens only adjust runtime-safe options.</p></div>
-        </div>
-        <div class="lock-runtime-grid">
-          <article>
-            <h4 data-i18n="lock.locked">Locked in Create Bot</h4>
-            <div data-locked-fields></div>
-          </article>
-          <article>
-            <h4 data-i18n="lock.runtime">Runtime-adjustable later</h4>
-            <div data-runtime-fields></div>
-          </article>
-        </div>
-      </section>
-
-      <section id="state-readiness" data-screen-id="state-readiness" class="screen-card state-card">
-        <div class="screen-heading">
-          <span>ST</span>
-          <div><h3 data-i18n="state.title">Studio State and Readiness</h3><p data-i18n="state.body">Screen status is derived from Public Core state, not hardcoded per panel.</p></div>
-        </div>
-        <div class="state-grid" data-state-summary></div>
-        <div class="readiness-issues">
-          <h4 data-i18n="state.issues">Readiness Issues</h4>
-          <div data-readiness-issues></div>
-        </div>
-      </section>
-
-      <section id="i18n-policy" data-screen-id="i18n-policy" class="screen-card i18n-card">
-        <div class="screen-heading">
-          <span>i18n</span>
-          <div><h3 data-i18n="i18n.title">Localization and Error Messages</h3><p data-i18n="i18n.subtitle">Menus matter, but error messages and operational alerts must be localized from day one.</p></div>
-          <em>Default: English · Supported: KO / ZH-CN / JA / VI / DE / FR</em>
-        </div>
-        <div class="i18n-grid">
-          <article>
-            <h4 data-i18n="i18n.locales.title">Supported Locales</h4>
-            <p data-i18n="i18n.locales.body">English is the default fallback. Korean, Chinese, Japanese, Vietnamese, German, and French are first-phase locales.</p>
-            <div class="locale-row"><span>en</span><span>ko</span><span>zh-CN</span><span>ja</span><span>vi</span><span>de</span><span>fr</span></div>
-          </article>
-          <article>
-            <h4 data-i18n="i18n.contract.title">Error Code Contract</h4>
-            <p data-i18n="i18n.contract.body">APIs return stable error codes. The UI resolves messages by locale and falls back to English.</p>
-            <code>CGA_LLM_REQUIRED_FOR_PDF</code>
-          </article>
-          <article>
-            <h4 data-i18n="i18n.fallback.title">Fallback Order</h4>
-            <p data-i18n="i18n.fallback.body">Current locale → English → fallback_message → error_code.</p>
-            <span class="module-badge" data-i18n="i18n.noHardcode">Never hardcode user-facing errors</span>
-          </article>
-        </div>
-        <div class="error-samples" data-error-samples></div>
-      </section>
-
-      <section id="commercial-availability" data-screen-id="commercial-availability" class="screen-card commercial-availability-card">
-        <div class="screen-heading">
-          <span>CM</span>
-          <div><h3 data-i18n="commercial.title">Commercial Module Availability</h3><p data-i18n="commercial.body">Public Core can render commercial feature states without loading private implementations.</p></div>
-        </div>
-        <div class="feature-list" data-commercial-availability></div>
-      </section>
-
-      <section id="module-boundary" data-screen-id="module-boundary" class="screen-card boundary-card">
-        <div class="screen-heading">
-          <span>MB</span>
-          <div><h3 data-i18n="module.title">Module Boundary Matrix</h3><p data-i18n="module.body">Each screen shows what stays public and what becomes a commercial module candidate.</p></div>
-        </div>
-        <div class="boundary-table" data-boundary-table role="table" aria-label="Public and commercial module boundary"></div>
-      </section>
-
-      <section id="public-contracts" data-screen-id="public-contracts" class="screen-card contract-card">
-        <div class="screen-heading">
-          <span>CT</span>
-          <div><h3 data-i18n="contracts.title">Public Core Contracts</h3><p data-i18n="contracts.body">Stable contracts for errors, workflow mapping, and commercial module availability.</p></div>
-        </div>
-        <div class="contract-grid">
-          <article>
-            <h4 data-i18n="contracts.error">Error Response</h4>
-            <code>{ error_code, message_key, fallback_message, details }</code>
-            <p data-i18n="contracts.errorBody">API and runtime errors must use stable codes and i18n message keys.</p>
-          </article>
-          <article>
-            <h4 data-i18n="contracts.module">Module Status</h4>
-            <code>{ module_id, status, enabled_features }</code>
-            <p data-i18n="contracts.moduleBody">Public Core can show disabled or commercial-required states without loading private modules.</p>
-          </article>
-          <article>
-            <h4 data-i18n="contracts.workflow">Workflow Mapping</h4>
-            <code>6 visible steps → Aidot internal functions</code>
-            <p data-i18n="contracts.workflowBody">The user sees a simple flow while Aidot compatibility remains unchanged.</p>
-          </article>
-          <article>
-            <h4 data-i18n="contracts.authApi">CGA Auth / Group API</h4>
-            <code>/api/cga/auth/* · /api/cga/groups/*</code>
-            <p data-i18n="contracts.authApiBody">Signup, login, group join requests, and admin approvals are CGA management APIs. Aidot runtime and webchat APIs remain unchanged.</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="open-core" data-screen-id="open-core" class="screen-card commercial-card">
-        <div class="screen-heading">
-          <span>OC</span>
-          <div><h3 data-i18n="openCore.title">Open Core Strategy</h3><p data-i18n="openCore.body">Public CGA remains useful, while high-value commercial modules are separated.</p></div>
-        </div>
-        <div class="module-layout">
-          <article class="core-module">
-            <h4 data-i18n="openCore.public">Public Core</h4>
-            <p data-i18n="openCore.publicBody">Open on GitHub. Runs the basic CGA workflow with Aidot-compatible contracts.</p>
-            <ul><li>CGA Orchestrator Core</li><li>CGA Studio Basic UI</li><li>Basic bot build flow</li><li>Webchat/API compatibility</li></ul>
-          </article>
-          <article>
-            <h4 data-i18n="openCore.advanced">Advanced Builder</h4>
-            <p data-i18n="openCore.advancedBody">Commercial module for high-value bot creation automation.</p>
-            <ul><li>PDF Q&amp;A generation quality</li><li>Intent merge recommendation</li><li>Answer quality checks</li><li>Handoff result validation</li></ul>
-            <span class="module-badge" data-i18n="openCore.required">Commercial Module Required</span>
-          </article>
-          <article>
-            <h4 data-i18n="openCore.operations">Operations Monitor</h4>
-            <p data-i18n="openCore.operationsBody">Commercial module for production monitoring and improvement.</p>
-            <ul><li>LLM cost tracking</li><li>Channel alerting</li><li>Undefined intent analysis</li><li>Operations report</li></ul>
-            <span class="module-badge" data-i18n="openCore.required">Commercial Module Required</span>
-          </article>
-          <article>
-            <h4 data-i18n="openCore.entitlement">License / Entitlement</h4>
-            <p data-i18n="openCore.entitlementBody">Commercial control module for organization and feature access.</p>
-            <ul><li>License key validation</li><li>Bot / channel limits</li><li>Feature activation</li><li>Expiration checks</li></ul>
-            <span class="module-badge" data-i18n="openCore.private">Private Implementation</span>
-          </article>
-        </div>
-      </section>
 
     </main>
     <div class="help-modal" data-help-modal hidden>
@@ -738,7 +580,63 @@
     </div>
   </div>
   <script src="/apps/studio/i18n.js"></script>
-  <script src="/apps/studio/entry-auth.js?v=20260610-5"></script>
-  <script type="module" src="/apps/studio/app.js?v=20260612-2"></script>
+  <script src="/apps/studio/entry-auth.js?v=20260617-1"></script>
+  <script type="module" src="/apps/studio/app.js?v=20260617-1"></script>
+  <script>
+    (() => {
+      const DEFAULT_SCREEN_ID = "access-management";
+      const isAuthenticated = () => {
+        const shell = document.querySelector(".app-shell");
+        const loginEntry = document.querySelector("[data-login-entry]");
+        return Boolean(shell && !shell.classList.contains("unauthenticated") && loginEntry?.hidden);
+      };
+      const syncActiveScreen = () => {
+        const workspace = document.querySelector(".workspace");
+        if (!workspace) return;
+        const sections = Array.from(workspace.querySelectorAll("[data-screen-id]"));
+        if (!isAuthenticated()) {
+          sections.forEach((section) => {
+            section.hidden = true;
+            section.style.display = "none";
+            section.setAttribute("aria-hidden", "true");
+            section.classList.remove("selected");
+          });
+          return;
+        }
+        const ids = sections.map((section) => section.dataset.screenId);
+        const hashId = window.location.hash.replace("#", "");
+        const activeId = ids.includes(hashId) ? hashId : (ids.includes(DEFAULT_SCREEN_ID) ? DEFAULT_SCREEN_ID : ids[0]);
+        sections.forEach((section) => {
+          const selected = section.dataset.screenId === activeId;
+          section.hidden = !selected;
+          section.style.display = selected ? "" : "none";
+          section.setAttribute("aria-hidden", selected ? "false" : "true");
+          section.classList.toggle("selected", selected);
+        });
+      };
+      const schedule = () => {
+        syncActiveScreen();
+        requestAnimationFrame(syncActiveScreen);
+        setTimeout(syncActiveScreen, 0);
+        setTimeout(syncActiveScreen, 100);
+        setTimeout(syncActiveScreen, 300);
+      };
+      document.addEventListener("DOMContentLoaded", schedule);
+      window.addEventListener("load", schedule);
+      window.addEventListener("hashchange", schedule);
+      document.addEventListener("cga:content-rendered", schedule);
+      document.addEventListener("cga:entry-login-success", schedule);
+      document.addEventListener("click", () => setTimeout(syncActiveScreen, 0), true);
+    })();
+  </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+

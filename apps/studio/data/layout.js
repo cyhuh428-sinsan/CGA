@@ -11,16 +11,7 @@ export const screenLayout = [
   { id: "operate", group: "operation", visible: true, order: 85, mode: "public" },
   { id: "analysis", group: "operation", visible: true, order: 86, mode: "public" },
   { id: "team-dashboard", group: "workspace", visible: true, order: 90, mode: "public" },
-  { id: "api-answer-source", group: "workspace", visible: true, order: 100, mode: "public" },
-  { id: "collaboration-platform", group: "hidden", visible: false, order: 905, mode: "public" },
-  { id: "state-readiness", group: "hidden", visible: false, order: 915, mode: "public" },
-  { id: "i18n-policy", group: "hidden", visible: false, order: 925, mode: "public" },
-  { id: "commercial-availability", group: "hidden", visible: false, order: 935, mode: "public" },
-  { id: "aidot-feature-coverage", group: "hidden", visible: false, order: 900, mode: "public" },
-  { id: "locked-vs-runtime", group: "hidden", visible: false, order: 910, mode: "public" },
-  { id: "module-boundary", group: "hidden", visible: false, order: 920, mode: "public" },
-  { id: "public-contracts", group: "hidden", visible: false, order: 930, mode: "public" },
-  { id: "open-core", group: "hidden", visible: false, order: 940, mode: "public" }
+  { id: "api-answer-source", group: "workspace", visible: true, order: 100, mode: "public" }
 ];
 
 export const layoutPolicy = Object.freeze({

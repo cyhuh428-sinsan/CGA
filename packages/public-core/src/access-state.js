@@ -1,6 +1,7 @@
 import {
   ACCESS_SCOPES,
   SYSTEM_ADMIN_USER_ID,
+  SYSTEM_ADMIN_GROUP_ID,
   SCREEN_SCOPE_REQUIREMENTS,
   USER_ROLES,
   createGroup,
@@ -28,12 +29,12 @@ export function createSampleAccessState() {
       createUser({ id: "u-viewer", name: "Viewer", locale: "fr" })
     ],
     groups: [
-      createGroup({ id: "g-admin", name: "System Admin Group" }),
+      createGroup({ id: SYSTEM_ADMIN_GROUP_ID, name: "System Admin Group" }),
       createGroup({ id: "g-support", name: "Support Bot Group" }),
       createGroup({ id: "g-ops", name: "Operations Group" })
     ],
     memberships: [
-      createGroupMembership({ userId: SYSTEM_ADMIN_USER_ID, groupId: "g-admin", role: USER_ROLES.SYSTEM_ADMIN }),
+      createGroupMembership({ userId: SYSTEM_ADMIN_USER_ID, groupId: SYSTEM_ADMIN_GROUP_ID, role: USER_ROLES.SYSTEM_ADMIN }),
       createGroupMembership({ userId: "u-group-admin", groupId: "g-support", role: USER_ROLES.GROUP_ADMIN }),
       createGroupMembership({ userId: "u-builder", groupId: "g-support", role: USER_ROLES.BUILDER }),
       createGroupMembership({ userId: "u-reviewer", groupId: "g-support", role: USER_ROLES.REVIEWER }),
@@ -154,13 +155,13 @@ export function loginAsUser(state, { userId }) {
 }
 
 export function isSystemAdmin(state, userId) {
-  return getUserGroupMemberships(state, userId).some((membership) => membership.role === USER_ROLES.SYSTEM_ADMIN);
+  return getUserGroupMemberships(state, userId).some((membership) => membership.group_id === SYSTEM_ADMIN_GROUP_ID && membership.role === USER_ROLES.SYSTEM_ADMIN);
 }
 
 export function isGroupAdminForGroup(state, userId, groupId) {
   return getUserGroupMemberships(state, userId).some((membership) => (
     membership.group_id === groupId &&
-    [USER_ROLES.GROUP_ADMIN, USER_ROLES.OWNER, USER_ROLES.SYSTEM_ADMIN].includes(membership.role)
+    [USER_ROLES.GROUP_ADMIN, USER_ROLES.OWNER].includes(membership.role)
   ));
 }
 
@@ -393,7 +394,7 @@ export function summarizeAdminRequests(state) {
 export function summarizeAccessPolicy(state) {
   const activeGroups = state.groups.filter((group) => group.status === "active");
   const groupsWithoutUsers = activeGroups.filter((group) => !state.memberships.some((membership) => membership.group_id === group.id && membership.status === "active"));
-  const groupsWithoutAdmin = activeGroups.filter((group) => !state.memberships.some((membership) => membership.group_id === group.id && membership.status === "active" && [USER_ROLES.GROUP_ADMIN, USER_ROLES.SYSTEM_ADMIN, USER_ROLES.OWNER].includes(membership.role)));
+  const groupsWithoutAdmin = activeGroups.filter((group) => !state.memberships.some((membership) => membership.group_id === group.id && membership.status === "active" && [USER_ROLES.GROUP_ADMIN, USER_ROLES.OWNER].includes(membership.role)));
   return {
     systemAdmin: state.users.find((user) => user.id === state.policy.systemAdminUserId),
     pendingJoinRequests: state.joinRequests.filter((request) => request.status === "pending").length,
@@ -407,4 +408,5 @@ export function summarizeAccessPolicy(state) {
     errorLocaleSource: state.policy.errorLocaleSource
   };
 }
+
 
