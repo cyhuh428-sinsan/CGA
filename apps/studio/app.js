@@ -1,5 +1,5 @@
-import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260611-5";
-import { getVisibleLayout } from "./data/layout.js?v=20260611-5";
+import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-8";
+import { getVisibleLayout } from "./data/layout.js?v=20260618-8";
 import { sampleStudioState } from "./data/sample-state.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";

@@ -3049,3 +3049,18 @@ o duplicate function declarations.
 
 ### 확인
 - `npm run studio:validate` 재실행 예정 기준으로 수정.
+## 2026-06-18 08:22 KST
+
+- 로그인 후 기본 진입 화면이 `workspace-home`이 아니라 `detail`로 강제되는 원인 추가 확인.
+- 원인: `apps/studio/entry-auth.js`의 `enterAuthenticatedShell()`가 로그인 성공 직후 `detail` 해시를 직접 기록하고 있었음.
+- 조치:
+  - `apps/studio/entry-auth.js` 로그인 직후 기본 화면을 `workspace-home`으로 수정.
+  - `apps/studio/index.html`의 보조 화면 전환 스크립트 기본값도 `workspace-home`으로 정리.
+  - 캐시 영향 최소화를 위해 `styles.css`, `entry-auth.js`, `app.js`, `workflow.js`, `layout.js`의 버전 쿼리 갱신.
+- 디자인 보완:
+  - `봇 생성` 화면을 2열 밀도형 배치로 조정.
+  - 섹션 설명부를 가로 정렬로 줄이고 설명 textarea 높이를 축소.
+  - 우측 요약 패널을 화면 높이에 맞춰 고정형으로 정리.
+- 검증:
+  - `npm run studio:validate` 통과.
+  - 브라우저 직접 확인 결과 현재 `http://127.0.0.1:4173/`는 아직 이전 실행본 영향이 남아 있어, Git 반영 및 WSL 재배포 후 다시 확인 필요.
