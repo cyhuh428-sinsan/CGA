@@ -1084,8 +1084,7 @@ function addWorkspaceBotVersion(bot, sourceVersionId = null) {
     note: `버전 추가 (${sourceVersion?.id || bot.version || "v0.1"})`,
     isActive: false
   };
-  const nextVersions = [next, ...versions.map((item) => ({ ...item, isActive: item.id === bot.version })]
-  ];
+  const nextVersions = [next, ...versions.map((item) => ({ ...item, isActive: item.id === bot.version }))];
   updateBotVersionRegistry(bot, nextVersions);
   return next;
 }
