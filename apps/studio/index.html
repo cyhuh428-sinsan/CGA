@@ -348,10 +348,7 @@
         </div>
         <div class="aidot-settings-screen">
           <aside class="aidot-settings-side">
-            <div class="bot-avatar-small"></div>
-            <strong aria-label="static">테스트봇 - 시멘틱 RAG</strong>
-            <span class="star-mark">★</span>
-            <div class="button-row"><button type="button">수정</button><button type="button" class="ghost-btn">삭제</button></div>
+            <strong class="aidot-settings-side__title">서버 메뉴</strong>
             <nav>
               <strong>설정</strong>
               <a class="active">AI 모델 설정</a>
@@ -406,44 +403,35 @@
         </div>
         <div class="aidot-rag-config">
           <section class="aidot-rag-left">
+            <div class="rag-info-line">운영버전은 구성 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.</div>
             <header>
-              <strong aria-label="static">RAG 답변 문서 구성</strong>
-              <span aria-label="static">구성용 엔진 : Semantic - Vector Worker · Aidot Vector Worker 기본 모델</span>
+              <strong aria-label="static">학습문장 입력</strong>
+              <span aria-label="static">구성용 엔진 : ML · DeepLearning Lite</span>
             </header>
             <div class="rag-form-grid">
-              <label>구성 엔진<select><option value="Semantic - Vector Worker">Semantic - Vector Worker</option></select></label>
-              <label>구성 모델<select><option value="Aidot Vector Worker 기본 모델">Aidot Vector Worker 기본 모델</option></select></label>
+              <label>구성 엔진<select><option value="ML">ML</option></select></label>
+              <label>구성 모델<select><option value="DeepLearning Lite">DeepLearning Lite</option></select></label>
             </div>
             <div class="rag-info-line">자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.</div>
-            <div class="rag-radio-row"><label><input type="radio" checked /> 텍스트</label><label><input type="radio" /> PDF</label></div>
-            <label>답변 텍스트<textarea data-config-utterances></textarea></label>
-            <label>문서 제목<input value="입력하지 않으면 답변 문서로 저장됩니다." /></label>
-            <div class="rag-info-line"><span>선택한 구성 모델 기준으로 답변 문서를 임베딩합니다.</span><b aria-label="static">Aidot Vector Worker 기본 모델</b></div>
-            <div class="rag-target-row"><label>목표 의도 수<input type="number" min="1" value="50" data-config-intent-count /></label><button type="button" data-config-generate-qa disabled>RAG 문서 구성</button></div>
+            <label>학습문장을 줄 단위로 입력하세요.<textarea data-config-utterances>예) 상담원 연결해줘
+예) 콜백 예약하고 싶어
+예) 발신자 확인해줘</textarea></label>
+            <div class="rag-target-row">
+              <label>목표 의도 수<input type="number" min="1" value="50" data-config-intent-count /></label>
+              <button type="button">자동 구성</button>
+            </div>
+            <div class="rag-info-line">분류 수 기준 ML은 무조건 수를 강제하지 않고, 유사도가 충분한 후보만 병합합니다.</div>
             <div class="rag-radio-row"><label><input type="radio" /> 50개 이하로 최대한 적게</label><label><input type="radio" checked /> 50개에 가깝게</label><label><input type="radio" /> 무조건 50개</label></div>
-            <div class="button-row"><button type="button" data-config-export-handoff data-i18n="configure.export">Export Handoff File</button><button type="button" class="ghost-btn" data-config-import-result data-i18n="configure.import">Import LLM Result</button><button type="button" class="ghost-btn" data-config-save-pdf data-i18n="configure.savePdf">Save PDF</button></div>
-            <button type="button" class="ghost-btn">NLU 기준 / 가중치 설정</button>
+            <div class="button-row"><button type="button">ML 기준 의도 입력</button><button type="button" class="ghost-btn">NLU 기준 / 가중치 설정</button></div>
+            <section class="aidot-setting-block">
+              <header><strong>ML 구성 테스트</strong><span>현재 의도 후보 기준으로 사용자 발화를 비교합니다.</span></header>
+              <div class="rag-target-row"><label>테스트 문장<input value="예) 계약 철회할게요" /></label><button type="button">테스트</button></div>
+            </section>
           </section>
           <section class="aidot-rag-right">
             <header><strong>의도 후보</strong><div><button type="button">선택 병합</button><button type="button" class="primary-action-small">현재 버전 덮어쓰기</button></div></header>
-            <div data-config-preview class="rag-candidate-box"></div>
+            <div data-config-preview class="rag-candidate-box">학습문장을 입력하고 자동 구성을 실행하세요.</div>
           </section>
-        </div>
-        <div class="asset-transfer-panel">
-          <div>
-            <h4 data-i18n="transfer.assetsTitle">Reusable Bot Assets</h4>
-            <p data-i18n="transfer.assetsBody">Download or upload major bot assets as Aidot-compatible packages so another Aidot or CGA bot can reuse them.</p>
-            <p class="compat-note" data-i18n="transfer.aidotLocaleBoundary">Aidot upload compatibility uses a single selected bot language. CGA multilingual packages require a CGA-only import path or an Aidot compatibility update.</p>
-          </div>
-          <div class="asset-transfer-grid">
-            <article><strong data-i18n="transfer.intentAnswer">Intent / Answer</strong><span data-i18n="transfer.dialogJsonReplace">Dialog JSON · replace</span><div><button data-asset-download="intentDialog" data-i18n="transfer.download">Download</button><button data-asset-upload="intentDialog" class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
-            <article><strong data-i18n="detail.synonyms">Synonyms</strong><span data-i18n="transfer.txtMerge">TXT · merge</span><div><button data-asset-download="intentUtterance" data-i18n="transfer.download">Download</button><button data-asset-upload="intentUtterance" class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
-            <article><strong data-i18n="detail.entities">Entities</strong><span data-i18n="transfer.txtMerge">TXT · merge</span><div><button data-asset-download="entity" data-i18n="transfer.download">Download</button><button data-asset-upload="entity" class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
-            <article><strong data-i18n="detail.dictionary">Dictionary</strong><span data-i18n="transfer.txtMerge">TXT · merge</span><div><button data-asset-download="dictionary" data-i18n="transfer.download">Download</button><button data-asset-upload="dictionary" class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
-            <article><strong data-i18n="detail.scenario">Scenario</strong><span data-i18n="transfer.dialogJsonReplace">Dialog JSON · replace</span><div><button data-asset-download="scenario" data-i18n="transfer.download">Download</button><button data-asset-upload="scenario" class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
-            <article><strong data-i18n="transfer.apiMapping">API Mapping</strong><span data-i18n="transfer.apiJsonReplace">API JSON · replace</span><div><button data-asset-download="apiMapping" data-i18n="transfer.download">Download</button><button data-asset-upload="apiMapping" class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
-            <article><strong data-i18n="coverage.ruleTitle">Rule</strong><span data-i18n="transfer.txtMerge">TXT · merge</span><div><button data-asset-download="rule" data-i18n="transfer.download">Download</button><button data-asset-upload="rule" class="ghost-btn" data-i18n="transfer.upload">Upload</button></div></article>
-          </div>
         </div>
       </section>
 
@@ -514,17 +502,71 @@
           <span>05</span>
           <div><h3 data-i18n="test.title">Test</h3><p data-i18n="test.body">Show Aidot simulator results in a builder-friendly layout.</p></div>
         </div>
-        <div class="simulator-layout">
-          <div class="chat-box"><p class="user-msg" data-test-user-message>I forgot my password.</p><p class="bot-msg" data-test-bot-message>Open Account Settings and choose Reset Password.</p><input placeholder="Type a test message" data-test-input data-i18n-placeholder="test.simPlaceholder" /></div>
-          <aside class="analysis-box">
-            <h4 data-i18n="test.analysis">Conversation Analysis</h4>
-            <p><b data-i18n="test.matched">Matched intent</b><span data-test-intent>password_reset</span></p>
-            <p><b data-i18n="test.method">Method</b><span data-test-method>LLM intent classification</span></p>
-            <p><b>Similarity</b><span data-test-similarity>0.94</span></p>
-            <p><b>Latency</b><span data-test-latency>14ms</span></p>
+        <div class="aidot-simulator-shell">
+          <section class="aidot-simulator-window">
+            <header class="aidot-simulator-window__header">
+              <div class="aidot-simulator-window__title"><div class="bot-avatar-large"></div><div><strong>Aidot 봇</strong><span>v1 / Simulator</span></div></div>
+              <button type="button" class="icon-button">×</button>
+            </header>
+            <div class="aidot-simulator-window__body">
+              <div class="aidot-simulator-canvas">
+                <div class="aidot-simulator-card-list">
+                  <button type="button">CAROUSEL</button>
+                  <button type="button">TAB</button>
+                  <button type="button">KAKAOMAP</button>
+                  <button type="button">BUTTON</button>
+                  <button type="button">BUTTON(POPUP)</button>
+                  <button type="button">BUTTON(REJECT/SUBMIT)</button>
+                  <button type="button">INPUT POPUP</button>
+                  <button type="button">STAR RATE</button>
+                  <button type="button">VIDEO</button>
+                  <button type="button">IMAGE LIST</button>
+                  <button type="button">VALIDATION</button>
+                </div>
+                <div class="aidot-simulator-time">오후 05:28</div>
+              </div>
+              <div class="aidot-simulator-compose">
+                <div class="aidot-simulator-tools"><button type="button">↶</button><button type="button">✕</button><button type="button">↷</button><button type="button">↓</button></div>
+                <div class="aidot-simulator-input-row"><input placeholder="챗봇과 대화를 진행해보세요." data-test-input data-i18n-placeholder="test.simPlaceholder" /><button type="button">전송</button></div>
+                <button type="button" class="aidot-simulator-analysis-button">분석 데이터 보기</button>
+              </div>
+            </div>
+          </section>
+          <aside class="aidot-simulator-analysis">
+            <header><strong>분석 데이터</strong><span>Runtime / Variables / Trace</span></header>
+            <section>
+              <h4>현재 런타임 상태</h4>
+              <dl>
+                <div><dt>대화</dt><dd>Rich Form</dd></div>
+                <div><dt>다음 카드</dt><dd>bb636362-71ab-4d62-882b-91e6a126b315</dd></div>
+                <div><dt>대기 카드</dt><dd>f9d4c8fe-4298-499e-9db1-84bb7e7b8d23</dd></div>
+                <div><dt>종료 여부</dt><dd>진행 중</dd></div>
+                <div><dt>변수값</dt><dd>없음</dd></div>
+              </dl>
+            </section>
+            <section>
+              <dl>
+                <div><dt>사용자 발화</dt><dd data-test-user-message>대화 시작</dd></div>
+                <div><dt>선택 의도</dt><dd data-test-intent>시나리오 실행</dd></div>
+              </dl>
+            </section>
+            <section class="aidot-simulator-analysis__light">
+              <h4>의도 인식 적용 단계</h4>
+              <strong>ML</strong>
+              <p>적용 대상 <b>시나리오 실행</b></p>
+              <p>의도와 단계에서 매칭된 항목이 없어 ML Score 계산 결과를 기준으로 의도를 판정했습니다.</p>
+              <p>판정 순서: 제외/무시 → 스몰토크 → Exacting Matching → 룰 → ML / 시멘틱 / LLM. 앞 단계가 적용되면 이후 단계는 실행하지 않습니다.</p>
+              <h4>Score Setting</h4>
+              <p>NLU Cut-off Score : 0.8 / 유사의도 Score : 0.8</p>
+              <p class="warn">분류 결과 : 입력 발화에서 분류에 사용할 토큰을 찾지 못했습니다.</p>
+              <h4>의도분류 Score-in</h4>
+              <p>Cut-off 기준을 통과한 의도가 없습니다.</p>
+              <h4>의도분류 Score-out</h4>
+              <p>비교 가능한 Score-out 의도가 없습니다.</p>
+              <h4>형태소</h4>
+              <p>-</p>
+            </section>
           </aside>
-          <div class="simulator-result-grid" data-test-aidot-result></div>
-          <div class="simulator-runtime-grid" data-test-runtime></div>
         </div>
       </section>
 

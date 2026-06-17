@@ -2409,8 +2409,92 @@ function renderWorkflowScreenShell(sectionId, code, title, subtitle, bodyHtml) {
 
 function renderTestAidotScreen() {
   const test = currentOperationsState.test || {};
-  const rows = [["매칭 의도", test.matched_intent || "-"], ["처리 방식", test.method || "-"], ["Similarity", Number(test.similarity ?? 0).toFixed(2)], ["Latency", `${Number(test.latency_ms ?? 0)}ms`]];
-  renderWorkflowScreenShell("test", "05", "봇 테스트", "Aidot 시뮬레이터 기준으로 테스트 결과를 확인합니다.", `<div class="aidot-simulator-screen"><div class="aidot-simulator-chat"><p class="user-msg">${escapeText(test.last_user_message || "")}</p><p class="bot-msg">${escapeText(test.last_bot_message || "")}</p><input placeholder="테스트 메시지를 입력하세요" /></div><aside class="aidot-simulator-side"><h4>대화 분석</h4>${rows.map(([label, value]) => `<p><b>${escapeText(label)}</b><span>${escapeText(value)}</span></p>`).join("")}</aside></div>`);
+  const rows = Array.isArray(test.trace) ? test.trace.slice(0, 3) : [];
+  const runtimeStatus = test.runtime || "운영 중단";
+  const vars = test.variables || { locale: currentStudioState.bot?.defaultLocale || "en" };
+  const traceValue = rows.length ? rows.join(" / ") : "trace 없음";
+  renderWorkflowScreenShell(
+    "test",
+    "05",
+    "봇 테스트",
+    "Aidot 시뮬레이터 기준으로 테스트 결과를 확인합니다.",
+    `<div class="aidot-simulator-shell">
+      <div class="aidot-simulator-window">
+        <div class="aidot-simulator-window__header">
+          <div class="aidot-simulator-window__title">
+            <div class="bot-avatar-large"></div>
+            <div>
+              <strong>Aidot 봇</strong>
+              <span>v1 / Simulator</span>
+            </div>
+          </div>
+          <button type="button" class="icon-button">⋮</button>
+        </div>
+        <div class="aidot-simulator-window__body">
+          <div class="aidot-simulator-canvas">
+            <div class="aidot-simulator-card-list">
+              <button type="button">CAROUSEL</button>
+              <button type="button">TAB</button>
+              <button type="button">KAKAOMAP</button>
+              <button type="button">BUTTON</button>
+              <button type="button">HTML</button>
+              <button type="button">TABLE</button>
+              <button type="button">TABLE</button>
+              <button type="button">BUTTON</button>
+              <button type="button">LINK_BUTTON</button>
+              <button type="button">FORM(RICH)</button>
+              <button type="button">CAROUSEL</button>
+              <button type="button">FORM(A CARD)</button>
+            </div>
+            <div class="aidot-simulator-time">${escapeText(test.created_at || "2026-05-05 02:55:35")}</div>
+          </div>
+          <div class="aidot-simulator-compose">
+            <div class="aidot-simulator-tools">
+              <button type="button">📎</button>
+              <button type="button">🙂</button>
+            </div>
+            <div class="aidot-simulator-input-row">
+              <input type="text" placeholder="질문을 입력하세요" value="${escapeText(test.last_user_message || "")}" />
+              <button type="button">➤</button>
+            </div>
+            <button type="button" class="aidot-simulator-analysis-button">분석 데이터 보기</button>
+          </div>
+        </div>
+      </div>
+      <aside class="aidot-simulator-analysis">
+        <header><strong>분석 데이터</strong><span>Runtime / Variables / Trace</span></header>
+        <section>
+          <h4>Runtime</h4>
+          <div class="simulator-runtime-grid">
+            <article><strong>요청</strong><span>${escapeText(test.method || "LLM")}</span></article>
+            <article class="${runtimeStatus.includes("중단") ? "warn" : ""}"><strong>상태</strong><span>${escapeText(runtimeStatus)}</span></article>
+            <article><strong>의도</strong><span>${escapeText(test.matched_intent || "-")}</span></article>
+            <article><strong>유사도</strong><span>${Number(test.similarity ?? 0).toFixed(2)}</span></article>
+          </div>
+        </section>
+        <section>
+          <h4>Variables</h4>
+          <dl>
+            <div><dt>locale</dt><dd>${escapeText(vars.locale || "-")}</dd></div>
+            <div><dt>lastUser</dt><dd>${escapeText(test.last_user || "-")}</dd></div>
+            <div><dt>botMessage</dt><dd>${escapeText(test.last_bot_message ? "있음" : "없음")}</dd></div>
+          </dl>
+        </section>
+        <section>
+          <h4>Trace</h4>
+          <dl>
+            <div><dt>trace</dt><dd>${escapeText(traceValue)}</dd></div>
+          </dl>
+        </section>
+        <section class="aidot-simulator-analysis__light">
+          <h4>의도 인식</h4>
+          <p><strong>의도: ${escapeText(test.matched_intent || "intent_check")}</strong> ${escapeText(test.recognizer || "ML")}</p>
+          <p>의도 신뢰도: ${Number(test.similarity ?? 0).toFixed(2)}</p>
+          <p class="${test.warning ? "warn" : ""}">경고: ${escapeText(test.warning || "주의사항 없음")}</p>
+        </section>
+      </aside>
+    </div>`
+  );
 }
 
 function renderEvaluateAidotScreen() {
@@ -5725,19 +5809,13 @@ function renderBuildAidotScreen() {
   if (!rows.some((row) => row.id === currentSelectedIntentId)) currentSelectedIntentId = rows[0]?.id || "";
   const selected = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || {};
   const page = getWorkflowPagedRows("build-intents", rows);
-  const botName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "테스트봇";
   const renderHeader = () => `
-    <div class="aidot-bot-main-head">
-      <div class="aidot-bot-title">
-        <div class="bot-avatar-large"></div>
-        <div>
-          <div class="aidot-title-row"><h2>${escapeText(botName)} - 시멘틱 RAG</h2><select><option>${escapeText(currentStudioState.bot.version || "Ver. 1")} · 테스트형</option><option>${escapeText(currentStudioState.bot.version || "Ver. 1")} · 운영</option></select><span class="test-badge">테스트형</span><span class="star-mark">★</span><button type="button" class="icon-button">⋮</button></div>
-          <strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: Semantic Engine RAG 답변</strong>
-          <div class="train-row"><button type="button" data-build-run>학습하기</button><span>${currentOperationsState.build?.last_run_at ? `학습성공 ${escapeText(currentOperationsState.build.last_run_at)} ${escapeText(currentAccessState.currentUserId)}` : "학습 전"}</span></div>
-        </div>
-      </div>
-      <div class="aidot-count-tabs"><button class="active"><span>☞ 의도</span><b>${rows.length}</b></button><button><span>☷ 구성</span><b>-</b></button><button><span>⊙ 개체</span><b>${currentEntityAssets.length}</b></button><button><span>▣ 사전</span><b>${currentDictionaryAssets.length}</b></button><button><span>⌁ 평가</span><b>-</b></button><button><span>↔ 재학습</span><b>0</b></button><button><span>⌁ 분석</span><b>-</b></button></div>
-    </div>`;
+    <div class="aidot-build-meta">
+      <strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: Semantic Engine RAG 답변</strong>
+      <div class="train-row"><button type="button" data-build-run>학습하기</button><span>${currentOperationsState.build?.last_run_at ? `학습성공 ${escapeText(currentOperationsState.build.last_run_at)} ${escapeText(currentAccessState.currentUserId)}` : "학습 전"}</span></div>
+      <div class="aidot-build-meta__notice">운영버전은 제작 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.</div>
+    </div>
+  `;
   const renderList = () => `
     ${renderHeader()}
     <div class="aidot-intent-main-toolbar"><div class="aidot-search-line"><input placeholder="의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색해주세요." /><select><option>전체</option></select></div><div class="aidot-list-actions"><button type="button" data-aidot-intent-add>+ 의도/모듈 추가</button><button type="button" class="icon-button">⋮</button></div></div>
