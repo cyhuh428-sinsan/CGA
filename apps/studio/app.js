@@ -6467,7 +6467,6 @@ function bindAccessNavigationGuard() {
 function setActiveScreen(screenId, { replaceHash = false } = {}) {
   const visibleIds = getVisibleLayout().map((item) => item.id);
   if (!visibleIds.includes(screenId)) return;
-  console.info("[CGA nav] setActiveScreen:start", { screenId, replaceHash, currentHash: window.location.hash, activeScreenId });
   activeScreenId = screenId;
   localStorage.setItem(LAST_SCREEN_STORAGE_KEY, activeScreenId);
   if (replaceHash) {
@@ -6475,7 +6474,6 @@ function setActiveScreen(screenId, { replaceHash = false } = {}) {
   } else {
     history.pushState(null, "", `#${screenId}`);
   }
-  console.info("[CGA nav] setActiveScreen:end", { screenId, nextHash: window.location.hash });
   applyScreenLayout();
 }
 
@@ -7126,7 +7124,6 @@ if (document.readyState === "loading") {
   bootApp();
 }
 window.addEventListener("cga:entry-login-success", async () => {
-  console.info("[CGA nav] entry-login-success", { hash: window.location.hash, activeScreenId });
   clearAuthMessage();
   const loaded = await refreshAccessStateFromServer().catch(() => false);
   if (loaded) {
@@ -7140,7 +7137,6 @@ window.addEventListener("cga:entry-login-success", async () => {
 });
 window.addEventListener("hashchange", () => {
   const hashId = window.location.hash.replace("#", "");
-  console.info("[CGA nav] hashchange", { hashId, hash: window.location.hash, activeScreenId });
   if (hashId) setActiveScreen(hashId, { replaceHash: true });
 });
 document.addEventListener("cga:i18n-ready", syncStudioLocaleToCurrentUser);

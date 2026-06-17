@@ -3064,3 +3064,13 @@ o duplicate function declarations.
 - 검증:
   - `npm run studio:validate` 통과.
   - 브라우저 직접 확인 결과 현재 `http://127.0.0.1:4173/`는 아직 이전 실행본 영향이 남아 있어, Git 반영 및 WSL 재배포 후 다시 확인 필요.
+
+## 2026-06-18 08:31 KST
+
+- 추가 원인 정리:
+  - 로그인 버튼에 `apps/studio/entry-auth.js`와 `apps/studio/app.js`가 동시에 바인딩되어 인증/화면전환이 이중 실행되고 있었음.
+- 조치:
+  - 로그인 처리 주체를 `apps/studio/app.js` 한 곳으로 통일.
+  - `apps/studio/entry-auth.js`에서는 로그인 바인딩을 제거하고, 로그인 화면 문구/로그아웃 보조 역할만 유지.
+- 기대 효과:
+  - 로그인 성공 후 기본 진입 화면 결정이 단일 경로로 정리되어 `workspace-home` 강제가 안정화되어야 함.
