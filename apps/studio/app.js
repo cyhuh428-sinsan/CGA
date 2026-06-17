@@ -128,7 +128,8 @@ let currentConfigureSubview = "ai-model";
 let currentCompositionState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
-  input_mode: "utterances",
+  input_mode: "pdf",
+  document_title: "",
   utterances: [
     "How do I reset my password?",
     "I forgot my login password.",
@@ -2752,8 +2753,11 @@ function renderAnalysisAidotScreen() {
 }
 
 function renderDetailAidotScreen() {
+  const inputMode = currentCompositionState.input_mode === "text" ? "text" : "pdf";
   const currentUtterances = (currentCompositionState.utterances || []).join("\n");
   const targetIntentCount = currentCompositionState.requested_intent_count || 50;
+  const documentTitle = currentCompositionState.document_title || "";
+  const fileName = currentCompositionState.pdf?.file_name || "";
   renderWorkflowScreenShell(
     "detail",
     "03",
@@ -2761,29 +2765,41 @@ function renderDetailAidotScreen() {
     "봇 구성은 학습문장을 기반으로 의도 후보를 생성합니다.",
     `<div class="aidot-rag-config">
       <section class="aidot-rag-left">
-        <div class="rag-info-line">운영버전은 구성 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.</div>
         <header>
-          <strong>학습문장 입력</strong>
-          <span>구성용 엔진 : Semantic · Vector Worker / 구성 모델 : Aidot Vector Worker 기본 모델</span>
+          <strong>RAG 답변 문서 구성</strong>
+          <span>구성용 엔진 : Semantic · Vector Worker · Aidot Vector Worker 기본 모델</span>
         </header>
         <div class="rag-form-grid">
           <label>구성 엔진<select><option value="Semantic - Vector Worker">Semantic - Vector Worker</option></select></label>
           <label>구성 모델<select><option value="Aidot Vector Worker 기본 모델">Aidot Vector Worker 기본 모델</option></select></label>
         </div>
         <div class="rag-info-line">자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.</div>
-        <label>학습문장을 줄 단위로 입력하세요.
-          <textarea data-config-utterances aria-label="학습문장을 줄 단위로 입력">${escapeText(currentUtterances || "예) 상담원 연결해줘\n예) 콜백 예약하고 싶어\n예) 발신자 확인해줘")}</textarea>
-        </label>
+        <div class="rag-source-mode">
+          <label><input type="radio" name="config-input-mode" value="text" data-config-input-mode ${inputMode === "text" ? "checked" : ""} /> 텍스트</label>
+          <label><input type="radio" name="config-input-mode" value="pdf" data-config-input-mode ${inputMode === "pdf" ? "checked" : ""} /> PDF</label>
+        </div>
+        ${inputMode === "text" ? `
+          <label class="rag-source-field">답변 텍스트
+            <textarea data-config-utterances aria-label="답변 텍스트 입력" placeholder="의도 : 계약 해지 요청&#10;답변 : 고객님, 해지 요청 확인했습니다.">${escapeText(currentUtterances)}</textarea>
+          </label>
+        ` : `
+          <label class="rag-source-field">PDF 파일
+            <div class="rag-pdf-upload-row">
+              <button type="button" data-config-pdf-select>파일 선택</button>
+              <input value="${escapeText(fileName)}" data-config-pdf-name readonly />
+            </div>
+          </label>
+          <label class="rag-source-field">문서 제목
+            <input value="${escapeText(documentTitle)}" data-config-doc-title placeholder="임베딩 후 문서에서 인식됩니다." />
+          </label>
+          <div class="rag-info-line rag-info-line--inline">
+            <span>선택한 구성 모델 기준으로 답변 문서를 임베딩합니다.</span>
+            <strong>Aidot Vector Worker 기본 모델</strong>
+          </div>
+        `}
         <div class="rag-target-row">
           <label>목표 의도 수<input type="number" min="1" value="${escapeText(targetIntentCount)}" data-config-intent-count /></label>
-          <button type="button" class="ghost-btn">자동 구성</button>
-        </div>
-        <div class="rag-target-row">
-          <button type="button" data-config-export-handoff>의도 후보 내보내기</button>
-          <button type="button" data-config-import-result>의도 후보 불러오기</button>
-          <button type="button" data-config-save-pdf>PDF 저장</button>
-          <button type="button" data-config-pdf-select>PDF 업로드</button>
-          <button type="button" data-config-generate-qa>PDF 기준 의도 생성</button>
+          <button type="button" class="ghost-btn" data-config-generate-qa>${inputMode === "pdf" ? "RAG 문서 구성" : "자동 구성"}</button>
         </div>
         <div class="rag-info-line">분류 수 기준 ML은 무조건 수를 강제하지 않고, 유사도가 충분한 후보만 병합합니다.</div>
         <div class="rag-radio-row">
@@ -2791,10 +2807,14 @@ function renderDetailAidotScreen() {
           <label><input type="radio" checked /> 50개에 가깝게</label>
           <label><input type="radio" /> 무조건 50개</label>
         </div>
+        <div class="rag-footer-row">
+          <button type="button" class="ghost-btn">NLU 기준 / 가중치 설정</button>
+          <span>중대형 의도 · 50개 의도 기준</span>
+        </div>
       </section>
       <section class="aidot-rag-right">
         <header><strong>의도 후보</strong><div><button type="button">선택 병합</button><button type="button" class="primary-action-small">현재 버전 덮어쓰기</button></div></header>
-        <div data-config-preview class="rag-candidate-box">학습문장을 입력하고 자동 구성을 실행하세요.</div>
+        <div data-config-preview class="rag-candidate-box">답변 텍스트 또는 PDF를 입력하고 RAG 문서 구성을 실행하세요.</div>
       </section>
     </div>`
   );
@@ -3108,15 +3128,19 @@ function renderConfigureComposition() {
   const utterances = document.querySelector("[data-config-utterances]");
   const intentCount = document.querySelector("[data-config-intent-count]");
   const pdfSelect = document.querySelector("[data-config-pdf-select]");
+  const pdfName = document.querySelector("[data-config-pdf-name]");
+  const docTitle = document.querySelector("[data-config-doc-title]");
   const generateQa = document.querySelector("[data-config-generate-qa]");
   const preview = document.querySelector("[data-config-preview]");
   if (utterances && document.activeElement !== utterances) utterances.value = currentCompositionState.utterances.join("\n");
   if (intentCount && document.activeElement !== intentCount) intentCount.value = String(currentCompositionState.requested_intent_count || 1);
   if (pdfSelect) {
-    pdfSelect.textContent = currentCompositionState.pdf?.file_name || window.cgaStudioI18n?.resolveMessage?.(window.cgaStudioI18n.getLocale?.() || "en", "configure.upload", "Drop PDF here or choose file") || "Drop PDF here or choose file";
+    pdfSelect.textContent = "파일 선택";
   }
+  if (pdfName && document.activeElement !== pdfName) pdfName.value = currentCompositionState.pdf?.file_name || "";
+  if (docTitle && document.activeElement !== docTitle) docTitle.value = currentCompositionState.document_title || "";
   if (generateQa) {
-    generateQa.disabled = !canGeneratePdfQa(currentStudioState) || !currentCompositionState.pdf;
+    generateQa.disabled = currentCompositionState.input_mode === "pdf" && (!canGeneratePdfQa(currentStudioState) || !currentCompositionState.pdf);
   }
   if (preview) {
     const candidates = currentCompositionState.intent_candidates || [];
@@ -3131,7 +3155,7 @@ function renderConfigureComposition() {
         <span>${getIntentStatusLabel(item.status)}</span>
         <button type="button" data-i18n="review.review">Review</button>
       </div>
-    `).join("") || `<div class="intent-row"><strong>${t("review.noIntentCandidate", "No intent candidate")}</strong><span>0 ${t("review.utteranceUnit", "utterances")}</span><span>${t("review.manualResultRequired", "Manual handoff or PDF Q&A result required")}</span><button type="button" disabled data-i18n="review.review">Review</button></div>`;
+    `).join("") || `<div class="intent-row"><strong>${t("review.noIntentCandidate", "No intent candidate")}</strong><span>0 ${t("review.utteranceUnit", "utterances")}</span><span>${currentCompositionState.input_mode === "pdf" ? "답변 텍스트 또는 PDF를 입력하고 RAG 문서 구성을 실행하세요." : t("review.manualResultRequired", "Manual handoff or PDF Q&A result required")}</span><button type="button" disabled data-i18n="review.review">Review</button></div>`;
   }
 }
 
@@ -3153,8 +3177,21 @@ function requestPdfFile(handler) {
 }
 
 function bindConfigureComposition() {
+  document.querySelectorAll("[data-config-input-mode]").forEach((radio) => {
+    if (radio.dataset.bound === "true") return;
+    radio.dataset.bound = "true";
+    radio.addEventListener("change", () => {
+      currentCompositionState.input_mode = radio.value === "text" ? "text" : "pdf";
+      scheduleCompositionSave();
+      renderWorkflowScreens();
+      bindConfigureComposition();
+      renderConfigureComposition();
+      enforceActiveScreenVisibility();
+    });
+  });
   const utterances = document.querySelector("[data-config-utterances]");
   const intentCount = document.querySelector("[data-config-intent-count]");
+  const docTitle = document.querySelector("[data-config-doc-title]");
   const exportHandoff = document.querySelector("[data-config-export-handoff]");
   const importResult = document.querySelector("[data-config-import-result]");
   const pdfSelect = document.querySelector("[data-config-pdf-select]");
@@ -3172,6 +3209,13 @@ function bindConfigureComposition() {
     intentCount.dataset.bound = "true";
     intentCount.addEventListener("input", () => {
       currentCompositionState.requested_intent_count = Math.max(1, Number(intentCount.value || 1));
+      scheduleCompositionSave();
+    });
+  }
+  if (docTitle && docTitle.dataset.bound !== "true") {
+    docTitle.dataset.bound = "true";
+    docTitle.addEventListener("input", () => {
+      currentCompositionState.document_title = docTitle.value;
       scheduleCompositionSave();
     });
   }
@@ -3368,8 +3412,9 @@ function applyScreenLayout() {
 function updateNavigationActiveState() {
   document.querySelectorAll(".management-nav a, .server-sub-nav a, .system-admin-subnav a, [data-workflow-nav] a").forEach((link) => {
     const linkScreenId = link.getAttribute("href")?.replace("#", "");
-    const subviewMatches = !link.dataset.adminSubview || link.dataset.adminSubview === currentSystemAdminSubview;
-    link.classList.toggle("active", linkScreenId === activeScreenId && subviewMatches);
+    const adminSubviewMatches = !link.dataset.adminSubview || link.dataset.adminSubview === currentSystemAdminSubview;
+    const configSubviewMatches = !link.dataset.configSubview || (linkScreenId === "configure" && link.dataset.configSubview === currentConfigureSubview);
+    link.classList.toggle("active", linkScreenId === activeScreenId && adminSubviewMatches && configSubviewMatches);
   });
 }
 
@@ -3456,8 +3501,17 @@ function renderWorkflowRail() {
       </details>
     `;
   }).join("");
-  nav.querySelectorAll("[data-config-subview]").forEach((link) => link.addEventListener("click", () => {
+  nav.querySelectorAll("[data-config-subview]").forEach((link) => link.addEventListener("click", (event) => {
+    event.preventDefault();
     currentConfigureSubview = link.dataset.configSubview || "ai-model";
+    if (activeScreenId !== "configure") {
+      setActiveScreen("configure");
+      return;
+    }
+    renderWorkflowRail();
+    renderConfigureAidotScreen();
+    updateNavigationActiveState();
+    enforceActiveScreenVisibility();
   }));
 }
 

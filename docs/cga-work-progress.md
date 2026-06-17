@@ -2947,3 +2947,9 @@ o duplicate function declarations.
 - 조치: `renderDetailAidotScreen()`의 단계 코드를 `04`에서 `03`으로 수정.
 - 조치: `renderBuildAidotScreen()`도 `build` 섹션 안에서 자체적으로 `04 봇 제작` 헤더를 렌더하도록 바꿔, `detail`과 `build` 화면이 섞여 보일 가능성을 줄임.
 - 조치: `index.html`의 초기 정적 골격도 `03 봇 구성`, `04 봇 제작` 기준으로 맞춰 브라우저 초기 노출과 JS 렌더 후 상태가 다르지 않게 정리.
+
+## 2026-06-17 21:05 Aidot 동일 화면 기준 재수정
+- 사용자 지시에 따라 `봇 구성` 화면에서 임의 해석 문구와 혼합형 구성을 제거.
+- 기준 소스는 `Aidot/apps/web/components/intent-configure-page.tsx`의 `RAG 답변 문서 구성` 블록으로 고정.
+- 조치: `RAG 답변 문서 구성`, `텍스트/PDF`, `답변 텍스트`, `PDF 파일`, `문서 제목`, `RAG 문서 구성`, `분류 수 기준`, `NLU 기준 / 가중치 설정`, `의도 후보` 구조와 문구를 Aidot 기준으로 다시 맞춤.
+- 조치: `봇 설정` 하위 메뉴는 클릭 시 `currentConfigureSubview`만 바뀌고 본문이 갱신되지 않던 문제를 함께 수정해, 좌측 메뉴 선택 즉시 Aidot 본문이 바뀌도록 보정.
