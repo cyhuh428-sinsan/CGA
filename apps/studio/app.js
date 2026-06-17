@@ -6203,7 +6203,7 @@ function bindAdminWorkbench() {
       history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
       applyScreenLayout();
       rerenderAdminAndAccess();
-      setActiveScreen(DEFAULT_ACTIVE_SCREEN_ID, { replaceHash: true });
+      queuePostLoginLandingScreen();
     } catch (error) {
       if (error.status) {
         setAuthMessage("error", "admin.loginFailedTitle", getCgaErrorMessage(error, t("errors.auth.loginFailed", "Login failed.")));
@@ -6216,7 +6216,7 @@ function bindAdminWorkbench() {
       history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
       applyScreenLayout();
       rerenderAdminAndAccess();
-      setActiveScreen(DEFAULT_ACTIVE_SCREEN_ID, { replaceHash: true });
+      queuePostLoginLandingScreen();
     }
   };
   if (loginSubmit && loginSubmit.dataset.bound !== "true") {
@@ -6495,6 +6495,16 @@ function syncTopActionsForScreen() {
     topDeploy.hidden = !allowDeploy;
     topDeploy.disabled = !allowDeploy;
   }
+}
+
+function queuePostLoginLandingScreen() {
+  const applyLanding = () => {
+    activeScreenId = DEFAULT_ACTIVE_SCREEN_ID;
+    setActiveScreen(DEFAULT_ACTIVE_SCREEN_ID, { replaceHash: true });
+  };
+  applyLanding();
+  window.setTimeout(applyLanding, 50);
+  window.setTimeout(applyLanding, 250);
 }
 
 async function saveCurrentWorkspaceState() {
