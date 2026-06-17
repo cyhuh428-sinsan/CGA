@@ -125,6 +125,7 @@ let currentIntentFilter = "all";
 let currentDetailTab = "intent";
 let currentBuildAidotView = "list";
 let currentConfigureSubview = "ai-model";
+let selectedBotManagementId = "supportbot-draft";
 let currentCompositionState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
@@ -2823,6 +2824,8 @@ function renderDetailAidotScreen() {
 function renderWorkflowScreens() {
   try {
     renderWorkspaceHome();
+    renderBotManagement();
+    renderTeamDashboard();
     renderConfigureAidotScreen();
     renderDetailAidotScreen();
     renderBuildAidotScreen();
@@ -3701,11 +3704,8 @@ function renderCollaborationSummary() {
 }
 
 function renderTeamDashboard() {
-  const myTasks = document.querySelector("[data-team-my-tasks]");
-  const reviewQueue = document.querySelector("[data-team-review-queue]");
-  const blockedItems = document.querySelector("[data-team-blocked-items]");
-  const statusStrip = document.querySelector("[data-team-status-strip]");
-  if (!myTasks || !reviewQueue || !blockedItems || !statusStrip) return;
+  const section = document.querySelector('[data-screen-id="team-dashboard"]');
+  if (!section) return;
   const dashboard = summarizeTeamDashboard(currentCollaborationState, { currentUserId: currentAccessState.currentUserId });
   const renderItems = (items, emptyText, mode) => items.map((item) => {
     const lockOwner = item.lock?.user_id;
@@ -3724,15 +3724,46 @@ function renderTeamDashboard() {
     </div>
   `;
   }).join("") || `<div class="team-task-empty"><strong>${emptyText}</strong><span>${t("team.currentUser", "Current user")}: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
-  myTasks.innerHTML = renderItems(dashboard.myTasks, t("team.noAssignedTask", "No assigned task"), "mine");
-  reviewQueue.innerHTML = renderItems(dashboard.reviewQueue, t("team.noReviewWaiting", "No review waiting"), "review");
-  blockedItems.innerHTML = renderItems(dashboard.blockedItems, t("team.noBlockedItem", "No blocked item"), "blocked");
-  statusStrip.innerHTML = dashboard.byStatus.map((entry) => `
-    <div class="team-status-card ${entry.status}">
-      <strong>${entry.status}</strong>
-      <span>${entry.count}</span>
-    </div>
-  `).join("");
+  const totalWork = dashboard.byStatus.reduce((sum, entry) => sum + Number(entry.count || 0), 0);
+  renderWorkflowScreenShell(
+    "team-dashboard",
+    "TM",
+    "팀 대시보드",
+    "봇 제작 작업, 검수, 차단 상태를 그룹 기준으로 확인합니다.",
+    `<div class="cga-command-page team-command-page">
+      <section class="command-summary">
+        <article><strong>내 작업</strong><span>${dashboard.myTasks.length}건</span></article>
+        <article><strong>검수 대기</strong><span>${dashboard.reviewQueue.length}건</span></article>
+        <article><strong>차단</strong><span>${dashboard.blockedItems.length}건</span></article>
+        <article><strong>전체 작업</strong><span>${totalWork}건</span></article>
+      </section>
+      <section class="team-command-grid">
+        <article class="command-panel">
+          <header><div><strong>내 작업</strong><span>할당된 봇 제작 작업입니다.</span></div></header>
+          <div class="team-task-list">${renderItems(dashboard.myTasks, t("team.noAssignedTask", "No assigned task"), "mine")}</div>
+        </article>
+        <article class="command-panel">
+          <header><div><strong>검수 대기</strong><span>승인 또는 수정 요청이 필요한 항목입니다.</span></div></header>
+          <div class="team-task-list">${renderItems(dashboard.reviewQueue, t("team.noReviewWaiting", "No review waiting"), "review")}</div>
+        </article>
+        <article class="command-panel">
+          <header><div><strong>차단 항목</strong><span>작업 진행이 멈춘 항목입니다.</span></div></header>
+          <div class="team-task-list">${renderItems(dashboard.blockedItems, t("team.noBlockedItem", "No blocked item"), "blocked")}</div>
+        </article>
+      </section>
+      <section class="command-panel command-panel--status">
+        <header><div><strong>작업 상태</strong><span>전체 작업 흐름 상태입니다.</span></div></header>
+        <div class="team-status-strip">
+          ${dashboard.byStatus.map((entry) => `
+            <div class="team-status-card ${entry.status}">
+              <strong>${entry.status}</strong>
+              <span>${entry.count}</span>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+    </div>`
+  );
   bindTeamDashboardActions();
 }
 
@@ -5878,19 +5909,73 @@ function renderWorkspaceHome() {
   if (!groups.some((group) => group.id === currentWorkspaceGroupId)) currentWorkspaceGroupId = groups[0]?.id || currentWorkspaceGroupId;
   const groupOptions = groups.map((group) => `<option value="${escapeText(group.id)}" ${group.id === currentWorkspaceGroupId ? "selected" : ""}>${escapeText(group.name)}</option>`).join("");
   const rows = currentWorkspaceBots.filter((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
-  const shell = renderWorkflowScreenShell("workspace-home", "BOT", "봇 작업공간", "그룹을 선택하고 해당 그룹의 봇을 엽니다.", `<div data-workspace-list-surface></div>`);
-  const surface = shell?.querySelector("[data-workspace-list-surface]");
+  const currentGroup = getCurrentWorkspaceGroup();
+  const currentBot = getCurrentWorkspaceBot();
+  const operatingCount = rows.filter((bot) => bot.status === "operating").length;
+  const shell = renderWorkflowScreenShell(
+    "workspace-home",
+    "BOT",
+    "봇 작업공간",
+    "그룹을 선택하고 해당 그룹의 봇을 엽니다.",
+    `<div class="cga-command-page workspace-command-page">
+      <section class="command-summary">
+        <article>
+          <strong>현재 그룹</strong>
+          <select data-workspace-group>${groupOptions}</select>
+        </article>
+        <article>
+          <strong>그룹 봇</strong>
+          <span>${rows.length}개</span>
+        </article>
+        <article>
+          <strong>운영 봇</strong>
+          <span>${operatingCount}개</span>
+        </article>
+        <article>
+          <strong>현재 작업 봇</strong>
+          <span>${escapeText(currentBot?.name || "선택 없음")}</span>
+        </article>
+      </section>
+      <section class="workspace-command-grid">
+        <article class="command-panel command-panel--wide">
+          <header>
+            <div><strong>그룹 봇 목록</strong><span>${escapeText(currentGroup?.name || currentWorkspaceGroupId)} 안에서 작업할 봇을 선택합니다.</span></div>
+            <button type="button" data-workspace-create ${canCreateBotInCurrentWorkspace() ? "" : "disabled"}>+ 봇 생성</button>
+          </header>
+          <div class="command-table" style="--command-cols:1.1fr 1.5fr .6fr .7fr .6fr 1fr .7fr">
+            <div class="command-row command-row--head"><span>봇 ID</span><span>봇 이름</span><span>버전</span><span>상태</span><span>언어</span><span>최종수정일시</span><span>작업</span></div>
+            ${rows.map((bot) => `
+              <button type="button" class="command-row command-row--button ${bot.id === currentWorkspaceBotId ? "selected" : ""}" data-open-bot="${escapeText(bot.id)}">
+                <span>${escapeText(bot.id)}</span>
+                <strong>${escapeText(bot.name)}</strong>
+                <span>${escapeText(bot.version || "-")}</span>
+                <span>${escapeText(bot.status || "-")}</span>
+                <span>${escapeText(bot.locale || "-")}</span>
+                <span>${escapeText(bot.updated_at || bot.created_at || "-")}</span>
+                <span>열기</span>
+              </button>
+            `).join("") || `<div class="command-empty">이 그룹에 봇이 없습니다.</div>`}
+          </div>
+        </article>
+        <aside class="command-panel">
+          <header><div><strong>현재 작업 대상</strong><span>이 봇 기준으로 제작 흐름이 열립니다.</span></div></header>
+          <dl class="command-definition">
+            <div><dt>봇</dt><dd>${escapeText(currentBot?.name || "-")}</dd></div>
+            <div><dt>버전</dt><dd>${escapeText(currentBot?.version || currentStudioState.bot.version || "-")}</dd></div>
+            <div><dt>상태</dt><dd>${escapeText(currentBot?.status || "-")}</dd></div>
+            <div><dt>언어</dt><dd>${escapeText(currentBot?.locale || currentStudioState.bot.defaultLocale || "-")}</dd></div>
+          </dl>
+          <div class="command-action-stack">
+            <button type="button" data-jump-screen="create">봇 생성으로 이동</button>
+            <button type="button" data-jump-screen="configure">봇 설정 열기</button>
+            <button type="button" data-jump-screen="detail">봇 구성 열기</button>
+          </div>
+        </aside>
+      </section>
+    </div>`
+  );
+  const surface = shell;
   if (!surface) return;
-  renderWorkflowTablePage(surface, "workspace-home", rows, ["봇 ID", "봇 이름", "버전", "상태", "언어", "최종수정일시", "최종수정자"], (bot) => `
-    <button type="button" class="workflow-grid__row ${bot.id === currentWorkspaceBotId ? "selected" : ""}" data-open-bot="${escapeText(bot.id)}">
-      <strong>${escapeText(bot.id)}</strong><span>${escapeText(bot.name)}</span><span>${escapeText(bot.version || "-")}</span><span>${escapeText(bot.status || "-")}</span><span>${escapeText(bot.locale || "-")}</span><span>${escapeText(bot.updated_at || bot.created_at || "-")}</span><span>${escapeText(bot.updated_by || "SYSTEM")}</span>
-    </button>
-  `, {
-    placeholder: "봇 ID 또는 봇 이름을 검색하세요.",
-    template: "1.15fr 1.5fr .7fr .7fr .6fr 1fr .8fr",
-    filters: `<select data-workspace-group>${groupOptions}</select>`,
-    actions: `<button type="button" class="admin-page__primary" data-workspace-create ${canCreateBotInCurrentWorkspace() ? "" : "disabled"}>+ 봇 생성</button>`
-  });
   surface.querySelector("[data-workspace-group]")?.addEventListener("change", (event) => {
     currentWorkspaceGroupId = event.target.value;
     renderWorkspaceHome();
@@ -5909,10 +5994,83 @@ function renderWorkspaceHome() {
     renderTopContext();
   }));
   surface.querySelector("[data-workspace-create]")?.addEventListener("click", () => {
-    activeScreenId = "create";
-    window.location.hash = "create";
-    applyScreenLayout();
+    setActiveScreen("create");
   });
+  surface.querySelectorAll("[data-jump-screen]").forEach((button) => {
+    button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen));
+  });
+}
+
+function renderBotManagement() {
+  const section = document.querySelector('[data-screen-id="bot-management"]');
+  if (!section) return;
+  const group = getCurrentWorkspaceGroup();
+  const bots = currentWorkspaceBots.filter((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
+  if (!bots.some((bot) => bot.id === selectedBotManagementId)) selectedBotManagementId = currentWorkspaceBotId || bots[0]?.id || "";
+  const selected = bots.find((bot) => bot.id === selectedBotManagementId) || getCurrentWorkspaceBot() || bots[0] || {};
+  const webchatUrl = `http://127.0.0.1:4173/webchat/${encodeURIComponent(selected.id || currentWorkspaceBotId || "bot")}`;
+  renderWorkflowScreenShell(
+    "bot-management",
+    "BM",
+    "봇 관리",
+    "Aidot 호환 봇 패키지, 버전, 운영 상태, WebChat 접속을 관리합니다.",
+    `<div class="cga-command-page bot-management-command-page">
+      <section class="command-summary">
+        <article><strong>Aidot 호환</strong><span>다운로드 / 업로드 왕복</span></article>
+        <article><strong>선택 봇</strong><span>${escapeText(selected.name || "-")}</span></article>
+        <article><strong>운영버전</strong><span>${escapeText(selected.version || currentStudioState.bot.version || "v0.1")}</span></article>
+        <article><strong>WebChat</strong><span>접속 기준 유지</span></article>
+      </section>
+      <section class="bot-management-grid">
+        <article class="command-panel">
+          <header><div><strong>봇 선택</strong><span>그룹 안의 봇 패키지를 선택합니다.</span></div></header>
+          <div class="bot-card-list">
+            ${bots.map((bot) => `
+              <button type="button" class="bot-select-card ${bot.id === selectedBotManagementId ? "selected" : ""}" data-manage-bot="${escapeText(bot.id)}">
+                <strong>${escapeText(bot.name)}</strong>
+                <span>${escapeText(bot.id)} · ${escapeText(bot.version || "-")} · ${escapeText(bot.status || "-")}</span>
+              </button>
+            `).join("") || `<div class="command-empty">관리할 봇이 없습니다.</div>`}
+          </div>
+        </article>
+        <article class="command-panel command-panel--wide">
+          <header><div><strong>Aidot 패키지 왕복</strong><span>봇 단위 다운로드/업로드가 깨지면 안 되는 핵심 호환 영역입니다.</span></div></header>
+          <div class="package-action-grid">
+            <button type="button" data-download-bot-package><strong>봇 다운로드</strong><span>Aidot 봇 패키지</span></button>
+            <button type="button" data-upload-bot-package><strong>봇 업로드</strong><span>Aidot 패키지 수용</span></button>
+            <button type="button" data-download-version-package><strong>버전 다운로드</strong><span>선택 버전 패키지</span></button>
+            <button type="button" data-upload-version-package><strong>버전 업로드</strong><span>버전 단위 반영</span></button>
+          </div>
+          <div class="command-note">${escapeText(currentTransferStatus || "최근 패키지 전송 이력이 없습니다.")}</div>
+        </article>
+        <article class="command-panel">
+          <header><div><strong>운영 / WebChat</strong><span>운영버전과 접속 경로를 확인합니다.</span></div></header>
+          <dl class="command-definition">
+            <div><dt>그룹</dt><dd>${escapeText(group?.name || currentWorkspaceGroupId)}</dd></div>
+            <div><dt>봇 ID</dt><dd>${escapeText(selected.id || "-")}</dd></div>
+            <div><dt>상태</dt><dd>${escapeText(selected.status || "-")}</dd></div>
+            <div><dt>WebChat</dt><dd>${escapeText(webchatUrl)}</dd></div>
+          </dl>
+          <div class="command-action-stack">
+            <button type="button" data-jump-screen="build">봇 제작 열기</button>
+            <button type="button" data-jump-screen="test">봇 테스트 열기</button>
+            <button type="button" data-jump-screen="analysis">분석 열기</button>
+          </div>
+        </article>
+      </section>
+    </div>`
+  );
+  section.querySelectorAll("[data-manage-bot]").forEach((button) => button.addEventListener("click", () => {
+    selectedBotManagementId = button.dataset.manageBot;
+    const bot = bots.find((item) => item.id === selectedBotManagementId);
+    if (bot) {
+      applyCurrentBotToStudioState(bot);
+    }
+    renderBotManagement();
+    renderTopContext();
+  }));
+  section.querySelectorAll("[data-jump-screen]").forEach((button) => button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen)));
+  bindWorkspaceActions();
 }
 
 function renderConfigureAidotScreen() {
