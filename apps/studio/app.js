@@ -6203,6 +6203,7 @@ function bindAdminWorkbench() {
       history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
       applyScreenLayout();
       rerenderAdminAndAccess();
+      setActiveScreen(DEFAULT_ACTIVE_SCREEN_ID, { replaceHash: true });
     } catch (error) {
       if (error.status) {
         setAuthMessage("error", "admin.loginFailedTitle", getCgaErrorMessage(error, t("errors.auth.loginFailed", "Login failed.")));
@@ -6215,6 +6216,7 @@ function bindAdminWorkbench() {
       history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
       applyScreenLayout();
       rerenderAdminAndAccess();
+      setActiveScreen(DEFAULT_ACTIVE_SCREEN_ID, { replaceHash: true });
     }
   };
   if (loginSubmit && loginSubmit.dataset.bound !== "true") {
