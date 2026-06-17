@@ -214,6 +214,7 @@ let currentOperationsState = {
 const DEFAULT_ACTIVE_SCREEN_ID = "workspace-home";
 let activeScreenId = "";
 let screenLayoutApplying = false;
+let postAuthDefaultScreenPending = false;
 
 const HELP_TOPICS = {
   access: {
@@ -3648,6 +3649,9 @@ function resolveActiveScreenId() {
   const workspace = document.querySelector(".workspace");
   if (!workspace) return "";
   const selectableIds = getSelectableScreenIds(workspace);
+  if (postAuthDefaultScreenPending && selectableIds.includes(DEFAULT_ACTIVE_SCREEN_ID)) {
+    return DEFAULT_ACTIVE_SCREEN_ID;
+  }
   const hashId = window.location.hash.replace("#", "");
   const candidates = [hashId, activeScreenId, DEFAULT_ACTIVE_SCREEN_ID, selectableIds[0]].filter(Boolean);
   return candidates.find((id) => selectableIds.includes(id)) || selectableIds[0] || "";
@@ -3717,6 +3721,7 @@ function applyScreenLayout() {
     console.error("CGA screen layout failed", error);
   } finally {
     screenLayoutApplying = false;
+    postAuthDefaultScreenPending = false;
     enforceActiveScreenVisibility();
     updateNavigationActiveState();
     syncTopActionsForScreen();
@@ -6193,6 +6198,7 @@ function bindAdminWorkbench() {
       clearAuthMessage();
       currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
       await refreshAccessStateFromServer();
+      postAuthDefaultScreenPending = true;
       activeScreenId = DEFAULT_ACTIVE_SCREEN_ID;
       history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
       applyScreenLayout();
@@ -6204,6 +6210,7 @@ function bindAdminWorkbench() {
         return;
       }
       currentAccessState = loginAsUser(currentAccessState, { userId });
+      postAuthDefaultScreenPending = true;
       activeScreenId = DEFAULT_ACTIVE_SCREEN_ID;
       history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
       applyScreenLayout();
@@ -6245,6 +6252,7 @@ function bindAdminWorkbench() {
     clearAuthSession();
     setAuthMessage("info", "admin.logoutTitle", "admin.logoutSuccess");
     currentAccessState = loginAsUser(currentAccessState, { userId: "admin" });
+    postAuthDefaultScreenPending = false;
     activeScreenId = "";
     history.replaceState(null, "", "#");
     applyScreenLayout();
