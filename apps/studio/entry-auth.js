@@ -3,7 +3,6 @@
   const LOGIN_ID_KEY = "cga-studio-login-id";
   const LOCALE_KEY = "cga.studio.locale";
   const LAST_SCREEN_KEY = "cga-studio-last-screen";
-  const DEFAULT_POST_LOGIN_SCREEN = "workspace-home";
   const copy = {
     en: {
       eyebrow: "CGA STUDIO",
@@ -110,24 +109,6 @@
     node.textContent = "";
   }
 
-  function enterAuthenticatedShell() {
-    const shell = $(".app-shell");
-    const topbar = $(".topbar");
-    const workflow = $(".workflow");
-    const loginEntry = $("[data-login-entry]");
-    if (shell) shell.classList.remove("unauthenticated");
-    if (topbar) topbar.hidden = false;
-    if (workflow) workflow.hidden = false;
-    if (loginEntry) loginEntry.hidden = true;
-    const nextScreen = DEFAULT_POST_LOGIN_SCREEN;
-    console.info("[CGA auth] enterAuthenticatedShell", { nextScreen, currentHash: window.location.hash });
-    localStorage.setItem(LAST_SCREEN_KEY, nextScreen);
-    window.history.replaceState(null, "", `#${nextScreen}`);
-    console.info("[CGA auth] replaceState", { nextHash: window.location.hash });
-    window.dispatchEvent(new CustomEvent("cga:entry-login-success"));
-    window.dispatchEvent(new HashChangeEvent("hashchange"));
-  }
-
   function enterLoginShell() {
     const shell = $(".app-shell");
     const topbar = $(".topbar");
@@ -168,59 +149,12 @@
     if (signup) signup.textContent = c.signup;
   }
 
-  async function runEntryLogin() {
-    const userId = $("[data-entry-login-id]")?.value?.trim();
-    const password = $("[data-entry-login-password]")?.value || "";
-    const remember = $("[data-entry-remember-id]")?.checked;
-    const loginButton = $("[data-entry-login-submit]");
-    const c = text();
-    if (!userId || !password) {
-      showMessage(c.required);
-      return;
-    }
-    clearMessage();
-    if (loginButton) loginButton.disabled = true;
-    try {
-      const response = await fetch("/api/cga/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ user_id: userId, password })
-      });
-      if (!response.ok) {
-        showMessage(c.failed);
-        return;
-      }
-      const session = await response.json();
-      if (session.session_token) localStorage.setItem(SESSION_KEY, session.session_token);
-      localStorage.setItem(LOCALE_KEY, locale());
-      if (remember) localStorage.setItem(LOGIN_ID_KEY, userId);
-      if (!remember) localStorage.removeItem(LOGIN_ID_KEY);
-      enterAuthenticatedShell();
-    } catch {
-      showMessage(c.failed);
-    } finally {
-      if (loginButton) loginButton.disabled = false;
-    }
-  }
-
   function bootEntryAuth() {
     const loginId = $("[data-entry-login-id]");
-    const loginButton = $("[data-entry-login-submit]");
-    const password = $("[data-entry-login-password]");
     const localeSelect = $("[data-entry-locale]");
     const logoutButton = $("[data-top-logout-submit]");
     if (loginId && !loginId.value) loginId.value = localStorage.getItem(LOGIN_ID_KEY) || "";
     applyEntryLocale();
-    if (loginButton && loginButton.dataset.bound !== "true") {
-      loginButton.dataset.bound = "true";
-      loginButton.addEventListener("click", runEntryLogin);
-    }
-    if (password && password.dataset.bound !== "true") {
-      password.dataset.bound = "true";
-      password.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") runEntryLogin();
-      });
-    }
     if (logoutButton && logoutButton.dataset.bound !== "true") {
       logoutButton.dataset.bound = "true";
       logoutButton.addEventListener("click", runTopLogout);
