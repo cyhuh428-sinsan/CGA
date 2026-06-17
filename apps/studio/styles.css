@@ -3678,6 +3678,321 @@ h1 { line-height: 1; }
   padding: 0 20px 20px;
 }
 
+/* CGA production command screens */
+.cga-command-page {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  min-height: calc(100vh - 230px);
+  overflow: hidden;
+}
+
+.command-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.command-summary article,
+.command-panel {
+  border: 1px solid #d9e2ec;
+  background: #fff;
+}
+
+.command-summary article {
+  min-height: 58px;
+  padding: 10px 12px;
+}
+
+.command-summary strong,
+.command-panel header strong {
+  display: block;
+  color: #0f2238;
+  font-size: var(--font-title);
+}
+
+.command-summary span,
+.command-panel header span {
+  display: block;
+  margin-top: 4px;
+  color: #52657a;
+  font-size: var(--font-desc);
+}
+
+.command-summary select {
+  width: 100%;
+  height: 28px;
+  margin-top: 5px;
+  border: 1px solid #c9d5e4;
+  background: #fff;
+  font-size: var(--font-body);
+}
+
+.workspace-command-grid,
+.bot-management-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, .7fr);
+  gap: 10px;
+  min-height: 0;
+}
+
+.bot-management-grid {
+  grid-template-columns: 310px minmax(0, 1fr) 360px;
+}
+
+.team-command-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-height: 0;
+}
+
+.team-command-page {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.command-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.command-panel--wide {
+  min-width: 0;
+}
+
+.command-panel--status {
+  min-height: 104px;
+}
+
+.command-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5ebf2;
+}
+
+.command-panel header button,
+.command-action-stack button,
+.package-action-grid button {
+  min-height: 30px;
+  border: 1px solid #1f2a44;
+  background: #1f2a44;
+  color: #fff;
+  font-size: var(--font-body);
+  font-weight: 700;
+}
+
+.command-panel header button:disabled {
+  opacity: .45;
+}
+
+.command-table {
+  display: grid;
+  grid-auto-rows: minmax(36px, auto);
+  min-height: 0;
+  overflow: auto;
+}
+
+.command-row {
+  display: grid;
+  grid-template-columns: var(--command-cols);
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 1px solid #e5ebf2;
+  background: #fff;
+  color: #24364f;
+  text-align: left;
+  font-size: var(--font-body);
+}
+
+.command-row--head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f4f7fb;
+  color: #0f2238;
+  font-weight: 700;
+}
+
+.command-row--button {
+  cursor: pointer;
+}
+
+.command-row--button:hover,
+.command-row--button.selected,
+.bot-select-card:hover,
+.bot-select-card.selected {
+  background: #e9fbf7;
+}
+
+.command-empty {
+  padding: 18px 12px;
+  color: #8090a5;
+  font-size: var(--font-body);
+}
+
+.command-definition {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  margin: 0;
+  padding: 12px;
+}
+
+.command-definition div {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.command-definition dt {
+  color: #52657a;
+  font-weight: 700;
+}
+
+.command-definition dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #0f2238;
+}
+
+.command-action-stack {
+  display: grid;
+  gap: 8px;
+  align-self: end;
+  padding: 12px;
+  border-top: 1px solid #e5ebf2;
+}
+
+.bot-card-list,
+.team-task-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.bot-select-card {
+  display: grid;
+  gap: 4px;
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bot-select-card strong {
+  color: #0f2238;
+  font-size: var(--font-title);
+}
+
+.bot-select-card span {
+  color: #52657a;
+  font-size: var(--font-desc);
+}
+
+.package-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+
+.package-action-grid button {
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  gap: 4px;
+  min-height: 72px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.package-action-grid button span {
+  color: #dce6f5;
+  font-size: var(--font-desc);
+  font-weight: 500;
+}
+
+.command-note {
+  margin: 0 12px 12px;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  background: #f8fafc;
+  color: #52657a;
+  font-size: var(--font-body);
+}
+
+.team-task-row {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+}
+
+.team-task-row > strong {
+  color: #0f2238;
+  font-size: var(--font-title);
+}
+
+.team-task-row > span,
+.team-task-empty span {
+  color: #52657a;
+  font-size: var(--font-desc);
+}
+
+.team-task-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.team-task-actions button {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c9d5e4;
+  background: #f8fafc;
+  color: #1f2a44;
+  font-size: var(--font-body);
+  font-weight: 700;
+}
+
+.team-task-empty {
+  display: grid;
+  gap: 4px;
+  padding: 14px 10px;
+  border: 1px dashed #c9d5e4;
+}
+
+.team-status-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.team-status-card {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  background: #f8fafc;
+}
+
 /* Aidot-compatible workflow lookup screens */
 .workflow-lookup {
   display: grid;
