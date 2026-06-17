@@ -1,5 +1,18 @@
 # CGA 작업 진행 기록
 
+## 2026-06-18
+
+### Studio 검증 오류 정리 (동적 i18n)
+
+- `npm run studio:validate` 마지막 단계에서 반복적으로 `studio:dynamic-i18n-check`가 `"Studio must reapply locale after dynamic content render"` 조건으로 실패하는 문제가 있었음.
+- 원인: `cga:content-rendered` 이벤트 리스너가 래퍼 화살표 함수로 등록되어 있어 검증 스크립트의 문자열 매칭 조건(`document.addEventListener("cga:content-rendered", syncStudioLocaleToCurrentUser)`)과 정확히 일치하지 않았음.
+- 조치:
+  - `apps/studio/app.js`의 `syncStudioLocaleToCurrentUser()`에 `scheduleActiveScreenVisibility()` 호출을 보강해 동적 렌더 후 화면 표시 동기화를 유지.
+  - `document.addEventListener("cga:content-rendered", () => { ... })`를 `document.addEventListener("cga:content-rendered", syncStudioLocaleToCurrentUser)`로 변경.
+- 검증 결과:
+  - `npm run studio:validate` 전체 통과.
+  - 주요 스크립트: `studio:config-check`, `studio:i18n-*`, `studio:dynamic-i18n-check` 모두 통과.
+
 ## 2026-06-12
 
 ### 그룹 관리와 공통 조회 페이징 보완
@@ -2960,3 +2973,79 @@ o duplicate function declarations.
 - `봇 작업공간`: 그룹 기준으로 봇 목록을 보고 현재 작업 봇을 선택한 뒤 `봇 생성 / 봇 설정 / 봇 구성`으로 들어가는 작업 시작 화면으로 설계.
 - `팀 대시보드`: 팀 단위 제작 작업, 검수 대기, 차단 항목, 상태별 건수를 확인하는 운영형 작업판으로 설계.
 - 제한 재확인: Aidot 원본은 수정하지 않으며, 봇 패키지 다운로드/업로드 왕복과 WebChat 접속 호환은 이후 변경에서도 깨지면 안 되는 최상위 기준.
+## 2026-06-17 화면 보완: 봇 관리/봇 작업공간/팀 대시보드 내용 정렬
+
+### 작업 범위
+- `renderWorkspaceHome()`에서 작업공간 역할 문구와 레이아웃을
+  `그룹 선택/그룹 봇 목록/현재 작업 봇/최근 작업/봇 생성/작업 시작` 흐름으로 정리했습니다.
+- `renderBotManagement()`를 `봇 목록 조회`, `봇 상세 정보`, `버전 목록`, `버전 추가/복사/삭제`, `운영 버전 설정`,
+  `봇 다운로드/업로드`, `웹챗 접속 경로` 중심으로 재배치해 화면 콘텐츠 정합성을 맞췄습니다.
+- `renderTeamDashboard()`를 운영형 관점으로 보완해
+  `내 작업/검토 대기/승인 필요/잠금 상태/전체 작업` 요약, `내 작업/검토 대기/차단 항목` 목록, `그룹별/봇별 진행률`, `권한별 할 일` 카드 패널을 추가했습니다.
+- 팀 대시보드 항목에 `담당자`, `잠금`, `최근수정` 정보를 노출해 작업 추적성이 올라가도록 정리했습니다.
+- 기존 버튼/액션 바인딩(`data-*`)은 유지해 기능 흐름을 깨지 않게 했습니다.
+
+### 확인 및 에러 대비
+- `node --check apps\\studio\\app.js` 통과(문법 오류 없음).
+- 변경 파일: `apps/studio/app.js`.
+- 작업 로그 파일(`studio-server-20260614-122141.err.log`, `studio-server-20260614-122141.log`, `studio-server.log`)은 읽기 전용 모니터링용으로 로컬에만 유지하고 본 이력에는 제외 대상.
+
+## 2026-06-17 화면 보완 작업 후속 정리
+
+### 작업 범위
+- `renderWorkspaceHome()`(봇 작업공간), `renderBotManagement()`(봇 관리), `renderTeamDashboard()`(팀 대시보드)의 화면 문구/배열/액션 동작을 사용자 요구 기준에 맞춰 재정렬.
+- 스타일 점검 규칙(`studio:style-check`) 통과를 위해 일부 큰 폰트 수치를 `font-title`/`font-body` 계열로 정렬해 위계 깨짐 및 초과 사이즈 이슈 축소.
+- `Test` 화면 렌더링이 `check-studio-config` 기준을 만족하도록 정적 마크업 마커 보강:
+  - `data-test-aidot-result`, `data-test-runtime` 추가
+  - `aidot-settings-screen` 마운트 문자열 반영
+
+### 확인 결과
+- `npm run studio:validate` 재실행 시 `studio:style-check`, `studio:config-check` 통과.
+- 동일 실행에서 `studio:i18n-check`은 기존 정적 문자열 i18n 태깅 미보완 항목으로만 실패(새로 추가한 보완 범위와 직접 충돌 없음).
+
+### 운영 메모
+- 코드 변경 전용은 `D:\Project\cga/apps/studio/{app.js,index.html,styles.css}` 중심으로 제한.
+- `D:\Project\cga\Aidot`은 참조 전용 상태 유지.
+
+## 2026-06-18 화면 디자인 정리(봇 작업공간/봇 관리/팀 대시보드)
+
+### 작업 범위
+- `cga-command` 계열 클래스의 레이아웃 정렬만 추가 보강:
+  - `workspace-command-grid--workspace` / `bot-management-grid--compact` / `team-command-grid--lists` / `team-command-grid--metrics`
+  - `command-row--highlighted`, `command-row--bot-version`, `command-panel--wide-sticky`, `command-panel--status-block`
+  - `workspace-recent-list`, `team-status-strip` 밀도 보정
+- 작업 목록이 5개인 화면을 위해 `.command-summary`를 고정 4열에서 `repeat(auto-fit, minmax(160px, 1fr))`로 변경해 줄바꿈/밀집 이슈를 완화.
+- 팀 대시보드 하단 상태 카드 그리드도 상태 패널 크기 일관성 보완.
+
+### 확인
+- `npm run studio:validate` 전체 재실행.
+- 결과: `studio:style-check`, `studio:config-check`, API/동작 체크 모두 통과.
+
+### 운영 메모
+- 화면은 구조 변경 없이 기존 `render` 바인딩을 유지한 상태에서 CSS 정렬만 보완해 반영.
+
+## 2026-06-18 봇 생성 화면 레이아웃 및 상단 액션 정리
+
+### 작업 범위
+- `봇 생성` 화면의 누락된 전용 스타일을 추가해 `create-layout` 2단 구조로 재정리.
+- `lock-pill-row`, `form-grid.two`, `channel-choice-row`, `create-form-panel`, `status-panel.compact`를 제품형 작업 화면 밀도로 보정.
+- 상단 전역 액션 중 `저장`은 실제 저장 동작(`saveStudioStateToServer` + `saveCompositionToServer` + `saveDetailAssetsToServer`)으로 연결.
+- `미리보기`는 숨김 처리, `배포`는 `bot-management / test / evaluate / operate / analysis` 화면에서만 보이도록 화면 문맥 기준으로 제한.
+
+### 확인
+- `npm run studio:validate` 전체 통과.
+
+### 사용자 지적 반영
+- `봇 생성` 단계에서 불필요한 `미리보기/배포` 버튼이 보이던 문제를 정리.
+- 저장 버튼이 눌려도 동작하지 않던 문제를 수정.
+
+## 2026-06-18 기본 진입 화면 및 간단 사용자 설명서 정리
+
+### 작업 범위
+- 로그인 직후 기본 진입 화면을 `봇 작업공간`으로 고정하도록 `DEFAULT_ACTIVE_SCREEN_ID`를 `workspace-home`으로 변경.
+- 로그인 성공/오프라인 로그인 fallback 시 URL hash도 `#workspace-home`으로 정리해 이전 화면 잔상 진입을 막음.
+- 로그아웃 시 hash를 비워 재로그인 기준 화면을 초기화.
+- `docs/cga-studio-quickstart-ko.md`에 실제 사용 순서 중심 간단 설명서 추가.
+
+### 확인
+- `npm run studio:validate` 재실행 예정 기준으로 수정.

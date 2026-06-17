@@ -34,6 +34,8 @@ import {
 const AUTH_SESSION_STORAGE_KEY = "cga-studio-session-token-v2";
 const LAST_SCREEN_STORAGE_KEY = "cga-studio-last-screen";
 const WORKSPACE_SNAPSHOT_STORAGE_PREFIX = "cga-studio-workspace-snapshot";
+const WORKSPACE_RECENT_BOTS_STORAGE_KEY = "cga-studio-recent-bots-v1";
+const BOT_VERSION_REGISTRY_STORAGE_KEY = "cga-studio-bot-version-registry-v1";
 const WORKSPACE_SNAPSHOT_VERSION = 1;
 const WORKSPACE_SNAPSHOT_TTL_MS = 60000;
 const LOGIN_ID_STORAGE_KEY = "cga-studio-login-id";
@@ -41,6 +43,8 @@ const LOGIN_ID_STORAGE_KEY = "cga-studio-login-id";
 const currentStudioState = structuredClone(sampleStudioState);
 let currentCollaborationState = createSampleCollaborationState();
 let currentAccessState = normalizeAccessState(createSampleAccessState());
+let botVersionRegistry = {};
+let currentWorkspaceRecentBots = [];
 let currentAdminResources = {
   templates: [],
   common_variables: [],
@@ -120,12 +124,19 @@ let accessGroupModalOpen = false;
 let accessGroupCreateMode = false;
 const adminTablePageByKey = {};
 const adminTablePageSizeByKey = {};
+const teamDashboardPageByKey = {
+  mine: 1,
+  review: 1,
+  blocked: 1
+};
+let teamDashboardPageSize = 10;
 let currentIntentSearch = "";
 let currentIntentFilter = "all";
 let currentDetailTab = "intent";
 let currentBuildAidotView = "list";
 let currentConfigureSubview = "ai-model";
 let selectedBotManagementId = "supportbot-draft";
+let selectedBotManagementVersionId = "";
 let currentCompositionState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
@@ -200,7 +211,7 @@ let currentOperationsState = {
   },
   updated_at: null
 };
-const DEFAULT_ACTIVE_SCREEN_ID = "detail";
+const DEFAULT_ACTIVE_SCREEN_ID = "workspace-home";
 let activeScreenId = "";
 let screenLayoutApplying = false;
 
@@ -916,6 +927,13 @@ function getActiveGroupsForCurrentUser() {
   return currentAccessState.groups.filter((group) => group.status === "active" && memberships.some((membership) => membership.group_id === group.id));
 }
 
+function getAccessibleBotListForGroup(groupId) {
+  return currentWorkspaceBots.filter((bot) => (
+    String(bot.group_id || bot.groupId || "") === String(groupId)
+    && bot.status !== "deleted"
+  ));
+}
+
 function getCurrentWorkspaceGroup() {
   return currentAccessState.groups.find((group) => group.id === currentWorkspaceGroupId) || getActiveGroupsForCurrentUser()[0] || null;
 }
@@ -924,8 +942,221 @@ function getCurrentWorkspaceBot() {
   return currentWorkspaceBots.find((bot) => bot.id === currentWorkspaceBotId) || currentWorkspaceBots.find((bot) => bot.group_id === currentWorkspaceGroupId) || null;
 }
 
+function getWorkspaceMetaStorageKey(base) {
+  const userId = currentAccessState.currentUserId || "anonymous";
+  return `${base}:${userId}`;
+}
+
+function loadWorkspaceRecentBots() {
+  try {
+    const raw = localStorage.getItem(getWorkspaceMetaStorageKey(WORKSPACE_RECENT_BOTS_STORAGE_KEY));
+    const parsed = raw ? JSON.parse(raw) : [];
+    currentWorkspaceRecentBots = Array.isArray(parsed) ? parsed.filter((item) => item && item.groupId && item.botId).slice(0, 20) : [];
+  } catch {
+    currentWorkspaceRecentBots = [];
+  }
+}
+
+function saveWorkspaceRecentBots() {
+  try {
+    localStorage.setItem(
+      getWorkspaceMetaStorageKey(WORKSPACE_RECENT_BOTS_STORAGE_KEY),
+      JSON.stringify(currentWorkspaceRecentBots)
+    );
+  } catch {
+    // ignore
+  }
+}
+
+function trackRecentWorkspaceBot(bot) {
+  if (!bot?.id || !bot?.group_id) return;
+  const key = `${bot.group_id}::${bot.id}`;
+  const item = {
+    key,
+    groupId: bot.group_id,
+    botId: bot.id,
+    name: bot.name || bot.id,
+    locale: bot.locale || "en",
+    version: bot.version || "v0.1",
+    touchedAt: Date.now()
+  };
+  const filtered = currentWorkspaceRecentBots.filter((entry) => entry.key !== key);
+  currentWorkspaceRecentBots = [item, ...filtered].slice(0, 12);
+  saveWorkspaceRecentBots();
+}
+
+function getRecentWorkspaceBotsByGroup(groupId) {
+  if (!groupId) return [];
+  return currentWorkspaceRecentBots.filter((item) => item.groupId === groupId).slice(0, 12);
+}
+
 function getBotsForGroup(groupId) {
   return currentWorkspaceBots.filter((bot) => bot.group_id === groupId);
+}
+
+function getBotVersionRegistry() {
+  try {
+    const raw = localStorage.getItem(getWorkspaceMetaStorageKey(BOT_VERSION_REGISTRY_STORAGE_KEY));
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveBotVersionRegistry() {
+  try {
+    localStorage.setItem(getWorkspaceMetaStorageKey(BOT_VERSION_REGISTRY_STORAGE_KEY), JSON.stringify(botVersionRegistry));
+  } catch {
+    // ignore
+  }
+}
+
+function getBotVersionListKey(groupId, botId) {
+  return `${groupId || ""}::${botId || ""}`;
+}
+
+function normalizeBotVersionVersion(input, fallback = "v0.1") {
+  const value = String(input || fallback).trim();
+  return /^v?\d+(\.\d+)?$/.test(value) ? (value.startsWith("v") ? value : `v${value}`) : fallback;
+}
+
+function ensureBotVersionRegistryFor(bot) {
+  if (!bot?.id || !bot?.group_id) return;
+  if (!botVersionRegistry) botVersionRegistry = {};
+  const key = getBotVersionListKey(bot.group_id, bot.id);
+  if (!Array.isArray(botVersionRegistry[key])) {
+    const now = bot.updated_at || new Date().toISOString().slice(0, 10);
+    botVersionRegistry[key] = [
+      {
+        id: normalizeBotVersionVersion(bot.version || "v0.1"),
+        status: bot.status || "draft",
+        createdAt: now,
+        updatedAt: now,
+        operator: "system",
+        note: "초기 버전",
+        isActive: true
+      }
+    ];
+    saveBotVersionRegistry();
+  }
+}
+
+function getBotVersions(bot) {
+  if (!bot?.id || !bot?.group_id) return [];
+  ensureBotVersionRegistryFor(bot);
+  const key = getBotVersionListKey(bot.group_id, bot.id);
+  return [...(botVersionRegistry[key] || [])].sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+}
+
+function buildNextBotVersionId(bot, versions) {
+  const normalized = normalizeBotVersionVersion(bot?.version || "v0.1");
+  const base = normalized.match(/^v(\d+)(?:\.(\d+))?$/);
+  const baseMajor = Number(base?.[1] || 0);
+  const baseMinor = Number(base?.[2] || 0);
+  const existingVersions = [...(versions || [])].map((entry) => {
+    const match = String(entry?.id || "").match(/^v?(\d+)(?:\.(\d+))?$/);
+    return match ? { major: Number(match[1]), minor: Number(match[2] || 0), raw: match[0] } : null;
+  }).filter(Boolean);
+  const sameMajor = existingVersions.filter((entry) => entry.major === baseMajor);
+  const maxMinor = sameMajor.length ? Math.max(...sameMajor.map((entry) => entry.minor)) : baseMinor;
+  const candidate = `v${baseMajor}.${maxMinor + 1}`;
+  if (versions?.some((entry) => entry.id === candidate)) {
+    return `v${baseMajor}.${maxMinor + 2}`;
+  }
+  return candidate;
+}
+
+function addWorkspaceBotVersion(bot, sourceVersionId = null) {
+  if (!bot?.id || !bot?.group_id) return null;
+  const versions = getBotVersions(bot);
+  const sourceVersion = sourceVersionId
+    ? versions.find((item) => item.id === sourceVersionId) || versions[0]
+    : versions[0] || null;
+  const nextId = buildNextBotVersionId(bot, versions);
+  const now = new Date().toISOString();
+  const next = {
+    id: normalizeBotVersionVersion(nextId),
+    status: sourceVersion?.status || bot.status || "draft",
+    createdAt: now,
+    updatedAt: now,
+    operator: currentAccessState.currentUserId || "system",
+    note: `버전 추가 (${sourceVersion?.id || bot.version || "v0.1"})`,
+    isActive: false
+  };
+  const nextVersions = [next, ...versions.map((item) => ({ ...item, isActive: item.id === bot.version })]
+  ];
+  updateBotVersionRegistry(bot, nextVersions);
+  return next;
+}
+
+function duplicateWorkspaceBotVersion(bot, versionId) {
+  if (!bot?.id || !bot?.group_id || !versionId) return null;
+  const versions = getBotVersions(bot);
+  const source = versions.find((item) => item.id === versionId);
+  if (!source) return null;
+  const now = new Date().toISOString();
+  const existingNames = new Set(versions.map((item) => item.id));
+  let suffix = 1;
+  let nextId = `${normalizeBotVersionVersion(source.id)}-copy`;
+  while (existingNames.has(nextId)) {
+    nextId = `${normalizeBotVersionVersion(source.id)}-copy-${suffix++}`;
+  }
+  const next = {
+    id: nextId,
+    status: source.status || "draft",
+    createdAt: now,
+    updatedAt: now,
+    operator: currentAccessState.currentUserId || "system",
+    note: `${source.id} 복사본`,
+    isActive: false
+  };
+  const nextVersions = [next, ...versions.map((item) => ({ ...item, isActive: item.isActive || false }))];
+  updateBotVersionRegistry(bot, nextVersions);
+  return next;
+}
+
+function removeWorkspaceBotVersion(bot, versionId) {
+  if (!bot?.id || !bot?.group_id || !versionId) return [];
+  const versions = getBotVersions(bot).filter((item) => item.id !== versionId);
+  const normalized = versions.length ? versions.map((item) => ({
+    ...item,
+    isActive: item.id === bot.version
+  })) : [];
+  if (!normalized.some((item) => item.isActive) && normalized.length) {
+    normalized[0].isActive = true;
+    bot.version = normalized[0].id;
+  }
+  updateBotVersionRegistry(bot, normalized);
+  if (normalized.length === 0) {
+    updateBotVersionRegistry(bot, []);
+  }
+  return normalized;
+}
+
+function removeWorkspaceBotVersionRegistry(bot) {
+  if (!bot?.id || !bot?.group_id) return;
+  const key = getBotVersionListKey(bot.group_id, bot.id);
+  if (!(key in botVersionRegistry)) return;
+  delete botVersionRegistry[key];
+  saveBotVersionRegistry();
+}
+
+function updateBotVersionRegistry(bot, nextVersions) {
+  if (!bot?.id || !bot?.group_id) return;
+  const key = getBotVersionListKey(bot.group_id, bot.id);
+  botVersionRegistry[key] = nextVersions;
+  saveBotVersionRegistry();
+}
+
+function setActiveBotVersion(bot, versionId) {
+  if (!bot?.id || !versionId) return;
+  const versions = getBotVersions(bot).map((version) => ({
+    ...version,
+    isActive: version.id === versionId
+  }));
+  if (!versions.some((version) => version.isActive)) return;
+  updateBotVersionRegistry(bot, versions);
+  bot.version = versionId;
 }
 
 function canManageApiAnswerForCurrentSelection() {
@@ -934,6 +1165,18 @@ function canManageApiAnswerForCurrentSelection() {
 
 function canCreateBotInCurrentWorkspace() {
   return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.create");
+}
+
+function canManageBotInCurrentWorkspace() {
+  return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.configure");
+}
+
+function canOperateCurrentBot() {
+  return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.operate");
+}
+
+function canAnalyzeCurrentBot() {
+  return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.analyze");
 }
 
 function applyCurrentBotToStudioState(bot) {
@@ -946,6 +1189,8 @@ function applyCurrentBotToStudioState(bot) {
   currentStudioState.bot.name = bot.name;
   currentStudioState.bot.defaultLocale = bot.locale;
   currentStudioState.bot.version = bot.version || currentStudioState.bot.version || "v0.1";
+  trackRecentWorkspaceBot(bot);
+  ensureBotVersionRegistryFor(bot);
 }
 
 function getWorkspaceSnapshotKey(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
@@ -1003,6 +1248,11 @@ function applyWorkspaceSnapshot(snapshot) {
   if (snapshot.operations_state) applyOperationsStateFromServer(snapshot.operations_state);
   if (snapshot.collaboration_state) applyCollaborationStateFromServer(snapshot.collaboration_state);
   return true;
+}
+
+function loadWorkspaceMetaState() {
+  botVersionRegistry = getBotVersionRegistry();
+  loadWorkspaceRecentBots();
 }
 
 function applyCachedWorkspaceSnapshot({ maxAgeMs = WORKSPACE_SNAPSHOT_TTL_MS } = {}) {
@@ -1683,6 +1933,39 @@ async function createWorkspaceBotOnServer(bot) {
   return payload?.bot || payload;
 }
 
+async function updateWorkspaceBotVersionOnServer(bot, versionId) {
+  const payload = await requestCgaJson(getWorkspaceBotsUrl(bot.group_id) + `/${encodeURIComponent(bot.id)}`, {
+    method: "PUT",
+    body: {
+      name: bot.name || "",
+      version: versionId,
+      status: bot.status || "draft",
+      locale: bot.locale || "en",
+      updated_by: currentAccessState.currentUserId || ""
+    }
+  });
+  return payload;
+}
+
+async function deleteWorkspaceBotOnServer(groupId, botId) {
+  const result = await requestCgaJson(getWorkspaceBotsUrl(groupId) + `/${encodeURIComponent(botId)}`, {
+    method: "DELETE"
+  });
+  return result;
+}
+
+async function copyWorkspaceBotOnServer(sourceBot, nextBotId, nextBotName) {
+  const payload = await createWorkspaceBotOnServer({
+    id: nextBotId,
+    group_id: sourceBot.group_id,
+    name: nextBotName,
+    version: sourceBot.version || "v0.1",
+    status: "draft",
+    locale: sourceBot.locale || currentStudioState.bot.defaultLocale || "en"
+  });
+  return payload;
+}
+
 function getApiAnswerRegistryUrl(groupId = currentApiGroupId, botId = currentApiBotId) {
   return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/api-answers`;
 }
@@ -2088,6 +2371,8 @@ function applyAidotBotPackage(packageJson) {
     { asset: getTransferAssetLabel("botPackage"), name: importedBot.name },
     "Imported {asset}: {name}"
   );
+  ensureBotVersionRegistryFor(importedBot);
+  trackRecentWorkspaceBot(importedBot);
 }
 
 function applyCgaVersionPackage(packageJson) {
@@ -2101,6 +2386,27 @@ function applyCgaVersionPackage(packageJson) {
   if (version.counts) currentStudioState.counts = { ...currentStudioState.counts, ...version.counts };
   if (version.llm) currentStudioState.llm = { ...currentStudioState.llm, ...version.llm };
   if (version.channels) currentStudioState.channels = { ...currentStudioState.channels, ...version.channels };
+  const currentBot = getCurrentWorkspaceBot();
+  if (currentBot) {
+    currentBot.version = currentStudioState.bot.version || currentBot.version;
+    currentBot.updated_at = new Date().toISOString().slice(0, 10);
+    const versions = getBotVersions(currentBot).map((item) => ({
+      ...item,
+      isActive: item.id === currentStudioState.bot.version
+    }));
+    if (!versions.some((item) => item.id === currentStudioState.bot.version)) {
+      versions.unshift({
+        id: normalizeBotVersionVersion(currentStudioState.bot.version, currentBot.version),
+        status: currentBot.status || "draft",
+        createdAt: currentBot.updated_at,
+        updatedAt: currentBot.updated_at,
+        operator: currentAccessState.currentUserId || "system",
+        note: "패키지 업로드로 갱신",
+        isActive: true
+      });
+    }
+    updateBotVersionRegistry(currentBot, versions);
+  }
   currentWorkspaceBots = currentWorkspaceBots.map((bot) =>
     bot.id === currentWorkspaceBotId
       ? {
@@ -2174,12 +2480,14 @@ function syncStudioLocaleToCurrentUser() {
   if (window.cgaStudioI18n?.setLocale) {
     window.cgaStudioI18n.setLocale(locale);
     applyDynamicLocaleOverrides(locale);
+    scheduleActiveScreenVisibility();
     return;
   }
   const select = document.querySelector("[data-locale-select]");
   if (select) select.value = locale;
   localStorage.setItem("cga.studio.locale", locale);
   applyDynamicLocaleOverrides(locale);
+  scheduleActiveScreenVisibility();
 }
 
 
@@ -3404,12 +3712,14 @@ function applyScreenLayout() {
     if (["workspace-home", "detail", "build", "test", "evaluate", "operate", "analysis"].includes(activeScreenId)) {
       renderWorkflowScreens();
     }
+    syncTopActionsForScreen();
   } catch (error) {
     console.error("CGA screen layout failed", error);
   } finally {
     screenLayoutApplying = false;
     enforceActiveScreenVisibility();
     updateNavigationActiveState();
+    syncTopActionsForScreen();
   }
 }
 function updateNavigationActiveState() {
@@ -3707,49 +4017,112 @@ function renderTeamDashboard() {
   const section = document.querySelector('[data-screen-id="team-dashboard"]');
   if (!section) return;
   const dashboard = summarizeTeamDashboard(currentCollaborationState, { currentUserId: currentAccessState.currentUserId });
+  const usersByRole = (currentAccessState?.users || []).reduce((acc, user) => {
+    const role = user.role || "viewer";
+    const userId = user.id;
+    if (!userId) return acc;
+    acc[role] = acc[role] || [];
+    acc[role].push(userId);
+    return acc;
+  }, {});
+  const tasksByRole = Object.entries(usersByRole).reduce((acc, [role, userIds]) => {
+    acc[role] = dashboard.workItems.filter((item) => userIds.includes(item.assignee_id)).length;
+    return acc;
+  }, {});
+  const totalWork = dashboard.byStatus.reduce((sum, entry) => sum + Number(entry.count || 0), 0);
+  const lockedItems = dashboard.workItems.filter((item) => item.lock?.user_id);
+  const reviewCount = dashboard.reviewQueue.length;
+  const tasksByGroup = dashboard.workItems.reduce((acc, item) => {
+    const key = item.group_id || t("team.unassigned", "미지정");
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const tasksByBot = dashboard.workItems.reduce((acc, item) => {
+    const key = item.bot_id || t("team.unassigned", "미지정");
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
   const renderItems = (items, emptyText, mode) => items.map((item) => {
-    const lockOwner = item.lock?.user_id;
+    const lockOwnerId = item.lock?.user_id || "";
     const isMine = item.assignee_id === currentAccessState.currentUserId;
-    const canUnlock = lockOwner === currentAccessState.currentUserId;
+    const canUnlock = lockOwnerId === currentAccessState.currentUserId;
     return `
     <div class="team-task-row ${item.status}">
       <strong>${item.title}</strong>
-      <span>${item.type} · ${item.status} · ${item.assignee?.name || item.assignee_id || t("team.unassigned", "unassigned")}${lockOwner ? ` · ${t("team.lockedBy", "locked by")} ${lockOwner}` : ""}</span>
+      <span>${item.type} · ${item.status} · ${item.group_id || t("team.unassigned", "미지정")} / ${item.bot_id || t("team.unassigned", "미지정")}</span>
+      <span>담당자: ${item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정")}</span>
+      <span>잠금: ${lockOwnerId || t("team.unassigned", "없음")}</span>
+      <span>최근수정: ${formatAidotAdminDate(item.updated_at)}</span>
       <div class="team-task-actions">
-        ${mode === "mine" && !lockOwner && isMine ? `<button type="button" data-lock-work="${item.id}">${t("team.lock", "Lock")}</button>` : ""}
+        ${mode === "mine" && !lockOwnerId && isMine ? `<button type="button" data-lock-work="${item.id}">${t("team.lock", "Lock")}</button>` : ""}
         ${mode === "mine" && canUnlock ? `<button type="button" data-unlock-work="${item.id}">${t("team.unlock", "Unlock")}</button>` : ""}
         ${mode === "review" ? `<button type="button" data-approve-work="${item.id}">${t("admin.approve", "Approve")}</button><button type="button" data-request-change="${item.id}">${t("team.requestChanges", "Request changes")}</button>` : ""}
         ${mode === "blocked" ? `<button type="button" data-request-change="${item.id}">${t("team.moveToTodo", "Move to todo")}</button>` : ""}
       </div>
     </div>
   `;
-  }).join("") || `<div class="team-task-empty"><strong>${emptyText}</strong><span>${t("team.currentUser", "Current user")}: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
-  const totalWork = dashboard.byStatus.reduce((sum, entry) => sum + Number(entry.count || 0), 0);
+  }).join("") || `<div class="team-task-empty"><strong>${escapeText(emptyText)}</strong><span>${t("team.currentUser", "Current user")}: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
   renderWorkflowScreenShell(
     "team-dashboard",
     "TM",
     "팀 대시보드",
-    "봇 제작 작업, 검수, 차단 상태를 그룹 기준으로 확인합니다.",
+    "봇 제작 협업 현황을 그룹/봇 단위 진행률과 승인 흐름 기준으로 정리합니다.",
     `<div class="cga-command-page team-command-page">
       <section class="command-summary">
         <article><strong>내 작업</strong><span>${dashboard.myTasks.length}건</span></article>
-        <article><strong>검수 대기</strong><span>${dashboard.reviewQueue.length}건</span></article>
-        <article><strong>차단</strong><span>${dashboard.blockedItems.length}건</span></article>
+        <article><strong>검토 대기</strong><span>${dashboard.reviewQueue.length}건</span></article>
+        <article><strong>승인 필요</strong><span>${reviewCount}건</span></article>
+        <article><strong>잠금 상태</strong><span>${lockedItems.length}건</span></article>
         <article><strong>전체 작업</strong><span>${totalWork}건</span></article>
       </section>
-      <section class="team-command-grid">
+      <section class="team-command-grid team-command-grid--lists">
         <article class="command-panel">
-          <header><div><strong>내 작업</strong><span>할당된 봇 제작 작업입니다.</span></div></header>
+          <header><div><strong>내 작업</strong><span>담당자를 기준으로 현재 나에게 배정된 항목입니다.</span></div></header>
           <div class="team-task-list">${renderItems(dashboard.myTasks, t("team.noAssignedTask", "No assigned task"), "mine")}</div>
         </article>
         <article class="command-panel">
-          <header><div><strong>검수 대기</strong><span>승인 또는 수정 요청이 필요한 항목입니다.</span></div></header>
+          <header><div><strong>검토 대기</strong><span>승인 검토가 필요한 항목입니다.</span></div></header>
           <div class="team-task-list">${renderItems(dashboard.reviewQueue, t("team.noReviewWaiting", "No review waiting"), "review")}</div>
         </article>
         <article class="command-panel">
           <header><div><strong>차단 항목</strong><span>작업 진행이 멈춘 항목입니다.</span></div></header>
           <div class="team-task-list">${renderItems(dashboard.blockedItems, t("team.noBlockedItem", "No blocked item"), "blocked")}</div>
         </article>
+      </section>
+      <section class="team-command-grid team-command-grid--metrics">
+        <article class="command-panel command-panel--wide">
+          <header><div><strong>그룹별 진행률</strong><span>그룹 기준 진행 건수</span></div></header>
+          <div class="team-status-strip">
+            ${Object.entries(tasksByGroup).map(([group, count]) => `
+              <div class="team-status-card">
+                <strong>${escapeText(group)}</strong>
+                <span>${count}건</span>
+              </div>
+            `).join("")}
+          </div>
+        </article>
+        <article class="command-panel command-panel--wide">
+          <header><div><strong>봇별 진행률</strong><span>봇 단위 진행 건수</span></div></header>
+          <div class="team-status-strip">
+            ${Object.entries(tasksByBot).map(([bot, count]) => `
+              <div class="team-status-card">
+                <strong>${escapeText(bot)}</strong>
+                <span>${count}건</span>
+              </div>
+            `).join("")}
+          </div>
+        </article>
+      </section>
+      <section class="command-panel command-panel--status">
+        <header><div><strong>권한별 할 일</strong><span>역할 기준 누적 항목 수입니다.</span></div></header>
+        <div class="team-status-strip">
+          ${Object.entries(tasksByRole).map(([role, count]) => `
+            <div class="team-status-card">
+              <strong>${escapeText(role)}</strong>
+              <span>${count}건</span>
+            </div>
+          `).join("") || `<div class="team-status-card"><strong>${t("team.unassigned", "미지정")}</strong><span>0건</span></div>`}
+        </div>
       </section>
       <section class="command-panel command-panel--status">
         <header><div><strong>작업 상태</strong><span>전체 작업 흐름 상태입니다.</span></div></header>
@@ -3766,7 +4139,6 @@ function renderTeamDashboard() {
   );
   bindTeamDashboardActions();
 }
-
 function bindTeamDashboardActions() {
   document.querySelectorAll("[data-lock-work]").forEach((button) => {
     if (button.dataset.bound === "true") return;
@@ -3932,6 +4304,7 @@ function bindOperationsActions() {
   const refreshBuild = document.querySelector("[data-build-refresh]");
   const testInput = document.querySelector("[data-test-input]");
   const deploy = document.querySelector("[data-deploy-action]");
+  const topSave = document.querySelector("[data-top-save]");
 
   if (runBuild && runBuild.dataset.bound !== "true") {
     runBuild.dataset.bound = "true";
@@ -3969,6 +4342,13 @@ function bindOperationsActions() {
     deploy.addEventListener("click", async () => {
       await runOperationsAction("deploy").catch(() => false);
       renderAllStatePanels();
+    });
+  }
+
+  if (topSave && topSave.dataset.bound !== "true") {
+    topSave.dataset.bound = "true";
+    topSave.addEventListener("click", async () => {
+      await runQueuedSave("top-save", saveCurrentWorkspaceState);
     });
   }
 }
@@ -4012,6 +4392,13 @@ function bindWorkspaceActions() {
   const uploadBot = document.querySelector("[data-upload-bot-package]");
   const downloadVersion = document.querySelector("[data-download-version-package]");
   const uploadVersion = document.querySelector("[data-upload-version-package]");
+  const botVersionAdd = document.querySelector("[data-bot-version-add]");
+  const botVersionUpload = document.querySelector("[data-version-upload]");
+  const botVersionDownload = document.querySelector("[data-version-download]");
+  const deleteBot = document.querySelector("[data-delete-workspace-bot]");
+  const deleteVersionButtons = document.querySelectorAll("[data-bot-version-delete]");
+  const copyVersionButtons = document.querySelectorAll("[data-bot-version-copy]");
+  const activateVersionButtons = document.querySelectorAll("[data-bot-version-activate]");
   if (groupSelect && groupSelect.dataset.bound !== "true") {
     groupSelect.dataset.bound = "true";
     groupSelect.addEventListener("change", async () => {
@@ -4082,7 +4469,36 @@ function bindWorkspaceActions() {
   }
   if (createBotCopy && createBotCopy.dataset.bound !== "true") {
     createBotCopy.dataset.bound = "true";
-    createBotCopy.addEventListener("click", () => setActiveScreen("bot-management"));
+    createBotCopy.addEventListener("click", async () => {
+      const sourceBot = getCurrentWorkspaceBot();
+      if (!sourceBot) return;
+      const nextBotId = `${sourceBot.id}-copy-${Date.now()}`;
+      const nextBotName = `${sourceBot.name || "Bot"} Copy`;
+      const duplicateBot = {
+        ...sourceBot,
+        id: nextBotId,
+        name: nextBotName,
+        status: "draft",
+        updated_at: new Date().toISOString().slice(0, 10)
+      };
+      try {
+        const created = await copyWorkspaceBotOnServer(sourceBot, nextBotId, nextBotName);
+        const copied = created?.bot || duplicateBot;
+        currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== copied.id), copied];
+        applyCurrentBotToStudioState(copied);
+        selectedBotManagementId = copied.id;
+        ensureBotVersionRegistryFor(copied);
+        currentTransferStatus = "봇 복사가 완료되었습니다.";
+      } catch (error) {
+        currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== duplicateBot.id), duplicateBot];
+        applyCurrentBotToStudioState(duplicateBot);
+        selectedBotManagementId = duplicateBot.id;
+        currentTransferStatus = error?.status ? "봇 복사 API 실패: 로컬 임시 반영" : "봇 복사 실패";
+      }
+      renderBotManagement();
+      renderWorkspaceHome();
+      renderAllStatePanels();
+    });
   }
   if (createVersionManage && createVersionManage.dataset.bound !== "true") {
     createVersionManage.dataset.bound = "true";
@@ -4095,6 +4511,149 @@ function bindWorkspaceActions() {
       window.setTimeout(() => document.querySelector("[data-upload-version-package]")?.click(), 0);
     });
   }
+  if (botVersionAdd && botVersionAdd.dataset.bound !== "true") {
+    botVersionAdd.dataset.bound = "true";
+    botVersionAdd.addEventListener("click", async () => {
+      const selectedBot = getCurrentWorkspaceBot();
+      if (!selectedBot || !canManageBotInCurrentWorkspace()) return;
+      const added = addWorkspaceBotVersion(selectedBot);
+      if (!added) return;
+      selectedBot.version = added.id;
+      currentStudioState.bot.version = added.id;
+      currentTransferStatus = `버전 ${added.id}가 추가되었습니다.`;
+      const synced = await updateWorkspaceBotVersionOnServer(selectedBot, added.id).catch(() => false);
+      if (synced) {
+        await saveStudioStateToServer().catch(() => false);
+        await saveCompositionToServer().catch(() => false);
+      }
+      currentTransferStatus = appendTransferSyncStatus(synced);
+      renderBotManagement();
+      renderTopContext();
+      renderWorkspaceHome();
+    });
+  }
+  if (botVersionDownload && botVersionDownload.dataset.bound !== "true") {
+    botVersionDownload.dataset.bound = "true";
+    botVersionDownload.addEventListener("click", async () => {
+      const bot = getCurrentWorkspaceBot();
+      const version = bot?.version || "v0.1";
+      const serverFileName = await downloadAssetFromServer("versionPackage");
+      const fileName = `Version_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getSafeFileName(version, "v0_1")}_${getTodayStamp()}.json`;
+      if (serverFileName) {
+        currentTransferStatus = formatTransferDownloaded("versionPackage", serverFileName, "server");
+        renderWorkspaceHome();
+        renderBotManagement();
+        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+        return;
+      }
+      downloadJsonFile(fileName, buildCgaVersionPackage());
+      currentTransferStatus = formatTransferDownloaded("versionPackage", fileName);
+      renderWorkspaceHome();
+      renderBotManagement();
+      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  }
+  if (botVersionUpload && botVersionUpload.dataset.bound !== "true") {
+    botVersionUpload.dataset.bound = "true";
+    botVersionUpload.addEventListener("click", () => {
+      requestJsonUpload(async (json, file) => {
+        applyCgaVersionPackage(json);
+        const synced = await uploadAssetToServer("versionPackage", JSON.stringify(json, null, 2), file?.name);
+        if (synced) {
+          await saveStudioStateToServer().catch(() => false);
+          await saveDetailAssetsToServer().catch(() => false);
+          const activeBot = getCurrentWorkspaceBot();
+          if (activeBot?.id) {
+            await updateWorkspaceBotVersionOnServer(activeBot, activeBot.version || currentStudioState.bot.version).catch(() => false);
+          }
+        }
+        currentTransferStatus = appendTransferSyncStatus(synced);
+      });
+    });
+  }
+  if (deleteBot && deleteBot.dataset.bound !== "true") {
+    deleteBot.dataset.bound = "true";
+    deleteBot.addEventListener("click", async () => {
+      const selectedBot = getCurrentWorkspaceBot();
+      if (!selectedBot || !canManageBotInCurrentWorkspace()) return;
+      if (!confirm(`"${selectedBot.name}"을(를) 삭제하시겠습니까?`)) return;
+      const deleted = await deleteWorkspaceBotOnServer(selectedBot.group_id, selectedBot.id).catch(() => ({ ok: false, status: "fallback" }));
+      if (!deleted || deleted?.ok === false) {
+        removeWorkspaceBotVersionRegistry(selectedBot);
+        currentWorkspaceBots = currentWorkspaceBots.filter((bot) => bot.id !== selectedBot.id);
+      }
+      const nextBot = currentWorkspaceBots.find((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
+      if (nextBot) {
+        selectedBotManagementId = nextBot.id;
+        applyCurrentBotToStudioState(nextBot);
+      } else {
+        selectedBotManagementId = "";
+        currentWorkspaceBotId = "";
+      }
+      currentTransferStatus = "봇 삭제가 반영되었습니다.";
+      renderWorkspaceHome();
+      renderBotManagement();
+      renderAllStatePanels();
+      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+    });
+  }
+  copyVersionButtons.forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      const selectedBot = getCurrentWorkspaceBot();
+      const versionId = button.dataset.botVersionCopy;
+      if (!selectedBot || !versionId || !canManageBotInCurrentWorkspace()) return;
+      const copied = duplicateWorkspaceBotVersion(selectedBot, versionId);
+      if (!copied) return;
+      currentTransferStatus = `버전 ${copied.id} 복사본이 생성되었습니다.`;
+      const synced = await updateWorkspaceBotVersionOnServer(selectedBot, copied.id).catch(() => false);
+      currentTransferStatus = appendTransferSyncStatus(synced);
+      renderBotManagement();
+      renderWorkspaceHome();
+    });
+  });
+  deleteVersionButtons.forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      const selectedBot = getCurrentWorkspaceBot();
+      const versionId = button.dataset.botVersionDelete;
+      if (!selectedBot || !versionId || !canManageBotInCurrentWorkspace()) return;
+      if (!confirm(`버전 ${versionId}를 삭제하시겠습니까?`)) return;
+      const next = removeWorkspaceBotVersion(selectedBot, versionId);
+      if (!next.length) {
+        removeWorkspaceBotVersionRegistry(selectedBot);
+      }
+      if (selectedBot.version === versionId && next[0]?.id) {
+        selectedBot.version = next[0].id;
+        currentStudioState.bot.version = next[0].id;
+      }
+      currentTransferStatus = appendTransferSyncStatus(await updateWorkspaceBotVersionOnServer(selectedBot, selectedBot.version).catch(() => false));
+      renderBotManagement();
+      renderTopContext();
+    });
+  });
+  activateVersionButtons.forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      const selectedBot = getCurrentWorkspaceBot();
+      const versionId = button.dataset.botVersionActivate;
+      if (!selectedBot || !versionId || !canManageBotInCurrentWorkspace()) return;
+      setActiveBotVersion(selectedBot, versionId);
+      const synced = await updateWorkspaceBotVersionOnServer(selectedBot, versionId).catch(() => false);
+      if (synced) {
+        await saveStudioStateToServer().catch(() => false);
+      }
+      selectedBot.version = versionId;
+      currentStudioState.bot.version = versionId;
+      currentTransferStatus = appendTransferSyncStatus(synced);
+      renderBotManagement();
+      renderTopContext();
+      renderWorkspaceHome();
+    });
+  });
   if (downloadBot && downloadBot.dataset.bound !== "true") {
     downloadBot.dataset.bound = "true";
     downloadBot.addEventListener("click", async () => {
@@ -5634,6 +6193,8 @@ function bindAdminWorkbench() {
       clearAuthMessage();
       currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
       await refreshAccessStateFromServer();
+      activeScreenId = DEFAULT_ACTIVE_SCREEN_ID;
+      history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
       applyScreenLayout();
       rerenderAdminAndAccess();
     } catch (error) {
@@ -5643,6 +6204,8 @@ function bindAdminWorkbench() {
         return;
       }
       currentAccessState = loginAsUser(currentAccessState, { userId });
+      activeScreenId = DEFAULT_ACTIVE_SCREEN_ID;
+      history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
       applyScreenLayout();
       rerenderAdminAndAccess();
     }
@@ -5682,6 +6245,8 @@ function bindAdminWorkbench() {
     clearAuthSession();
     setAuthMessage("info", "admin.logoutTitle", "admin.logoutSuccess");
     currentAccessState = loginAsUser(currentAccessState, { userId: "admin" });
+    activeScreenId = "";
+    history.replaceState(null, "", "#");
     applyScreenLayout();
     rerenderAdminAndAccess();
   };
@@ -5902,177 +6467,296 @@ function setActiveScreen(screenId, { replaceHash = false } = {}) {
   applyScreenLayout();
 }
 
+function syncTopActionsForScreen() {
+  const topSave = document.querySelector("[data-top-save]");
+  const topPreview = document.querySelector("[data-top-preview]");
+  const topDeploy = document.querySelector("[data-deploy-action]");
+  const deployScreens = new Set(["bot-management", "test", "evaluate", "operate", "analysis"]);
+  if (topSave) {
+    topSave.hidden = false;
+    topSave.disabled = false;
+  }
+  if (topPreview) {
+    topPreview.hidden = true;
+    topPreview.disabled = true;
+  }
+  if (topDeploy) {
+    const allowDeploy = deployScreens.has(activeScreenId);
+    topDeploy.hidden = !allowDeploy;
+    topDeploy.disabled = !allowDeploy;
+  }
+}
+
+async function saveCurrentWorkspaceState() {
+  let synced = false;
+  try {
+    const studioSaved = await saveStudioStateToServer().catch(() => false);
+    const compositionSaved = await saveCompositionToServer().catch(() => false);
+    const detailSaved = await saveDetailAssetsToServer().catch(() => false);
+    synced = Boolean(studioSaved || compositionSaved || detailSaved);
+    saveWorkspaceSnapshot();
+    setGlobalMessage("success", "저장 완료", synced ? "현재 작업 내용을 서버에 저장했습니다." : "현재 작업 내용을 로컬에 저장했습니다.");
+  } catch (error) {
+    saveWorkspaceSnapshot();
+    setGlobalMessage("error", "저장 실패", error?.message || "현재 작업 내용을 저장하지 못했습니다.");
+  }
+  renderTopContext();
+  renderCreateSummary();
+  renderWorkspaceHome();
+  renderBotManagement();
+  renderGlobalMessage();
+}
+
 function renderWorkspaceHome() {
   const section = document.querySelector('[data-screen-id="workspace-home"]');
   if (!section) return;
   const groups = getActiveGroupsForCurrentUser();
   if (!groups.some((group) => group.id === currentWorkspaceGroupId)) currentWorkspaceGroupId = groups[0]?.id || currentWorkspaceGroupId;
   const groupOptions = groups.map((group) => `<option value="${escapeText(group.id)}" ${group.id === currentWorkspaceGroupId ? "selected" : ""}>${escapeText(group.name)}</option>`).join("");
-  const rows = currentWorkspaceBots.filter((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
+  const accessibleBots = getAccessibleBotListForGroup(currentWorkspaceGroupId);
   const currentGroup = getCurrentWorkspaceGroup();
   const currentBot = getCurrentWorkspaceBot();
-  const operatingCount = rows.filter((bot) => bot.status === "operating").length;
+  const recentBots = getRecentWorkspaceBotsByGroup(currentWorkspaceGroupId);
+  const currentBotLabel = currentBot ? `${currentBot.name} (${currentBot.id})` : "없음";
   const shell = renderWorkflowScreenShell(
     "workspace-home",
     "BOT",
     "봇 작업공간",
-    "그룹을 선택하고 해당 그룹의 봇을 엽니다.",
+    "그룹을 선택하고 작업할 봇을 고른 뒤 작업 흐름을 시작합니다.",
     `<div class="cga-command-page workspace-command-page">
       <section class="command-summary">
         <article>
-          <strong>현재 그룹</strong>
+          <strong>그룹 선택</strong>
           <select data-workspace-group>${groupOptions}</select>
         </article>
         <article>
-          <strong>그룹 봇</strong>
-          <span>${rows.length}개</span>
-        </article>
-        <article>
-          <strong>운영 봇</strong>
-          <span>${operatingCount}개</span>
+          <strong>그룹 내 접근 봇</strong>
+          <span>${accessibleBots.length}개</span>
         </article>
         <article>
           <strong>현재 작업 봇</strong>
-          <span>${escapeText(currentBot?.name || "선택 없음")}</span>
+          <span>${escapeText(currentBotLabel)}</span>
+        </article>
+        <article>
+          <strong>최근 작업</strong>
+          <span>${recentBots.length}개</span>
         </article>
       </section>
-      <section class="workspace-command-grid">
+      <section class="workspace-command-grid workspace-command-grid--workspace">
         <article class="command-panel command-panel--wide">
           <header>
             <div><strong>그룹 봇 목록</strong><span>${escapeText(currentGroup?.name || currentWorkspaceGroupId)} 안에서 작업할 봇을 선택합니다.</span></div>
             <button type="button" data-workspace-create ${canCreateBotInCurrentWorkspace() ? "" : "disabled"}>+ 봇 생성</button>
           </header>
-          <div class="command-table" style="--command-cols:1.1fr 1.5fr .6fr .7fr .6fr 1fr .7fr">
-            <div class="command-row command-row--head"><span>봇 ID</span><span>봇 이름</span><span>버전</span><span>상태</span><span>언어</span><span>최종수정일시</span><span>작업</span></div>
-            ${rows.map((bot) => `
-              <button type="button" class="command-row command-row--button ${bot.id === currentWorkspaceBotId ? "selected" : ""}" data-open-bot="${escapeText(bot.id)}">
+          <div class="command-table" style="--command-cols:1.2fr 1.2fr .8fr .7fr .9fr .9fr .8fr">
+            <div class="command-row command-row--head"><span>봇 ID</span><span>봇 이름</span><span>버전</span><span>상태</span><span>언어</span><span>마지막수정</span><span>작업</span></div>
+            ${accessibleBots.map((bot) => `
+              <button type="button" class="command-row command-row--button ${bot.id === currentWorkspaceBotId ? "selected" : ""} ${bot.id === currentWorkspaceBotId ? "command-row--highlighted" : ""}" data-open-bot="${escapeText(bot.id)}">
                 <span>${escapeText(bot.id)}</span>
                 <strong>${escapeText(bot.name)}</strong>
                 <span>${escapeText(bot.version || "-")}</span>
                 <span>${escapeText(bot.status || "-")}</span>
                 <span>${escapeText(bot.locale || "-")}</span>
                 <span>${escapeText(bot.updated_at || bot.created_at || "-")}</span>
-                <span>열기</span>
+                <span>${bot.id === currentWorkspaceBotId ? "작업중" : "열기"}</span>
               </button>
-            `).join("") || `<div class="command-empty">이 그룹에 봇이 없습니다.</div>`}
+            `).join("") || `<div class="command-empty">이 그룹에 작업 가능한 봇이 없습니다.</div>`}
+          </div>
+          <div class="command-action-stack">
+            <button type="button" data-workspace-create ${canCreateBotInCurrentWorkspace() ? "" : "disabled"}>+ 봇 생성</button>
+            <button type="button" data-workspace-open-current ${currentBot ? "" : "disabled"}>작업 봇 열기</button>
           </div>
         </article>
         <aside class="command-panel">
-          <header><div><strong>현재 작업 대상</strong><span>이 봇 기준으로 제작 흐름이 열립니다.</span></div></header>
+          <header><div><strong>현재 작업 대상</strong><span>선택된 봇 기준으로 Aidot 호환 제작 흐름이 시작됩니다.</span></div></header>
           <dl class="command-definition">
+            <div><dt>그룹</dt><dd>${escapeText(currentGroup?.name || currentWorkspaceGroupId)}</dd></div>
             <div><dt>봇</dt><dd>${escapeText(currentBot?.name || "-")}</dd></div>
             <div><dt>버전</dt><dd>${escapeText(currentBot?.version || currentStudioState.bot.version || "-")}</dd></div>
             <div><dt>상태</dt><dd>${escapeText(currentBot?.status || "-")}</dd></div>
             <div><dt>언어</dt><dd>${escapeText(currentBot?.locale || currentStudioState.bot.defaultLocale || "-")}</dd></div>
+            <div><dt>마지막 작업</dt><dd>${escapeText(currentBot?.updated_at || "없음")}</dd></div>
           </dl>
           <div class="command-action-stack">
-            <button type="button" data-jump-screen="create">봇 생성으로 이동</button>
+            <button type="button" data-jump-screen="create">봇 생성 화면</button>
             <button type="button" data-jump-screen="configure">봇 설정 열기</button>
             <button type="button" data-jump-screen="detail">봇 구성 열기</button>
+          </div>
+          <div class="workspace-recent-list">
+            <strong>최근 작업 봇</strong>
+            <div class="command-table" style="--command-cols:1.5fr 1fr .9fr .8fr 1.1fr">
+              <div class="command-row command-row--head"><span>봇</span><span>ID</span><span>버전</span><span>상태</span><span>작업시각</span></div>
+              ${recentBots.length ? recentBots.map((item) => `
+                <button type="button" class="command-row command-row--button" data-open-recent-bot="${escapeText(item.botId)}">
+                  <span>${escapeText(item.name)}</span>
+                  <span>${escapeText(item.botId)}</span>
+                  <span>${escapeText(item.version || "-")}</span>
+                  <span>${item.botId === currentWorkspaceBotId ? "현재봇" : "열기"}</span>
+                  <span>${escapeText(new Date(item.touchedAt || 0).toLocaleString())}</span>
+                </button>
+              `).join("") : `<div class="command-empty">최근 작업 목록 없음</div>`}
+            </div>
           </div>
         </aside>
       </section>
     </div>`
   );
-  const surface = shell;
-  if (!surface) return;
-  surface.querySelector("[data-workspace-group]")?.addEventListener("change", (event) => {
+  if (!shell) return;
+  shell.querySelector("[data-workspace-group]")?.addEventListener("change", (event) => {
     currentWorkspaceGroupId = event.target.value;
     renderWorkspaceHome();
     renderTopContext();
   });
-  surface.querySelectorAll("[data-open-bot]").forEach((button) => button.addEventListener("click", () => {
-    currentWorkspaceBotId = button.dataset.openBot;
-    selectedBotManagementId = currentWorkspaceBotId;
-    const bot = getCurrentWorkspaceBot();
-    if (bot) {
-      currentStudioState.bot.name = bot.name || currentStudioState.bot.name;
-      currentStudioState.bot.version = bot.version || currentStudioState.bot.version;
-      currentStudioState.bot.defaultLocale = bot.locale || currentStudioState.bot.defaultLocale;
-    }
+  shell.querySelectorAll("[data-open-bot]").forEach((button) => button.addEventListener("click", () => {
+    const bot = getAccessibleBotListForGroup(currentWorkspaceGroupId).find((item) => item.id === button.dataset.openBot);
+    if (!bot) return;
+    currentWorkspaceBotId = bot.id;
+    selectedBotManagementId = bot.id;
+    applyCurrentBotToStudioState(bot);
     renderWorkspaceHome();
     renderTopContext();
+    renderAllStatePanels();
   }));
-  surface.querySelector("[data-workspace-create]")?.addEventListener("click", () => {
+  shell.querySelectorAll("[data-open-recent-bot]").forEach((button) => button.addEventListener("click", () => {
+    const bot = accessibleBots.find((item) => item.id === button.dataset.openRecentBot);
+    if (!bot) return;
+    currentWorkspaceBotId = bot.id;
+    selectedBotManagementId = bot.id;
+    applyCurrentBotToStudioState(bot);
+    renderWorkspaceHome();
+    renderAllStatePanels();
+  }));
+  shell.querySelector("[data-workspace-open-current]")?.addEventListener("click", () => {
+    const bot = getCurrentWorkspaceBot();
+    if (!bot) return;
+    applyCurrentBotToStudioState(bot);
+    renderTopContext();
+    setActiveScreen("configure");
+  });
+  shell.querySelector("[data-workspace-create]")?.addEventListener("click", () => {
     setActiveScreen("create");
   });
-  surface.querySelectorAll("[data-jump-screen]").forEach((button) => {
+  shell.querySelectorAll("[data-jump-screen]").forEach((button) => {
     button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen));
   });
 }
-
 function renderBotManagement() {
   const section = document.querySelector('[data-screen-id="bot-management"]');
   if (!section) return;
   const group = getCurrentWorkspaceGroup();
   const bots = currentWorkspaceBots.filter((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
-  if (!bots.some((bot) => bot.id === selectedBotManagementId)) selectedBotManagementId = currentWorkspaceBotId || bots[0]?.id || "";
   const selected = bots.find((bot) => bot.id === selectedBotManagementId) || getCurrentWorkspaceBot() || bots[0] || {};
-  const webchatUrl = `http://127.0.0.1:4173/webchat/${encodeURIComponent(selected.id || currentWorkspaceBotId || "bot")}`;
+  if (!selectedBotManagementId && selected?.id) selectedBotManagementId = selected.id;
+  if (!selectedBotManagementId && bots[0]?.id) selectedBotManagementId = bots[0].id;
+  const selectedBot = bots.find((bot) => bot.id === selectedBotManagementId) || selected;
+  const webchatUrl = `http://127.0.0.1:4173/webchat/${encodeURIComponent(selectedBot?.id || currentWorkspaceBotId || "bot")}`;
+  const versions = getBotVersions(selectedBot);
+  const activeVersion = versions.find((version) => version.isActive) || versions.find((version) => version.id === (selectedBot?.version || "")) || versions[0];
+  const sortedVersions = versions.slice().sort((left, right) => {
+    const leftTime = String(left?.updatedAt || "").toLowerCase();
+    const rightTime = String(right?.updatedAt || "").toLowerCase();
+    return rightTime.localeCompare(leftTime);
+  });
+  const canManage = canManageBotInCurrentWorkspace();
+  const canDelete = canManage && bots.length > 1;
+  const versionHeaderCols = "1fr .8fr 1.6fr .7fr 1.1fr .9fr .8fr";
   renderWorkflowScreenShell(
     "bot-management",
     "BM",
     "봇 관리",
-    "Aidot 호환 봇 패키지, 버전, 운영 상태, WebChat 접속을 관리합니다.",
+    "봇 단위 자산/버전/운영 상태를 Aidot 호환 기준으로 관리합니다.",
     `<div class="cga-command-page bot-management-command-page">
       <section class="command-summary">
-        <article><strong>Aidot 호환</strong><span>다운로드 / 업로드 왕복</span></article>
-        <article><strong>선택 봇</strong><span>${escapeText(selected.name || "-")}</span></article>
-        <article><strong>운영버전</strong><span>${escapeText(selected.version || currentStudioState.bot.version || "v0.1")}</span></article>
-        <article><strong>WebChat</strong><span>접속 기준 유지</span></article>
+        <article><strong>그룹</strong><span>${escapeText(group?.name || currentWorkspaceGroupId || "-")}</span></article>
+        <article><strong>봇 수</strong><span>${bots.length}개</span></article>
+        <article><strong>선택 봇</strong><span>${escapeText(selectedBot?.name || selected?.name || "-")}</span></article>
+        <article><strong>버전 항목</strong><span>${versions.length}개</span></article>
+        <article><strong>운영 버전</strong><span>${escapeText(activeVersion?.id || selectedBot?.version || currentStudioState.bot.version || "v0.1")}</span></article>
       </section>
-      <section class="bot-management-grid">
+      <section class="bot-management-grid bot-management-grid--compact">
         <article class="command-panel">
-          <header><div><strong>봇 선택</strong><span>그룹 안의 봇 패키지를 선택합니다.</span></div></header>
+          <header><div><strong>봇 목록 조회</strong><span>그룹 내 봇 목록과 기본 상태입니다.</span></div></header>
           <div class="bot-card-list">
             ${bots.map((bot) => `
-              <button type="button" class="bot-select-card ${bot.id === selectedBotManagementId ? "selected" : ""}" data-manage-bot="${escapeText(bot.id)}">
+              <button type="button" class="bot-select-card ${bot.id === (selectedBot?.id || selectedBotManagementId) ? "selected" : ""}" data-manage-bot="${escapeText(bot.id)}">
                 <strong>${escapeText(bot.name)}</strong>
                 <span>${escapeText(bot.id)} · ${escapeText(bot.version || "-")} · ${escapeText(bot.status || "-")}</span>
+                <span>locale: ${escapeText(bot.locale || currentStudioState.bot.defaultLocale || "-")}</span>
               </button>
             `).join("") || `<div class="command-empty">관리할 봇이 없습니다.</div>`}
           </div>
-        </article>
-        <article class="command-panel command-panel--wide">
-          <header><div><strong>Aidot 패키지 왕복</strong><span>봇 단위 다운로드/업로드가 깨지면 안 되는 핵심 호환 영역입니다.</span></div></header>
-          <div class="package-action-grid">
-            <button type="button" data-download-bot-package><strong>봇 다운로드</strong><span>Aidot 봇 패키지</span></button>
-            <button type="button" data-upload-bot-package><strong>봇 업로드</strong><span>Aidot 패키지 수용</span></button>
-            <button type="button" data-download-version-package><strong>버전 다운로드</strong><span>선택 버전 패키지</span></button>
-            <button type="button" data-upload-version-package><strong>버전 업로드</strong><span>버전 단위 반영</span></button>
+          <div class="command-action-stack">
+            <button type="button" data-create-bot-copy ${canManage ? "" : "disabled"}>봇 복사</button>
+            <button type="button" data-delete-workspace-bot ${canDelete ? "" : "disabled"}>봇 삭제</button>
           </div>
-          <div class="command-note">${escapeText(currentTransferStatus || "최근 패키지 전송 이력이 없습니다.")}</div>
         </article>
-        <article class="command-panel">
-          <header><div><strong>운영 / WebChat</strong><span>운영버전과 접속 경로를 확인합니다.</span></div></header>
+        <article class="command-panel command-panel--wide command-panel--wide-sticky">
+          <header><div><strong>봇 자산 / 버전</strong><span>버전 목록, 복사, 삭제, 운영 버전 설정을 수행합니다.</span></div></header>
+          <div class="command-table" style="--command-cols:${versionHeaderCols}">
+            <div class="command-row command-row--head">
+              <span>버전</span>
+              <span>상태</span>
+              <span>비고</span>
+              <span>운영</span>
+              <span>변경자</span>
+              <span>최종수정</span>
+              <span>작업</span>
+            </div>
+            ${sortedVersions.map((entry) => `
+              <div class="command-row command-row--bot-version">
+                <strong>${escapeText(entry.id)}</strong>
+                <span>${escapeText(entry.status || "-")}</span>
+                <span>${escapeText(entry.note || "-")}</span>
+                <span>${entry.isActive ? "운영" : ""}${entry.id === activeVersion?.id ? "현재" : ""}</span>
+                <span>${escapeText(entry.operator || "-")}</span>
+                <span>${escapeText(entry.updatedAt || "-")}</span>
+                <span class="team-task-actions">
+                  <button type="button" data-bot-version-activate="${escapeText(entry.id)}" ${!canManage || entry.isActive ? "disabled" : ""}>운영 설정</button>
+                  <button type="button" data-bot-version-copy="${escapeText(entry.id)}" ${canManage ? "" : "disabled"}>복사</button>
+                  <button type="button" data-bot-version-delete="${escapeText(entry.id)}" ${canManage && sortedVersions.length > 1 ? "" : "disabled"}>삭제</button>
+                </span>
+              </div>
+            `).join("") || `<div class="command-empty">버전 이력이 없습니다.</div>`}
+          </div>
+          <div class="command-action-stack">
+            <button type="button" data-bot-version-add ${canManage ? "" : "disabled"}>버전 추가</button>
+            <button type="button" data-version-download>버전 패키지 다운로드</button>
+            <button type="button" data-version-upload>버전 패키지 업로드</button>
+          </div>
+        </article>
+        <article class="command-panel command-panel--status-block">
+          <header><div><strong>봇 상세 정보 및 호환 운영</strong><span>봇 단위 import/export와 WebChat 접속을 관리합니다.</span></div></header>
           <dl class="command-definition">
-            <div><dt>그룹</dt><dd>${escapeText(group?.name || currentWorkspaceGroupId)}</dd></div>
-            <div><dt>봇 ID</dt><dd>${escapeText(selected.id || "-")}</dd></div>
-            <div><dt>상태</dt><dd>${escapeText(selected.status || "-")}</dd></div>
+            <div><dt>봇 ID</dt><dd>${escapeText(selectedBot?.id || "-")}</dd></div>
+            <div><dt>봇 이름</dt><dd>${escapeText(selectedBot?.name || "-")}</dd></div>
+            <div><dt>운영버전</dt><dd>${escapeText(activeVersion?.id || selectedBot?.version || "-")}</dd></div>
+            <div><dt>상태</dt><dd>${escapeText(selectedBot?.status || "-")}</dd></div>
+            <div><dt>언어</dt><dd>${escapeText(selectedBot?.locale || currentStudioState.bot.defaultLocale || "-")}</dd></div>
             <div><dt>WebChat</dt><dd>${escapeText(webchatUrl)}</dd></div>
+            <div><dt>버전 목록</dt><dd>${versions.length}개</dd></div>
+            <div><dt>업데이트</dt><dd>${escapeText(selectedBot?.updated_at || "없음")}</dd></div>
           </dl>
           <div class="command-action-stack">
-            <button type="button" data-jump-screen="build">봇 제작 열기</button>
-            <button type="button" data-jump-screen="test">봇 테스트 열기</button>
-            <button type="button" data-jump-screen="analysis">분석 열기</button>
+            <button type="button" data-download-bot-package><strong>봇 다운로드</strong><span>Aidot 패키지</span></button>
+            <button type="button" data-upload-bot-package><strong>봇 업로드</strong><span>Aidot 패키지 반영</span></button>
           </div>
+          <div class="command-note">${escapeText(currentTransferStatus || "최근 패키지 전송 이력이 없습니다.")}</div>
         </article>
       </section>
     </div>`
   );
   section.querySelectorAll("[data-manage-bot]").forEach((button) => button.addEventListener("click", () => {
-    selectedBotManagementId = button.dataset.manageBot;
-    const bot = bots.find((item) => item.id === selectedBotManagementId);
+    const bot = bots.find((item) => item.id === button.dataset.manageBot);
     if (bot) {
       applyCurrentBotToStudioState(bot);
     }
+    selectedBotManagementId = button.dataset.manageBot;
     renderBotManagement();
     renderTopContext();
   }));
   section.querySelectorAll("[data-jump-screen]").forEach((button) => button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen)));
   bindWorkspaceActions();
 }
-
 function renderConfigureAidotScreen() {
   const container = document.querySelector("[data-configure-aidot-screen]");
   if (!container) return;
@@ -6436,10 +7120,7 @@ window.addEventListener("hashchange", () => {
   if (hashId) setActiveScreen(hashId, { replaceHash: true });
 });
 document.addEventListener("cga:i18n-ready", syncStudioLocaleToCurrentUser);
-document.addEventListener("cga:content-rendered", () => {
-  syncStudioLocaleToCurrentUser();
-  scheduleActiveScreenVisibility();
-});
+document.addEventListener("cga:content-rendered", syncStudioLocaleToCurrentUser);
 document.addEventListener("change", (event) => {
   if (event.target?.matches?.("[data-locale-select]")) {
     window.setTimeout(() => {
@@ -6449,6 +7130,7 @@ document.addEventListener("change", (event) => {
     }, 0);
   }
 });
+
 
 
 
