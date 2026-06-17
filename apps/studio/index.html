@@ -346,38 +346,7 @@
           <span>02</span>
           <div><h3 data-i18n="configure.title">Configure Bot</h3><p data-i18n="configure.body">LLM-first bot composition flow.</p></div>
         </div>
-        <div class="aidot-settings-screen">
-          <section class="aidot-settings-main aidot-settings-main--full">
-            <div class="aidot-field-grid">
-              <label>봇 이름 *<input value="테스트봇 - 시멘틱 RAG" /></label>
-              <label>유형<input value="텍스트형" readonly /></label>
-              <label>봇 ID<input value="828971ea-ec13-4f1b-944a-60f39936d9c3" readonly /></label>
-              <label>최근 수정<input value="2026. 06. 02 19:01" readonly /></label>
-            </div>
-            <div class="aidot-field-grid five">
-              <label>언어 *<input value="한국어" readonly /></label>
-              <label>NLU 방식<input value="Semantic - Vector Worker" readonly /></label>
-              <label>NLU 모델 *<input value="Aidot Vector Worker 기본 모델" readonly /></label>
-              <label>답변 방식<input value="Semantic Engine RAG 답변" readonly /></label>
-              <div class="profile-dots"><span></span><b></b><span></span></div>
-            </div>
-            <section class="aidot-setting-block">
-              <header><strong aria-label="static">Intent Vector DB 연결</strong><span aria-label="static">Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</span></header>
-              <div class="rag-form-grid"><label>사용 여부<select><option>사용</option></select></label><label>Index 이름<input value="aidot-intent" /></label></div>
-            </section>
-            <section class="aidot-setting-block">
-              <header><strong aria-label="static">Answer Vector DB 연결</strong><span aria-label="static">Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 Answer Vector DB에 저장합니다.</span></header>
-              <div class="rag-form-grid"><label>사용 여부<select><option>사용</option></select></label><label>Index 이름<input value="aidot-answer" /></label></div>
-            </section>
-            <section class="aidot-setting-block">
-              <header><strong>구성 자동분류 가중치</strong><span>구성 화면의 의도 후보 분류에서 사전, 개체, 단어, 글자 조각, 조사/어미 반영 비율을 조정합니다.</span></header>
-              <div class="aidot-weight-grid">
-                <label>사전 대표어<input value="1.2" /></label><label>개체<input value="1.2" /></label><label>명사/동사<input value="1" /></label><label>글자 조각<input value="0.2" /></label><label>조사/어미<input value="0.05" /></label><label>대표어 일치 최소점수<input value="0.82" /></label>
-              </div>
-            </section>
-            <label>소개<textarea>봇을 설명할 수 있는 소개 문장을 입력하세요.</textarea></label>
-          </section>
-        </div>
+        <div data-configure-aidot-screen></div>
       </section>
 
       <section id="detail" data-screen-id="detail" class="screen-card">

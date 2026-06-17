@@ -311,7 +311,7 @@ button:disabled { opacity: .48; }
   border: 0;
   border-radius: 0;
   background: transparent;
-  padding: 2px 0 2px 36px;
+  padding: 2px 0 2px 44px;
   color: #475569;
   font-size: var(--font-body);
   text-decoration: none;
@@ -328,6 +328,11 @@ button:disabled { opacity: .48; }
 .workflow-step-subnav .subnav-group {
   padding: 0 2px;
 }
+.workflow-step-subnav .subnav-group summary {
+  padding: 7px 16px 7px 12px;
+  font-size: var(--font-desc);
+  font-weight: 700;
+}
 .workflow-step-subnav .subnav-group__links {
   padding-bottom: 6px;
 }
@@ -338,7 +343,7 @@ button:disabled { opacity: .48; }
   border: 0;
   border-radius: 0;
   background: transparent;
-  padding: 2px 0 2px 12px;
+  padding: 2px 0 2px 24px;
   text-align: left;
   grid-template-columns: none;
   grid-template-rows: none;
@@ -664,6 +669,33 @@ textarea { min-height: 84px; resize: vertical; }
 .aidot-settings-main--full {
   grid-column: 1 / -1;
   min-width: 0;
+}
+.configure-message-list {
+  display: grid;
+  gap: 10px;
+}
+.configure-message-item {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 10px;
+}
+.configure-message-item__head,
+.configure-message-item__mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.configure-message-item__mode {
+  justify-content: flex-start;
+}
+.configure-message-item__mode label,
+.configure-message-item__head label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
 }
 .bot-avatar-small,
 .bot-avatar-large {

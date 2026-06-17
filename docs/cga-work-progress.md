@@ -2915,3 +2915,22 @@ o duplicate function declarations.
 - 사용자 확인 기준에서 `03 봇 구성`이 계속 `04 봇 제작` 본문처럼 보이는 현상이 있었음.
 - 현재 로컬 소스 기준 구조는 `03(detail)=Aidot 자동 구성 화면`, `04(build)=Aidot 의도 목록/대화 설계 연결 화면`으로 분리되어 있음.
 - 따라서 동일 증상 재발 시 우선 렌더 구조 문제보다도 `Git push -> WSL pull -> docker-compose -p cga up -d --build studio` 반영 누락 여부를 먼저 확인해야 함.
+
+## 2026-06-17 서버 메뉴 그룹 제목 폰트 보정
+- 사용자 확인 기준에서 `설정 / 기본 대화 / 연계` 그룹 제목 글자 크기가 워크플로우 카드 제목(`봇 평가` 등)보다 커 보였음.
+- 조치: `02 봇 설정` 하위 `workflow-step-subnav` 내부 그룹 제목만 `var(--font-body)`로 낮춰, 상위 워크플로우 카드보다 작게 보이도록 조정.
+
+## 2026-06-17 서버 메뉴 하위 위계 보정
+- 사용자 확인 기준에서 `설정 / 기본 대화 / 연계`는 상위 `봇 설정`보다 더 작은 글자와 들여쓰기로 보여야 함.
+- 조치: `workflow-step-subnav` 내부 그룹 제목 폰트를 `var(--font-desc)`로 더 낮추고, summary 자체에 좌측 여백을 줘 상위 카드보다 한 단계 아래 구조가 보이도록 수정.
+- 조치: 각 하위 링크도 좌측 패딩을 늘려 그룹 제목 아래에 종속된 항목처럼 보이도록 보정.
+
+## 2026-06-17 시스템 관리 하위 링크 들여쓰기 보정
+- 사용자 확인 기준에서 시스템 관리 하위 링크(`사용자 관리 / 로그인 이력 / 그룹 관리` 등)도 그룹 제목 아래로 한 단계 들어가 보여야 함.
+- 조치: 공통 `.subnav-group__links a` 좌측 패딩을 늘려 시스템 관리와 봇 설정 하위 링크 모두 들여쓰기되도록 통일.
+
+## 2026-06-17 봇 설정 서브메뉴별 Aidot 본문 연결
+- 사용자 확인 기준에서 `AI 모델 설정`만 아니라 `기본값 설정 / 메시지 설정 / 메신저 편의 기능 / 제외/무시 목록 설정 / 룰 설정 / 스몰토크 / 봇스테이션` 각각도 Aidot 기준 본문이 보여야 함.
+- 조치: `#configure` 화면을 정적 한 장에서 `data-configure-aidot-screen` 렌더러 구조로 변경.
+- 조치: `currentConfigureSubview`에 따라 Aidot 기준 본문을 각각 렌더링하도록 `renderConfigureAidotScreen()` 추가.
+- 참고 기준: `Aidot/apps/web/components/bot-settings-shell.tsx`, `conversation-default-settings-page.tsx`, `conversation-message-settings-page.tsx`, `messenger-settings-page.tsx`, `blocklist-settings-page.tsx`, `rule-settings-page.tsx`, `smalltalk-settings-page.tsx`, `botstation-settings-page.tsx`, `Aidot/docs/settings-semantics-40-45.md`.
