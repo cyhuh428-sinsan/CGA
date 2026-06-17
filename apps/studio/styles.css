@@ -3228,6 +3228,17 @@ button.management-table-row:hover,
 
 .access-toolbar--users { grid-template-columns: minmax(340px, 1fr) 150px 150px 150px 150px 52px 52px; }
 .access-toolbar--group { grid-template-columns: minmax(340px, 1fr) 150px 52px 52px 92px; }
+
+@media (max-width: 820px) {
+  .workspace-command-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace-command-footer__meta {
+    grid-template-columns: 1fr;
+  }
+}
 .access-toolbar button {
   width: 52px;
   min-width: 52px;
@@ -3976,6 +3987,33 @@ h1 { line-height: 1; }
   display: grid;
   gap: 8px;
   min-height: 0;
+}
+
+.workspace-command-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-top: 1px solid #e5ebf2;
+  background: #fbfcfe;
+}
+
+.workspace-command-footer__meta {
+  display: grid;
+  grid-template-columns: repeat(4, max-content);
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.workspace-command-footer__meta span {
+  color: #6b7b90;
+  font-size: var(--font-desc);
+}
+
+.workspace-command-footer__meta strong {
+  color: #0f2238;
+  font-size: var(--font-body);
 }
 
 .workspace-recent-list > strong {

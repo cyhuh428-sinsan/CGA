@@ -6579,10 +6579,15 @@ function renderWorkspaceHome() {
                 <span>${escapeText(bot.updated_at || bot.created_at || "-")}</span>
                 <span>${bot.id === currentWorkspaceBotId ? "작업중" : "열기"}</span>
               </button>
-            `).join("") || `<div class="command-empty">이 그룹에 작업 가능한 봇이 없습니다.</div>`}
+            `).join("") || `<div class="command-empty">이 그룹에 작업 가능한 봇이 없습니다. 새 봇을 생성해서 작업을 시작하세요.</div>`}
           </div>
-          <div class="command-action-stack">
-            <button type="button" data-workspace-create ${canCreateBotInCurrentWorkspace() ? "" : "disabled"}>+ 봇 생성</button>
+          <div class="workspace-command-footer">
+            <div class="workspace-command-footer__meta">
+              <span>선택 그룹</span>
+              <strong>${escapeText(currentGroup?.name || currentWorkspaceGroupId || "-")}</strong>
+              <span>작업 가능 봇</span>
+              <strong>${accessibleBots.length}개</strong>
+            </div>
             <button type="button" data-workspace-open-current ${currentBot ? "" : "disabled"}>작업 봇 열기</button>
           </div>
         </article>
@@ -6597,9 +6602,9 @@ function renderWorkspaceHome() {
             <div><dt>마지막 작업</dt><dd>${escapeText(currentBot?.updated_at || "없음")}</dd></div>
           </dl>
           <div class="command-action-stack">
-            <button type="button" data-jump-screen="create">봇 생성 화면</button>
             <button type="button" data-jump-screen="configure">봇 설정 열기</button>
             <button type="button" data-jump-screen="detail">봇 구성 열기</button>
+            <button type="button" data-jump-screen="bot-management">봇 관리 열기</button>
           </div>
           <div class="workspace-recent-list">
             <strong>최근 작업 봇</strong>
@@ -6645,16 +6650,16 @@ function renderWorkspaceHome() {
     renderWorkspaceHome();
     renderAllStatePanels();
   }));
-  shell.querySelector("[data-workspace-open-current]")?.addEventListener("click", () => {
+  shell.querySelectorAll("[data-workspace-open-current]").forEach((button) => button.addEventListener("click", () => {
     const bot = getCurrentWorkspaceBot();
     if (!bot) return;
     applyCurrentBotToStudioState(bot);
     renderTopContext();
     setActiveScreen("configure");
-  });
-  shell.querySelector("[data-workspace-create]")?.addEventListener("click", () => {
+  }));
+  shell.querySelectorAll("[data-workspace-create]").forEach((button) => button.addEventListener("click", () => {
     setActiveScreen("create");
-  });
+  }));
   shell.querySelectorAll("[data-jump-screen]").forEach((button) => {
     button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen));
   });
