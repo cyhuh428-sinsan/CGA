@@ -2941,3 +2941,9 @@ o duplicate function declarations.
 - 좌측 입력 영역(`학습문장 입력`, `구성 엔진/모델`, `목표 의도 수`, `자동 구성`)과 우측 `의도 후보` 패널을 연결해 `detail` 화면 고정 템플릿으로 반영.
 - 후보 목록은 기존 미리보기 텍스트/갱신 로직을 유지하는 `data-config-preview` 바인딩으로 연결.
 - 사용자 기준: 화면은 `apps/studio/app.js`의 `renderDetailAidotScreen` 단위 변경만 적용했고, 실행 경로(`D:\Project\cga`, Docker 기준 `studio`)는 기존 운영 규칙을 유지.
+
+## 2026-06-17 20:20 봇 구성/봇 제작 화면 번호 및 렌더 경계 보정
+- 사용자 확인 기준에서 좌측 `03 봇 구성`을 눌렀는데 본문 헤더가 `04 봇 제작`처럼 보여 단계 식별이 틀어지는 문제가 있었음.
+- 조치: `renderDetailAidotScreen()`의 단계 코드를 `04`에서 `03`으로 수정.
+- 조치: `renderBuildAidotScreen()`도 `build` 섹션 안에서 자체적으로 `04 봇 제작` 헤더를 렌더하도록 바꿔, `detail`과 `build` 화면이 섞여 보일 가능성을 줄임.
+- 조치: `index.html`의 초기 정적 골격도 `03 봇 구성`, `04 봇 제작` 기준으로 맞춰 브라우저 초기 노출과 JS 렌더 후 상태가 다르지 않게 정리.

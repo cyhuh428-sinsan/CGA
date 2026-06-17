@@ -2756,7 +2756,7 @@ function renderDetailAidotScreen() {
   const targetIntentCount = currentCompositionState.requested_intent_count || 50;
   renderWorkflowScreenShell(
     "detail",
-    "04",
+    "03",
     "봇 구성",
     "봇 구성은 학습문장을 기반으로 의도 후보를 생성합니다.",
     `<div class="aidot-rag-config">
@@ -6115,6 +6115,13 @@ function renderConfigureAidotScreen() {
 }
 
 function renderBuildAidotScreen() {
+  renderWorkflowScreenShell(
+    "build",
+    "04",
+    "봇 제작",
+    "Aidot 의도 화면 기준으로 의도/모듈을 제작하고 대화 설계로 연결합니다.",
+    `<div data-build-aidot-screen></div>`
+  );
   const container = document.querySelector("[data-build-aidot-screen]");
   if (!container) return;
   const rows = getCurrentIntentRowsForWorkflow();
