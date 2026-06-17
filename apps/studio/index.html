@@ -347,23 +347,7 @@
           <div><h3 data-i18n="configure.title">Configure Bot</h3><p data-i18n="configure.body">LLM-first bot composition flow.</p></div>
         </div>
         <div class="aidot-settings-screen">
-          <aside class="aidot-settings-side">
-            <strong class="aidot-settings-side__title">서버 메뉴</strong>
-            <nav>
-              <strong>설정</strong>
-              <a class="active">AI 모델 설정</a>
-              <a>기본값 설정</a>
-              <a>메시지 설정</a>
-              <a>메신저 편의 기능</a>
-              <strong>기본 대화</strong>
-              <a>제외/무시 목록 설정</a>
-              <a>룰 설정</a>
-              <a>스몰토크</a>
-              <strong>연계</strong>
-              <a>봇스테이션</a>
-            </nav>
-          </aside>
-          <section class="aidot-settings-main">
+          <section class="aidot-settings-main aidot-settings-main--full">
             <div class="aidot-field-grid">
               <label>봇 이름 *<input value="테스트봇 - 시멘틱 RAG" /></label>
               <label>유형<input value="텍스트형" readonly /></label>
@@ -406,11 +390,11 @@
             <div class="rag-info-line">운영버전은 구성 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.</div>
             <header>
               <strong aria-label="static">학습문장 입력</strong>
-              <span aria-label="static">구성용 엔진 : ML · DeepLearning Lite</span>
+              <span aria-label="static">구성용 엔진 : Semantic · Vector Worker · Aidot Vector Worker 기본 모델</span>
             </header>
             <div class="rag-form-grid">
-              <label>구성 엔진<select><option value="ML">ML</option></select></label>
-              <label>구성 모델<select><option value="DeepLearning Lite">DeepLearning Lite</option></select></label>
+              <label>구성 엔진<select><option value="Semantic - Vector Worker">Semantic - Vector Worker</option></select></label>
+              <label>구성 모델<select><option value="Aidot Vector Worker 기본 모델">Aidot Vector Worker 기본 모델</option></select></label>
             </div>
             <div class="rag-info-line">자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.</div>
             <label>학습문장을 줄 단위로 입력하세요.<textarea data-config-utterances>예) 상담원 연결해줘
@@ -422,11 +406,7 @@
             </div>
             <div class="rag-info-line">분류 수 기준 ML은 무조건 수를 강제하지 않고, 유사도가 충분한 후보만 병합합니다.</div>
             <div class="rag-radio-row"><label><input type="radio" /> 50개 이하로 최대한 적게</label><label><input type="radio" checked /> 50개에 가깝게</label><label><input type="radio" /> 무조건 50개</label></div>
-            <div class="button-row"><button type="button">ML 기준 의도 입력</button><button type="button" class="ghost-btn">NLU 기준 / 가중치 설정</button></div>
-            <section class="aidot-setting-block">
-              <header><strong>ML 구성 테스트</strong><span>현재 의도 후보 기준으로 사용자 발화를 비교합니다.</span></header>
-              <div class="rag-target-row"><label>테스트 문장<input value="예) 계약 철회할게요" /></label><button type="button">테스트</button></div>
-            </section>
+            <div class="button-row"><button type="button" class="ghost-btn">NLU 기준 / 가중치 설정</button></div>
           </section>
           <section class="aidot-rag-right">
             <header><strong>의도 후보</strong><div><button type="button">선택 병합</button><button type="button" class="primary-action-small">현재 버전 덮어쓰기</button></div></header>
