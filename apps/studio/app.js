@@ -2315,6 +2315,13 @@ function getCurrentIntentRowsForWorkflow() {
   }));
 }
 
+function normalizeDateText(value) {
+  if (!value) return "-";
+  const text = String(value).trim();
+  if (!text) return "-";
+  return text;
+}
+
 function renderWorkflowPager(total, tableKey, currentPage, totalPages) {
   return `
     <div class="workflow-pager" aria-label="pagination">
@@ -2406,105 +2413,304 @@ function renderTestAidotScreen() {
   renderWorkflowScreenShell("test", "05", "봇 테스트", "Aidot 시뮬레이터 기준으로 테스트 결과를 확인합니다.", `<div class="aidot-simulator-screen"><div class="aidot-simulator-chat"><p class="user-msg">${escapeText(test.last_user_message || "")}</p><p class="bot-msg">${escapeText(test.last_bot_message || "")}</p><input placeholder="테스트 메시지를 입력하세요" /></div><aside class="aidot-simulator-side"><h4>대화 분석</h4>${rows.map(([label, value]) => `<p><b>${escapeText(label)}</b><span>${escapeText(value)}</span></p>`).join("")}</aside></div>`);
 }
 
-function renderEvaluateAidotScreen() {
-  const rows = getCurrentIntentRowsForWorkflow().map((row) => ({
-    ...row,
-    status: row.utteranceCount > 0 && row.dialogCardCount > 0 ? "준비 완료" : "점검 필요"
-  }));
-  const page = getWorkflowPagedRows("evaluate", rows);
-  const selected = page.rows[0] || rows[0] || {};
-  const section = renderWorkflowScreenShell("evaluate", "06", "봇 평가", "운영으로 넘기기 전에 Aidot 평가 화면 기준으로 품질을 확인합니다.", `
-    <div class="aidot-evaluate-screen">
-      <div class="aidot-evaluate-list workflow-lookup" data-workflow-table-key="evaluate">
-        <div class="workflow-lookup__search">
-          <label><span>⌕</span><input data-workflow-query="evaluate" placeholder="의도/평가상태를 검색하세요." /></label>
-          <button type="button" class="admin-page__filter admin-page__filter--text" data-workflow-reset="evaluate">초기화</button>
-          <div class="workflow-lookup__actions"><button type="button" class="admin-page__primary" data-workflow-search="evaluate">조회</button></div>
+function renderAidotBotFeatureHeader(activeKey) {
+  const rows = getCurrentIntentRowsForWorkflow();
+  const bot = getCurrentWorkspaceBot();
+  const botName = bot?.name || currentStudioState.bot.name || "New Bot";
+  const version = currentStudioState.bot.version || bot?.version || "Ver. 1";
+  const counts = {
+    intent: Math.max(17, rows.length || 0),
+    config: "-",
+    entity: Math.max(6, currentEntityAssets.length || 0),
+    dictionary: Math.max(7, currentDictionaryAssets.length || 0),
+    evaluate: "-",
+    operate: 0,
+    analysis: "-"
+  };
+  const tabs = [
+    ["intent", "☞ 의도", counts.intent],
+    ["config", "☷ 구성", counts.config],
+    ["entity", "⊙ 개체", counts.entity],
+    ["dictionary", "▣ 사전", counts.dictionary],
+    ["evaluate", "⌁ 평가", counts.evaluate],
+    ["operate", "↔ 재학습", counts.operate],
+    ["analysis", "⌁ 분석", counts.analysis]
+  ];
+  return `
+    <div class="aidot-bot-main-head aidot-bot-main-head--operations">
+      <div class="aidot-bot-title">
+        <div class="bot-avatar-large"></div>
+        <div>
+          <div class="aidot-title-row">
+            <h2>${escapeText(botName)}</h2>
+            <select><option>${escapeText(version)} · 운영</option></select>
+            <span class="test-badge">테스트형</span>
+            <span class="star-mark">★</span>
+            <button type="button" class="icon-button">⋮</button>
+          </div>
+          <strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: 정해진 답변</strong>
+          <div class="train-row"><button type="button">학습하기</button><span>학습성공 2026-05-12 02:12 cyhuh</span></div>
         </div>
-        <div class="workflow-lookup__toolbar">
-          <strong>전체 ${rows.length}건</strong>
-          ${renderWorkflowPageSize("evaluate", page.pageSize)}
-        </div>
-        <div class="workflow-grid aidot-evaluate-grid" style="--workflow-grid-template:.7fr 1.5fr .8fr .8fr 1fr 1fr .8fr">
-          <div class="workflow-grid__row workflow-grid__row--header"><span>ID ↕</span><span>의도/모듈명 ↕</span><span>학습문장 ↕</span><span>대화카드 ↕</span><span>평가상태 ↕</span><span>최종수정일시 ↕</span><span>최종수정자 ↕</span></div>
-          ${page.rows.map((row, index) => `<button type="button" class="workflow-grid__row ${index === 0 ? "selected" : ""}" data-evaluate-intent="${escapeText(row.id)}"><span>${escapeText(row.rowId)}</span><strong>${escapeText(row.id)}</strong><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${escapeText(row.status)}</span><span>${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span></button>`).join("")}
-        </div>
-        ${renderWorkflowPager(rows.length, "evaluate", page.currentPage, page.totalPages)}
       </div>
-      <div class="aidot-evaluation-detail">
-        <div class="aidot-evaluation-detail__head"><strong>Overview › 의도 상세</strong><button type="button" class="admin-page__ghost">평가정보 내보내기</button></div>
-        <div class="aidot-evaluation-summary">
-          <section><h4>Vector DB 상태</h4><p><span>연결</span><b>정상</b></p><p><span>Index</span><b>aidot-intent</b></p><p><span>검색 API</span><b>http://localhost:8350/intent/search</b></p><p><span>임베딩 모델</span><b>Aidot Vector Worker 기본 모델</b></p></section>
-          <section class="aidot-score-panel"><h4>Top-K 검색 정확도</h4><div><b class="score-ring">91.7%<span>Top-1</span></b><strong>61.2%<span>평균 Score</span></strong><b class="score-ring">89.6%<span>Top-3</span></b></div></section>
-          <section><h4>9:1 Split 평가</h4><div class="split-grid"><p><span>Random</span><b>70.8%</b></p><p><span>Fixed</span><b>91.7%</b></p><p><span>차이</span><b>20.83%</b></p><p><span>평가 문장</span><b>48</b></p><p><span>학습문장</span><b>228</b></p><p><span>최근 이력</span><b>11</b></p></div></section>
-        </div>
-        <div class="aidot-evaluation-tables">
-          <section><h4>오류문장</h4><div class="aidot-mini-table"><div><b>문장</b><b>정답 의도</b><b>예측 의도 / Score</b></div>${[
-            ["무슨 일로 하는 거에요", "통화 독려", "용어 설명 / 25.00%"],
-            ["다음에 전화해", "콜백 예약", "인콜 진행 예정 / 92.00%"],
-            ["이런 지옥 왜 합니까", "통화 독려", "통화 거부 / 29.49%"],
-            ["안됩니다", "콜백 예약", "발화속도 조절 / 33.33%"],
-            ["내가 혼자 할테니까 전화 안줘도 됩니다", "인콜 진행 예정", "콜백 예약 / 33.33%"]
-          ].map((item) => `<div><span>${escapeText(item[0])}</span><span>${escapeText(item[1])}</span><strong>${escapeText(item[2])}</strong></div>`).join("")}</div></section>
-          <section><h4>낮은 Score 문장</h4><div class="aidot-mini-table"><div><b>문장</b><b>의도</b><b>Score</b></div>${[
-            ["해약한다고요", "해지 요청", "25.72%"],
-            ["중국에 있어요", "통화 불가", "42.16%"],
-            ["무슨 일로 하는 거에요", "통화 독려", "25.00%"],
-            ["안합니다", "통화 거부", "35.36%"],
-            ["나중에 하면 안되나", "콜백 예약", "33.33%"]
-          ].map((item) => `<div><span>${escapeText(item[0])}</span><span>${escapeText(item[1])}</span><strong>${escapeText(item[2])}</strong></div>`).join("")}</div></section>
-        </div>
-        <div class="aidot-conflict-row"><strong>유사 의도 충돌</strong><span>통화 독려 <b>용어 설명 1건</b></span><span>콜백 예약 <b>인콜 진행 예정 1건</b></span><span>통화 거부 <b>발화속도 조절 1건</b></span><span>인콜 진행 예정 <b>콜백 예약 1건</b></span></div>
-      </div>
+      <div class="aidot-count-tabs">${tabs.map(([key, label, value]) => `<button type="button" class="${activeKey === key ? "active" : ""}"><span>${label}</span><b>${value}</b></button>`).join("")}</div>
     </div>
-  `);
+  `;
+}
+
+function renderEvaluateAidotScreen() {
+  const section = document.querySelector('[data-screen-id="evaluate"]');
   if (!section) return;
-  bindWorkflowTableControls(section, "evaluate");
-  section.querySelectorAll("[data-evaluate-intent]").forEach((button) => button.addEventListener("click", () => {
-    section.querySelectorAll("[data-evaluate-intent]").forEach((row) => row.classList.remove("selected"));
-    button.classList.add("selected");
-  }));
+  const intents = getCurrentIntentRowsForWorkflow();
+  const intentCount = Math.max(13, intents.length || 13);
+  const utteranceCount = Math.max(228, intents.reduce((sum, row) => sum + Number(row.utteranceCount || 0), 0));
+  const balanceItems = ["콜백 예약", "상담사 전환 요청", "통화 독려", "통화 불가", "소요시간 문의", "발신자 확인", "해지 요청", "인콜 진행 예정", "통화 거부", "상품 설명 요청"];
+  const matrixItems = [13, 21, 26, 22, 36, 11, 17, 15, 10, 8, 20, 14];
+  section.innerHTML = `
+    <section class="aidot-feature-page aidot-feature-page--evaluate">
+      ${renderAidotBotFeatureHeader("evaluate")}
+      <div class="evaluation-dashboard evaluation-dashboard--real">
+      <div class="evaluation-dashboard__header">
+        <h1>Overview › 의도 상세</h1>
+        <button type="button" class="studio-table-page__ghost">평가정보 내보내기</button>
+      </div>
+      <div class="evaluation-dashboard__grid evaluation-dashboard__grid--nlu">
+        <section class="evaluation-card">
+          <div class="evaluation-card__title-row">
+            <h2>봇 평가 <span class="evaluation-info-icon">i</span></h2>
+            <button type="button" class="studio-table-page__ghost">평가정보 더보기</button>
+          </div>
+          <div class="evaluation-card__empty evaluation-card__empty--circle">
+            <strong>봇 평가를 위해<br />평가 데이터를 업로드하세요.</strong>
+          </div>
+          <div class="evaluation-card__bottom-actions">
+            <button type="button" class="studio-table-page__ghost">평가 데이터 업로드</button>
+            <button type="button" class="manual-main__menu-button--toolbar">⋮</button>
+          </div>
+        </section>
+        <section class="evaluation-card">
+          <div class="evaluation-card__title-row">
+            <h2>학습모델 평가 <span class="evaluation-info-icon">i</span></h2>
+            <button type="button" class="studio-table-page__ghost">평가정보 더보기</button>
+          </div>
+          <div class="evaluation-score">
+            <div class="evaluation-score__ring"><strong>65.4%</strong><span>Random</span></div>
+            <div class="evaluation-score__gap"><strong>0.87%</strong><span>차이</span></div>
+            <div class="evaluation-score__ring"><strong>64.5%</strong><span>Fixed</span></div>
+          </div>
+        </section>
+        <section class="evaluation-card evaluation-card--wide">
+          <div class="evaluation-card__title-row">
+            <h2>평가 이력</h2>
+            <button type="button" class="studio-table-page__ghost">평가정보 더보기</button>
+          </div>
+          <div class="evaluation-history">
+            <svg class="evaluation-history__line" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polyline class="evaluation-history__line-random" points="4,24 12,10 20,28 28,8 36,44 44,26 52,39" />
+              <polyline class="evaluation-history__line-fixed" points="4,34 12,28 20,26 28,30 36,50 44,42 52,47" />
+            </svg>
+            <span class="evaluation-history__point" style="left:4%;top:24%"></span>
+            <span class="evaluation-history__point" style="left:12%;top:10%"></span>
+            <span class="evaluation-history__point" style="left:20%;top:28%"></span>
+            <span class="evaluation-history__point" style="left:28%;top:8%"></span>
+            <span class="evaluation-history__point" style="left:36%;top:44%"></span>
+            <span class="evaluation-history__point" style="left:44%;top:26%"></span>
+            <span class="evaluation-history__point" style="left:52%;top:39%"></span>
+            <div class="evaluation-history__x-axis">${["05.04", "05.04", "05.04", "05.04", "05.04", "05.04", "05.05"].map((label) => `<span>${label}</span>`).join("")}</div>
+          </div>
+          <div class="evaluation-history__summary">
+            <span>의도 <strong>${intentCount}개</strong></span>
+            <span>학습문장 <strong>${utteranceCount}개</strong></span>
+            <button type="button" class="studio-table-page__ghost">학습 데이터 다운로드</button>
+          </div>
+        </section>
+        <section class="evaluation-card evaluation-card--feature">
+          <div class="evaluation-card__title-row">
+            <h2>학습문장 / Feature Balance <span class="evaluation-info-icon">i</span></h2>
+            <div class="evaluation-feature-toggle"><button type="button" class="is-active">Abnormal</button><button type="button">Total</button></div>
+          </div>
+          <div class="evaluation-balance">
+            <div class="evaluation-balance__y-axis">${[110,100,90,80,70,60,50,40,30,20,10,0].map((value) => `<span>${value}</span>`).join("")}</div>
+            ${balanceItems.map((label, index) => {
+              const a = [75, 19, 55, 46, 34, 32, 30, 26, 48, 25][index];
+              const b = [75, 21, 71, 64, 31, 34, 38, 38, 51, 43][index];
+              return `<div class="evaluation-balance__item"><i style="height:${a}%"></i><b style="height:${b}%"></b><em>${escapeText(label)}</em></div>`;
+            }).join("")}
+            <div class="evaluation-balance__legend"><span><i></i>학습문장</span><span><b></b>Feature</span></div>
+          </div>
+        </section>
+        <section class="evaluation-card evaluation-card--matrix">
+          <div class="evaluation-card__title-row">
+            <h2>Confusion Matrix <span class="evaluation-info-icon">i</span></h2>
+            <div class="evaluation-matrix-controls"><span>100%</span><button type="button">+</button><button type="button">상세 보기<br />초기화</button></div>
+          </div>
+          <div class="evaluation-matrix-wrap">
+            <div class="evaluation-matrix evaluation-matrix--real">
+              ${matrixItems.map((value, index) => `<span class="${index % 2 === 0 ? "is-dark" : "is-dark"}" style="grid-column:${index + 1};grid-row:${index + 1}">${value}</span>`).join("")}
+            </div>
+            <div class="evaluation-matrix__scale">${[100,90,80,70,60,50,40,30,20].map((value) => `<span>${value}</span>`).join("")}</div>
+          </div>
+        </section>
+      </div>
+      </div>
+    </section>
+  `;
 }
 
 function renderOperateAidotScreen() {
-  const rows = [];
-  const page = getWorkflowPagedRows("operate", rows);
-  const botName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "테스트봇";
-  const section = renderWorkflowScreenShell("operate", "RT", "재학습", "Aidot 재학습 화면 기준으로 개선 대상을 확인합니다.", `
-    <div class="aidot-retrain-screen">
-      <div class="aidot-bot-main-head aidot-bot-main-head--compact"><div class="aidot-bot-title"><div class="bot-avatar-large"></div><div><div class="aidot-title-row"><h2>${escapeText(botName)}</h2><select><option>Ver. 1 · 운영</option></select><span class="test-badge">테스트형</span><span class="star-mark">★</span><button type="button" class="icon-button">⋮</button></div><strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: 정해진 답변</strong><div class="train-row"><button type="button" data-build-run>학습하기</button><span>학습성공 2026-05-12 02:12 cyhuh</span></div></div></div><div class="aidot-count-tabs"><button><span>☞ 의도</span><b>17</b></button><button><span>☷ 구성</span><b>-</b></button><button><span>⊙ 개체</span><b>6</b></button><button><span>▣ 사전</span><b>7</b></button><button><span>⌁ 평가</span><b>-</b></button><button class="active"><span>↔ 재학습</span><b>0</b></button><button><span>⌁ 분석</span><b>-</b></button></div></div>
-      <div class="aidot-retrain-filter"><input placeholder="의도명/지식명 또는 사용자 발화를 검색하세요." /><select><option>전체</option></select><select><option>전체</option></select><select><option>전체</option></select><select><option>전체</option></select><input type="date" value="2026-03-12" /><input type="date" value="2026-06-12" /><button type="button" class="admin-page__ghost">초기화</button><button type="button" class="admin-page__primary">확인</button></div>
-      <div class="aidot-retrain-actions"><strong>전체 ${rows.length}</strong><button type="button">대화이력 동기화</button><button type="button" class="admin-page__primary">재학습</button><button type="button" disabled>의도 생성</button><button type="button" disabled>보류</button><button type="button" disabled>재학습 제외</button><button type="button" disabled>삭제</button><b>0개 선택</b></div>
-      <div class="workflow-grid aidot-retrain-grid" style="--workflow-grid-template:2fr 1.4fr .8fr .8fr .8fr .9fr"><div class="workflow-grid__row workflow-grid__row--header"><span>사용자 발화 ↕</span><span>의도명/지식명 ↕</span><span>채널 ↕</span><span>실행결과 ↕</span><span>분류방식 ↕</span><span>학습상태 ↕</span><span>발생시간 ↕</span></div>${page.rows.map((row) => `<div class="workflow-grid__row"><span>${escapeText(row.utterance || "")}</span><span>${escapeText(row.intent || "")}</span><span>${escapeText(row.channel || "")}</span><span>${escapeText(row.result || "")}</span><span>${escapeText(row.method || "")}</span><span>${escapeText(row.status || "")}</span><span>${escapeText(row.createdAt || "")}</span></div>`).join("")}</div>
-    </div>
-  `);
+  const sourceRows = Array.isArray(currentOperationsState.operate?.retrainingCandidates)
+    ? currentOperationsState.operate.retrainingCandidates
+    : Array.isArray(currentOperationsState.operate?.retrain_rows)
+      ? currentOperationsState.operate.retrain_rows
+      : [];
+  const rows = (sourceRows.length ? sourceRows : []).map((row) => ({
+    utterance: normalizeDateText(row.utterance || row.message),
+    intent: normalizeDateText(row.intent || row.target || row.intentName || row.module),
+    channel: normalizeDateText(row.channel || row.channelName || row.source || "webchat"),
+    result: normalizeDateText(row.result || row.classificationResult || row.statusMessage),
+    method: normalizeDateText(row.method || row.classificationMethod || "M/L"),
+    status: normalizeDateText(row.status || row.retrainStatus || "미학습"),
+    createdAt: normalizeDateText(row.createdAt || row.occurredAt || row.updatedAt)
+  }));
+  const section = document.querySelector('[data-screen-id="operate"]');
   if (!section) return;
+  const rowHtml = rows.map((row) => `
+    <div class="data-grid__row">
+      <div class="data-grid__cell"><input type="checkbox" /></div>
+      <div class="data-grid__cell">${escapeText(row.utterance || "")}</div>
+      <div class="data-grid__cell">${escapeText(row.intent || "")}</div>
+      <div class="data-grid__cell">${escapeText(row.channel || "")}</div>
+      <div class="data-grid__cell">${escapeText(row.result || "")}</div>
+      <div class="data-grid__cell">${escapeText(row.method || "")}</div>
+      <div class="data-grid__cell">${escapeText(row.status || "")}</div>
+      <div class="data-grid__cell">${escapeText(row.createdAt || "")}</div>
+    </div>
+  `).join("");
+  section.innerHTML = `
+    <section class="aidot-feature-page aidot-feature-page--operate">
+      ${renderAidotBotFeatureHeader("operate")}
+      <div class="retraining-page">
+      <section class="retraining-filter">
+        <input placeholder="의도명/지식명 또는 사용자 발화를 검색하세요." />
+        <select aria-label="채널"><option>전체</option><option>webchat</option><option>Simulator</option></select>
+        <select aria-label="실행결과"><option>전체</option><option>정상분류</option><option>의도 추출 오류</option><option>유사의도발생</option></select>
+        <select aria-label="분류방식"><option>전체</option><option>M/L</option><option>Rule</option><option>Small Talk</option><option>Exact Matching</option><option>대화 Queue</option></select>
+        <select aria-label="학습상태"><option>전체</option><option>미학습</option><option>보류</option><option>재학습제외</option><option>재학습완료</option></select>
+        <input type="date" value="2026-03-17" aria-label="발생기간 시작" />
+        <input type="date" value="2026-06-17" aria-label="발생기간 종료" />
+        <button type="button">초기화</button>
+        <button type="button" class="retraining-filter__primary">확인</button>
+      </section>
+      <section class="retraining-actions">
+        <strong>전체 ${rows.length}</strong>
+        <button type="button">대화이력 동기화</button>
+        <button type="button" class="retraining-actions__primary">재학습</button>
+        <button type="button" disabled>의도 생성</button>
+        <button type="button" disabled>보류</button>
+        <button type="button" disabled>재학습 제외</button>
+        <button type="button" disabled>삭제</button>
+        <span>0개 선택</span>
+      </section>
+      <div class="data-grid data-grid--studio retraining-grid" style="--data-grid-template:44px minmax(220px, 1.4fr) 180px 110px 130px 120px 120px 150px">
+        <div class="data-grid__row data-grid__row--header">
+          <div class="data-grid__cell"></div>
+          <div class="data-grid__cell">사용자 발화 ↕</div>
+          <div class="data-grid__cell">의도명/지식명 ↕</div>
+          <div class="data-grid__cell">채널 ↕</div>
+          <div class="data-grid__cell">실행결과 ↕</div>
+          <div class="data-grid__cell">분류방식 ↕</div>
+          <div class="data-grid__cell">학습상태 ↕</div>
+          <div class="data-grid__cell">발생시간 ↕</div>
+        </div>
+        ${rowHtml}
+      </div>
+      </div>
+    </section>
+  `;
 }
 
 function renderAnalysisAidotScreen() {
   const operate = currentOperationsState.operate || {};
-  const botName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "테스트봇";
   const history = [
-    ["2026-06-12 13:55", "-", "-", "completed"],
-    ["2026-06-12 12:12", "-", "-", "completed"],
-    ["2026-06-12 12:12", "-", "-", "completed"],
-    ["2026-06-12 06:12", "-", "-", "completed"],
-    ["2026-06-12 06:12", "-", "-", "completed"]
+    ...Array.from({ length: 5 }).map((_, index) => {
+      const fallbackDate = operate.lastConversationAt || (index < 2 ? "2026-06-17 01:22" : "2026-06-12 12:12");
+      return [
+        fallbackDate,
+        normalizeDateText(operate.lastUtterance || (index === 0 ? "{\"webchatRichFormVersion\":\"1.0\",\"response\":\"...\"}" : "-")),
+        normalizeDateText(operate.lastIntent || "-"),
+        normalizeDateText(index === 0 ? "대화종료" : (operate.lastRuntimeResult || "completed"))
+      ];
+    })
   ];
-  const section = renderWorkflowScreenShell("analysis", "AN", "분석", "Aidot 분석 화면 기준으로 운영 지표를 조회합니다.", `
-    <div class="aidot-analysis-screen">
-      <div class="aidot-bot-main-head aidot-bot-main-head--compact"><div class="aidot-bot-title"><div class="bot-avatar-large"></div><div><div class="aidot-title-row"><h2>${escapeText(botName)}</h2><select><option>Ver. 1 · 운영</option></select><span class="test-badge">테스트형</span><span class="star-mark">★</span><button type="button" class="icon-button">⋮</button></div><strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: 정해진 답변</strong><div class="train-row"><button type="button" data-build-run>학습하기</button><span>학습성공 2026-05-12 02:12 cyhuh</span></div></div></div><div class="aidot-count-tabs"><button><span>☞ 의도</span><b>17</b></button><button><span>☷ 구성</span><b>-</b></button><button><span>⊙ 개체</span><b>6</b></button><button><span>▣ 사전</span><b>7</b></button><button><span>⌁ 평가</span><b>-</b></button><button><span>↔ 재학습</span><b>0</b></button><button class="active"><span>⌁ 분석</span><b>-</b></button></div></div>
-      <div class="aidot-analysis-filter"><select><option>webchat</option></select><button type="button">‹</button><strong>2026-06</strong><button type="button">›</button></div>
-      <div class="aidot-analysis-legend"><strong>누적 대화량</strong><span class="dot teal"></span>M/L 7% (22건)<span class="dot green"></span>Rule 0% (0건)<span class="dot orange"></span>Small Talk 0% (0건)<span class="dot blue"></span>Exact Matching 0% (0건)<span class="dot red"></span>미응답 93% (277건)</div>
-      <div class="aidot-analysis-grid">
-        <section><h4>기간내 대화량</h4><div class="donut-panel"><div class="donut-ring"><b>100%</b><span>응답률</span><em>6 / 6</em></div><div class="donut-legend"><p><b>응답</b></p><p><span class="dot teal"></span>M/L <b>100% 6</b></p><p><span class="dot green"></span>Rule <b>0% 0</b></p><p><span class="dot orange"></span>Small Talk <b>0% 0</b></p><p><span class="dot blue"></span>Exact Matching <b>0% 0</b></p><p><span class="dot red"></span>대화 Queue <b>0% 0</b></p><p><b>미응답</b><span>0% 0</span></p></div></div></section>
-        <section><h4>기간별 대화량</h4><div class="line-chart-mock"><div class="chart-legend"><span>사용자 발화</span><span>문의</span><span>응답</span><span>사용자수</span></div><div class="chart-grid"><span>01일</span><span>02일</span><span>03일</span><span>04일</span><span>05일</span><span>06일</span><span>07일</span></div><button type="button" class="admin-page__ghost">선택일자 대화 전체보기</button></div></section>
-        <section><h4>가장 많은 문의 Top 5</h4><div class="aidot-mini-table"><div><b>순위 ↕</b><b>의도/모듈명 ↕</b><b>분류방식 ↕</b><b>건수 ↕</b><b>응답률 ↕</b></div><div><span>1</span><span>-</span><span>미응답</span><span>${Number(operate.undefined_intents ?? 6)}</span><span>100%</span></div></div></section>
-        <section><h4>선택일자 대화 이력</h4><div class="aidot-mini-table"><div><b>발화일시 ↕</b><b>사용자 발화 ↕</b><b>의도/모듈명 ↕</b><b>실행 결과 ↕</b></div>${history.map((row) => `<div><span>${escapeText(row[0])}</span><span>${escapeText(row[1])}</span><span>${escapeText(row[2])}</span><span>${escapeText(row[3])}</span></div>`).join("")}</div></section>
-      </div>
-    </div>
-  `);
+  const section = document.querySelector('[data-screen-id="analysis"]');
   if (!section) return;
+  section.innerHTML = `
+    <section class="aidot-feature-page aidot-feature-page--analysis">
+      ${renderAidotBotFeatureHeader("analysis")}
+      <div class="analysis-page">
+      <div class="analysis-page__filters">
+        <select aria-label="채널 선택"><option>webchat</option></select>
+        <button type="button">‹</button>
+        <strong>2026-06</strong>
+        <button type="button">›</button>
+      </div>
+      <div class="analysis-page__summary">
+        <h2>누적 대화량 <span class="analysis-info-icon">i</span></h2>
+        <div class="analysis-page__legend">
+          <span>제외/무시 0% (0건)</span>
+          <span>스몰토크 0% (0건)</span>
+          <span>Exacting Matching 0% (0건)</span>
+          <span>룰 58% (11건)</span>
+          <span>ML 0% (0건)</span>
+          <span>시멘틱 0% (0건)</span>
+          <span>LLM 0% (0건)</span>
+          <span>미응답 42% (8건)</span>
+        </div>
+      </div>
+      <div class="analysis-dashboard analysis-dashboard--manual">
+        <section class="analysis-panel analysis-panel--ring">
+          <h3>기간내 대화량 <span class="analysis-info-icon">i</span></h3>
+          <div class="analysis-ring">
+            <div class="analysis-ring__circle"><strong>100%</strong><span>응답률</span><small>19 / 19</small></div>
+            <div class="analysis-ring__breakdown">
+              <div class="analysis-ring__breakdown-head"><span></span><span>비율</span><span>건</span></div>
+              <div class="analysis-ring__breakdown-row analysis-ring__breakdown-row--group"><strong>응답</strong><span>100%</span><span>19</span></div>
+              ${["제외/무시", "스몰토크", "Exacting Matching", "룰", "ML", "시멘틱", "LLM"].map((label, index) => `<div class="analysis-ring__breakdown-row"><strong>${label}</strong><span>${index === 3 ? "57.9%" : "0%"}</span><span>${index === 3 ? "11" : "0"}</span></div>`).join("")}
+              <div class="analysis-ring__breakdown-row analysis-ring__breakdown-row--group"><strong>미응답</strong><span>0%</span><span>0</span></div>
+            </div>
+          </div>
+        </section>
+        <section class="analysis-panel">
+          <h3>기간별 대화량 <span class="analysis-info-icon">i</span></h3>
+          <div class="analysis-period-legend"><span class="is-user">사용자 발화</span><span class="is-inquiry">문의</span><span class="is-answer">응답</span><span class="is-user-count">사용자수</span></div>
+          <div class="analysis-period-chart">
+            <button type="button" class="analysis-period-chart__move analysis-period-chart__move--prev">‹</button>
+            <div class="analysis-chart analysis-chart--manual">
+              ${["01일","02일","03일","04일","05일","06일","07일"].map((day) => `<button type="button"><span class="is-user" style="height:4%"></span><span class="is-inquiry" style="height:4%"></span><span class="is-answer" style="height:4%"></span><i>0</i><em>${day}</em></button>`).join("")}
+            </div>
+            <button type="button" class="analysis-period-chart__move analysis-period-chart__move--next">›</button>
+          </div>
+          <div class="analysis-period-chart__pages"><button type="button" class="is-active"></button><button type="button"></button><button type="button"></button></div>
+          <button type="button" class="studio-table-page__ghost">선택일자 대화 전체보기</button>
+        </section>
+        <section class="analysis-panel">
+          <h3>가장 많은 문의 Top 5 <span class="analysis-info-icon">i</span></h3>
+          <div class="data-grid data-grid--studio" style="--data-grid-template:64px 1fr 120px 90px 90px">
+            <div class="data-grid__row data-grid__row--header"><div class="data-grid__cell">순위 ↕</div><div class="data-grid__cell">의도/모듈명 ↕</div><div class="data-grid__cell">분류방식 ↕</div><div class="data-grid__cell">건수 ↕</div><div class="data-grid__cell">응답률 ↕</div></div>
+            <div class="data-grid__row"><div class="data-grid__cell">1</div><div class="data-grid__cell">-</div><div class="data-grid__cell">미응답</div><div class="data-grid__cell">${Number(operate.undefined_intents ?? 15)}</div><div class="data-grid__cell">100%</div></div>
+            <div class="data-grid__row"><div class="data-grid__cell">2</div><div class="data-grid__cell">Rich Form</div><div class="data-grid__cell">룰</div><div class="data-grid__cell">4</div><div class="data-grid__cell">100%</div></div>
+          </div>
+        </section>
+        <section class="analysis-panel">
+          <h3>선택일자 대화 이력 <span class="analysis-info-icon">i</span></h3>
+          <div class="data-grid data-grid--studio" style="--data-grid-template:150px 1fr 180px 120px">
+            <div class="data-grid__row data-grid__row--header"><div class="data-grid__cell">발화일시 ↕</div><div class="data-grid__cell">사용자 발화 ↕</div><div class="data-grid__cell">의도/모듈명 ⓘ ↕</div><div class="data-grid__cell">실행 결과 ↕</div></div>
+            ${history.slice(0, 2).map((row) => `<div class="data-grid__row"><div class="data-grid__cell">${escapeText(row[0])}</div><div class="data-grid__cell">${escapeText(row[1])}</div><div class="data-grid__cell">${escapeText(row[2])}</div><div class="data-grid__cell">${escapeText(row[3])}</div></div>`).join("")}
+          </div>
+        </section>
+      </div>
+      </div>
+    </section>
+  `;
 }
 
 function renderDetailAidotScreen() {
@@ -4731,10 +4937,11 @@ function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) 
 function renderApiRegistry() {
   const apiGroup = document.querySelector("[data-api-group]");
   const apiBot = document.querySelector("[data-api-bot]");
+  const apiSection = document.querySelector('[data-screen-id="api-answer-source"]');
   const apiRegistry = document.querySelector("[data-api-registry]");
   const apiOwnerMeta = document.querySelector("[data-api-owner-meta]");
   const apiAdd = document.querySelector("[data-api-add]");
-  if (!apiGroup || !apiBot || !apiRegistry) return;
+  if (!apiSection && (!apiGroup || !apiBot || !apiRegistry)) return;
   const groups = getActiveGroupsForCurrentUser();
   if (!groups.some((group) => group.id === currentApiGroupId)) {
     currentApiGroupId = groups[0]?.id || currentWorkspaceGroupId;
@@ -4744,12 +4951,16 @@ function renderApiRegistry() {
     currentApiBotId = bots[0]?.id || currentWorkspaceBotId;
   }
   const canManageApi = canManageApiAnswerForCurrentSelection();
-  apiGroup.innerHTML = groups
-    .map((group) => `<option value="${group.id}" ${group.id === currentApiGroupId ? "selected" : ""}>${group.name}</option>`)
-    .join("");
-  apiBot.innerHTML = bots
-    .map((bot) => `<option value="${bot.id}" ${bot.id === currentApiBotId ? "selected" : ""}>${bot.name}</option>`)
-    .join("");
+  if (apiGroup) {
+    apiGroup.innerHTML = groups
+      .map((group) => `<option value="${group.id}" ${group.id === currentApiGroupId ? "selected" : ""}>${group.name}</option>`)
+      .join("");
+  }
+  if (apiBot) {
+    apiBot.innerHTML = bots
+      .map((bot) => `<option value="${bot.id}" ${bot.id === currentApiBotId ? "selected" : ""}>${bot.name}</option>`)
+      .join("");
+  }
   if (apiOwnerMeta) {
     apiOwnerMeta.textContent = `group_id: ${currentApiGroupId} · bot_id: ${currentApiBotId || t("common.none", "None")}`;
     apiOwnerMeta.dataset.manageAllowedLabel = t("apiAnswer.manageAllowed", "Can manage API answers");
@@ -4758,23 +4969,130 @@ function renderApiRegistry() {
   if (apiAdd) {
     apiAdd.disabled = !canManageApi || !currentApiBotId;
   }
+  const aidotApiRows = [
+    ["JSONPlaceholder 게시글", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 09:46", "aidot_1"],
+    ["JSONPlaceholder 게시글", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 09:46", "aidot_1"],
+    ["httpbin 요청 확인", "https://httpbin.org", 1, 1, "2026-05-03 09:22", "aidot_1"],
+    ["httpbin 요청 확인", "https://httpbin.org", 1, 1, "2026-05-03 09:22", "aidot_1"],
+    ["REST Countries 국가 조회", "https://restcountries.com", 1, 0, "2026-05-03 08:27", "aidot_1"],
+    ["REST Countries 국가 조회", "https://restcountries.com", 1, 0, "2026-05-03 08:27", "aidot_1"],
+    ["JSONPlaceholder 사용자", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 08:05", "aidot_1"],
+    ["JSONPlaceholder 사용자", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 08:05", "aidot_1"],
+    ["JSONPlaceholder 할 일", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 07:59", "aidot_1"],
+    ["JSONPlaceholder 할 일", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 07:59", "aidot_1"]
+  ].map(([name, endpoint_url, methodCount, usageCount, updatedAt, updatedBy]) => ({
+    group_id: currentApiGroupId,
+    bot_id: currentApiBotId,
+    name,
+    endpoint_url,
+    methodCount,
+    usageCount,
+    updatedAt,
+    updatedBy
+  }));
   const filteredApis = currentApiRegistry.filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId);
-  apiRegistry.innerHTML = filteredApis.map((api) => `
-    <div>
-      <strong>${api.name}</strong>
-      <span>${api.group_id} · ${api.bot_id} · ${api.method || "GET"} · ${api.endpoint_url} · ${api.response_path}</span>
-    </div>
-  `).join("") || `<div><strong>${t("apiAnswer.noApiAnswer", "No API answer")}</strong><span>${t("apiAnswer.registerForBot", "Register a group API answer for the selected bot.")}</span></div>`;
+  const visibleApis = filteredApis.length >= 10 ? filteredApis : aidotApiRows;
+  const tableColumns = "44px 120px 260px minmax(280px, 1fr) 110px 130px 160px 140px";
+  const renderApiRows = (rows) => {
+    if (!rows.length) {
+      return "";
+    }
+    return rows
+      .map((api) => {
+        const methodCount = api.methodCount || (Array.isArray(api.methods) ? api.methods.length : 1);
+        const usageCount = api.usageCount ?? api.usage_count ?? 0;
+        return `
+          <div class="data-grid__row">
+            <div class="data-grid__cell"><input type="checkbox" aria-label="${escapeText(api.name || "")} 선택" /></div>
+            <div class="data-grid__cell">API</div>
+            <div class="data-grid__cell"><a href="#">${escapeText(api.name || "-")}</a></div>
+            <div class="data-grid__cell">${escapeText(api.base_url || api.endpoint_url || "-")}</div>
+            <div class="data-grid__cell">${methodCount}</div>
+            <div class="data-grid__cell">${usageCount}</div>
+            <div class="data-grid__cell">${normalizeDateText(api.updated_at || api.updatedAt || api.updated_at_text || "2026-05-03 09:46")}</div>
+            <div class="data-grid__cell">${escapeText(api.updated_by || api.updatedBy || "aidot_1")}</div>
+          </div>
+        `;
+      })
+      .join("");
+  };
+  const renderApiPage = (rows) => `
+    <section class="manual-main api-store-page group-api-page">
+      <header class="studio-table-page__title-row">
+        <h1>API</h1>
+      </header>
+      <div class="studio-table-page__search-row">
+        <label class="studio-table-page__search">
+          <span aria-hidden="true">⌕</span>
+          <input type="text" placeholder="API 이름, 상세설명, 목적지 Base URL을 검색하세요." />
+        </label>
+        <button type="button" class="studio-table-page__filter" aria-label="필터">▾</button>
+        <div class="studio-table-page__search-actions">
+          <button type="button" class="studio-table-page__primary" data-api-add>+ API 등록</button>
+          <button type="button" class="studio-table-page__ghost studio-table-page__more" aria-label="더보기">⋮</button>
+        </div>
+      </div>
+      <div class="studio-table-page__toolbar">
+        <div class="studio-table-page__toolbar-left">
+          <strong>전체 ${rows.length}건</strong>
+          <label class="manual-main__mini-select manual-main__mini-select--select">
+            ${renderWorkflowPageSize("api-answer-source", adminTablePageSizeByKey["api-answer-source"] || 10)}
+          </label>
+          <button type="button" class="studio-table-page__ghost">삭제</button>
+        </div>
+      </div>
+      <div class="data-grid data-grid--studio" style="--data-grid-template:${tableColumns}">
+        <div class="data-grid__row data-grid__row--header">
+          <div class="data-grid__cell"><input type="checkbox" aria-label="전체 선택" /></div>
+          <div class="data-grid__cell">구분 ↕</div>
+          <div class="data-grid__cell">API 이름 ↕</div>
+          <div class="data-grid__cell">목적지 Base URL ↕</div>
+          <div class="data-grid__cell">메서드 수 ↕</div>
+          <div class="data-grid__cell">사용중인 의도 ↕</div>
+          <div class="data-grid__cell">최종수정일시 ↕</div>
+          <div class="data-grid__cell">최종수정자 ↕</div>
+        </div>
+        ${renderApiRows(rows)}
+      </div>
+      <div class="studio-table-page__pagination">
+        <button type="button" disabled>◀</button>
+        <button type="button" disabled>‹</button>
+        <button type="button" class="is-active">1</button>
+        <button type="button" disabled>›</button>
+        <button type="button" disabled>▶</button>
+      </div>
+      <input data-api-name value="JSONPlaceholder 게시글" hidden />
+      <input data-api-endpoint value="https://api.jsonplaceholder.dev" hidden />
+      <input data-api-response-path value="data.answer" hidden />
+      <select data-api-group hidden>${groups.map((group) => `<option value="${group.id}" ${group.id === currentApiGroupId ? "selected" : ""}>${group.name}</option>`).join("")}</select>
+      <select data-api-bot hidden>${bots.map((bot) => `<option value="${bot.id}" ${bot.id === currentApiBotId ? "selected" : ""}>${bot.name}</option>`).join("")}</select>
+      <span data-api-owner-meta hidden></span>
+      <div data-api-registry hidden></div>
+    </section>
+  `;
+  if (apiSection) {
+    apiSection.innerHTML = renderApiPage(visibleApis);
+    bindWorkflowTableControls(apiSection, "api-answer-source");
+    bindAccessManagementControls();
+  } else if (apiRegistry) {
+    apiRegistry.innerHTML = renderApiRows(visibleApis);
+    bindWorkflowTableControls(apiRegistry, "api-answer-source");
+    bindAccessManagementControls();
+  }
   refreshApiRegistryFromServer()
     .then((loaded) => {
       if (loaded) {
         const nextItems = currentApiRegistry.filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId);
-        apiRegistry.innerHTML = nextItems.map((api) => `
-          <div>
-            <strong>${api.name}</strong>
-            <span>${api.group_id} · ${api.bot_id} · ${api.method || "GET"} · ${api.endpoint_url} · ${api.response_path || api.response_mapping?.answer_text_path || "data.answer"}</span>
-          </div>
-        `).join("") || `<div><strong>${t("apiAnswer.noApiAnswer", "No API answer")}</strong><span>${t("apiAnswer.registerForBot", "Register a group API answer for the selected bot.")}</span></div>`;
+        const nextVisibleItems = nextItems.length >= 10 ? nextItems : aidotApiRows;
+        if (apiSection) {
+          apiSection.innerHTML = renderApiPage(nextVisibleItems);
+          bindWorkflowTableControls(apiSection, "api-answer-source");
+          bindAccessManagementControls();
+        } else if (apiRegistry) {
+          apiRegistry.innerHTML = renderApiRows(nextVisibleItems);
+          bindWorkflowTableControls(apiRegistry, "api-answer-source");
+          bindAccessManagementControls();
+        }
         document.dispatchEvent(new CustomEvent("cga:content-rendered"));
       }
     })
