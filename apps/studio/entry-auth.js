@@ -120,8 +120,10 @@
     if (workflow) workflow.hidden = false;
     if (loginEntry) loginEntry.hidden = true;
     const nextScreen = DEFAULT_POST_LOGIN_SCREEN;
+    console.info("[CGA auth] enterAuthenticatedShell", { nextScreen, currentHash: window.location.hash });
     localStorage.setItem(LAST_SCREEN_KEY, nextScreen);
     window.history.replaceState(null, "", `#${nextScreen}`);
+    console.info("[CGA auth] replaceState", { nextHash: window.location.hash });
     window.dispatchEvent(new CustomEvent("cga:entry-login-success"));
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   }
