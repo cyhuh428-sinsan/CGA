@@ -3,6 +3,7 @@
   const LOGIN_ID_KEY = "cga-studio-login-id";
   const LOCALE_KEY = "cga.studio.locale";
   const LAST_SCREEN_KEY = "cga-studio-last-screen";
+  const DEFAULT_POST_LOGIN_SCREEN = "workspace-home";
   const copy = {
     en: {
       eyebrow: "CGA STUDIO",
@@ -118,7 +119,7 @@
     if (topbar) topbar.hidden = false;
     if (workflow) workflow.hidden = false;
     if (loginEntry) loginEntry.hidden = true;
-    const nextScreen = "detail";
+    const nextScreen = DEFAULT_POST_LOGIN_SCREEN;
     localStorage.setItem(LAST_SCREEN_KEY, nextScreen);
     window.history.replaceState(null, "", `#${nextScreen}`);
     window.dispatchEvent(new CustomEvent("cga:entry-login-success"));
