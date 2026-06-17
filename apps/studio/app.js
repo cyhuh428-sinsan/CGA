@@ -3424,7 +3424,6 @@ function renderWorkflowRail() {
           <small data-i18n="workflow.${step.id}.subtitle">${step.subtitle}</small>
         </summary>
         <div class="workflow-step-subnav">
-          <strong>서버 메뉴</strong>
           <details class="subnav-group" ${["ai-model", "defaults", "message", "messenger"].includes(currentConfigureSubview) ? "open" : ""}>
             <summary>설정</summary>
             <div class="subnav-group__links">

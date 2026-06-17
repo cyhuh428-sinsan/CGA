@@ -256,12 +256,6 @@ button:disabled { opacity: .48; }
   border-radius: 8px;
   background: #fff;
 }
-.workflow-step-subnav > strong {
-  display: block;
-  margin-bottom: 8px;
-  text-align: center;
-  font-size: var(--font-title);
-}
 .system-admin-nav {
   display: none;
 }
@@ -338,7 +332,25 @@ button:disabled { opacity: .48; }
   padding-bottom: 6px;
 }
 .workflow-step-subnav .subnav-group__links a {
+  width: 100%;
+  min-height: 18px;
+  display: block;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   padding: 2px 0 2px 12px;
+  text-align: left;
+  grid-template-columns: none;
+  grid-template-rows: none;
+  column-gap: 0;
+}
+.workflow-step-subnav .subnav-group__links a span {
+  display: inline;
+  grid-row: auto;
+  align-self: auto;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
 .subnav-feature-group {
   display: grid;
@@ -648,6 +660,10 @@ textarea { min-height: 84px; resize: vertical; }
   align-content: start;
   justify-items: center;
   gap: 10px;
+}
+.aidot-settings-main--full {
+  grid-column: 1 / -1;
+  min-width: 0;
 }
 .bot-avatar-small,
 .bot-avatar-large {
@@ -3313,9 +3329,6 @@ h1 { line-height: 1; }
 }
 .workflow-step-subnav {
   padding: 10px 10px 8px;
-}
-.workflow-step-subnav > strong {
-  margin-bottom: 6px;
 }
 .workflow-step-subnav .subnav-group {
   padding: 0;
