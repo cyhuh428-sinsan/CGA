@@ -3697,38 +3697,8 @@ h1 { line-height: 1; }
 .aidot-feature-page {
   width: 100%;
   min-height: calc(100vh - 112px);
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
   background: #ffffff;
-}
-
-.aidot-feature-page .aidot-bot-main-head {
-  flex: 0 0 auto;
-  margin: 0;
-  border: 0;
-  border-bottom: 1px solid #d9e2ec;
-  border-radius: 0;
-  background: #ffffff;
-}
-
-.aidot-feature-page .aidot-bot-title {
-  min-width: 390px;
-}
-
-.aidot-feature-page .aidot-count-tabs {
-  min-width: 790px;
-}
-
-.aidot-feature-page .aidot-count-tabs button {
-  border-radius: 0;
-}
-
-.aidot-feature-page .evaluation-dashboard,
-.aidot-feature-page .retraining-page,
-.aidot-feature-page .analysis-page {
-  flex: 1 1 auto;
-  min-height: 0;
 }
 
 .retraining-page {

@@ -2413,50 +2413,6 @@ function renderTestAidotScreen() {
   renderWorkflowScreenShell("test", "05", "봇 테스트", "Aidot 시뮬레이터 기준으로 테스트 결과를 확인합니다.", `<div class="aidot-simulator-screen"><div class="aidot-simulator-chat"><p class="user-msg">${escapeText(test.last_user_message || "")}</p><p class="bot-msg">${escapeText(test.last_bot_message || "")}</p><input placeholder="테스트 메시지를 입력하세요" /></div><aside class="aidot-simulator-side"><h4>대화 분석</h4>${rows.map(([label, value]) => `<p><b>${escapeText(label)}</b><span>${escapeText(value)}</span></p>`).join("")}</aside></div>`);
 }
 
-function renderAidotBotFeatureHeader(activeKey) {
-  const rows = getCurrentIntentRowsForWorkflow();
-  const bot = getCurrentWorkspaceBot();
-  const botName = bot?.name || currentStudioState.bot.name || "New Bot";
-  const version = currentStudioState.bot.version || bot?.version || "Ver. 1";
-  const counts = {
-    intent: Math.max(17, rows.length || 0),
-    config: "-",
-    entity: Math.max(6, currentEntityAssets.length || 0),
-    dictionary: Math.max(7, currentDictionaryAssets.length || 0),
-    evaluate: "-",
-    operate: 0,
-    analysis: "-"
-  };
-  const tabs = [
-    ["intent", "☞ 의도", counts.intent],
-    ["config", "☷ 구성", counts.config],
-    ["entity", "⊙ 개체", counts.entity],
-    ["dictionary", "▣ 사전", counts.dictionary],
-    ["evaluate", "⌁ 평가", counts.evaluate],
-    ["operate", "↔ 재학습", counts.operate],
-    ["analysis", "⌁ 분석", counts.analysis]
-  ];
-  return `
-    <div class="aidot-bot-main-head aidot-bot-main-head--operations">
-      <div class="aidot-bot-title">
-        <div class="bot-avatar-large"></div>
-        <div>
-          <div class="aidot-title-row">
-            <h2>${escapeText(botName)}</h2>
-            <select><option>${escapeText(version)} · 운영</option></select>
-            <span class="test-badge">테스트형</span>
-            <span class="star-mark">★</span>
-            <button type="button" class="icon-button">⋮</button>
-          </div>
-          <strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: 정해진 답변</strong>
-          <div class="train-row"><button type="button">학습하기</button><span>학습성공 2026-05-12 02:12 cyhuh</span></div>
-        </div>
-      </div>
-      <div class="aidot-count-tabs">${tabs.map(([key, label, value]) => `<button type="button" class="${activeKey === key ? "active" : ""}"><span>${label}</span><b>${value}</b></button>`).join("")}</div>
-    </div>
-  `;
-}
-
 function renderEvaluateAidotScreen() {
   const section = document.querySelector('[data-screen-id="evaluate"]');
   if (!section) return;
@@ -2467,7 +2423,6 @@ function renderEvaluateAidotScreen() {
   const matrixItems = [13, 21, 26, 22, 36, 11, 17, 15, 10, 8, 20, 14];
   section.innerHTML = `
     <section class="aidot-feature-page aidot-feature-page--evaluate">
-      ${renderAidotBotFeatureHeader("evaluate")}
       <div class="evaluation-dashboard evaluation-dashboard--real">
       <div class="evaluation-dashboard__header">
         <h1>Overview › 의도 상세</h1>
@@ -2587,7 +2542,6 @@ function renderOperateAidotScreen() {
   `).join("");
   section.innerHTML = `
     <section class="aidot-feature-page aidot-feature-page--operate">
-      ${renderAidotBotFeatureHeader("operate")}
       <div class="retraining-page">
       <section class="retraining-filter">
         <input placeholder="의도명/지식명 또는 사용자 발화를 검색하세요." />
@@ -2645,7 +2599,6 @@ function renderAnalysisAidotScreen() {
   if (!section) return;
   section.innerHTML = `
     <section class="aidot-feature-page aidot-feature-page--analysis">
-      ${renderAidotBotFeatureHeader("analysis")}
       <div class="analysis-page">
       <div class="analysis-page__filters">
         <select aria-label="채널 선택"><option>webchat</option></select>
