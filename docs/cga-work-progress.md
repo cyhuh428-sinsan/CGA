@@ -2934,3 +2934,10 @@ o duplicate function declarations.
 - 조치: `#configure` 화면을 정적 한 장에서 `data-configure-aidot-screen` 렌더러 구조로 변경.
 - 조치: `currentConfigureSubview`에 따라 Aidot 기준 본문을 각각 렌더링하도록 `renderConfigureAidotScreen()` 추가.
 - 참고 기준: `Aidot/apps/web/components/bot-settings-shell.tsx`, `conversation-default-settings-page.tsx`, `conversation-message-settings-page.tsx`, `messenger-settings-page.tsx`, `blocklist-settings-page.tsx`, `rule-settings-page.tsx`, `smalltalk-settings-page.tsx`, `botstation-settings-page.tsx`, `Aidot/docs/settings-semantics-40-45.md`.
+
+## 2026-06-17 20:00 봇 구성 화면 상세 본문 반영
+- `detail` 섹션 렌더러를 기존 의도/모듈 표 기반 표출에서 Aidot 기준 자동 구성 본문으로 교체.
+- 화면 타이틀을 `봇 구성`으로, 부제목을 `봇 구성은 학습문장을 기반으로 의도 후보를 생성합니다.`로 통일.
+- 좌측 입력 영역(`학습문장 입력`, `구성 엔진/모델`, `목표 의도 수`, `자동 구성`)과 우측 `의도 후보` 패널을 연결해 `detail` 화면 고정 템플릿으로 반영.
+- 후보 목록은 기존 미리보기 텍스트/갱신 로직을 유지하는 `data-config-preview` 바인딩으로 연결.
+- 사용자 기준: 화면은 `apps/studio/app.js`의 `renderDetailAidotScreen` 단위 변경만 적용했고, 실행 경로(`D:\Project\cga`, Docker 기준 `studio`)는 기존 운영 규칙을 유지.

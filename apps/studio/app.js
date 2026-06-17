@@ -2752,44 +2752,53 @@ function renderAnalysisAidotScreen() {
 }
 
 function renderDetailAidotScreen() {
-  const rows = getCurrentIntentRowsForWorkflow();
-  const body = document.createElement("div");
-
-  renderWorkflowTablePage(
-    body,
-    "detail",
-    rows,
-    ["", "ID", "구분", "의도/모듈명", "표시명", "학습문장", "대화카드", "태그", "기타옵션", "최종수정일시", "최종수정자", ""],
-    (row) => `
-      <div class="workflow-grid__row workflow-grid__row--body">
-        <span><input type="checkbox" aria-label="${escapeText(row.name || row.intentName || row.rowId || "intent")} 선택" /></span>
-        <span>${escapeCell(row.rowId || row.id || "-")}</span>
-        <span>${escapeCell(row.type || "의도")}</span>
-        <span><button type="button" class="link-button" data-open-dialog-start="${escapeText(row.rowId || row.id || "")}">${escapeText(row.name || row.intentName || row.intent || "-")}</button></span>
-        <span>${escapeCell(row.displayName || row.name || row.intentName || "-")}</span>
-        <span>${escapeCell(row.utteranceCount ?? row.trainingCount ?? row.examples ?? 0)}</span>
-        <span>${escapeCell(row.dialogCardCount ?? row.cardCount ?? 0)}</span>
-        <span>${escapeCell(row.tagCount ?? 0)}</span>
-        <span class="workflow-grid__option-badges"><i>T</i><i>R</i><i>F</i></span>
-        <span>${escapeCell(row.updatedAt || "-")}</span>
-        <span>${escapeCell(row.updatedBy || "-")}</span>
-        <span>⋮</span>
-      </div>`,
-    {
-      placeholder: "의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색하세요.",
-      filters: `<select data-workflow-filter="detail"><option>전체</option><option>의도</option><option>모듈</option></select>`,
-      actions: `<button type="button" class="admin-page__primary" data-workflow-search="detail">조회</button><button type="button" class="admin-page__primary" data-open-intent-create>+ 의도/모듈 추가</button>`,
-      template: "40px 84px 72px 1.25fr 1.25fr 92px 92px 72px 100px 150px 120px 36px"
-    }
-  );
-
+  const currentUtterances = (currentCompositionState.utterances || []).join("\n");
+  const targetIntentCount = currentCompositionState.requested_intent_count || 50;
   renderWorkflowScreenShell(
     "detail",
     "04",
-    "봇 제작",
-    "Aidot 의도 화면 기준으로 의도/모듈을 제작하고 대화 설계로 연결합니다.",
-    body.innerHTML
+    "봇 구성",
+    "봇 구성은 학습문장을 기반으로 의도 후보를 생성합니다.",
+    `<div class="aidot-rag-config">
+      <section class="aidot-rag-left">
+        <div class="rag-info-line">운영버전은 구성 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.</div>
+        <header>
+          <strong>학습문장 입력</strong>
+          <span>구성용 엔진 : Semantic · Vector Worker / 구성 모델 : Aidot Vector Worker 기본 모델</span>
+        </header>
+        <div class="rag-form-grid">
+          <label>구성 엔진<select><option value="Semantic - Vector Worker">Semantic - Vector Worker</option></select></label>
+          <label>구성 모델<select><option value="Aidot Vector Worker 기본 모델">Aidot Vector Worker 기본 모델</option></select></label>
+        </div>
+        <div class="rag-info-line">자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.</div>
+        <label>학습문장을 줄 단위로 입력하세요.
+          <textarea data-config-utterances aria-label="학습문장을 줄 단위로 입력">${escapeText(currentUtterances || "예) 상담원 연결해줘\n예) 콜백 예약하고 싶어\n예) 발신자 확인해줘")}</textarea>
+        </label>
+        <div class="rag-target-row">
+          <label>목표 의도 수<input type="number" min="1" value="${escapeText(targetIntentCount)}" data-config-intent-count /></label>
+          <button type="button" class="ghost-btn">자동 구성</button>
+        </div>
+        <div class="rag-target-row">
+          <button type="button" data-config-export-handoff>의도 후보 내보내기</button>
+          <button type="button" data-config-import-result>의도 후보 불러오기</button>
+          <button type="button" data-config-save-pdf>PDF 저장</button>
+          <button type="button" data-config-pdf-select>PDF 업로드</button>
+          <button type="button" data-config-generate-qa>PDF 기준 의도 생성</button>
+        </div>
+        <div class="rag-info-line">분류 수 기준 ML은 무조건 수를 강제하지 않고, 유사도가 충분한 후보만 병합합니다.</div>
+        <div class="rag-radio-row">
+          <label><input type="radio" /> 50개 이하로 최대한 적게</label>
+          <label><input type="radio" checked /> 50개에 가깝게</label>
+          <label><input type="radio" /> 무조건 50개</label>
+        </div>
+      </section>
+      <section class="aidot-rag-right">
+        <header><strong>의도 후보</strong><div><button type="button">선택 병합</button><button type="button" class="primary-action-small">현재 버전 덮어쓰기</button></div></header>
+        <div data-config-preview class="rag-candidate-box">학습문장을 입력하고 자동 구성을 실행하세요.</div>
+      </section>
+    </div>`
   );
+
 }
 function renderWorkflowScreens() {
   try {
