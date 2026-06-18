@@ -3139,3 +3139,7 @@ o duplicate function declarations.
 - 검증:
   - `node --check apps/studio/app.js` 통과.
   - `npm run studio:validate` 전체 통과.
+- 추가 확인:
+  - 첫 배포 후 브라우저에 새 `WebChat 열기`/`전송 이력`이 안 보였음.
+  - 원인: `index.html`의 정적 자원 쿼리 버전이 그대로여서 브라우저가 `app.js/styles.css` 이전 캐시를 계속 사용.
+  - 조치: `styles.css`, `entry-auth.js`, `app.js`, `workflow.js`, `layout.js` 쿼리 버전을 `20260618-10`으로 상향.
