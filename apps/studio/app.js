@@ -6857,6 +6857,13 @@ async function saveCurrentWorkspaceState() {
   renderGlobalMessage();
 }
 
+async function syncSelectedBotServerState(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+  if (!groupId || !botId) return;
+  await refreshOperationsStateFromServer(groupId, botId).catch(() => false);
+  await refreshCollaborationStateFromServer(groupId, botId).catch(() => false);
+  await refreshApiRegistryFromServer().catch(() => false);
+}
+
 function renderWorkspaceHome() {
   const section = document.querySelector('[data-screen-id="workspace-home"]');
   if (!section) return;
@@ -6961,29 +6968,29 @@ function renderWorkspaceHome() {
     renderWorkspaceHome();
     renderTopContext();
   });
-  shell.querySelectorAll("[data-open-bot]").forEach((button) => button.addEventListener("click", () => {
+  shell.querySelectorAll("[data-open-bot]").forEach((button) => button.addEventListener("click", async () => {
     const bot = getAccessibleBotListForGroup(currentWorkspaceGroupId).find((item) => item.id === button.dataset.openBot);
     if (!bot) return;
     currentWorkspaceBotId = bot.id;
     selectedBotManagementId = bot.id;
     applyCurrentBotToStudioState(bot);
-    renderWorkspaceHome();
-    renderTopContext();
-    renderAllStatePanels();
+    await syncSelectedBotServerState(currentWorkspaceGroupId, bot.id);
+    refreshWorkspaceManagementSurfaces({ rerenderAdmin: true });
   }));
-  shell.querySelectorAll("[data-open-recent-bot]").forEach((button) => button.addEventListener("click", () => {
+  shell.querySelectorAll("[data-open-recent-bot]").forEach((button) => button.addEventListener("click", async () => {
     const bot = accessibleBots.find((item) => item.id === button.dataset.openRecentBot);
     if (!bot) return;
     currentWorkspaceBotId = bot.id;
     selectedBotManagementId = bot.id;
     applyCurrentBotToStudioState(bot);
-    renderWorkspaceHome();
-    renderAllStatePanels();
+    await syncSelectedBotServerState(currentWorkspaceGroupId, bot.id);
+    refreshWorkspaceManagementSurfaces({ rerenderAdmin: true });
   }));
-  shell.querySelectorAll("[data-workspace-open-current]").forEach((button) => button.addEventListener("click", () => {
+  shell.querySelectorAll("[data-workspace-open-current]").forEach((button) => button.addEventListener("click", async () => {
     const bot = getCurrentWorkspaceBot();
     if (!bot) return;
     applyCurrentBotToStudioState(bot);
+    await syncSelectedBotServerState(currentWorkspaceGroupId, bot.id);
     renderTopContext();
     setActiveScreen("configure");
   }));
@@ -7105,14 +7112,14 @@ function renderBotManagement() {
       </section>
     </div>`
   );
-  section.querySelectorAll("[data-manage-bot]").forEach((button) => button.addEventListener("click", () => {
+  section.querySelectorAll("[data-manage-bot]").forEach((button) => button.addEventListener("click", async () => {
     const bot = bots.find((item) => item.id === button.dataset.manageBot);
     if (bot) {
       applyCurrentBotToStudioState(bot);
     }
     selectedBotManagementId = button.dataset.manageBot;
-    renderBotManagement();
-    renderTopContext();
+    await syncSelectedBotServerState(currentWorkspaceGroupId, selectedBotManagementId);
+    refreshWorkspaceManagementSurfaces({ rerenderAdmin: true });
   }));
   section.querySelectorAll("[data-jump-screen]").forEach((button) => button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen)));
   section.querySelectorAll("[data-open-webchat]").forEach((button) => button.addEventListener("click", () => {

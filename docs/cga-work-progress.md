@@ -3317,3 +3317,16 @@ o duplicate function declarations.
 - 검증:
   - `node --check apps/studio/app.js` 통과
   - `npm run studio:validate` 전체 통과
+
+## 2026-06-18 11:58 KST
+
+- 봇 선택 시 서버 상태 동기화 보강:
+  - `봇 작업공간`이나 `봇 관리`에서 다른 봇을 선택해도 운영 상태, 협업 상태, API 레지스트리가 직전 봇 기준으로 남아 보일 수 있었음.
+- 적용 내용:
+  - `syncSelectedBotServerState()` 헬퍼 추가.
+  - 봇 목록 선택, 최근 작업 봇 선택, 현재 작업 봇 열기, 봇 관리 카드 선택 시
+    `operations-state`, `collaboration-state`, `api-registry`를 서버에서 다시 읽도록 연결.
+  - 이후 `refreshWorkspaceManagementSurfaces({ rerenderAdmin: true })`로 관련 화면이 같은 봇 기준으로 같이 갱신되도록 정리.
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 전체 통과
