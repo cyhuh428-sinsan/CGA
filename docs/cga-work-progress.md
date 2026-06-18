@@ -3370,3 +3370,15 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js` 통과
   - `npm run studio:validate` 통과
   - 작업 중 Git 동작 점검: 현재 환경에서 `git pull`은 `.git/FETCH_HEAD` 권한 제약으로 실행 불가로 확인(읽기 권한 범위 제약으로 인한 일시적 제약).
+
+## 2026-06-19 (continued)
+
+- [동작 비검증 버튼 추가 정리] `renderAidotInteractiveTable`, 로그인 이력, API 화면, 봇 설정의 잔여 비작동 버튼/메뉴 제거:
+  - `renderAidotInteractiveTable`: 조회 기본 버튼/초기화/페이지 크기/다운로드/페이저를 제거해 동작 없는 상단/하단 UI를 제거.
+  - `renderLicenseSurface`: 라이선스 업로드 버튼 제거(호출 액션이 없어 단독 클릭 불가 상태였음).
+  - `renderAccessPanels` 로그인 이력: `초기화/조회`와 페이지 크기 선택 제거.
+  - `renderApiRegistry`: API 필터 아이콘, 더보기 버튼, 삭제 버튼, 정적 페이지네이션 제거.
+  - 봇 설정: `모듈대화 목록` 비동작 버튼 제거.
+- 점검:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 통과

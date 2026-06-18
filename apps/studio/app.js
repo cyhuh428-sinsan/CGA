@@ -5143,14 +5143,12 @@ function renderAidotInteractiveTable(surface, config) {
       <div class="admin-page__search-row ${config.searchClass || ""}">
         <label class="admin-page__search"><span>⌕</span><input data-admin-query-input value="" placeholder="${config.placeholder || "검색어를 입력하세요."}" /></label>
         ${config.filters || ""}
-        <button type="button" class="admin-page__filter admin-page__filter--text">초기화</button>
-        <div class="admin-page__search-actions">${config.topRight || `<button type="button" class="admin-page__primary">조회</button>`}</div>
+        ${config.topRight ? `<div class="admin-page__search-actions">${config.topRight}</div>` : ""}
       </div>
       <div class="admin-page__toolbar">
-        <div class="admin-page__toolbar-left"><strong>전체 ${rows.length}건</strong><select><option>10개씩 보기</option><option>25개씩 보기</option><option>50개씩 보기</option><option>100개씩 보기</option></select>${config.download === false ? "" : `<button type="button" class="admin-page__ghost">다운로드</button>`}</div>
+        <div class="admin-page__toolbar-left"><strong>전체 ${rows.length}건</strong></div>
       </div>
       ${renderDataGrid(config.columns, rows, config.template)}
-      ${renderPager(rows.length)}
     </section>
   `;
 }
@@ -5234,7 +5232,7 @@ function renderLicenseSurface(surface) {
   const rows = currentAdminResources.licenses.map((item) => `
     <div class="data-grid__row"><span class="data-grid__cell">${escapeCell(item.category)}</span><span class="data-grid__cell">${escapeCell(item.total)}</span><span class="data-grid__cell">${escapeCell(item.used)}</span><span class="data-grid__cell">${escapeCell(item.remaining)}</span><span class="data-grid__cell">${escapeCell(item.expires_at)}</span></div>
   `);
-  renderAidotInteractiveTable(surface, { title: "라이선스 조회", placeholder: "라이선스 이름을 검색하세요.", topRight: `<button type="button" class="admin-page__primary">라이선스 업로드</button>`, columns: ["구분", "전체 수", "사용중", "잔여", "만료일"], template: "220px 220px 220px 220px 220px", rows });
+  renderAidotInteractiveTable(surface, { title: "라이선스 조회", placeholder: "라이선스 이름을 검색하세요.", columns: ["구분", "전체 수", "사용중", "잔여", "만료일"], template: "220px 220px 220px 220px 220px", rows });
 }
 
 function renderSimpleHistorySurface(surface, key) {
@@ -5545,13 +5543,10 @@ function renderAccessPanels() {
         <div class="aidot-admin-actions aidot-admin-actions--right">
           <input type="date" aria-label="시작일" />
           <input type="date" aria-label="종료일" />
-          <button type="button" class="ghost-btn">초기화</button>
-          <button type="button" class="primary-action-small">조회</button>
         </div>
       </header>
       <div class="management-list-meta">
         <strong>전체 ${loginRows.length}건</strong>
-        <select aria-label="페이지 크기"><option>10개씩 보기</option><option>25개씩 보기</option><option>50개씩 보기</option><option>100개씩 보기</option></select>
       </div>
       <div class="management-table management-table--login-history management-table--paged">
         <div class="management-table-row head">
@@ -6040,10 +6035,8 @@ function renderApiRegistry() {
           <span aria-hidden="true">⌕</span>
           <input type="text" placeholder="API 이름, 상세설명, 목적지 Base URL을 검색하세요." />
         </label>
-        <button type="button" class="studio-table-page__filter" aria-label="필터">▾</button>
         <div class="studio-table-page__search-actions">
           <button type="button" class="studio-table-page__primary" data-api-add>+ API 등록</button>
-          <button type="button" class="studio-table-page__ghost studio-table-page__more" aria-label="더보기">⋮</button>
         </div>
       </div>
       <div class="studio-table-page__toolbar">
@@ -6052,7 +6045,6 @@ function renderApiRegistry() {
           <label class="manual-main__mini-select manual-main__mini-select--select">
             ${renderWorkflowPageSize("api-answer-source", adminTablePageSizeByKey["api-answer-source"] || 10)}
           </label>
-          <button type="button" class="studio-table-page__ghost">삭제</button>
         </div>
       </div>
       <div class="data-grid data-grid--studio" style="--data-grid-template:${tableColumns}">
@@ -6067,13 +6059,6 @@ function renderApiRegistry() {
           <div class="data-grid__cell">최종수정자 ↕</div>
         </div>
         ${renderApiRows(rows)}
-      </div>
-      <div class="studio-table-page__pagination">
-        <button type="button" disabled>◀</button>
-        <button type="button" disabled>‹</button>
-        <button type="button" class="is-active">1</button>
-        <button type="button" disabled>›</button>
-        <button type="button" disabled>▶</button>
       </div>
       <input data-api-name value="JSONPlaceholder 게시글" hidden />
       <input data-api-endpoint value="https://api.jsonplaceholder.dev" hidden />
@@ -7150,8 +7135,7 @@ function renderConfigureAidotScreen() {
             <label>의도파악 시도 횟수<input value="3" /></label>
           </div>
           <div class="rag-form-grid">
-            <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="intent_overflow" readonly /></label>
-            <label>모듈대화 목록<button type="button">모듈 목록</button></label>
+              <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="intent_overflow" readonly /></label>
           </div>
         </section>
         <section class="aidot-setting-block">
