@@ -3935,7 +3935,7 @@ h1 { line-height: 1; }
 }
 
 .bot-management-grid--compact {
-  grid-template-columns: minmax(250px, 0.7fr) minmax(0, 1.5fr) minmax(250px, 0.8fr);
+  grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.45fr) minmax(320px, 0.92fr);
   gap: 10px;
 }
 
@@ -3982,6 +3982,10 @@ h1 { line-height: 1; }
   min-width: 0;
 }
 
+.command-panel--bot-detail {
+  grid-template-rows: auto auto auto auto 1fr;
+}
+
 .command-panel--status {
   min-height: 104px;
 }
@@ -3992,6 +3996,10 @@ h1 { line-height: 1; }
 
 .command-row--bot-version {
   grid-template-columns: var(--command-cols);
+}
+
+.command-row--bot-version .team-task-actions {
+  justify-content: flex-end;
 }
 
 .workspace-recent-list {
@@ -4156,13 +4164,14 @@ h1 { line-height: 1; }
 
 .command-definition div {
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
+  grid-template-columns: 74px minmax(0, 1fr);
   gap: 10px;
 }
 
 .command-definition dt {
   color: #52657a;
   font-weight: 700;
+  font-size: var(--font-body);
 }
 
 .command-definition dd {
@@ -4170,6 +4179,7 @@ h1 { line-height: 1; }
   margin: 0;
   overflow-wrap: anywhere;
   color: #0f2238;
+  font-size: var(--font-body);
 }
 
 .command-action-stack {
@@ -4247,6 +4257,8 @@ h1 { line-height: 1; }
   color: #0f766e;
   text-decoration: underline;
   overflow-wrap: anywhere;
+  line-height: 1.35;
+  font-size: var(--font-desc);
 }
 
 .command-history {
@@ -4256,7 +4268,8 @@ h1 { line-height: 1; }
   padding: 10px;
   border: 1px solid #d9e2ec;
   background: #ffffff;
-  min-height: 88px;
+  min-height: 120px;
+  align-content: start;
 }
 
 .transfer-history-item {
@@ -4279,6 +4292,28 @@ h1 { line-height: 1; }
 .transfer-history-item span {
   color: #52657a;
   font-size: var(--font-desc);
+}
+
+.command-panel--bot-detail .command-action-stack button {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+  min-height: 42px;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.command-panel--bot-detail .command-action-stack button span {
+  color: #dce6f5;
+  font-size: var(--font-desc);
+  font-weight: 500;
+}
+
+.command-panel--bot-detail .command-note {
+  margin-top: 12px;
+  background: #eef8f4;
+  border-color: #cfe7db;
+  color: #185b45;
 }
 
 .team-task-row {
