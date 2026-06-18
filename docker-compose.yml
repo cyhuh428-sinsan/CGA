@@ -4,6 +4,7 @@ services:
   studio:
     container_name: cga-studio
     image: cga-studio
+    restart: unless-stopped
     build:
       context: .
     working_dir: /workspace

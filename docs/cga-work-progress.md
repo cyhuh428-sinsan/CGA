@@ -3330,3 +3330,5 @@ o duplicate function declarations.
 - 검증:
   - `node --check apps/studio/app.js` 통과
   - `npm run studio:validate` 전체 통과
+
+- 2026-06-19: CGA docker-compose.yml에 services.studio.restart: unless-stopped 추가. 이유: WSL 재시작 시 컨테이너가 자동 복구되지 않던 원인(현재 no restart 정책)을 제거하기 위함. 이 변경은 실행/도커 정책만 변경하며, 웹 화면/기능 로직에는 영향 없음.
