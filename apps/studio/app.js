@@ -857,7 +857,7 @@ const dynamicMessages = {
 };
 
 function getCurrentLocale() {
-  return document.querySelector("[data-locale-select]")?.value || window.cgaStudioI18n?.getLocale?.() || localStorage.getItem("cga.studio.locale") || getCurrentAccessUser()?.locale || document.documentElement.lang || "en";
+  return window.cgaStudioI18n?.getLocale?.() || document.querySelector("[data-locale-select]")?.value || localStorage.getItem("cga.studio.locale") || getCurrentAccessUser()?.locale || document.documentElement.lang || "en";
 }
 
 function t(key, fallback = key) {
@@ -4081,6 +4081,21 @@ function renderTeamDashboard() {
   const fallbackBotLabel = getCurrentWorkspaceBot()?.name || currentWorkspaceBotId || t("team.unassigned", "미지정");
   const getWorkGroupLabel = (item) => item.group_name || item.group_id || fallbackGroupLabel;
   const getWorkBotLabel = (item) => item.bot_name || item.bot_id || fallbackBotLabel;
+  const getWorkStatusLabel = (status) => ({
+    todo: "할 일",
+    in_progress: "진행 중",
+    review: "검토 대기",
+    approved: "승인 완료",
+    blocked: "차단"
+  }[status] || status || "-");
+  const getRoleLabel = (role) => ({
+    system_admin: "시스템 관리자",
+    group_admin: "그룹 관리자",
+    builder: "빌더",
+    reviewer: "검토자",
+    operator: "운영자",
+    viewer: "조회자"
+  }[role] || role || t("team.unassigned", "미지정"));
   const usersByRole = (currentAccessState?.users || []).reduce((acc, user) => {
     const role = user.role || "viewer";
     const userId = user.id;
@@ -4125,7 +4140,7 @@ function renderTeamDashboard() {
     return `
     <div class="team-task-row ${item.status}">
       <strong>${item.title}</strong>
-      <span>${item.type} · ${item.status} · ${getWorkGroupLabel(item)} / ${getWorkBotLabel(item)}</span>
+      <span>${item.type} · ${getWorkStatusLabel(item.status)} · ${getWorkGroupLabel(item)} / ${getWorkBotLabel(item)}</span>
       <span>담당자: ${item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정")}</span>
       <span>잠금: ${lockOwnerId || t("team.unassigned", "없음")}</span>
       <span>최근수정: ${formatAidotAdminDate(item.updated_at)}</span>
@@ -4194,7 +4209,7 @@ function renderTeamDashboard() {
         <div class="team-status-strip">
           ${Object.entries(tasksByRole).map(([role, count]) => `
             <div class="team-status-card">
-              <strong>${escapeText(role)}</strong>
+              <strong>${escapeText(getRoleLabel(role))}</strong>
               <span>${count}건</span>
             </div>
           `).join("") || `<div class="team-status-card"><strong>${t("team.unassigned", "미지정")}</strong><span>0건</span></div>`}
@@ -4205,7 +4220,7 @@ function renderTeamDashboard() {
         <div class="team-status-strip">
           ${dashboard.byStatus.map((entry) => `
             <div class="team-status-card ${entry.status}">
-              <strong>${entry.status}</strong>
+              <strong>${escapeText(getWorkStatusLabel(entry.status))}</strong>
               <span>${entry.count}</span>
             </div>
           `).join("")}
@@ -4231,7 +4246,7 @@ function renderTeamDashboard() {
             ${bottleneckItems.map((item) => `
               <div class="team-task-row ${item.status}">
                 <strong>${item.title}</strong>
-                <span>${item.status} · ${getWorkGroupLabel(item)} / ${getWorkBotLabel(item)}</span>
+                <span>${getWorkStatusLabel(item.status)} · ${getWorkGroupLabel(item)} / ${getWorkBotLabel(item)}</span>
                 <span>잠금: ${item.lock?.user_id || t("team.unassigned", "없음")}</span>
                 <span>담당자: ${item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정")}</span>
               </div>
@@ -7274,9 +7289,12 @@ document.addEventListener("cga:content-rendered", syncStudioLocaleToCurrentUser)
 document.addEventListener("change", (event) => {
   if (event.target?.matches?.("[data-locale-select]")) {
     window.setTimeout(() => {
+      applyDynamicLocaleOverrides(event.target.value);
+      renderTopContext();
+      renderNavigationRails();
+      renderWorkflowRail();
       renderAllStatePanels();
       rerenderAdminAndAccess();
-      applyDynamicLocaleOverrides(event.target.value);
     }, 0);
   }
 });

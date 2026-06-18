@@ -3225,3 +3225,19 @@ o duplicate function declarations.
   - 브라우저 기준으로 협업 항목 다수가 `미지정` 그룹/봇으로 보여 실제 작업 대상 감지가 약한 상태를 확인.
   - 조치 예정:
     - 협업 항목에 `group_id`, `bot_id`가 비어 있을 때 현재 작업 그룹/봇을 fallback으로 사용해 대시보드 가독성을 개선.
+
+## 2026-06-18 10:31 KST
+
+- 추가 점검:
+  - 브라우저에서 상단 context badge와 팀 대시보드 액션 버튼 일부가 한국어 선택 상태에서도 영어(`Authentication`, `Approve`, `Lock`)로 남는 현상을 확인.
+  - 원인 추정:
+    - `getCurrentLocale()`가 topbar select 값을 우선 사용해 실제 i18n 런타임 locale과 어긋나는 경우가 있음.
+  - 조치 예정:
+    - locale 판정 우선순위를 i18n 런타임 기준으로 조정하고, locale 변경 시 상단 context/네비게이션/대시보드가 같은 기준으로 다시 렌더되도록 보정.
+
+## 2026-06-18 10:38 KST
+
+- locale 보정 확인:
+  - 새 탭에서 `#team-dashboard` 기준 재확인 결과 상단 context badge와 대시보드 액션 버튼이 한국어(`인증`, `승인`, `수정 요청`, `할 일로 이동`)로 정상 출력됨.
+- 추가 보완 예정:
+  - 팀 대시보드 내부 상태 코드(`todo`, `in_progress`, `review`, `blocked`)와 역할명(`viewer` 등)은 아직 내부 코드 그대로 노출되는 구간이 있어 사용자용 라벨로 변환 예정.
