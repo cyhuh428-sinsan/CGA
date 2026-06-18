@@ -4077,6 +4077,10 @@ function renderTeamDashboard() {
   const section = document.querySelector('[data-screen-id="team-dashboard"]');
   if (!section) return;
   const dashboard = summarizeTeamDashboard(currentCollaborationState, { currentUserId: currentAccessState.currentUserId });
+  const fallbackGroupLabel = getCurrentWorkspaceGroup()?.name || currentWorkspaceGroupId || t("team.unassigned", "미지정");
+  const fallbackBotLabel = getCurrentWorkspaceBot()?.name || currentWorkspaceBotId || t("team.unassigned", "미지정");
+  const getWorkGroupLabel = (item) => item.group_name || item.group_id || fallbackGroupLabel;
+  const getWorkBotLabel = (item) => item.bot_name || item.bot_id || fallbackBotLabel;
   const usersByRole = (currentAccessState?.users || []).reduce((acc, user) => {
     const role = user.role || "viewer";
     const userId = user.id;
@@ -4105,12 +4109,12 @@ function renderTeamDashboard() {
     return acc;
   }, {});
   const tasksByGroup = dashboard.workItems.reduce((acc, item) => {
-    const key = item.group_id || t("team.unassigned", "미지정");
+    const key = getWorkGroupLabel(item);
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
   const tasksByBot = dashboard.workItems.reduce((acc, item) => {
-    const key = item.bot_id || t("team.unassigned", "미지정");
+    const key = getWorkBotLabel(item);
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
@@ -4121,7 +4125,7 @@ function renderTeamDashboard() {
     return `
     <div class="team-task-row ${item.status}">
       <strong>${item.title}</strong>
-      <span>${item.type} · ${item.status} · ${item.group_id || t("team.unassigned", "미지정")} / ${item.bot_id || t("team.unassigned", "미지정")}</span>
+      <span>${item.type} · ${item.status} · ${getWorkGroupLabel(item)} / ${getWorkBotLabel(item)}</span>
       <span>담당자: ${item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정")}</span>
       <span>잠금: ${lockOwnerId || t("team.unassigned", "없음")}</span>
       <span>최근수정: ${formatAidotAdminDate(item.updated_at)}</span>
@@ -4214,7 +4218,7 @@ function renderTeamDashboard() {
             ${recentUpdates.map((item) => `
               <div class="team-task-row">
                 <strong>${item.title}</strong>
-                <span>${item.group_id || t("team.unassigned", "미지정")} / ${item.bot_id || t("team.unassigned", "미지정")}</span>
+                <span>${getWorkGroupLabel(item)} / ${getWorkBotLabel(item)}</span>
                 <span>담당자: ${item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정")}</span>
                 <span>최근수정: ${formatAidotAdminDate(item.updated_at)}</span>
               </div>
@@ -4227,7 +4231,7 @@ function renderTeamDashboard() {
             ${bottleneckItems.map((item) => `
               <div class="team-task-row ${item.status}">
                 <strong>${item.title}</strong>
-                <span>${item.status} · ${item.group_id || t("team.unassigned", "미지정")} / ${item.bot_id || t("team.unassigned", "미지정")}</span>
+                <span>${item.status} · ${getWorkGroupLabel(item)} / ${getWorkBotLabel(item)}</span>
                 <span>잠금: ${item.lock?.user_id || t("team.unassigned", "없음")}</span>
                 <span>담당자: ${item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정")}</span>
               </div>

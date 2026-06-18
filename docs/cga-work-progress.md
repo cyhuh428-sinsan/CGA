@@ -3201,3 +3201,27 @@ o duplicate function declarations.
   - 조치 예정:
     - 최근 전송 이력을 전역 상태로 유지하고, 상태 문구와 이력 박스가 같은 기준을 보도록 정리.
     - 함께 `봇 관리` 우측 패널 폭/링크 줄바꿈/버튼 정렬을 보정해 실제 사용 화면 밀도를 개선.
+
+## 2026-06-18 10:18 KST
+
+- `봇 관리` 후속 보정 적용:
+  - 최근 전송 이력을 `currentTransferHistory`로 유지하고, 상태 문구가 이력 상태와 어긋나지 않도록 보강.
+  - 우측 상세 패널 전용 레이아웃(`command-panel--bot-detail`) 추가.
+  - `WebChat` 링크, 상태 문구, 전송 이력 블록, 우측 액션 버튼 높이/정렬 보정.
+  - 버전 표의 작업 버튼 정렬을 우측 기준으로 맞춤.
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 전체 통과
+  - Git push 후 WSL 배포본 재기동 완료
+  - `http://127.0.0.1:4173/`, `http://127.0.0.1:4173/webchat/supportbot-draft` 응답 `200`
+  - 브라우저에서 `WebChat` 화면 직접 메시지 왕복 확인:
+    - 사용자 입력: `How do I reset my password?`
+    - 매칭 의도: `password_reset`
+    - 봇 답변: `Open Account Settings and choose Reset Password.`
+
+## 2026-06-18 10:22 KST
+
+- `팀 대시보드` 후속 점검:
+  - 브라우저 기준으로 협업 항목 다수가 `미지정` 그룹/봇으로 보여 실제 작업 대상 감지가 약한 상태를 확인.
+  - 조치 예정:
+    - 협업 항목에 `group_id`, `bot_id`가 비어 있을 때 현재 작업 그룹/봇을 fallback으로 사용해 대시보드 가독성을 개선.
