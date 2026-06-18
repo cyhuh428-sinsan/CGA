@@ -2062,9 +2062,10 @@ function renderTransferHistoryItems(container, items) {
   const recent = [...items].reverse().slice(0, 5);
   container.innerHTML = recent.length
     ? recent.map((item) => `
-      <div>
+      <div class="transfer-history-item">
         <strong>${item.scope || "asset"} · ${item.direction || "transfer"}</strong>
-        <span>${item.source || item.asset_path || "server"} · ${item.created_at || ""}</span>
+        <span>${item.source || item.asset_path || "server"}</span>
+        <span>${item.created_at || ""}</span>
       </div>
     `).join("")
     : `<div><strong data-i18n="transfer.historyEmptyTitle">No transfer history</strong><span data-i18n="transfer.historyEmptyBody">Download or upload a package to create a server record.</span></div>`;
@@ -6849,15 +6850,19 @@ function renderBotManagement() {
             <div><dt>운영버전</dt><dd>${escapeText(activeVersion?.id || selectedBot?.version || "-")}</dd></div>
             <div><dt>상태</dt><dd>${escapeText(selectedBot?.status || "-")}</dd></div>
             <div><dt>언어</dt><dd>${escapeText(selectedBot?.locale || currentStudioState.bot.defaultLocale || "-")}</dd></div>
-            <div><dt>WebChat</dt><dd>${escapeText(webchatUrl)}</dd></div>
+            <div><dt>WebChat</dt><dd><a href="${escapeText(webchatUrl)}" target="_blank" rel="noreferrer" class="command-link">${escapeText(webchatUrl)}</a></dd></div>
             <div><dt>버전 목록</dt><dd>${versions.length}개</dd></div>
             <div><dt>업데이트</dt><dd>${escapeText(selectedBot?.updated_at || "없음")}</dd></div>
           </dl>
           <div class="command-action-stack">
+            <button type="button" data-open-webchat><strong>WebChat 열기</strong><span>현재 봇 채널 연결</span></button>
             <button type="button" data-download-bot-package><strong>봇 다운로드</strong><span>Aidot 패키지</span></button>
             <button type="button" data-upload-bot-package><strong>봇 업로드</strong><span>Aidot 패키지 반영</span></button>
           </div>
           <div class="command-note">${escapeText(currentTransferStatus || "최근 패키지 전송 이력이 없습니다.")}</div>
+          <div class="command-history" data-transfer-history>
+            <div><strong>전송 이력 불러오는 중</strong><span>최근 5건 패키지 전송 이력을 표시합니다.</span></div>
+          </div>
         </article>
       </section>
     </div>`
@@ -6872,7 +6877,11 @@ function renderBotManagement() {
     renderTopContext();
   }));
   section.querySelectorAll("[data-jump-screen]").forEach((button) => button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen)));
+  section.querySelectorAll("[data-open-webchat]").forEach((button) => button.addEventListener("click", () => {
+    window.open(webchatUrl, "_blank", "noopener,noreferrer");
+  }));
   bindWorkspaceActions();
+  refreshTransferHistory();
 }
 function renderConfigureAidotScreen() {
   const container = document.querySelector("[data-configure-aidot-screen]");

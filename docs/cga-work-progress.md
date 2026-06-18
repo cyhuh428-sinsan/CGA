@@ -3118,3 +3118,24 @@ o duplicate function declarations.
 - 문서:
   - `docs/cga-studio-user-guide-ko.md` 신규 작성
   - `docs/cga-studio-quickstart-ko.md`는 상세 가이드 링크용으로 축약 정리
+
+## 2026-06-18 09:34 KST
+
+- 신산님 추가 지시:
+  - 에러 상황에 대비해 작업 진행 상황을 항상 별도 파일에 기록 유지.
+- 기록 원칙 확정:
+  - 진행 중 작업, 발견한 문제, 적용한 수정, 검증 결과를 모두 `docs/cga-work-progress.md`에 이어서 누적 기록.
+  - 전체 완료 전까지는 최종 산출물 문서로 취급하지 않고 작업 로그만 지속 갱신.
+- 현재 진행 중:
+  - `봇 관리` 화면에 WebChat 실제 열기 동선과 패키지 전송 이력 표시를 보강 중.
+
+## 2026-06-18 09:40 KST
+
+- `봇 관리` 보강 작업:
+  - WebChat 주소를 단순 텍스트가 아니라 클릭 가능한 링크로 변경.
+  - `WebChat 열기` 버튼 추가.
+  - `data-transfer-history` 영역을 `봇 관리` 화면에 추가해 최근 패키지 전송 5건을 바로 확인할 수 있도록 보강.
+  - 전송 이력 아이템용 스타일(`transfer-history-item`)과 링크/이력 블록 스타일 추가.
+- 검증:
+  - `node --check apps/studio/app.js` 통과.
+  - `npm run studio:validate` 전체 통과.

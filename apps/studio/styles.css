@@ -4243,6 +4243,44 @@ h1 { line-height: 1; }
   font-size: var(--font-body);
 }
 
+.command-link {
+  color: #0f766e;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.command-history {
+  display: grid;
+  gap: 8px;
+  margin: 0 12px 12px;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  background: #ffffff;
+  min-height: 88px;
+}
+
+.transfer-history-item {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5ebf2;
+}
+
+.transfer-history-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.transfer-history-item strong {
+  color: #0f2238;
+  font-size: var(--font-body);
+}
+
+.transfer-history-item span {
+  color: #52657a;
+  font-size: var(--font-desc);
+}
+
 .team-task-row {
   display: grid;
   gap: 5px;
