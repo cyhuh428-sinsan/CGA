@@ -3177,3 +3177,17 @@ o duplicate function declarations.
     - 의도: `password_reset`
     - 봇 답변: `Open Account Settings and choose Reset Password.`
   - `npm run studio:validate` 전체 통과
+
+## 2026-06-18 10:03 KST
+
+- Git / 배포:
+  - 커밋: `de1f779 feat: add aidot-compatible webchat page`
+  - 브랜치: `codex/wsl-container-dev`
+  - 원격 push 완료 후 WSL 실행본 `~/deploy/cga`에서 `git pull --ff-only` 및 `docker-compose -p cga up -d --build studio` 재기동 완료.
+- 배포 검증:
+  - `http://127.0.0.1:4173/webchat/supportbot-draft` 응답 `200`
+  - `http://127.0.0.1:4173/` 응답 `200`
+  - 배포 서버에서 room 생성 및 메시지 전송 확인:
+    - room 생성 성공
+    - 의도: `password_reset`
+    - 봇 답변: `Open Account Settings and choose Reset Password.`
