@@ -13,6 +13,19 @@
   - `npm run studio:validate` 전체 통과.
   - 주요 스크립트: `studio:config-check`, `studio:i18n-*`, `studio:dynamic-i18n-check` 모두 통과.
 
+## 2026-06-19
+
+### 테스트/평가/재학습/분석 화면의 비작동 UI 1차 제거
+
+- `apps/studio/app.js`의 `renderTestAidotScreen()`에서 시뮬레이터 헤더 메뉴, 카드 템플릿 버튼, 툴 버튼을 제거해 실제 동작과 무관한 조작 요소를 정리.
+- `renderEvaluateAidotScreen()`에서 작동 바인딩이 없는 `평가정보/다운로드`, `토글`, `행렬 제어` 관련 버튼을 제거.
+- `renderOperateAidotScreen()`에서 조회 필터 하단의 `초기화`, `확인`, `재학습`/`의도 생성`/`보류`/`삭제` 계열의 비작동 액션을 제거.
+- `renderAnalysisAidotScreen()`에서 월 이동/차트 이동/페이지 버튼을 제거해 현재 데이터 표시는 유지하고 조작 오탐성을 낮춤.
+- 스타일/스크립트 유효성은 유지하고, 화면 렌더는 기존 데이터 표시 중심 흐름으로 정리.
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 통과
+
 ## 2026-06-12
 
 ### 그룹 관리와 공통 조회 페이징 보완

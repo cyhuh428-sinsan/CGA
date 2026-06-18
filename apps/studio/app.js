@@ -2797,31 +2797,12 @@ function renderTestAidotScreen() {
               <span>v1 / Simulator</span>
             </div>
           </div>
-          <button type="button" class="icon-button">⋮</button>
         </div>
         <div class="aidot-simulator-window__body">
           <div class="aidot-simulator-canvas">
-            <div class="aidot-simulator-card-list">
-              <button type="button">CAROUSEL</button>
-              <button type="button">TAB</button>
-              <button type="button">KAKAOMAP</button>
-              <button type="button">BUTTON</button>
-              <button type="button">HTML</button>
-              <button type="button">TABLE</button>
-              <button type="button">TABLE</button>
-              <button type="button">BUTTON</button>
-              <button type="button">LINK_BUTTON</button>
-              <button type="button">FORM(RICH)</button>
-              <button type="button">CAROUSEL</button>
-              <button type="button">FORM(A CARD)</button>
-            </div>
             <div class="aidot-simulator-time">${escapeText(test.created_at || "2026-05-05 02:55:35")}</div>
           </div>
           <div class="aidot-simulator-compose">
-            <div class="aidot-simulator-tools">
-              <button type="button">📎</button>
-              <button type="button">🙂</button>
-            </div>
             <div class="aidot-simulator-input-row">
               <input type="text" data-test-input placeholder="질문을 입력하세요" value="${escapeText(test.last_user_message || "")}" />
               <button type="button" data-test-send>➤</button>
@@ -2879,26 +2860,19 @@ function renderEvaluateAidotScreen() {
       <div class="evaluation-dashboard evaluation-dashboard--real">
       <div class="evaluation-dashboard__header">
         <h1>Overview › 의도 상세</h1>
-        <button type="button" class="studio-table-page__ghost">평가정보 내보내기</button>
       </div>
       <div class="evaluation-dashboard__grid evaluation-dashboard__grid--nlu">
         <section class="evaluation-card">
           <div class="evaluation-card__title-row">
             <h2>봇 평가 <span class="evaluation-info-icon">i</span></h2>
-            <button type="button" class="studio-table-page__ghost">평가정보 더보기</button>
           </div>
           <div class="evaluation-card__empty evaluation-card__empty--circle">
             <strong>봇 평가를 위해<br />평가 데이터를 업로드하세요.</strong>
-          </div>
-          <div class="evaluation-card__bottom-actions">
-            <button type="button" class="studio-table-page__ghost">평가 데이터 업로드</button>
-            <button type="button" class="manual-main__menu-button--toolbar">⋮</button>
           </div>
         </section>
         <section class="evaluation-card">
           <div class="evaluation-card__title-row">
             <h2>학습모델 평가 <span class="evaluation-info-icon">i</span></h2>
-            <button type="button" class="studio-table-page__ghost">평가정보 더보기</button>
           </div>
           <div class="evaluation-score">
             <div class="evaluation-score__ring"><strong>65.4%</strong><span>Random</span></div>
@@ -2909,7 +2883,6 @@ function renderEvaluateAidotScreen() {
         <section class="evaluation-card evaluation-card--wide">
           <div class="evaluation-card__title-row">
             <h2>평가 이력</h2>
-            <button type="button" class="studio-table-page__ghost">평가정보 더보기</button>
           </div>
           <div class="evaluation-history">
             <svg class="evaluation-history__line" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -2928,13 +2901,11 @@ function renderEvaluateAidotScreen() {
           <div class="evaluation-history__summary">
             <span>의도 <strong>${intentCount}개</strong></span>
             <span>학습문장 <strong>${utteranceCount}개</strong></span>
-            <button type="button" class="studio-table-page__ghost">학습 데이터 다운로드</button>
           </div>
         </section>
         <section class="evaluation-card evaluation-card--feature">
           <div class="evaluation-card__title-row">
             <h2>학습문장 / Feature Balance <span class="evaluation-info-icon">i</span></h2>
-            <div class="evaluation-feature-toggle"><button type="button" class="is-active">Abnormal</button><button type="button">Total</button></div>
           </div>
           <div class="evaluation-balance">
             <div class="evaluation-balance__y-axis">${[110,100,90,80,70,60,50,40,30,20,10,0].map((value) => `<span>${value}</span>`).join("")}</div>
@@ -2949,7 +2920,6 @@ function renderEvaluateAidotScreen() {
         <section class="evaluation-card evaluation-card--matrix">
           <div class="evaluation-card__title-row">
             <h2>Confusion Matrix <span class="evaluation-info-icon">i</span></h2>
-            <div class="evaluation-matrix-controls"><span>100%</span><button type="button">+</button><button type="button">상세 보기<br />초기화</button></div>
           </div>
           <div class="evaluation-matrix-wrap">
             <div class="evaluation-matrix evaluation-matrix--real">
@@ -3004,17 +2974,9 @@ function renderOperateAidotScreen() {
         <select aria-label="학습상태"><option>전체</option><option>미학습</option><option>보류</option><option>재학습제외</option><option>재학습완료</option></select>
         <input type="date" value="2026-03-17" aria-label="발생기간 시작" />
         <input type="date" value="2026-06-17" aria-label="발생기간 종료" />
-        <button type="button">초기화</button>
-        <button type="button" class="retraining-filter__primary">확인</button>
       </section>
       <section class="retraining-actions">
         <strong>전체 ${rows.length}</strong>
-        <button type="button">대화이력 동기화</button>
-        <button type="button" class="retraining-actions__primary">재학습</button>
-        <button type="button" disabled>의도 생성</button>
-        <button type="button" disabled>보류</button>
-        <button type="button" disabled>재학습 제외</button>
-        <button type="button" disabled>삭제</button>
         <span>0개 선택</span>
       </section>
       <div class="data-grid data-grid--studio retraining-grid" style="--data-grid-template:44px minmax(220px, 1.4fr) 180px 110px 130px 120px 120px 150px">
@@ -3055,9 +3017,7 @@ function renderAnalysisAidotScreen() {
       <div class="analysis-page">
       <div class="analysis-page__filters">
         <select aria-label="채널 선택"><option>webchat</option></select>
-        <button type="button">‹</button>
         <strong>2026-06</strong>
-        <button type="button">›</button>
       </div>
       <div class="analysis-page__summary">
         <h2>누적 대화량 <span class="analysis-info-icon">i</span></h2>
@@ -3089,14 +3049,11 @@ function renderAnalysisAidotScreen() {
           <h3>기간별 대화량 <span class="analysis-info-icon">i</span></h3>
           <div class="analysis-period-legend"><span class="is-user">사용자 발화</span><span class="is-inquiry">문의</span><span class="is-answer">응답</span><span class="is-user-count">사용자수</span></div>
           <div class="analysis-period-chart">
-            <button type="button" class="analysis-period-chart__move analysis-period-chart__move--prev">‹</button>
             <div class="analysis-chart analysis-chart--manual">
-              ${["01일","02일","03일","04일","05일","06일","07일"].map((day) => `<button type="button"><span class="is-user" style="height:4%"></span><span class="is-inquiry" style="height:4%"></span><span class="is-answer" style="height:4%"></span><i>0</i><em>${day}</em></button>`).join("")}
+              ${["01일","02일","03일","04일","05일","06일","07일"].map((day) => `<span class="analysis-chart__day"><span class="is-user" style="height:4%"></span><span class="is-inquiry" style="height:4%"></span><span class="is-answer" style="height:4%"></span><i>0</i><em>${day}</em></span>`).join("")}
             </div>
-            <button type="button" class="analysis-period-chart__move analysis-period-chart__move--next">›</button>
           </div>
-          <div class="analysis-period-chart__pages"><button type="button" class="is-active"></button><button type="button"></button><button type="button"></button></div>
-          <button type="button" class="studio-table-page__ghost">선택일자 대화 전체보기</button>
+          <div class="analysis-period-chart__pages"><span class="analysis-page-dot"></span><span class="analysis-page-dot is-active"></span><span class="analysis-page-dot"></span></div>
         </section>
         <section class="analysis-panel">
           <h3>가장 많은 문의 Top 5 <span class="analysis-info-icon">i</span></h3>

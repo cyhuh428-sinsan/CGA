@@ -5076,7 +5076,8 @@ h1 { line-height: 1; }
   background: repeating-linear-gradient(to bottom, #fff 0, #fff 44px, #edf1f6 45px);
 }
 
-.analysis-chart--manual button {
+.analysis-chart--manual button,
+.analysis-chart--manual .analysis-chart__day {
   position: relative;
   height: 100%;
   display: flex;
@@ -5088,7 +5089,8 @@ h1 { line-height: 1; }
   background: transparent;
 }
 
-.analysis-chart--manual button span {
+.analysis-chart--manual button span,
+.analysis-chart--manual .analysis-chart__day span {
   width: 6px;
   min-height: 2px;
   border-radius: 2px 2px 0 0;
@@ -5098,7 +5100,8 @@ h1 { line-height: 1; }
 .analysis-chart--manual .is-inquiry { background: #39425b; }
 .analysis-chart--manual .is-answer { background: #17a6c1; }
 
-.analysis-chart--manual button i {
+.analysis-chart--manual button i,
+.analysis-chart--manual .analysis-chart__day i {
   position: absolute;
   bottom: 10px;
   color: #9aa5b1;
@@ -5106,7 +5109,8 @@ h1 { line-height: 1; }
   font-size: 10px;
 }
 
-.analysis-chart--manual button em {
+.analysis-chart--manual button em,
+.analysis-chart--manual .analysis-chart__day em {
   position: absolute;
   bottom: -20px;
   color: #7a8798;
@@ -5120,13 +5124,17 @@ h1 { line-height: 1; }
   gap: 5px;
 }
 
-.analysis-period-chart__pages button {
+.analysis-period-chart__pages .analysis-page-dot {
   width: 7px;
   height: 7px;
   padding: 0;
   border: 0;
   border-radius: 999px;
   background: #cbd5e1;
+}
+
+.analysis-period-chart__pages .analysis-page-dot.is-active {
+  background: #5b6e85;
 }
 
 .analysis-period-chart__pages button.is-active {
