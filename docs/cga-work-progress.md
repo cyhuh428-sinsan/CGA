@@ -3143,3 +3143,9 @@ o duplicate function declarations.
   - 첫 배포 후 브라우저에 새 `WebChat 열기`/`전송 이력`이 안 보였음.
   - 원인: `index.html`의 정적 자원 쿼리 버전이 그대로여서 브라우저가 `app.js/styles.css` 이전 캐시를 계속 사용.
   - 조치: `styles.css`, `entry-auth.js`, `app.js`, `workflow.js`, `layout.js` 쿼리 버전을 `20260618-10`으로 상향.
+  - 추가 원인:
+    - `봇 다운로드` / `버전 다운로드` 이후 `renderWorkspaceHome()`만 호출되어 현재 `봇 관리` 화면의 상태 문구와 전송 이력이 즉시 갱신되지 않았음.
+    - `WebChat 열기`는 `window.open()`만 사용해서 팝업 차단 시 반응이 없을 수 있었음.
+  - 추가 조치:
+    - 다운로드 후 `renderBotManagement()`도 함께 호출하도록 수정.
+    - `window.open()` 실패 시 `window.location.assign()`으로 같은 탭 이동 fallback 추가.

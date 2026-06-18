@@ -4760,6 +4760,7 @@ function bindWorkspaceActions() {
       if (serverFileName) {
         currentTransferStatus = formatTransferDownloaded("botPackage", serverFileName, "server");
         renderWorkspaceHome();
+        renderBotManagement();
         document.dispatchEvent(new CustomEvent("cga:content-rendered"));
         return;
       }
@@ -4767,6 +4768,7 @@ function bindWorkspaceActions() {
       downloadJsonFile(fileName, buildAidotBotPackage());
       currentTransferStatus = formatTransferDownloaded("botPackage", fileName);
       renderWorkspaceHome();
+      renderBotManagement();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
     });
   }
@@ -4793,6 +4795,7 @@ function bindWorkspaceActions() {
       if (serverFileName) {
         currentTransferStatus = formatTransferDownloaded("versionPackage", serverFileName, "server");
         renderWorkspaceHome();
+        renderBotManagement();
         document.dispatchEvent(new CustomEvent("cga:content-rendered"));
         return;
       }
@@ -4800,6 +4803,7 @@ function bindWorkspaceActions() {
       downloadJsonFile(fileName, buildCgaVersionPackage());
       currentTransferStatus = formatTransferDownloaded("versionPackage", fileName);
       renderWorkspaceHome();
+      renderBotManagement();
       document.dispatchEvent(new CustomEvent("cga:content-rendered"));
     });
   }
@@ -6878,7 +6882,8 @@ function renderBotManagement() {
   }));
   section.querySelectorAll("[data-jump-screen]").forEach((button) => button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen)));
   section.querySelectorAll("[data-open-webchat]").forEach((button) => button.addEventListener("click", () => {
-    window.open(webchatUrl, "_blank", "noopener,noreferrer");
+    const popup = window.open(webchatUrl, "_blank", "noopener,noreferrer");
+    if (!popup) window.location.assign(webchatUrl);
   }));
   bindWorkspaceActions();
   refreshTransferHistory();
