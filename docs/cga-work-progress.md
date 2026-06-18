@@ -3332,3 +3332,5 @@ o duplicate function declarations.
   - `npm run studio:validate` 전체 통과
 
 - 2026-06-19: CGA docker-compose.yml에 services.studio.restart: unless-stopped 추가. 이유: WSL 재시작 시 컨테이너가 자동 복구되지 않던 원인(현재 no restart 정책)을 제거하기 위함. 이 변경은 실행/도커 정책만 변경하며, 웹 화면/기능 로직에는 영향 없음.
+
+- 2026-06-19: 팀 대시보드 액션 동기화 개선. indTeamDashboardActions의 액션 처리 후 syncTeamDashboardAfterAction()를 호출해 unCollaborationAction 실행/폴백 반영 뒤 efreshCollaborationStateFromServer + enderTeamDashboard + enderCollaborationSummary + efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 기존 즉시 렌더만 하던 방식에서 서버 기준 상태 반영으로 전환.

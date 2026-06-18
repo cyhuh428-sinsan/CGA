@@ -4458,6 +4458,15 @@ function renderTeamDashboard() {
   );
   bindTeamDashboardActions();
 }
+
+async function syncTeamDashboardAfterAction() {
+  if (currentWorkspaceGroupId && currentWorkspaceBotId) {
+    await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId);
+  }
+  renderTeamDashboard();
+  renderCollaborationSummary();
+  refreshWorkspaceManagementSurfaces();
+}
 function bindTeamDashboardActions() {
   document.querySelectorAll("[data-lock-work]").forEach((button) => {
     if (button.dataset.bound === "true") return;
@@ -4465,9 +4474,7 @@ function bindTeamDashboardActions() {
     button.addEventListener("click", async () => {
       const synced = await runCollaborationAction(button.dataset.lockWork, "lock").catch(() => false);
       if (synced === false) currentCollaborationState = lockWorkItem(currentCollaborationState, { workItemId: button.dataset.lockWork, userId: currentAccessState.currentUserId });
-      renderTeamDashboard();
-      renderCollaborationSummary();
-      renderGlobalMessage();
+      await syncTeamDashboardAfterAction();
     });
   });
   document.querySelectorAll("[data-unlock-work]").forEach((button) => {
@@ -4476,9 +4483,7 @@ function bindTeamDashboardActions() {
     button.addEventListener("click", async () => {
       const synced = await runCollaborationAction(button.dataset.unlockWork, "unlock").catch(() => false);
       if (synced === false) currentCollaborationState = releaseWorkItemLock(currentCollaborationState, { workItemId: button.dataset.unlockWork, userId: currentAccessState.currentUserId });
-      renderTeamDashboard();
-      renderCollaborationSummary();
-      renderGlobalMessage();
+      await syncTeamDashboardAfterAction();
     });
   });
   document.querySelectorAll("[data-approve-work]").forEach((button) => {
@@ -4487,9 +4492,7 @@ function bindTeamDashboardActions() {
     button.addEventListener("click", async () => {
       const synced = await runCollaborationAction(button.dataset.approveWork, "approve").catch(() => false);
       if (synced === false) currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.approveWork, reviewerId: currentAccessState.currentUserId, decision: "approve" });
-      renderTeamDashboard();
-      renderCollaborationSummary();
-      renderGlobalMessage();
+      await syncTeamDashboardAfterAction();
     });
   });
   document.querySelectorAll("[data-request-change]").forEach((button) => {
@@ -4498,9 +4501,7 @@ function bindTeamDashboardActions() {
     button.addEventListener("click", async () => {
       const synced = await runCollaborationAction(button.dataset.requestChange, "request-changes").catch(() => false);
       if (synced === false) currentCollaborationState = submitReviewDecision(currentCollaborationState, { workItemId: button.dataset.requestChange, reviewerId: currentAccessState.currentUserId, decision: "request_changes" });
-      renderTeamDashboard();
-      renderCollaborationSummary();
-      renderGlobalMessage();
+      await syncTeamDashboardAfterAction();
     });
   });
 }
