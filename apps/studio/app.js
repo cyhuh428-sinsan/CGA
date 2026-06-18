@@ -100,6 +100,7 @@ let currentApiRegistry = [
 let currentApiGroupId = "g-support";
 let currentApiBotId = "supportbot-draft";
 let currentTransferStatus = "";
+let currentTransferHistory = [];
 let currentAuthMessage = null;
 let currentGlobalMessage = null;
 let studioStateSaveTimer = null;
@@ -2059,7 +2060,8 @@ async function saveApiAnswerToServer(api) {
 }
 
 function renderTransferHistoryItems(container, items) {
-  const recent = [...items].reverse().slice(0, 5);
+  currentTransferHistory = Array.isArray(items) ? [...items] : [];
+  const recent = [...currentTransferHistory].reverse().slice(0, 5);
   container.innerHTML = recent.length
     ? recent.map((item) => `
       <div class="transfer-history-item">
@@ -2069,6 +2071,18 @@ function renderTransferHistoryItems(container, items) {
       </div>
     `).join("")
     : `<div><strong data-i18n="transfer.historyEmptyTitle">No transfer history</strong><span data-i18n="transfer.historyEmptyBody">Download or upload a package to create a server record.</span></div>`;
+  const note = document.querySelector("[data-transfer-note]");
+  if (note && !currentTransferStatus) {
+    note.textContent = getLatestTransferSummary() || "최근 패키지 전송 이력이 없습니다.";
+  }
+}
+
+function getLatestTransferSummary() {
+  const latest = [...currentTransferHistory]
+    .filter((item) => item?.created_at)
+    .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+  if (!latest) return "";
+  return `${latest.scope || "asset"} ${latest.direction || "transfer"} · ${latest.source || latest.asset_path || "server"} · ${latest.created_at}`;
 }
 
 async function refreshTransferHistory() {
@@ -6782,6 +6796,7 @@ function renderBotManagement() {
   const canManage = canManageBotInCurrentWorkspace();
   const canDelete = canManage && bots.length > 1;
   const versionHeaderCols = "1fr .8fr 1.6fr .7fr 1.1fr .9fr .8fr";
+  const transferNote = currentTransferStatus || getLatestTransferSummary() || "최근 패키지 전송 이력이 없습니다.";
   renderWorkflowScreenShell(
     "bot-management",
     "BM",
@@ -6846,7 +6861,7 @@ function renderBotManagement() {
             <button type="button" data-version-upload>버전 패키지 업로드</button>
           </div>
         </article>
-        <article class="command-panel command-panel--status-block">
+        <article class="command-panel command-panel--status-block command-panel--bot-detail">
           <header><div><strong>봇 상세 정보 및 호환 운영</strong><span>봇 단위 import/export와 WebChat 접속을 관리합니다.</span></div></header>
           <dl class="command-definition">
             <div><dt>봇 ID</dt><dd>${escapeText(selectedBot?.id || "-")}</dd></div>
@@ -6863,7 +6878,7 @@ function renderBotManagement() {
             <button type="button" data-download-bot-package><strong>봇 다운로드</strong><span>Aidot 패키지</span></button>
             <button type="button" data-upload-bot-package><strong>봇 업로드</strong><span>Aidot 패키지 반영</span></button>
           </div>
-          <div class="command-note">${escapeText(currentTransferStatus || "최근 패키지 전송 이력이 없습니다.")}</div>
+          <div class="command-note" data-transfer-note>${escapeText(transferNote)}</div>
           <div class="command-history" data-transfer-history>
             <div><strong>전송 이력 불러오는 중</strong><span>최근 5건 패키지 전송 이력을 표시합니다.</span></div>
           </div>
