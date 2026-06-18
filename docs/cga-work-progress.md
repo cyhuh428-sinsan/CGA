@@ -3279,3 +3279,15 @@ o duplicate function declarations.
 - 검증:
   - `node --check apps/studio/app.js` 통과
   - `npm run studio:validate` 전체 통과
+
+## 2026-06-18 11:27 KST
+
+- `봇 테스트` 동작 보강:
+  - `run-test` 실행 바인딩은 있었지만 테스트 화면 입력창에 `data-test-input`이 없어 엔터/전송 버튼 모두 실제 실행으로 이어지지 않는 상태였음.
+- 적용 내용:
+  - 시뮬레이터 입력창에 `data-test-input`, 전송 버튼에 `data-test-send` 연결.
+  - 엔터 입력과 전송 버튼 클릭이 같은 `run-test` 실행 로직을 타도록 통합.
+  - `분석 데이터 보기` 버튼은 우측 분석 패널 위치로 바로 이동하도록 보조 동작 추가.
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 전체 통과

@@ -2822,10 +2822,10 @@ function renderTestAidotScreen() {
               <button type="button">🙂</button>
             </div>
             <div class="aidot-simulator-input-row">
-              <input type="text" placeholder="질문을 입력하세요" value="${escapeText(test.last_user_message || "")}" />
-              <button type="button">➤</button>
+              <input type="text" data-test-input placeholder="질문을 입력하세요" value="${escapeText(test.last_user_message || "")}" />
+              <button type="button" data-test-send>➤</button>
             </div>
-            <button type="button" class="aidot-simulator-analysis-button">분석 데이터 보기</button>
+            <button type="button" class="aidot-simulator-analysis-button" data-test-analysis-toggle>분석 데이터 보기</button>
           </div>
         </div>
       </div>
@@ -4577,8 +4577,17 @@ function bindOperationsActions() {
   const runBuild = document.querySelector("[data-build-run]");
   const refreshBuild = document.querySelector("[data-build-refresh]");
   const testInput = document.querySelector("[data-test-input]");
+  const testSend = document.querySelector("[data-test-send]");
+  const analysisToggle = document.querySelector("[data-test-analysis-toggle]");
   const deploy = document.querySelector("[data-deploy-action]");
   const topSave = document.querySelector("[data-top-save]");
+  const runTest = async () => {
+    const message = testInput?.value?.trim();
+    if (!message) return;
+    await runOperationsAction("run-test", { message }).catch(() => false);
+    if (testInput) testInput.value = "";
+    renderAllStatePanels();
+  };
 
   if (runBuild && runBuild.dataset.bound !== "true") {
     runBuild.dataset.bound = "true";
@@ -4603,11 +4612,21 @@ function bindOperationsActions() {
     testInput.addEventListener("keydown", async (event) => {
       if (event.key !== "Enter") return;
       event.preventDefault();
-      const message = testInput.value.trim();
-      if (!message) return;
-      await runOperationsAction("run-test", { message }).catch(() => false);
-      testInput.value = "";
-      renderAllStatePanels();
+      await runTest();
+    });
+  }
+
+  if (testSend && testSend.dataset.bound !== "true") {
+    testSend.dataset.bound = "true";
+    testSend.addEventListener("click", async () => {
+      await runTest();
+    });
+  }
+
+  if (analysisToggle && analysisToggle.dataset.bound !== "true") {
+    analysisToggle.dataset.bound = "true";
+    analysisToggle.addEventListener("click", () => {
+      document.querySelector(".aidot-simulator-analysis")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     });
   }
 
