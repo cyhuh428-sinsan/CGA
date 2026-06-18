@@ -3249,3 +3249,19 @@ o duplicate function declarations.
   - 그 결과 우측 구조 요약 패널이 아래로 밀려 한 화면에서 보이지 않아 스크롤이 커지는 원인이 됨.
 - 조치 예정:
   - `봇 생성`만큼은 1280 기준에서도 2열이 유지되도록 반응형 분기 폭을 더 낮게 조정.
+
+## 2026-06-18 11:02 KST
+
+- `봇 설정` / `봇 구성` 레이아웃 보정 시작:
+  - `봇 설정`은 실제 본문만 있는 화면인데 `.aidot-settings-screen`이 grid 껍데기를 유지하고 있어 화면 폭을 어색하게 쓰는 상태였음.
+  - `봇 구성`은 좌측 입력 작업 영역보다 우측 후보 영역이 더 크게 보이는 비율이라 Aidot 작업 흐름 기준으로 답답했음.
+- 적용 내용:
+  - `.aidot-settings-screen`을 전체 폭 단일 블록 레이아웃으로 정리.
+  - `.aidot-settings-main`과 하위 grid(`aidot-field-grid`, `aidot-weight-grid`, `rag-form-grid`)가 화면 전체 폭을 사용하도록 보강.
+  - `.aidot-rag-config`는 좌측 작업영역 우선 비율로 재조정.
+  - `rag-target-row`, `rag-source-mode`, `rag-footer-row`는 줄바꿈 가능하게 보강.
+  - `의도 후보` 박스 최소 높이를 늘려 우측 패널이 빈 박스처럼 보이지 않도록 조정.
+  - 1180px / 820px 이하에서는 관련 grid가 순차적으로 1열 또는 2열로 접히도록 반응형 분기 추가.
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 전체 통과
