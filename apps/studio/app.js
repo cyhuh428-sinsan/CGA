@@ -1,5 +1,5 @@
-import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-8";
-import { getVisibleLayout } from "./data/layout.js?v=20260618-8";
+import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-9";
+import { getVisibleLayout } from "./data/layout.js?v=20260618-9";
 import { sampleStudioState } from "./data/sample-state.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
@@ -924,6 +924,9 @@ function applyDynamicLocaleOverrides(locale = getCurrentLocale()) {
 }
 
 function getActiveGroupsForCurrentUser() {
+  if (isSystemAdmin(currentAccessState, currentAccessState.currentUserId)) {
+    return currentAccessState.groups.filter((group) => group.status === "active");
+  }
   const memberships = currentAccessState.memberships.filter((membership) => membership.user_id === currentAccessState.currentUserId && membership.status === "active");
   return currentAccessState.groups.filter((group) => group.status === "active" && memberships.some((membership) => membership.group_id === group.id));
 }
@@ -941,6 +944,44 @@ function getCurrentWorkspaceGroup() {
 
 function getCurrentWorkspaceBot() {
   return currentWorkspaceBots.find((bot) => bot.id === currentWorkspaceBotId) || currentWorkspaceBots.find((bot) => bot.group_id === currentWorkspaceGroupId) || null;
+}
+
+function syncWorkspaceSelection() {
+  const groups = getActiveGroupsForCurrentUser();
+  if (!groups.length) return { groups, bots: [] };
+
+  const currentGroupStillVisible = groups.some((group) => group.id === currentWorkspaceGroupId);
+  const currentGroupBots = currentGroupStillVisible ? getAccessibleBotListForGroup(currentWorkspaceGroupId) : [];
+  const botMatchedGroup = currentWorkspaceBots.find((bot) => bot.id === currentWorkspaceBotId)?.group_id;
+  const preferredGroupId = [
+    botMatchedGroup,
+    currentStudioState.bot.id ? currentWorkspaceBots.find((bot) => bot.id === currentStudioState.bot.id)?.group_id : "",
+    groups.find((group) => getAccessibleBotListForGroup(group.id).length > 0)?.id,
+    groups[0]?.id
+  ].find((groupId) => groupId && groups.some((group) => group.id === groupId));
+
+  if (!currentGroupStillVisible || (!currentGroupBots.length && preferredGroupId && preferredGroupId !== currentWorkspaceGroupId)) {
+    currentWorkspaceGroupId = preferredGroupId || groups[0].id;
+  }
+
+  const bots = getAccessibleBotListForGroup(currentWorkspaceGroupId);
+  const selectedBot = bots.find((bot) => bot.id === currentWorkspaceBotId)
+    || bots.find((bot) => bot.id === currentStudioState.bot.id)
+    || bots[0]
+    || null;
+
+  if (selectedBot) {
+    currentWorkspaceBotId = selectedBot.id;
+    selectedBotManagementId = selectedBot.id;
+    if (currentStudioState.bot.id !== selectedBot.id || currentStudioState.bot.name !== selectedBot.name || currentStudioState.bot.version !== selectedBot.version) {
+      applyCurrentBotToStudioState(selectedBot);
+    }
+  } else {
+    currentWorkspaceBotId = "";
+    if (!bots.length) selectedBotManagementId = "";
+  }
+
+  return { groups, bots };
 }
 
 function getWorkspaceMetaStorageKey(base) {
@@ -4036,6 +4077,18 @@ function renderTeamDashboard() {
   const totalWork = dashboard.byStatus.reduce((sum, entry) => sum + Number(entry.count || 0), 0);
   const lockedItems = dashboard.workItems.filter((item) => item.lock?.user_id);
   const reviewCount = dashboard.reviewQueue.length;
+  const recentUpdates = dashboard.workItems
+    .slice()
+    .sort((left, right) => String(right.updated_at || "").localeCompare(String(left.updated_at || "")))
+    .slice(0, 5);
+  const bottleneckItems = dashboard.workItems
+    .filter((item) => item.status === "blocked" || item.status === "review" || item.lock?.user_id)
+    .slice(0, 5);
+  const assigneeLoad = dashboard.workItems.reduce((acc, item) => {
+    const key = item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정");
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
   const tasksByGroup = dashboard.workItems.reduce((acc, item) => {
     const key = item.group_id || t("team.unassigned", "미지정");
     acc[key] = (acc[key] || 0) + 1;
@@ -4137,6 +4190,45 @@ function renderTeamDashboard() {
               <span>${entry.count}</span>
             </div>
           `).join("")}
+        </div>
+      </section>
+      <section class="team-command-grid team-command-grid--metrics team-command-grid--insights">
+        <article class="command-panel">
+          <header><div><strong>최근 수정 이력</strong><span>최근 수정 순서로 작업 항목을 확인합니다.</span></div></header>
+          <div class="team-task-list">
+            ${recentUpdates.map((item) => `
+              <div class="team-task-row">
+                <strong>${item.title}</strong>
+                <span>${item.group_id || t("team.unassigned", "미지정")} / ${item.bot_id || t("team.unassigned", "미지정")}</span>
+                <span>담당자: ${item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정")}</span>
+                <span>최근수정: ${formatAidotAdminDate(item.updated_at)}</span>
+              </div>
+            `).join("") || `<div class="team-task-empty"><strong>최근 수정 이력이 없습니다.</strong></div>`}
+          </div>
+        </article>
+        <article class="command-panel">
+          <header><div><strong>병목 항목</strong><span>잠금, 검토 지연, 차단 항목을 우선 모읍니다.</span></div></header>
+          <div class="team-task-list">
+            ${bottleneckItems.map((item) => `
+              <div class="team-task-row ${item.status}">
+                <strong>${item.title}</strong>
+                <span>${item.status} · ${item.group_id || t("team.unassigned", "미지정")} / ${item.bot_id || t("team.unassigned", "미지정")}</span>
+                <span>잠금: ${item.lock?.user_id || t("team.unassigned", "없음")}</span>
+                <span>담당자: ${item.assignee?.name || item.assignee_id || t("team.unassigned", "미지정")}</span>
+              </div>
+            `).join("") || `<div class="team-task-empty"><strong>현재 병목 항목이 없습니다.</strong></div>`}
+          </div>
+        </article>
+      </section>
+      <section class="command-panel command-panel--status">
+        <header><div><strong>담당자별 작업량</strong><span>현재 협업 배분 상태입니다.</span></div></header>
+        <div class="team-status-strip">
+          ${Object.entries(assigneeLoad).map(([assignee, count]) => `
+            <div class="team-status-card">
+              <strong>${escapeText(assignee)}</strong>
+              <span>${count}건</span>
+            </div>
+          `).join("") || `<div class="team-status-card"><strong>${t("team.unassigned", "미지정")}</strong><span>0건</span></div>`}
         </div>
       </section>
     </div>`
@@ -4358,6 +4450,7 @@ function bindOperationsActions() {
 }
 
 function renderTopContext() {
+  syncWorkspaceSelection();
   const current = summarizeAccess(currentAccessState);
   const group = getCurrentWorkspaceGroup();
   const bot = getCurrentWorkspaceBot();
@@ -6480,7 +6573,7 @@ function syncTopActionsForScreen() {
   const topSave = document.querySelector("[data-top-save]");
   const topPreview = document.querySelector("[data-top-preview]");
   const topDeploy = document.querySelector("[data-deploy-action]");
-  const deployScreens = new Set(["bot-management", "test", "evaluate", "operate", "analysis"]);
+  const deployScreens = new Set(["operate"]);
   if (topSave) {
     topSave.hidden = false;
     topSave.disabled = false;
@@ -6529,10 +6622,9 @@ async function saveCurrentWorkspaceState() {
 function renderWorkspaceHome() {
   const section = document.querySelector('[data-screen-id="workspace-home"]');
   if (!section) return;
-  const groups = getActiveGroupsForCurrentUser();
-  if (!groups.some((group) => group.id === currentWorkspaceGroupId)) currentWorkspaceGroupId = groups[0]?.id || currentWorkspaceGroupId;
+  const { groups, bots: syncedBots } = syncWorkspaceSelection();
   const groupOptions = groups.map((group) => `<option value="${escapeText(group.id)}" ${group.id === currentWorkspaceGroupId ? "selected" : ""}>${escapeText(group.name)}</option>`).join("");
-  const accessibleBots = getAccessibleBotListForGroup(currentWorkspaceGroupId);
+  const accessibleBots = syncedBots;
   const currentGroup = getCurrentWorkspaceGroup();
   const currentBot = getCurrentWorkspaceBot();
   const recentBots = getRecentWorkspaceBotsByGroup(currentWorkspaceGroupId);
@@ -6667,6 +6759,7 @@ function renderWorkspaceHome() {
 function renderBotManagement() {
   const section = document.querySelector('[data-screen-id="bot-management"]');
   if (!section) return;
+  syncWorkspaceSelection();
   const group = getCurrentWorkspaceGroup();
   const bots = currentWorkspaceBots.filter((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
   const selected = bots.find((bot) => bot.id === selectedBotManagementId) || getCurrentWorkspaceBot() || bots[0] || {};
