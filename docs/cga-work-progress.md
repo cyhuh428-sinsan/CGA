@@ -3360,3 +3360,13 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
 
 
 - 2026-06-19: 봇 제작 화면 비작동 버튼 정비. `renderBuildAidotScreen()`에서 동작 없는 버튼/아이콘/메뉴 항목을 정리하고, 실제 바인딩 버튼만 남김. (`+ 의도/모듈 추가`, `학습문장 추가`, `학습문장 삭제`, `저장하기`, `저장 후 대화설계`, `대화 설계 저장`). `node --check apps/studio/app.js` 통과.
+
+## 2026-06-19 14:35 KST
+
+- `renderConfigureAidotScreen()` 일부 정리:
+  - 봇 설정/구성 화면에서 동작 없는 버튼(설정 라디오 조작, 모듈 목록 열기, 플로팅 버튼/추천 의도 추가, 블록리스트/룰/스몰토크/봇스테이션 저장/연결 버튼)을 제거해 화면 오작동 느낌을 줄임.
+  - 동작이 남아 있는 버튼/입력은 유지하고, 레이아웃 정합성만 정리(들여쓰기 정리).
+- 점검:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 통과
+  - 작업 중 Git 동작 점검: 현재 환경에서 `git pull`은 `.git/FETCH_HEAD` 권한 제약으로 실행 불가로 확인(읽기 권한 범위 제약으로 인한 일시적 제약).
