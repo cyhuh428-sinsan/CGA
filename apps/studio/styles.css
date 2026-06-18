@@ -820,14 +820,15 @@ textarea { min-height: 84px; resize: vertical; }
   color: #64748b;
   font-size: var(--font-desc);
 }
-.aidot-settings-screen,
-.aidot-rag-config {
-  display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
-  gap: 14px;
+.aidot-settings-screen {
+  display: block;
+  width: 100%;
 }
 .aidot-rag-config {
-  grid-template-columns: minmax(420px, .8fr) minmax(0, 1.4fr);
+  display: grid;
+  grid-template-columns: minmax(620px, 1.2fr) minmax(420px, 0.85fr);
+  gap: 14px;
+  align-items: start;
 }
 .aidot-settings-side,
 .aidot-settings-main,
@@ -837,6 +838,9 @@ textarea { min-height: 84px; resize: vertical; }
   background: #fff;
   padding: 12px;
 }
+.aidot-settings-main {
+  width: 100%;
+}
 .aidot-settings-side {
   display: grid;
   align-content: start;
@@ -844,7 +848,6 @@ textarea { min-height: 84px; resize: vertical; }
   gap: 10px;
 }
 .aidot-settings-main--full {
-  grid-column: 1 / -1;
   min-width: 0;
 }
 .configure-message-list {
@@ -926,6 +929,12 @@ textarea { min-height: 84px; resize: vertical; }
   gap: 10px;
   margin-bottom: 12px;
 }
+.aidot-settings-main .aidot-field-grid,
+.aidot-settings-main .aidot-field-grid.five,
+.aidot-settings-main .aidot-weight-grid,
+.aidot-settings-main .rag-form-grid {
+  width: 100%;
+}
 .aidot-field-grid.five {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -975,6 +984,7 @@ textarea { min-height: 84px; resize: vertical; }
 .rag-target-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin: 10px 0;
 }
@@ -982,6 +992,7 @@ textarea { min-height: 84px; resize: vertical; }
 .rag-footer-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
   margin: 10px 0;
 }
@@ -1012,7 +1023,10 @@ textarea { min-height: 84px; resize: vertical; }
   color: #64748b;
   font-size: var(--font-desc);
 }
-.rag-target-row label { width: 110px; }
+.rag-target-row label {
+  width: 140px;
+  margin-bottom: 0;
+}
 .rag-target-row button,
 .primary-action-small {
   min-height: 30px;
@@ -1022,9 +1036,10 @@ textarea { min-height: 84px; resize: vertical; }
   padding: 0 12px;
 }
 .rag-candidate-box {
-  min-height: 240px;
+  min-height: 520px;
   display: grid;
-  place-items: center;
+  align-content: start;
+  padding: 14px;
   color: #94a3b8;
 }
 .aidot-bot-main-head {
@@ -3227,7 +3242,32 @@ button.management-table-row:hover,
 
 @media (max-width: 1300px) { .app-shell { grid-template-columns: 240px 1fr; } .approval { grid-column: 1 / -1; position: static; } .topbar { grid-template-columns: 1fr; height: auto; position: static; } .context-bar { justify-content: flex-start; } .hero-panel, .two-column, .simulator-layout, .editor-layout, .aidot-intent-layout, .permission-layout, .auth-policy-layout, .auth-flow-layout, .request-layout, .access-ops-panel, .workspace-home-layout, .team-dashboard-layout { grid-template-columns: 1fr; } .workspace-transfer-card { grid-column: auto; } }
 @media (max-width: 1180px) { .create-layout, .create-form-panel { grid-template-columns: 1fr; } .create-layout .status-panel.compact { position: static; } }
+@media (max-width: 1180px) {
+  .aidot-rag-config,
+  .aidot-field-grid.five,
+  .aidot-weight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .aidot-field-grid,
+  .rag-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rag-candidate-box {
+    min-height: 320px;
+  }
+}
 @media (max-width: 820px) { .app-shell { grid-template-columns: 1fr; padding: 12px; } .workflow { position: static; } .input-paths, .readiness-grid, .ops-grid, .module-layout, .boundary-table, .i18n-grid, .error-samples, .contract-grid, .state-grid, .decision-grid, .lock-runtime-grid, .access-grid, .access-ops-grid, .api-answer-layout, .metric-example, .coverage-grid, .collab-grid, .collab-summary, .permission-table, .screen-access-list > div, .policy-list p, .bot-list-row, .team-status-strip, .asset-transfer-grid, .version-strip, .transfer-history-list > div, .aidot-intent-toolbar, .simulator-result-grid, .simulator-runtime-grid, .detail-asset-row, .form-grid.two { grid-template-columns: 1fr; } .screen-heading { grid-template-columns: 42px 1fr; } .screen-heading em { grid-column: 1 / -1; max-width: none; } .intent-row, .aidot-intent-head, .aidot-intent-row, .channel-choice-row { grid-template-columns: 1fr; } .aidot-intent-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mini-flow { white-space: normal; flex-wrap: wrap; } }
+@media (max-width: 820px) {
+  .aidot-field-grid,
+  .aidot-field-grid.five,
+  .aidot-weight-grid,
+  .rag-form-grid,
+  .aidot-rag-config {
+    grid-template-columns: 1fr;
+  }
+}
 
 .status-panel [data-create-summary] {
   display: block;
