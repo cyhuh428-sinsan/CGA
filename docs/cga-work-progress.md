@@ -2737,14 +2737,18 @@
 ### 원인
 - pps/studio/app.js 안에 동일 함수가 여러 번 선언되어 모듈 파싱이 중단됨.
 - 확인된 중복 함수:
-  - enderBuildAidotScreen
-  - enderWorkspaceHome
+  - 
+enderBuildAidotScreen
+  - 
+enderWorkspaceHome
 - 브라우저 탭에는 이전 pp.js?v=20260613-8 캐시가 남아 있어, 서버 파일과 브라우저 적용 파일이 다르게 보였음.
 
 ### 조치
 - CGA 전용 파일만 수정함. Aidot 저장소/소스는 수정하지 않음.
-- pps/studio/app.js에서 중복된 구버전 enderWorkspaceHome 선언 블록을 제거하고 최종 구현만 남김.
-- 기존에 중복 제거한 enderBuildAidotScreen 최종 구현만 유지됨.
+- pps/studio/app.js에서 중복된 구버전 
+enderWorkspaceHome 선언 블록을 제거하고 최종 구현만 남김.
+- 기존에 중복 제거한 
+enderBuildAidotScreen 최종 구현만 유지됨.
 - pps/studio/index.html의 Studio 스크립트 캐시 버전을 pp.js?v=20260613-9로 갱신함.
 
 ### 검증
@@ -2777,7 +2781,8 @@ o duplicate function declarations.
 ## 2026-06-13 12:51:45 작업 진행 기록
 - 작업 범위: CGA Studio만 수정. Aidot 소스는 수정하지 않음.
 - 수정 내용: 로그인/인증 게이트가 좌측 메뉴 카드까지 숨기던 문제를 워크스페이스 화면만 숨기도록 제한.
-- 수정 내용: 워크플로우 화면 재렌더링 후 현재 선택 화면을 다시 적용하도록 enderWorkflowScreens()에 화면 가시성 재적용 추가.
+- 수정 내용: 워크플로우 화면 재렌더링 후 현재 선택 화면을 다시 적용하도록 
+enderWorkflowScreens()에 화면 가시성 재적용 추가.
 - 목적: #detail 등에서 여러 화면이 얇게 겹쳐 보이고 좌측 메뉴가 열리지 않는 문제를 먼저 제거.
 - 다음 확인: 1920x1080 기준으로 detail/evaluate/operate/analysis 화면이 각각 1개만 표시되는지 브라우저 검증.
 
@@ -3333,4 +3338,12 @@ o duplicate function declarations.
 
 - 2026-06-19: CGA docker-compose.yml에 services.studio.restart: unless-stopped 추가. 이유: WSL 재시작 시 컨테이너가 자동 복구되지 않던 원인(현재 no restart 정책)을 제거하기 위함. 이 변경은 실행/도커 정책만 변경하며, 웹 화면/기능 로직에는 영향 없음.
 
-- 2026-06-19: 팀 대시보드 액션 동기화 개선. indTeamDashboardActions의 액션 처리 후 syncTeamDashboardAfterAction()를 호출해 unCollaborationAction 실행/폴백 반영 뒤 efreshCollaborationStateFromServer + enderTeamDashboard + enderCollaborationSummary + efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 기존 즉시 렌더만 하던 방식에서 서버 기준 상태 반영으로 전환.
+- 2026-06-19: 팀 대시보드 액션 동기화 개선. indTeamDashboardActions의 액션 처리 후 syncTeamDashboardAfterAction()를 호출해 
+unCollaborationAction 실행/폴백 반영 뒤 
+efreshCollaborationStateFromServer + 
+enderTeamDashboard + 
+enderCollaborationSummary + 
+efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 기존 즉시 렌더만 하던 방식에서 서버 기준 상태 반영으로 전환.
+
+
+- 2026-06-19: 봇 제작 화면 비작동 버튼 정비. `renderBuildAidotScreen()`에서 동작 없는 버튼/아이콘/메뉴 항목을 정리하고, 실제 바인딩 버튼만 남김. (`+ 의도/모듈 추가`, `학습문장 추가`, `학습문장 삭제`, `저장하기`, `저장 후 대화설계`, `대화 설계 저장`). `node --check apps/studio/app.js` 통과.
