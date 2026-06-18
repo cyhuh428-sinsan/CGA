@@ -606,7 +606,18 @@ textarea { min-height: 84px; resize: vertical; }
 .mini-flow span { width: 28px; height: 2px; background: #94a3b8; display: inline-block; position: relative; }
 .mini-flow span::after { content: ""; position: absolute; right: -1px; top: -4px; border-left: 8px solid #94a3b8; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
 .review-board { margin-top: 16px; }
-.intent-row { margin-top: 10px; display: grid; grid-template-columns: 1fr 120px 1fr auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--muted-line); border-radius: 8px; background: #fff; }
+.intent-row { margin-top: 10px; display: grid; grid-template-columns: 24px 1fr 120px 1fr auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--muted-line); border-radius: 8px; background: #fff; }
+.intent-row__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+.intent-row__check input {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+}
 .intent-row button { border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; padding: 7px 12px; }
 .tab-strip { margin-bottom: 14px; }
 .tab-strip button { border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; padding: 8px 12px; }

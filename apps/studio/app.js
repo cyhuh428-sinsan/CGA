@@ -178,6 +178,7 @@ let currentScenarioAssets = [
   { id: "account_update", type: "intent", displayName: "account_update", answer: "Open Profile Settings and update your account information.", dialogCards: ["Open Profile Settings and update your account information."] }
 ];
 let currentSelectedIntentId = "password_reset";
+let currentSelectedCompositionCandidates = new Set();
 let currentOperationsState = {
   group_id: "g-support",
   bot_id: "supportbot-draft",
@@ -3178,7 +3179,7 @@ function renderDetailAidotScreen() {
         </div>
       </section>
       <section class="aidot-rag-right">
-        <header><strong>의도 후보</strong><div><button type="button">선택 병합</button><button type="button" class="primary-action-small">현재 버전 덮어쓰기</button></div></header>
+        <header><strong>의도 후보</strong><div><button type="button" data-config-merge-selected>선택 병합</button><button type="button" class="primary-action-small" data-config-apply-current>현재 버전 덮어쓰기</button></div></header>
         <div data-config-preview class="rag-candidate-box">답변 텍스트 또는 PDF를 입력하고 RAG 문서 구성을 실행하세요.</div>
       </section>
     </div>`
@@ -3470,8 +3471,98 @@ function normalizeIntentCandidate(item, index = 0) {
   return {
     intent,
     utterance_count: Number(item.utterance_count || item.utteranceCount || utterances.length || 0),
-    status: item.status || "answer_required"
+    status: item.status || "answer_required",
+    utterances
   };
+}
+
+function sanitizeIntentToken(value, fallback = "intent") {
+  const text = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u3131-\u318e\uac00-\ud7a3]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return text || fallback;
+}
+
+function deriveIntentNameFromUtterance(text, index = 0) {
+  const source = String(text || "").trim();
+  const explicitMatch = source.match(/(?:의도|intent)\s*[:：]\s*([^\n/]+)/i);
+  if (explicitMatch?.[1]) {
+    return sanitizeIntentToken(explicitMatch[1], `intent_${index + 1}`);
+  }
+  const normalized = source.toLowerCase();
+  if (/(password|비밀번호|로그인)/.test(normalized)) return "password_reset";
+  if (/(email|메일|account|계정|profile|프로필|정보변경|update)/.test(normalized)) return "account_update";
+  if (/(cancel|해지|subscription|plan|요금제)/.test(normalized)) return "cancel_subscription";
+  if (/(order|주문|delivery|배송|tracking)/.test(normalized)) return "order_status";
+  if (/(bill|billing|payment|refund|결제|환불|요금)/.test(normalized)) return "billing_question";
+  if (/(greeting|hello|hi|안녕|반가워)/.test(normalized)) return "greeting";
+  return `general_inquiry_${index + 1}`;
+}
+
+function buildCompositionIntentCandidates() {
+  if (currentCompositionState.input_mode === "pdf") {
+    const base = sanitizeIntentToken(
+      currentCompositionState.document_title || currentCompositionState.pdf?.file_name || currentWorkspaceBotId || "document",
+      "document"
+    );
+    return [
+      { intent: `${base}_overview`, utterance_count: 0, status: "ready", utterances: [] },
+      { intent: `${base}_policy`, utterance_count: 0, status: "ready", utterances: [] },
+      { intent: `${base}_procedure`, utterance_count: 0, status: "ready", utterances: [] }
+    ];
+  }
+
+  const buckets = new Map();
+  (currentCompositionState.utterances || []).forEach((utterance, index) => {
+    const intent = deriveIntentNameFromUtterance(utterance, index);
+    const existing = buckets.get(intent) || [];
+    existing.push(utterance);
+    buckets.set(intent, existing);
+  });
+
+  return [...buckets.entries()].slice(0, Math.max(1, currentCompositionState.requested_intent_count || 1)).map(([intent, utterances]) => ({
+    intent,
+    utterance_count: utterances.length,
+    status: utterances.length ? "ready" : "answer_required",
+    utterances
+  }));
+}
+
+function syncCandidatesToCurrentVersion(candidates) {
+  const nextCandidates = Array.isArray(candidates) && candidates.length
+    ? candidates
+    : (currentCompositionState.intent_candidates || []).filter((item) => currentSelectedCompositionCandidates.has(item.intent));
+  if (!nextCandidates.length) return false;
+
+  nextCandidates.forEach((candidate) => {
+    const intentId = candidate.intent;
+    const existingScenarioIndex = currentScenarioAssets.findIndex((item) => item.id === intentId || item.displayName === intentId);
+    const nextScenario = {
+      id: intentId,
+      type: "intent",
+      displayName: intentId,
+      answer: existingScenarioIndex >= 0 ? currentScenarioAssets[existingScenarioIndex].answer : "",
+      dialogCards: existingScenarioIndex >= 0 ? currentScenarioAssets[existingScenarioIndex].dialogCards : [],
+      updated_at: new Date().toISOString().slice(0, 16).replace("T", " ")
+    };
+    if (existingScenarioIndex >= 0) currentScenarioAssets.splice(existingScenarioIndex, 1, nextScenario);
+    else currentScenarioAssets.push(nextScenario);
+
+    if (Array.isArray(candidate.utterances) && candidate.utterances.length) {
+      currentIntentUtteranceAssets = [
+        ...currentIntentUtteranceAssets.filter((item) => item.division !== intentId),
+        ...candidate.utterances.map((utterance) => ({ utterance, division: intentId }))
+      ];
+    }
+  });
+
+  currentSelectedIntentId = nextCandidates[0]?.intent || currentSelectedIntentId;
+  currentStudioState.counts.intents = getAidotIntentRows().length;
+  currentStudioState.counts.utterances = currentIntentUtteranceAssets.length;
+  currentOperationsState.build.intent_count = currentStudioState.counts.intents;
+  return true;
 }
 
 function buildManualHandoffPackage() {
@@ -3511,18 +3602,37 @@ function renderConfigureComposition() {
   }
   if (preview) {
     const candidates = currentCompositionState.intent_candidates || [];
+    if (!currentSelectedCompositionCandidates.size && candidates.length) {
+      currentSelectedCompositionCandidates = new Set(candidates.map((item) => item.intent));
+    }
     const getIntentStatusLabel = (status) => ({
       answer_required: t("review.answerRequired", "Answer draft required"),
       ready: t("review.ready", "Ready")
     })[status] || status || t("review.answerRequired", "Answer draft required");
     preview.innerHTML = candidates.map((item) => `
       <div class="intent-row">
+        <label class="intent-row__check"><input type="checkbox" data-config-candidate-select="${escapeText(item.intent)}" ${currentSelectedCompositionCandidates.has(item.intent) ? "checked" : ""} /></label>
         <strong>${item.intent}</strong>
         <span>${item.utterance_count || 0} ${t("review.utteranceUnit", "utterances")}</span>
         <span>${getIntentStatusLabel(item.status)}</span>
-        <button type="button" data-i18n="review.review">Review</button>
+        <button type="button" data-i18n="review.review" data-config-review-intent="${escapeText(item.intent)}">Review</button>
       </div>
-    `).join("") || `<div class="intent-row"><strong>${t("review.noIntentCandidate", "No intent candidate")}</strong><span>0 ${t("review.utteranceUnit", "utterances")}</span><span>${currentCompositionState.input_mode === "pdf" ? "답변 텍스트 또는 PDF를 입력하고 RAG 문서 구성을 실행하세요." : t("review.manualResultRequired", "Manual handoff or PDF Q&A result required")}</span><button type="button" disabled data-i18n="review.review">Review</button></div>`;
+    `).join("") || `<div class="intent-row"><label class="intent-row__check"><input type="checkbox" disabled /></label><strong>${t("review.noIntentCandidate", "No intent candidate")}</strong><span>0 ${t("review.utteranceUnit", "utterances")}</span><span>${currentCompositionState.input_mode === "pdf" ? "답변 텍스트 또는 PDF를 입력하고 RAG 문서 구성을 실행하세요." : t("review.manualResultRequired", "Manual handoff or PDF Q&A result required")}</span><button type="button" disabled data-i18n="review.review">Review</button></div>`;
+    preview.querySelectorAll("[data-config-review-intent]").forEach((button) => {
+      button.addEventListener("click", () => {
+        currentSelectedIntentId = button.dataset.configReviewIntent || currentSelectedIntentId;
+        currentBuildAidotView = "start";
+        setActiveScreen("build");
+      });
+    });
+    preview.querySelectorAll("[data-config-candidate-select]").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        const intent = checkbox.dataset.configCandidateSelect;
+        if (!intent) return;
+        if (checkbox.checked) currentSelectedCompositionCandidates.add(intent);
+        else currentSelectedCompositionCandidates.delete(intent);
+      });
+    });
   }
 }
 
@@ -3563,6 +3673,9 @@ function bindConfigureComposition() {
   const importResult = document.querySelector("[data-config-import-result]");
   const pdfSelect = document.querySelector("[data-config-pdf-select]");
   const savePdf = document.querySelector("[data-config-save-pdf]");
+  const generateQa = document.querySelector("[data-config-generate-qa]");
+  const mergeSelected = document.querySelector("[data-config-merge-selected]");
+  const applyCurrent = document.querySelector("[data-config-apply-current]");
   if (utterances && utterances.dataset.bound !== "true") {
     utterances.dataset.bound = "true";
     utterances.addEventListener("input", () => {
@@ -3641,6 +3754,37 @@ function bindConfigureComposition() {
       }
       await saveCompositionToServer().catch(() => false);
       renderAllStatePanels();
+    });
+  }
+  if (generateQa && generateQa.dataset.bound !== "true") {
+    generateQa.dataset.bound = "true";
+    generateQa.addEventListener("click", async () => {
+      const candidates = buildCompositionIntentCandidates().map(normalizeIntentCandidate);
+      currentCompositionState.intent_candidates = candidates;
+      currentSelectedCompositionCandidates = new Set(candidates.map((item) => item.intent));
+      currentStudioState.counts.intents = candidates.length;
+      await saveCompositionToServer().catch(() => false);
+      renderAllStatePanels();
+    });
+  }
+  if (mergeSelected && mergeSelected.dataset.bound !== "true") {
+    mergeSelected.dataset.bound = "true";
+    mergeSelected.addEventListener("click", async () => {
+      const applied = syncCandidatesToCurrentVersion();
+      if (!applied) return;
+      await saveDetailAssetsToServer().catch(() => false);
+      renderAllStatePanels();
+      setActiveScreen("build");
+    });
+  }
+  if (applyCurrent && applyCurrent.dataset.bound !== "true") {
+    applyCurrent.dataset.bound = "true";
+    applyCurrent.addEventListener("click", async () => {
+      const applied = syncCandidatesToCurrentVersion(currentCompositionState.intent_candidates || []);
+      if (!applied) return;
+      await saveDetailAssetsToServer().catch(() => false);
+      renderAllStatePanels();
+      setActiveScreen("build");
     });
   }
 }
