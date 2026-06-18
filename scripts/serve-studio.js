@@ -2377,7 +2377,10 @@ const server = http.createServer(async (req, res) => {
     });
     return;
   }
-  const requestPath = urlPath === "/" ? "/apps/studio/index.html" : urlPath;
+  const isWebchatPageRequest = /^\/webchat(\/[^/]+)?\/?$/.test(urlPath);
+  const requestPath = urlPath === "/"
+    ? "/apps/studio/index.html"
+    : (isWebchatPageRequest ? "/apps/webchat/index.html" : urlPath);
   const safePath = path.normalize(requestPath).replace(/^[/\\]+/, "");
   const filePath = path.join(root, safePath);
   if (!filePath.startsWith(root)) return send(res, 403, "Forbidden");

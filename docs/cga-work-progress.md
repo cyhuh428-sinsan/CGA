@@ -3149,3 +3149,31 @@ o duplicate function declarations.
   - 추가 조치:
     - 다운로드 후 `renderBotManagement()`도 함께 호출하도록 수정.
     - `window.open()` 실패 시 `window.location.assign()`으로 같은 탭 이동 fallback 추가.
+
+## 2026-06-18 09:52 KST
+
+- 추가 원인 확정:
+  - `봇 관리`의 `WebChat 열기` 버튼은 노출되지만 실제 대상 URL `/webchat/{botSlug}`를 `scripts/serve-studio.js`가 서빙하지 않아 `HTTP 404`가 발생함.
+  - 따라서 현재 문제는 버튼/스타일 문제가 아니라 브라우저용 WebChat 화면 라우트 부재임.
+- 수정 방침:
+  - 기존 Aidot 호환 WebChat API(`/api/v1/channels/webchat/*`, `/api/v1/webchat/*`)는 유지.
+  - 그 API를 사용하는 브라우저 전용 WebChat 화면을 추가하고, `/webchat/{botSlug}` 경로를 서버에서 직접 연결.
+  - 새 기능 추가가 아니라 기존 WebChat API를 실제 접속 가능한 화면으로 노출하는 정리 작업으로 제한.
+
+## 2026-06-18 10:00 KST
+
+- 적용 내용:
+  - `scripts/serve-studio.js`에 `/webchat/{botSlug}` 요청을 `apps/webchat/index.html`로 연결하는 라우팅 추가.
+  - `apps/webchat/index.html`, `apps/webchat/styles.css`, `apps/webchat/app.js` 신규 추가.
+  - WebChat 화면은 기존 Aidot 호환 API를 사용해 다음 순서로 동작:
+    - `/api/v1/webchat/bootstrap`로 봇 목록 확인
+    - `/api/v1/channels/webchat/rooms`로 room 생성
+    - `/api/v1/channels/webchat/rooms/{roomId}/messages`로 메시지 송수신
+  - 서버 응답이 Aidot 형식(`{ data: ... }`)인 점을 반영해 WebChat 브라우저 JS가 `data` 래퍼를 풀어 처리하도록 수정.
+- 검증:
+  - `npm run studio:check` 통과
+  - 임시 로컬 서버(`PORT=4273`)에서 `GET /webchat/supportbot-draft` 응답 `200` 확인
+  - 같은 서버에서 room 생성 및 메시지 전송 후 응답 확인:
+    - 의도: `password_reset`
+    - 봇 답변: `Open Account Settings and choose Reset Password.`
+  - `npm run studio:validate` 전체 통과
