@@ -4866,9 +4866,7 @@ function bindWorkspaceActions() {
         await saveCompositionToServer().catch(() => false);
       }
       currentTransferStatus = appendTransferSyncStatus(synced);
-      renderBotManagement();
-      renderTopContext();
-      renderWorkspaceHome();
+      refreshWorkspaceManagementSurfaces();
     });
   }
   if (botVersionDownload && botVersionDownload.dataset.bound !== "true") {
@@ -4880,16 +4878,12 @@ function bindWorkspaceActions() {
       const fileName = `Version_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getSafeFileName(version, "v0_1")}_${getTodayStamp()}.json`;
       if (serverFileName) {
         currentTransferStatus = formatTransferDownloaded("versionPackage", serverFileName, "server");
-        renderWorkspaceHome();
-        renderBotManagement();
-        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+        refreshWorkspaceManagementSurfaces();
         return;
       }
       downloadJsonFile(fileName, buildCgaVersionPackage());
       currentTransferStatus = formatTransferDownloaded("versionPackage", fileName);
-      renderWorkspaceHome();
-      renderBotManagement();
-      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+      refreshWorkspaceManagementSurfaces();
     });
   }
   if (botVersionUpload && botVersionUpload.dataset.bound !== "true") {
@@ -4907,6 +4901,7 @@ function bindWorkspaceActions() {
           }
         }
         currentTransferStatus = appendTransferSyncStatus(synced);
+        refreshWorkspaceManagementSurfaces();
       });
     });
   }
@@ -4930,10 +4925,7 @@ function bindWorkspaceActions() {
         currentWorkspaceBotId = "";
       }
       currentTransferStatus = "봇 삭제가 반영되었습니다.";
-      renderWorkspaceHome();
-      renderBotManagement();
-      renderAllStatePanels();
-      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+      refreshWorkspaceManagementSurfaces();
     });
   }
   copyVersionButtons.forEach((button) => {
@@ -4948,8 +4940,7 @@ function bindWorkspaceActions() {
       currentTransferStatus = `버전 ${copied.id} 복사본이 생성되었습니다.`;
       const synced = await updateWorkspaceBotVersionOnServer(selectedBot, copied.id).catch(() => false);
       currentTransferStatus = appendTransferSyncStatus(synced);
-      renderBotManagement();
-      renderWorkspaceHome();
+      refreshWorkspaceManagementSurfaces();
     });
   });
   deleteVersionButtons.forEach((button) => {
@@ -4969,8 +4960,7 @@ function bindWorkspaceActions() {
         currentStudioState.bot.version = next[0].id;
       }
       currentTransferStatus = appendTransferSyncStatus(await updateWorkspaceBotVersionOnServer(selectedBot, selectedBot.version).catch(() => false));
-      renderBotManagement();
-      renderTopContext();
+      refreshWorkspaceManagementSurfaces();
     });
   });
   activateVersionButtons.forEach((button) => {
@@ -4988,9 +4978,7 @@ function bindWorkspaceActions() {
       selectedBot.version = versionId;
       currentStudioState.bot.version = versionId;
       currentTransferStatus = appendTransferSyncStatus(synced);
-      renderBotManagement();
-      renderTopContext();
-      renderWorkspaceHome();
+      refreshWorkspaceManagementSurfaces();
     });
   });
   if (downloadBot && downloadBot.dataset.bound !== "true") {
@@ -5000,17 +4988,13 @@ function bindWorkspaceActions() {
       const serverFileName = await downloadAssetFromServer("botPackage");
       if (serverFileName) {
         currentTransferStatus = formatTransferDownloaded("botPackage", serverFileName, "server");
-        renderWorkspaceHome();
-        renderBotManagement();
-        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+        refreshWorkspaceManagementSurfaces();
         return;
       }
       const fileName = `Bot_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getTodayStamp()}.json`;
       downloadJsonFile(fileName, buildAidotBotPackage());
       currentTransferStatus = formatTransferDownloaded("botPackage", fileName);
-      renderWorkspaceHome();
-      renderBotManagement();
-      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+      refreshWorkspaceManagementSurfaces();
     });
   }
   if (uploadBot && uploadBot.dataset.bound !== "true") {
@@ -5024,6 +5008,7 @@ function bindWorkspaceActions() {
           await saveDetailAssetsToServer().catch(() => false);
         }
         currentTransferStatus = appendTransferSyncStatus(synced);
+        refreshWorkspaceManagementSurfaces();
       });
     });
   }
@@ -5035,17 +5020,13 @@ function bindWorkspaceActions() {
       const serverFileName = await downloadAssetFromServer("versionPackage");
       if (serverFileName) {
         currentTransferStatus = formatTransferDownloaded("versionPackage", serverFileName, "server");
-        renderWorkspaceHome();
-        renderBotManagement();
-        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+        refreshWorkspaceManagementSurfaces();
         return;
       }
       const fileName = `Version_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getSafeFileName(version, "v0_1")}_${getTodayStamp()}.json`;
       downloadJsonFile(fileName, buildCgaVersionPackage());
       currentTransferStatus = formatTransferDownloaded("versionPackage", fileName);
-      renderWorkspaceHome();
-      renderBotManagement();
-      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+      refreshWorkspaceManagementSurfaces();
     });
   }
   if (uploadVersion && uploadVersion.dataset.bound !== "true") {
@@ -5059,6 +5040,7 @@ function bindWorkspaceActions() {
           await saveDetailAssetsToServer().catch(() => false);
         }
         currentTransferStatus = appendTransferSyncStatus(synced);
+        refreshWorkspaceManagementSurfaces();
       });
     });
   }
@@ -6813,6 +6795,16 @@ function setActiveScreen(screenId, { replaceHash = false } = {}) {
     history.pushState(null, "", `#${screenId}`);
   }
   applyScreenLayout();
+}
+
+function refreshWorkspaceManagementSurfaces({ rerenderAdmin = false } = {}) {
+  renderWorkspaceHome();
+  renderBotManagement();
+  renderAllStatePanels();
+  renderTopContext();
+  renderGlobalMessage();
+  if (rerenderAdmin) rerenderAdminAndAccess();
+  document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }
 
 function syncTopActionsForScreen() {

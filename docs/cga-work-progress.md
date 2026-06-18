@@ -3304,3 +3304,16 @@ o duplicate function declarations.
 - 검증:
   - `node --check apps/studio/app.js` 통과
   - `npm run studio:validate` 전체 통과
+
+## 2026-06-18 11:44 KST
+
+- `봇 관리` / `봇 작업공간` 후속 동기화 보강:
+  - 다운로드/업로드/버전 추가/복사/삭제/운영설정 후 일부 화면은 갱신되지만, 다른 화면은 이전 상태가 남아 눌러도 변화가 없는 것처럼 보일 수 있었음.
+- 적용 내용:
+  - `refreshWorkspaceManagementSurfaces()` 헬퍼 추가.
+  - `봇 관리`의 버전 추가, 버전 다운로드/업로드, 봇 삭제, 버전 복사/삭제/운영설정, 봇 다운로드/업로드 후
+    `봇 작업공간`, `봇 관리`, 상단 컨텍스트, 상태 패널이 한 번에 다시 그려지도록 정리.
+  - 전송 이력/상태 문구도 같은 시점에 즉시 화면 반영되도록 보강.
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 전체 통과
