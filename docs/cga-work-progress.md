@@ -5204,3 +5204,29 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - CGA 매뉴얼은
   - `봇 생성`만 설명하는 단일 문서가 아니라
   - Brity식 장 구조를 따라 `봇 설정` 단계까지 순차 문서화가 시작됐다.
+
+## 2026-06-23 22:05 KST
+
+### Brity식 흐름으로 핵심 사용자 매뉴얼 묶음 완성
+
+- 이번에 이어서 작성한 문서:
+  - `docs/manual/cga-user-manual/03_CGA_봇_구성.md`
+  - `docs/manual/cga-user-manual/04_CGA_봇_제작.md`
+  - `docs/manual/cga-user-manual/05_CGA_봇_테스트.md`
+  - `docs/manual/cga-user-manual/06_CGA_봇_관리와_버전.md`
+  - `docs/manual/cga-user-manual/README.md`
+- 작성 원칙:
+  - Brity 원본 매뉴얼처럼
+    - 단계의 목적
+    - 사용 대상
+    - 문서 범위
+    - 절차형 안내
+    - 문제 해결
+    - 다음 단계 연결
+    구조를 유지
+  - 현재 CGA Studio에 실제 존재하는 워크플로우와 버튼만 설명
+  - 처음 사용자에게는 무엇을 수정하고 무엇을 보류해야 하는지 분명히 서술
+- 이번 단계 의미:
+  - CGA 사용자 매뉴얼은
+  - `봇 생성 -> 봇 설정 -> 봇 구성 -> 봇 제작 -> 봇 테스트 -> 봇 관리/버전`
+    흐름까지 한 세트의 기본 사용자 문서 묶음으로 정리됐다.
