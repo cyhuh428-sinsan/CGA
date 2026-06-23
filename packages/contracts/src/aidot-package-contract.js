@@ -1,4 +1,6 @@
 export const AIDOT_PACKAGE_FORMAT_VERSION = 1;
+export const AIDOT_CONTRACT_VERSION = "v1.0";
+export const AIDOT_SUPPORTED_CONTRACT_VERSIONS = Object.freeze([AIDOT_CONTRACT_VERSION]);
 
 export const AIDOT_PACKAGE_SCOPE = Object.freeze({
   BOT: "bot",
@@ -47,6 +49,27 @@ export const AIDOT_DIALOG_JSON_TOP_LEVEL_KEYS = Object.freeze([
   "messageDigest"
 ]);
 
+export const AIDOT_VERSION_JSON_TOP_LEVEL_KEYS = Object.freeze([
+  "asset_format_version",
+  "dialogs",
+  "dialog_flow_graphs",
+  "entities",
+  "dictionary",
+  "faq_dialogs",
+  "apis",
+  "floating_buttons",
+  "rules",
+  "small_talk",
+  "blacklists",
+  "system_config"
+]);
+
+export const AIDOT_API_JSON_TOP_LEVEL_KEYS = Object.freeze([
+  "asset_format_version",
+  "exported_at",
+  "apis"
+]);
+
 export const AIDOT_DIALOG_TYPE = Object.freeze({
   MODULE: 0,
   INTENT: 1
@@ -77,6 +100,7 @@ export const AIDOT_COMPATIBLE_PACKAGE_ASSETS = Object.freeze([
     fileFormat: AIDOT_PACKAGE_FILE_FORMAT.JSON,
     uploadMode: AIDOT_PACKAGE_UPLOAD_MODE.REPLACE,
     aidotUploadCompatible: true,
+    requiredTopLevelKeys: AIDOT_VERSION_JSON_TOP_LEVEL_KEYS,
     multilingualBoundary: "single_bot_language"
   },
   {
@@ -93,7 +117,8 @@ export const AIDOT_COMPATIBLE_PACKAGE_ASSETS = Object.freeze([
     label: "API definition",
     fileFormat: AIDOT_PACKAGE_FILE_FORMAT.JSON,
     uploadMode: AIDOT_PACKAGE_UPLOAD_MODE.REPLACE,
-    aidotUploadCompatible: true
+    aidotUploadCompatible: true,
+    requiredTopLevelKeys: AIDOT_API_JSON_TOP_LEVEL_KEYS
   },
   {
     scope: AIDOT_PACKAGE_SCOPE.ENTITY,
@@ -158,6 +183,8 @@ export function createAidotPackageManifest({
 
   return {
     package_format_version: AIDOT_PACKAGE_FORMAT_VERSION,
+    contract_version: AIDOT_CONTRACT_VERSION,
+    supported_contract_versions: [...AIDOT_SUPPORTED_CONTRACT_VERSIONS],
     scope,
     file_format: asset.fileFormat,
     upload_mode: asset.uploadMode,

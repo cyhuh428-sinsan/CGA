@@ -1,10 +1,11 @@
 import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-10";
 import { getVisibleLayout } from "./data/layout.js?v=20260618-10";
 import { sampleStudioState } from "./data/sample-state.js";
+import { buildVersionAssetMetadataSnapshot, createEmptyVersionAssetMetadataState, readVersionAssetMetadataSnapshot } from "./data/version-asset-metadata.js";
 import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
 import { createGroupManagedApiAnswerDraft } from "/packages/contracts/src/api-answer-contract.js";
-import { createAidotPackageManifest } from "/packages/contracts/src/aidot-package-contract.js";
+import { AIDOT_CONTRACT_VERSION, AIDOT_SUPPORTED_CONTRACT_VERSIONS, createAidotPackageManifest } from "/packages/contracts/src/aidot-package-contract.js";
 import { createSampleCollaborationState, lockWorkItem, releaseWorkItemLock, submitReviewDecision, summarizeCollaboration, summarizeTeamDashboard } from "/packages/public-core/src/collaboration-state.js";
 import {
   approveAdminPermissionRequest,
@@ -114,6 +115,26 @@ const API_REGISTRY_CACHE_TTL_MS = 15000;
 const MANAGED_GROUP_ROLES = ["group_admin", "builder", "reviewer", "operator", "viewer"];
 let currentSystemAdminSubview = "users";
 let currentAdminResourceModal = null;
+let currentCommonVariableUiState = {
+  query: "",
+  kind: "",
+  selectedIds: [],
+  page: 1,
+  pageSize: 10,
+  menuOpen: false
+};
+let currentConversationHistoryFilters = {
+  channel: "all",
+  startDate: "2026-06-21",
+  endDate: "2026-06-21"
+};
+let currentConversationHistoryState = {
+  items: [],
+  loading: false,
+  loaded: false,
+  error: ""
+};
+let conversationHistoryRequestSerial = 0;
 let selectedAccessUserId = "admin";
 let selectedAccessGroupId = "g-admin";
 let userListPage = 1;
@@ -173,11 +194,27 @@ let currentRuleAssets = [
   { name: "Business hours", description: "Route after-hours questions", expression: "time.after(18:00)", target: "support_after_hours", enabled: "Y" },
   { name: "Billing priority", description: "Route billing requests", expression: "intent == billing_question", target: "billing_question", enabled: "Y" }
 ];
+let currentBlocklistAssets = [
+  { name: "아", type: "0", pattern: "아", enabled: "Y" },
+  { name: "일단", type: "0", pattern: "일단", enabled: "Y" }
+];
+let currentFaqDialogAssets = [
+  { dialogId: "faq_password_reset", question: "비밀번호를 어떻게 재설정하나요?", answer: "계정 설정에서 비밀번호 재설정을 선택하세요.", enabled: "Y" }
+];
+let currentFloatingButtonAssets = [
+  { buttonId: "floating-help", label: "도움말", action: "open_help", enabled: "Y", sortOrder: 1 }
+];
+let currentSmallTalkAssets = [
+  { trigger: "안녕", response: "안녕하세요. 무엇을 도와드릴까요?", enabled: "Y" }
+];
 let currentScenarioAssets = [
   { id: "password_reset", type: "intent", displayName: "password_reset", answer: "Open Account Settings and choose Reset Password.", dialogCards: ["Open Account Settings and choose Reset Password."] },
   { id: "account_update", type: "intent", displayName: "account_update", answer: "Open Profile Settings and update your account information.", dialogCards: ["Open Profile Settings and update your account information."] }
 ];
 let currentSelectedIntentId = "password_reset";
+let currentVersionDocumentExtraFields = createEmptyVersionAssetMetadataState().documentExtraFields;
+let currentVersionSystemConfigExtraFields = createEmptyVersionAssetMetadataState().systemConfigExtraFields;
+let currentVersionLegacyExtraFields = createEmptyVersionAssetMetadataState().legacyVersionExtraFields;
 let currentSelectedCompositionCandidates = new Set();
 let currentBuildSelectedUtterances = new Set();
 let currentOperationsState = {
@@ -1229,6 +1266,9 @@ function applyCurrentBotToStudioState(bot) {
   currentWorkspaceGroupId = bot.group_id;
   currentApiGroupId = bot.group_id;
   currentApiBotId = bot.id;
+  currentVersionDocumentExtraFields = createEmptyVersionAssetMetadataState().documentExtraFields;
+  currentVersionSystemConfigExtraFields = createEmptyVersionAssetMetadataState().systemConfigExtraFields;
+  currentVersionLegacyExtraFields = createEmptyVersionAssetMetadataState().legacyVersionExtraFields;
   currentStudioState.bot.id = bot.id;
   currentStudioState.bot.name = bot.name;
   currentStudioState.bot.defaultLocale = bot.locale;
@@ -1266,8 +1306,14 @@ function saveWorkspaceSnapshot() {
         entities: cloneForSnapshot(currentEntityAssets),
         dictionary: cloneForSnapshot(currentDictionaryAssets),
         rules: cloneForSnapshot(currentRuleAssets),
+        blocklists: cloneForSnapshot(currentBlocklistAssets),
         scenarios: cloneForSnapshot(currentScenarioAssets)
       },
+      version_asset_metadata: buildVersionAssetMetadataSnapshot({
+        documentExtraFields: currentVersionDocumentExtraFields,
+        systemConfigExtraFields: currentVersionSystemConfigExtraFields,
+        legacyVersionExtraFields: currentVersionLegacyExtraFields
+      }),
       operations_state: cloneForSnapshot(currentOperationsState),
       collaboration_state: cloneForSnapshot(currentCollaborationState)
     }));
@@ -1289,6 +1335,10 @@ function applyWorkspaceSnapshot(snapshot) {
   if (snapshot.studio_state) applyStudioStateFromServer(snapshot.studio_state);
   if (snapshot.composition_state) applyCompositionFromServer(snapshot.composition_state);
   if (snapshot.detail_assets) applyDetailAssetsFromServer(snapshot.detail_assets);
+  const versionAssetMetadata = readVersionAssetMetadataSnapshot(snapshot.version_asset_metadata);
+  currentVersionDocumentExtraFields = versionAssetMetadata.documentExtraFields;
+  currentVersionSystemConfigExtraFields = versionAssetMetadata.systemConfigExtraFields;
+  currentVersionLegacyExtraFields = versionAssetMetadata.legacyVersionExtraFields;
   if (snapshot.operations_state) applyOperationsStateFromServer(snapshot.operations_state);
   if (snapshot.collaboration_state) applyCollaborationStateFromServer(snapshot.collaboration_state);
   return true;
@@ -1370,12 +1420,46 @@ function getAssetTransferScope(assetKey) {
     intentUtterance: "intent_utterance",
     entity: "entity",
     dictionary: "dictionary",
+    blocklist: "blocklist",
     rule: "rule"
   }[assetKey] || assetKey;
 }
 
 function getAssetTransferFileFormat(assetKey) {
   return ["botPackage", "versionPackage", "intentDialog", "scenario", "apiMapping"].includes(assetKey) ? "json" : "txt";
+}
+
+function getAssetTransferFallbackFileStem(assetKey) {
+  const bot = getCurrentWorkspaceBot();
+  const botName = getSafeFileName(currentStudioState.bot.name || bot?.name || bot?.id || "CGA_Bot", "CGA_Bot");
+  const botVersion = getSafeFileName(currentStudioState.bot.version || "v0_1", "v0_1");
+  if (assetKey === "botPackage") return `Bot_${botName}`;
+  if (assetKey === "versionPackage") return `Version_${botName}_${botVersion}`;
+  if (assetKey === "apiMapping") return `API_${botName}`;
+  if (assetKey === "intentDialog") {
+    const dialog = getAidotDialogExportTarget("intent");
+    const target = String(dialog?.displayName || dialog?.id || currentSelectedIntentId || "FlowDesign");
+    return `FlowDesign_${getSafeFileName(target, "FlowDesign")}`;
+  }
+  if (assetKey === "scenario") {
+    const dialog = getAidotDialogExportTarget("scenario");
+    const target = String(dialog?.displayName || dialog?.id || currentSelectedIntentId || "FlowDesign");
+    return `FlowDesign_${getSafeFileName(target, "FlowDesign")}`;
+  }
+  if (assetKey === "intentUtterance") {
+    const dialog = getAidotDialogExportTarget("intent");
+    const target = String(dialog?.id || dialog?.displayName || currentSelectedIntentId || botName || "LearningExpr");
+    return `LearningExpr_${getSafeFileName(target, "LearningExpr")}`;
+  }
+  if (assetKey === "entity") return `Entity_${botName}`;
+  if (assetKey === "dictionary") return `Dictionary_${botName}`;
+  if (assetKey === "blocklist") return `Blocklist_${botName}`;
+  if (assetKey === "rule") return `Rule_${botName}`;
+  return `${getSafeFileName(assetKey, "Asset")}`;
+}
+
+function getAssetTransferDownloadFileName(assetKey) {
+  return `${getAssetTransferFallbackFileStem(assetKey)}_${getTodayStamp()}.${getAssetTransferFileFormat(assetKey)}`;
 }
 
 function formatMessage(key, values = {}, fallback = key) {
@@ -1413,6 +1497,30 @@ function formatTransferUploaded(assetKey, count, synced) {
 function appendTransferSyncStatus(synced) {
   const base = currentTransferStatus || t("transfer.status.updated", "Updated package");
   return `${base} / ${getTransferSyncLabel(synced)}`;
+}
+
+function buildAssetImportMetadataNote(responsePayload) {
+  if (!responsePayload || typeof responsePayload !== "object") return "";
+  const notes = [];
+  if (responsePayload.status === "blocked") notes.push("업로드 차단");
+  const resolvedContractVersion = String(responsePayload.resolved_contract_version || "").trim();
+  if (resolvedContractVersion) notes.push(`contract ${resolvedContractVersion}`);
+  const prunedFeatures = Array.isArray(responsePayload.pruned_features) ? responsePayload.pruned_features : [];
+  if (responsePayload.pruning_status === "pruned" && prunedFeatures.length) {
+    notes.push(`제거/무시: ${prunedFeatures.join(", ")}`);
+  }
+  if (responsePayload.pruning_status === "blocked" && prunedFeatures.length) {
+    notes.push(`차단 전 제거 검토: ${prunedFeatures.join(", ")}`);
+  }
+  const warnings = Array.isArray(responsePayload.warnings) ? responsePayload.warnings : [];
+  if (warnings.length) notes.push(`경고 ${warnings.length}건`);
+  const errors = Array.isArray(responsePayload.errors) ? responsePayload.errors : [];
+  if (errors.length) notes.push(`사유: ${errors[0]}`);
+  return notes.length ? ` / ${notes.join(" / ")}` : "";
+}
+
+function isAssetUploadAccepted(responsePayload) {
+  return Boolean(responsePayload && typeof responsePayload === "object" && responsePayload.status === "accepted");
 }
 
 function getAssetTransferUrl(assetKey, action) {
@@ -1581,7 +1689,7 @@ async function downloadAssetFromServer(assetKey) {
     });
     if (!response.ok) throw await createCgaResponseError(response, "Asset download failed.");
     const fileName = getFileNameFromContentDisposition(response.headers.get("Content-Disposition")) ||
-      `CGA_${getAssetTransferScope(assetKey)}_${getSafeFileName(currentWorkspaceBotId, "bot")}_${getTodayStamp()}.${getAssetTransferFileFormat(assetKey)}`;
+      getAssetTransferDownloadFileName(assetKey);
     downloadBlobFile(fileName, await response.blob());
     return fileName;
   } catch (error) {
@@ -1597,12 +1705,13 @@ async function uploadAssetToServer(assetKey, body, fileName) {
       headers: {
         ...getCgaAuthHeaders(),
         "Content-Type": getAssetTransferFileFormat(assetKey) === "json" ? "application/json; charset=utf-8" : "text/plain; charset=utf-8",
-        "X-CGA-File-Name": fileName || `uploaded.${getAssetTransferFileFormat(assetKey)}`
+        "X-CGA-File-Name": fileName || `uploaded.${getAssetTransferFileFormat(assetKey)}`,
+        "X-CGA-Target-Contract-Version": "v1.0"
       },
       body
     });
     if (!response.ok) throw await createCgaResponseError(response, "Asset upload failed.");
-    return response.ok;
+    return await response.json();
   } catch (error) {
     if (error.status) showApiErrorMessage(error);
     return false;
@@ -1663,6 +1772,7 @@ function applyDetailAssetsFromServer(detailAssets) {
   if (Array.isArray(detailAssets.entities)) currentEntityAssets = detailAssets.entities;
   if (Array.isArray(detailAssets.dictionary)) currentDictionaryAssets = detailAssets.dictionary;
   if (Array.isArray(detailAssets.rules)) currentRuleAssets = detailAssets.rules;
+  if (Array.isArray(detailAssets.blocklists)) currentBlocklistAssets = detailAssets.blocklists;
   if (Array.isArray(detailAssets.scenarios)) currentScenarioAssets = detailAssets.scenarios;
   const intentCount = new Set(currentIntentUtteranceAssets.map((item) => item.division).filter(Boolean)).size;
   currentStudioState.counts.utterances = currentIntentUtteranceAssets.length || currentStudioState.counts.utterances;
@@ -1839,6 +1949,7 @@ async function saveDetailAssetsToServer() {
     entities: cloneForSnapshot(currentEntityAssets),
     dictionary: cloneForSnapshot(currentDictionaryAssets),
     rules: cloneForSnapshot(currentRuleAssets),
+    blocklists: cloneForSnapshot(currentBlocklistAssets),
     scenarios: cloneForSnapshot(currentScenarioAssets)
   };
   return runQueuedSave(`detail-assets:${groupId}:${botId}`, () => persistDetailAssetsToServer(groupId, botId, payload));
@@ -2234,6 +2345,31 @@ function parseRuleTxt(text) {
     .filter((item) => item.name && item.expression);
 }
 
+function buildBlocklistTxt(items) {
+  const header = ["Blocklist 이름", "유형", "제외 단어/정규 표현식", "사용여부"];
+  const rows = items.map((item) => [item.name, item.type, item.pattern, item.enabled]);
+  return [header, ...rows].map((row) => row.map(escapeTxtCell).join(",")).join("\r\n");
+}
+
+function parseBlocklistTxt(text) {
+  const lines = splitTextRows(text);
+  if (!lines.length) return [];
+  const first = parseDelimitedLine(lines[0]);
+  const hasHeader = first[0] === "Blocklist 이름";
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+  return dataLines
+    .map((line) => {
+      const [name = "", type = "0", pattern = "", enabled = "Y"] = parseDelimitedLine(line);
+      return {
+        name: name.trim(),
+        type: type.trim() || "0",
+        pattern: pattern.trim(),
+        enabled: enabled.trim().toUpperCase() === "N" ? "N" : "Y"
+      };
+    })
+    .filter((item) => item.name && item.pattern);
+}
+
 function mergeDictionaryAssets(existing, incoming) {
   const buckets = new Map(existing.map((item) => [item.word, new Set(item.synonyms)]));
   for (const item of incoming) {
@@ -2263,23 +2399,75 @@ function mergeRuleAssets(existing, incoming) {
   return [...rows.values()];
 }
 
+function mergeBlocklistAssets(existing, incoming) {
+  const keyOf = (item) => `${item.name}\u0001${item.type}\u0001${item.pattern}`;
+  const rows = new Map(existing.map((item) => [keyOf(item), item]));
+  incoming.forEach((item) => rows.set(keyOf(item), item));
+  return [...rows.values()];
+}
+
+function getScenarioAssetsByDialogType(dialogType = 1) {
+  return currentScenarioAssets.filter((item) => (item.type === "module" ? 0 : 1) === dialogType);
+}
+
+function getAidotDialogExportTarget(kind = "intent") {
+  const dialogType = kind === "scenario" ? 0 : 1;
+  const candidates = getScenarioAssetsByDialogType(dialogType);
+  const selected = candidates.find((item) => item.id === currentSelectedIntentId || item.displayName === currentSelectedIntentId);
+  return selected || candidates[0] || currentScenarioAssets[0] || null;
+}
+
+function createAidotFlowGraphNodes(dialogAsset, dialogType = 1) {
+  const dialogId = String(dialogAsset?.id || dialogAsset?.displayName || `dialog-${Date.now()}`);
+  const displayName = String(dialogAsset?.displayName || dialogId);
+  const answer = String(dialogAsset?.answer || dialogAsset?.dialogCards?.[0] || "");
+  return [
+    {
+      objectType: "Start",
+      objectId: `${dialogId}-start`,
+      dialogId,
+      displayName: `${displayName} Start`,
+      additionalInfo: null,
+      position: { x: 80, y: 120 }
+    },
+    {
+      objectType: "Message",
+      objectId: `${dialogId}-message`,
+      dialogId,
+      displayName,
+      additionalInfo: {
+        text: answer,
+        dialogType
+      },
+      position: { x: 320, y: 120 }
+    },
+    {
+      objectType: "End",
+      objectId: `${dialogId}-end`,
+      dialogId,
+      displayName: `${displayName} End`,
+      additionalInfo: null,
+      position: { x: 560, y: 120 }
+    }
+  ];
+}
+
 function buildAidotDialogPackage(kind = "intent") {
   const bot = getCurrentWorkspaceBot();
   const dialogType = kind === "scenario" ? 0 : 1;
+  const dialogAsset = getAidotDialogExportTarget(kind);
+  const dialogId = String(dialogAsset?.id || dialogAsset?.displayName || currentSelectedIntentId || `dialog-${Date.now()}`);
+  const displayName = String(dialogAsset?.displayName || dialogId);
   return {
-    flowGraph: {
-      botId: bot?.id || currentWorkspaceBotId,
-      locale: currentStudioState.bot.defaultLocale || bot?.locale || "en",
-      nodes: currentScenarioAssets.map((item) => ({
-        id: item.id,
-        label: item.displayName,
-        type: item.type
-      }))
-    },
+    flowGraph: createAidotFlowGraphNodes(dialogAsset, dialogType),
     licenseInfo: null,
     AIDOTAssistantVersion: "CGA-AIDOT-COMPATIBLE-1",
     dialogType,
-    messageDigest: ""
+    messageDigest: "",
+    dialogId,
+    displayName,
+    botId: bot?.id || currentWorkspaceBotId,
+    locale: currentStudioState.bot.defaultLocale || bot?.locale || "en"
   };
 }
 
@@ -2287,27 +2475,165 @@ function applyAidotDialogPackage(packageJson) {
   if (!packageJson || typeof packageJson !== "object" || !("flowGraph" in packageJson)) {
     throw new Error("Invalid Aidot dialog package: flowGraph is required.");
   }
-  const nodes = Array.isArray(packageJson.flowGraph?.nodes) ? packageJson.flowGraph.nodes : [];
-  currentScenarioAssets = nodes.map((node) => ({
-    id: String(node.id || node.dialogId || `dialog-${Date.now()}`),
-    type: String(node.type || (packageJson.dialogType === 0 ? "module" : "intent")),
-    displayName: String(node.label || node.displayName || node.id || "Imported dialog")
-  }));
+  const nodes = Array.isArray(packageJson.flowGraph)
+    ? packageJson.flowGraph
+    : (Array.isArray(packageJson.flowGraph?.nodes) ? packageJson.flowGraph.nodes : []);
+  const dialogType = packageJson.dialogType === 0 ? "module" : "intent";
+  const firstDialogNode = nodes.find((node) => node && typeof node === "object" && (node.dialogId || node.displayName || node.label || node.id));
+  const messageNode = nodes.find((node) => node?.objectType === "Message" || node?.type === "message");
+  const dialogId = String(
+    packageJson.dialogId
+    || firstDialogNode?.dialogId
+    || firstDialogNode?.id
+    || firstDialogNode?.objectId
+    || `dialog-${Date.now()}`
+  );
+  const displayName = String(
+    packageJson.displayName
+    || firstDialogNode?.displayName
+    || firstDialogNode?.label
+    || dialogId
+  );
+  const answer = String(
+    messageNode?.additionalInfo?.text
+    || messageNode?.text
+    || messageNode?.additionalInfo?.message
+    || ""
+  );
+  const importedDialog = {
+    id: dialogId,
+    type: dialogType,
+    displayName,
+    answer,
+    dialogCards: answer ? [answer] : []
+  };
+  const existingIndex = currentScenarioAssets.findIndex((item) => item.id === dialogId || item.displayName === dialogId);
+  if (existingIndex >= 0) currentScenarioAssets.splice(existingIndex, 1, importedDialog);
+  else currentScenarioAssets = [...currentScenarioAssets, importedDialog];
+  currentSelectedIntentId = dialogId;
   currentTransferStatus = formatMessage(
     "transfer.status.uploadedItems",
-    { asset: getTransferAssetLabel("intentDialog"), count: currentScenarioAssets.length },
+    { asset: getTransferAssetLabel("intentDialog"), count: 1 },
     "Uploaded {asset}: {count} item(s) replaced"
   );
 }
 
 function buildApiMappingPackage() {
   const entries = currentApiRegistry.filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId);
+  const createDefaultApiMethod = (api, index = 1) => {
+    const endpointUrl = String(api.endpoint_url || api.baseUrl || "");
+    const fallbackMethod = String(api.method || "GET").toUpperCase();
+    return {
+      id: `${api.group_id || "group"}_${api.bot_id || "bot"}_${api.name || `api_${index}`}:default`,
+      name: "default",
+      httpMethod: fallbackMethod,
+      methodUrl: endpointUrl,
+      description: "",
+      loggingEnabled: false,
+      proxyEnabled: true,
+      transferMode: "sync",
+      parameters: [],
+      outputParameters: [],
+      outputSample: ""
+    };
+  };
+  const normalizeApiParameterForTransfer = (parameter, parameterIndex) => {
+    if (!parameter || typeof parameter !== "object") {
+      return {
+        id: `parameter-${parameterIndex + 1}`,
+        name: "",
+        location: "query",
+        dataType: "string",
+        defaultValue: "",
+        required: false,
+        visible: true,
+        description: ""
+      };
+    }
+    return {
+      id: String(parameter.id || `parameter-${parameterIndex + 1}`),
+      name: String(parameter.name || parameter.parameterName || ""),
+      location: String(parameter.location || parameter.parameterType || "query"),
+      dataType: String(parameter.dataType || "string"),
+      defaultValue: String(parameter.defaultValue || parameter.default || ""),
+      required: parameter.required === true || parameter.requiredYn === true,
+      visible: parameter.visible !== false && parameter.visibleYn !== false,
+      description: String(parameter.description || "")
+    };
+  };
+  const normalizeApiOutputParameterForTransfer = (parameter, parameterIndex) => {
+    if (!parameter || typeof parameter !== "object") {
+      return {
+        id: `output-parameter-${parameterIndex + 1}`,
+        name: "",
+        path: "",
+        dataType: "string",
+        description: ""
+      };
+    }
+    return {
+      id: String(parameter.id || `output-parameter-${parameterIndex + 1}`),
+      name: String(parameter.name || parameter.parameterName || parameter.path || parameter.jsonPath || ""),
+      path: String(parameter.path || parameter.jsonPath || parameter.name || parameter.parameterName || ""),
+      dataType: String(parameter.dataType || "string"),
+      description: String(parameter.description || "")
+    };
+  };
+  const normalizeApiMethodForExport = (api, method, methodIndex) => {
+    const fallbackMethod = String(api.method || "GET").toUpperCase();
+    const fallbackUrl = String(api.endpoint_url || api.baseUrl || "");
+    if (!method || typeof method !== "object") {
+      return createDefaultApiMethod(api, methodIndex + 1);
+    }
+    return {
+      id: String(method.id || `${api.group_id || "group"}_${api.bot_id || "bot"}_${api.name || "api"}:method:${methodIndex}`),
+      name: String(method.name || `Method ${methodIndex + 1}`),
+      httpMethod: String(method.httpMethod || method.method || fallbackMethod || "GET").toUpperCase(),
+      methodUrl: String(method.methodUrl || method.path || method.url || fallbackUrl),
+      description: String(method.description || ""),
+      loggingEnabled: method.loggingEnabled === true,
+      proxyEnabled: method.proxyEnabled !== false,
+      transferMode: "sync",
+      parameters: Array.isArray(method.parameters) ? method.parameters.map((parameter, index) => normalizeApiParameterForTransfer(parameter, index)) : [],
+      outputParameters: Array.isArray(method.outputParameters) ? method.outputParameters.map((parameter, index) => normalizeApiOutputParameterForTransfer(parameter, index)) : [],
+      outputSample: String(method.outputSample || method.output_sample || "")
+    };
+  };
+  const buildApiMethodList = (api, apiIndex) => {
+    const methods = Array.isArray(api.methods) ? api.methods : [];
+    const methodList = methods.length ? methods : [null];
+    const normalizedMethods = methodList.map((method, index) => normalizeApiMethodForExport(api, method, index));
+    return normalizedMethods.length ? normalizedMethods : [createDefaultApiMethod(api, apiIndex + 1)];
+  };
+  const apis = entries.map((api, index) => {
+    const methods = buildApiMethodList(api, index);
+    const primaryMethod = methods[0] || createDefaultApiMethod(api, index + 1);
+    return {
+      id: String(api.id || `${api.group_id || "group"}:${api.bot_id || "bot"}:${api.name}`),
+      type: "api",
+      apiKey: String(api.apiKey || api.key || `${api.group_id || "group"}_${api.bot_id || "bot"}_${api.name}`),
+      name: String(api.name || `api_${index + 1}`),
+      baseUrl: String(api.baseUrl || api.destinationBaseUrl || api.destinationUrl || api.endpoint_url || primaryMethod.methodUrl || ""),
+      description: String(api.description || ""),
+      category: String(api.category || "API"),
+      methods,
+      methodCount: methods.length,
+      usageCount: Number(api.usageCount || api.usage_count || 0) || 0,
+      updatedAt: String(api.updatedAt || api.updated_at || api.updated_at_text || new Date().toISOString()),
+      updatedBy: String(api.updatedBy || api.updated_by || "cga"),
+      auth_type: String(api.auth_type || "none"),
+      secret_ref: String(api.secret_ref || ""),
+      response_path: String(api.response_path || api.responsePath || "data.answer"),
+      method: primaryMethod.httpMethod || "GET"
+    };
+  });
   return {
     manifest: createAidotPackageManifest({
       scope: "api",
       botId: currentApiBotId || currentWorkspaceBotId,
       botLocale: currentStudioState.bot.defaultLocale || "en"
     }),
+    apis,
     apiList: entries.map((api) => ({
       name: api.name,
       endpoint_url: api.endpoint_url,
@@ -2319,8 +2645,135 @@ function buildApiMappingPackage() {
   };
 }
 
+function normalizeApiMethodForImport(method, methodIndex, fallbackUrl, fallbackMethod) {
+  if (!method || typeof method !== "object") {
+    return {
+      id: `method-${methodIndex + 1}`,
+      name: `Method ${methodIndex + 1}`,
+      httpMethod: String(fallbackMethod || "GET").toUpperCase(),
+      methodUrl: String(fallbackUrl || ""),
+      description: "",
+      loggingEnabled: false,
+      proxyEnabled: true,
+      transferMode: "sync",
+      parameters: [],
+      outputParameters: [],
+      outputSample: ""
+    };
+  }
+  const normalizeApiParameterForImport = (parameter, parameterIndex) => {
+    if (!parameter || typeof parameter !== "object") {
+      return {
+        id: `parameter-${parameterIndex + 1}`,
+        name: "",
+        location: "query",
+        dataType: "string",
+        defaultValue: "",
+        required: false,
+        visible: true,
+        description: ""
+      };
+    }
+    return {
+      id: String(parameter.id || `parameter-${parameterIndex + 1}`),
+      name: String(parameter.name || parameter.parameterName || "").trim(),
+      location: String(parameter.location || parameter.parameterType || "query"),
+      dataType: String(parameter.dataType || "string"),
+      defaultValue: String(parameter.defaultValue || parameter.default || ""),
+      required: parameter.required === true || parameter.requiredYn === true,
+      visible: parameter.visible !== false && parameter.visibleYn !== false,
+      description: String(parameter.description || "")
+    };
+  };
+  const normalizeApiOutputParameterForImport = (parameter, parameterIndex) => {
+    if (!parameter || typeof parameter !== "object") {
+      return {
+        id: `output-parameter-${parameterIndex + 1}`,
+        name: "",
+        path: "",
+        dataType: "string",
+        description: ""
+      };
+    }
+    const path = String(parameter.path || parameter.jsonPath || parameter.name || parameter.parameterName || "").trim();
+    const name = String(parameter.name || parameter.parameterName || path || "").trim();
+    return {
+      id: String(parameter.id || `output-parameter-${parameterIndex + 1}`),
+      name,
+      path,
+      dataType: String(parameter.dataType || "string"),
+      description: String(parameter.description || "")
+    };
+  };
+  return {
+    id: String(method.id || `method-${methodIndex + 1}`),
+    name: String(method.name || method.methodName || `Method ${methodIndex + 1}`),
+    httpMethod: String(method.httpMethod || method.method || fallbackMethod || "GET").toUpperCase(),
+    methodUrl: String(method.methodUrl || method.path || method.url || fallbackUrl || ""),
+    description: String(method.description || ""),
+    loggingEnabled: method.loggingEnabled === true || method.logging === true,
+    proxyEnabled: method.proxyEnabled !== false && method.proxy !== false,
+    transferMode: "sync",
+    parameters: Array.isArray(method.parameters) ? method.parameters.map((parameter, index) => normalizeApiParameterForImport(parameter, index)) : [],
+    outputParameters: Array.isArray(method.outputParameters) ? method.outputParameters.map((parameter, index) => normalizeApiOutputParameterForImport(parameter, index)) : [],
+    outputSample: String(method.outputSample || method.output_sample || "")
+  };
+}
+
+function normalizeApiFromAidotPackage(api, index = 0) {
+  const baseUrl = String(api?.baseUrl || api?.destinationBaseUrl || api?.destinationUrl || api?.endpoint_url || api?.endpoint || api?.url || "");
+  const fallbackMethod = String(api?.httpMethod || api?.method || "GET").toUpperCase();
+  const rawMethods = Array.isArray(api?.methods) ? api.methods : [];
+  const methods = rawMethods.length
+    ? rawMethods.map((item, methodIndex) => normalizeApiMethodForImport(item, methodIndex, baseUrl, fallbackMethod))
+    : [normalizeApiMethodForImport(null, 0, baseUrl, fallbackMethod)];
+  const primaryMethod = methods[0] || {};
+  return {
+    name: String(api?.name || api?.apiName || `api_${index + 1}`),
+    endpoint_url: String(api?.endpoint_url || baseUrl || primaryMethod.methodUrl || ""),
+    method: String(primaryMethod.httpMethod || fallbackMethod || "GET"),
+    auth_type: String(api?.auth_type || api?.authType || "none"),
+    secret_ref: String(api?.secret_ref || api?.secretRef || ""),
+    response_path: String(api?.response_path || api?.responsePath || "data.answer"),
+    methods,
+    usageCount: Number(api?.usageCount || api?.usage_count || 0) || 0,
+    methodCount: Number(api?.methodCount || api?.method_count || methods.length || 1),
+    id: String(api?.id || `api_${index + 1}`),
+    apiKey: String(api?.apiKey || api?.key || `api_${index + 1}`),
+    baseUrl,
+    description: String(api?.description || ""),
+    category: String(api?.category || "API"),
+    updatedAt: String(api?.updatedAt || api?.updated_at || new Date().toISOString()),
+    updatedBy: String(api?.updatedBy || api?.updated_by || "cga")
+  };
+}
+
+function extractApiListFromPackage(packageJson) {
+  if (Array.isArray(packageJson)) {
+    return packageJson.map((api, index) => normalizeApiFromAidotPackage(api, index));
+  }
+  if (Array.isArray(packageJson?.apiList)) {
+    return packageJson.apiList.map((api, index) => ({
+      name: String(api?.name || `api_${index + 1}`),
+      endpoint_url: String(api?.endpoint_url || ""),
+      method: String(api?.method || "GET"),
+      auth_type: String(api?.auth_type || api?.authType || "none"),
+      secret_ref: String(api?.secret_ref || ""),
+      response_path: String(api?.response_path || "data.answer"),
+      methods: [normalizeApiMethodForImport({
+        methodUrl: api?.methodUrl || api?.endpoint_url || "",
+        method: api?.httpMethod || api?.method || "GET",
+        name: "default"
+      }, 0, api?.endpoint_url || "", api?.method || "GET")]
+    }));
+  }
+  if (!Array.isArray(packageJson?.apis)) return [];
+  return packageJson.apis.map((api, index) => normalizeApiFromAidotPackage(api, index));
+
+}
+
 function applyApiMappingPackage(packageJson) {
-  const apiList = Array.isArray(packageJson?.apiList) ? packageJson.apiList : Array.isArray(packageJson) ? packageJson : [];
+  const apiList = extractApiListFromPackage(packageJson);
   if (!apiList.length) {
     throw new Error("Invalid API package: apiList is required.");
   }
@@ -2331,10 +2784,20 @@ function applyApiMappingPackage(packageJson) {
       bot_id: currentApiBotId,
       name: String(api.name || "imported_api"),
       endpoint_url: String(api.endpoint_url || api.url || ""),
+      baseUrl: String(api.baseUrl || api.endpoint_url || ""),
       method: String(api.method || "GET"),
       auth_type: String(api.auth_type || "none"),
       secret_ref: String(api.secret_ref || ""),
-      response_path: String(api.response_path || "data.answer")
+      response_path: String(api.response_path || "data.answer"),
+      methods: Array.isArray(api.methods) ? api.methods : [],
+      methodCount: Number(api.method_count || api.methodCount || (Array.isArray(api.methods) ? api.methods.length : 1)),
+      usageCount: Number(api.usageCount || api.usage_count || 0) || 0,
+      id: String(api.id || ""),
+      apiKey: String(api.apiKey || ""),
+      description: String(api.description || ""),
+      category: String(api.category || "API"),
+      updatedAt: String(api.updatedAt || api.updated_at || new Date().toISOString()),
+      updatedBy: String(api.updatedBy || api.updated_by || "cga")
     })).filter((api) => api.endpoint_url)
   ];
   currentTransferStatus = formatMessage(
@@ -2344,8 +2807,152 @@ function applyApiMappingPackage(packageJson) {
   );
 }
 
+function buildAidotDialogList() {
+  const dialogs = new Map();
+  currentScenarioAssets.forEach((item) => {
+    const dialogId = String(item.id || item.displayName || "").trim();
+    if (!dialogId) return;
+    dialogs.set(dialogId, {
+      dialogId,
+      dialogType: item.type === "module" ? 0 : 1,
+      displayName: String(item.displayName || dialogId)
+    });
+  });
+  currentIntentUtteranceAssets.forEach((item) => {
+    const dialogId = String(item.division || "").trim();
+    if (!dialogId || dialogs.has(dialogId)) return;
+    dialogs.set(dialogId, {
+      dialogId,
+      dialogType: 1,
+      displayName: dialogId
+    });
+  });
+  return [...dialogs.values()];
+}
+
+function buildAidotDialogFlowGraphList() {
+  return currentScenarioAssets.map((item) => ({
+    dialogId: String(item.id || item.displayName || ""),
+    dialogType: item.type === "module" ? 0 : 1,
+    flowGraph: createAidotFlowGraphNodes(item, item.type === "module" ? 0 : 1)
+  })).filter((item) => item.dialogId);
+}
+
+function parseAidotScenarioAssets(packageBody) {
+  const dialogs = Array.isArray(packageBody?.dialogList) ? packageBody.dialogList : [];
+  const flowGraphs = Array.isArray(packageBody?.dialogFlowGraphList) ? packageBody.dialogFlowGraphList : [];
+  const flowGraphByDialogId = new Map(
+    flowGraphs
+      .map((item) => [String(item?.dialogId || ""), item?.flowGraph])
+      .filter(([dialogId]) => dialogId)
+  );
+  return dialogs
+    .map((dialog) => {
+      const dialogId = String(dialog.dialogId || dialog.id || dialog.name || "").trim();
+      if (!dialogId) return null;
+      const flowGraph = flowGraphByDialogId.get(dialogId);
+      const nodes = Array.isArray(flowGraph)
+        ? flowGraph
+        : (Array.isArray(flowGraph?.nodes) ? flowGraph.nodes : []);
+      const messageNode = nodes.find((node) => node?.objectType === "Message" || node?.type === "message");
+      const answer = String(
+        messageNode?.additionalInfo?.text
+        || messageNode?.text
+        || messageNode?.additionalInfo?.message
+        || ""
+      );
+      return {
+        id: dialogId,
+        type: dialog.dialogType === 0 ? "module" : "intent",
+        displayName: String(dialog.displayName || dialog.name || dialogId),
+        answer,
+        dialogCards: answer ? [answer] : []
+      };
+    })
+    .filter(Boolean);
+}
+
+function parseAidotEntityAssets(packageBody) {
+  return (Array.isArray(packageBody?.entityTypeList) ? packageBody.entityTypeList : [])
+    .map((item) => ({
+      name: String(item.entityName || item.name || "").trim(),
+      value: String(item.entityValue || item.value || "").trim(),
+      rowType: String(item.entityType || item.rowType || "S").trim().toUpperCase() === "P" ? "P" : "S",
+      detail: String(item.detail || item.pattern || "")
+    }))
+    .filter((item) => item.name && item.value);
+}
+
+function parseAidotRuleAssets(packageBody) {
+  return (Array.isArray(packageBody?.ruleVoList) ? packageBody.ruleVoList : [])
+    .map((item) => ({
+      name: String(item.ruleName || item.name || "").trim(),
+      description: String(item.ruleDescription || item.description || ""),
+      expression: String(item.ruleExpression || item.expression || "").trim(),
+      target: String(item.targetDialogId || item.target || ""),
+      enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() === "N" ? "N" : "Y"
+    }))
+    .filter((item) => item.name && item.expression);
+}
+
+function parseAidotDictionaryAssets(packageBody) {
+  return (Array.isArray(packageBody?.dictionaryVoList) ? packageBody.dictionaryVoList : [])
+    .map((item) => ({
+      word: String(item.word || item.representativeWord || "").trim(),
+      synonyms: Array.isArray(item.synonyms)
+        ? item.synonyms.map((synonym) => String(synonym || "").trim()).filter(Boolean)
+        : []
+    }))
+    .filter((item) => item.word);
+}
+
+function parseAidotBlocklistAssets(packageBody) {
+  return (Array.isArray(packageBody?.blacklistList) ? packageBody.blacklistList : [])
+    .map((item) => ({
+      name: String(item.name || item.blacklistName || "").trim(),
+      type: String(item.type || item.blacklistType || "0").trim() || "0",
+      pattern: String(item.pattern || item.expression || item.value || "").trim(),
+      enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() === "N" ? "N" : "Y"
+    }))
+    .filter((item) => item.name && item.pattern);
+}
+
+function parseAidotFaqDialogAssets(packageBody) {
+  return (Array.isArray(packageBody?.faqDialogList) ? packageBody.faqDialogList : [])
+    .map((item) => ({
+      dialogId: String(item.dialogId || item.id || item.name || "").trim(),
+      question: String(item.question || item.title || item.name || "").trim(),
+      answer: String(item.answer || item.response || item.message || ""),
+      enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() === "N" ? "N" : "Y"
+    }))
+    .filter((item) => item.dialogId || item.question);
+}
+
+function parseAidotFloatingButtonAssets(packageBody) {
+  return (Array.isArray(packageBody?.floatingButtonVoList) ? packageBody.floatingButtonVoList : [])
+    .map((item, index) => ({
+      buttonId: String(item.buttonId || item.id || `floating-${index + 1}`).trim(),
+      label: String(item.label || item.name || item.title || "").trim(),
+      action: String(item.action || item.link || item.payload || ""),
+      enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() === "N" ? "N" : "Y",
+      sortOrder: Number(item.sortOrder || item.order || index + 1) || index + 1
+    }))
+    .filter((item) => item.buttonId && item.label);
+}
+
+function parseAidotSmallTalkAssets(packageBody) {
+  return (Array.isArray(packageBody?.smallTalkVoList) ? packageBody.smallTalkVoList : [])
+    .map((item) => ({
+      trigger: String(item.trigger || item.question || item.input || "").trim(),
+      response: String(item.response || item.answer || item.message || ""),
+      enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() === "N" ? "N" : "Y"
+    }))
+    .filter((item) => item.trigger && item.response);
+}
+
 function buildAidotBotPackage() {
   const bot = getCurrentWorkspaceBot();
+  const dialogList = buildAidotDialogList();
   return {
     AIDOTAssistantVersion: "CGA-AIDOT-COMPATIBLE-1",
     messageDigest: "",
@@ -2362,24 +2969,141 @@ function buildAidotBotPackage() {
       { configKey: "bot.version", configValue: currentStudioState.bot.version || "v0.1" },
       { configKey: "cga.compatibility", configValue: "aidot_single_language" }
     ],
-    dialogList: [
-      { dialogId: "password_reset", dialogType: 1, displayName: "password_reset" },
-      { dialogId: "account_update", dialogType: 1, displayName: "account_update" },
-      { dialogId: "billing_question", dialogType: 1, displayName: "billing_question" }
-    ],
-    dialogFlowGraphList: [],
-    entityTypeList: [],
-    faqDialogList: [],
-    floatingButtonVoList: [],
-    ruleVoList: [],
-    smallTalkVoList: [],
-    dictionaryVoList: [],
-    blacklistList: []
+    dialogList,
+    dialogFlowGraphList: buildAidotDialogFlowGraphList(),
+    entityTypeList: currentEntityAssets.map((item) => ({
+      entityName: item.name,
+      entityValue: item.value,
+      entityType: item.rowType,
+      detail: item.detail
+    })),
+    faqDialogList: currentFaqDialogAssets.map((item) => ({
+      dialogId: item.dialogId,
+      question: item.question,
+      answer: item.answer,
+      enabled: item.enabled
+    })),
+    floatingButtonVoList: currentFloatingButtonAssets.map((item) => ({
+      buttonId: item.buttonId,
+      label: item.label,
+      action: item.action,
+      enabled: item.enabled,
+      sortOrder: item.sortOrder
+    })),
+    ruleVoList: currentRuleAssets.map((item) => ({
+      ruleName: item.name,
+      ruleDescription: item.description,
+      ruleExpression: item.expression,
+      targetDialogId: item.target,
+      enabled: item.enabled
+    })),
+    smallTalkVoList: currentSmallTalkAssets.map((item) => ({
+      trigger: item.trigger,
+      response: item.response,
+      enabled: item.enabled
+    })),
+    dictionaryVoList: currentDictionaryAssets.map((item) => ({
+      word: item.word,
+      synonyms: [...item.synonyms]
+    })),
+    blacklistList: currentBlocklistAssets.map((item) => ({
+      blacklistName: item.name,
+      blacklistType: item.type,
+      expression: item.pattern,
+      enabled: item.enabled
+    }))
+  };
+}
+
+function buildAidotVersionDocument() {
+  const bot = getCurrentWorkspaceBot();
+  const apiPackage = buildApiMappingPackage();
+  const systemConfig = {
+    ...structuredClone(currentVersionSystemConfigExtraFields),
+    bot: {
+      botId: bot?.id || currentWorkspaceBotId,
+      botName: currentStudioState.bot.name || bot?.name || "CGA Bot",
+      description: currentStudioState.bot.description || "",
+      defaultLocale: currentStudioState.bot.defaultLocale || bot?.locale || "en",
+      version: currentStudioState.bot.version || bot?.version || "v0.1"
+    },
+    structuralChoices: structuredClone(currentStudioState.structuralChoices),
+    counts: structuredClone(currentStudioState.counts),
+    llm: structuredClone(currentStudioState.llm),
+    channels: structuredClone(currentStudioState.channels),
+    cga: {
+      compatibility: "aidot_single_language"
+    }
+  };
+  return {
+    ...structuredClone(currentVersionDocumentExtraFields),
+    asset_format_version: 1,
+    contract_version: AIDOT_CONTRACT_VERSION,
+    supported_contract_versions: [...AIDOT_SUPPORTED_CONTRACT_VERSIONS],
+    dialogs: buildAidotDialogList().map((item) => {
+      const scenario = currentScenarioAssets.find((asset) => asset.id === item.dialogId || asset.displayName === item.displayName);
+      return {
+        dialogId: item.dialogId,
+        dialogType: item.dialogType,
+        displayName: item.displayName,
+        answer: String(scenario?.answer || ""),
+        dialogCards: Array.isArray(scenario?.dialogCards) ? [...scenario.dialogCards] : []
+      };
+    }),
+    dialog_flow_graphs: buildAidotDialogFlowGraphList().map((item) => ({
+      dialogId: item.dialogId,
+      dialogType: item.dialogType,
+      flowGraph: Array.isArray(item.flowGraph) ? [...item.flowGraph] : item.flowGraph
+    })),
+    entities: currentEntityAssets.map((item) => ({
+      entityName: item.name,
+      entityValue: item.value,
+      entityType: item.rowType,
+      detail: item.detail
+    })),
+    dictionary: currentDictionaryAssets.map((item) => ({
+      word: item.word,
+      synonyms: [...item.synonyms]
+    })),
+    faq_dialogs: currentFaqDialogAssets.map((item) => ({
+      dialogId: item.dialogId,
+      question: item.question,
+      answer: item.answer,
+      enabled: item.enabled
+    })),
+    apis: Array.isArray(apiPackage.apis) ? apiPackage.apis.map((item) => structuredClone(item)) : [],
+    floating_buttons: currentFloatingButtonAssets.map((item) => ({
+      buttonId: item.buttonId,
+      label: item.label,
+      action: item.action,
+      enabled: item.enabled,
+      sortOrder: item.sortOrder
+    })),
+    rules: currentRuleAssets.map((item) => ({
+      ruleName: item.name,
+      ruleDescription: item.description,
+      ruleExpression: item.expression,
+      targetDialogId: item.target,
+      enabled: item.enabled
+    })),
+    small_talk: currentSmallTalkAssets.map((item) => ({
+      trigger: item.trigger,
+      response: item.response,
+      enabled: item.enabled
+    })),
+    blacklists: currentBlocklistAssets.map((item) => ({
+      blacklistName: item.name,
+      blacklistType: item.type,
+      expression: item.pattern,
+      enabled: item.enabled
+    })),
+    system_config: systemConfig
   };
 }
 
 function buildCgaVersionPackage() {
   const bot = getCurrentWorkspaceBot();
+  const versionDocument = buildAidotVersionDocument();
   return {
     manifest: createAidotPackageManifest({
       scope: "version",
@@ -2387,7 +3111,9 @@ function buildCgaVersionPackage() {
       versionId: currentStudioState.bot.version || bot?.version || "v0.1",
       botLocale: currentStudioState.bot.defaultLocale || bot?.locale || "en"
     }),
+    ...versionDocument,
     version: {
+      ...structuredClone(currentVersionLegacyExtraFields),
       bot: structuredClone(currentStudioState.bot),
       structuralChoices: structuredClone(currentStudioState.structuralChoices),
       counts: structuredClone(currentStudioState.counts),
@@ -2403,27 +3129,50 @@ function applyAidotBotPackage(packageJson) {
   if (!botVo || typeof botVo !== "object") {
     throw new Error("Invalid Aidot bot package: botVo is required.");
   }
-  const nextId = getSafeFileName(botVo.botId || `bot-${Date.now()}`, `bot-${Date.now()}`);
-  const nextName = String(botVo.botName || botVo.name || "Imported Bot");
-  const nextLocale = String(botVo.defaultLanguage || botVo.locale || currentStudioState.bot.defaultLocale || "en");
-  const nextVersion = String(botVo.versionName || botVo.version || "v0.1");
+  const currentBot = getCurrentWorkspaceBot();
+  const nextId = currentBot?.id || currentWorkspaceBotId || getSafeFileName(botVo.botId || botVo.bot_id || `bot-${Date.now()}`, `bot-${Date.now()}`);
+  const nextName = String(botVo.botName || botVo.name || currentBot?.name || "Imported Bot");
+  const nextLocale = String(botVo.defaultLanguage || botVo.defaultLocale || botVo.locale || currentStudioState.bot.defaultLocale || currentBot?.locale || "en");
+  const nextVersion = String(botVo.versionName || botVo.version || currentStudioState.bot.version || currentBot?.version || "v0.1");
   const importedBot = {
-    id: currentWorkspaceBots.some((bot) => bot.id === nextId) ? `${nextId}-${Date.now()}` : nextId,
+    id: nextId,
     group_id: currentWorkspaceGroupId,
     name: nextName,
     version: nextVersion,
-    status: "draft",
+    status: currentBot?.status || "draft",
     locale: nextLocale,
     updated_at: "imported"
   };
-  currentWorkspaceBots = [...currentWorkspaceBots, importedBot];
-  currentWorkspaceBotId = importedBot.id;
-  currentApiGroupId = currentWorkspaceGroupId;
-  currentApiBotId = importedBot.id;
+  currentWorkspaceBots = currentWorkspaceBots.some((bot) => bot.id === importedBot.id && bot.group_id === importedBot.group_id)
+    ? currentWorkspaceBots.map((bot) => (bot.id === importedBot.id && bot.group_id === importedBot.group_id ? importedBot : bot))
+    : [...currentWorkspaceBots, importedBot];
+  selectedBotManagementId = importedBot.id;
+  applyCurrentBotToStudioState(importedBot);
+  currentVersionDocumentExtraFields = createEmptyVersionAssetMetadataState().documentExtraFields;
+  currentVersionSystemConfigExtraFields = createEmptyVersionAssetMetadataState().systemConfigExtraFields;
+  currentVersionLegacyExtraFields = createEmptyVersionAssetMetadataState().legacyVersionExtraFields;
+  currentStudioState.bot.id = importedBot.id;
   currentStudioState.bot.name = importedBot.name;
   currentStudioState.bot.description = String(botVo.description || "");
   currentStudioState.bot.defaultLocale = importedBot.locale;
   currentStudioState.bot.version = importedBot.version;
+  const importedScenarios = parseAidotScenarioAssets(packageBody);
+  if (importedScenarios.length) currentScenarioAssets = importedScenarios;
+  const importedEntities = parseAidotEntityAssets(packageBody);
+  if (importedEntities.length) currentEntityAssets = importedEntities;
+  const importedRules = parseAidotRuleAssets(packageBody);
+  if (importedRules.length) currentRuleAssets = importedRules;
+  const importedDictionary = parseAidotDictionaryAssets(packageBody);
+  if (importedDictionary.length) currentDictionaryAssets = importedDictionary;
+  const importedBlocklists = parseAidotBlocklistAssets(packageBody);
+  if (importedBlocklists.length) currentBlocklistAssets = importedBlocklists;
+  const importedFaqDialogs = parseAidotFaqDialogAssets(packageBody);
+  if (importedFaqDialogs.length) currentFaqDialogAssets = importedFaqDialogs;
+  const importedFloatingButtons = parseAidotFloatingButtonAssets(packageBody);
+  if (importedFloatingButtons.length) currentFloatingButtonAssets = importedFloatingButtons;
+  const importedSmallTalk = parseAidotSmallTalkAssets(packageBody);
+  if (importedSmallTalk.length) currentSmallTalkAssets = importedSmallTalk;
+  if (currentScenarioAssets.length) currentSelectedIntentId = currentScenarioAssets[0].id;
   currentTransferStatus = formatMessage(
     "transfer.status.imported",
     { asset: getTransferAssetLabel("botPackage"), name: importedBot.name },
@@ -2431,22 +3180,113 @@ function applyAidotBotPackage(packageJson) {
   );
   ensureBotVersionRegistryFor(importedBot);
   trackRecentWorkspaceBot(importedBot);
+  saveWorkspaceSnapshot();
 }
 
 function applyCgaVersionPackage(packageJson) {
   const packageBody = packageJson?.package || packageJson;
+  const versionDocumentKeys = [
+    "asset_format_version",
+    "dialogs",
+    "dialog_flow_graphs",
+    "entities",
+    "dictionary",
+    "faq_dialogs",
+    "apis",
+    "floating_buttons",
+    "rules",
+    "small_talk",
+    "blacklists",
+    "system_config"
+  ];
+  const hasVersionDocumentShape = versionDocumentKeys.some((key) => Object.prototype.hasOwnProperty.call(packageBody || {}, key));
   const version = packageBody?.version;
-  if (!version?.bot) {
-    throw new Error("Invalid CGA version package: version.bot is required.");
+  if (!hasVersionDocumentShape && !version?.bot) {
+    throw new Error("Invalid CGA version package: version.bot or Aidot version document is required.");
   }
-  currentStudioState.bot = { ...currentStudioState.bot, ...version.bot };
-  if (version.structuralChoices) currentStudioState.structuralChoices = { ...currentStudioState.structuralChoices, ...version.structuralChoices };
-  if (version.counts) currentStudioState.counts = { ...currentStudioState.counts, ...version.counts };
-  if (version.llm) currentStudioState.llm = { ...currentStudioState.llm, ...version.llm };
-  if (version.channels) currentStudioState.channels = { ...currentStudioState.channels, ...version.channels };
+  if (hasVersionDocumentShape) {
+    const systemConfig = packageBody.system_config && typeof packageBody.system_config === "object" ? packageBody.system_config : {};
+    const botConfig = systemConfig.bot && typeof systemConfig.bot === "object" ? systemConfig.bot : {};
+    const knownVersionDocumentKeys = new Set([
+      "asset_format_version",
+      "contract_version",
+      "supported_contract_versions",
+      "dialogs",
+      "dialog_flow_graphs",
+      "entities",
+      "dictionary",
+      "faq_dialogs",
+      "apis",
+      "floating_buttons",
+      "rules",
+      "small_talk",
+      "blacklists",
+      "system_config",
+      "manifest",
+      "package",
+      "version"
+    ]);
+    currentVersionDocumentExtraFields = Object.fromEntries(
+      Object.entries(packageBody || {}).filter(([key]) => !knownVersionDocumentKeys.has(key))
+    );
+    const knownSystemConfigKeys = new Set(["bot", "structuralChoices", "counts", "llm", "channels", "cga"]);
+    currentVersionSystemConfigExtraFields = Object.fromEntries(
+      Object.entries(systemConfig).filter(([key]) => !knownSystemConfigKeys.has(key))
+    );
+    const knownLegacyVersionKeys = new Set(["bot", "structuralChoices", "counts", "llm", "channels"]);
+    currentVersionLegacyExtraFields = Object.fromEntries(
+      Object.entries(version || {}).filter(([key]) => !knownLegacyVersionKeys.has(key))
+    );
+    currentStudioState.bot = {
+      ...currentStudioState.bot,
+      name: String(botConfig.botName || botConfig.name || currentStudioState.bot.name || ""),
+      description: String(botConfig.description || currentStudioState.bot.description || ""),
+      defaultLocale: String(botConfig.defaultLocale || botConfig.defaultLanguage || currentStudioState.bot.defaultLocale || "en"),
+      version: String(botConfig.version || botConfig.versionName || currentStudioState.bot.version || "v0.1")
+    };
+    if (systemConfig.structuralChoices) currentStudioState.structuralChoices = { ...currentStudioState.structuralChoices, ...systemConfig.structuralChoices };
+    if (systemConfig.counts) currentStudioState.counts = { ...currentStudioState.counts, ...systemConfig.counts };
+    if (systemConfig.llm) currentStudioState.llm = { ...currentStudioState.llm, ...systemConfig.llm };
+    if (systemConfig.channels) currentStudioState.channels = { ...currentStudioState.channels, ...systemConfig.channels };
+
+    const importedScenarios = parseAidotScenarioAssets({
+      dialogList: Array.isArray(packageBody.dialogs) ? packageBody.dialogs : [],
+      dialogFlowGraphList: Array.isArray(packageBody.dialog_flow_graphs) ? packageBody.dialog_flow_graphs : []
+    });
+    if (importedScenarios.length) currentScenarioAssets = importedScenarios;
+    const importedEntities = parseAidotEntityAssets({ entityTypeList: Array.isArray(packageBody.entities) ? packageBody.entities : [] });
+    if (importedEntities.length) currentEntityAssets = importedEntities;
+    const importedDictionary = parseAidotDictionaryAssets({ dictionaryVoList: Array.isArray(packageBody.dictionary) ? packageBody.dictionary : [] });
+    if (importedDictionary.length) currentDictionaryAssets = importedDictionary;
+    const importedFaqDialogs = parseAidotFaqDialogAssets({ faqDialogList: Array.isArray(packageBody.faq_dialogs) ? packageBody.faq_dialogs : [] });
+    if (importedFaqDialogs.length) currentFaqDialogAssets = importedFaqDialogs;
+    const importedFloatingButtons = parseAidotFloatingButtonAssets({ floatingButtonVoList: Array.isArray(packageBody.floating_buttons) ? packageBody.floating_buttons : [] });
+    if (importedFloatingButtons.length) currentFloatingButtonAssets = importedFloatingButtons;
+    const importedRules = parseAidotRuleAssets({ ruleVoList: Array.isArray(packageBody.rules) ? packageBody.rules : [] });
+    if (importedRules.length) currentRuleAssets = importedRules;
+    const importedSmallTalk = parseAidotSmallTalkAssets({ smallTalkVoList: Array.isArray(packageBody.small_talk) ? packageBody.small_talk : [] });
+    if (importedSmallTalk.length) currentSmallTalkAssets = importedSmallTalk;
+    const importedBlocklists = parseAidotBlocklistAssets({ blacklistList: Array.isArray(packageBody.blacklists) ? packageBody.blacklists : [] });
+    if (importedBlocklists.length) currentBlocklistAssets = importedBlocklists;
+    if (Array.isArray(packageBody.apis) && packageBody.apis.length) {
+      applyApiMappingPackage({ apis: packageBody.apis });
+    }
+  } else {
+    const knownLegacyVersionKeys = new Set(["bot", "structuralChoices", "counts", "llm", "channels"]);
+    currentVersionLegacyExtraFields = Object.fromEntries(
+      Object.entries(version || {}).filter(([key]) => !knownLegacyVersionKeys.has(key))
+    );
+    currentStudioState.bot = { ...currentStudioState.bot, ...version.bot };
+    if (version.structuralChoices) currentStudioState.structuralChoices = { ...currentStudioState.structuralChoices, ...version.structuralChoices };
+    if (version.counts) currentStudioState.counts = { ...currentStudioState.counts, ...version.counts };
+    if (version.llm) currentStudioState.llm = { ...currentStudioState.llm, ...version.llm };
+    if (version.channels) currentStudioState.channels = { ...currentStudioState.channels, ...version.channels };
+  }
   const currentBot = getCurrentWorkspaceBot();
   if (currentBot) {
     currentBot.version = currentStudioState.bot.version || currentBot.version;
+    currentBot.locale = currentStudioState.bot.defaultLocale || currentBot.locale;
+    currentBot.name = currentStudioState.bot.name || currentBot.name;
     currentBot.updated_at = new Date().toISOString().slice(0, 10);
     const versions = getBotVersions(currentBot).map((item) => ({
       ...item,
@@ -2578,6 +3418,23 @@ function syncCreateControlsFromState() {
   });
 }
 
+function getCreateRequiredFieldIssues() {
+  const issues = [];
+  if (!String(currentStudioState?.bot?.name || "").trim()) issues.push("bot.name");
+  if (!String(currentStudioState?.bot?.version || "").trim()) issues.push("bot.version");
+  return issues;
+}
+
+function syncCreateValidationState() {
+  const missingFields = new Set(getCreateRequiredFieldIssues());
+  document.querySelectorAll("[data-structural-field]").forEach((control) => {
+    const field = control.dataset.structuralField || "";
+    control.classList.toggle("create-field__missing", missingFields.has(field));
+  });
+  const notice = document.querySelector("[data-create-required-notice]");
+  if (notice) notice.hidden = missingFields.size === 0;
+}
+
 function applyStructuralSideEffects(field) {
   const choices = currentStudioState.structuralChoices;
   choices.allowPdf = choices.compositionInput === "pdf" || choices.compositionInput === "both";
@@ -2598,6 +3455,7 @@ function renderCreateSummary() {
     <p><b data-i18n="summary.orchestrator">Orchestrator</b><span>${choices.orchestratorMode}</span></p>
     <p><b data-i18n="summary.botServer">Bot Server</b><span>${choices.botServerLocation}</span></p>
   `;
+  syncCreateValidationState();
 }
 
 function getSimulatorIntentRow(test) {
@@ -3784,6 +4642,7 @@ function bindConfigureComposition() {
 
 function bindCreateControls() {
   syncCreateControlsFromState();
+  syncCreateValidationState();
   document.querySelectorAll("[data-structural-field]").forEach((control) => {
     if (control.dataset.createBound === "true") return;
     control.dataset.createBound = "true";
@@ -3791,6 +4650,7 @@ function bindCreateControls() {
       const field = control.dataset.structuralField;
       setByPath(currentStudioState, field, coerceFieldValue(field, control.value));
       applyStructuralSideEffects(field);
+      syncCreateValidationState();
       renderAllStatePanels();
       scheduleStudioStateSave();
     });
@@ -3798,6 +4658,7 @@ function bindCreateControls() {
       const field = control.dataset.structuralField;
       setByPath(currentStudioState, field, coerceFieldValue(field, control.value));
       applyStructuralSideEffects(field);
+      syncCreateValidationState();
       renderAllStatePanels();
       await saveStudioStateToServer().catch(() => false);
       renderWorkspaceHome();
@@ -3844,9 +4705,40 @@ function resolveActiveScreenId() {
   if (postAuthDefaultScreenPending && selectableIds.includes(DEFAULT_ACTIVE_SCREEN_ID)) {
     return DEFAULT_ACTIVE_SCREEN_ID;
   }
-  const hashId = window.location.hash.replace("#", "");
+  const hashRoute = parseHashRoute(window.location.hash);
+  const hashId = hashRoute.screenId;
+  if (hashId === "access-management" && hashRoute.adminSubview) {
+    currentSystemAdminSubview = hashRoute.adminSubview;
+  }
   const candidates = [hashId, activeScreenId, DEFAULT_ACTIVE_SCREEN_ID, selectableIds[0]].filter(Boolean);
   return candidates.find((id) => selectableIds.includes(id)) || selectableIds[0] || "";
+}
+
+function parseHashRoute(hashValue = "") {
+  const raw = String(hashValue || "").replace(/^#/, "").trim();
+  if (!raw) return { screenId: "", adminSubview: "" };
+  const [screenId, queryString = ""] = raw.split("?");
+  const params = new URLSearchParams(queryString);
+  return {
+    screenId: String(screenId || "").trim(),
+    adminSubview: String(params.get("subview") || "").trim()
+  };
+}
+
+function buildScreenHash(screenId, { adminSubview = "" } = {}) {
+  const normalizedScreenId = String(screenId || "").trim();
+  if (!normalizedScreenId) return "#";
+  const params = new URLSearchParams();
+  if (normalizedScreenId === "access-management" && adminSubview) {
+    params.set("subview", adminSubview);
+  }
+  const query = params.toString();
+  return `#${normalizedScreenId}${query ? `?${query}` : ""}`;
+}
+
+function hasExplicitHashRoute() {
+  const route = parseHashRoute(window.location.hash);
+  return Boolean(route.screenId);
 }
 
 function enforceActiveScreenVisibility() {
@@ -3884,7 +4776,11 @@ function applyScreenLayout() {
     );
     sectionsById.forEach((section) => setScreenSectionVisible(section, false));
     const visibleExistingIds = visibleIds.filter((id) => sectionsById.has(id));
-    if (!visibleExistingIds.includes(activeScreenId)) {
+    const explicitRoute = parseHashRoute(window.location.hash);
+    const hasSelectableExplicitRoute = explicitRoute.screenId && visibleExistingIds.includes(explicitRoute.screenId);
+    if (hasSelectableExplicitRoute && activeScreenId !== explicitRoute.screenId) {
+      activeScreenId = resolveActiveScreenId();
+    } else if (!visibleExistingIds.includes(activeScreenId)) {
       activeScreenId = resolveActiveScreenId();
     }
     visibleLayout.forEach((item) => {
@@ -3921,7 +4817,7 @@ function applyScreenLayout() {
 }
 function updateNavigationActiveState() {
   document.querySelectorAll(".management-nav a, .server-sub-nav a, .system-admin-subnav a, [data-workflow-nav] a").forEach((link) => {
-    const linkScreenId = link.getAttribute("href")?.replace("#", "");
+    const linkScreenId = parseHashRoute(link.getAttribute("href") || "").screenId;
     const adminSubviewMatches = !link.dataset.adminSubview || link.dataset.adminSubview === currentSystemAdminSubview;
     const configSubviewMatches = !link.dataset.configSubview || (linkScreenId === "configure" && link.dataset.configSubview === currentConfigureSubview);
     link.classList.toggle("active", linkScreenId === activeScreenId && adminSubviewMatches && configSubviewMatches);
@@ -4045,7 +4941,7 @@ function renderSystemAdminSubnav() {
       <summary>${section.title}</summary>
       <div class="subnav-group__links">
         ${section.links.map((link) => `
-          <a href="#${link.id}" class="${link.id === activeScreenId && (!link.subview || link.subview === currentSystemAdminSubview) ? "active" : ""}" ${link.subview ? `data-admin-subview="${link.subview}"` : ""}>
+          <a href="${buildScreenHash(link.id, { adminSubview: link.subview || "" })}" class="${link.id === activeScreenId && (!link.subview || link.subview === currentSystemAdminSubview) ? "active" : ""}" ${link.subview ? `data-admin-subview="${link.subview}"` : ""}>
             <span>${link.label}</span>
           </a>
         `).join("")}
@@ -4469,37 +5365,42 @@ function bindAssetTransferActions() {
         return;
       }
       if (button.dataset.assetDownload === "dictionary") {
-        const fileName = `Dictionary_${botName}_${getTodayStamp()}.txt`;
+        const fileName = getAssetTransferDownloadFileName("dictionary");
         downloadTextFile(fileName, buildDictionaryTxt(currentDictionaryAssets));
         currentTransferStatus = formatTransferDownloaded("dictionary", fileName);
       }
       if (button.dataset.assetDownload === "intentUtterance") {
-        const fileName = `IntentUtterance_${botName}_${getTodayStamp()}.txt`;
+        const fileName = getAssetTransferDownloadFileName("intentUtterance");
         downloadTextFile(fileName, buildIntentUtteranceTxt(currentIntentUtteranceAssets));
         currentTransferStatus = formatTransferDownloaded("intentUtterance", fileName);
       }
       if (button.dataset.assetDownload === "entity") {
-        const fileName = `Entity_${botName}_${getTodayStamp()}.txt`;
+        const fileName = getAssetTransferDownloadFileName("entity");
         downloadTextFile(fileName, buildEntityTxt(currentEntityAssets));
         currentTransferStatus = formatTransferDownloaded("entity", fileName);
       }
       if (button.dataset.assetDownload === "rule") {
-        const fileName = `Rule_${botName}_${getTodayStamp()}.txt`;
+        const fileName = getAssetTransferDownloadFileName("rule");
         downloadTextFile(fileName, buildRuleTxt(currentRuleAssets));
         currentTransferStatus = formatTransferDownloaded("rule", fileName);
       }
+      if (button.dataset.assetDownload === "blocklist") {
+        const fileName = getAssetTransferDownloadFileName("blocklist");
+        downloadTextFile(fileName, buildBlocklistTxt(currentBlocklistAssets));
+        currentTransferStatus = formatTransferDownloaded("blocklist", fileName);
+      }
       if (button.dataset.assetDownload === "intentDialog") {
-        const fileName = `Dialog_${botName}_${getTodayStamp()}.json`;
+        const fileName = getAssetTransferDownloadFileName("intentDialog");
         downloadJsonFile(fileName, buildAidotDialogPackage("intent"));
         currentTransferStatus = formatTransferDownloaded("intentDialog", fileName);
       }
       if (button.dataset.assetDownload === "scenario") {
-        const fileName = `Scenario_${botName}_${getTodayStamp()}.json`;
+        const fileName = getAssetTransferDownloadFileName("scenario");
         downloadJsonFile(fileName, buildAidotDialogPackage("scenario"));
         currentTransferStatus = formatTransferDownloaded("scenario", fileName);
       }
       if (button.dataset.assetDownload === "apiMapping") {
-        const fileName = `API_${botName}_${getTodayStamp()}.json`;
+        const fileName = getAssetTransferDownloadFileName("apiMapping");
         downloadJsonFile(fileName, buildApiMappingPackage());
         currentTransferStatus = formatTransferDownloaded("apiMapping", fileName);
       }
@@ -4515,51 +5416,67 @@ function bindAssetTransferActions() {
         requestTextUpload(async (text, file) => {
           const incoming = parseDictionaryTxt(text);
           currentDictionaryAssets = mergeDictionaryAssets(currentDictionaryAssets, incoming);
-          const synced = await uploadAssetToServer("dictionary", text, file?.name);
+          const uploadResponse = await uploadAssetToServer("dictionary", text, file?.name);
+          const synced = isAssetUploadAccepted(uploadResponse);
           if (synced) await saveDetailAssetsToServer().catch(() => false);
-          currentTransferStatus = formatTransferUploaded("dictionary", incoming.length, synced);
+          currentTransferStatus = `${formatTransferUploaded("dictionary", incoming.length, synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
         });
       }
       if (button.dataset.assetUpload === "intentUtterance") {
         requestTextUpload(async (text, file) => {
           const incoming = parseIntentUtteranceTxt(text);
           currentIntentUtteranceAssets = mergeIntentUtteranceAssets(currentIntentUtteranceAssets, incoming);
-          const synced = await uploadAssetToServer("intentUtterance", text, file?.name);
+          const uploadResponse = await uploadAssetToServer("intentUtterance", text, file?.name);
+          const synced = isAssetUploadAccepted(uploadResponse);
           if (synced) await saveDetailAssetsToServer().catch(() => false);
-          currentTransferStatus = formatTransferUploaded("intentUtterance", incoming.length, synced);
+          currentTransferStatus = `${formatTransferUploaded("intentUtterance", incoming.length, synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
         });
       }
       if (button.dataset.assetUpload === "entity") {
         requestTextUpload(async (text, file) => {
           const incoming = parseEntityTxt(text);
           currentEntityAssets = mergeEntityAssets(currentEntityAssets, incoming);
-          const synced = await uploadAssetToServer("entity", text, file?.name);
+          const uploadResponse = await uploadAssetToServer("entity", text, file?.name);
+          const synced = isAssetUploadAccepted(uploadResponse);
           if (synced) await saveDetailAssetsToServer().catch(() => false);
-          currentTransferStatus = formatTransferUploaded("entity", incoming.length, synced);
+          currentTransferStatus = `${formatTransferUploaded("entity", incoming.length, synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
         });
       }
       if (button.dataset.assetUpload === "rule") {
         requestTextUpload(async (text, file) => {
           const incoming = parseRuleTxt(text);
           currentRuleAssets = mergeRuleAssets(currentRuleAssets, incoming);
-          const synced = await uploadAssetToServer("rule", text, file?.name);
+          const uploadResponse = await uploadAssetToServer("rule", text, file?.name);
+          const synced = isAssetUploadAccepted(uploadResponse);
           if (synced) await saveDetailAssetsToServer().catch(() => false);
-          currentTransferStatus = formatTransferUploaded("rule", incoming.length, synced);
+          currentTransferStatus = `${formatTransferUploaded("rule", incoming.length, synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
+        });
+      }
+      if (button.dataset.assetUpload === "blocklist") {
+        requestTextUpload(async (text, file) => {
+          const incoming = parseBlocklistTxt(text);
+          currentBlocklistAssets = mergeBlocklistAssets(currentBlocklistAssets, incoming);
+          const uploadResponse = await uploadAssetToServer("blocklist", text, file?.name);
+          const synced = isAssetUploadAccepted(uploadResponse);
+          if (synced) await saveDetailAssetsToServer().catch(() => false);
+          currentTransferStatus = `${formatTransferUploaded("blocklist", incoming.length, synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
         });
       }
       if (button.dataset.assetUpload === "intentDialog" || button.dataset.assetUpload === "scenario") {
         requestJsonUpload(async (json, file) => {
           applyAidotDialogPackage(json);
-          const synced = await uploadAssetToServer(button.dataset.assetUpload, JSON.stringify(json, null, 2), file?.name);
+          const uploadResponse = await uploadAssetToServer(button.dataset.assetUpload, JSON.stringify(json, null, 2), file?.name);
+          const synced = isAssetUploadAccepted(uploadResponse);
           if (synced) await saveDetailAssetsToServer().catch(() => false);
-          currentTransferStatus = appendTransferSyncStatus(synced);
+          currentTransferStatus = `${appendTransferSyncStatus(synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
         });
       }
       if (button.dataset.assetUpload === "apiMapping") {
         requestJsonUpload(async (json, file) => {
           applyApiMappingPackage(json);
-          const synced = await uploadAssetToServer("apiMapping", JSON.stringify(json, null, 2), file?.name);
-          currentTransferStatus = appendTransferSyncStatus(synced);
+          const uploadResponse = await uploadAssetToServer("apiMapping", JSON.stringify(json, null, 2), file?.name);
+          const synced = isAssetUploadAccepted(uploadResponse);
+          currentTransferStatus = `${appendTransferSyncStatus(synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
           renderApiRegistry();
         });
       }
@@ -4706,12 +5623,11 @@ function bindWorkspaceActions() {
     createButton.dataset.bound = "true";
     createButton.addEventListener("click", async () => {
       if (!canCreateBotInCurrentWorkspace()) return;
-      const nextNumber = currentWorkspaceBots.length + 1;
       const id = `bot-${Date.now()}`;
       const bot = {
         id,
         group_id: currentWorkspaceGroupId,
-        name: `New Bot ${nextNumber}`,
+        name: "",
         status: "draft",
         locale: currentStudioState.bot.defaultLocale,
         version: "v0.1",
@@ -4840,7 +5756,8 @@ function bindWorkspaceActions() {
     botVersionUpload.addEventListener("click", () => {
       requestJsonUpload(async (json, file) => {
         applyCgaVersionPackage(json);
-        const synced = await uploadAssetToServer("versionPackage", JSON.stringify(json, null, 2), file?.name);
+        const uploadResponse = await uploadAssetToServer("versionPackage", JSON.stringify(json, null, 2), file?.name);
+        const synced = isAssetUploadAccepted(uploadResponse);
         if (synced) {
           await saveStudioStateToServer().catch(() => false);
           await saveDetailAssetsToServer().catch(() => false);
@@ -4849,7 +5766,7 @@ function bindWorkspaceActions() {
             await updateWorkspaceBotVersionOnServer(activeBot, activeBot.version || currentStudioState.bot.version).catch(() => false);
           }
         }
-        currentTransferStatus = appendTransferSyncStatus(synced);
+        currentTransferStatus = `${appendTransferSyncStatus(synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
         refreshWorkspaceManagementSurfaces();
       });
     });
@@ -4951,12 +5868,15 @@ function bindWorkspaceActions() {
     uploadBot.addEventListener("click", () => {
       requestJsonUpload(async (json, file) => {
         applyAidotBotPackage(json);
-        const synced = await uploadAssetToServer("botPackage", JSON.stringify(json, null, 2), file?.name);
+        const uploadResponse = await uploadAssetToServer("botPackage", JSON.stringify(json, null, 2), file?.name);
+        const synced = isAssetUploadAccepted(uploadResponse);
         if (synced) {
           await saveStudioStateToServer().catch(() => false);
           await saveDetailAssetsToServer().catch(() => false);
+          await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
+          await syncSelectedBotServerState(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
         }
-        currentTransferStatus = appendTransferSyncStatus(synced);
+        currentTransferStatus = `${appendTransferSyncStatus(synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
         refreshWorkspaceManagementSurfaces();
       });
     });
@@ -4983,12 +5903,13 @@ function bindWorkspaceActions() {
     uploadVersion.addEventListener("click", () => {
       requestJsonUpload(async (json, file) => {
         applyCgaVersionPackage(json);
-        const synced = await uploadAssetToServer("versionPackage", JSON.stringify(json, null, 2), file?.name);
+        const uploadResponse = await uploadAssetToServer("versionPackage", JSON.stringify(json, null, 2), file?.name);
+        const synced = isAssetUploadAccepted(uploadResponse);
         if (synced) {
           await saveStudioStateToServer().catch(() => false);
           await saveDetailAssetsToServer().catch(() => false);
         }
-        currentTransferStatus = appendTransferSyncStatus(synced);
+        currentTransferStatus = `${appendTransferSyncStatus(synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
         refreshWorkspaceManagementSurfaces();
       });
     });
@@ -5063,7 +5984,7 @@ const AIDOT_ADMIN_SURFACE_TITLES = {
   "api-call-history": "API 호출 이력 조회",
   "queue-history": "Queue 이력 조회",
   "intent-feedback": "의도별 피드백 조회",
-  "common-variables": "공통 변수 관리하기",
+  "common-variables": "공통 변수 관리",
   "default-messages": "기본 메시지 관리",
   channels: "채널 관리",
   "botstation-links": "봇스테이션 연계 현황",
@@ -5090,6 +6011,66 @@ function formatAidotAdminDate(value) {
 
 function formatLoginHistoryDate(value) {
   return formatAidotAdminDate(value);
+}
+
+function buildCommonVariableCsv(items) {
+  const rows = [
+    ["변수명", "변수값", "설명"],
+    ...items
+      .filter((item) => item.kind === "user")
+      .map((item) => [item.name || "", item.value || "", item.description || ""])
+  ];
+  return rows
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, "\"\"")}"`).join(","))
+    .join("\n");
+}
+
+function parseCommonVariableCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuote = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === '"' && inQuote && next === '"') {
+      cell += '"';
+      index += 1;
+      continue;
+    }
+    if (char === '"') {
+      inQuote = !inQuote;
+      continue;
+    }
+    if (char === "," && !inQuote) {
+      row.push(cell.trim());
+      cell = "";
+      continue;
+    }
+    if ((char === "\n" || char === "\r") && !inQuote) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+      continue;
+    }
+    cell += char;
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function downloadCommonVariablesCsv() {
+  const csv = `\ufeff${buildCommonVariableCsv(currentAdminResources.common_variables || [])}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "공통 변수.csv";
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 function formatAidotSignupStatus(record) {
@@ -5206,10 +6187,96 @@ function renderLoginHistorySurface(surface) {
 
 function renderCommonVariableSurface(surface) {
   const resource = "common-variables";
-  const rows = currentAdminResources.common_variables.map((item) => `
-    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}"><a class="data-grid__cell table-link" href="#">${escapeCell(item.name)}</a><span class="data-grid__cell">${escapeCell(item.category)}</span><span class="data-grid__cell">${escapeCell(item.value)}</span><span class="data-grid__cell">${escapeCell(item.description)}</span><span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span><span class="data-grid__cell">${escapeCell(item.updated_by)}</span></div>
+  const allItems = Array.isArray(currentAdminResources.common_variables) ? currentAdminResources.common_variables : [];
+  const normalizedQuery = currentCommonVariableUiState.query.trim().toLowerCase();
+  const normalizedKind = String(currentCommonVariableUiState.kind || "").trim();
+  const filteredItems = allItems.filter((item) => {
+    const haystack = [item.name, item.value, item.description].filter(Boolean).join(" ").toLowerCase();
+    const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
+    const matchesKind = !normalizedKind || item.kind === normalizedKind;
+    return matchesQuery && matchesKind;
+  });
+  const userVariableIds = filteredItems.filter((item) => item.kind === "user").map((item) => item.id);
+  currentCommonVariableUiState.selectedIds = currentCommonVariableUiState.selectedIds.filter((id) => userVariableIds.includes(id));
+  const allUserSelected = userVariableIds.length > 0 && userVariableIds.every((id) => currentCommonVariableUiState.selectedIds.includes(id));
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / currentCommonVariableUiState.pageSize));
+  if (currentCommonVariableUiState.page > totalPages) currentCommonVariableUiState.page = totalPages;
+  const startIndex = (currentCommonVariableUiState.page - 1) * currentCommonVariableUiState.pageSize;
+  const pagedItems = filteredItems.slice(startIndex, startIndex + currentCommonVariableUiState.pageSize);
+  const rows = pagedItems.map((item) => `
+    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}">
+      <span class="data-grid__cell">
+        ${item.kind === "user"
+          ? `<input type="checkbox" data-common-variable-select="${escapeCell(item.id)}" ${currentCommonVariableUiState.selectedIds.includes(item.id) ? "checked" : ""} aria-label="${escapeCell(item.name)} 선택" />`
+          : `<input type="checkbox" disabled aria-label="${escapeCell(item.name)} 선택 불가" />`}
+      </span>
+      <span class="data-grid__cell">${escapeCell(item.kind === "system" ? "시스템" : "사용자")}</span>
+      <a class="data-grid__cell table-link" href="#">${escapeCell(item.name)}</a>
+      <span class="data-grid__cell">${escapeCell(item.value)}</span>
+      <span class="data-grid__cell">${escapeCell(item.description)}</span>
+      <span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span>
+      <span class="data-grid__cell">${escapeCell(item.updater_name || item.updated_by || "SYSTEM")}</span>
+    </div>
   `);
-  renderAidotInteractiveTable(surface, { resource, title: "공통 변수 관리하기", placeholder: "변수명을 검색하세요.", topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button><button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 변수 등록</button>`, columns: ["변수명", "구분", "변수값", "설명", "최종수정일시", "최종수정자"], template: "180px 120px 180px 1fr 180px 140px", rows });
+  surface.innerHTML = `
+    <section class="admin-page" data-admin-resource="${resource}">
+      <h2>공통 변수 관리</h2>
+      <div class="admin-page__search-row admin-common-variables__search-row">
+        <label class="admin-page__search">
+          <span>⌕</span>
+          <input data-admin-query-input value="${escapeCell(currentCommonVariableUiState.query)}" placeholder="변수명 또는 변수값을 검색하세요." />
+        </label>
+        <select class="login-select" data-common-variable-kind>
+          <option value="" ${normalizedKind ? "" : "selected"}>전체 구분</option>
+          <option value="user" ${normalizedKind === "user" ? "selected" : ""}>사용자</option>
+          <option value="system" ${normalizedKind === "system" ? "selected" : ""}>시스템</option>
+        </select>
+        <button type="button" class="admin-page__filter" data-common-variable-reset>초기화</button>
+        <div class="admin-page__search-actions">
+          <button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button>
+          <button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 공통 변수 추가</button>
+          <div class="admin-common-variables__more">
+            <button type="button" class="admin-common-variables__more-button" data-common-variable-menu-toggle aria-label="공통 변수 더보기">⋮</button>
+            ${currentCommonVariableUiState.menuOpen ? `
+              <div class="admin-common-variables__menu">
+                <button type="button" data-common-variable-upload-open>파일 업로드</button>
+              </div>
+            ` : ""}
+          </div>
+          <input type="file" accept=".csv,text/csv" class="admin-common-variables__file" data-common-variable-file />
+        </div>
+      </div>
+      <div class="admin-page__toolbar">
+        <div class="admin-page__toolbar-left">
+          <strong>전체 ${filteredItems.length}건</strong>
+          <label class="manual-main__mini-select manual-main__mini-select--select">
+            <select data-common-variable-page-size>
+              ${[10, 25, 50, 100].map((option) => `<option value="${option}" ${currentCommonVariableUiState.pageSize === option ? "selected" : ""}>${option}개씩 보기</option>`).join("")}
+            </select>
+          </label>
+          ${currentCommonVariableUiState.selectedIds.length > 0 ? `<span class="admin-page__selection">${currentCommonVariableUiState.selectedIds.length}개 선택</span>` : ""}
+          <button type="button" class="admin-page__ghost" data-common-variable-download>다운로드</button>
+          <button type="button" class="admin-page__ghost" data-common-variable-delete ${currentCommonVariableUiState.selectedIds.length === 0 ? "disabled" : ""}>삭제</button>
+        </div>
+      </div>
+      ${renderDataGrid([
+        `<input type="checkbox" data-common-variable-select-all ${allUserSelected ? "checked" : ""} aria-label="전체 선택" />`,
+        "구분",
+        "변수명",
+        "변수값",
+        "설명",
+        "최종수정일시",
+        "최종수정자"
+      ], rows, "44px 90px 210px 180px 1fr 180px 180px")}
+      <div class="admin-page__pagination" aria-label="pagination">
+        <button type="button" ${currentCommonVariableUiState.page === 1 ? "disabled" : ""}>◀</button>
+        <button type="button" ${currentCommonVariableUiState.page === 1 ? "disabled" : ""}>‹</button>
+        <strong class="is-active">${currentCommonVariableUiState.page}</strong>
+        <button type="button" ${currentCommonVariableUiState.page === totalPages ? "disabled" : ""}>›</button>
+        <button type="button" ${currentCommonVariableUiState.page === totalPages ? "disabled" : ""}>▶</button>
+      </div>
+    </section>
+  `;
 }
 
 function renderDefaultMessageSurface(surface) {
@@ -5233,6 +6300,130 @@ function renderLicenseSurface(surface) {
     <div class="data-grid__row"><span class="data-grid__cell">${escapeCell(item.category)}</span><span class="data-grid__cell">${escapeCell(item.total)}</span><span class="data-grid__cell">${escapeCell(item.used)}</span><span class="data-grid__cell">${escapeCell(item.remaining)}</span><span class="data-grid__cell">${escapeCell(item.expires_at)}</span></div>
   `);
   renderAidotInteractiveTable(surface, { title: "라이선스 조회", placeholder: "라이선스 이름을 검색하세요.", columns: ["구분", "전체 수", "사용중", "잔여", "만료일"], template: "220px 220px 220px 220px 220px", rows });
+}
+
+function getConversationHistoryChannelOptions() {
+  const configuredChannels = (currentAdminResources.channels || [])
+    .map((item) => {
+      const provider = String(item.provider || item.renderer_type || "").trim().toLowerCase();
+      if (provider === "webchat") return "webchat";
+      const channelName = String(item.channel_name || item.channel_code || "").trim();
+      return channelName || "";
+    })
+    .filter(Boolean);
+  const mergedChannels = [...new Set(["Simulator", "webchat", ...configuredChannels])];
+  return ["all", ...mergedChannels];
+}
+
+function normalizeConversationHistoryChannelName(value = "") {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (text.toLowerCase() === "webchat") return "webchat";
+  if (text.toLowerCase() === "simulator") return "Simulator";
+  return text;
+}
+
+function normalizeConversationHistoryDateOnly(value = "") {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return text.slice(0, 10);
+}
+
+function getConversationHistoryRows() {
+  const selectedChannel = String(currentConversationHistoryFilters.channel || "all");
+  const startDate = normalizeConversationHistoryDateOnly(currentConversationHistoryFilters.startDate);
+  const endDate = normalizeConversationHistoryDateOnly(currentConversationHistoryFilters.endDate);
+  const rows = (currentConversationHistoryState.items || []).map((item) => {
+    const data = item?.data_json || {};
+    const utterances = Array.isArray(data.session_user_utterances) ? data.session_user_utterances : [];
+    const firstUtterance = data.session_first_user_utterance || utterances[0] || "";
+    return {
+      occurredAt: normalizeDateText(item?.uttered_at || data.session_started_at || ""),
+      utterance: normalizeDateText(firstUtterance || ""),
+      target: normalizeDateText(item?.intent_or_module_name || ""),
+      result: normalizeDateText(item?.result || ""),
+      channel: normalizeConversationHistoryChannelName(item?.channel_name || ""),
+      rawDate: normalizeConversationHistoryDateOnly(item?.uttered_at || data.session_started_at || "")
+    };
+  });
+  return rows.filter((row) => {
+    const channelMatch = selectedChannel === "all" || String(row.channel || "").toLowerCase() === selectedChannel.toLowerCase();
+    const startMatch = !startDate || !row.rawDate || row.rawDate >= startDate;
+    const endMatch = !endDate || !row.rawDate || row.rawDate <= endDate;
+    return channelMatch && startMatch && endMatch;
+  });
+}
+
+async function refreshConversationHistoryFromServer() {
+  const requestSerial = ++conversationHistoryRequestSerial;
+  currentConversationHistoryState = {
+    ...currentConversationHistoryState,
+    loading: true,
+    error: ""
+  };
+  renderAccessPanels();
+  try {
+    const payload = await requestCgaJson("/api/v1/admin/conversations");
+    if (requestSerial !== conversationHistoryRequestSerial) return;
+    currentConversationHistoryState = {
+      items: Array.isArray(payload.items) ? payload.items : [],
+      loading: false,
+      loaded: true,
+      error: ""
+    };
+  } catch (error) {
+    if (requestSerial !== conversationHistoryRequestSerial) return;
+    currentConversationHistoryState = {
+      ...currentConversationHistoryState,
+      loading: false,
+      loaded: true,
+      error: error?.payload?.message_key || error?.message || "대화 이력 조회에 실패했습니다."
+    };
+  }
+  renderAccessPanels();
+}
+
+function renderConversationHistorySurface(surface) {
+  const channelOptions = getConversationHistoryChannelOptions();
+  const selectedChannel = String(currentConversationHistoryFilters.channel || "all");
+  const allRows = getConversationHistoryRows();
+  const rows = allRows;
+  const loadingNote = currentConversationHistoryState.loading ? `<span class="admin-page__helper">조회 중...</span>` : "";
+  const errorNote = currentConversationHistoryState.error ? `<span class="admin-page__helper admin-page__helper--error">${escapeCell(currentConversationHistoryState.error)}</span>` : "";
+  const rowHtml = rows.map((row) => `
+    <div class="data-grid__row">
+      <span class="data-grid__cell">${escapeCell(row.occurredAt)}</span>
+      <span class="data-grid__cell">${escapeCell(row.utterance)}</span>
+      <span class="data-grid__cell">${escapeCell(row.target)}</span>
+      <span class="data-grid__cell">${escapeCell(row.result)}</span>
+      <span class="data-grid__cell">${escapeCell(row.channel)}</span>
+    </div>
+  `);
+  surface.innerHTML = `
+    <section class="admin-page admin-page--conversation-history" data-admin-resource="conversation-history">
+      <h2>대화 이력 조회</h2>
+      <div class="admin-page__search-row admin-page__search-row--history">
+        <select class="admin-page__filter" data-history-channel-filter aria-label="채널 선택">
+          ${channelOptions.map((option) => {
+            const label = option === "all" ? "전체 채널" : option;
+            return `<option value="${escapeCell(option)}" ${option === selectedChannel ? "selected" : ""}>${escapeCell(label)}</option>`;
+          }).join("")}
+        </select>
+        <span class="admin-page__date-label">시작일</span>
+        <input class="admin-page__filter" type="date" data-history-start-date value="${escapeCell(currentConversationHistoryFilters.startDate || "")}" aria-label="시작일" />
+        <span class="admin-page__date-label">종료일</span>
+        <input class="admin-page__filter" type="date" data-history-end-date value="${escapeCell(currentConversationHistoryFilters.endDate || "")}" aria-label="종료일" />
+        <button type="button" class="admin-page__ghost" data-history-filter-reset>필터 초기화</button>
+      </div>
+      <div class="admin-page__toolbar">
+        <div class="admin-page__toolbar-left"><strong>전체 ${rows.length}건</strong>${loadingNote}${errorNote}</div>
+      </div>
+      ${renderDataGrid(["발화일시", "사용자 발화", "의도/모듈명", "실행 결과", "채널"], rowHtml, "170px minmax(320px, 1.5fr) 220px 220px 120px")}
+    </section>
+  `;
+  if (!currentConversationHistoryState.loaded && !currentConversationHistoryState.loading) {
+    refreshConversationHistoryFromServer().catch(() => {});
+  }
 }
 
 function renderSimpleHistorySurface(surface, key) {
@@ -5332,9 +6523,43 @@ function renderAdminResourceModal() {
   if (!config) return;
   const item = mode === "create" ? {} : getAdminResourceItem(resource, id);
   const title = modal.querySelector("[data-admin-resource-modal-title]");
+  const subtitle = modal.querySelector("[data-admin-resource-modal-subtitle]");
   const detail = modal.querySelector("[data-admin-resource-detail]");
   const edit = modal.querySelector("[data-admin-resource-edit]");
+  modal.classList.toggle("detail-modal--common-variable", resource === "common-variables");
   if (title) title.textContent = `${config.title} ${mode === "create" ? "등록" : "상세"}`;
+  if (subtitle) subtitle.textContent = "선택한 항목을 수정합니다.";
+  if (resource === "common-variables") {
+    const isSystem = item?.kind === "system";
+    if (title) title.textContent = mode === "create" ? "공통 변수 추가" : "공통 변수 상세 정보";
+    if (subtitle) subtitle.textContent = isSystem ? "시스템 변수는 읽기 전용입니다." : "공통 변수 정보를 확인합니다.";
+    if (detail) detail.innerHTML = "";
+    if (edit) {
+      edit.innerHTML = `
+        <div class="admin-variable-dialog__body">
+          <label>
+            <span>변수명</span>
+            <input type="text" data-admin-field="name" value="${escapeCell(item?.name || "")}" ${mode !== "create" ? "disabled" : ""} />
+          </label>
+          <label>
+            <span>변수값</span>
+            <input type="text" data-admin-field="value" value="${escapeCell(item?.value || "")}" ${isSystem ? "disabled" : ""} />
+          </label>
+          <label>
+            <span>변수 설명</span>
+            <textarea data-admin-field="description" ${isSystem ? "disabled" : ""}>${escapeCell(item?.description || "")}</textarea>
+          </label>
+          <div class="entity-editor-dialog__footer">
+            <button type="button" class="secondary-action" data-admin-resource-modal-close>취소</button>
+            ${isSystem ? "" : `<button type="button" class="primary-action" data-admin-resource-save>확인</button>`}
+          </div>
+        </div>
+      `;
+    }
+    bindAdminResourceModalControls();
+    modal.hidden = false;
+    return;
+  }
   if (detail) {
     detail.innerHTML = `
       <h4>기본 정보</h4>
@@ -5368,6 +6593,12 @@ async function saveAdminResourceFromModal() {
   const config = getAdminResourceUi(resource);
   if (!config) return;
   const body = collectAdminResourceForm();
+  if (resource === "common-variables") {
+    if (!String(body.name || "").trim() || !String(body.value || "").trim()) {
+      setGlobalMessage("error", "저장 실패", "변수명과 변수값을 입력해주세요.");
+      return;
+    }
+  }
   const url = mode === "create" ? config.endpoint : `${config.endpoint}/${encodeURIComponent(id)}`;
   await requestCgaJson(url, { method: mode === "create" ? "POST" : "PATCH", body });
   await refreshAdminResourcesFromServer();
@@ -5380,6 +6611,13 @@ async function deleteAdminResourceFromModal() {
   const { resource, id } = currentAdminResourceModal;
   const config = getAdminResourceUi(resource);
   if (!config) return;
+  if (resource === "common-variables") {
+    const item = getAdminResourceItem(resource, id);
+    if (item?.kind === "system") {
+      setGlobalMessage("error", "삭제 실패", "시스템 변수는 삭제할 수 없습니다.");
+      return;
+    }
+  }
   await requestCgaJson(`${config.endpoint}/${encodeURIComponent(id)}`, { method: "DELETE" });
   await refreshAdminResourcesFromServer();
   closeAdminResourceModal();
@@ -5411,10 +6649,12 @@ async function queryAdminResource(surface, resource) {
   const q = surface.querySelector("[data-admin-query-input]")?.value || "";
   const channel = surface.querySelector("[data-admin-channel-filter]")?.value || "";
   const status = surface.querySelector("[data-admin-status-filter]")?.value || "";
+  const kind = surface.querySelector("[data-common-variable-kind]")?.value || "";
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (channel) params.set("channel", channel);
   if (status && status !== "all") params.set("status", status);
+  if (resource === "common-variables" && kind) params.set("kind", kind);
   const started = performance.now();
   const result = await requestCgaJson(`${config.endpoint}${params.toString() ? `?${params}` : ""}`);
   const elapsed = performance.now() - started;
@@ -5428,6 +6668,7 @@ function bindAdminSurfaceControls(surface) {
     if (row.dataset.bound === "true") return;
     row.dataset.bound = "true";
     row.addEventListener("click", (event) => {
+      if (event.target?.closest?.("input, button")) return;
       event.preventDefault();
       openAdminResourceModal(row.dataset.adminResource, row.dataset.adminId, "edit");
     });
@@ -5440,7 +6681,228 @@ function bindAdminSurfaceControls(surface) {
   surface.querySelectorAll("[data-admin-query]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => queryAdminResource(surface, button.dataset.adminQuery).catch((error) => setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다.")));
+    button.addEventListener("click", async () => {
+      const resource = button.dataset.adminQuery;
+      if (resource === "common-variables") {
+        currentCommonVariableUiState.query = surface.querySelector("[data-admin-query-input]")?.value || "";
+        currentCommonVariableUiState.kind = surface.querySelector("[data-common-variable-kind]")?.value || "";
+        currentCommonVariableUiState.page = 1;
+      }
+      queryAdminResource(surface, resource).catch((error) => setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다."));
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-kind]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      currentCommonVariableUiState.kind = select.value || "";
+      currentCommonVariableUiState.page = 1;
+      renderCommonVariableSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-reset]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      currentCommonVariableUiState = {
+        ...currentCommonVariableUiState,
+        query: "",
+        kind: "",
+        selectedIds: [],
+        page: 1,
+        menuOpen: false
+      };
+      const result = await requestCgaJson("/api/cga/admin/common-variables").catch((error) => {
+        setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다.");
+        return null;
+      });
+      if (result) {
+        currentAdminResources = { ...currentAdminResources, common_variables: result.items || [] };
+        renderAccessPanels();
+      }
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-menu-toggle]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentCommonVariableUiState.menuOpen = !currentCommonVariableUiState.menuOpen;
+      renderCommonVariableSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-upload-open]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentCommonVariableUiState.menuOpen = false;
+      surface.querySelector("[data-common-variable-file]")?.click();
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-file]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const rows = parseCommonVariableCsv(await file.text()).filter((row) => row.length >= 2);
+      const dataRows = rows[0]?.some((cell) => cell.includes("변수")) ? rows.slice(1) : rows;
+      let savedCount = 0;
+      let skippedCount = 0;
+      for (const row of dataRows) {
+        const name = String(row[0] || "").trim();
+        const value = String(row[1] || "").trim();
+        const description = String(row[2] || "").trim();
+        if (!name || !value) continue;
+        const existing = (currentAdminResources.common_variables || []).find((item) => item.name === name);
+        try {
+          if (existing?.kind === "system") {
+            skippedCount += 1;
+            continue;
+          }
+          if (existing) {
+            await requestCgaJson(`/api/cga/admin/common-variables/${encodeURIComponent(existing.id)}`, {
+              method: "PATCH",
+              body: { value, description }
+            });
+          } else {
+            await requestCgaJson("/api/cga/admin/common-variables", {
+              method: "POST",
+              body: { name, value, description }
+            });
+          }
+          savedCount += 1;
+        } catch {
+          skippedCount += 1;
+        }
+      }
+      input.value = "";
+      await refreshAdminResourcesFromServer();
+      renderAccessPanels();
+      setGlobalMessage("info", "공통 변수 업로드", `${savedCount}건 업로드, ${skippedCount}건 제외되었습니다.`);
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-select-all]").forEach((checkbox) => {
+    if (checkbox.dataset.bound === "true") return;
+    checkbox.dataset.bound = "true";
+    checkbox.addEventListener("change", () => {
+      const visibleUserIds = (currentAdminResources.common_variables || [])
+        .filter((item) => {
+          const q = currentCommonVariableUiState.query.trim().toLowerCase();
+          const matchesQuery = !q || [item.name, item.value, item.description].filter(Boolean).join(" ").toLowerCase().includes(q);
+          const matchesKind = !currentCommonVariableUiState.kind || item.kind === currentCommonVariableUiState.kind;
+          return matchesQuery && matchesKind && item.kind === "user";
+        })
+        .map((item) => item.id);
+      currentCommonVariableUiState.selectedIds = checkbox.checked ? [...visibleUserIds] : [];
+      renderCommonVariableSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-select]").forEach((checkbox) => {
+    if (checkbox.dataset.bound === "true") return;
+    checkbox.dataset.bound = "true";
+    checkbox.addEventListener("change", () => {
+      const id = checkbox.dataset.commonVariableSelect;
+      if (!id) return;
+      if (checkbox.checked) {
+        currentCommonVariableUiState.selectedIds = Array.from(new Set([...currentCommonVariableUiState.selectedIds, id]));
+      } else {
+        currentCommonVariableUiState.selectedIds = currentCommonVariableUiState.selectedIds.filter((item) => item !== id);
+      }
+      renderCommonVariableSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-page-size]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      currentCommonVariableUiState.pageSize = Number(select.value) || 10;
+      currentCommonVariableUiState.page = 1;
+      renderCommonVariableSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-common-variable-download]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", downloadCommonVariablesCsv);
+  });
+  surface.querySelectorAll("[data-common-variable-delete]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      if (!currentCommonVariableUiState.selectedIds.length) return;
+      for (const id of currentCommonVariableUiState.selectedIds) {
+        await requestCgaJson(`/api/cga/admin/common-variables/${encodeURIComponent(id)}`, { method: "DELETE" });
+      }
+      currentCommonVariableUiState.selectedIds = [];
+      await refreshAdminResourcesFromServer();
+      renderAccessPanels();
+      setGlobalMessage("info", "공통 변수 삭제", "선택한 공통 변수가 삭제되었습니다.");
+    });
+  });
+  surface.querySelectorAll(".admin-page__pagination button").forEach((button, index, buttons) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    if (surface.dataset.adminSurface !== "common-variable" && surface.dataset.adminSurface !== "common-variables") return;
+    button.addEventListener("click", () => {
+      const totalItems = (currentAdminResources.common_variables || []).filter((item) => {
+        const q = currentCommonVariableUiState.query.trim().toLowerCase();
+        const matchesQuery = !q || [item.name, item.value, item.description].filter(Boolean).join(" ").toLowerCase().includes(q);
+        const matchesKind = !currentCommonVariableUiState.kind || item.kind === currentCommonVariableUiState.kind;
+        return matchesQuery && matchesKind;
+      }).length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / currentCommonVariableUiState.pageSize));
+      if (index === 0) currentCommonVariableUiState.page = 1;
+      if (index === 1) currentCommonVariableUiState.page = Math.max(1, currentCommonVariableUiState.page - 1);
+      if (index === buttons.length - 2) currentCommonVariableUiState.page = Math.min(totalPages, currentCommonVariableUiState.page + 1);
+      if (index === buttons.length - 1) currentCommonVariableUiState.page = totalPages;
+      renderCommonVariableSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-history-channel-filter]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      currentConversationHistoryFilters.channel = select.value || "all";
+      renderConversationHistorySurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-history-start-date]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("change", () => {
+      currentConversationHistoryFilters.startDate = input.value || "";
+      renderConversationHistorySurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-history-end-date]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("change", () => {
+      currentConversationHistoryFilters.endDate = input.value || "";
+      renderConversationHistorySurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-history-filter-reset]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentConversationHistoryFilters = {
+        channel: "all",
+        startDate: "2026-06-21",
+        endDate: "2026-06-21"
+      };
+      renderConversationHistorySurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
   });
 }
 
@@ -5454,6 +6916,7 @@ function renderAdminSurface(surface, key) {
     "botstation-link": "botstation-links"
   }[key] || key;
   if (normalizedKey === "login-history") renderLoginHistorySurface(surface);
+  else if (normalizedKey === "conversation-history") renderConversationHistorySurface(surface);
   else if (normalizedKey === "templates") renderTemplateListSurface(surface);
   else if (normalizedKey === "common-variables") renderCommonVariableSurface(surface);
   else if (normalizedKey === "default-messages") renderDefaultMessageSurface(surface);
@@ -5920,7 +7383,7 @@ function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) 
   const screenAccess = new Map(current.screens.map((screen) => [screen.screenId, screen]));
   const links = [...document.querySelectorAll(".management-nav a, .server-sub-nav a, .system-admin-subnav a, [data-workflow-nav] a")];
   links.forEach((link) => {
-    const id = link.getAttribute("href")?.replace("#", "");
+    const id = parseHashRoute(link.getAttribute("href") || "").screenId;
     const access = screenAccess.get(id);
     const allowed = access ? access.allowed : true;
     link.classList.toggle("access-blocked", !allowed);
@@ -5929,11 +7392,12 @@ function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) 
     link.hidden = access ? !allowed : false;
     link.dataset.accessLabel = "";
   });
-  const activeLink = links.find((link) => link.getAttribute("href") === `#${activeScreenId}`);
+  const activeHash = buildScreenHash(activeScreenId, { adminSubview: activeScreenId === "access-management" ? currentSystemAdminSubview : "" });
+  const activeLink = links.find((link) => link.getAttribute("href") === activeHash) || links.find((link) => link.getAttribute("href") === `#${activeScreenId}`);
   let activeScreenChanged = false;
   if (activeLink?.hidden) {
     const firstAllowed = links.find((link) => !link.hidden);
-    const firstAllowedId = firstAllowed?.getAttribute("href")?.replace("#", "");
+    const firstAllowedId = parseHashRoute(firstAllowed?.getAttribute("href") || "").screenId;
     if (firstAllowedId) {
       activeScreenId = firstAllowedId;
       activeScreenChanged = true;
@@ -6452,9 +7916,11 @@ function bindAdminWorkbench() {
       clearAuthMessage();
       currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
       await refreshAccessStateFromServer();
-      postAuthDefaultScreenPending = true;
-      activeScreenId = DEFAULT_ACTIVE_SCREEN_ID;
-      history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
+      postAuthDefaultScreenPending = !hasExplicitHashRoute();
+      activeScreenId = hasExplicitHashRoute() ? parseHashRoute(window.location.hash).screenId || activeScreenId : DEFAULT_ACTIVE_SCREEN_ID;
+      if (!hasExplicitHashRoute()) {
+        history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
+      }
       applyScreenLayout();
       rerenderAdminAndAccess();
       queuePostLoginLandingScreen();
@@ -6465,9 +7931,11 @@ function bindAdminWorkbench() {
         return;
       }
       currentAccessState = loginAsUser(currentAccessState, { userId });
-      postAuthDefaultScreenPending = true;
-      activeScreenId = DEFAULT_ACTIVE_SCREEN_ID;
-      history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
+      postAuthDefaultScreenPending = !hasExplicitHashRoute();
+      activeScreenId = hasExplicitHashRoute() ? parseHashRoute(window.location.hash).screenId || activeScreenId : DEFAULT_ACTIVE_SCREEN_ID;
+      if (!hasExplicitHashRoute()) {
+        history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
+      }
       applyScreenLayout();
       rerenderAdminAndAccess();
       queuePostLoginLandingScreen();
@@ -6711,22 +8179,29 @@ function bindAccessNavigationGuard() {
       if (link.dataset.adminSubview) {
         currentSystemAdminSubview = link.dataset.adminSubview;
       }
-      const nextScreenId = link.getAttribute("href")?.replace("#", "");
+      const nextRoute = parseHashRoute(link.getAttribute("href") || "");
+      const nextScreenId = nextRoute.screenId;
       if (!nextScreenId) return;
-      setActiveScreen(nextScreenId);
+      setActiveScreen(nextScreenId, { adminSubview: nextRoute.adminSubview || link.dataset.adminSubview || "" });
     });
   });
 }
 
-function setActiveScreen(screenId, { replaceHash = false } = {}) {
+function setActiveScreen(screenId, { replaceHash = false, adminSubview = "" } = {}) {
   const visibleIds = getVisibleLayout().map((item) => item.id);
   if (!visibleIds.includes(screenId)) return;
+  if (screenId === "access-management" && adminSubview) {
+    currentSystemAdminSubview = adminSubview;
+  }
   activeScreenId = screenId;
   localStorage.setItem(LAST_SCREEN_STORAGE_KEY, activeScreenId);
+  const nextHash = buildScreenHash(screenId, {
+    adminSubview: screenId === "access-management" ? (adminSubview || currentSystemAdminSubview || "") : ""
+  });
   if (replaceHash) {
-    history.replaceState(null, "", `#${screenId}`);
+    history.replaceState(null, "", nextHash);
   } else {
-    history.pushState(null, "", `#${screenId}`);
+    history.pushState(null, "", nextHash);
   }
   applyScreenLayout();
 }
@@ -6748,7 +8223,7 @@ function syncTopActionsForScreen() {
   const deployScreens = new Set(["operate"]);
   if (topSave) {
     topSave.hidden = false;
-    topSave.disabled = false;
+    topSave.disabled = activeScreenId === "create" && getCreateRequiredFieldIssues().length > 0;
   }
   if (topPreview) {
     topPreview.hidden = true;
@@ -6763,6 +8238,15 @@ function syncTopActionsForScreen() {
 
 function queuePostLoginLandingScreen() {
   const applyLanding = () => {
+    if (hasExplicitHashRoute()) {
+      const route = parseHashRoute(window.location.hash);
+      activeScreenId = route.screenId || activeScreenId;
+      setActiveScreen(route.screenId || activeScreenId, {
+        replaceHash: true,
+        adminSubview: route.adminSubview || ""
+      });
+      return;
+    }
     activeScreenId = DEFAULT_ACTIVE_SCREEN_ID;
     setActiveScreen(DEFAULT_ACTIVE_SCREEN_ID, { replaceHash: true });
   };
@@ -7442,6 +8926,7 @@ function bootApp() {
       if (loaded) {
         await refreshWorkspaceDataFromServer({ includeBots: true }).catch(() => false);
         await refreshAdminResourcesFromServer().catch(() => false);
+        applyScreenLayout();
         renderAllStatePanels();
         rerenderAdminAndAccess();
         enforceActiveScreenVisibility();
@@ -7468,8 +8953,8 @@ window.addEventListener("cga:entry-login-success", async () => {
   enforceActiveScreenVisibility();
 });
 window.addEventListener("hashchange", () => {
-  const hashId = window.location.hash.replace("#", "");
-  if (hashId) setActiveScreen(hashId, { replaceHash: true });
+  const route = parseHashRoute(window.location.hash);
+  if (route.screenId) setActiveScreen(route.screenId, { replaceHash: true, adminSubview: route.adminSubview || "" });
 });
 document.addEventListener("cga:i18n-ready", syncStudioLocaleToCurrentUser);
 document.addEventListener("cga:content-rendered", syncStudioLocaleToCurrentUser);

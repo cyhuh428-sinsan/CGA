@@ -1,6 +1,8 @@
 import { ACCESS_SCOPES } from "./access-contract.js";
 import {
+  AIDOT_CONTRACT_VERSION,
   AIDOT_PACKAGE_SCOPE,
+  AIDOT_SUPPORTED_CONTRACT_VERSIONS,
   createAidotPackageManifest,
   getAidotCompatibleAsset
 } from "./aidot-package-contract.js";
@@ -27,6 +29,12 @@ export const ASSET_TRANSFER_STATUS = Object.freeze({
 export const ASSET_TRANSFER_DIRECTION = Object.freeze({
   EXPORT: "export",
   IMPORT: "import"
+});
+
+export const ASSET_TRANSFER_PRUNING_STATUS = Object.freeze({
+  NONE: "none",
+  PRUNED: "pruned",
+  BLOCKED: "blocked"
 });
 
 export const ASSET_TRANSFER_SCOPE_REQUIREMENTS = Object.freeze({
@@ -102,6 +110,7 @@ export function createAssetImportRequest({
   versionId = "",
   botLocale,
   fileName,
+  targetContractVersion = AIDOT_CONTRACT_VERSION,
   compatibilityMode = ASSET_TRANSFER_COMPATIBILITY_MODE.AIDOT
 }) {
   const asset = getAidotCompatibleAsset(scope);
@@ -115,6 +124,7 @@ export function createAssetImportRequest({
     bot_locale: botLocale,
     compatibility_mode: compatibilityMode,
     file_name: fileName,
+    target_contract_version: targetContractVersion,
     expected_file_format: asset.fileFormat,
     upload_mode: asset.uploadMode
   };
@@ -124,6 +134,10 @@ export function createAssetTransferResponse({
   request,
   status = ASSET_TRANSFER_STATUS.READY,
   transferId = "",
+  resolvedContractVersion = request?.target_contract_version || request?.manifest?.contract_version || AIDOT_CONTRACT_VERSION,
+  supportedContractVersions = AIDOT_SUPPORTED_CONTRACT_VERSIONS,
+  pruningStatus = ASSET_TRANSFER_PRUNING_STATUS.NONE,
+  prunedFeatures = [],
   warnings = [],
   errors = []
 }) {
@@ -131,6 +145,10 @@ export function createAssetTransferResponse({
     transfer_id: transferId,
     status,
     request,
+    resolved_contract_version: resolvedContractVersion,
+    supported_contract_versions: [...supportedContractVersions],
+    pruning_status: pruningStatus,
+    pruned_features: Array.isArray(prunedFeatures) ? [...prunedFeatures] : [],
     manifest: createAidotPackageManifest({
       scope: request.scope,
       botId: request.bot_id,

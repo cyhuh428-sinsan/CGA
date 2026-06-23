@@ -1,0 +1,2 @@
+대표어,유의어1
+password,login password

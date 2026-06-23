@@ -136,7 +136,17 @@ function createDefaultAdminResources() {
     ["cv-llm-answer-source-type", "_llm_answer_source_type", "LLM RAG 답변 출처 유형"],
     ["cv-llm-answer-source-title", "_llm_answer_source_title", "LLM RAG 답변 출처 제목"],
     ["cv-llm-answer-page", "_llm_answer_page", "LLM RAG PDF 페이지"]
-  ].map(([id, name, description]) => ({ id, name, category: "시스템", value: "", description, updated_at: stamp, updated_by: "SYSTEM" }));
+  ].map(([id, name, description]) => ({
+    id,
+    kind: "system",
+    name,
+    value: "",
+    description,
+    updated_at: stamp,
+    updated_by: "SYSTEM",
+    updater_name: "SYSTEM",
+    data_json: {}
+  }));
   const defaultMessageStamp = "2026-06-11T07:02:10.000Z";
   const default_messages = [
     ["dm-dialog-config-error", "오류", "대화 흐름 설정 오류 메시지", "dialog_flow_config_error", "대화 흐름 설정 오류로 대화를 계속할 수 없습니다.", "SYSTEM"],
@@ -192,10 +202,22 @@ function mergeDefaultCollection(existing, defaults, key = "id", options = {}) {
 function normalizeAdminResources(resources) {
   const defaults = createDefaultAdminResources();
   const next = resources && typeof resources === "object" ? resources : {};
+  const normalizedCommonVariables = mergeDefaultCollection(next.common_variables, defaults.common_variables).map((item) => {
+    const kind = item.kind || (item.category === "시스템" ? "system" : "user");
+    return {
+      ...item,
+      kind,
+      value: item.value ?? "",
+      description: item.description || "",
+      updated_by: item.updated_by || item.updater_name || "SYSTEM",
+      updater_name: item.updater_name || item.updated_by || "SYSTEM",
+      data_json: item.data_json && typeof item.data_json === "object" ? item.data_json : {}
+    };
+  });
   return {
     version: 1,
     templates: mergeDefaultCollection(next.templates, defaults.templates),
-    common_variables: mergeDefaultCollection(next.common_variables, defaults.common_variables),
+    common_variables: normalizedCommonVariables,
     default_messages: mergeDefaultCollection(next.default_messages, defaults.default_messages, "id", { replaceSeedItems: true, dropExtraKeys: ["dm-no-desired", "dm-runtime-flow"] }),
     channels: mergeDefaultCollection(next.channels, defaults.channels),
     botstation_links: Array.isArray(next.botstation_links) ? next.botstation_links : defaults.botstation_links,
@@ -507,6 +529,63 @@ function saveStudioStateRegistry(registry) {
   return registry;
 }
 
+function extractImportedBotMeta(bodyText, { groupId, botId, botLocale }) {
+  let parsed;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    return null;
+  }
+  const packageBody = parsed?.package || parsed;
+  const botVo = packageBody?.botVo;
+  if (!botVo || typeof botVo !== "object") return null;
+  return {
+    id: botId,
+    group_id: groupId,
+    name: String(botVo.botName || botVo.name || "Imported Bot"),
+    version: String(botVo.versionName || botVo.version || "v0.1"),
+    locale: String(botVo.defaultLanguage || botVo.defaultLocale || botVo.locale || botLocale || "en"),
+    description: String(botVo.description || "")
+  };
+}
+
+function upsertWorkspaceBotFromImportedPackage(bodyText, { groupId, botId, botLocale }) {
+  const importedBot = extractImportedBotMeta(bodyText, { groupId, botId, botLocale });
+  if (!importedBot) return null;
+  const existingIndex = workspaceBots.findIndex((item) => item.group_id === groupId && item.id === botId);
+  const nextBot = {
+    ...(existingIndex >= 0 ? workspaceBots[existingIndex] : {}),
+    ...importedBot,
+    status: existingIndex >= 0 ? (workspaceBots[existingIndex].status || "draft") : "draft",
+    updated_at: new Date().toISOString().slice(0, 10)
+  };
+  saveWorkspaceBots(existingIndex >= 0
+    ? workspaceBots.map((item, index) => (index === existingIndex ? nextBot : item))
+    : [...workspaceBots, nextBot]);
+  const existingStudioState = studioStateRegistry.find((item) => item.group_id === groupId && item.bot_id === botId);
+  const nextStudioState = {
+    ...(existingStudioState?.state || createDefaultStudioStateForBot(groupId, botId)),
+    bot: {
+      ...(existingStudioState?.state?.bot || createDefaultStudioStateForBot(groupId, botId).bot),
+      id: botId,
+      name: nextBot.name,
+      description: importedBot.description,
+      version: nextBot.version,
+      defaultLocale: nextBot.locale
+    }
+  };
+  saveStudioStateRegistry([
+    ...studioStateRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId)),
+    {
+      group_id: groupId,
+      bot_id: botId,
+      state: nextStudioState,
+      updated_at: new Date().toISOString()
+    }
+  ]);
+  return nextBot;
+}
+
 function createDefaultStudioStateForBot(groupId, botId) {
   const bot = workspaceBots.find((item) => item.group_id === groupId && item.id === botId) || {};
   return {
@@ -603,11 +682,11 @@ function saveCollaborationStateRegistry(registry) {
 
 function loadWebchatRooms() {
   const rooms = loadJsonFile(webchatRoomsFile, []);
-  return Array.isArray(rooms) ? rooms : [];
+  return Array.isArray(rooms) ? rooms.map(normalizeWebchatRoomRecord) : [];
 }
 
 function saveWebchatRooms(rooms) {
-  webchatRooms = rooms;
+  webchatRooms = Array.isArray(rooms) ? rooms.map(normalizeWebchatRoomRecord) : [];
   writeJsonFile(webchatRoomsFile, rooms);
   return rooms;
 }
@@ -653,6 +732,10 @@ function createDefaultDetailAssetsForBot(groupId, botId) {
     rules: [
       { name: "Business hours", description: "Route after-hours questions", expression: "time.after(18:00)", target: "support_after_hours", enabled: "Y" },
       { name: "Billing priority", description: "Route billing requests", expression: "intent == billing_question", target: "billing_question", enabled: "Y" }
+    ],
+    blocklists: [
+      { name: "아", type: "0", pattern: "아", enabled: "Y" },
+      { name: "일단", type: "0", pattern: "일단", enabled: "Y" }
     ],
     scenarios: [
       { id: "password_reset", type: "intent", displayName: "password_reset", answer: "Open Account Settings and choose Reset Password.", dialogCards: ["Open Account Settings and choose Reset Password."] },
@@ -826,6 +909,11 @@ function parseAdminResourcePath(urlPath) {
   if (collectionMatch) return { resource: collectionMatch[1] };
   const itemMatch = urlPath.match(/^\/api\/cga\/admin\/(templates|common-variables|default-messages|channels|botstation-links)\/([^/]+)$/);
   if (itemMatch) return { resource: itemMatch[1], id: itemMatch[2] };
+  return null;
+}
+
+function parseAidotAdminHistoryPath(urlPath) {
+  if (urlPath === "/api/v1/admin/conversations") return { resource: "conversations" };
   return null;
 }
 
@@ -1162,6 +1250,7 @@ async function handleDetailAssetApi(req, res, urlPath) {
       entities: Array.isArray(body.entities) ? body.entities : [],
       dictionary: Array.isArray(body.dictionary) ? body.dictionary : [],
       rules: Array.isArray(body.rules) ? body.rules : [],
+      blocklists: Array.isArray(body.blocklists) ? body.blocklists : [],
       scenarios: Array.isArray(body.scenarios) ? body.scenarios : [],
       updated_at: new Date().toISOString()
     };
@@ -1739,11 +1828,14 @@ function filterAdminResourceItems(resource, query) {
   const keyword = String(query.get("q") || query.get("keyword") || "").trim().toLowerCase();
   const channel = String(query.get("channel") || "").trim().toLowerCase();
   const status = String(query.get("status") || "").trim();
+  const kind = String(query.get("kind") || "").trim().toLowerCase();
   return items.filter((item) => {
     const haystack = [
       item.name,
       item.key,
       item.category,
+      item.kind,
+      item.value,
       item.description,
       item.message,
       item.channel_code,
@@ -1756,7 +1848,8 @@ function filterAdminResourceItems(resource, query) {
     const matchesKeyword = !keyword || haystack.includes(keyword);
     const matchesChannel = !channel || String(item.channel_name || item.channel_code || "").toLowerCase().includes(channel);
     const matchesStatus = !status || status === "all" || item.status === status || item.status_label === status;
-    return matchesKeyword && matchesChannel && matchesStatus;
+    const matchesKind = resource !== "common-variables" || !kind || String(item.kind || "").toLowerCase() === kind;
+    return matchesKeyword && matchesChannel && matchesStatus && matchesKind;
   });
 }
 
@@ -1790,12 +1883,14 @@ function normalizeAdminResourcePayload(resource, body, existing = null) {
       ...(existing || {}),
       ...body,
       id: existing?.id || body.id || createAdminId("cv"),
+      kind: existing?.kind || "user",
       name,
-      category: body.category || existing?.category || "사용자",
       value: body.value ?? existing?.value ?? "",
       description: body.description || existing?.description || "",
       updated_at: now,
-      updated_by: body.updated_by || "admin"
+      updated_by: body.updated_by || "admin",
+      updater_name: body.updater_name || body.updated_by || "admin",
+      data_json: existing?.data_json && typeof existing.data_json === "object" ? existing.data_json : {}
     };
   }
   if (resource === "default-messages") {
@@ -1893,6 +1988,24 @@ async function handleAdminResourceApi(req, res, urlPath, query) {
         sendJson(res, 400, { error_code: getAdminResourceRequiredError(parsed.resource), message_key: "errors.admin.resourceNameRequired" });
         return true;
       }
+      if (parsed.resource === "common-variables" && !String(body.value ?? "").trim()) {
+        sendJson(res, 400, { error_code: "CGA_COMMON_VARIABLE_VALUE_REQUIRED", message_key: "errors.admin.resourceValueRequired" });
+        return true;
+      }
+      if (parsed.resource === "common-variables") {
+        const duplicated = collection.find((item) => item.name === name && item.kind === "system");
+        if (duplicated) {
+          sendJson(res, 400, { error_code: "CGA_COMMON_VARIABLE_SYSTEM_NAME_CONFLICT", message_key: "errors.admin.resourceSystemConflict" });
+          return true;
+        }
+        const existingUserVariable = collection.find((item) => item.name === name && item.kind === "user");
+        if (existingUserVariable) {
+          const nextItems = collection.map((item) => item.id === existingUserVariable.id ? normalizeAdminResourcePayload(parsed.resource, body, item) : item);
+          saveAdminResources({ ...adminResources, [collectionKey]: nextItems });
+          sendJson(res, 200, nextItems.find((item) => item.id === existingUserVariable.id));
+          return true;
+        }
+      }
       const item = normalizeAdminResourcePayload(parsed.resource, body);
       saveAdminResources({ ...adminResources, [collectionKey]: [item, ...collection] });
       sendJson(res, 201, item);
@@ -1908,19 +2021,46 @@ async function handleAdminResourceApi(req, res, urlPath, query) {
     return true;
   }
   if (req.method === "PUT" || req.method === "PATCH") {
+    if (parsed.resource === "common-variables" && target.kind === "system") {
+      sendJson(res, 400, { error_code: "CGA_COMMON_VARIABLE_SYSTEM_READ_ONLY", message_key: "errors.admin.resourceReadOnly" });
+      return true;
+    }
     const body = await readJsonRequest(req);
+    if (parsed.resource === "common-variables" && !String(body.value ?? target.value ?? "").trim()) {
+      sendJson(res, 400, { error_code: "CGA_COMMON_VARIABLE_VALUE_REQUIRED", message_key: "errors.admin.resourceValueRequired" });
+      return true;
+    }
     const nextItems = collection.map((item) => item.id === parsed.id ? normalizeAdminResourcePayload(parsed.resource, body, item) : item);
     saveAdminResources({ ...adminResources, [collectionKey]: nextItems });
     sendJson(res, 200, nextItems.find((item) => item.id === parsed.id));
     return true;
   }
   if (req.method === "DELETE") {
+    if (parsed.resource === "common-variables" && target.kind === "system") {
+      sendJson(res, 400, { error_code: "CGA_COMMON_VARIABLE_SYSTEM_READ_ONLY", message_key: "errors.admin.resourceReadOnly" });
+      return true;
+    }
     saveAdminResources({ ...adminResources, [collectionKey]: collection.filter((item) => item.id !== parsed.id) });
     sendJson(res, 200, { deleted: true, id: parsed.id });
     return true;
   }
   sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
   return true;
+}
+
+async function handleAidotAdminHistoryApi(req, res, urlPath, query) {
+  const parsed = parseAidotAdminHistoryPath(urlPath);
+  if (!parsed) return false;
+  if (req.method !== "GET") {
+    sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+    return true;
+  }
+  if (parsed.resource === "conversations") {
+    const items = listAdminConversationHistoryItems(query);
+    sendJson(res, 200, { items, total: items.length });
+    return true;
+  }
+  return false;
 }
 
 function getWebchatBotBySlug(botSlug) {
@@ -1955,12 +2095,229 @@ function getWebchatBots() {
     .map((bot) => ({ ...bot, slug: bot.slug || bot.id }));
 }
 
+function getWorkspaceBot(botId) {
+  return workspaceBots.find((item) => item.id === botId) || null;
+}
+
+function getVersionNo(value) {
+  const match = String(value || "").match(/(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+function createConversationHistoryItemFromRoom(room) {
+  const bot = getWorkspaceBot(room.bot_id) || getWebchatBotBySlug(room.bot_slug) || {};
+  const history = ensureRoomConversationHistory(room);
+  const groupName = getBotGroupName(bot.group_id || room.group_id) || bot.group_id || room.group_id || "";
+  const runtimeEvents = Array.isArray(history.runtime_events) ? [...history.runtime_events] : [];
+  const latestProblemEvent = history.latest_error_message
+    ? {
+        level: "error",
+        message: history.latest_error_message,
+        source: "webchat-runtime"
+      }
+    : {};
+  const runtimeDiagnostics = {
+    dialog_ended: history.dialog_ended,
+    session_ended: history.session_ended,
+    completion_reason: history.completion_reason || "",
+    latest_intent_name: history.latest_intent_name || "",
+    compatibility_status: history.compatibilityStatus || "compatible"
+  };
+  const runtimeSummary = history.latest_error_message
+    || history.completion_reason
+    || history.latest_queue_status
+    || room.status
+    || "open";
+  return {
+    id: room.id,
+    group_name: groupName,
+    channel_name: "Webchat",
+    bot_name: bot.name || room.bot_slug || room.bot_id || "",
+    version_no: getVersionNo(room.bot_version_id || bot.version),
+    user_key: history.participant_name || history.participant_id || "visitor",
+    intent_or_module_name: history.latest_intent_name || "",
+    uttered_at: history.started_at || room.created_at || room.updated_at || new Date().toISOString(),
+    result: history.completion_reason || (history.session_ended ? "session_ended" : history.dialog_ended ? "dialog_ended" : room.status || "open"),
+    data_json: {
+      contract_version: history.contractVersion || room.contract_version || "v1.0",
+      compatibility_status: history.compatibilityStatus || "compatible",
+      pruned_features: Array.isArray(history.prunedFeatures) ? [...history.prunedFeatures] : [],
+      session_started_at: history.started_at || "",
+      session_ended_at: history.ended_at || "",
+      session_end_reason: history.session_end_reason || "",
+      session_message_count: Number(history.message_count || 0),
+      session_user_message_count: Number(history.user_message_count || 0),
+      session_user_utterances: Array.isArray(history.user_utterances) ? [...history.user_utterances] : [],
+      session_user_raw_utterances: Array.isArray(history.user_raw_utterances) ? [...history.user_raw_utterances] : [],
+      session_first_user_utterance: history.first_user_utterance || "",
+      session_ended: history.session_ended === true,
+      dialog_ended: history.dialog_ended === true,
+      completion_reason: history.completion_reason || "",
+      room_id: history.room_id || room.id || "",
+      client_room_id: history.client_room_id || room.client_room_id || room.id || "",
+      room_status: history.room_status || room.status || "open",
+      queue_event_id: history.latest_queue_event_id || "",
+      runtime_summary: runtimeSummary,
+      runtime_diagnostics: runtimeDiagnostics,
+      runtime_events: runtimeEvents,
+      messages: Array.isArray(room.messages) ? room.messages.map((message) => serializeAdminConversationMessage(message)).filter(Boolean) : [],
+      conversation_history: structuredClone(history),
+      transcript: Array.isArray(history.transcript) ? [...history.transcript] : [],
+      latest_problem_event: latestProblemEvent,
+      problem_location: history.latest_error_message ? "runtime" : ""
+    }
+  };
+}
+
+function createConversationHistoryItemFromSimulator(entry) {
+  const test = entry?.test || {};
+  if (!test.last_run_at) return null;
+  const bot = getWorkspaceBot(entry.bot_id) || {};
+  const groupName = getBotGroupName(entry.group_id) || entry.group_id || "";
+  const transcript = [
+    {
+      participant_kind: "user",
+      participant_id: "simulator-user",
+      participant_name: "Simulator User",
+      text: String(test.last_user_message || ""),
+      created_at: test.last_run_at,
+      display_text: String(test.last_user_message || "")
+    },
+    {
+      participant_kind: "bot",
+      participant_id: entry.bot_id,
+      participant_name: bot.name || entry.bot_id || "",
+      text: String(test.last_bot_message || ""),
+      created_at: test.last_run_at,
+      display_text: String(test.last_bot_message || "")
+    }
+  ];
+  const simulatorRoomId = `simulator:${entry.group_id}:${entry.bot_id}`;
+  const runtimeEvents = createMatchedRuntimeEvents({
+    userMessage: String(test.last_user_message || ""),
+    botMessage: String(test.last_bot_message || ""),
+    intentName: String(test.matched_intent || "matched"),
+    similarity: Number(test.similarity || 0),
+    queueEventId: `${simulatorRoomId}:${test.last_run_at}`,
+    timestamp: test.last_run_at,
+    sourceNodeId: "simulator-talk-1",
+    nextNodeId: "simulator-end-1"
+  });
+  return {
+    id: `${simulatorRoomId}:${test.last_run_at}`,
+    group_name: groupName,
+    channel_name: "Simulator",
+    bot_name: bot.name || entry.bot_id || "",
+    version_no: getVersionNo(bot.version),
+    user_key: "Simulator User",
+    intent_or_module_name: String(test.matched_intent || ""),
+    uttered_at: test.last_run_at,
+    result: String(test.method || "simulator"),
+    data_json: {
+      contract_version: "v1.0",
+      compatibility_status: "compatible",
+      pruned_features: [],
+      session_started_at: test.last_run_at,
+      session_ended_at: "",
+      session_end_reason: "",
+      session_message_count: 2,
+      session_user_message_count: 1,
+      session_user_utterances: [String(test.last_user_message || "")],
+      session_user_raw_utterances: [String(test.last_user_message || "")],
+      session_first_user_utterance: String(test.last_user_message || ""),
+      session_ended: false,
+      dialog_ended: true,
+      completion_reason: "matched",
+      room_id: simulatorRoomId,
+      client_room_id: simulatorRoomId,
+      queue_event_id: `${simulatorRoomId}:${test.last_run_at}`,
+      runtime_summary: String(test.matched_intent || "matched"),
+      runtime_diagnostics: {
+        dialog_ended: true,
+        session_ended: false,
+        completion_reason: "matched",
+        latest_intent_name: String(test.matched_intent || ""),
+        similarity: Number(test.similarity || 0),
+        latency_ms: Number(test.latency_ms || 0)
+      },
+      runtime_events: runtimeEvents,
+      messages: transcript.map((message, index) => ({
+        id: index === 0 ? `sim-user:${entry.bot_id}` : `sim-bot:${entry.bot_id}`,
+        ...message,
+        message_type: "text",
+        payload_json: {}
+      })),
+      conversation_history: {
+        contractVersion: "v1.0",
+        sourceProductVersion: "aidot-1.1",
+        compatibilityStatus: "compatible",
+        prunedFeatures: [],
+        session_id: simulatorRoomId,
+        room_id: simulatorRoomId,
+        client_room_id: simulatorRoomId,
+        participant_id: "simulator-user",
+        participant_name: "Simulator User",
+        channel_type: "simulator",
+        room_status: "closed",
+        bot_id: entry.bot_id,
+        bot_version_id: bot.version || "v0.1",
+        started_at: test.last_run_at,
+        first_user_utterance: String(test.last_user_message || ""),
+        user_utterances: [String(test.last_user_message || "")],
+        user_raw_utterances: [String(test.last_user_message || "")],
+        transcript,
+        user_message_count: 1,
+        message_count: 2,
+        last_message_at: test.last_run_at,
+        last_user_message_at: test.last_run_at,
+        latest_queue_event_id: `${simulatorRoomId}:${test.last_run_at}`,
+        latest_intent_name: String(test.matched_intent || ""),
+        latest_queue_status: "matched",
+        latest_error_message: "",
+        runtime_events: runtimeEvents,
+        dialog_ended: true,
+        session_ended: false,
+        completion_reason: "matched",
+        ended_at: "",
+        session_end_reason: ""
+      },
+      transcript,
+      latest_problem_event: {},
+      problem_location: ""
+    }
+  };
+}
+
+function listAdminConversationHistoryItems(query) {
+  const webchatItems = webchatRooms.map((room) => createConversationHistoryItemFromRoom(room));
+  const simulatorItems = operationsStateRegistry.map((entry) => createConversationHistoryItemFromSimulator(entry)).filter(Boolean);
+  const normalizedQuery = String(query.get("query") || query.get("q") || "").trim().toLowerCase();
+  const allItems = [...webchatItems, ...simulatorItems]
+    .sort((a, b) => String(b.uttered_at || "").localeCompare(String(a.uttered_at || "")));
+  if (!normalizedQuery) return allItems;
+  return allItems.filter((item) => {
+    const haystack = [
+      item.group_name,
+      item.channel_name,
+      item.bot_name,
+      item.user_key,
+      item.intent_or_module_name,
+      item.result,
+      item.data_json?.session_first_user_utterance,
+      ...(Array.isArray(item.data_json?.session_user_utterances) ? item.data_json.session_user_utterances : [])
+    ].join(" ").toLowerCase();
+    return haystack.includes(normalizedQuery);
+  });
+}
+
 function serializeWebchatRoom(room) {
   const bot = getWebchatBotBySlug(room.bot_slug) || workspaceBots.find((item) => item.id === room.bot_id) || workspaceBots[0];
   return {
     id: room.id,
     clientRoomId: room.client_room_id || room.id,
     channelType: "webchat",
+    contractVersion: room.contract_version || "v1.0",
+    supportedContractVersions: Array.isArray(room.supported_contract_versions) ? [...room.supported_contract_versions] : ["v1.0"],
     status: room.status || "open",
     bot: serializeWebchatBot(bot),
     createdAt: room.created_at,
@@ -1968,17 +2325,407 @@ function serializeWebchatRoom(room) {
   };
 }
 
-function createStoredChannelMessage({ participantKind, participantId, participantName, text, payload = null }) {
+function createStoredChannelMessage({ participantKind, participantId, participantName, text, payload = null, messageType = "text", options = [] }) {
+  const normalizedOptions = Array.isArray(options) ? options.map((item) => String(item || "").trim()).filter(Boolean) : [];
   return {
     id: crypto.randomUUID(),
     participantId,
     participantKind,
     participantName,
-    messageType: "text",
+    messageType,
     text,
+    options: normalizedOptions,
     payload: payload || undefined,
+    payload_json: payload || undefined,
     createdAt: new Date().toISOString()
   };
+}
+
+function buildWebchatRichSampleMessage(bot, userText) {
+  const normalized = String(userText || "").trim().toLowerCase();
+  if (normalized !== "__cga_rich_options__") return null;
+  const options = ["예금", "대출", "상담원 연결"];
+  return createStoredChannelMessage({
+    participantKind: "bot",
+    participantId: bot.id,
+    participantName: bot.name,
+    text: "다음 중 선택하세요",
+    messageType: "form",
+    options,
+    payload: {
+      richForm: {
+        type: "button-group",
+        title: "다음 중 선택하세요"
+      },
+      options,
+      sourceTalkNodeId: "sample-rich-options-node"
+    }
+  });
+}
+
+function buildWebchatSessionEndedSampleMessage(bot, userText) {
+  const normalized = String(userText || "").trim().toLowerCase();
+  if (normalized !== "__cga_session_end__") return null;
+  return createStoredChannelMessage({
+    participantKind: "bot",
+    participantId: bot.id,
+    participantName: bot.name,
+    text: "상담 세션을 종료합니다."
+  });
+}
+
+function createDefaultConversationHistory(room = {}) {
+  return {
+    contractVersion: room.contract_version || "v1.0",
+    sourceProductVersion: "aidot-1.1",
+    compatibilityStatus: "compatible",
+    prunedFeatures: [],
+    session_id: room.id || "",
+    room_id: room.id || "",
+    client_room_id: room.client_room_id || room.id || "",
+    participant_id: room.participant_id || "visitor",
+    participant_name: room.participant_name || "사용자",
+    channel_type: room.channel_type || "webchat",
+    room_status: room.status || "open",
+    bot_id: room.bot_id || "",
+    bot_version_id: room.bot_version_id || "v0.1",
+    started_at: room.created_at || new Date().toISOString(),
+    first_user_utterance: "",
+    user_utterances: [],
+    user_raw_utterances: [],
+    transcript: [],
+    user_message_count: 0,
+    message_count: 0,
+    last_message_at: room.updated_at || room.created_at || new Date().toISOString(),
+    last_user_message_at: "",
+    latest_queue_event_id: "",
+    latest_intent_name: "",
+    latest_queue_status: "",
+    latest_error_message: "",
+    runtime_events: [],
+    dialog_ended: false,
+    session_ended: false,
+    completion_reason: "",
+    ended_at: "",
+    session_end_reason: ""
+  };
+}
+
+function ensureRoomConversationHistory(room) {
+  if (!room || typeof room !== "object") return createDefaultConversationHistory();
+  const next = room.conversationHistory && typeof room.conversationHistory === "object"
+    ? { ...createDefaultConversationHistory(room), ...room.conversationHistory }
+    : createDefaultConversationHistory(room);
+  next.contractVersion = room.contract_version || next.contractVersion || "v1.0";
+  next.sourceProductVersion = next.sourceProductVersion || "aidot-1.1";
+  next.compatibilityStatus = next.compatibilityStatus || "compatible";
+  next.prunedFeatures = Array.isArray(next.prunedFeatures) ? next.prunedFeatures : [];
+  next.session_id = next.session_id || room.id || "";
+  next.room_id = next.room_id || room.id || "";
+  next.client_room_id = next.client_room_id || room.client_room_id || room.id || "";
+  next.participant_id = next.participant_id || room.participant_id || "visitor";
+  next.participant_name = next.participant_name || room.participant_name || "사용자";
+  next.channel_type = next.channel_type || room.channel_type || "webchat";
+  next.room_status = room.status || next.room_status || "open";
+  next.bot_id = next.bot_id || room.bot_id || "";
+  next.bot_version_id = next.bot_version_id || room.bot_version_id || "v0.1";
+  next.started_at = next.started_at || room.created_at || new Date().toISOString();
+  next.transcript = Array.isArray(next.transcript) ? next.transcript : [];
+  next.user_utterances = Array.isArray(next.user_utterances) ? next.user_utterances : [];
+  next.user_raw_utterances = Array.isArray(next.user_raw_utterances) ? next.user_raw_utterances : [];
+  next.runtime_events = Array.isArray(next.runtime_events) ? next.runtime_events : [];
+  return next;
+}
+
+function parseJsonLike(value) {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed || (!trimmed.startsWith("{") && !trimmed.startsWith("["))) return value;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+}
+
+function firstReadableString(value, visited = new Set()) {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed && !trimmed.includes("webchatRichFormVersion")) {
+      return trimmed;
+    }
+    return "";
+  }
+  if (Array.isArray(value)) {
+    if (visited.has(value)) return "";
+    visited.add(value);
+    for (const item of value) {
+      const found = firstReadableString(item, visited);
+      if (found) return found;
+    }
+    return "";
+  }
+  if (!value || typeof value !== "object") return "";
+  if (visited.has(value)) return "";
+  visited.add(value);
+  const record = value;
+  for (const key of ["label", "text", "title", "name", "value", "buttonValue", "displayValue", "display_text"]) {
+    const found = firstReadableString(record[key], visited);
+    if (found) return found;
+  }
+  for (const entry of Object.values(record)) {
+    const found = firstReadableString(entry, visited);
+    if (found) return found;
+  }
+  return "";
+}
+
+function summarizeWebchatSelection(value) {
+  const parsed = parseJsonLike(value);
+  const root = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  if (!String(root.webchatRichFormVersion || "").trim()) {
+    return typeof value === "string" ? value.trim() : "";
+  }
+  const response = root.response && typeof root.response === "object" && !Array.isArray(root.response) ? root.response : {};
+  const directButtonValue = firstReadableString(response.buttonValue);
+  if (directButtonValue) return `버튼 선택: ${directButtonValue}`;
+  const responseEntry = Object.entries(response).find(([, entryValue]) => {
+    if (typeof entryValue === "string") return entryValue.trim().length > 0;
+    if (Array.isArray(entryValue)) return entryValue.length > 0;
+    return Boolean(entryValue) && typeof entryValue === "object" && !Array.isArray(entryValue) && Object.keys(entryValue).length > 0;
+  });
+  if (!responseEntry) return "RichForm 응답";
+  const [responseType, responseValue] = responseEntry;
+  const responseRecord = responseValue && typeof responseValue === "object" && !Array.isArray(responseValue) ? responseValue : {};
+  const candidates = [
+    responseRecord.buttonValue,
+    responseRecord.displayValue,
+    responseRecord.display_text,
+    responseRecord.text,
+    responseRecord.label,
+    responseRecord.title,
+    responseRecord.value,
+    responseValue
+  ];
+  const resolved = candidates.map((candidate) => firstReadableString(candidate)).find(Boolean) || responseType.toUpperCase();
+  const normalizedType = responseType.toUpperCase();
+  if (["INPUT", "TEXTAREA", "ADDRESS"].includes(normalizedType)) return `입력: ${resolved}`;
+  if (["CHECK", "CHECKBOX", "RADIO", "RADIOBUTTON", "COMBO", "COMBOBOX", "SELECT"].includes(normalizedType)) return `선택: ${resolved}`;
+  if (["TAB", "BUTTON", "TOGGLEBUTTON"].includes(normalizedType)) return `버튼 선택: ${resolved}`;
+  return `${normalizedType}: ${resolved}`;
+}
+
+function summarizeConversationText(value) {
+  if (typeof value !== "string") return firstReadableString(value);
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.includes("webchatRichFormVersion")) return summarizeWebchatSelection(trimmed);
+  return trimmed;
+}
+
+function summarizeRichformPayload(payload) {
+  const payloadRecord = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const richForm = payloadRecord.richForm || payloadRecord.richform || payloadRecord.response || payloadRecord.payload;
+  const richFormRecord = richForm && typeof richForm === "object" && !Array.isArray(richForm) ? richForm : {};
+  const title = firstReadableString(richFormRecord.title || richFormRecord.name || payloadRecord.title || payloadRecord.name);
+  const text = firstReadableString(richFormRecord.text || richFormRecord.message || payloadRecord.text || payloadRecord.message);
+  const rawOptions = Array.isArray(richFormRecord.options) && richFormRecord.options.length
+    ? richFormRecord.options
+    : (Array.isArray(payloadRecord.options) ? payloadRecord.options : []);
+  const options = rawOptions.map((option) => firstReadableString(option)).filter(Boolean);
+  const details = [title, text, options.slice(0, 3).join(", ")].filter(Boolean);
+  return details.length ? details.join(" / ") : "RichForm 카드";
+}
+
+function conversationHistoryDisplayText(message) {
+  const participantKind = String(message?.participantKind || "").toLowerCase();
+  const messageType = String(message?.messageType || message?.message_type || "").toLowerCase();
+  const rawText = String(message?.text || "").trim();
+  const payloadJson = message?.payload_json && typeof message.payload_json === "object" && !Array.isArray(message.payload_json)
+    ? message.payload_json
+    : (message?.payload && typeof message.payload === "object" && !Array.isArray(message.payload) ? message.payload : {});
+  if (participantKind === "user") {
+    return summarizeConversationText(rawText || payloadJson);
+  }
+  const richSummary = summarizeRichformPayload(payloadJson);
+  const hasRichPayload = Boolean(
+    (payloadJson && typeof payloadJson === "object" && !Array.isArray(payloadJson))
+    && (payloadJson.richForm || payloadJson.richform || payloadJson.response || payloadJson.payload || Array.isArray(payloadJson.options))
+  );
+  if ((messageType === "form" || messageType === "form-a-card" || hasRichPayload) && richSummary) {
+    if (!rawText || rawText === "RichForm" || richSummary.startsWith(`${rawText} /`) || richSummary === rawText) {
+      return richSummary;
+    }
+  }
+  if (!rawText || rawText === "RichForm") {
+    return richSummary;
+  }
+  return summarizeConversationText(rawText);
+}
+
+function serializeAdminConversationMessage(message) {
+  if (!message || typeof message !== "object") return null;
+  const participantKind = String(message.participant_kind || message.participantKind || "").trim().toLowerCase();
+  const participantId = String(message.participant_id || message.participantId || "").trim();
+  const participantName = String(message.participant_name || message.participantName || "").trim();
+  const messageType = String(message.message_type || message.messageType || "text").trim();
+  const text = String(message.text || "").trim();
+  const createdAt = String(message.created_at || message.createdAt || "").trim();
+  const payloadJson = message.payload_json && typeof message.payload_json === "object" && !Array.isArray(message.payload_json)
+    ? structuredClone(message.payload_json)
+    : (message.payload && typeof message.payload === "object" && !Array.isArray(message.payload)
+      ? structuredClone(message.payload)
+      : {});
+  const displayText = String(message.display_text || "").trim()
+    || conversationHistoryDisplayText({
+      participantKind,
+      text,
+      payload_json: payloadJson,
+      payload: payloadJson
+    });
+  return {
+    id: String(message.id || ""),
+    participant_id: participantId,
+    participant_kind: participantKind,
+    participant_name: participantName,
+    message_type: messageType,
+    text,
+    payload_json: payloadJson,
+    created_at: createdAt,
+    display_text: displayText
+  };
+}
+
+function appendConversationHistoryMessage(room, message) {
+  const history = ensureRoomConversationHistory(room);
+  const text = String(message?.text || "");
+  const createdAt = message?.createdAt || new Date().toISOString();
+  const payloadJson = message?.payload_json && typeof message.payload_json === "object" && !Array.isArray(message.payload_json)
+    ? structuredClone(message.payload_json)
+    : (message?.payload && typeof message.payload === "object" && !Array.isArray(message.payload)
+      ? structuredClone(message.payload)
+      : {});
+  const displayText = conversationHistoryDisplayText({ ...message, payload_json: payloadJson });
+  history.transcript = [
+    ...history.transcript,
+    {
+      participant_kind: message?.participantKind || "",
+      participant_id: message?.participantId || "",
+      participant_name: message?.participantName || "",
+      message_type: message?.messageType || "text",
+      text,
+      payload_json: payloadJson,
+      created_at: createdAt
+      ,
+      display_text: displayText
+    }
+  ];
+  history.message_count = Number(history.message_count || 0) + 1;
+  history.last_message_at = createdAt;
+  if (message?.participantKind === "user") {
+    history.user_message_count = Number(history.user_message_count || 0) + 1;
+    history.last_user_message_at = createdAt;
+    const readableText = displayText || text;
+    if (readableText) {
+      history.user_utterances = [...history.user_utterances, readableText];
+      if (!history.first_user_utterance) history.first_user_utterance = readableText;
+    }
+    if (text) {
+      history.user_raw_utterances = [...history.user_raw_utterances, text];
+    }
+  }
+  room.conversationHistory = history;
+  return history;
+}
+
+function applyConversationHistoryRuntime(room, runtime = {}) {
+  const history = ensureRoomConversationHistory(room);
+  if (runtime.intentName) history.latest_intent_name = runtime.intentName;
+  if (runtime.queueStatus) history.latest_queue_status = runtime.queueStatus;
+  if (runtime.errorMessage) history.latest_error_message = runtime.errorMessage;
+  if (runtime.queueEventId) history.latest_queue_event_id = runtime.queueEventId;
+  if (Array.isArray(runtime.runtimeEvents)) {
+    history.runtime_events = runtime.runtimeEvents.map((event) => structuredClone(event));
+  }
+  if (typeof runtime.dialogEnded === "boolean") history.dialog_ended = runtime.dialogEnded;
+  if (typeof runtime.sessionEnded === "boolean") history.session_ended = runtime.sessionEnded;
+  if (runtime.completionReason) history.completion_reason = runtime.completionReason;
+  if (runtime.endedAt) history.ended_at = runtime.endedAt;
+  if (runtime.sessionEndReason) history.session_end_reason = runtime.sessionEndReason;
+  history.room_status = room.status || history.room_status || "open";
+  room.conversationHistory = history;
+  return history;
+}
+
+function normalizeWebchatRoomRecord(room) {
+  if (!room || typeof room !== "object") return room;
+  const normalized = {
+    ...room,
+    contract_version: room.contract_version || "v1.0",
+    supported_contract_versions: Array.isArray(room.supported_contract_versions) && room.supported_contract_versions.length
+      ? [...room.supported_contract_versions]
+      : ["v1.0"],
+    messages: Array.isArray(room.messages) ? room.messages : []
+  };
+  normalized.conversationHistory = ensureRoomConversationHistory(normalized);
+  return normalized;
+}
+
+function createMatchedRuntimeEvents({
+  userMessage,
+  botMessage,
+  intentName,
+  similarity,
+  queueEventId,
+  timestamp,
+  sourceNodeId = "talk-1",
+  nextNodeId = "end-1",
+  completionReason = "matched"
+}) {
+  const eventTime = timestamp || new Date().toISOString();
+  return [
+    {
+      time: eventTime,
+      level: "info",
+      event: "channel.runtime.intent_matched",
+      message: "의도가 매칭되었습니다.",
+      data: {
+        intentName,
+        intentScore: similarity,
+        updatedVariables: ["$userMessage", "$matchedIntent"],
+        valuePreviews: {
+          $userMessage: userMessage,
+          $matchedIntent: intentName
+        },
+        queueEventId
+      }
+    },
+    {
+      time: eventTime,
+      level: "info",
+      event: "channel.runtime.talk_response_stored",
+      message: "응답 메시지를 생성했습니다.",
+      data: {
+        updatedVariables: ["$botResponse"],
+        valuePreviews: {
+          $botResponse: botMessage
+        },
+        sourceNodeId,
+        nextNodeId,
+        queueEventId
+      }
+    },
+    {
+      time: eventTime,
+      level: "info",
+      event: "channel.runtime.completed",
+      message: "채널 Queue 처리를 완료했습니다.",
+      data: {
+        queueEventId,
+        completionReason
+      }
+    }
+  ];
 }
 
 function getDetailAssetsForWebchatBot(bot) {
@@ -2058,12 +2805,44 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
         return true;
       }
       const now = new Date().toISOString();
+      const existingRoom = body.client_room_id
+        ? webchatRooms.find((item) => item.client_room_id === body.client_room_id)
+        : null;
+      if (existingRoom) {
+        existingRoom.conversationHistory = ensureRoomConversationHistory(existingRoom);
+        if (
+          existingRoom.status === "open"
+          && existingRoom.bot_id === bot.id
+          && existingRoom.bot_version_id === (bot.version || "v0.1")
+        ) {
+          existingRoom.updated_at = now;
+          saveWebchatRooms([...webchatRooms]);
+          sendAidotSuccess(req, res, {
+            room: serializeWebchatRoom(existingRoom),
+            messages: existingRoom.messages || [],
+            initialMessages: []
+          });
+          return true;
+        }
+        existingRoom.status = "closed";
+        existingRoom.updated_at = now;
+        applyConversationHistoryRuntime(existingRoom, {
+          dialogEnded: true,
+          sessionEnded: true,
+          completionReason: "active_version_changed",
+          endedAt: now,
+          sessionEndReason: "active_version_changed"
+        });
+      }
       const room = {
         id: crypto.randomUUID(),
         client_room_id: body.client_room_id || crypto.randomUUID(),
         channel_type: "webchat",
+        contract_version: "v1.0",
+        supported_contract_versions: ["v1.0"],
         bot_id: bot.id,
         bot_slug: bot.slug || bot.id,
+        bot_version_id: bot.version || "v0.1",
         participant_id: body.participant_id || "visitor",
         participant_name: body.participant_name || "사용자",
         status: "open",
@@ -2071,6 +2850,7 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
         created_at: now,
         updated_at: now
       };
+      room.conversationHistory = ensureRoomConversationHistory(room);
       const botMessage = createStoredChannelMessage({
         participantKind: "bot",
         participantId: bot.id,
@@ -2078,7 +2858,8 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
         text: `${bot.name}에 연결되었습니다.`
       });
       room.messages = [botMessage];
-      saveWebchatRooms([room, ...webchatRooms]);
+      appendConversationHistoryMessage(room, botMessage);
+      saveWebchatRooms([room, ...webchatRooms.filter((item) => item.id !== existingRoom?.id), ...(existingRoom ? [existingRoom] : [])]);
       sendAidotSuccess(req, res, { room: serializeWebchatRoom(room), messages: room.messages, initialMessages: [] });
       return true;
     }
@@ -2090,6 +2871,13 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
       if (room) {
         room.status = "closed";
         room.updated_at = new Date().toISOString();
+        applyConversationHistoryRuntime(room, {
+          dialogEnded: true,
+          sessionEnded: true,
+          completionReason: "closed",
+          endedAt: room.updated_at,
+          sessionEndReason: "deleted"
+        });
         saveWebchatRooms([...webchatRooms]);
       }
       sendAidotSuccess(req, res, { roomId: parsed.roomId, deleted: true });
@@ -2126,8 +2914,11 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
         id: parsed.roomId,
         client_room_id: parsed.roomId,
         channel_type: "webchat",
+        contract_version: "v1.0",
+        supported_contract_versions: ["v1.0"],
         bot_id: bot.id,
         bot_slug: bot.slug || bot.id,
+        bot_version_id: bot.version || "v0.1",
         participant_id: body.participant_id || "visitor",
         participant_name: "사용자",
         status: "open",
@@ -2135,6 +2926,7 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
         created_at: now,
         updated_at: now
       };
+      room.conversationHistory = ensureRoomConversationHistory(room);
       webchatRooms = [room, ...webchatRooms];
     }
     const userMessage = createStoredChannelMessage({
@@ -2143,29 +2935,63 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
       participantName: room.participant_name || "사용자",
       text: body.message || ""
     });
+    const sessionEndedSampleMessage = buildWebchatSessionEndedSampleMessage(bot, body.message || "");
+    const richSampleMessage = buildWebchatRichSampleMessage(bot, body.message || "");
     const { scenario, score } = selectWebchatIntent(bot, body.message || "");
     const answer = scenario?.answer || scenario?.dialogCards?.[0] || "질문을 이해하지 못했습니다. 다시 말씀해주세요.";
-    const botMessage = createStoredChannelMessage({
+    const botMessage = sessionEndedSampleMessage || richSampleMessage || createStoredChannelMessage({
       participantKind: "bot",
       participantId: bot.id,
       participantName: bot.name,
       text: answer
     });
+    const queueEventId = `${room.id}:${botMessage.createdAt}`;
+    const isSessionEnded = Boolean(sessionEndedSampleMessage);
+    const isRichSample = Boolean(richSampleMessage);
+    const completionReason = isSessionEnded ? "session_ended" : "matched";
+    const intentName = isSessionEnded
+      ? "session_end"
+      : (isRichSample ? "sample_rich_options" : (scenario?.displayName || scenario?.id || "matched"));
+    const runtimeEvents = createMatchedRuntimeEvents({
+      userMessage: String(body.message || ""),
+      botMessage: botMessage.text || answer,
+      intentName,
+      similarity: score,
+      queueEventId,
+      timestamp: botMessage.createdAt,
+      completionReason
+    });
     room.messages = [...(room.messages || []), userMessage, botMessage];
+    appendConversationHistoryMessage(room, userMessage);
+    appendConversationHistoryMessage(room, botMessage);
     room.updated_at = botMessage.createdAt;
+    if (isSessionEnded) room.status = "closed";
+    applyConversationHistoryRuntime(room, {
+      queueEventId,
+      intentName,
+      queueStatus: "matched",
+      runtimeEvents,
+      dialogEnded: true,
+      sessionEnded: isSessionEnded,
+      completionReason,
+      endedAt: isSessionEnded ? botMessage.createdAt : "",
+      sessionEndReason: isSessionEnded ? "user_requested_end" : ""
+    });
     saveWebchatRooms([...webchatRooms.filter((item) => item.id !== room.id), room]);
     sendAidotSuccess(req, res, {
       botMessage,
       botMessages: [botMessage],
       intent: {
-        id: scenario?.id || null,
-        name: scenario?.displayName || scenario?.id || null,
+        id: isSessionEnded ? "session_end" : (isRichSample ? "sample_rich_options" : (scenario?.id || null)),
+        name: intentName,
         score
       },
       runtime: {
+        resolvedContractVersion: room.contract_version || "v1.0",
         dialogEnded: true,
-        sessionEnded: false,
-        completionReason: "matched"
+        sessionEnded: isSessionEnded,
+        completionReason,
+        endedAt: isSessionEnded ? botMessage.createdAt : undefined
       }
     });
     return true;
@@ -2177,6 +3003,235 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
 function getTodayStamp() {
   const now = new Date();
   return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function parseContractVersionNumber(value) {
+  const match = String(value || "").match(/v?(\d+)(?:\.(\d+))?/i);
+  if (!match) return { major: 0, minor: 0 };
+  return {
+    major: Number(match[1] || 0),
+    minor: Number(match[2] || 0)
+  };
+}
+
+function isContractVersionHigher(sourceVersion, targetVersion) {
+  const source = parseContractVersionNumber(sourceVersion);
+  const target = parseContractVersionNumber(targetVersion);
+  if (source.major !== target.major) return source.major > target.major;
+  return source.minor > target.minor;
+}
+
+function deleteNestedProperty(target, pathParts) {
+  if (!target || typeof target !== "object" || !Array.isArray(pathParts) || !pathParts.length) return false;
+  if (pathParts.length === 1) {
+    if (Object.prototype.hasOwnProperty.call(target, pathParts[0])) {
+      delete target[pathParts[0]];
+      return true;
+    }
+    return false;
+  }
+  const [head, ...rest] = pathParts;
+  if (!target[head] || typeof target[head] !== "object") return false;
+  return deleteNestedProperty(target[head], rest);
+}
+
+function sanitizeChannelsForContractV10(channels) {
+  if (!channels || typeof channels !== "object") return { channels, prunedFeatures: [] };
+  const allowedKeys = new Set(["web", "desktopMessenger", "kakaoKr"]);
+  const next = { ...channels };
+  const prunedFeatures = [];
+  Object.keys(next).forEach((key) => {
+    if (!allowedKeys.has(key)) {
+      delete next[key];
+      prunedFeatures.push(`system_config.channels.${key}`);
+    }
+  });
+  if (Object.prototype.hasOwnProperty.call(next, "kakaoKr") && next.kakaoKr !== "disabled") {
+    next.kakaoKr = "disabled";
+    prunedFeatures.push("system_config.channels.kakaoKr");
+  }
+  return { channels: next, prunedFeatures };
+}
+
+function sanitizeImportedJsonForContractV10(scope, payload) {
+  const next = structuredClone(payload);
+  const prunedFeatures = [];
+  const directPrunePaths = [
+    ["external_channels"],
+    ["kakao_channel"],
+    ["kakao_channel_config"],
+    ["channel_extensions"],
+    ["extended_rich_ui"],
+    ["rich_cards_v2"],
+    ["advanced_analytics"]
+  ];
+  directPrunePaths.forEach((pathParts) => {
+    if (deleteNestedProperty(next, pathParts)) {
+      prunedFeatures.push(pathParts.join("."));
+    }
+  });
+  if (scope === "version") {
+    const systemConfig = next.system_config && typeof next.system_config === "object" ? next.system_config : null;
+    if (systemConfig?.channels && typeof systemConfig.channels === "object") {
+      const sanitized = sanitizeChannelsForContractV10(systemConfig.channels);
+      systemConfig.channels = sanitized.channels;
+      prunedFeatures.push(...sanitized.prunedFeatures);
+    }
+  }
+  return {
+    payload: next,
+    prunedFeatures: [...new Set(prunedFeatures)]
+  };
+}
+
+function hasObjectValue(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasNonEmptyArray(value) {
+  return Array.isArray(value) && value.length > 0;
+}
+
+function hasNonEmptyString(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function evaluateContractV10CoreCompatibility(scope, payload) {
+  if (!payload || typeof payload !== "object") {
+    return {
+      blocked: true,
+      reason: "Imported payload is empty after pruning and cannot be mapped to contract v1.0."
+    };
+  }
+
+  if (scope === "version") {
+    const hasSystemBot = hasObjectValue(payload.system_config?.bot) || hasObjectValue(payload.version?.bot);
+    const hasDialogCore = hasNonEmptyArray(payload.dialogs) || hasNonEmptyArray(payload.dialog_flow_graphs);
+    const hasRuntimeAssets = [
+      payload.entities,
+      payload.dictionary,
+      payload.faq_dialogs,
+      payload.apis,
+      payload.floating_buttons,
+      payload.rules,
+      payload.small_talk,
+      payload.blacklists
+    ].some(hasNonEmptyArray);
+    if (hasSystemBot || hasDialogCore || hasRuntimeAssets) return { blocked: false, reason: "" };
+    return {
+      blocked: true,
+      reason: "After pruning, the version package no longer contains contract v1.0 core assets such as bot metadata, dialogs, or runtime assets."
+    };
+  }
+
+  if (scope === "bot") {
+    const hasBotCore = hasObjectValue(payload.botVo);
+    const hasDialogCore = hasNonEmptyArray(payload.dialogList) || hasNonEmptyArray(payload.dialogFlowGraphList) || hasNonEmptyArray(payload.faqDialogList);
+    const hasRuntimeAssets = [
+      payload.floatingButtonVoList,
+      payload.ruleVoList,
+      payload.smallTalkVoList,
+      payload.dictionaryVoList,
+      payload.blacklistList,
+      payload.entityTypeList
+    ].some(hasNonEmptyArray);
+    if (hasBotCore || hasDialogCore || hasRuntimeAssets) return { blocked: false, reason: "" };
+    return {
+      blocked: true,
+      reason: "After pruning, the bot package no longer contains contract v1.0 core assets such as bot metadata, dialogs, or runtime assets."
+    };
+  }
+
+  if (scope === "dialog") {
+    const hasDialogId = hasNonEmptyString(payload.dialogId) || hasNonEmptyString(payload.displayName);
+    const hasFlowGraph = hasObjectValue(payload.flowGraph) || hasNonEmptyArray(payload.flowGraph);
+    if (hasDialogId || hasFlowGraph) return { blocked: false, reason: "" };
+    return {
+      blocked: true,
+      reason: "After pruning, the dialog package no longer contains contract v1.0 dialog identity or flow graph data."
+    };
+  }
+
+  return { blocked: false, reason: "" };
+}
+
+function sanitizeImportedAssetBodyForContract({ scope, fileFormat, bodyText, targetContractVersion }) {
+  const normalizedTarget = String(targetContractVersion || "v1.0").trim() || "v1.0";
+  if (fileFormat !== "json") {
+    return {
+      bodyText,
+      sourceContractVersion: normalizedTarget,
+      resolvedContractVersion: normalizedTarget,
+      status: "accepted",
+      pruningStatus: "none",
+      prunedFeatures: [],
+      warnings: [],
+      errors: []
+    };
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    return {
+      bodyText,
+      sourceContractVersion: normalizedTarget,
+      resolvedContractVersion: normalizedTarget,
+      status: "accepted",
+      pruningStatus: "none",
+      prunedFeatures: [],
+      warnings: [],
+      errors: []
+    };
+  }
+  const sourceContractVersion = String(parsed?.contract_version || parsed?.manifest?.contract_version || normalizedTarget).trim() || normalizedTarget;
+  const sanitized = sanitizeImportedJsonForContractV10(scope, parsed);
+  const higherContract = isContractVersionHigher(sourceContractVersion, normalizedTarget);
+  const prunedFeatures = [...new Set(sanitized.prunedFeatures)];
+  const warnings = [];
+  const errors = [];
+  if (higherContract) {
+    warnings.push(`Higher contract version detected: ${sourceContractVersion} -> importing as ${normalizedTarget}`);
+  }
+  if (prunedFeatures.length) {
+    warnings.push(`Pruned unsupported features: ${prunedFeatures.join(", ")}`);
+  }
+  const shouldEvaluateCompatibility = higherContract || prunedFeatures.length > 0;
+  const compatibility = shouldEvaluateCompatibility
+    ? evaluateContractV10CoreCompatibility(scope, sanitized.payload)
+    : { blocked: false, reason: "" };
+  if (compatibility.blocked && compatibility.reason) {
+    errors.push(compatibility.reason);
+    warnings.push(`Upload blocked because contract v1.0 core meaning could not be preserved for scope "${scope}".`);
+  }
+  return {
+    bodyText: JSON.stringify(sanitized.payload, null, 2),
+    sourceContractVersion,
+    resolvedContractVersion: normalizedTarget,
+    status: compatibility.blocked ? "blocked" : "accepted",
+    pruningStatus: compatibility.blocked ? "blocked" : (higherContract || prunedFeatures.length ? "pruned" : "none"),
+    prunedFeatures,
+    warnings,
+    errors
+  };
+}
+
+function getAssetTransferScopeExportFileName(scope, botId, fileFormat) {
+  const safeBotId = sanitizePathSegment(botId, "bot");
+  const safeDate = getTodayStamp();
+  const baseMap = {
+    bot: `Bot_${safeBotId}`,
+    version: `Version_${safeBotId}_v0_1`,
+    dialog: `FlowDesign_${safeBotId}`,
+    api: `API_${safeBotId}`,
+    intent_utterance: `LearningExpr_${safeBotId}`,
+    entity: `Entity_${safeBotId}`,
+    dictionary: `Dictionary_${safeBotId}`,
+    blocklist: `Blocklist_${safeBotId}`,
+    rule: `Rule_${safeBotId}`
+  };
+  const stem = baseMap[scope] || `${sanitizePathSegment(scope, "Asset")}_${safeBotId}`;
+  return `${stem}_${safeDate}.${fileFormat}`;
 }
 
 function buildSampleTextAsset(scope) {
@@ -2191,8 +3246,60 @@ function buildSampleTextAsset(scope) {
 }
 
 function buildSampleJsonAsset(scope, groupId, botId, botLocale) {
+  const contractVersion = "v1.0";
+  const supportedContractVersions = [contractVersion];
   if (scope === "api") {
+    const sampleMethods = [
+      {
+        id: `sample:${groupId}:${botId}:order_status_lookup:get`,
+        name: "default",
+        httpMethod: "GET",
+        methodUrl: "https://api.example.com/orders/{order_id}",
+        description: "",
+        loggingEnabled: false,
+        proxyEnabled: true,
+        transferMode: "sync",
+        parameters: [
+          {
+            id: "order_id",
+            name: "order_id",
+            location: "path",
+            dataType: "string",
+            defaultValue: "",
+            required: true,
+            visible: true,
+            description: "조회할 주문 ID"
+          }
+        ],
+        outputParameters: [
+          {
+            id: "status",
+            name: "status",
+            path: "status",
+            dataType: "string",
+            description: "주문 상태"
+          }
+        ],
+        outputSample: ""
+      }
+    ];
     return {
+      asset_format_version: 1,
+      exported_at: new Date().toISOString(),
+      apis: [
+        {
+          id: `sample:${groupId}:${botId}:order_status_lookup`,
+          type: "api",
+          apiKey: `sample:${groupId}:${botId}:order_status_lookup`,
+          name: "order_status_lookup",
+          baseUrl: "https://api.example.com/orders/{order_id}",
+          description: "",
+          category: "API",
+          methods: sampleMethods,
+          updatedAt: new Date().toISOString(),
+          updatedBy: "cga"
+        }
+      ],
       apiList: [
         {
           name: "order_status_lookup",
@@ -2222,6 +3329,43 @@ function buildSampleJsonAsset(scope, groupId, botId, botLocale) {
   }
   if (scope === "version") {
     return {
+      asset_format_version: 1,
+      contract_version: contractVersion,
+      supported_contract_versions: [...supportedContractVersions],
+      dialogs: [
+        { dialogId: "password_reset", dialogType: 1, displayName: "password_reset", answer: "계정 설정에서 비밀번호를 재설정하세요." }
+      ],
+      dialog_flow_graphs: [
+        {
+          dialogId: "password_reset",
+          dialogType: 1,
+          flowGraph: [
+            { objectType: "Start", objectId: "password_reset-start", dialogId: "password_reset", displayName: "password_reset Start", additionalInfo: null, position: { x: 80, y: 120 } },
+            { objectType: "Message", objectId: "password_reset-message", dialogId: "password_reset", displayName: "password_reset", additionalInfo: { text: "계정 설정에서 비밀번호를 재설정하세요." }, position: { x: 320, y: 120 } },
+            { objectType: "End", objectId: "password_reset-end", dialogId: "password_reset", displayName: "password_reset End", additionalInfo: null, position: { x: 560, y: 120 } }
+          ]
+        }
+      ],
+      entities: [],
+      dictionary: [],
+      faq_dialogs: [],
+      apis: [],
+      floating_buttons: [],
+      rules: [],
+      small_talk: [],
+      blacklists: [],
+      system_config: {
+        bot: {
+          botId,
+          botName: "CGA Bot",
+          defaultLocale: botLocale,
+          version: "v0.1"
+        },
+        structuralChoices: {},
+        counts: {},
+        llm: {},
+        channels: {}
+      },
       version: {
         bot: {
           name: "CGA Bot",
@@ -2249,12 +3393,20 @@ function buildSampleJsonAsset(scope, groupId, botId, botLocale) {
     dialogList: [],
     dialogFlowGraphList: [],
     entityTypeList: [],
-    faqDialogList: [],
-    floatingButtonVoList: [],
+    faqDialogList: [
+      { dialogId: "faq_password_reset", question: "비밀번호를 어떻게 재설정하나요?", answer: "계정 설정에서 비밀번호 재설정을 선택하세요.", enabled: "Y" }
+    ],
+    floatingButtonVoList: [
+      { buttonId: "floating-help", label: "도움말", action: "open_help", enabled: "Y", sortOrder: 1 }
+    ],
     ruleVoList: [],
-    smallTalkVoList: [],
+    smallTalkVoList: [
+      { trigger: "안녕", response: "안녕하세요. 무엇을 도와드릴까요?", enabled: "Y" }
+    ],
     dictionaryVoList: [],
-    blacklistList: []
+    blacklistList: [
+      { blacklistName: "sample_blocklist", blacklistType: "0", expression: "forbidden", enabled: "Y" }
+    ]
   };
 }
 
@@ -2305,7 +3457,7 @@ async function handleAssetTransferApi(req, res, urlPath, query) {
       source: storedBody == null ? "sample" : "stored",
       created_at: new Date().toISOString()
     });
-    const fileName = `CGA_${scope}_${botId}_${getTodayStamp()}.${asset.fileFormat}`;
+    const fileName = getAssetTransferScopeExportFileName(scope, botId, asset.fileFormat);
     if (asset.fileFormat === "txt") {
       sendDownload(res, fileName, storedBody ?? buildSampleTextAsset(scope), "text/plain; charset=utf-8");
       return true;
@@ -2328,26 +3480,58 @@ async function handleAssetTransferApi(req, res, urlPath, query) {
       return true;
     }
     const body = await readRequestBody(req);
+    const targetContractVersion = String(req.headers["x-cga-target-contract-version"] || "v1.0").trim() || "v1.0";
+    const sanitizedImport = sanitizeImportedAssetBodyForContract({
+      scope,
+      fileFormat: asset.fileFormat,
+      bodyText: body,
+      targetContractVersion
+    });
     const request = contract.createAssetImportRequest({
       groupId,
       botId,
       scope,
       botLocale,
-      fileName: req.headers["x-cga-file-name"] || `uploaded.${asset.fileFormat}`
+      fileName: req.headers["x-cga-file-name"] || `uploaded.${asset.fileFormat}`,
+      targetContractVersion
     });
     const transferId = `import-${Date.now()}`;
-    const storedPath = storeAssetBody({ groupId, botId, scope, fileFormat: asset.fileFormat, body });
+    let storedPath = "";
+    if (sanitizedImport.status === "accepted") {
+      storedPath = storeAssetBody({ groupId, botId, scope, fileFormat: asset.fileFormat, body: sanitizedImport.bodyText });
+      if (scope === "bot") {
+        upsertWorkspaceBotFromImportedPackage(sanitizedImport.bodyText, { groupId, botId, botLocale });
+      }
+    }
     recordAssetTransfer({
       transfer_id: transferId,
       group_id: groupId,
       bot_id: botId,
       scope,
       direction: "import",
-      byte_length: Buffer.byteLength(body, "utf8"),
+      status: sanitizedImport.status,
+      byte_length: Buffer.byteLength(sanitizedImport.bodyText, "utf8"),
       asset_path: storedPath,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      warnings: sanitizedImport.warnings,
+      errors: sanitizedImport.errors
     });
-    sendJson(res, 202, contract.createAssetTransferResponse({ request, status: contract.ASSET_TRANSFER_STATUS.ACCEPTED, transferId }));
+    sendJson(res, 202, contract.createAssetTransferResponse({
+      request,
+      status: sanitizedImport.status === "blocked"
+        ? contract.ASSET_TRANSFER_STATUS.BLOCKED
+        : contract.ASSET_TRANSFER_STATUS.ACCEPTED,
+      transferId,
+      resolvedContractVersion: sanitizedImport.resolvedContractVersion,
+      pruningStatus: sanitizedImport.pruningStatus === "blocked"
+        ? contract.ASSET_TRANSFER_PRUNING_STATUS.BLOCKED
+        : (sanitizedImport.pruningStatus === "pruned"
+          ? contract.ASSET_TRANSFER_PRUNING_STATUS.PRUNED
+          : contract.ASSET_TRANSFER_PRUNING_STATUS.NONE),
+      prunedFeatures: sanitizedImport.prunedFeatures,
+      warnings: sanitizedImport.warnings,
+      errors: sanitizedImport.errors
+    }));
     return true;
   }
 
@@ -2368,6 +3552,7 @@ const server = http.createServer(async (req, res) => {
     if (await handleWorkspaceBotApi(req, res, urlPath)) return;
     if (await handleApiAnswerApi(req, res, urlPath)) return;
     if (await handleAdminResourceApi(req, res, urlPath, query)) return;
+    if (await handleAidotAdminHistoryApi(req, res, urlPath, query)) return;
     if (await handleAssetTransferApi(req, res, urlPath, query)) return;
   } catch (error) {
     sendJson(res, 500, {

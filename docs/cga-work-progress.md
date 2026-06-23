@@ -3369,7 +3369,6 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
 - 점검:
   - `node --check apps/studio/app.js` 통과
   - `npm run studio:validate` 통과
-  - 작업 중 Git 동작 점검: 현재 환경에서 `git pull`은 `.git/FETCH_HEAD` 권한 제약으로 실행 불가로 확인(읽기 권한 범위 제약으로 인한 일시적 제약).
 
 ## 2026-06-19 (continued)
 
@@ -3382,3 +3381,1586 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
 - 점검:
   - `node --check apps/studio/app.js` 통과
   - `npm run studio:validate` 통과
+
+## 2026-06-21 01:05 KST
+
+### 최신 Aidot 100% 호환 작업 분할 계획 수립
+
+- 신산님 지시에 따라 최신 Aidot 호환 작업을 한 번에 진행하지 않고 단계별로 분할하는 계획을 먼저 고정했다.
+- 기준 참조본은 `D:\Project\cga\Aidot\apps`로 유지한다.
+- 현재 판단:
+  - 기존 `봇 다운로드/업로드` 축은 상당 부분 보강되었지만,
+  - 최신 Aidot의 가장 큰 구조 변화인 `conversationHistory` 저장 구조와
+  - 운영 조회 API(`/api/v1/admin/conversations`) 및
+  - 해당 데이터를 읽는 운영 화면/WebChat 실증까지 포함하면
+  - 아직 `100% 호환 완료`라고 판단하면 안 된다.
+- 이번에 `docs/aidot-latest-parity-step-plan.md`를 추가해 아래 순서로 고정했다.
+  - 1단계: 최신 Aidot 기준선 고정
+  - 2단계: 검증 시나리오 고정
+  - 3단계: 대화 이력 저장 구조 호환
+  - 4단계: 운영 조회 API 호환
+  - 5단계: CGA Studio 운영 화면 연결
+  - 6단계: 최신 Aidot WebChat 실증
+  - 7단계: 전체 회귀 검증
+- 다음 작업은 계획서 기준으로 `1단계. 최신 Aidot 기준선 고정`부터 진행한다.
+
+## 2026-06-21 01:18 KST
+
+### Aidot-CGA 버전 단위 호환 운영 정책 초안 작성
+
+- 신산님 요청에 따라 Aidot 개발자와 직접 논의할 수 있는 버전 호환 정책 문서를 작성했다.
+- 신규 문서:
+  - `docs/aidot-cga-version-compatibility-policy.md`
+- 문서 핵심:
+  - 제품 버전과 호환 계약 버전을 분리한다.
+  - 기존 계약 버전은 수정하지 않고 새 계약 버전으로 추가한다.
+  - Aidot는 하위호환을 기본 원칙으로 유지한다.
+  - CGA는 자신이 지원하는 계약 버전만 명시적으로 처리한다.
+  - 업로드/다운로드/WebChat/Admin 조회에도 `contract_version` 기준이 들어가야 한다.
+- 이번 문서는 구현 코드가 아니라 Aidot 개발자와 CGA 개발자가 변경 규칙을 먼저 합의하기 위한 운영 정책 초안이다.
+
+## 2026-06-21 01:42 KST
+
+### CGA contract v1.0 갭 분석 문서 작성
+
+- Aidot 측 합의 초안 `Aidot 1.1 / contract v1.0` 기준으로 CGA 현재 상태를 갭 분석했다.
+- 신규 문서:
+  - `docs/cga-contract-v1.0-gap-analysis.md`
+- 현재 판단을 아래처럼 정리했다.
+  - `Bot Package`: 기반은 있으나 `contract_version`과 상위 기능 처리 정책이 아직 부족
+  - `Version Document`: Aidot형 구조는 반영됐지만 의미 보존과 계약 버전 메타가 미완
+  - `WebChat`: 세션 생성/송수신은 구현됐지만 운영 이력 의미 계약까지는 미도달
+  - `Admin Conversations`: `/api/v1/admin/conversations` 부재로 미충족
+  - `Conversation History`: 실제 세션 transcript/발화/상태 의미 저장이 미충족
+  - `contract_version`: 정책 문서만 있고 실 구현은 미충족
+- 최상 우선 구현 항목도 같이 고정했다.
+  - `contract_version` 메타데이터 반영
+  - `conversationHistory` 저장 의미 계약 구현
+  - `/api/v1/admin/conversations` 구현
+
+## 2026-06-21 02:02 KST
+
+### 상위 버전 봇 처리 원칙 반영
+
+- 신산님과 합의한 핵심 원칙을 문서 기준으로 고정했다.
+- 핵심 원칙:
+  - 어떤 Aidot 버전의 봇이 오더라도 CGA가 보장할 수 있는 기능은 온전히 유지한다.
+  - CGA 미지원 상위 기능은 제거 또는 무시한다.
+  - 제거/무시로 핵심 의미가 깨지면 업로드를 차단한다.
+- 반영 문서:
+  - `docs/aidot-cga-version-compatibility-policy.md`
+  - `docs/cga-contract-v1.0-gap-analysis.md`
+- 이 원칙에 따라 앞으로 상위 버전 봇 import는 `제품 버전 차단`이 아니라
+  - `지원 기능 추출`
+  - `미지원 기능 제거/무시`
+  - `핵심 의미 유지 여부 판정`
+  순서로 설계해야 한다고 정리했다.
+
+## 2026-06-21 02:18 KST
+
+### contract_version 메타데이터 설계안 작성
+
+- 다음 실제 구현 전에 `contract_version` 메타데이터 위치를 먼저 설계 문서로 고정했다.
+- 신규 문서:
+  - `docs/cga-contract-version-metadata-design.md`
+- 설계 핵심:
+  - bot export `manifest.contract_version`
+  - version document top-level `contract_version`
+  - import 요청의 `target_contract_version`
+  - import 결과의 `resolved_contract_version`
+  - 상위 기능 제거 내역 `pruned_features`
+  - WebChat room/runtime 메타
+  - `conversationHistory.contractVersion`
+  - admin conversations API 응답 메타
+- 구현 순서도 같이 정리했다.
+  - 1단계: manifest/version document
+  - 2단계: import 요청/응답
+  - 3단계: WebChat/session/history
+  - 4단계: admin conversations API
+
+## 2026-06-21 02:31 KST
+
+### contract_version 1단계 반영
+
+- 설계안 기준으로 가장 영향이 적은 1단계만 먼저 구현했다.
+- 반영 범위:
+  - `packages/contracts/src/aidot-package-contract.js`
+    - `AIDOT_CONTRACT_VERSION = "v1.0"` 추가
+    - `AIDOT_SUPPORTED_CONTRACT_VERSIONS = ["v1.0"]` 추가
+    - `createAidotPackageManifest()` 결과에
+      - `contract_version`
+      - `supported_contract_versions`
+      를 포함하도록 보강
+  - `apps/studio/app.js`
+    - `buildAidotVersionDocument()` top-level에
+      - `contract_version`
+      - `supported_contract_versions`
+      추가
+  - `scripts/serve-studio.js`
+    - version 샘플 export payload에도 같은 계약 메타 추가
+  - `scripts/check-asset-transfer-api.mjs`
+    - manifest 응답의 `contract_version`
+    - version export payload의 `contract_version`
+    - `supported_contract_versions`
+    검증 추가
+- 이번 단계 원칙:
+  - Aidot 1.1 의미 필드는 건드리지 않고, 계약 메타만 additive하게 추가
+  - import 요청/응답, WebChat/session, conversationHistory, admin conversations API 메타는 다음 단계로 분리
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `node --check scripts/serve-studio.js` 통과
+  - `node --check scripts/check-asset-transfer-api.mjs` 통과
+  - `npm run studio:asset-api-check` 통과
+
+## 2026-06-21 02:44 KST
+
+### contract_version 2단계 반영
+
+- 설계안 기준 2단계인 import 요청/응답 메타를 반영했다.
+- 반영 범위:
+  - `packages/contracts/src/asset-transfer-api-contract.js`
+    - `ASSET_TRANSFER_PRUNING_STATUS` 추가
+    - `createAssetImportRequest()`에 `target_contract_version` 추가
+    - `createAssetTransferResponse()`에
+      - `resolved_contract_version`
+      - `supported_contract_versions`
+      - `pruning_status`
+      - `pruned_features`
+      추가
+  - `scripts/serve-studio.js`
+    - import 요청 헤더 `X-CGA-Target-Contract-Version`을 읽도록 보강
+    - import 응답에 `resolved_contract_version = v1.0`
+    - `pruning_status = none`
+    - `pruned_features = []`
+    를 내려주도록 연결
+  - `scripts/check-asset-transfer-api.mjs`
+    - dictionary/blocklist/bot/api/version/dialog import 응답에
+      - `target_contract_version`
+      - `resolved_contract_version`
+      - `pruning_status`
+      - `pruned_features`
+      검증 추가
+- 이번 단계 원칙:
+  - 아직 실제 pruning 로직은 넣지 않고, 이후 상위 버전 봇 처리 로직이 들어갈 메타 골격만 먼저 고정
+  - 현재 기본값은 `v1.0 / none / []`
+- 검증:
+  - `node --check packages/contracts/src/asset-transfer-api-contract.js` 통과
+  - `node --check scripts/serve-studio.js` 통과
+  - `node --check scripts/check-asset-transfer-api.mjs` 통과
+  - `npm run studio:asset-api-check` 통과
+
+## 2026-06-22 00:08 KST
+
+### WebChat/session 메타와 conversationHistory 최소 저장 뼈대 반영
+
+- 설계안 3단계 중 WebChat room/runtime 메타와 `conversationHistory` 최소 저장 구조를 먼저 반영했다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - `loadWebchatRooms()` / `saveWebchatRooms()`에서 room 정규화 추가
+    - room에
+      - `contract_version`
+      - `supported_contract_versions`
+      - `bot_version_id`
+      - `conversationHistory`
+      를 유지하도록 보강
+    - `serializeWebchatRoom()` 응답에
+      - `contractVersion`
+      - `supportedContractVersions`
+      추가
+    - room 생성/메시지 송수신/삭제 시 `conversationHistory`를 같이 갱신하도록 보강
+    - 현재 저장되는 최소 의미:
+      - `session_id`, `room_id`, `client_room_id`
+      - `participant_id`, `participant_name`
+      - `channel_type`, `room_status`
+      - `bot_id`, `bot_version_id`
+      - `started_at`
+      - `first_user_utterance`
+      - `user_utterances`, `user_raw_utterances`
+      - `transcript`
+      - `user_message_count`, `message_count`
+      - `last_message_at`, `last_user_message_at`
+      - `latest_intent_name`
+      - `dialog_ended`, `session_ended`
+      - `completion_reason`, `ended_at`, `session_end_reason`
+      - `contractVersion`, `sourceProductVersion`, `compatibilityStatus`, `prunedFeatures`
+    - WebChat message 응답 `runtime`에 `resolvedContractVersion = v1.0` 추가
+  - `scripts/check-webchat-channel-api.mjs`
+    - room 응답의 `contractVersion`
+    - `supportedContractVersions`
+    - message/legacy message 응답의 `runtime.resolvedContractVersion`
+    검증 추가
+- 이번 단계 의미:
+  - 아직 `/api/v1/admin/conversations`는 없지만, 이후 운영 조회 API가 읽어갈 수 있는 room/session 저장 뼈대가 먼저 생김
+  - 현재는 WebChat 축만 반영했고, simulator 병합과 운영 조회 응답 구성은 다음 단계로 남음
+- 검증:
+  - `node --check scripts/serve-studio.js` 통과
+  - `node --check scripts/check-webchat-channel-api.mjs` 통과
+  - `npm run studio:webchat-channel-check` 통과
+
+## 2026-06-22 00:24 KST
+
+### `/api/v1/admin/conversations` 최소 구현
+
+- `Aidot 1.1 / contract v1.0` 기준으로 운영 조회 최소 Required 범위인 `/api/v1/admin/conversations`를 구현했다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - `/api/v1/admin/conversations` 경로 파서 추가
+    - WebChat room 기준 세션 행 생성 로직 추가
+    - simulator `operations-state.test.last_run_at` 기준 세션 행 생성 로직 추가
+    - 응답 구조:
+      - `items`
+      - `total`
+    - 각 row 최소 필드:
+      - `id`
+      - `group_name`
+      - `channel_name`
+      - `bot_name`
+      - `version_no`
+      - `user_key`
+      - `intent_or_module_name`
+      - `uttered_at`
+      - `result`
+      - `data_json`
+    - `data_json`에는 아래를 포함하도록 구성
+      - `contract_version`
+      - `compatibility_status`
+      - `pruned_features`
+      - `session_*`
+      - `runtime_summary`
+      - `messages`
+      - `conversation_history`
+      - `transcript`
+      - `latest_problem_event`
+      - `problem_location`
+  - `scripts/check-admin-conversations-api.mjs`
+    - WebChat 세션 생성/메시지 송신
+    - simulator `run-test`
+    - `/api/v1/admin/conversations` 조회
+    - WebChat/Simulator 두 행 모두 존재하는지 검증
+    - `contract_version`, transcript, 사용자 발화, 필터 동작 검증
+  - `package.json`
+    - `studio:admin-conversations-check` 스크립트 추가
+- 현재 범위:
+  - WebChat + Simulator 병합까지는 반영
+  - 고급 분석 필드나 상세 팝업용 추가 메타는 이후 확장 가능
+- 검증:
+  - `node --check scripts/serve-studio.js` 통과
+  - `node --check scripts/check-admin-conversations-api.mjs` 통과
+  - `npm run studio:admin-conversations-check` 통과
+
+## 2026-06-22 00:31 KST
+
+### Studio 대화 이력 조회 화면 실제 API 연결
+
+- `apps/studio/app.js`의 `대화 이력 조회` 화면을 샘플 행 기반에서 실제 `/api/v1/admin/conversations` 조회 기반으로 전환했다.
+- 반영 내용:
+  - `currentConversationHistoryState` 상태 추가
+  - 최초 진입 시 서버에서 대화 이력 조회
+  - 서버 응답 `items`를 화면 row로 정규화
+  - 기존 필터(`채널`, `시작일`, `종료일`)를 실제 서버 결과에 적용
+  - 조회 중/오류 상태 표시 추가
+- 이번 단계 의미:
+  - 이제 Studio 대화 이력 조회는 고정 샘플이 아니라 실제 WebChat/Simulator 세션 데이터를 본다.
+  - 상세 팝업 연결 전 단계까지는 실데이터 기반 운영 조회 흐름이 만들어졌다.
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:admin-conversations-check` 통과
+  - `npm run studio:webchat-channel-check` 통과
+
+## 2026-06-22 00:52 KST
+
+### 상위 버전 봇 import pruning 1차 반영
+
+- `어떤 Aidot 버전이 오더라도 CGA 보장 기능은 유지하고, 미지원 상위 기능은 제거/무시하며, 핵심 의미 손실 시 차단` 원칙에 따라 pruning 1차 로직을 넣었다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - import 시 JSON payload의 `contract_version` 확인
+    - `source contract > target contract(v1.0)`이면 pruning 경고를 남기도록 보강
+    - 1차 pruning 대상:
+      - `advanced_analytics`
+      - `external_channels`
+      - `kakao_channel`
+      - `kakao_channel_config`
+      - `channel_extensions`
+      - `extended_rich_ui`
+      - `rich_cards_v2`
+      - `system_config.channels`의 미지원 상위 키
+      - `system_config.channels.kakaoKr`의 비허용 활성값
+    - import 응답 메타에
+      - `pruning_status`
+      - `pruned_features`
+      - `warnings`
+      반영
+    - 저장되는 body도 sanitize된 결과로 저장되도록 보강
+  - `apps/studio/app.js`
+    - asset upload 시 import 응답 메타를 읽어
+      - `contract v1.0`
+      - 제거/무시된 기능 목록
+      - 경고 건수
+      를 상태 문구에 표시하도록 보강
+    - 업로드 요청 헤더 `X-CGA-Target-Contract-Version = v1.0` 추가
+  - `scripts/check-asset-transfer-api.mjs`
+    - `contract_version = v1.1` + 상위 기능 포함 version import 케이스 추가
+    - 기대 검증:
+      - `pruning_status = pruned`
+      - `pruned_features`에 상위 기능 포함
+      - re-export 시 상위 기능 제거
+      - `kakaoKr`는 `disabled`
+      - 미지원 채널 키 제거
+- 현재 범위:
+  - 아직 핵심 의미 손실 판정에 따른 `blocked` 로직까지는 안 갔고, 1차는 `경고 + 제거/무시 후 accepted` 중심
+  - 의미 손실 차단 기준표는 다음 단계에서 더 구체화 가능
+- 검증:
+  - `node --check scripts/serve-studio.js` 통과
+  - `node --check apps/studio/app.js` 통과
+  - `node --check scripts/check-asset-transfer-api.mjs` 통과
+  - `npm run studio:asset-api-check` 통과
+
+## 2026-06-22 01:09 KST
+
+### 상위 버전 import blocked 판정 1차 반영
+
+- `경고 + 제외 후 업로드` 기본 정책은 유지하되, `제외 후에도 contract v1.0 핵심 의미를 복원할 수 없는 경우만 차단`하도록 서버 판정을 보강했다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - `version`, `bot`, `dialog` JSON import에 대해 v1.0 핵심 의미 존재 여부를 점검하는 판정 추가
+    - 차단 기준은 매우 보수적으로 적용
+      - `version`: 봇 메타/대화 자산/런타임 자산이 모두 사라진 경우만 blocked
+      - `bot`: 봇 메타/대화 자산/런타임 자산이 모두 사라진 경우만 blocked
+      - `dialog`: dialog 식별 정보와 flow graph가 모두 사라진 경우만 blocked
+    - blocked일 때는 저장하지 않고 import 응답에
+      - `status = blocked`
+      - `pruning_status = blocked`
+      - `errors`
+      를 내려주도록 연결
+    - asset transfer history에도 blocked 시도와 사유가 남도록 보강
+  - `apps/studio/app.js`
+    - 업로드 상태 문구에 `업로드 차단`, 차단 사유, 차단 전 제거 검토 기능 목록이 보이도록 보강
+  - `scripts/check-asset-transfer-api.mjs`
+    - 상위 버전 기능만 있고 v1.0 핵심 자산이 없는 version import 케이스를 추가
+    - 기대 검증:
+      - `status = blocked`
+      - `pruning_status = blocked`
+      - `errors` 존재
+      - history에 blocked import 기록 존재
+- 이번 단계 의미:
+  - 이제 상위 버전 봇/버전 문서를 무조건 accepted 하지 않고,
+  - `CGA가 실제로 v1.0 의미를 유지할 수 있는지`를 최소 범위에서 판정하기 시작했다.
+  - 아직 기능별 blocked 기준표 전체를 다 채운 것은 아니고, 우선 `version/bot/dialog` 핵심 대화 의미 축만 1차 반영했다.
+
+## 2026-06-22 01:26 KST
+
+### WebChat conversation history 의미 호환 보강
+
+- Aidot 최신 테스트/화면 코드를 기준으로 WebChat 대화 이력의 `사람이 읽을 수 있는 표시 의미(display_text)` 축을 다시 맞췄다.
+- 확인한 Aidot 기준:
+  - `webchatRichFormVersion` 형태의 사용자 응답은 원문 JSON이 아니라 `버튼 선택: ...`, `선택: ...`, `입력: ...` 형태로 `user_utterances`와 `transcript.display_text`에 저장한다.
+  - 봇 RichForm 응답은 payload 기준으로 제목/본문/옵션을 요약한 문자열을 `display_text`로 남긴다.
+  - 운영 조회 화면은 `conversation_history.transcript[*].display_text`, `payload_json`, `session_first_user_utterance`, `session_user_utterances`를 실제 표시 기준으로 사용한다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - JSON-like 문자열 파싱, readable string 추출, WebChat 선택 응답 요약, RichForm payload 요약 헬퍼 추가
+    - transcript row에
+      - `message_type`
+      - `payload_json`
+      - `display_text`
+      저장
+    - 사용자 발화 누적은 raw JSON이 아니라 readable text 기준으로 `user_utterances`에 저장
+    - `user_raw_utterances`는 기존처럼 원문 유지
+    - 운영 조회 `data_json`에 `queue_event_id` 기본 메타 보강
+  - `scripts/check-webchat-channel-api.mjs`
+    - 일반 텍스트 대화 후 RichForm 선택형 JSON 메시지를 한 번 더 보내고,
+    - `/api/v1/admin/conversations`에서
+      - `session_user_utterances`에 `버튼 선택: BUTTON`
+      - `conversation_history.transcript[*].display_text`
+      가 저장됐는지 검증 추가
+- 이번 단계 의미:
+  - 이제 CGA의 WebChat 이력 저장은 단순 원문 저장이 아니라, Aidot 운영 화면이 기대하는 `읽을 수 있는 대화 의미`에 더 가깝게 맞춰졌다.
+
+## 2026-06-22 01:39 KST
+
+### Admin Conversations 상세 팝업 표시 키 정렬
+
+- Aidot `admin/conversations` 화면 코드를 기준으로 상세 팝업이 직접 읽는 top-level 키를 다시 정렬했다.
+- 확인한 갭:
+  - `runtime_summary`가 객체로 들어가면 Aidot 화면에서 문자열로 처리될 때 `[object Object]`가 될 수 있었음.
+  - `completion_reason`, `dialog_ended`, `session_ended`, `room_id`, `client_room_id`는 `conversation_history` 안에는 있었지만, Aidot 상세 팝업은 `data_json` top-level에서도 직접 읽고 있었음.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - WebChat row:
+      - `runtime_summary`를 문자열 요약으로 저장
+      - 기존 구조성 정보는 `runtime_diagnostics`로 분리
+      - `session_ended`, `dialog_ended`, `completion_reason`, `room_id`, `client_room_id`, `runtime_events`를 top-level에 보강
+    - Simulator row도 같은 방식으로 문자열 요약과 top-level 메타를 맞춤
+  - `scripts/check-admin-conversations-api.mjs`
+    - WebChat/Simulator row 각각에 대해
+      - `runtime_summary`
+      - `completion_reason`
+      - `dialog_ended`
+      - `session_ended`
+      - `room_id`
+      - `client_room_id`
+      검증 추가
+- 이번 단계 의미:
+  - 이제 CGA의 `/api/v1/admin/conversations` 응답은 Aidot 운영 화면이 목록뿐 아니라 상세 팝업에서도 그대로 읽기 쉬운 형태에 더 가까워졌다.
+
+## 2026-06-22 01:53 KST
+
+### runtime_events 최소 의미 계약 보강
+
+- Aidot 상세 팝업의 `변수 변경 추적` 섹션이 실제로 읽는 `runtime_events[*].data.updatedVariables / valuePreviews` 최소 shape를 CGA 응답에도 넣기 시작했다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - `conversationHistory.runtime_events` 기본 배열 추가
+    - WebChat 메시지 처리 시 synthetic runtime event 3종 추가
+      - `channel.runtime.intent_matched`
+      - `channel.runtime.talk_response_stored`
+      - `channel.runtime.completed`
+    - 각 event에
+      - `data.updatedVariables`
+      - `data.valuePreviews`
+      - `queueEventId`
+      를 포함
+    - Simulator row도 같은 최소 이벤트 구조를 파생 생성
+    - `/api/v1/admin/conversations` 응답의 `runtime_events`에 WebChat/Simulator 이벤트가 실제 포함되도록 연결
+  - `scripts/check-admin-conversations-api.mjs`
+    - WebChat/Simulator row 모두
+      - `runtime_events` 존재
+      - `updatedVariables`
+      - `valuePreviews.$matchedIntent`
+      를 검증 추가
+- 이번 단계 의미:
+  - 아직 Aidot 엔진의 전체 runtime trace를 모두 재현한 것은 아니지만,
+  - 상세 팝업의 변수 변경 추적 섹션이 최소한 의미 있는 데이터로 열릴 수 있는 기반을 만들었다.
+
+## 2026-06-22 02:04 KST
+
+### Admin conversations `messages` 배열 snake_case 정규화
+
+- Aidot `admin/conversations` 화면은 `conversation_history.transcript`를 우선 사용하지만, fallback `messages` 배열도 `participant_kind`, `participant_name`, `created_at`, `payload_json`, `display_text` 기준으로 읽는다.
+- 확인한 갭:
+  - CGA WebChat `messages`는 camelCase(`participantKind`, `createdAt`)가 섞여 있었음
+  - Simulator `messages`도 transcript와 달리 `display_text`, `payload_json`이 비어 있었음
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - `serializeAdminConversationMessage()` 헬퍼 추가
+    - WebChat row의 `data_json.messages`를 Aidot형 snake_case 메시지 배열로 변환
+    - Simulator row의 `data_json.messages`도 transcript 기반 snake_case 배열로 정규화
+  - `scripts/check-admin-conversations-api.mjs`
+    - WebChat/Simulator 각각에 대해
+      - `messages[*].participant_kind`
+      - `messages[*].display_text`
+      검증 추가
+- 이번 단계 의미:
+  - 이제 `/api/v1/admin/conversations` 응답은 transcript뿐 아니라 fallback messages 배열까지 Aidot 화면이 기대하는 메시지 shape에 더 가깝게 맞춰졌다.
+
+## 2026-06-22 02:16 KST
+
+### CGA WebChat 클라이언트 연결 흐름 보강
+
+- CGA `apps/webchat` 클라이언트는 기존에 단순 `bootstrap -> room 생성 -> 메시지 송신` 흐름만 가지고 있어, Aidot 최신 webchat의 `connect -> room list -> room detail -> 없으면 create` 흐름과 차이가 있었다.
+- 반영 범위:
+  - `apps/webchat/app.js`
+    - backend message를 snake_case/camelCase 모두 읽는 `normalizeBackendMessage()` 추가
+    - 초기 연결 시 `POST /api/v1/channels/webchat/connect` 호출
+    - 이후 `GET /api/v1/channels/webchat/rooms?participant_id=...`로 기존 room 조회
+    - 같은 봇의 open room이 있으면 `GET /api/v1/channels/webchat/rooms/{id}`로 복원
+    - 없을 때만 새 room 생성
+    - bot message 렌더도 `display_text` 우선으로 읽도록 보강
+  - `scripts/check-webchat-channel-api.mjs`
+    - room 생성 후
+      - room list
+      - room detail
+      가 정상 응답하는지 검증 추가
+- 이번 단계 의미:
+  - 아직 Aidot 최신 webchat UI 전체를 복제한 것은 아니지만,
+  - CGA 자체 WebChat 클라이언트도 Aidot가 기대하는 채널 연결/복원 흐름에 한 단계 더 가까워졌다.
+
+## 2026-06-22 02:24 KST
+
+### WebChat 응답 해석 우선순위 정리
+
+- Aidot webchat은 room 생성/복원/메시지 응답에서 `messages`, `botMessages`, `initialMessages`, `botMessage`를 상황별로 다르게 내려줄 수 있다.
+- CGA `apps/webchat` 클라이언트는 이 우선순위를 부분적으로만 처리하고 있었기 때문에, 응답 해석 규칙을 helper로 고정했다.
+- 반영 범위:
+  - `apps/webchat/app.js`
+    - `resolveInitialMessages()` 추가
+    - 초기 room 복원/생성 시
+      - `messages`
+      - `botMessages`
+      - `initialMessages`
+      - `botMessage`
+      순서로 메시지를 해석
+    - room detail이 `closed` 상태면 그 room을 재사용하지 않고 새 room 생성 흐름으로 진행
+    - 메시지 전송 응답도 같은 helper로 해석하도록 정리
+- 이번 단계 의미:
+  - CGA WebChat 클라이언트는 이제 Aidot backend 응답 형태가 조금 달라도 더 안정적으로 같은 사용자 흐름을 유지할 수 있다.
+
+## 2026-06-22 02:36 KST
+
+### Studio version package 확장 메타 보존 보강
+
+- 남아 있던 round-trip 리스크 중 하나는 `Studio 화면에서 version package를 업로드한 뒤 다시 다운로드할 때`, CGA가 직접 이해하지 않는 확장 메타를 잃어버릴 수 있다는 점이었다.
+- 반영 범위:
+  - `apps/studio/app.js`
+    - `currentVersionDocumentExtraFields`
+    - `currentVersionSystemConfigExtraFields`
+    - `currentVersionLegacyExtraFields`
+    상태 추가
+    - version package import 시
+      - top-level 미인식 키
+      - `system_config` 내부 미인식 키
+      - `version` 내부 미인식 키
+      를 별도 보존
+    - version package export 시 위 확장 메타를 다시 합쳐서 내보내도록 보강
+- 이번 단계 의미:
+  - CGA가 직접 쓰는 핵심 필드(`dialogs`, `system_config.bot`, `counts`, `llm`, `channels`)는 계속 정상 처리하고,
+  - Aidot 쪽 확장 메타는 가능한 한 손실 없이 유지하는 방향으로 round-trip 안정성을 높였다.
+- 검증:
+  - `node --check apps/studio/app.js` 문법 검사로 1차 확인
+  - 이 변경은 browser runtime 상태 보존 성격이라 별도 시나리오 검증은 다음 round-trip 점검 단계에서 이어서 확인 예정
+
+## 2026-06-22 02:44 KST
+
+### 확장 메타 snapshot/컨텍스트 전환 보강
+
+- 앞 단계 보강만으로는 메모리 상태에서는 유지되지만, 새로고침/봇 전환 시 확장 메타가 사라지거나 다른 봇으로 섞일 수 있는 리스크가 있었다.
+- 반영 범위:
+  - `apps/studio/app.js`
+    - workspace snapshot 저장 시 `version_asset_metadata` 추가
+    - snapshot 복원 시
+      - `document_extra_fields`
+      - `system_config_extra_fields`
+      - `legacy_version_extra_fields`
+      복원
+    - `applyCurrentBotToStudioState()`, `applyAidotBotPackage()`에서 봇 컨텍스트가 바뀔 때 확장 메타를 기본 초기화
+- 이번 단계 의미:
+  - 이제 version package 확장 메타는
+    - import 후 메모리 상태
+    - workspace snapshot 저장/복원
+    - 봇 전환 시 오염 방지
+    까지 한 세트로 묶여서 더 안전해졌다.
+
+## 2026-06-22 03:02 KST
+
+### version asset metadata 분리 검증 추가
+
+- 직전 단계에서 `apps/studio/data/version-asset-metadata.js`로 분리한 helper가 실제로 round-trip 되는지 고정 검증이 없어서, 회귀 방지용 체크를 추가했다.
+- 반영 범위:
+  - `scripts/check-version-asset-metadata.mjs`
+    - 빈 상태 기본값 검증
+    - clone deep copy 검증
+    - snapshot build/read round-trip 검증
+    - 비정상 입력 배열/문자열/null 정규화 검증
+  - `package.json`
+    - `studio:version-asset-metadata-check` 스크립트 추가
+    - `studio:validate`에 위 검증 포함
+- 이번 단계 의미:
+  - 이제 version package 확장 메타 보존 로직은 단순 문법 검사만이 아니라, snapshot 저장/복원과 deep copy 의미까지 자동 확인된다.
+
+## 2026-06-22 03:18 KST
+
+### WebChat room 재생성 시 `client_room_id` 재사용 호환 보강
+
+- Aidot 최신 채널 API를 다시 대조한 결과, 같은 `client_room_id`로 `POST /api/v1/channels/webchat/rooms`가 다시 들어오면 기존 open room을 재사용하는 규칙이 있었고, CGA는 이 동작이 약해 중복 room이 생길 수 있는 갭이 있었다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - room 생성 전에 같은 `client_room_id` 기존 room 탐색 추가
+    - 기존 room이 같은 bot/version의 open room이면 새 room을 만들지 않고 기존 room 그대로 반환
+    - 같은 `client_room_id`지만 bot/version이 달라진 경우 기존 room은 `closed` 처리 후 새 room 생성
+  - `scripts/check-webchat-channel-api.mjs`
+    - 같은 `client_room_id`로 room 생성 요청을 한 번 더 보내고, 동일 room id가 재사용되는지 검증 추가
+- 이번 단계 의미:
+  - CGA WebChat backend는 이제 Aidot webchat이 기대하는 `중복 생성 대신 세션 재사용` 흐름에 더 가깝게 맞춰졌다.
+
+## 2026-06-22 03:27 KST
+
+### 상위 버전 version import 후 unknown field round-trip 검증 보강
+
+- 상위 버전 import에서 `제거 대상 기능은 빠지고, 미지원이 아닌 확장 필드는 다시 내려와야 한다`는 원칙을 검증으로 고정했다.
+- 반영 범위:
+  - `scripts/check-asset-transfer-api.mjs`
+    - `contract_version = v1.1` version import 케이스에
+      - top-level unknown field
+      - `system_config` unknown field
+      - legacy `version` unknown field
+      를 추가
+    - re-export 시 위 3종이 그대로 남는지 검증 추가
+    - 동시에 기존 pruning 대상인
+      - `advanced_analytics`
+      - `system_config.channels.kakaoKr`
+      - `system_config.channels.teams`
+      는 계속 제거/비활성 처리되는지 유지 검증
+- 이번 단계 의미:
+  - 이제 CGA는 `상위 버전 봇을 무조건 축소 저장`하는 것이 아니라,
+  - `v1.0 의미를 깨지 않는 확장 메타는 최대한 보존`한다는 규칙까지 자동 검증으로 묶였다.
+
+## 2026-06-22 03:39 KST
+
+### CGA WebChat 클라이언트의 Aidot형 연결/fallback 흐름 보강
+
+- CGA `apps/webchat`는 이미 기본 송수신은 가능했지만, Aidot 최신 webchat에 비해 여전히 legacy bootstrap 의존이 남아 있었다.
+- 반영 범위:
+  - `apps/webchat/app.js`
+    - 초기 연결 시 `connect` 응답의 `bots`를 우선 사용하도록 정리
+    - `connect` 응답에 봇 목록이 없을 때만 `/api/v1/channels/webchat/bots`로 fallback
+    - 마지막 fallback으로만 legacy `/api/v1/webchat/bootstrap` 사용
+    - 기존 open room 복원 시 room detail 조회 실패가 나면 그대로 죽지 않고 새 room 생성 흐름으로 넘어가도록 보강
+  - `apps/webchat/index.html`
+    - `app.js` 캐시 버전 문자열 갱신
+- 이번 단계 의미:
+  - CGA 자체 WebChat 화면도 Aidot 최신 webchat이 사용하는 `connect -> bots -> rooms/detail` 축에 더 가까워졌고,
+  - legacy bootstrap은 필수가 아니라 하위호환 fallback 역할로만 남게 됐다.
+
+## 2026-06-22 03:47 KST
+
+### 간단형 CGA WebChat의 `sessionEnded` 반영 보강
+
+- 간단형 `apps/webchat` 화면은 기본 송수신은 가능했지만, Aidot 최신 webchat처럼 message 응답의 `runtime.sessionEnded`를 즉시 반영하지는 못하고 있었다.
+- 반영 범위:
+  - `apps/webchat/app.js`
+    - `sendMessage()`에서 `runtime.sessionEnded === true`를 감지하면
+      - 현재 `roomId`를 비우고
+      - 상단 상태를 `세션 종료`로 갱신하고
+      - `completionReason`이 있으면 런타임 노트에 함께 표시하고
+      - 시스템 메시지로 새 채팅방 생성 안내를 남기도록 보강
+- 이번 단계 의미:
+  - 간단형 CGA WebChat도 이제 Aidot 최신 webchat처럼 `세션 종료 응답 -> 입력 중단 -> 새 세션 유도` 흐름에 더 가깝게 동작한다.
+
+## 2026-06-22 03:58 KST
+
+### 간단형 CGA WebChat의 richer payload 최소 수용성 보강
+
+- 간단형 `apps/webchat`는 기존에 bot message를 거의 `text`만 표시하고 있어서, Aidot 계열 richer payload가 와도 대화 흐름을 이어받는 최소 장치가 필요했다.
+- 반영 범위:
+  - `apps/webchat/app.js`
+    - message 정규화 시
+      - `payload_json` / `payload`
+      - `options`
+      - `sourceTalkNodeId`
+      를 같이 읽도록 보강
+    - rich form / adaptive / table를 전부 그리지는 않더라도,
+      - `display_text` 우선 표시
+      - 텍스트가 부족하면 payload 요약 문구 표시
+      - `options`가 있으면 후속 클릭 버튼으로 렌더
+      - 버튼 클릭 시 `source_talk_node_id`를 함께 다시 송신
+    - 전송 중 상태 플래그를 추가해 옵션 버튼 중복 클릭을 줄이도록 보강
+  - `apps/webchat/styles.css`
+    - payload note / option button 최소 스타일 추가
+  - `apps/webchat/index.html`
+    - css/js 캐시 버전 문자열 갱신
+- 이번 단계 의미:
+  - 간단형 CGA WebChat은 아직 Aidot full rich UI를 복제한 것은 아니지만,
+  - richer bot message가 와도 최소한 `읽기`, `후속 선택`, `다음 요청 전달`이 끊기지 않는 방향으로 한 단계 더 안정화됐다.
+
+## 2026-06-22 04:07 KST
+
+### simple WebChat rich message 정규화 로직 분리 및 자동 검증 추가
+
+- 방금 보강한 richer payload 수용 로직이 이후에도 깨지지 않도록, simple webchat의 message 정규화 부분을 순수 함수로 분리하고 자동 검증에 포함했다.
+- 반영 범위:
+  - `apps/webchat/message-shape.js`
+    - `extractMessageOptions()`
+    - `summarizePayload()`
+    - `normalizeBackendMessage()`
+    를 분리
+  - `apps/webchat/app.js`
+    - 위 helper import로 교체해 UI 본체와 message shape 판단 로직을 분리
+  - `scripts/check-webchat-message-shape.mjs`
+    - Aidot형 샘플 메시지 기준으로
+      - payload options 추출
+      - table summary
+      - rich form summary
+      - adaptive card summary
+      - `sourceTalkNodeId` 보존
+      - plain text fallback
+      을 검증
+  - `package.json`
+    - `studio:webchat-message-shape-check` 추가
+    - `studio:validate`에 포함
+- 이번 단계 의미:
+  - 이제 simple webchat의 richer message 수용성은 수동 확인이 아니라 자동 검증 경로로 들어갔다.
+
+## 2026-06-22 04:18 KST
+
+### server response -> simple webchat normalize 브리지 검증 추가
+
+- rich message 정규화 helper만 따로 검증하는 것으로는 부족해서, 실제 CGA 서버 응답이 simple webchat helper까지 자연스럽게 이어지는지 확인하는 브리지 검증을 추가했다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - 테스트용 예약 문구 `__CGA_RICH_OPTIONS__` 입력 시
+      - `messageType = form`
+      - `options`
+      - `payload_json.richForm`
+      - `payload_json.sourceTalkNodeId`
+      를 가진 Aidot형 샘플 bot message를 반환하도록 보강
+  - `scripts/check-webchat-channel-api.mjs`
+    - 위 rich sample 응답의 `messageType`, `options`, `sourceTalkNodeId`를 직접 검증 추가
+  - `scripts/check-webchat-message-bridge.mjs`
+    - 실제 서버에 room 생성/메시지 전송 후
+    - 응답 bot message를 `normalizeBackendMessage()`에 바로 넣어
+    - simple webchat이 기대하는 정규화 결과가 나오는지 검증 추가
+  - `package.json`
+    - `studio:webchat-message-bridge-check` 추가
+    - `studio:validate`에 포함
+- 이번 단계 의미:
+  - 이제 `server response -> client normalize` 축도 자동 검증으로 묶였다.
+
+## 2026-06-22 04:27 KST
+
+### rich sample의 운영 조회 표시 의미 검증 보강
+
+- 다음 단계로, simple webchat용 rich sample이 운영 조회(`/api/v1/admin/conversations`) 축에서도 의미를 잃지 않는지 확인했다.
+- 반영 범위:
+  - `scripts/check-admin-conversations-api.mjs`
+    - 기존 webchat 세션에 `__CGA_RICH_OPTIONS__` rich sample 메시지를 추가로 전송
+    - 운영 조회 응답의
+      - `data_json.messages`
+      - `data_json.conversation_history.transcript`
+      에서
+        - `message_type = form`
+        - `display_text`
+        - `payload_json.options`
+        - `payload_json.sourceTalkNodeId`
+      를 직접 검증 추가
+  - `scripts/serve-studio.js`
+    - `summarizeRichformPayload()`가 `payload_json.options`를 함께 읽도록 보강
+    - `conversationHistoryDisplayText()`가 rich payload의 제목/옵션 요약을 우선 반영하도록 보강
+- 이번 단계 의미:
+  - 이제 rich sample은
+    - 채널 응답
+    - simple webchat normalize
+    - 운영 조회 messages/transcript
+    까지 한 줄로 이어지는 검증 경로를 갖게 됐다.
+
+## 2026-06-22 04:36 KST
+
+### Aidot 1.1형 version round-trip fixture 파일 분리
+
+- `version import/export` 검증이 코드 안의 인라인 JSON 조립에 너무 의존하고 있어서, 이후 Aidot 쪽 변경과 직접 대조하기 쉽도록 fixture 파일로 분리했다.
+- 반영 범위:
+  - `scripts/fixtures/aidot-version-uploaded.json`
+    - Aidot 1.1형 기본 version round-trip 샘플 추가
+  - `scripts/fixtures/aidot-version-higher-v1_1.json`
+    - 상위 버전 pruning/unknown field 보존 검증용 샘플 추가
+  - `scripts/check-asset-transfer-api.mjs`
+    - 위 fixture JSON을 읽어서 import 검증에 사용하도록 변경
+  - `scripts/check-api-answer-api.mjs`
+    - 전체 validate 중 간헐적으로 보이던 포트 충돌/기동 플래키성을 줄이기 위해 테스트 포트 범위를 크게 확장
+- 이번 단계 의미:
+  - 이제 `version` 검증은 코드 안에서 임의로 조립한 payload가 아니라, 별도 fixture 문서를 기준으로 round-trip을 확인한다.
+
+## 2026-06-22 04:44 KST
+
+### bot/dialog package도 fixture 파일 기준으로 전환
+
+- version만 fixture 파일 기준으로 두면 반쪽이라, `bot`과 `dialog` package도 같은 방식으로 분리했다.
+- 반영 범위:
+  - `scripts/fixtures/aidot-bot-uploaded.json`
+    - bot package round-trip 검증용 Aidot형 샘플 추가
+  - `scripts/fixtures/aidot-dialog-password-reset.json`
+    - dialog package round-trip 검증용 Aidot형 샘플 추가
+  - `scripts/check-asset-transfer-api.mjs`
+    - bot/dialog import 검증도 fixture JSON을 읽도록 변경
+- 이번 단계 의미:
+  - 이제 `version`, `bot`, `dialog` 핵심 package 검증은 모두 fixture 문서 기준으로 동작한다.
+
+## 2026-06-22 04:52 KST
+
+### api package도 fixture 파일 기준으로 전환
+
+- `api` import/export 검증도 인라인 JSON 의존을 줄이고 fixture 문서 기준으로 고정했다.
+- 반영 범위:
+  - `scripts/fixtures/aidot-api-uploaded.json`
+    - 기본 API round-trip 샘플 추가
+  - `scripts/fixtures/aidot-api-only-custom.json`
+    - `apis` 배열만 있는 케이스 샘플 추가
+  - `scripts/fixtures/aidot-api-alias-custom.json`
+    - alias 필드명(`apiName`, `destinationBaseUrl`, `authType`, `jsonPath` 등) 검증용 샘플 추가
+  - `scripts/check-asset-transfer-api.mjs`
+    - 위 3종 fixture를 읽어 API import 검증에 사용하도록 변경
+- 이번 단계 의미:
+  - 이제 `version`, `bot`, `dialog`, `api` 핵심 package 검증이 모두 fixture 문서 기준으로 정리됐다.
+
+## 2026-06-22 04:58 KST
+
+### dictionary / blocklist 텍스트 자산도 fixture 파일 기준으로 전환
+
+- 남아 있던 인라인 전송 포맷 중 `dictionary`, `blocklist` 텍스트 업로드 샘플도 fixture 파일로 분리했다.
+- 반영 범위:
+  - `scripts/fixtures/aidot-dictionary-uploaded.txt`
+    - dictionary import 검증용 TXT 샘플 추가
+  - `scripts/fixtures/aidot-blocklist-uploaded.txt`
+    - blocklist import 검증용 TXT 샘플 추가
+  - `scripts/check-asset-transfer-api.mjs`
+    - text fixture loader 추가
+    - dictionary/blocklist import 검증이 위 TXT fixture를 읽도록 변경
+- 이번 단계 의미:
+  - 이제 핵심 asset transfer 검증은 JSON package뿐 아니라 대표 TXT 자산까지 fixture 문서 기준으로 정리됐다.
+
+## 2026-06-22 05:06 KST
+
+### Aidot 1.1 호환 검증 범위 매트릭스 문서 추가
+
+- 자동 검증 범위가 꽤 넓어져서, 현재 CGA가 Aidot 1.1과 어디까지 맞춰졌는지 운영 기준 문서로 한 번 고정했다.
+- 반영 범위:
+  - `docs/aidot-1.1-compatibility-coverage-matrix.md`
+    - `자동 검증됨 / 부분 검증 / 수동 확인 필요` 상태 구분 추가
+    - package transfer, WebChat API, simple webchat normalize, admin conversations, version asset metadata 범위를 표로 정리
+    - 현재 fixture 자산 목록 정리
+    - 현재 판단과 남은 수동 확인 범위 정리
+- 이번 단계 의미:
+  - 이제 “무엇이 이미 자동 검증되고 있고, 무엇이 아직 수동 확인 범위인지”를 문서로 바로 설명할 수 있게 됐다.
+
+## 2026-06-22 05:18 KST
+
+### WebChat session ended 흐름도 자동 검증 범위로 승격
+
+- `runtime.sessionEnded`는 코드상 반영돼 있었지만, 전용 검증 시나리오가 없어서 매트릭스상 `부분 검증`으로 남아 있었다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - `__CGA_SESSION_END__` 테스트 전용 입력 추가
+    - 해당 입력 시 `sessionEnded=true`, `completionReason=session_ended`, room `closed`, `session_end_reason=user_requested_end`가 저장되도록 반영
+  - `scripts/check-webchat-session-ended.mjs`
+    - 종료 응답 메타
+    - room detail의 `closed` 상태
+    - admin conversations의 `session_ended`, `completion_reason`, `room_status`
+    - 동일 `client_room_id` 재진입 시 새 room 생성
+    - 까지 한 번에 확인하는 검증 스크립트 추가
+  - `package.json`
+    - `studio:webchat-session-ended-check` 추가
+    - `studio:validate`에 포함
+  - `docs/aidot-1.1-compatibility-coverage-matrix.md`
+    - Simple WebChat 종료 흐름 상태를 `자동 검증됨`으로 상향
+- 이번 단계 의미:
+  - 이제 WebChat 종료 처리도 단순 코드 존재 수준이 아니라 실제 종료 응답, room 상태 전환, 운영 이력 반영, 재진입 동작까지 자동 검증 기준으로 관리할 수 있게 됐다.
+
+## 2026-06-22 05:33 KST
+
+### Studio 대화 이력 조회 UI wiring 검증 추가 및 날짜 필터 버그 수정
+
+- `대화 이력 조회` 화면은 API 자체는 맞게 붙어 있었지만, 시작일/종료일 변경 시 화면이 다시 그려지지 않아 날짜 필터가 즉시 반영되지 않는 버그가 있었다.
+- 반영 범위:
+  - `apps/studio/app.js`
+    - `data-history-start-date`, `data-history-end-date` change 이벤트에서 상태만 바꾸지 않고 `renderConversationHistorySurface(surface)`와 `bindAdminSurfaceControls(surface)`를 다시 호출하도록 수정
+  - `scripts/check-conversation-history-ui.cjs`
+    - 화면이 `/api/v1/admin/conversations`를 직접 사용하고 있는지
+    - 채널/시작일/종료일/초기화 control이 존재하는지
+    - 채널 옵션 병합/정규화
+    - 날짜 범위 필터
+    - row mapping
+    - 을 자동 확인하는 UI wiring 검증 스크립트 추가
+  - `package.json`
+    - `studio:conversation-history-ui-check` 추가
+    - `studio:validate`에 포함
+  - `docs/aidot-1.1-compatibility-coverage-matrix.md`
+    - `Studio 대화 이력 조회 UI`를
+      - `UI wiring` 자동 검증
+      - `브라우저 렌더` 부분 검증
+      로 분리
+- 이번 단계 의미:
+  - 이제 대화 이력 조회는 API 의미 검증뿐 아니라, Studio 화면이 그 데이터를 실제로 어떤 필터와 표 구조로 소비하는지까지 자동 검증 기준으로 관리할 수 있게 됐다.
+
+## 2026-06-22 05:45 KST
+
+### Simple WebChat UI wiring 검증 추가 및 세션 종료 후 재진입 보강
+
+- simple WebChat은 `sessionEnded`를 감지하고 안내 문구는 보여줬지만, 그 뒤 사용자가 새 메시지를 보내도 새 room을 다시 만들지 못해 실제 재진입 흐름이 끊기는 갭이 있었다.
+- 반영 범위:
+  - `apps/webchat/app.js`
+    - submit 시 `roomId`가 비어 있으면 즉시 종료시키지 않고 `openOrCreateRoom()`을 다시 호출해 새 세션을 만든 뒤 메시지를 계속 보낼 수 있도록 보강
+    - 재연결 중/실패 상태 문구도 함께 갱신
+  - `scripts/check-webchat-ui.cjs`
+    - WebChat 화면의 핵심 DOM binding 존재 여부
+    - `connect -> bots fallback -> legacy bootstrap fallback`
+    - `rooms -> room detail -> create` 흐름
+    - `resolveInitialMessages()` 우선순위
+    - `source_talk_node_id` 전달
+    - `sessionEnded` 처리 및 새 room 재생성 submit 흐름
+    - 을 자동 확인하는 UI wiring 검증 스크립트 추가
+  - `package.json`
+    - `studio:webchat-ui-check` 추가
+    - `studio:validate`에 포함
+  - `docs/aidot-1.1-compatibility-coverage-matrix.md`
+    - simple WebChat을
+      - `UI wiring` 자동 검증
+      - `브라우저 렌더` 부분 검증
+      으로 분리
+- 이번 단계 의미:
+  - 이제 simple WebChat도 단순 API 응답/normalize 확인을 넘어서, 실제 화면 코드가 Aidot 호환 연결 흐름과 세션 재진입 흐름을 어떻게 소비하는지까지 자동 검증 기준으로 관리할 수 있게 됐다.
+
+## 2026-06-22 05:58 KST
+
+### legacy AM/session core flow 자동 검증 추가
+
+- 남아 있던 큰 공백 중 하나는 `AM/session API 전체 parity`였는데, 실제로는 legacy bootstrap과 legacy room message 경로가 어느 정도 구현돼 있으면서도 검증이 얕게만 걸려 있었다.
+- 반영 범위:
+  - `scripts/check-am-session-api.mjs`
+    - legacy `/api/v1/webchat/bootstrap`의 bot/participant envelope
+    - legacy room message 호출 시 implicit room 생성
+    - 생성된 room의 modern room detail/list 조회
+    - legacy `__CGA_SESSION_END__` 종료 처리
+    - `/api/v1/admin/conversations` 운영 이력 반영
+    - 까지 한 번에 확인하는 검증 스크립트 추가
+  - `package.json`
+    - `studio:am-session-api-check` 추가
+    - `studio:validate`에 포함
+  - `docs/aidot-1.1-compatibility-coverage-matrix.md`
+    - `AM/session API 전체 parity`를
+      - `Legacy AM/session core flow` 자동 검증
+      - `전체 parity` 부분 검증
+      으로 분리
+- 이번 단계 의미:
+  - 이제 CGA는 modern webchat 채널 API뿐 아니라, Aidot 하위호환 성격의 legacy AM/session core flow도 자동 검증 기준으로 관리할 수 있게 됐다.
+
+## 2026-06-22 06:10 KST
+
+### 브라우저 기준 rich sample runtime 의미 정리
+
+- 실제 브라우저에서 simple WebChat을 확인하던 중, test용 rich sample 입력 `__CGA_RICH_OPTIONS__`는 form 버튼을 정상 렌더하지만 runtime note에는 기본 scenario intent인 `password_reset`가 표시되어 의미가 어긋나는 것을 확인했다.
+- 반영 범위:
+  - `scripts/serve-studio.js`
+    - rich sample 응답일 때는 intent를 기본 scenario가 아니라 `sample_rich_options`로 명시하도록 조정
+  - `scripts/check-webchat-channel-api.mjs`
+    - rich sample 응답의 intent name이 `sample_rich_options`인지 검증 추가
+- 이번 단계 의미:
+  - test hook 기반 rich sample도 화면 표시와 runtime 의미가 서로 어긋나지 않게 정리됐다.
+
+## 2026-06-22 06:24 KST
+
+### 시스템 관리 서브뷰 deep-link 지원 추가
+
+- 브라우저로 Studio를 실제 확인하던 중, `access-management` 화면 안의 서브뷰는 상태가 JS 메모리에만 있고 URL에는 남지 않아 직접 진입/재현/자동 검증이 불편했다.
+- 반영 범위:
+  - `apps/studio/app.js`
+    - `parseHashRoute()`, `buildScreenHash()` 추가
+    - 시스템 관리 서브메뉴 링크를 `#access-management?subview=conversation-history` 형태로 생성
+    - 클릭 시 `currentSystemAdminSubview`를 같이 보존
+    - `hashchange`와 화면 복원 시에도 `subview`를 다시 읽어 활성 서브뷰를 복원
+  - `scripts/check-access-subview-hash.cjs`
+    - 위 deep-link 계약이 소스에 유지되는지 확인하는 검증 스크립트 추가
+  - `package.json`
+    - `studio:access-subview-hash-check` 추가
+    - `studio:validate`에 포함
+  - `docs/aidot-1.1-compatibility-coverage-matrix.md`
+    - system-admin subview deep-link를 자동 검증 항목으로 추가
+- 이번 단계 의미:
+  - 이제 시스템 관리 하위 화면은 브라우저 새로고침이나 직접 URL 진입 시에도 서브뷰 상태를 더 안정적으로 복원할 수 있고, 이후 브라우저 기반 검증도 한 단계 더 쉽게 붙일 수 있게 됐다.
+
+## 2026-06-22 06:41 KST
+
+### 최신 Aidot WebChat fallback 실증 검증 추가
+
+- `docs/aidot-latest-parity-step-plan.md`를 현재 실제 진행 상태에 맞게 갱신했다.
+  - 1~2단계 완료
+  - 3~5단계 사실상 완료 또는 거의 완료
+  - 남은 핵심을 `6단계 최신 Aidot WebChat 실증`과 `7단계 최종 회귀 판정`으로 재정리
+- 최신 Aidot `apps/webchat/app/page.tsx`가 실제로 사용하는 `AM 우선 호출 -> channel fallback` 흐름을 그대로 흉내 내는 자동 검증을 추가했다.
+- 반영 범위:
+  - `scripts/check-aidot-webchat-latest-flow.mjs`
+    - `connect`
+    - room list
+    - `AM /session/start` 실패 후 channel room create fallback
+    - `AM /chat` 실패 후 channel message fallback
+    - rich message / `sourceTalkNodeId`
+    - `AM /session/end` 실패 후 channel `DELETE`
+    - closed room detail
+    - same `client_room_id` 재생성
+    - admin conversations 반영
+    - 까지 한 번에 검증
+  - `package.json`
+    - `studio:aidot-webchat-latest-flow-check` 추가
+    - `studio:validate`에 포함
+  - `docs/aidot-1.1-compatibility-coverage-matrix.md`
+    - `Latest Aidot WebChat fallback flow` 자동 검증 항목 추가
+- 이번 단계 의미:
+  - 최신 Aidot full WebChat 앱을 이 작업공간에서 바로 실행하지 못하더라도,
+  - 실제 최신 클라이언트가 밟는 핵심 fallback 경로를 CGA backend 기준으로 자동 검증하는 기반을 확보했다.
+- 검증:
+  - `node --check scripts/check-aidot-webchat-latest-flow.mjs` 통과
+  - `npm run studio:aidot-webchat-latest-flow-check` 통과
+  - `npm run studio:validate` 전체 통과
+  - 참고: `MODULE_TYPELESS_PACKAGE_JSON` 경고는 계속 보이지만 현재 실패 원인은 아니며, 이번 단계에서는 동작 변경 없이 유지
+
+## 2026-06-22 23:02 KST
+
+### Studio 서브뷰 해시 직접 진입 회귀 원인 축소 및 보강
+
+- 브라우저 기준으로 `#access-management?subview=conversation-history` 직접 진입을 다시 확인하는 과정에서,
+  - `apps/studio/app.js` 내부 deep-link 로직만으로는 부족했고
+  - `apps/studio/index.html` 하단 인라인 fallback 스크립트가 hash 전체 문자열을 그대로 비교하면서
+  - `workspace-home`로 다시 덮어쓰는 회귀 지점을 확인했다.
+- 반영 범위:
+  - `apps/studio/app.js`
+    - 명시적 hash route가 있을 때 post-login landing이 이를 덮어쓰지 않도록 보강
+    - 세션 복원 후 `applyScreenLayout()`를 다시 호출하도록 보강
+    - explicit hash screen이 selectable하면 현재 active screen보다 우선해 다시 해석하도록 보강
+  - `apps/studio/index.html`
+    - `parseHashScreenId()` 추가
+    - 인라인 fallback 스크립트가 `#screen?subview=...` 형식에서 `screen`만 비교하도록 수정
+    - 정적 자원 캐시 버전을 `20260622-2`로 상향
+  - `scripts/check-access-subview-hash.cjs`
+    - `app.js`뿐 아니라 `index.html` 인라인 hash parser까지 검증하도록 보강
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:access-subview-hash-check` 통과
+  - `npm run studio:validate` 전체 통과
+- 추가 확인:
+  - 기존 `4173` 포트 서버는 현재 워크트리의 최신 정적 파일을 서빙하지 않는 별도 오래된 프로세스로 확인되어,
+    브라우저 수동 점검은 `4181` 신규 서버 기준으로 다시 진행했다.
+  - `4181` 신규 서버 응답에서 `app.js?v=20260622-2`와 `parseHashScreenId()` 반영은 확인했다.
+- 이번 단계 의미:
+  - system-admin deep-link는 이제 `app.js` 내부 route 처리뿐 아니라,
+  - `index.html` fallback visibility script까지 포함해 같은 계약을 따르도록 정리됐다.
+
+## 2026-06-22 23:36 KST
+
+### Studio 대화 이력 조회 진입 시 초기화 중단 버그 수정
+
+- 최신 브라우저 기준 점검을 계속 진행하던 중,
+  - 로그인 화면 자체는 보이지만
+  - `data-entry-login-submit`, `data-entry-locale` 바인딩이 붙지 않고
+  - system-admin 대화 이력 조회 화면 초기화도 중간에서 멈추는 현상을 확인했다.
+- 원인:
+  - `apps/studio/app.js`의 `renderConversationHistorySurface()`에서
+  - 채널 선택 박스를 그릴 때 `selectedChannel` 지역 변수를 선언하지 않은 채 참조하고 있었고,
+  - 이 예외가 `renderAccessPanels()` 단계에서 발생하면서
+  - 이후 `bindAdminWorkbench()`까지 내려가지 못했다.
+- 반영 범위:
+  - `apps/studio/app.js`
+    - `renderConversationHistorySurface()` 안에 `const selectedChannel = String(currentConversationHistoryFilters.channel || "all");` 복구
+  - `apps/studio/index.html`
+    - 브라우저 캐시 영향을 피하기 위해 `app.js` 정적 자원 버전을 `20260622-6`으로 상향
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:access-subview-hash-check` 통과
+  - `npm run studio:validate` 전체 통과
+  - 브라우저 스모크 확인:
+    - `http://127.0.0.1:4182/?b=20260622-6#access-management?subview=conversation-history`
+    - `data-entry-login-submit`, `data-entry-locale` 바인딩 복구 확인
+    - 대화 이력 조회 채널 필터 기본값 `all` 확인
+    - system-admin 서브메뉴 링크 렌더링 복구 확인
+- 추가 확인:
+  - 기존 `4173` 서버는 여전히 오래된 정적 자원을 물고 있어 최신 수동 점검 기준에서 제외
+  - 최신 수동 확인은 `4182` 신규 서버 기준으로 계속 진행
+- 이번 단계 의미:
+  - 이제 system-admin 대화 이력 조회 화면 진입이 런타임 예외로 끊기지 않고,
+  - 로그인 이후 화면 복원과 실제 conversation-history 운영 조회 브라우저 실증을 다시 이어갈 수 있는 상태가 됐다.
+
+## 2026-06-22 23:49 KST
+
+### 로그인 이후 conversation-history deep-link 실브라우저 확인
+
+- 신규 서버 `4182` 기준으로 실제 브라우저 로그인 흐름을 다시 점검했다.
+- 확인 URL:
+  - `http://127.0.0.1:4182/?b=20260622-6#access-management?subview=conversation-history`
+- 실브라우저 확인 결과:
+  - 로그인 전:
+    - `data-entry-login-submit`, `data-entry-locale` 바인딩 정상
+  - 로그인 후:
+    - hash가 `#access-management?subview=conversation-history` 그대로 유지
+    - 활성 화면이 `access-management`로 복원
+    - system-admin 활성 서브뷰가 `conversation-history`로 유지
+    - 화면 헤더가 `대화 이력 조회`로 표시
+    - channel filter 기본값 `all` 유지
+    - conversation-history 패널이 즉시 표시
+- 반영 범위:
+  - `scripts/check-access-subview-hash.cjs`
+    - 단순 hash parser 존재 여부만 보지 않고,
+    - 로그인 성공 시 explicit hash route를 덮어쓰지 않는 계약까지 소스 검증하도록 강화
+    - `hasExplicitHashRoute()`
+    - `postAuthDefaultScreenPending = !hasExplicitHashRoute();`
+    - explicit hash route가 있을 때 `activeScreenId`를 hash 기준으로 복원하는 코드
+    - default landing이 explicit hash route를 건드리지 않는 분기
+    - 까지 확인하도록 보강
+- 검증:
+  - `npm run studio:access-subview-hash-check` 통과
+  - `npm run studio:validate` 전체 통과
+- 이번 단계 의미:
+  - 이제 system-admin 서브뷰 deep-link는
+    - URL 해석
+    - 로그인 전 초기 렌더
+    - 로그인 후 화면 복원
+    - 대화 이력 조회 패널 노출
+    - 까지 한 흐름으로 확인됐다.
+
+## 2026-06-23 00:06 KST
+
+### 진행 중 대화 이력 조회 자동 검증 편입
+
+- 최신 Aidot 1.1의 큰 구조 변화인
+  - `대화 진행 중에도 대화 이력 조회 가능`
+  - 요구를 CGA 자동 검증에도 직접 반영했다.
+- 반영 범위:
+  - `scripts/check-aidot-webchat-latest-flow.mjs`
+    - 최신 Aidot fallback create/chat 흐름 이후
+    - 세션 종료 전에 `/api/v1/admin/conversations`를 다시 조회해
+    - 해당 room이 `open` 상태로 보이는지
+    - transcript/messages가 이미 누적되어 조회되는지
+    - `session_ended === false` 상태가 유지되는지
+    - 검증하도록 보강
+  - `scripts/check-admin-conversations-api.mjs`
+    - 오래된 기대값 `password_reset` 고정 대신
+    - 최신 queue 기준 `latest_intent_name = sample_rich_options`를 확인하도록 수정
+    - 동시에 첫 사용자 발화와 초기 `password_reset` 응답이 transcript/messages 안에 보존되는지도 함께 검증
+  - `package.json`
+    - 빠져 있던 `studio:admin-conversations-check`를 `studio:validate` 체인에 편입
+  - `docs/aidot-1.1-compatibility-coverage-matrix.md`
+    - `진행 중 대화 이력 조회` 자동 검증 항목 추가
+  - `docs/aidot-latest-parity-step-plan.md`
+    - 6단계 진행 상태를 `대화 진행 중 이력 조회까지 자동 검증됨`으로 갱신
+- 안정화 보강:
+  - `scripts/check-aidot-webchat-latest-flow.mjs`
+  - `scripts/check-admin-conversations-api.mjs`
+    - 임시 포트 범위를 넓히고 서버 기동 대기 시간을 15초로 늘려
+    - 전체 `studio:validate` 체인에서 간헐 기동 실패가 나지 않도록 보강
+- 검증:
+  - `npm run studio:aidot-webchat-latest-flow-check` 통과
+  - `npm run studio:admin-conversations-check` 통과
+  - `npm run studio:validate` 전체 통과
+- 이번 단계 의미:
+  - 이제 CGA는 최신 Aidot 기준으로
+    - WebChat 대화 생성
+    - 대화 진행 중 운영 이력 조회
+    - 세션 종료 후 이력 상태 전환
+    - 까지를 자동 검증 범위 안에 넣은 상태다.
+
+## 2026-06-23 00:19 KST
+
+### Aidot full WebChat 실증용 브리지 및 수동 smoke 절차 고정
+
+- 최신 Aidot `apps/webchat` full UI는 기본 서버를 `http://localhost:8320`으로 가정하고 시작한다.
+- Aidot 참조본 자체는 수정하지 않고,
+  - CGA backend를 이 기본 주소로 브리지하는 얇은 프록시를 작업공간에 추가했다.
+- 반영 범위:
+  - `scripts/proxy-aidot-webchat-to-cga.cjs`
+    - `http://127.0.0.1:8320` 수신
+    - 기본 target `http://127.0.0.1:4182`
+    - request/response를 그대로 CGA backend로 전달
+  - `package.json`
+    - `npm run studio:aidot-webchat-proxy` 추가
+  - `docs/aidot-full-webchat-manual-smoke.md`
+    - full WebChat 기준 수동 smoke 절차 문서 추가
+    - 연결 테스트
+    - 채팅방 생성
+    - 일반 질의
+    - rich form
+    - 진행 중 운영 이력 조회
+    - 세션 종료
+    - 종료 후 운영 이력 조회
+    - 순서로 고정
+  - `docs/aidot-latest-parity-step-plan.md`
+    - 6단계에 프록시 실행 경로와 수동 smoke 문서 연결 반영
+- 확인:
+  - `Aidot\\node_modules\\next` 존재 확인
+  - `Aidot\\apps\\webchat` dev 서버 기동 가능 확인
+  - 프록시 기준 `http://127.0.0.1:8320/api/v1/channels/webchat/connect` -> 200 응답 확인
+- 검증:
+  - `node --check scripts/proxy-aidot-webchat-to-cga.cjs` 통과
+  - `npm run studio:validate` 전체 통과
+- 제한/판단:
+  - 현재 Codex 내장 브라우저 환경에서는 Next dev full UI hydration 상호작용까지 안정적으로 자동 재현되지는 않았다.
+  - 따라서 full WebChat 영역은
+    - backend/API 의미 호환은 자동 검증으로 관리하고
+    - full UI 경험은 이번에 고정한 브리지 + 수동 smoke 절차로 관리하는 것이 현재 가장 안전하다.
+- 이번 단계 의미:
+  - 남아 있던 `최신 Aidot full WebChat 실증`은 이제
+    - 실행 경로 없음
+    - 상태가 아니라
+    - 반복 가능한 실행 경로와 점검 절차가 확보된 상태다.
+
+## 2026-06-23 00:27 KST
+
+### Aidot full WebChat 원클릭 smoke 실행 경로 추가
+
+- full WebChat 수동 smoke는 준비 절차가 여러 단계라 반복 진입 비용이 있었다.
+- 이 비용을 줄이기 위해 아래 3개를 한 번에 띄우는 launcher를 추가했다.
+  - CGA Studio/backend
+  - Aidot `8320 -> CGA` 프록시
+  - Aidot full WebChat dev server
+- 반영 범위:
+  - `scripts/start-aidot-full-webchat-smoke.cjs`
+    - `4182 / 8320 / 3330` 기본 포트 기준으로 3개 프로세스를 동시에 시작
+    - stdout/stderr prefix를 붙여 어떤 프로세스 로그인지 구분 가능
+    - `Ctrl+C` 종료 시 자식 프로세스 정리
+  - `package.json`
+    - `npm run studio:aidot-full-webchat-smoke` 추가
+  - `docs/aidot-full-webchat-manual-smoke.md`
+    - `빠른 시작` 섹션 추가
+- 검증:
+  - `node --check scripts/start-aidot-full-webchat-smoke.cjs` 통과
+  - `npm run studio:validate` 전체 통과
+- 이번 단계 의미:
+  - 이제 full WebChat 남은 수동 범위는
+    - 실행 준비
+    - 가 아니라
+    - 실제 화면에서 눌러보는 마지막 UX 확인
+    - 으로 축소됐다.
+
+## 2026-06-23 00:41 KST
+
+### Aidot full WebChat smoke preflight 자동 검증 추가
+
+- full WebChat 수동 smoke에 들어가기 전에
+  - CGA backend
+  - Aidot 프록시
+  - Aidot full WebChat
+  - 이 실제로 함께 올라오는지 자동으로 확인하는 preflight를 추가했다.
+- 반영 범위:
+  - `scripts/check-aidot-full-webchat-preflight.cjs`
+    - 랜덤 포트로 CGA Studio 기동
+    - 랜덤 포트로 Aidot 프록시 기동
+    - Aidot full WebChat은
+      - 이미 `3330`에서 떠 있으면 재사용
+      - 없으면 새 dev server를 기동
+    - CGA root 응답
+    - full WebChat HTML 응답
+    - CGA `/api/v1/channels/webchat/connect` 연결 성공
+    - 을 한 번에 확인
+  - `package.json`
+    - `npm run studio:aidot-full-webchat-preflight-check` 추가
+  - `docs/aidot-full-webchat-manual-smoke.md`
+    - preflight 실행 절차 추가
+- 조정 사항:
+  - 초기 구현에서 Aidot `apps/webchat` dev server 중복 기동 감지로 실패하는 케이스가 있었고,
+    이미 `3330`에서 떠 있는 서버를 재사용하도록 보강
+  - 프록시 readiness는 HTTP probe 강제 대신
+    프로세스 생존 확인 + CGA webchat connect 성공 확인으로 안정화
+- 검증:
+  - `node --check scripts/check-aidot-full-webchat-preflight.cjs` 통과
+  - `npm run studio:aidot-full-webchat-preflight-check` 통과
+  - `npm run studio:validate` 전체 통과
+- 이번 단계 의미:
+  - 이제 full WebChat 영역도
+    - 실행 환경이 올라오는지
+    - 를 자동으로 먼저 점검한 뒤
+    - 실제 남은 수동 검증은 마지막 사용자 클릭/UX 체험
+    - 으로 더 좁혀졌다.
+
+## 2026-06-23 00:52 KST
+
+### Aidot 1.1 최종 호환 판정 문서 초안 고정
+
+- 현재까지의 자동 검증 범위와 남은 수동 범위를 한 장으로 정리한 최종 판정 문서 초안을 추가했다.
+- 반영 범위:
+  - `docs/aidot-1.1-final-parity-verdict.md`
+    - 기준선: `Aidot 1.1 / contract v1.0`
+    - 현재 판정: `조건부 호환 확보`
+    - 자동 검증으로 닫힌 범위
+    - 수동 smoke로 남은 범위
+    - 지금 안전하게 말할 수 있는 표현 / 아직 이른 표현
+    - 권장 운영 판정
+    - 최종 체크리스트
+    - 를 정리
+  - `docs/aidot-latest-parity-step-plan.md`
+    - 7단계 상태를 `최종 판정 문서 초안 작성 완료, 마지막 full WebChat smoke 기록만 남음`으로 갱신
+- 검증:
+  - `npm run studio:validate` 전체 통과
+- 이번 단계 의미:
+  - 이제 현재 상태는
+    - “뭘 더 해야 하는지 모호한 상태”
+    - 가 아니라
+    - “자동 검증 완료 + 마지막 full UI smoke 결과 반영만 남은 상태”
+    - 로 정리됐다.
+
+## 2026-06-23 01:00 KST
+
+### Aidot full WebChat 수동 smoke 접속 주소 가이드 보강
+
+- Aidot full WebChat dev 서버 로그에서
+  - `127.0.0.1` 접근 시 Next dev resource cross-origin 경고가 남는 것을 확인했다.
+- 제품 코드 변경 없이 수동 smoke 성공률을 높이기 위해,
+  - full WebChat 접속 기본 주소를 `http://localhost:3330`으로 안내하도록 문서를 보강했다.
+- 반영 범위:
+  - `docs/aidot-full-webchat-manual-smoke.md`
+    - 브라우저 열기 주소를 `http://localhost:3330`으로 수정
+    - dev 환경에서는 `127.0.0.1`보다 `localhost` 우선 사용 안내 추가
+- 이번 단계 의미:
+  - 남은 마지막 수동 smoke도
+    - 환경 경고를 피한 더 안정적인 진입 경로
+    - 기준으로 수행할 수 있게 됐다.
+
+## 2026-06-23 01:13 KST
+
+### Aidot full WebChat 최종 수동 검증 결과 기록 체계 고정
+
+- 자동 검증은 거의 닫혔지만,
+  - 마지막 full WebChat 수동 smoke 결과를 사람마다 다른 형식으로 남기면
+  - 최종 판정 근거가 흔들릴 수 있어 결과 기록 템플릿을 추가했다.
+- 반영 범위:
+  - `docs/aidot-full-webchat-smoke-result-template.md`
+    - 실행 정보
+    - 사전 점검 결과
+    - 1~7 단계 pass/fail
+    - 최종 판정
+    - 첨부 권장 항목
+    - 을 같은 형식으로 남기도록 추가
+  - `docs/aidot-full-webchat-manual-smoke.md`
+    - smoke 수행 후 위 템플릿에 결과를 남기고
+    - `cga-work-progress` / 최종 판정서까지 반영하도록 연결
+  - `docs/aidot-latest-parity-step-plan.md`
+    - 6~7단계의 공식 산출물로 smoke 결과 기록서를 명시
+  - `docs/aidot-1.1-final-parity-verdict.md`
+    - 조건부 배포 가능의 마지막 근거로
+    - smoke 결과 기록서 반영을 명시
+- 이번 단계 의미:
+  - 이제 남은 작업은
+    - “수동으로 한 번 눌러본다”
+    - 수준이 아니라
+    - 같은 기준으로 실행하고
+    - 같은 형식으로 기록하고
+    - 그 기록을 최종 판정 근거로 연결하는 단계
+    - 로 고정됐다.
+
+## 2026-06-23 01:18 KST
+
+### 최종 수동 smoke 직전 기준선 재검증 통과
+
+- 수동 smoke로 넘어가기 전에
+  - 자동 검증 전체
+  - full WebChat preflight
+  - 가 아직 깨지지 않았는지 다시 확인했다.
+- 실행 결과:
+  - `npm run studio:aidot-full-webchat-preflight-check` 통과
+    - `studio=http://127.0.0.1:46969`
+    - `proxy=http://127.0.0.1:47913`
+    - `webchat=http://127.0.0.1:3330`
+  - `npm run studio:validate` 전체 통과
+- 확인 의미:
+  - 현재 CGA 기준선은
+    - asset round-trip
+    - WebChat channel / fallback / session
+    - admin conversations
+    - Studio conversation-history wiring
+    - 까지 다시 한 번 정상 상태임을 확인했다.
+- 잔여 이슈:
+  - `MODULE_TYPELESS_PACKAGE_JSON` 경고는 계속 보이지만
+  - 현재 validate 실패 원인은 아니며
+  - 이번 호환 판정 범위에서는 비차단 경고로 유지한다.
+- 이번 단계 의미:
+  - 이제 남은 것은
+    - 환경 준비나 자동 검증 보강이 아니라
+    - `docs/aidot-full-webchat-manual-smoke.md`
+    - 기준의 마지막 실제 사용자 수동 smoke 실행과
+    - `docs/aidot-full-webchat-smoke-result-template.md`
+    - 결과 기록 반영
+    - 뿐이다.
+
+## 2026-06-23 06:19 KST
+
+### Aidot full WebChat 최종 실브라우저 smoke 통과 및 프록시 CORS 보강
+
+- 실제 `http://localhost:3330` 기준 full WebChat 화면에서
+  - 연결
+  - 채팅방 생성
+  - 일반 질의
+  - RichForm 표시/선택
+  - 진행 중 운영 이력 조회
+  - 채팅방 종료
+  - 종료 후 운영 이력 유지
+  - 까지를 끝까지 확인했다.
+- 실증 중 실제 장애 1건 확인:
+  - Aidot full WebChat은 room create 전에 `/api/am/...` 경로를 먼저 시도하고,
+    실패 시 channel fallback으로 내려오는데
+  - 프록시가 이 AM 경로의 `OPTIONS/CORS`를 보장하지 않아
+    브라우저에서 `Failed to fetch`로 끊기는 문제가 있었다.
+- 조치:
+  - `scripts/proxy-aidot-webchat-to-cga.cjs`
+    - universal `OPTIONS` 204 응답 추가
+    - 모든 응답에 `Access-Control-Allow-Origin/Methods/Headers` 주입
+    - 으로 full WebChat fallback 직전 CORS를 보강
+  - `scripts/check-aidot-full-webchat-preflight.cjs`
+    - proxy 기준
+    - `/api/am/supportbot-draft/session/start`
+    - `OPTIONS 204 + CORS`
+    - `POST 404 + CORS`
+    - 까지 확인하도록 보강
+- 실브라우저 확인 결과:
+  - room id:
+    - `a6c2cc10-3b19-4218-ad06-cae41431ff79`
+  - 일반 질의:
+    - `I need to reset my password`
+    - bot 응답:
+    - `Open Account Settings and choose Reset Password.`
+  - RichForm:
+    - `예금`
+    - `대출`
+    - `상담원 연결`
+    - 버튼 렌더 확인
+    - `예금` 클릭 후 후속 응답 확인
+  - 진행 중 운영 이력:
+    - `room_status = open`
+    - `session_ended = false`
+    - `sourceTalkNodeId = sample-rich-options-node`
+    - 유지 확인
+  - 종료 후:
+    - room detail `status = closed`
+    - admin conversations `result = closed`
+    - `session_ended = true`
+    - `session_end_reason = deleted`
+    - transcript/messages/runtime summary 유지 확인
+- 문서 반영:
+  - `docs/aidot-full-webchat-smoke-result-template.md`
+    - 실제 결과로 채움
+  - `docs/aidot-1.1-final-parity-verdict.md`
+    - `조건부 호환 확보` -> `Aidot 1.1 / contract v1.0 호환 확보`
+    - 로 상향
+  - `docs/aidot-latest-parity-step-plan.md`
+    - 6~7단계 완료로 갱신
+- 이번 단계 의미:
+  - 이제 이번 작업의 in-scope 기준에서는
+    - 최신 Aidot full WebChat 실증
+    - 운영 이력 의미 호환
+    - 최종 판정 기록
+    - 까지 모두 닫힌 상태다.
+  - 최종 반영 후
+    - `npm run studio:aidot-full-webchat-preflight-check`
+    - `npm run studio:validate`
+    - 도 다시 통과했다.
+
+## 2026-06-23 06:32 KST
+
+### 봇 생성 화면 필수 입력 규칙 및 저장 활성 조건 보강
+
+- 신산님 확인 기준으로 `봇 생성` 화면에는 두 가지 UX 문제가 있었다.
+  - `+ 봇 생성` 직후 draft 봇 이름이 `New Bot n` 형태로 자동 주입돼 사용자가 입력하지 않은 값이 확정된 것처럼 보이는 문제
+  - `봇 이름` 같은 필수 항목 표시가 없고, 상단 `저장` 버튼도 필수값과 무관하게 항상 활성화되어 있는 문제
+- 반영 범위:
+  - `apps/studio/app.js`
+    - `+ 봇 생성` 시 draft 봇 이름 기본값을 빈 문자열로 변경
+    - `getCreateRequiredFieldIssues()`, `syncCreateValidationState()` 추가
+    - `봇 생성` 화면에서는 `봇 이름`, `버전 이름` 미입력 시 상단 `저장` 버튼 비활성화
+  - `apps/studio/index.html`
+    - `봇 이름`, `버전 이름` 라벨에 필수 `*` 표시 추가
+    - `data-create-required-notice` 경고 문구 추가
+  - `apps/studio/styles.css`
+    - 필수 표시 스타일
+    - 미입력 필드 강조 스타일
+    - create validation notice spacing
+    - 추가
+- 현재 동작:
+  - `+ 봇 생성` 후 봇 이름은 자동으로 채워지지 않음
+  - `봇 이름`과 `버전 이름`에 필수 표시가 보임
+  - `봇 생성` 화면에서 필수 입력값이 비어 있으면 `저장` 버튼이 비활성화됨
+  - 값 입력 후에는 다시 저장 가능 상태로 전환됨
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `npm run studio:validate` 전체 통과
+- 이번 단계 의미:
+  - 이제 `봇 생성` 화면은
+    - 사용자가 아직 입력하지 않은 이름을 임의로 확정하지 않고
+    - 어떤 값이 필수인지 화면에서 바로 보이며
+    - 저장 가능 여부도 입력 규칙과 일치하는 상태가 됐다.
+
+## 2026-06-23 07:18 KST
+
+### 봇 업로드 반영 구조 수정
+
+- 신산님 확인으로 `봇 업로드` 후 화면에 변화가 거의 없고, 선택 봇도 그대로 남는 문제가 드러났다.
+- 원인:
+  - 클라이언트 `applyAidotBotPackage()`가 Aidot 패키지의 `botVo`를 읽어 현재 선택한 CGA 봇을 갱신하는 대신, 내부적으로 다른 봇 컨텍스트처럼 처리하고 있었다.
+  - 테스트 서버 `scripts/serve-studio.js`의 `bot` scope import도 전송 파일과 이력만 저장하고, 실제 `workspace-bots` / `studio-state` 메타데이터는 갱신하지 않았다.
+- 수정:
+  - `apps/studio/app.js`
+    - 봇 업로드는 이제 `현재 선택한 CGA 봇 슬롯`에 Aidot 패키지를 반영한다.
+    - 업로드 후 `selectedBotManagementId`, `currentWorkspaceBotId`, top context, bot management가 같은 봇을 바라보도록 정렬했다.
+    - 업로드 승인 후 서버 봇 목록과 선택 봇 상태를 다시 동기화하도록 보강했다.
+  - `scripts/serve-studio.js`
+    - `bot` package import 승인 시 현재 `groupId/botId`의 workspace bot 메타데이터를 업데이트한다.
+    - 같은 시점에 `studio-state`의 `bot.name / description / version / defaultLocale`도 함께 갱신한다.
+  - `scripts/check-asset-transfer-api.mjs`
+    - bot import 후 `/bots/{botId}`와 `/studio-state`가 실제로 갱신됐는지 회귀 체크를 추가했다.
+- 현재 의미:
+  - CGA에서는
+    - 먼저 봇 생성
+    - 그 다음 Aidot 봇 패키지 업로드
+    - 업로드된 내용이 현재 봇에 반영
+  - 되는 흐름으로 맞췄다.
+
+## 2026-06-23 07:28 KST
+
+### 봇 업로드 화면 실증 및 4173 구동 인스턴스 상태 확인
+
+- 신산님 질문:
+  - `봇 업로드를 했는데 아무 변화가 없는데, 봇 업로드 테스트 했어?`
+- 실제 확인:
+  - Codex in-app browser로 `http://127.0.0.1:4173/#bot-management`를 열어 상태를 점검했다.
+  - 여기서는 `bot import` 이력은 남지만, `supportbot-draft`의 봇 이름이 `SupportBot Draft` 그대로 유지됐다.
+  - 이어서 직접 API로 `aidot-bot-uploaded.json` fixture를 업로드해도 `GET /api/cga/groups/g-support/bots/supportbot-draft`가 여전히 예전 메타데이터를 반환했다.
+- 해석:
+  - 이 결과는 현재 신산님이 보고 있는 `4173` 서버가 수정 전 코드로 떠 있다는 뜻이다.
+  - 즉, 화면 반응이 없는 근본 이유는 “실행 중 인스턴스 stale”이다.
+- 재실증:
+  - 수정된 코드로 별도 포트 `4273`에서 새 스튜디오 인스턴스를 실행했다.
+  - `http://127.0.0.1:4273/#bot-management` 로그인 후 같은 `aidot-bot-uploaded.json` 업로드 경로를 검증했다.
+  - 결과:
+    - top context `Bot: Uploaded Bot`
+    - `선택 봇: Uploaded Bot`
+    - `봇 상세 정보`의 `봇 이름: Uploaded Bot`
+    - 최근 전송 이력에 `bot import`
+    - 로 반영되는 것을 화면에서 확인했다.
+- 현재 결론:
+  - 코드 수정본 기준으로는 `봇 업로드 후 아무 변화 없음` 버그가 재현되지 않았다.
+  - 신산님이 사용하는 `4173` 서버는 재시작이 필요하다.
+
+## 2026-06-23 08:11 KST
+
+### 관리자 영역 우선 수정 설계 계획서 작성
+
+- 신산님 요청 기준:
+  - Brity/Aidot의 운영형 개념을 기준으로
+  - `사용자관리`, `대화관리`, `시스템연계`, `기타관리`
+  - 중 `기타 관리 > 템플릿 목록`부터 실제 동작 복구를 시작하는 계획서를 먼저 작성
+- 반영 문서:
+  - `docs/cga-admin-priority-fix-plan.md`
+- 이번 계획서의 핵심 고정 원칙:
+  - Aidot API는 새로 설계하지 않고 원형을 그대로 유지
+  - CGA는 화면/메뉴/UX만 재구성
+  - 관리자 영역 우선 복구
+  - 첫 착수 화면은 `템플릿 목록`
+- 단계 구조:
+  - Phase 1 `템플릿 목록 기준선 고정`
+  - Phase 2 `관리자 공통 화면 패턴 확정`
+  - Phase 3 `사용자 관리 복구`
+  - Phase 4 `대화 관리 복구`
+  - Phase 5 `시스템 연계 복구`
+  - Phase 6 `관리자 영역 통합 검증`
+- 이번 단계 의미:
+  - 이제 CGA 수정은
+    - 챗봇 제작 화면을 계속 덧대는 방식이 아니라
+    - Aidot 운영형 관리자 기능을 먼저 실제 동작 수준으로 복구하는 방향
+  - 으로 고정됐다.
+
+## 2026-06-23 09:12 KST
+
+### 공통 변수 관리하기를 Aidot 기준 구조로 정렬
+
+- 신산님 지시 기준:
+  - `공통 변수 관리하기`는 CGA 범용 관리자 화면이 아니라 Aidot 기준 구조/문구/동작으로 맞춰야 함
+  - 시스템 변수는 시스템이 나중에 값을 넣는 변수이며, 사용자가 수정/삭제하면 안 됨
+  - 예: `_bot_id` 같은 값은 봇 컨텍스트에 따라 런타임에 바뀌어야 함
+- 반영 범위:
+  - `apps/studio/app.js`
+    - 공통 변수 화면을 Aidot형 검색/구분 필터/초기화/조회/`+ 공통 변수 추가`/더보기 업로드/다운로드/삭제/페이지 크기 구조로 교체
+    - 사용자 변수만 선택/삭제 가능하도록 보강
+    - 공통 변수 상세/추가 팝업을 범용 2단 레이아웃 대신 단일 Aidot형 입력 팝업으로 전환
+    - 시스템 변수는 읽기 전용으로 열리며 저장 버튼이 나오지 않도록 처리
+  - `apps/studio/index.html`
+    - 공통 변수 전용 팝업 설명 문구를 동적으로 바꿀 수 있도록 subtitle target 추가
+  - `apps/studio/styles.css`
+    - Aidot 공통 변수 화면용 search row / more menu / 파일 업로드 숨김 / 선택 개수 / 단일 팝업 레이아웃 스타일 추가
+  - `scripts/serve-studio.js`
+    - 공통 변수 seed 데이터를 `category`가 아니라 Aidot 의미와 맞는 `kind: system|user` 구조로 정리
+    - 기존 저장 데이터도 `kind`, `updater_name`, `data_json`을 갖도록 정규화
+    - `GET /api/cga/admin/common-variables`에 `kind` 필터 지원 추가
+    - 시스템 변수는 생성 충돌/수정/삭제가 차단되도록 보강
+    - 공통 변수 생성 시 같은 이름의 사용자 변수는 중복 생성 대신 갱신되도록 보강
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `node --check scripts/serve-studio.js` 통과
+- 이번 단계 의미:
+  - 공통 변수 화면은 이제
+    - CGA가 임의로 만든 범용 등록 화면
+    - 이 아니라
+    - Aidot의 공통 변수 관리 구조와 시스템/사용자 변수 규칙
+    - 을 기준으로 동작하는 상태로 정렬됐다.

@@ -1,0 +1,247 @@
+[
+  {
+    "key": "login",
+    "title": "로그인",
+    "url": "/login",
+    "file": "login.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\login.png"
+  },
+  {
+    "key": "dashboard",
+    "title": "메인 대시보드",
+    "url": "/studio/dashboard",
+    "file": "dashboard.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\dashboard.png"
+  },
+  {
+    "key": "bot_list",
+    "title": "봇 목록",
+    "url": "/studio/bots",
+    "file": "bot_list.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\bot_list.png"
+  },
+  {
+    "key": "bot_create",
+    "title": "봇 생성",
+    "url": "/studio/bots/new",
+    "file": "bot_create.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\bot_create.png"
+  },
+  {
+    "key": "bot_settings",
+    "title": "봇 설정",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/settings",
+    "file": "bot_settings.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\bot_settings.png"
+  },
+  {
+    "key": "bot_conversation_defaults",
+    "title": "대화 기본 설정",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/settings/conversation-defaults",
+    "file": "bot_conversation_defaults.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\bot_conversation_defaults.png"
+  },
+  {
+    "key": "bot_messages",
+    "title": "기본 메시지",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/settings/messages",
+    "file": "bot_messages.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\bot_messages.png"
+  },
+  {
+    "key": "version_management",
+    "title": "버전 관리",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions",
+    "file": "version_management.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\version_management.png"
+  },
+  {
+    "key": "intent_list",
+    "title": "의도 관리",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/intents",
+    "file": "intent_list.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\intent_list.png"
+  },
+  {
+    "key": "configure",
+    "title": "구성",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/configure",
+    "file": "configure.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\configure.png"
+  },
+  {
+    "key": "entity_list",
+    "title": "개체 관리",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/entities",
+    "file": "entity_list.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\entity_list.png"
+  },
+  {
+    "key": "dictionary",
+    "title": "사전 관리",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/dictionary",
+    "file": "dictionary.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\dictionary.png"
+  },
+  {
+    "key": "flow_designer",
+    "title": "대화 설계",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/flows",
+    "file": "flow_designer.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\flow_designer.png"
+  },
+  {
+    "key": "api_store",
+    "title": "API 관리",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/apis",
+    "file": "api_store.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\api_store.png"
+  },
+  {
+    "key": "evaluation",
+    "title": "평가",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/evaluation",
+    "file": "evaluation.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\evaluation.png"
+  },
+  {
+    "key": "retraining",
+    "title": "재학습",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/retraining",
+    "file": "retraining.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\retraining.png"
+  },
+  {
+    "key": "analysis",
+    "title": "분석",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/analysis",
+    "file": "analysis.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\analysis.png"
+  },
+  {
+    "key": "simulator",
+    "title": "시뮬레이터",
+    "url": "/studio/bots/%ED%85%8C%EC%8A%A4%ED%8A%B8%EB%B4%87-2/versions/v1/simulator",
+    "file": "simulator.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\simulator.png"
+  },
+  {
+    "key": "admin_users",
+    "title": "사용자 관리",
+    "url": "/admin/users",
+    "file": "admin_users.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_users.png"
+  },
+  {
+    "key": "admin_login_history",
+    "title": "로그인 이력",
+    "url": "/admin/login-history",
+    "file": "admin_login_history.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_login_history.png"
+  },
+  {
+    "key": "admin_groups",
+    "title": "그룹 관리",
+    "url": "/admin/groups",
+    "file": "admin_groups.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_groups.png"
+  },
+  {
+    "key": "admin_operations",
+    "title": "운영 대시보드",
+    "url": "/admin/operations-dashboard",
+    "file": "admin_operations.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_operations.png"
+  },
+  {
+    "key": "admin_logs",
+    "title": "운영/시스템 로그",
+    "url": "/admin/audit-logs",
+    "file": "admin_logs.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_logs.png"
+  },
+  {
+    "key": "admin_bot_status",
+    "title": "봇 현황",
+    "url": "/admin/bot-status",
+    "file": "admin_bot_status.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_bot_status.png"
+  },
+  {
+    "key": "admin_training_history",
+    "title": "학습 이력",
+    "url": "/admin/training-history",
+    "file": "admin_training_history.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_training_history.png"
+  },
+  {
+    "key": "admin_conversations",
+    "title": "대화 이력",
+    "url": "/admin/conversations",
+    "file": "admin_conversations.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_conversations.png"
+  },
+  {
+    "key": "admin_api_history",
+    "title": "API 호출 이력",
+    "url": "/admin/api-call-history",
+    "file": "admin_api_history.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_api_history.png"
+  },
+  {
+    "key": "admin_queue_history",
+    "title": "Queue 이력",
+    "url": "/admin/queue-history",
+    "file": "admin_queue_history.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_queue_history.png"
+  },
+  {
+    "key": "admin_feedback",
+    "title": "의도별 피드백",
+    "url": "/admin/intent-feedback",
+    "file": "admin_feedback.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_feedback.png"
+  },
+  {
+    "key": "admin_common_variables",
+    "title": "공통 변수",
+    "url": "/admin/common-variables",
+    "file": "admin_common_variables.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_common_variables.png"
+  },
+  {
+    "key": "admin_default_messages",
+    "title": "기본 메시지",
+    "url": "/admin/default-messages",
+    "file": "admin_default_messages.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_default_messages.png"
+  },
+  {
+    "key": "admin_channels",
+    "title": "채널 관리",
+    "url": "/admin/channels",
+    "file": "admin_channels.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_channels.png"
+  },
+  {
+    "key": "admin_botstation",
+    "title": "봇스테이션 연계",
+    "url": "/admin/botstation-status",
+    "file": "admin_botstation.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_botstation.png"
+  },
+  {
+    "key": "admin_templates",
+    "title": "템플릿 목록",
+    "url": "/admin/templates",
+    "file": "admin_templates.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_templates.png"
+  },
+  {
+    "key": "admin_license",
+    "title": "라이선스 조회",
+    "url": "/admin/license",
+    "file": "admin_license.png",
+    "path": "docs\\manual\\aidot-user-manual\\screenshots\\admin_license.png"
+  }
+]

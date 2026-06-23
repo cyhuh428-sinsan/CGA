@@ -1,0 +1,36 @@
+{
+  "asset_format_version": 1,
+  "contract_version": "v1.1",
+  "advanced_analytics": {
+    "enabled": true
+  },
+  "custom_runtime_policy": {
+    "keep": true,
+    "name": "retain-me"
+  },
+  "system_config": {
+    "bot": {
+      "botName": "Higher Version Bot",
+      "defaultLocale": "ko",
+      "version": "v-higher"
+    },
+    "custom_runtime_adapter": {
+      "mode": "shadow"
+    },
+    "channels": {
+      "web": "connected",
+      "kakaoKr": "connected",
+      "teams": "connected"
+    }
+  },
+  "version": {
+    "bot": {
+      "name": "Higher Version Bot",
+      "defaultLocale": "ko",
+      "version": "v-higher"
+    },
+    "customVersionMarker": {
+      "enabled": true
+    }
+  }
+}

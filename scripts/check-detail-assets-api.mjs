@@ -56,6 +56,7 @@ async function main() {
 
   const initial = await expectStatus(detailPath, { userId: "u-builder" }, 200, "initial detail assets read failed");
   if (!initial.dictionary?.some((item) => item.word === "password")) fail("default detail assets did not include dictionary samples");
+  if (!initial.blocklists?.some((item) => item.name === "아")) fail("default detail assets did not include blocklist samples");
   if (!initial.scenarios?.some((item) => item.id === "password_reset")) fail("default detail assets did not include scenario samples");
 
   await expectStatus(detailPath, {
@@ -82,6 +83,9 @@ async function main() {
       rules: [
         { name: "Revenue API route", description: "Use group API answer", expression: "intent == revenue_lookup", target: "api.revenue", enabled: "Y" }
       ],
+      blocklists: [
+        { name: "ignore_revenue", type: "0", pattern: "revenue", enabled: "Y" }
+      ],
       scenarios: [
         { id: "revenue_lookup", type: "intent", displayName: "revenue_lookup", answer: "Revenue comes from the financial API.", dialogCards: ["Revenue comes from the financial API."] }
       ]
@@ -89,11 +93,13 @@ async function main() {
   }, 200, "builder should save detail assets");
   if (saved.detail_assets?.dictionary?.[0]?.word !== "revenue") fail("saved detail dictionary mismatch");
   if (saved.detail_assets?.rules?.[0]?.target !== "api.revenue") fail("saved detail rule mismatch");
+  if (saved.detail_assets?.blocklists?.[0]?.name !== "ignore_revenue") fail("saved detail blocklist mismatch");
   if (saved.detail_assets?.scenarios?.[0]?.answer !== "Revenue comes from the financial API.") fail("saved detail scenario answer mismatch");
 
   const afterSave = await expectStatus(detailPath, { userId: "u-builder" }, 200, "detail assets read after save failed");
   if (afterSave.intent_utterances?.[0]?.division !== "revenue_lookup") fail("detail assets did not persist intent utterance");
   if (afterSave.entities?.[0]?.name !== "period") fail("detail assets did not persist entity");
+  if (afterSave.blocklists?.[0]?.pattern !== "revenue") fail("detail assets did not persist blocklist");
   if (afterSave.scenarios?.[0]?.dialogCards?.[0] !== "Revenue comes from the financial API.") fail("detail assets did not persist dialog card");
 
   const detailFile = join(dataDir, "detail-asset-registry.json");
