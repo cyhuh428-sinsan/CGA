@@ -3943,8 +3943,10 @@ h1 { line-height: 1; }
   width: min(720px, calc(100vw - 48px));
 }
 .detail-modal--settings-form .admin-resource-modal__panel {
-  width: min(760px, calc(100vw - 48px));
-  max-height: min(76vh, 680px);
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   border: 1px solid #dce3eb;
   box-shadow: 0 18px 40px rgba(31, 42, 55, 0.18);
 }
@@ -4011,6 +4013,8 @@ h1 { line-height: 1; }
   gap: 0;
   padding: 0;
   max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: #edf1f5;
 }
 .detail-modal--common-variable [data-admin-resource-detail] {
@@ -4034,10 +4038,11 @@ h1 { line-height: 1; }
   justify-self: center;
 }
 .detail-modal--settings-form [data-admin-resource-edit] {
-  width: 100%;
+  width: min(600px, 100%);
   min-height: 0;
   border: none;
-  padding: 18px;
+  padding: 16px;
+  justify-self: center;
 }
 .detail-modal__body > article,
 .detail-modal__body > aside {
