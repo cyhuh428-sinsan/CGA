@@ -1,0 +1,145 @@
+{
+  "asset_format_version": 1,
+  "dialogs": [
+    {
+      "dialogId": "version_uploaded_intent",
+      "dialogType": 1,
+      "displayName": "Version Uploaded Intent",
+      "answer": "Version uploaded answer"
+    }
+  ],
+  "dialog_flow_graphs": [
+    {
+      "dialogId": "version_uploaded_intent",
+      "dialogType": 1,
+      "flowGraph": [
+        {
+          "objectType": "Start",
+          "objectId": "version_uploaded_intent-start",
+          "dialogId": "version_uploaded_intent",
+          "displayName": "Version Uploaded Intent Start",
+          "additionalInfo": null,
+          "position": { "x": 80, "y": 120 }
+        },
+        {
+          "objectType": "Message",
+          "objectId": "version_uploaded_intent-message",
+          "dialogId": "version_uploaded_intent",
+          "displayName": "Version Uploaded Intent",
+          "additionalInfo": { "text": "Version uploaded answer" },
+          "position": { "x": 320, "y": 120 }
+        },
+        {
+          "objectType": "End",
+          "objectId": "version_uploaded_intent-end",
+          "dialogId": "version_uploaded_intent",
+          "displayName": "Version Uploaded Intent End",
+          "additionalInfo": null,
+          "position": { "x": 560, "y": 120 }
+        }
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "entityName": "version_email",
+      "entityValue": "email",
+      "entityType": "P",
+      "detail": "\\\\b.+@.+\\\\..+\\\\b"
+    }
+  ],
+  "dictionary": [
+    {
+      "word": "version",
+      "synonyms": ["uploaded"]
+    }
+  ],
+  "faq_dialogs": [
+    {
+      "dialogId": "faq_version",
+      "question": "버전 FAQ",
+      "answer": "버전 업로드 FAQ",
+      "enabled": "Y"
+    }
+  ],
+  "apis": [
+    {
+      "id": "version_api",
+      "type": "api",
+      "apiKey": "version_api",
+      "name": "version_api",
+      "baseUrl": "/api/version",
+      "description": "version uploaded api",
+      "category": "API",
+      "methods": [
+        {
+          "id": "version_api:get",
+          "name": "default",
+          "httpMethod": "GET",
+          "methodUrl": "/api/version",
+          "description": "",
+          "loggingEnabled": false,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [],
+          "outputParameters": [],
+          "outputSample": ""
+        }
+      ],
+      "updatedAt": "2026-06-21T00:00:00Z",
+      "updatedBy": "version-test"
+    }
+  ],
+  "floating_buttons": [
+    {
+      "buttonId": "version-help",
+      "label": "버전 도움말",
+      "action": "open_help",
+      "enabled": "Y",
+      "sortOrder": 1
+    }
+  ],
+  "rules": [
+    {
+      "ruleName": "Version Rule",
+      "ruleDescription": "version rule",
+      "ruleExpression": "intent == version_uploaded_intent",
+      "targetDialogId": "version_uploaded_intent",
+      "enabled": "Y"
+    }
+  ],
+  "small_talk": [
+    {
+      "trigger": "버전 안녕",
+      "response": "버전 스몰토크",
+      "enabled": "Y"
+    }
+  ],
+  "blacklists": [
+    {
+      "blacklistName": "version_blocklist",
+      "blacklistType": "0",
+      "expression": "ignore version",
+      "enabled": "Y"
+    }
+  ],
+  "system_config": {
+    "bot": {
+      "botName": "Uploaded Version Bot",
+      "defaultLocale": "ko",
+      "version": "v-uploaded"
+    },
+    "structuralChoices": {
+      "useLlm": true
+    },
+    "counts": {
+      "intents": 3
+    },
+    "llm": {
+      "status": "connected"
+    },
+    "channels": {
+      "web": "connected"
+    }
+  }
+}

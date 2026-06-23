@@ -99,6 +99,39 @@ body {
   opacity: 0.75;
 }
 
+.webchat-message__body {
+  white-space: pre-wrap;
+}
+
+.webchat-message__payload {
+  margin-top: 6px;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.webchat-message__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.webchat-message__action {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f766e;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.webchat-message__action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .webchat-compose {
   display: grid;
   grid-template-columns: 1fr auto;

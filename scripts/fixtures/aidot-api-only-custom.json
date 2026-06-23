@@ -1,0 +1,53 @@
+{
+  "apis": [
+    {
+      "id": "uploaded_only_custom_api",
+      "type": "api",
+      "apiKey": "uploaded_only_custom_api",
+      "name": "uploaded_only_custom_api",
+      "baseUrl": "/api/v2/custom/{id}",
+      "description": "uploaded only from apis",
+      "category": "API",
+      "auth_type": "none",
+      "response_path": "payload.result",
+      "secret_ref": "secret:group/g-support/only-uploaded",
+      "methods": [
+        {
+          "id": "uploaded_only_custom_api:get",
+          "name": "default",
+          "httpMethod": "GET",
+          "methodUrl": "/api/v2/custom/{id}",
+          "description": "",
+          "loggingEnabled": false,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [
+            {
+              "id": "id",
+              "name": "id",
+              "location": "path",
+              "dataType": "string",
+              "defaultValue": "",
+              "required": true,
+              "visible": true,
+              "description": "대상 리소스 ID"
+            }
+          ],
+          "outputParameters": [
+            {
+              "id": "result",
+              "name": "result",
+              "path": "result",
+              "dataType": "object",
+              "description": "결과 객체"
+            }
+          ],
+          "outputSample": ""
+        }
+      ],
+      "usageCount": 2,
+      "updatedAt": "2026-06-19T00:10:00Z",
+      "updatedBy": "cga-test"
+    }
+  ]
+}

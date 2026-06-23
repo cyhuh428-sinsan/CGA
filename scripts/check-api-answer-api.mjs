@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const port = String(4393 + Math.floor(Math.random() * 100));
+const port = String(14000 + Math.floor(Math.random() * 10000));
 const baseUrl = `http://localhost:${port}`;
 const dataDir = mkdtempSync(join(tmpdir(), "cga-api-answer-"));
 const server = spawn("node", ["scripts/serve-studio.js"], {
@@ -11,16 +11,25 @@ const server = spawn("node", ["scripts/serve-studio.js"], {
   env: { ...process.env, PORT: port, CGA_DATA_DIR: dataDir },
   stdio: "pipe"
 });
+let serverStderr = "";
+
+server.stderr?.on("data", (chunk) => {
+  serverStderr += chunk.toString();
+});
 
 function fail(message) {
-  console.error(`FAIL ${message}`);
+  const detail = serverStderr.trim();
+  console.error(`FAIL ${detail ? `${message}\n${detail}` : message}`);
   server.kill();
   process.exit(1);
 }
 
 async function waitForServer() {
-  const deadline = Date.now() + 8000;
+  const deadline = Date.now() + 12000;
   while (Date.now() < deadline) {
+    if (server.exitCode != null) {
+      fail(`api answer API test server exited early with code ${server.exitCode}`);
+    }
     try {
       const response = await fetch(`${baseUrl}/`);
       if (response.ok) return;

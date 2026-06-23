@@ -591,6 +591,7 @@ textarea { min-height: 84px; resize: vertical; }
 .next-action { margin-top: 14px; padding: 12px; background: var(--teal-soft); color: #0f766e; border-radius: 8px; font-weight: 700; }
 .notice { padding: 12px 14px; border-radius: 8px; margin-bottom: 14px; }
 .notice.warning { background: var(--warn-bg); color: var(--warn); border: 1px solid #fed7aa; }
+.create-validation { margin-top: 10px; margin-bottom: 0; }
 .input-paths { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .path-label { display: inline-block; padding: 5px 9px; border-radius: 8px; font-size: var(--font-desc); font-weight: 800; }
 .path-label.blue { color: var(--blue); background: var(--blue-soft); }
@@ -708,8 +709,26 @@ textarea { min-height: 84px; resize: vertical; }
   grid-column: 1 / -1;
 }
 
+.create-field--required {
+  position: relative;
+}
+
+.field-required-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  color: #dc2626;
+  font-weight: 800;
+}
+
 .create-form-panel label {
   margin-bottom: 0;
+}
+
+.create-form-panel .create-field__missing {
+  border-color: #f59e0b;
+  background: #fffaf0;
 }
 
 .create-form-panel textarea[data-structural-field="bot.description"] {
@@ -3407,6 +3426,10 @@ button.management-table-row:hover,
 .admin-page__toolbar-left strong {
   color: #0f172a;
 }
+.admin-page__selection {
+  color: #64748b;
+  font-size: 12px;
+}
 .admin-page__toolbar select {
   width: 120px;
   min-height: 32px;
@@ -3447,6 +3470,58 @@ button.management-table-row:hover,
   color: #17456f;
   text-decoration: underline;
   font-weight: 600;
+}
+.admin-common-variables__search-row {
+  grid-template-columns: minmax(320px, 460px) 140px auto minmax(0, 1fr);
+}
+.admin-common-variables__search-row .admin-page__filter {
+  width: auto;
+  min-width: 64px;
+  padding: 0 12px;
+}
+.admin-common-variables__search-row .admin-page__search-actions {
+  grid-column: 4;
+  justify-content: flex-end;
+}
+.admin-common-variables__more {
+  position: relative;
+}
+.admin-common-variables__more-button {
+  width: 30px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #b9c1cb;
+  background: #ffffff;
+  color: #5d6673;
+  font-size: 11px;
+  line-height: 1;
+}
+.admin-common-variables__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  min-width: 112px;
+  display: grid;
+  border: 1px solid #d6dce4;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(31, 42, 55, 0.12);
+}
+.admin-common-variables__menu button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  background: #ffffff;
+  color: #596575;
+  font-size: 11px;
+  text-align: left;
+}
+.admin-common-variables__menu button:hover {
+  background: #f5f8fb;
+}
+.admin-common-variables__file {
+  display: none;
 }
 .admin-page__pagination {
   display: flex;
@@ -3738,6 +3813,9 @@ h1 { line-height: 1; }
 .detail-modal__panel.admin-resource-modal__panel {
   width: min(1540px, calc(100vw - 60px));
 }
+.detail-modal--common-variable .admin-resource-modal__panel {
+  width: min(560px, calc(100vw - 48px));
+}
 .detail-modal__panel > header {
   display: flex;
   justify-content: space-between;
@@ -3763,6 +3841,15 @@ h1 { line-height: 1; }
   overflow: auto;
   padding: 14px;
 }
+.detail-modal--common-variable .admin-resource-modal__body {
+  grid-template-columns: 1fr;
+}
+.detail-modal--common-variable [data-admin-resource-detail] {
+  display: none;
+}
+.detail-modal--common-variable [data-admin-resource-edit] {
+  min-height: auto;
+}
 .detail-modal__body > article,
 .detail-modal__body > aside {
   border: 1px solid var(--muted-line);
@@ -3786,6 +3873,25 @@ h1 { line-height: 1; }
 .detail-modal__body button {
   min-height: 32px;
   padding: 0 16px;
+}
+.admin-variable-dialog__body {
+  display: grid;
+  gap: 12px;
+}
+.admin-variable-dialog__body label {
+  display: grid;
+  gap: 8px;
+}
+.admin-variable-dialog__body input,
+.admin-variable-dialog__body textarea {
+  width: 100%;
+  border: 1px solid #d6dee8;
+  background: #ffffff;
+  padding: 10px 12px;
+}
+.admin-variable-dialog__body textarea {
+  min-height: 120px;
+  resize: none;
 }
 .access-detail-layout--modal {
   max-height: calc(100vh - 165px);

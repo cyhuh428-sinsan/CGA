@@ -1,0 +1,94 @@
+{
+  "apiList": [
+    {
+      "name": "uploaded_custom_api",
+      "endpoint_url": "/api/v1/custom/{id}",
+      "method": "GET",
+      "auth_type": "bearer",
+      "response_path": "payload.result",
+      "secret_ref": "secret:group/g-support/uploaded"
+    }
+  ],
+  "apis": [
+    {
+      "id": "uploaded_custom_api",
+      "type": "api",
+      "apiKey": "uploaded_custom_api",
+      "name": "uploaded_custom_api",
+      "baseUrl": "https://api.example.com/custom/{id}",
+      "description": "uploaded custom",
+      "category": "API",
+      "auth_type": "bearer",
+      "secret_ref": "secret:group/g-support/uploaded",
+      "response_path": "payload.result",
+      "methods": [
+        {
+          "id": "uploaded_custom_api:get",
+          "name": "default",
+          "httpMethod": "GET",
+          "methodUrl": "/api/v1/custom/{id}",
+          "description": "",
+          "loggingEnabled": false,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [
+            {
+              "id": "id",
+              "name": "id",
+              "location": "path",
+              "dataType": "string",
+              "defaultValue": "",
+              "required": true,
+              "visible": true,
+              "description": "대상 리소스 ID"
+            }
+          ],
+          "outputParameters": [
+            {
+              "id": "result",
+              "name": "result",
+              "path": "result",
+              "dataType": "object",
+              "description": "결과 객체"
+            }
+          ],
+          "outputSample": ""
+        },
+        {
+          "id": "uploaded_custom_api:post",
+          "name": "post",
+          "httpMethod": "POST",
+          "methodUrl": "/api/v1/custom/{id}",
+          "description": "생성/수정",
+          "loggingEnabled": false,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [
+            {
+              "id": "payload",
+              "name": "payload",
+              "location": "body",
+              "dataType": "object",
+              "defaultValue": "{}",
+              "required": true,
+              "visible": true,
+              "description": "요청 본문"
+            }
+          ],
+          "outputParameters": [
+            {
+              "id": "result",
+              "name": "result",
+              "path": "result",
+              "dataType": "object",
+              "description": "결과 객체"
+            }
+          ],
+          "outputSample": ""
+        }
+      ],
+      "updatedAt": "2026-06-19T00:00:00Z",
+      "updatedBy": "cga-test"
+    }
+  ]
+}
