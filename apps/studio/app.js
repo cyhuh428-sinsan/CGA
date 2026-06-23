@@ -131,6 +131,30 @@ let currentDefaultMessageUiState = {
   page: 1,
   pageSize: 25
 };
+let currentTemplateUiState = {
+  query: "",
+  channel: "",
+  status: "",
+  page: 1,
+  pageSize: 10
+};
+let currentChannelUiState = {
+  query: "",
+  status: "",
+  page: 1,
+  pageSize: 10
+};
+let currentBotstationUiState = {
+  botName: "",
+  updatedBy: "",
+  groupId: "",
+  channelCode: "",
+  status: "",
+  startDate: "",
+  endDate: "",
+  page: 1,
+  pageSize: 10
+};
 let currentConversationHistoryFilters = {
   channel: "all",
   startDate: "2026-06-21",
@@ -6146,6 +6170,121 @@ function downloadDefaultMessagesCsv() {
   URL.revokeObjectURL(url);
 }
 
+function buildTemplateCsv(items) {
+  const rows = [
+    ["순서", "채널", "템플릿 이름", "아이템 개수", "아이템 타입", "렌더러 타입", "사용여부", "최종수정자", "최종수정일시"],
+    ...items.map((item, index) => [
+      String(index + 1),
+      item.channel_name || item.channel_code || "",
+      item.name || "",
+      String(item.item_count ?? ""),
+      item.item_types || "",
+      item.renderer_type || "",
+      item.status_label || "",
+      item.updater_name || item.updated_by || "SYSTEM",
+      formatAidotAdminDate(item.updated_at)
+    ])
+  ];
+  return rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, "\"\"")}"`).join(",")).join("\n");
+}
+
+function buildChannelCsv(items) {
+  const rows = [
+    ["순서", "채널 아이디", "채널", "Provider", "렌더러 타입", "사용여부", "생성자", "최종수정자", "최종수정일시"],
+    ...items.map((item, index) => [
+      String(index + 1),
+      item.channel_code || "",
+      item.channel_name || "",
+      item.provider || "",
+      item.renderer_type || "",
+      item.status_label || "",
+      item.creator_name || item.created_by || "SYSTEM",
+      item.updater_name || item.updated_by || "SYSTEM",
+      formatAidotAdminDate(item.updated_at)
+    ])
+  ];
+  return rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, "\"\"")}"`).join(",")).join("\n");
+}
+
+function buildBotstationCsv(items) {
+  const rows = [
+    ["상태", "그룹", "채널", "봇 이름", "운영버전", "활성 채널", "메시지", "최종수정일시", "최종수정자"],
+    ...items.map((item) => [
+      item.status_label || item.status || "",
+      item.group_name || "",
+      item.channel_name || item.channel_code || "",
+      item.bot_name || "",
+      item.operating_version || "",
+      String(item.active_channels ?? ""),
+      item.issue_message || "",
+      formatAidotAdminDate(item.updated_at),
+      item.updater_name || item.updated_by || "SYSTEM"
+    ])
+  ];
+  return rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, "\"\"")}"`).join(",")).join("\n");
+}
+
+function downloadCsvFile(fileName, csvText) {
+  const blob = new Blob([`\ufeff${csvText}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function getFilteredTemplateItems() {
+  const items = Array.isArray(currentAdminResources.templates) ? currentAdminResources.templates : [];
+  const query = currentTemplateUiState.query.trim().toLowerCase();
+  const channel = currentTemplateUiState.channel.trim().toLowerCase();
+  const status = currentTemplateUiState.status.trim().toLowerCase();
+  return items.filter((item) => {
+    const haystack = [item.name, item.channel_name, item.channel_code, item.item_types, item.renderer_type].filter(Boolean).join(" ").toLowerCase();
+    const matchesQuery = !query || haystack.includes(query);
+    const matchesChannel = !channel || String(item.channel_name || item.channel_code || "").toLowerCase().includes(channel);
+    const itemStatus = String(item.status || "").toLowerCase();
+    const matchesStatus = !status || itemStatus === status || String(item.status_label || "").toLowerCase() === status || (status === "active" && itemStatus === "y") || (status === "inactive" && itemStatus === "n");
+    return matchesQuery && matchesChannel && matchesStatus;
+  });
+}
+
+function getFilteredChannelItems() {
+  const items = Array.isArray(currentAdminResources.channels) ? currentAdminResources.channels : [];
+  const query = currentChannelUiState.query.trim().toLowerCase();
+  const status = currentChannelUiState.status.trim().toLowerCase();
+  return items.filter((item) => {
+    const haystack = [item.channel_code, item.channel_name, item.provider, item.renderer_type].filter(Boolean).join(" ").toLowerCase();
+    const matchesQuery = !query || haystack.includes(query);
+    const itemStatus = String(item.status || "").toLowerCase();
+    const matchesStatus = !status || itemStatus === status || String(item.status_label || "").toLowerCase() === status || (status === "active" && itemStatus === "y") || (status === "inactive" && itemStatus === "n");
+    return matchesQuery && matchesStatus;
+  });
+}
+
+function getFilteredBotstationItems() {
+  const items = Array.isArray(currentAdminResources.botstation_links) ? currentAdminResources.botstation_links : [];
+  const botName = currentBotstationUiState.botName.trim().toLowerCase();
+  const updatedBy = currentBotstationUiState.updatedBy.trim().toLowerCase();
+  const groupId = currentBotstationUiState.groupId.trim();
+  const channelCode = currentBotstationUiState.channelCode.trim();
+  const status = currentBotstationUiState.status.trim().toLowerCase();
+  const startDate = currentBotstationUiState.startDate || "";
+  const endDate = currentBotstationUiState.endDate || "";
+  return items.filter((item) => {
+    const rawDate = String(item.updated_at || "").slice(0, 10);
+    const itemStatus = String(item.status || item.status_label || "").toLowerCase();
+    const matchesBotName = !botName || String(item.bot_name || "").toLowerCase().includes(botName);
+    const matchesUpdatedBy = !updatedBy || String(item.updater_name || item.updated_by || "").toLowerCase().includes(updatedBy);
+    const matchesGroup = !groupId || String(item.group_id || "") === groupId;
+    const matchesChannel = !channelCode || String(item.channel_code || "") === channelCode;
+    const matchesStatus = !status || itemStatus === status || String(item.status_label || "").toLowerCase() === status;
+    const matchesStart = !startDate || !rawDate || rawDate >= startDate;
+    const matchesEnd = !endDate || !rawDate || rawDate <= endDate;
+    return matchesBotName && matchesUpdatedBy && matchesGroup && matchesChannel && matchesStatus && matchesStart && matchesEnd;
+  });
+}
+
 function formatAidotSignupStatus(record) {
   if (!record) return "-";
   if (record.rowStatus === "pending" || record.request?.status === "pending") return "가입 대기";
@@ -6209,29 +6348,65 @@ function renderAidotInteractiveTable(surface, config) {
 
 function renderTemplateListSurface(surface) {
   const resource = "templates";
-  const rows = currentAdminResources.templates.map((template, index) => `
+  const filteredItems = getFilteredTemplateItems();
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / currentTemplateUiState.pageSize));
+  if (currentTemplateUiState.page > totalPages) currentTemplateUiState.page = totalPages;
+  const startIndex = (currentTemplateUiState.page - 1) * currentTemplateUiState.pageSize;
+  const pagedItems = filteredItems.slice(startIndex, startIndex + currentTemplateUiState.pageSize);
+  const rows = pagedItems.map((template, index) => `
     <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(template.id)}">
-      <span class="data-grid__cell">${index + 1}</span>
+      <span class="data-grid__cell">${startIndex + index + 1}</span>
       <span class="data-grid__cell">${escapeCell(template.channel_name || template.channel_code)}</span>
       <a class="data-grid__cell table-link" href="#">${escapeCell(template.name)}</a>
       <span class="data-grid__cell">${escapeCell(template.item_count)}</span>
       <span class="data-grid__cell">${escapeCell(template.item_types)}</span>
       <span class="data-grid__cell">${escapeCell(template.renderer_type)}</span>
       <span class="data-grid__cell">${escapeCell(template.status_label || (template.status === "N" ? "미사용" : "사용"))}</span>
+      <span class="data-grid__cell">${escapeCell(template.updater_name || template.updated_by || "SYSTEM")}</span>
       <span class="data-grid__cell">${formatAidotAdminDate(template.updated_at)}</span>
     </div>
   `);
-  renderAidotInteractiveTable(surface, {
-    resource,
-    title: "템플릿 목록",
-    placeholder: "템플릿 이름을 검색하세요.",
-    searchClass: "admin-template-list__search-row",
-    filters: `<input class="admin-page__filter" data-admin-channel-filter placeholder="채널" /><select class="admin-page__filter" data-admin-status-filter><option value="all">전체 사용여부</option><option value="Y">사용</option><option value="N">미사용</option></select>`,
-    topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button><button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 템플릿 등록</button>`,
-    columns: ["순서", "채널", "템플릿 이름", "아이템 개수", "아이템 타입", "렌더러 타입", "사용여부", "최종수정일시"],
-    template: "80px 150px 220px 120px 1fr 160px 120px 180px",
-    rows
-  });
+  surface.innerHTML = `
+    <section class="admin-page" data-admin-resource="${resource}">
+      <h2>템플릿 목록</h2>
+      <div class="admin-page__search-row admin-template-list__search-row">
+        <label class="admin-page__search">
+          <span>⌕</span>
+          <input data-admin-query-input value="${escapeCell(currentTemplateUiState.query)}" placeholder="템플릿 이름을 검색하세요." />
+        </label>
+        <input class="admin-template-list__channel-input" data-admin-channel-filter value="${escapeCell(currentTemplateUiState.channel)}" placeholder="채널" />
+        <select class="login-select" data-admin-status-filter>
+          <option value="" ${currentTemplateUiState.status ? "" : "selected"}>전체 사용여부</option>
+          <option value="active" ${currentTemplateUiState.status === "active" ? "selected" : ""}>사용</option>
+          <option value="inactive" ${currentTemplateUiState.status === "inactive" ? "selected" : ""}>미사용</option>
+        </select>
+        <button type="button" class="admin-page__filter" data-template-reset>초기화</button>
+        <div class="admin-page__search-actions">
+          <button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button>
+          <button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 템플릿 등록</button>
+        </div>
+      </div>
+      <div class="admin-page__toolbar">
+        <div class="admin-page__toolbar-left">
+          <strong>전체 ${filteredItems.length}건</strong>
+          <label class="manual-main__mini-select manual-main__mini-select--select">
+            <select data-template-page-size>
+              ${[10, 25, 50, 100].map((option) => `<option value="${option}" ${currentTemplateUiState.pageSize === option ? "selected" : ""}>${option}개씩 보기</option>`).join("")}
+            </select>
+          </label>
+          <button type="button" class="admin-page__ghost" data-template-download>다운로드</button>
+        </div>
+      </div>
+      ${renderDataGrid(["순서", "채널", "템플릿 이름", "아이템 개수", "아이템 타입", "렌더러 타입", "사용여부", "최종수정자", "최종수정일시"], rows, "80px 150px 220px 120px 1fr 160px 120px 160px 180px")}
+      <div class="admin-page__pagination" aria-label="pagination">
+        <button type="button" data-template-page-nav="first" ${currentTemplateUiState.page === 1 ? "disabled" : ""}>◀</button>
+        <button type="button" data-template-page-nav="prev" ${currentTemplateUiState.page === 1 ? "disabled" : ""}>‹</button>
+        <strong class="is-active">${currentTemplateUiState.page}</strong>
+        <button type="button" data-template-page-nav="next" ${currentTemplateUiState.page === totalPages ? "disabled" : ""}>›</button>
+        <button type="button" data-template-page-nav="last" ${currentTemplateUiState.page === totalPages ? "disabled" : ""}>▶</button>
+      </div>
+    </section>
+  `;
 }
 
 function renderLoginHistorySurface(surface) {
@@ -6434,10 +6609,65 @@ function renderDefaultMessageSurface(surface) {
 
 function renderChannelSurface(surface) {
   const resource = "channels";
-  const rows = currentAdminResources.channels.map((item) => `
-    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}"><a class="data-grid__cell table-link" href="#">${escapeCell(item.channel_code)}</a><span class="data-grid__cell">${escapeCell(item.channel_name)}</span><span class="data-grid__cell">${escapeCell(item.provider)}</span><span class="data-grid__cell">${escapeCell(item.renderer_type)}</span><span class="data-grid__cell">${escapeCell(item.auth_type)}</span><span class="data-grid__cell">${escapeCell(item.status_label)}</span><span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span></div>
+  const filteredItems = getFilteredChannelItems();
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / currentChannelUiState.pageSize));
+  if (currentChannelUiState.page > totalPages) currentChannelUiState.page = totalPages;
+  const startIndex = (currentChannelUiState.page - 1) * currentChannelUiState.pageSize;
+  const pagedItems = filteredItems.slice(startIndex, startIndex + currentChannelUiState.pageSize);
+  const rows = pagedItems.map((item, index) => `
+    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}">
+      <span class="data-grid__cell">${startIndex + index + 1}</span>
+      <a class="data-grid__cell table-link" href="#">${escapeCell(item.channel_code)}</a>
+      <span class="data-grid__cell">${escapeCell(item.channel_name)}</span>
+      <span class="data-grid__cell">${escapeCell(item.provider)}</span>
+      <span class="data-grid__cell">${escapeCell(item.renderer_type)}</span>
+      <span class="data-grid__cell">${escapeCell(item.status_label)}</span>
+      <span class="data-grid__cell">${escapeCell(item.creator_name || item.created_by || "SYSTEM")}</span>
+      <span class="data-grid__cell">${escapeCell(item.updater_name || item.updated_by || "SYSTEM")}</span>
+      <span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span>
+      <span class="data-grid__cell"><button type="button" class="admin-botstation__link" data-admin-row-open="${escapeCell(item.id)}">관리</button></span>
+    </div>
   `);
-  renderAidotInteractiveTable(surface, { resource, title: "채널 관리", placeholder: "채널 이름을 검색하세요.", topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button><button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 채널 등록</button>`, columns: ["채널 코드", "채널명", "제공자", "렌더러 타입", "인증 방식", "사용여부", "최종수정일시"], template: "150px 170px 160px 180px 130px 120px 180px", rows });
+  surface.innerHTML = `
+    <section class="admin-page" data-admin-resource="${resource}">
+      <h2>채널 관리</h2>
+      <div class="admin-page__search-row admin-channels__search-row">
+        <label class="admin-page__search">
+          <span>⌕</span>
+          <input data-admin-query-input value="${escapeCell(currentChannelUiState.query)}" placeholder="채널 아이디 또는 채널 이름을 검색하세요." />
+        </label>
+        <select class="login-select" data-admin-status-filter>
+          <option value="" ${currentChannelUiState.status ? "" : "selected"}>전체 사용여부</option>
+          <option value="active" ${currentChannelUiState.status === "active" ? "selected" : ""}>사용</option>
+          <option value="inactive" ${currentChannelUiState.status === "inactive" ? "selected" : ""}>미사용</option>
+        </select>
+        <button type="button" class="admin-page__filter" data-channel-reset>초기화</button>
+        <div class="admin-page__search-actions">
+          <button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button>
+          <button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 채널 생성</button>
+        </div>
+      </div>
+      <div class="admin-page__toolbar">
+        <div class="admin-page__toolbar-left">
+          <strong>전체 ${filteredItems.length}건</strong>
+          <label class="manual-main__mini-select manual-main__mini-select--select">
+            <select data-channel-page-size>
+              ${[10, 25, 50, 100].map((option) => `<option value="${option}" ${currentChannelUiState.pageSize === option ? "selected" : ""}>${option}개씩 보기</option>`).join("")}
+            </select>
+          </label>
+          <button type="button" class="admin-page__ghost" data-channel-download>다운로드</button>
+        </div>
+      </div>
+      ${renderDataGrid(["순서", "채널 아이디", "채널", "Provider", "렌더러 타입", "사용여부", "생성자", "최종수정자", "최종수정일시", "관리"], rows, "70px 130px 150px 120px 130px 100px 130px 130px 170px 100px")}
+      <div class="admin-page__pagination" aria-label="pagination">
+        <button type="button" data-channel-page-nav="first" ${currentChannelUiState.page === 1 ? "disabled" : ""}>◀</button>
+        <button type="button" data-channel-page-nav="prev" ${currentChannelUiState.page === 1 ? "disabled" : ""}>‹</button>
+        <strong class="is-active">${currentChannelUiState.page}</strong>
+        <button type="button" data-channel-page-nav="next" ${currentChannelUiState.page === totalPages ? "disabled" : ""}>›</button>
+        <button type="button" data-channel-page-nav="last" ${currentChannelUiState.page === totalPages ? "disabled" : ""}>▶</button>
+      </div>
+    </section>
+  `;
 }
 
 function renderLicenseSurface(surface) {
@@ -6576,6 +6806,77 @@ function renderSimpleHistorySurface(surface, key) {
   const columns = key === "botstation-links" ? ["봇스테이션", "연계 상태", "최종수정일시"] : ["순서", "구분", "내용", "상태", "최종수정일시"];
   renderAidotInteractiveTable(surface, { title, placeholder: "검색어를 입력하세요.", download: false, columns, template: key === "botstation-links" ? "220px 180px 180px" : "80px 180px 1fr 120px 180px", rows: [] });
 }
+
+function renderBotstationSurface(surface) {
+  const resource = "botstation-links";
+  const filteredItems = getFilteredBotstationItems();
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / currentBotstationUiState.pageSize));
+  if (currentBotstationUiState.page > totalPages) currentBotstationUiState.page = totalPages;
+  const startIndex = (currentBotstationUiState.page - 1) * currentBotstationUiState.pageSize;
+  const pagedItems = filteredItems.slice(startIndex, startIndex + currentBotstationUiState.pageSize);
+  const groups = [...new Map((currentAdminResources.botstation_links || []).map((item) => [item.group_id, item.group_name])).entries()]
+    .filter(([id]) => Boolean(id));
+  const channels = [...new Map((currentAdminResources.botstation_links || []).map((item) => [item.channel_code, item.channel_name])).entries()]
+    .filter(([code]) => Boolean(code));
+  const rows = pagedItems.map((item) => `
+    <div class="data-grid__row">
+      <span class="data-grid__cell">${escapeCell(item.status_label || item.status)}</span>
+      <span class="data-grid__cell">${escapeCell(item.group_name)}</span>
+      <span class="data-grid__cell">${escapeCell(item.channel_name || item.channel_code)}</span>
+      <span class="data-grid__cell">${escapeCell(item.bot_name)}</span>
+      <span class="data-grid__cell">${escapeCell(item.operating_version)}</span>
+      <span class="data-grid__cell">${escapeCell(item.active_channels)}</span>
+      <span class="data-grid__cell">${escapeCell(item.issue_message || "")}</span>
+      <span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span>
+      <span class="data-grid__cell">${escapeCell(item.updater_name || item.updated_by || "SYSTEM")}</span>
+    </div>
+  `);
+  surface.innerHTML = `
+    <section class="admin-page admin-botstation" data-admin-resource="${resource}">
+      <h2>봇스테이션 연계 현황</h2>
+      <div class="admin-botstation__filters" aria-label="검색 조건">
+        <label><span>봇 이름</span><input data-botstation-bot-name value="${escapeCell(currentBotstationUiState.botName)}" /></label>
+        <label><span>최종 수정자</span><input data-botstation-updated-by value="${escapeCell(currentBotstationUiState.updatedBy)}" /></label>
+        <label><span>그룹</span><select data-botstation-group-id><option value="">전체</option>${groups.map(([id, name]) => `<option value="${escapeCell(id)}" ${currentBotstationUiState.groupId === id ? "selected" : ""}>${escapeCell(name)}</option>`).join("")}</select></label>
+        <label><span>채널</span><select data-botstation-channel-code><option value="">전체</option>${channels.map(([code, name]) => `<option value="${escapeCell(code)}" ${currentBotstationUiState.channelCode === code ? "selected" : ""}>${escapeCell(name)}</option>`).join("")}</select></label>
+        <label><span>상태</span><select data-botstation-status><option value="">전체</option><option value="active" ${currentBotstationUiState.status === "active" ? "selected" : ""}>Active</option><option value="inactive" ${currentBotstationUiState.status === "inactive" ? "selected" : ""}>Inactive</option></select></label>
+        <label><span>시작일</span><input type="date" data-botstation-start-date value="${escapeCell(currentBotstationUiState.startDate)}" /></label>
+        <label><span>종료일</span><input type="date" data-botstation-end-date value="${escapeCell(currentBotstationUiState.endDate)}" /></label>
+        <div class="admin-botstation__filter-actions">
+          <button type="button" class="admin-page__ghost" data-botstation-reset>초기화</button>
+          <button type="button" class="admin-page__primary" data-botstation-apply>확인</button>
+        </div>
+      </div>
+      <div class="admin-page__toolbar">
+        <div class="admin-page__toolbar-left">
+          <strong>전체 ${filteredItems.length}건</strong>
+          <label class="manual-main__mini-select manual-main__mini-select--select">
+            <select data-botstation-page-size>
+              ${[10, 25, 50, 100].map((option) => `<option value="${option}" ${currentBotstationUiState.pageSize === option ? "selected" : ""}>${option}개씩 보기</option>`).join("")}
+            </select>
+          </label>
+          <button type="button" class="admin-page__ghost" data-botstation-download>다운로드</button>
+        </div>
+      </div>
+      <div class="admin-page__grid-scroll">
+        <div class="data-grid data-grid--admin admin-botstation__grid" style="--data-grid-template:96px 140px minmax(150px, 1fr) minmax(160px, 1fr) 150px 96px minmax(140px, 1fr) 160px 120px">
+          <div class="data-grid__row data-grid__row--header">
+            ${["상태", "그룹", "채널", "봇 이름", "운영버전", "활성 채널", "메시지", "최종수정일시", "최종수정자"].map((column) => `<span class="data-grid__cell">${column}</span>`).join("")}
+          </div>
+          ${rows.join("")}
+        </div>
+      </div>
+      ${filteredItems.length === 0 ? `<p class="admin-page__empty">조회 결과가 없습니다.</p>` : ""}
+      <div class="admin-page__pagination">
+        <button type="button" data-botstation-page-nav="first" ${currentBotstationUiState.page === 1 ? "disabled" : ""}>◀</button>
+        <button type="button" data-botstation-page-nav="prev" ${currentBotstationUiState.page === 1 ? "disabled" : ""}>‹</button>
+        <button type="button" class="is-active">${currentBotstationUiState.page}</button>
+        <button type="button" data-botstation-page-nav="next" ${currentBotstationUiState.page === totalPages ? "disabled" : ""}>›</button>
+        <button type="button" data-botstation-page-nav="last" ${currentBotstationUiState.page === totalPages ? "disabled" : ""}>▶</button>
+      </div>
+    </section>
+  `;
+}
 const ADMIN_RESOURCE_UI = {
   templates: {
     collectionKey: "templates",
@@ -6615,9 +6916,9 @@ const ADMIN_RESOURCE_UI = {
   "botstation-links": {
     collectionKey: "botstation_links",
     endpoint: "/api/cga/admin/botstation-links",
-    title: "봇스테이션 연계",
-    label: (item) => item?.station_name || "",
-    fields: [["station_name", "봇스테이션", "text"], ["endpoint_url", "연계 URL", "text"], ["status", "사용여부", "status"]]
+    title: "봇스테이션 연계 현황",
+    label: (item) => item?.bot_name || "",
+    fields: [["bot_name", "봇 이름", "text"], ["group_name", "그룹", "text"], ["channel_name", "채널", "text"], ["operating_version", "운영버전", "text"], ["issue_message", "메시지", "textarea"], ["status", "상태", "text"]]
   }
 };
 
@@ -6896,6 +7197,23 @@ function bindAdminSurfaceControls(surface) {
     button.dataset.bound = "true";
     button.addEventListener("click", async () => {
       const resource = button.dataset.adminQuery;
+      if (resource === "templates") {
+        currentTemplateUiState.query = surface.querySelector("[data-admin-query-input]")?.value || "";
+        currentTemplateUiState.channel = surface.querySelector("[data-admin-channel-filter]")?.value || "";
+        currentTemplateUiState.status = surface.querySelector("[data-admin-status-filter]")?.value || "";
+        currentTemplateUiState.page = 1;
+        renderTemplateListSurface(surface);
+        bindAdminSurfaceControls(surface);
+        return;
+      }
+      if (resource === "channels") {
+        currentChannelUiState.query = surface.querySelector("[data-admin-query-input]")?.value || "";
+        currentChannelUiState.status = surface.querySelector("[data-admin-status-filter]")?.value || "";
+        currentChannelUiState.page = 1;
+        renderChannelSurface(surface);
+        bindAdminSurfaceControls(surface);
+        return;
+      }
       if (resource === "common-variables") {
         currentCommonVariableUiState.query = surface.querySelector("[data-admin-query-input]")?.value || "";
         currentCommonVariableUiState.kind = surface.querySelector("[data-common-variable-kind]")?.value || "";
@@ -6931,6 +7249,146 @@ function bindAdminSurfaceControls(surface) {
         currentAdminResources = { ...currentAdminResources, default_messages: result.items || [] };
         renderAccessPanels();
       }
+    });
+  });
+  surface.querySelectorAll("[data-template-reset]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentTemplateUiState = { query: "", channel: "", status: "", page: 1, pageSize: currentTemplateUiState.pageSize || 10 };
+      renderTemplateListSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-template-page-size]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      currentTemplateUiState.pageSize = Number(select.value) || 10;
+      currentTemplateUiState.page = 1;
+      renderTemplateListSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-template-download]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => downloadCsvFile("템플릿 목록.csv", buildTemplateCsv(getFilteredTemplateItems())));
+  });
+  surface.querySelectorAll("[data-template-page-nav]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const totalPages = Math.max(1, Math.ceil(getFilteredTemplateItems().length / currentTemplateUiState.pageSize));
+      const action = button.dataset.templatePageNav;
+      if (action === "first") currentTemplateUiState.page = 1;
+      if (action === "prev") currentTemplateUiState.page = Math.max(1, currentTemplateUiState.page - 1);
+      if (action === "next") currentTemplateUiState.page = Math.min(totalPages, currentTemplateUiState.page + 1);
+      if (action === "last") currentTemplateUiState.page = totalPages;
+      renderTemplateListSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-channel-reset]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentChannelUiState = { query: "", status: "", page: 1, pageSize: currentChannelUiState.pageSize || 10 };
+      renderChannelSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-channel-page-size]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      currentChannelUiState.pageSize = Number(select.value) || 10;
+      currentChannelUiState.page = 1;
+      renderChannelSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-channel-download]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => downloadCsvFile("채널 관리.csv", buildChannelCsv(getFilteredChannelItems())));
+  });
+  surface.querySelectorAll("[data-channel-page-nav]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const totalPages = Math.max(1, Math.ceil(getFilteredChannelItems().length / currentChannelUiState.pageSize));
+      const action = button.dataset.channelPageNav;
+      if (action === "first") currentChannelUiState.page = 1;
+      if (action === "prev") currentChannelUiState.page = Math.max(1, currentChannelUiState.page - 1);
+      if (action === "next") currentChannelUiState.page = Math.min(totalPages, currentChannelUiState.page + 1);
+      if (action === "last") currentChannelUiState.page = totalPages;
+      renderChannelSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-admin-row-open]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const row = button.closest("[data-admin-row]");
+      if (!row) return;
+      openAdminResourceModal(row.dataset.adminResource, row.dataset.adminId, "edit");
+    });
+  });
+  surface.querySelectorAll("[data-botstation-apply]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentBotstationUiState.botName = surface.querySelector("[data-botstation-bot-name]")?.value || "";
+      currentBotstationUiState.updatedBy = surface.querySelector("[data-botstation-updated-by]")?.value || "";
+      currentBotstationUiState.groupId = surface.querySelector("[data-botstation-group-id]")?.value || "";
+      currentBotstationUiState.channelCode = surface.querySelector("[data-botstation-channel-code]")?.value || "";
+      currentBotstationUiState.status = surface.querySelector("[data-botstation-status]")?.value || "";
+      currentBotstationUiState.startDate = surface.querySelector("[data-botstation-start-date]")?.value || "";
+      currentBotstationUiState.endDate = surface.querySelector("[data-botstation-end-date]")?.value || "";
+      currentBotstationUiState.page = 1;
+      renderBotstationSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-botstation-reset]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentBotstationUiState = { botName: "", updatedBy: "", groupId: "", channelCode: "", status: "", startDate: "", endDate: "", page: 1, pageSize: currentBotstationUiState.pageSize || 10 };
+      renderBotstationSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-botstation-page-size]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      currentBotstationUiState.pageSize = Number(select.value) || 10;
+      currentBotstationUiState.page = 1;
+      renderBotstationSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-botstation-download]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => downloadCsvFile("봇스테이션 연계 현황.csv", buildBotstationCsv(getFilteredBotstationItems())));
+  });
+  surface.querySelectorAll("[data-botstation-page-nav]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const totalPages = Math.max(1, Math.ceil(getFilteredBotstationItems().length / currentBotstationUiState.pageSize));
+      const action = button.dataset.botstationPageNav;
+      if (action === "first") currentBotstationUiState.page = 1;
+      if (action === "prev") currentBotstationUiState.page = Math.max(1, currentBotstationUiState.page - 1);
+      if (action === "next") currentBotstationUiState.page = Math.min(totalPages, currentBotstationUiState.page + 1);
+      if (action === "last") currentBotstationUiState.page = totalPages;
+      renderBotstationSurface(surface);
+      bindAdminSurfaceControls(surface);
     });
   });
   surface.querySelectorAll("[data-default-message-page-size]").forEach((select) => {
@@ -7193,6 +7651,7 @@ function renderAdminSurface(surface, key) {
   else if (normalizedKey === "common-variables") renderCommonVariableSurface(surface);
   else if (normalizedKey === "default-messages") renderDefaultMessageSurface(surface);
   else if (normalizedKey === "channels") renderChannelSurface(surface);
+  else if (normalizedKey === "botstation-links") renderBotstationSurface(surface);
   else if (normalizedKey === "license") renderLicenseSurface(surface);
   else renderSimpleHistorySurface(surface, normalizedKey);
   bindAdminSurfaceControls(surface);

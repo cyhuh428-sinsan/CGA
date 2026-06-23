@@ -219,13 +219,69 @@ function createDefaultAdminResources() {
     ["ch-webchat", "WEBCHAT", "Webchat", "webchat", "webchat", "none"],
     ["ch-kakao", "KAKAO", "Kakao", "kakao", "kakao", "token"],
     ["ch-teams", "TEAMS", "MS Teams", "ms_teams", "adaptive_card", "oauth"]
-  ].map(([id, channel_code, channel_name, provider, renderer_type, auth_type]) => ({ id, channel_code, channel_name, provider, renderer_type, auth_type, status: "Y", status_label: "사용", updated_at: stamp, updated_by: "SYSTEM" }));
+  ].map(([id, channel_code, channel_name, provider, renderer_type, auth_type]) => ({ id, channel_code, channel_name, provider, renderer_type, auth_type, status: "Y", status_label: "사용", creator_name: "SYSTEM", updater_name: "SYSTEM", created_by: "SYSTEM", updated_at: stamp, updated_by: "SYSTEM" }));
+  const botstation_links = [
+    {
+      id: "bs-support-webchat",
+      bot_id: "supportbot-draft",
+      bot_name: "SupportBot Draft",
+      group_id: "g-support",
+      group_name: "Support Bot Group",
+      channel_code: "WEBCHAT",
+      channel_name: "Webchat",
+      operating_version: "v0.1",
+      active_channels: 1,
+      status: "active",
+      status_label: "Active",
+      issue_message: "정상 연결",
+      updated_at: "2026-06-18T09:10:00.000Z",
+      updated_by: "SYSTEM",
+      updater_name: "SYSTEM",
+      data_json: {}
+    },
+    {
+      id: "bs-faq-kakao",
+      bot_id: "faqbot-v1",
+      bot_name: "FAQ Bot v1",
+      group_id: "g-support",
+      group_name: "Support Bot Group",
+      channel_code: "KAKAO",
+      channel_name: "Kakao",
+      operating_version: "v1.0",
+      active_channels: 1,
+      status: "active",
+      status_label: "Active",
+      issue_message: "정상 연결",
+      updated_at: "2026-06-17T13:25:00.000Z",
+      updated_by: "SYSTEM",
+      updater_name: "SYSTEM",
+      data_json: {}
+    },
+    {
+      id: "bs-ops-teams",
+      bot_id: "ops-assistant",
+      bot_name: "Ops Assistant",
+      group_id: "g-ops",
+      group_name: "Operations Group",
+      channel_code: "TEAMS",
+      channel_name: "MS Teams",
+      operating_version: "v0.3",
+      active_channels: 0,
+      status: "inactive",
+      status_label: "Inactive",
+      issue_message: "채널 연결 정보 확인 필요",
+      updated_at: "2026-06-16T08:40:00.000Z",
+      updated_by: "system",
+      updater_name: "system",
+      data_json: {}
+    }
+  ];
   const licenses = [
     { id: "lic-user", category: "사용자", total: 120, used: 4, remaining: 116, expires_at: "2026-12-31", status: "정상" },
     { id: "lic-bot", category: "봇", total: 30, used: 13, remaining: 17, expires_at: "2026-12-31", status: "정상" },
     { id: "lic-api", category: "API", total: 50, used: 5, remaining: 45, expires_at: "2026-12-31", status: "정상" }
   ];
-  return { version: 1, templates, common_variables, default_messages, channels, botstation_links: [], licenses };
+  return { version: 1, templates, common_variables, default_messages, channels, botstation_links, licenses };
 }
 
 function mergeDefaultCollection(existing, defaults, key = "id", options = {}) {
@@ -309,7 +365,7 @@ function normalizeAdminResources(resources) {
     common_variables: normalizedCommonVariables,
     default_messages: [...normalizedDefaultMessageMap.values()],
     channels: mergeDefaultCollection(next.channels, defaults.channels),
-    botstation_links: Array.isArray(next.botstation_links) ? next.botstation_links : defaults.botstation_links,
+    botstation_links: mergeDefaultCollection(next.botstation_links, defaults.botstation_links),
     licenses: mergeDefaultCollection(next.licenses, defaults.licenses, "id", { replaceSeedItems: true, keepExtraItems: false })
   };
 }
