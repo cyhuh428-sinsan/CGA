@@ -5248,3 +5248,23 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - CGA 사용자 매뉴얼은
   - 초기 제작 단계만이 아니라
   - 운영/관리/WebChat까지 포함한 1차 전체 세트로 확장됐다.
+
+## 2026-06-23 22:31 KST
+
+### CGA 사용자 매뉴얼 부록 세트 추가
+
+- 추가 작성 문서:
+  - `docs/manual/cga-user-manual/12_CGA_FAQ.md`
+  - `docs/manual/cga-user-manual/13_CGA_용어집.md`
+  - `docs/manual/cga-user-manual/14_CGA_운영자_체크리스트.md`
+  - `docs/manual/cga-user-manual/15_CGA_예제_시나리오.md`
+  - `docs/manual/cga-user-manual/README.md` 갱신
+- 반영 내용:
+  - 처음 사용자 질문에 대응할 수 있도록 FAQ 추가
+  - 그룹/버전/운영 버전/WebChat 등 핵심 용어를 빠르게 찾을 수 있도록 용어집 추가
+  - 운영 전 점검용 체크리스트 추가
+  - 실제 따라가기 예제 시나리오 추가
+- 이번 단계 의미:
+  - CGA 사용자 매뉴얼은
+  - 본문 장들만 있는 상태를 넘어서
+  - FAQ, 용어집, 체크리스트, 예제 시나리오를 갖춘 1차 완성본 형태로 정리됐다.

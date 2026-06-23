@@ -15,6 +15,10 @@
 9. [09_CGA_분석.md](D:\Project\cga\docs\manual\cga-user-manual\09_CGA_분석.md)
 10. [10_CGA_관리자_기능.md](D:\Project\cga\docs\manual\cga-user-manual\10_CGA_관리자_기능.md)
 11. [11_CGA_WebChat_사용.md](D:\Project\cga\docs\manual\cga-user-manual\11_CGA_WebChat_사용.md)
+12. [12_CGA_FAQ.md](D:\Project\cga\docs\manual\cga-user-manual\12_CGA_FAQ.md)
+13. [13_CGA_용어집.md](D:\Project\cga\docs\manual\cga-user-manual\13_CGA_용어집.md)
+14. [14_CGA_운영자_체크리스트.md](D:\Project\cga\docs\manual\cga-user-manual\14_CGA_운영자_체크리스트.md)
+15. [15_CGA_예제_시나리오.md](D:\Project\cga\docs\manual\cga-user-manual\15_CGA_예제_시나리오.md)
 
 ## 권장 읽기 순서
 
@@ -31,6 +35,10 @@
 9. 분석
 10. 관리자 기능
 11. WebChat 사용
+12. FAQ
+13. 용어집
+14. 운영자 체크리스트
+15. 예제 시나리오
 
 ## 문서 성격
 
@@ -41,4 +49,5 @@
 ## 현재 상태
 
 - CGA 핵심 사용자 흐름 문서가 1차 완성되었습니다.
-- 이후에는 실제 화면 캡처 삽입, 용어집 보강, 운영 시나리오 예제를 추가할 수 있습니다.
+- FAQ, 용어집, 운영자 체크리스트, 예제 시나리오까지 포함한 1차 전체 세트가 정리되었습니다.
+- 이후에는 실제 화면 캡처 삽입과 장별 예시 보강을 추가할 수 있습니다.
