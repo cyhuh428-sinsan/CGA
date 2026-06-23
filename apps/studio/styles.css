@@ -3417,11 +3417,14 @@ button.management-table-row:hover,
   align-items: center;
   justify-content: space-between;
   min-height: 34px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .admin-page__toolbar-left {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 .admin-page__toolbar-left strong {
   color: #0f172a;
@@ -3524,7 +3527,7 @@ button.management-table-row:hover,
   display: none;
 }
 .admin-default-messages__search-row {
-  grid-template-columns: minmax(320px, 460px) 160px 160px auto minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 1fr) 150px 150px 150px auto minmax(0, 1fr);
 }
 .admin-default-messages__search-row .admin-history-filters__field {
   display: grid;
@@ -3540,6 +3543,9 @@ button.management-table-row:hover,
   border: 1px solid #c9d4e2;
   background: #ffffff;
   padding: 0 10px;
+}
+.admin-default-messages__search-row .admin-page__search-actions {
+  justify-content: flex-end;
 }
 .admin-page__pagination {
   display: flex;
