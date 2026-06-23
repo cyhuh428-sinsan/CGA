@@ -6972,9 +6972,12 @@ function renderAdminResourceModal() {
   const subtitle = modal.querySelector("[data-admin-resource-modal-subtitle]");
   const detail = modal.querySelector("[data-admin-resource-detail]");
   const edit = modal.querySelector("[data-admin-resource-edit]");
+  const closeButton = modal.querySelector("[data-admin-resource-modal-close]");
   modal.classList.toggle("detail-modal--common-variable", resource === "common-variables");
   modal.classList.toggle("detail-modal--default-message", resource === "default-messages");
   modal.classList.toggle("detail-modal--single-form", ["common-variables", "default-messages", "templates", "channels"].includes(resource));
+  modal.classList.toggle("detail-modal--settings-form", ["templates", "channels"].includes(resource));
+  if (closeButton) closeButton.textContent = ["templates", "channels"].includes(resource) ? "×" : "닫기";
   if (title) title.textContent = `${config.title} ${mode === "create" ? "등록" : "상세"}`;
   if (subtitle) subtitle.textContent = "선택한 항목을 수정합니다.";
   if (resource === "common-variables") {

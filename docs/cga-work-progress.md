@@ -5074,3 +5074,23 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
     - 가 아니라
     - 목록과 등록/수정 팝업까지 같이 Aidot형 입력 흐름
     - 으로 정렬됐다.
+
+## 2026-06-23 14:18 KST
+
+### 템플릿 등록, 채널 생성 팝업의 외곽 컨테이너도 Aidot형 다이얼로그 크기로 재정렬
+
+- 신산님 추가 확인:
+  - 입력 폼 구조는 바뀌었지만
+  - 팝업 바깥 컨테이너는 여전히 예전 대형 상세 패널 폭을 사용하고 있었음
+- 반영 범위:
+  - `apps/studio/app.js`
+    - 템플릿/채널 팝업에 Aidot형 settings-form modal class를 분리 적용
+    - 닫기 버튼 표시를 `닫기` 텍스트가 아니라 `×` 형태로 변경
+  - `apps/studio/styles.css`
+    - 템플릿/채널 팝업의 panel 폭, header, close button, body padding, 단일 입력폼 폭을 Aidot 다이얼로그 기준으로 조정
+- 이번 단계 의미:
+  - 이제 템플릿/채널 팝업은
+    - 안쪽 폼만 Aidot형
+    - 이 아니라
+    - 바깥 다이얼로그 컨테이너까지 Aidot형 크기와 헤더를 따르는 상태
+    - 로 정렬됐다.
