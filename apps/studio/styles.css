@@ -4041,24 +4041,34 @@ h1 { line-height: 1; }
   width: min(600px, 100%);
   min-height: 0;
   border: none;
-  padding: 16px;
+  padding: 12px;
   justify-self: center;
 }
 .detail-modal--settings-form .admin-variable-dialog__body {
-  gap: 10px;
+  gap: 6px;
+}
+.detail-modal--settings-form .admin-variable-dialog__body label {
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.detail-modal--settings-form .admin-variable-dialog__body input,
+.detail-modal--settings-form .admin-variable-dialog__body select {
+  height: 32px;
 }
 .detail-modal--settings-form .admin-variable-dialog__body textarea {
-  min-height: 88px;
+  min-height: 64px;
   resize: vertical;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 .detail-modal--settings-form .admin-variable-dialog__body textarea[data-admin-field="auth_config"] {
-  min-height: 72px;
+  min-height: 56px;
 }
 .detail-modal--settings-form .admin-variable-dialog__body textarea[data-admin-field="description"] {
-  min-height: 96px;
+  min-height: 72px;
 }
 .detail-modal--settings-form .admin-variable-dialog__body label:last-of-type {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .detail-modal__body > article,
 .detail-modal__body > aside {
@@ -4113,8 +4123,8 @@ h1 { line-height: 1; }
   justify-content: flex-end;
 }
 .detail-modal--settings-form .entity-editor-dialog__footer {
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid #e8edf2;
 }
 .access-detail-layout--modal {
