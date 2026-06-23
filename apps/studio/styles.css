@@ -4082,6 +4082,15 @@ h1 { line-height: 1; }
   min-height: 120px;
   resize: none;
 }
+.entity-editor-dialog__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.detail-modal--single-form .entity-editor-dialog__footer,
+.detail-modal--settings-form .entity-editor-dialog__footer {
+  justify-content: flex-end;
+}
 .access-detail-layout--modal {
   max-height: calc(100vh - 165px);
 }
