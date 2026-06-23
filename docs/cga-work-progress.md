@@ -5230,3 +5230,21 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - CGA 사용자 매뉴얼은
   - `봇 생성 -> 봇 설정 -> 봇 구성 -> 봇 제작 -> 봇 테스트 -> 봇 관리/버전`
     흐름까지 한 세트의 기본 사용자 문서 묶음으로 정리됐다.
+
+## 2026-06-23 22:18 KST
+
+### Brity식 사용자 매뉴얼 범위를 운영/관리/WebChat까지 확장
+
+- 추가 작성 문서:
+  - `docs/manual/cga-user-manual/07_CGA_봇_평가.md`
+  - `docs/manual/cga-user-manual/08_CGA_재학습.md`
+  - `docs/manual/cga-user-manual/09_CGA_분석.md`
+  - `docs/manual/cga-user-manual/10_CGA_관리자_기능.md`
+  - `docs/manual/cga-user-manual/11_CGA_WebChat_사용.md`
+  - `docs/manual/cga-user-manual/README.md` 갱신
+- 정리한 범위:
+  - 제작 이후의 평가, 운영 개선, 관리자 기능, 실제 WebChat 사용 흐름
+- 이번 단계 의미:
+  - CGA 사용자 매뉴얼은
+  - 초기 제작 단계만이 아니라
+  - 운영/관리/WebChat까지 포함한 1차 전체 세트로 확장됐다.
