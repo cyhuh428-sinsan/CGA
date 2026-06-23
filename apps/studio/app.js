@@ -6974,6 +6974,7 @@ function renderAdminResourceModal() {
   const edit = modal.querySelector("[data-admin-resource-edit]");
   modal.classList.toggle("detail-modal--common-variable", resource === "common-variables");
   modal.classList.toggle("detail-modal--default-message", resource === "default-messages");
+  modal.classList.toggle("detail-modal--single-form", ["common-variables", "default-messages", "templates", "channels"].includes(resource));
   if (title) title.textContent = `${config.title} ${mode === "create" ? "등록" : "상세"}`;
   if (subtitle) subtitle.textContent = "선택한 항목을 수정합니다.";
   if (resource === "common-variables") {
@@ -7047,6 +7048,139 @@ function renderAdminResourceModal() {
             <button type="button" class="ghost-pill" data-default-message-restore ${item?.is_modified ? "" : "disabled"}>기본값 복원</button>
             <button type="button" class="secondary-action" data-admin-resource-modal-close>취소</button>
             <button type="button" class="primary-action" data-admin-resource-save>저장</button>
+          </div>
+        </div>
+      `;
+    }
+    bindAdminResourceModalControls();
+    modal.hidden = false;
+    return;
+  }
+  if (resource === "templates") {
+    if (title) title.textContent = mode === "create" ? "템플릿 등록" : "템플릿 정보 수정";
+    if (subtitle) subtitle.textContent = "";
+    if (detail) detail.innerHTML = "";
+    if (edit) {
+      const currentStatus = String(item?.status || "active").toLowerCase() === "inactive" || item?.status === "N" ? "inactive" : "active";
+      edit.innerHTML = `
+        <div class="admin-variable-dialog__body">
+          <label>
+            <span>채널</span>
+            <input type="text" data-admin-field="channel_code" value="${escapeCell(item?.channel_code || item?.channel_name || "")}" ${mode !== "create" ? "disabled" : ""} />
+          </label>
+          <label>
+            <span>템플릿 이름</span>
+            <input type="text" data-admin-field="name" value="${escapeCell(item?.name || "")}" />
+          </label>
+          <label>
+            <span>렌더러 타입</span>
+            <select class="login-select" data-admin-field="renderer_type">
+              ${[
+                ["text", "text (기본 메시지)"],
+                ["html", "html (Html)"],
+                ["card", "card (Card)"],
+                ["table", "table (Table)"],
+                ["button", "button (Button)"],
+                ["link-button", "link-button (Link Button)"],
+                ["form", "form (Form(Rich))"],
+                ["carousel", "carousel (Carousel)"],
+                ["dtmf", "dtmf (DTMF)"],
+                ["form-a-card", "form-a-card (Form(A Card))"]
+              ].map(([value, label]) => `<option value="${value}" ${String(item?.renderer_type || "text") === value ? "selected" : ""}>${label}</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            <span>아이템 타입</span>
+            <input type="text" data-admin-field="item_types" value="${escapeCell(item?.item_types || "")}" />
+          </label>
+          <label>
+            <span>상세 설명</span>
+            <textarea data-admin-field="description">${escapeCell(item?.description || "")}</textarea>
+          </label>
+          <label>
+            <span>사용 여부</span>
+            <select class="login-select" data-admin-field="status">
+              <option value="active" ${currentStatus === "active" ? "selected" : ""}>사용</option>
+              <option value="inactive" ${currentStatus === "inactive" ? "selected" : ""}>미사용</option>
+            </select>
+          </label>
+          <div class="entity-editor-dialog__footer">
+            ${mode === "create" ? "" : `<button type="button" class="secondary-action" data-admin-resource-delete>삭제</button>`}
+            <button type="button" class="secondary-action" data-admin-resource-modal-close>취소</button>
+            <button type="button" class="primary-action" data-admin-resource-save>확인</button>
+          </div>
+        </div>
+      `;
+    }
+    bindAdminResourceModalControls();
+    modal.hidden = false;
+    return;
+  }
+  if (resource === "channels") {
+    if (title) title.textContent = mode === "create" ? "채널 생성" : "채널 정보 수정";
+    if (subtitle) subtitle.textContent = "";
+    if (detail) detail.innerHTML = "";
+    if (edit) {
+      const currentStatus = String(item?.status || "active").toLowerCase() === "inactive" || item?.status === "N" ? "inactive" : "active";
+      edit.innerHTML = `
+        <div class="admin-variable-dialog__body">
+          <label>
+            <span>채널 아이디</span>
+            <input type="text" data-admin-field="channel_code" value="${escapeCell(item?.channel_code || "")}" ${mode !== "create" ? "disabled" : ""} />
+          </label>
+          <label>
+            <span>채널 이름</span>
+            <input type="text" data-admin-field="channel_name" value="${escapeCell(item?.channel_name || "")}" />
+          </label>
+          <label>
+            <span>Provider</span>
+            <select class="login-select" data-admin-field="provider">
+              ${[
+                ["webchat", "Webchat"],
+                ["kakao", "Kakao"],
+                ["ms_teams", "MS Teams"],
+                ["simulator", "Simulator"]
+              ].map(([value, label]) => `<option value="${value}" ${String(item?.provider || "webchat") === value ? "selected" : ""}>${label}</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            <span>렌더러 타입</span>
+            <input type="text" data-admin-field="renderer_type" value="${escapeCell(item?.renderer_type || "")}" />
+          </label>
+          <label>
+            <span>Endpoint URL</span>
+            <input type="text" data-admin-field="endpoint_url" value="${escapeCell(item?.endpoint_url || "")}" placeholder="https://..." />
+          </label>
+          <label>
+            <span>인증 방식</span>
+            <select class="login-select" data-admin-field="auth_type">
+              ${[
+                ["none", "없음"],
+                ["token", "Token"],
+                ["oauth", "OAuth"],
+                ["basic", "Basic"]
+              ].map(([value, label]) => `<option value="${value}" ${String(item?.auth_type || "none") === value ? "selected" : ""}>${label}</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            <span>인증 정보 JSON</span>
+            <textarea data-admin-field="auth_config" placeholder='{"token":"..."}'>${escapeCell(item?.auth_config || "")}</textarea>
+          </label>
+          <label>
+            <span>상세 설명</span>
+            <textarea data-admin-field="description">${escapeCell(item?.description || "")}</textarea>
+          </label>
+          <label>
+            <span>사용 여부</span>
+            <select class="login-select" data-admin-field="status">
+              <option value="active" ${currentStatus === "active" ? "selected" : ""}>사용</option>
+              <option value="inactive" ${currentStatus === "inactive" ? "selected" : ""}>미사용</option>
+            </select>
+          </label>
+          <div class="entity-editor-dialog__footer">
+            ${mode === "create" ? "" : `<button type="button" class="secondary-action" data-admin-resource-delete>삭제</button>`}
+            <button type="button" class="secondary-action" data-admin-resource-modal-close>취소</button>
+            <button type="button" class="primary-action" data-admin-resource-save>확인</button>
           </div>
         </div>
       `;

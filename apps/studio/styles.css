@@ -3973,10 +3973,16 @@ h1 { line-height: 1; }
 .detail-modal--default-message .admin-resource-modal__body {
   grid-template-columns: 1fr;
 }
+.detail-modal--single-form .admin-resource-modal__body {
+  grid-template-columns: 1fr;
+}
 .detail-modal--common-variable [data-admin-resource-detail] {
   display: none;
 }
 .detail-modal--default-message [data-admin-resource-detail] {
+  display: none;
+}
+.detail-modal--single-form [data-admin-resource-detail] {
   display: none;
 }
 .detail-modal--common-variable [data-admin-resource-edit] {
@@ -3984,6 +3990,11 @@ h1 { line-height: 1; }
 }
 .detail-modal--default-message [data-admin-resource-edit] {
   min-height: auto;
+}
+.detail-modal--single-form [data-admin-resource-edit] {
+  min-height: auto;
+  width: min(760px, 100%);
+  justify-self: center;
 }
 .detail-modal__body > article,
 .detail-modal__body > aside {
