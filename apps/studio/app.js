@@ -126,7 +126,10 @@ let currentCommonVariableUiState = {
 let currentDefaultMessageUiState = {
   query: "",
   category: "",
-  status: ""
+  status: "",
+  language: "",
+  page: 1,
+  pageSize: 25
 };
 let currentConversationHistoryFilters = {
   channel: "all",
@@ -6030,6 +6033,36 @@ function buildCommonVariableCsv(items) {
     .join("\n");
 }
 
+const DEFAULT_MESSAGE_LANGUAGE_OPTIONS = [
+  ["", "전체 언어"],
+  ["ko", "ko"],
+  ["en", "en"],
+  ["zh-CN", "zh-CN"],
+  ["ja", "ja"],
+  ["vi", "vi"],
+  ["de", "de"],
+  ["fr", "fr"]
+];
+
+function buildDefaultMessageCsv(items) {
+  const rows = [
+    ["구분", "메시지명", "언어", "적용 범위", "사용여부", "메시지", "최종수정일시", "최종수정자"],
+    ...items.map((item) => [
+      item.category_label || item.category || "",
+      item.message_name || item.name || "",
+      item.language || "",
+      item.scope_label || item.scope || "",
+      item.status_label || "",
+      item.message_text || item.message || "",
+      formatAidotAdminDate(item.updated_at),
+      item.updater_name || item.updated_by || "SYSTEM"
+    ])
+  ];
+  return rows
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, "\"\"")}"`).join(","))
+    .join("\n");
+}
+
 function parseCommonVariableCsv(text) {
   const rows = [];
   let row = [];
@@ -6074,6 +6107,41 @@ function downloadCommonVariablesCsv() {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = "공통 변수.csv";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function getFilteredDefaultMessageItems() {
+  const items = Array.isArray(currentAdminResources.default_messages) ? currentAdminResources.default_messages : [];
+  const keyword = currentDefaultMessageUiState.query.trim().toLowerCase();
+  const category = String(currentDefaultMessageUiState.category || "").trim().toLowerCase();
+  const status = String(currentDefaultMessageUiState.status || "").trim().toLowerCase();
+  const language = String(currentDefaultMessageUiState.language || "").trim().toLowerCase();
+  return items.filter((item) => {
+    const haystack = [
+      item.category_label,
+      item.message_name,
+      item.message_key,
+      item.message_text,
+      item.description,
+      item.language
+    ].filter(Boolean).join(" ").toLowerCase();
+    const matchesKeyword = !keyword || haystack.includes(keyword);
+    const matchesCategory = !category || String(item.category || "").toLowerCase() === category;
+    const normalizedStatus = String(item.status || "").toLowerCase();
+    const matchesStatus = !status || normalizedStatus === status || String(item.status_label || "").toLowerCase() === status;
+    const matchesLanguage = !language || String(item.language || "").toLowerCase() === language;
+    return matchesKeyword && matchesCategory && matchesStatus && matchesLanguage;
+  });
+}
+
+function downloadDefaultMessagesCsv() {
+  const csv = `\ufeff${buildDefaultMessageCsv(getFilteredDefaultMessageItems())}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "기본 메시지 관리.csv";
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -6286,7 +6354,12 @@ function renderCommonVariableSurface(surface) {
 
 function renderDefaultMessageSurface(surface) {
   const resource = "default-messages";
-  const rows = (currentAdminResources.default_messages || []).map((item) => `
+  const filteredItems = getFilteredDefaultMessageItems();
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / currentDefaultMessageUiState.pageSize));
+  if (currentDefaultMessageUiState.page > totalPages) currentDefaultMessageUiState.page = totalPages;
+  const startIndex = (currentDefaultMessageUiState.page - 1) * currentDefaultMessageUiState.pageSize;
+  const pagedItems = filteredItems.slice(startIndex, startIndex + currentDefaultMessageUiState.pageSize);
+  const rows = pagedItems.map((item) => `
     <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}">
       <span class="data-grid__cell">${escapeCell(item.category_label || item.category)}</span>
       <a class="data-grid__cell table-link" href="#">${escapeCell(item.message_name || item.name)}</a>
@@ -6298,39 +6371,65 @@ function renderDefaultMessageSurface(surface) {
       <span class="data-grid__cell">${escapeCell(item.updater_name || item.updated_by || "SYSTEM")}</span>
     </div>
   `);
-  renderAidotInteractiveTable(surface, {
-    resource,
-    title: "기본 메시지 관리",
-    placeholder: "메시지명 또는 메시지 내용을 검색하세요.",
-    queryValue: currentDefaultMessageUiState.query,
-    searchClass: "admin-default-messages__search-row",
-    filters: `
-      <label class="admin-history-filters__field">
-        <span>구분</span>
-        <select data-default-message-category>
-          <option value="" ${currentDefaultMessageUiState.category ? "" : "selected"}>전체 구분</option>
-          <option value="intent" ${currentDefaultMessageUiState.category === "intent" ? "selected" : ""}>의도</option>
-          <option value="input" ${currentDefaultMessageUiState.category === "input" ? "selected" : ""}>입력</option>
-          <option value="error" ${currentDefaultMessageUiState.category === "error" ? "selected" : ""}>오류</option>
-          <option value="session" ${currentDefaultMessageUiState.category === "session" ? "selected" : ""}>세션</option>
-          <option value="runtime" ${currentDefaultMessageUiState.category === "runtime" ? "selected" : ""}>런타임</option>
-        </select>
-      </label>
-      <label class="admin-history-filters__field">
-        <span>사용여부</span>
-        <select data-default-message-status>
-          <option value="" ${currentDefaultMessageUiState.status ? "" : "selected"}>전체 사용여부</option>
-          <option value="active" ${currentDefaultMessageUiState.status === "active" ? "selected" : ""}>사용</option>
-          <option value="inactive" ${currentDefaultMessageUiState.status === "inactive" ? "selected" : ""}>미사용</option>
-        </select>
-      </label>
-      <button type="button" class="admin-page__filter admin-page__filter--text" data-default-message-reset>초기화</button>
-    `,
-    topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button>`,
-    columns: ["구분", "메시지명", "언어", "적용 범위", "사용여부", "메시지", "최종수정일시", "최종수정자"],
-    template: "0.8fr 1.1fr 0.5fr 0.7fr 0.7fr 2.2fr 1.2fr 0.8fr",
-    rows
-  });
+  surface.innerHTML = `
+    <section class="admin-page" data-admin-resource="${resource}">
+      <h2>기본 메시지 관리</h2>
+      <div class="admin-page__search-row admin-default-messages__search-row">
+        <label class="admin-page__search">
+          <span>⌕</span>
+          <input data-admin-query-input value="${escapeCell(currentDefaultMessageUiState.query)}" placeholder="메시지명 또는 메시지 내용을 검색하세요." />
+        </label>
+        <label class="admin-history-filters__field">
+          <span>구분</span>
+          <select data-default-message-category>
+            <option value="" ${currentDefaultMessageUiState.category ? "" : "selected"}>전체 구분</option>
+            <option value="intent" ${currentDefaultMessageUiState.category === "intent" ? "selected" : ""}>의도</option>
+            <option value="input" ${currentDefaultMessageUiState.category === "input" ? "selected" : ""}>입력</option>
+            <option value="error" ${currentDefaultMessageUiState.category === "error" ? "selected" : ""}>오류</option>
+            <option value="session" ${currentDefaultMessageUiState.category === "session" ? "selected" : ""}>세션</option>
+            <option value="runtime" ${currentDefaultMessageUiState.category === "runtime" ? "selected" : ""}>런타임</option>
+          </select>
+        </label>
+        <label class="admin-history-filters__field">
+          <span>언어</span>
+          <select data-default-message-language>
+            ${DEFAULT_MESSAGE_LANGUAGE_OPTIONS.map(([value, label]) => `<option value="${escapeCell(value)}" ${currentDefaultMessageUiState.language === value ? "selected" : ""}>${label}</option>`).join("")}
+          </select>
+        </label>
+        <label class="admin-history-filters__field">
+          <span>사용여부</span>
+          <select data-default-message-status>
+            <option value="" ${currentDefaultMessageUiState.status ? "" : "selected"}>전체 사용여부</option>
+            <option value="active" ${currentDefaultMessageUiState.status === "active" ? "selected" : ""}>사용</option>
+            <option value="inactive" ${currentDefaultMessageUiState.status === "inactive" ? "selected" : ""}>미사용</option>
+          </select>
+        </label>
+        <button type="button" class="admin-page__filter admin-page__filter--text" data-default-message-reset>초기화</button>
+        <div class="admin-page__search-actions">
+          <button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button>
+        </div>
+      </div>
+      <div class="admin-page__toolbar">
+        <div class="admin-page__toolbar-left">
+          <strong>전체 ${filteredItems.length}건</strong>
+          <label class="manual-main__mini-select manual-main__mini-select--select">
+            <select data-default-message-page-size>
+              ${[10, 25, 50, 100].map((option) => `<option value="${option}" ${currentDefaultMessageUiState.pageSize === option ? "selected" : ""}>${option}개씩 보기</option>`).join("")}
+            </select>
+          </label>
+          <button type="button" class="admin-page__ghost" data-default-message-download>다운로드</button>
+        </div>
+      </div>
+      ${renderDataGrid(["구분", "메시지명", "언어", "적용 범위", "사용여부", "메시지", "최종수정일시", "최종수정자"], rows, "0.8fr 1.15fr 0.5fr 0.65fr 0.65fr 2.3fr 1.2fr 0.8fr")}
+      <div class="admin-page__pagination" aria-label="pagination">
+        <button type="button" data-default-message-page-nav="first" ${currentDefaultMessageUiState.page === 1 ? "disabled" : ""}>◀</button>
+        <button type="button" data-default-message-page-nav="prev" ${currentDefaultMessageUiState.page === 1 ? "disabled" : ""}>‹</button>
+        <strong class="is-active">${currentDefaultMessageUiState.page}</strong>
+        <button type="button" data-default-message-page-nav="next" ${currentDefaultMessageUiState.page === totalPages ? "disabled" : ""}>›</button>
+        <button type="button" data-default-message-page-nav="last" ${currentDefaultMessageUiState.page === totalPages ? "disabled" : ""}>▶</button>
+      </div>
+    </section>
+  `;
 }
 
 function renderChannelSurface(surface) {
@@ -6759,6 +6858,7 @@ async function queryAdminResource(surface, resource) {
   const status = surface.querySelector("[data-admin-status-filter]")?.value || "";
   const kind = surface.querySelector("[data-common-variable-kind]")?.value || "";
   const category = surface.querySelector("[data-default-message-category]")?.value || "";
+  const language = surface.querySelector("[data-default-message-language]")?.value || "";
   const defaultMessageStatus = surface.querySelector("[data-default-message-status]")?.value || "";
   const params = new URLSearchParams();
   if (q) params.set("q", q);
@@ -6766,6 +6866,7 @@ async function queryAdminResource(surface, resource) {
   if (status && status !== "all") params.set("status", status);
   if (resource === "common-variables" && kind) params.set("kind", kind);
   if (resource === "default-messages" && category) params.set("category", category);
+  if (resource === "default-messages" && language) params.set("language", language);
   if (resource === "default-messages" && defaultMessageStatus) params.set("status", defaultMessageStatus);
   const started = performance.now();
   const result = await requestCgaJson(`${config.endpoint}${params.toString() ? `?${params}` : ""}`);
@@ -6803,7 +6904,9 @@ function bindAdminSurfaceControls(surface) {
       if (resource === "default-messages") {
         currentDefaultMessageUiState.query = surface.querySelector("[data-admin-query-input]")?.value || "";
         currentDefaultMessageUiState.category = surface.querySelector("[data-default-message-category]")?.value || "";
+        currentDefaultMessageUiState.language = surface.querySelector("[data-default-message-language]")?.value || "";
         currentDefaultMessageUiState.status = surface.querySelector("[data-default-message-status]")?.value || "";
+        currentDefaultMessageUiState.page = 1;
       }
       queryAdminResource(surface, resource).catch((error) => setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다."));
     });
@@ -6812,7 +6915,14 @@ function bindAdminSurfaceControls(surface) {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
     button.addEventListener("click", async () => {
-      currentDefaultMessageUiState = { query: "", category: "", status: "" };
+      currentDefaultMessageUiState = {
+        query: "",
+        category: "",
+        status: "",
+        language: "",
+        page: 1,
+        pageSize: currentDefaultMessageUiState.pageSize || 25
+      };
       const result = await requestCgaJson("/api/cga/admin/default-messages").catch((error) => {
         setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다.");
         return null;
@@ -6821,6 +6931,36 @@ function bindAdminSurfaceControls(surface) {
         currentAdminResources = { ...currentAdminResources, default_messages: result.items || [] };
         renderAccessPanels();
       }
+    });
+  });
+  surface.querySelectorAll("[data-default-message-page-size]").forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      currentDefaultMessageUiState.pageSize = Number(select.value) || 25;
+      currentDefaultMessageUiState.page = 1;
+      renderDefaultMessageSurface(surface);
+      bindAdminSurfaceControls(surface);
+    });
+  });
+  surface.querySelectorAll("[data-default-message-download]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", downloadDefaultMessagesCsv);
+  });
+  surface.querySelectorAll("[data-default-message-page-nav]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const totalItems = getFilteredDefaultMessageItems().length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / currentDefaultMessageUiState.pageSize));
+      const action = button.dataset.defaultMessagePageNav;
+      if (action === "first") currentDefaultMessageUiState.page = 1;
+      if (action === "prev") currentDefaultMessageUiState.page = Math.max(1, currentDefaultMessageUiState.page - 1);
+      if (action === "next") currentDefaultMessageUiState.page = Math.min(totalPages, currentDefaultMessageUiState.page + 1);
+      if (action === "last") currentDefaultMessageUiState.page = totalPages;
+      renderDefaultMessageSurface(surface);
+      bindAdminSurfaceControls(surface);
     });
   });
   surface.querySelectorAll("[data-common-variable-kind]").forEach((select) => {

@@ -80,24 +80,29 @@ function getDefaultMessageCategoryLabel(category) {
   }[category] || category || "";
 }
 
+function getDefaultMessageSeedText(definition, language = "ko") {
+  if (!definition || typeof definition !== "object") return "";
+  return definition.translations?.[language] || definition.message_text || "";
+}
+
 function createDefaultMessageDefinitions() {
   return [
-    { message_key: "intent_fallback", message_name: "의도 미분류 메시지", category: "intent", message_text: "질문을 이해하지 못했습니다. 다시 말씀해주세요.", description: "사용자 발화에서 의도를 찾지 못했을 때 출력합니다." },
-    { message_key: "multi_intent_guide", message_name: "다중 의도 선택 안내", category: "intent", message_text: "아래 후보 중 원하는 의도를 선택해주세요.", description: "여러 의도가 후보로 잡혔을 때 출력합니다." },
-    { message_key: "no_desired_intent", message_name: "원하는 의도 없음 메시지", category: "intent", message_text: "원하는 의도가 없습니다. 다시 말씀해주세요.", description: "사용자가 후보 의도 중 원하는 의도가 없다고 선택했을 때 출력합니다." },
-    { message_key: "intent_receipt", message_name: "의도 접수 메시지", category: "intent", message_text: "{intentName} 의도로 접수되었습니다.", description: "연결된 대화 흐름이 없고 의도만 인식되었을 때 출력합니다." },
-    { message_key: "invalid_button", message_name: "버튼 오류 메시지", category: "input", message_text: "선택할 수 없는 항목입니다. 다시 선택해주세요.", description: "유효하지 않은 버튼이나 선택지가 입력되었을 때 출력합니다." },
-    { message_key: "generic_select", message_name: "기본 선택 안내", category: "input", message_text: "선택하세요.", description: "버튼형 메시지에 안내 문구가 없을 때 출력합니다." },
-    { message_key: "table_select", message_name: "테이블 선택 안내", category: "input", message_text: "아래 중 선택하세요.", description: "테이블형 메시지에 안내 문구가 없을 때 출력합니다." },
-    { message_key: "runtime_flow_error", message_name: "대화 흐름 설정 오류 메시지", category: "error", message_text: "대화 흐름 설정 오류로 대화를 계속할 수 없습니다.", description: "Condition, 연결선, 실행 카드 등 대화 흐름 설정 오류가 발생했을 때 출력합니다." },
-    { message_key: "runtime_module_not_found", message_name: "대화 모듈 연결 오류 메시지", category: "error", message_text: "연결할 대화 모듈을 찾지 못했습니다.", description: "Jump 카드가 연결할 대화 모듈을 찾지 못했을 때 출력합니다." },
-    { message_key: "runtime_flow_limit", message_name: "대화 흐름 실행 한도 초과 메시지", category: "error", message_text: "대화 흐름 실행 한도를 초과했습니다.", description: "대화 흐름이 비정상적으로 반복되어 실행 한도를 초과했을 때 출력합니다." },
-    { message_key: "system_error", message_name: "시스템 오류 메시지", category: "error", message_text: "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", description: "API 또는 시스템 오류가 발생했을 때 출력합니다." },
-    { message_key: "timeout", message_name: "타임아웃 메시지", category: "session", message_text: "응답 시간이 초과되었습니다. 처음부터 다시 진행해주세요.", description: "대화 타임아웃 발생 시 출력합니다." },
-    { message_key: "session_end", message_name: "세션 종료 메시지", category: "session", message_text: "대화가 종료되었습니다.", description: "세션 종료 시 출력합니다." },
-    { message_key: "conversation_in_progress", message_name: "진행 중 대화 안내", category: "session", message_text: "진행 중인 대화가 있습니다. 현재 대화를 먼저 완료해주세요.", description: "이미 진행 중인 대화가 있을 때 출력합니다." },
-    { message_key: "bot_connected", message_name: "봇 연결 안내 메시지", category: "runtime", message_text: "{botName}에 연결되었습니다.", description: "WebChat 채팅방이 열릴 때 초기 안내로 출력합니다." },
-    { message_key: "session_end_processing", message_name: "세션 종료 처리 메시지", category: "runtime", message_text: "상담 세션을 종료합니다.", description: "사용자 종료 요청으로 세션을 닫는 순간 출력합니다." }
+    { message_key: "intent_fallback", message_name: "의도 미분류 메시지", category: "intent", message_text: "질문을 이해하지 못했습니다. 다시 말씀해주세요.", translations: { ko: "질문을 이해하지 못했습니다. 다시 말씀해주세요.", en: "I could not understand your question. Please say it again.", "zh-CN": "我没有理解您的问题。请再说一遍。", ja: "ご質問を理解できませんでした。もう一度入力してください。", vi: "Toi khong hieu cau hoi cua ban. Vui long noi lai.", de: "Ich konnte Ihre Frage nicht verstehen. Bitte sagen Sie sie noch einmal.", fr: "Je n'ai pas compris votre question. Veuillez la reformuler." }, description: "사용자 발화에서 의도를 찾지 못했을 때 출력합니다." },
+    { message_key: "multi_intent_guide", message_name: "다중 의도 선택 안내", category: "intent", message_text: "아래 후보 중 원하는 의도를 선택해주세요.", translations: { ko: "아래 후보 중 원하는 의도를 선택해주세요.", en: "Please choose the intent you want from the options below.", "zh-CN": "请从下面的候选项中选择您想要的意图。", ja: "以下の候補から希望する意図を選択してください。", vi: "Vui long chon y dinh ban muon trong cac lua chon ben duoi.", de: "Bitte wahlen Sie die gewunschte Absicht aus den folgenden Optionen aus.", fr: "Veuillez choisir l'intention souhaitee parmi les options ci-dessous." }, description: "여러 의도가 후보로 잡혔을 때 출력합니다." },
+    { message_key: "no_desired_intent", message_name: "원하는 의도 없음 메시지", category: "intent", message_text: "원하는 의도가 없습니다. 다시 말씀해주세요.", translations: { ko: "원하는 의도가 없습니다. 다시 말씀해주세요.", en: "The intent you want is not listed. Please say it again.", "zh-CN": "没有您想要的意图。请再说一遍。", ja: "ご希望の意図がありません。もう一度入力してください。", vi: "Khong co y dinh ban muon. Vui long noi lai.", de: "Die gewunschte Absicht ist nicht vorhanden. Bitte sagen Sie es noch einmal.", fr: "L'intention souhaitee n'est pas disponible. Veuillez reformuler." }, description: "사용자가 후보 의도 중 원하는 의도가 없다고 선택했을 때 출력합니다." },
+    { message_key: "intent_receipt", message_name: "의도 접수 메시지", category: "intent", message_text: "{intentName} 의도로 접수되었습니다.", translations: { ko: "{intentName} 의도로 접수되었습니다.", en: "Your request has been received as the {intentName} intent.", "zh-CN": "已按 {intentName} 意图受理。", ja: "{intentName} 意図として受け付けました。", vi: "Yeu cau da duoc tiep nhan voi y dinh {intentName}.", de: "Ihre Anfrage wurde als Absicht {intentName} erfasst.", fr: "Votre demande a ete prise en compte comme intention {intentName}." }, description: "연결된 대화 흐름이 없고 의도만 인식되었을 때 출력합니다." },
+    { message_key: "invalid_button", message_name: "버튼 오류 메시지", category: "input", message_text: "선택할 수 없는 항목입니다. 다시 선택해주세요.", translations: { ko: "선택할 수 없는 항목입니다. 다시 선택해주세요.", en: "This item cannot be selected. Please choose again.", "zh-CN": "该项目无法选择。请重新选择。", ja: "選択できない項目です。もう一度選択してください。", vi: "Muc nay khong the chon. Vui long chon lai.", de: "Dieser Eintrag kann nicht ausgewahlt werden. Bitte wahlen Sie erneut.", fr: "Cet element ne peut pas etre selectionne. Veuillez choisir a nouveau." }, description: "유효하지 않은 버튼이나 선택지가 입력되었을 때 출력합니다." },
+    { message_key: "generic_select", message_name: "기본 선택 안내", category: "input", message_text: "선택하세요.", translations: { ko: "선택하세요.", en: "Please select.", "zh-CN": "请选择。", ja: "選択してください。", vi: "Vui long chon.", de: "Bitte auswahlen.", fr: "Veuillez selectionner." }, description: "버튼형 메시지에 안내 문구가 없을 때 출력합니다." },
+    { message_key: "table_select", message_name: "테이블 선택 안내", category: "input", message_text: "아래 중 선택하세요.", translations: { ko: "아래 중 선택하세요.", en: "Please choose one of the options below.", "zh-CN": "请从下面选择。", ja: "以下から選択してください。", vi: "Vui long chon mot muc ben duoi.", de: "Bitte wahlen Sie eine der folgenden Optionen aus.", fr: "Veuillez choisir une option ci-dessous." }, description: "테이블형 메시지에 안내 문구가 없을 때 출력합니다." },
+    { message_key: "runtime_flow_error", message_name: "대화 흐름 설정 오류 메시지", category: "error", message_text: "대화 흐름 설정 오류로 대화를 계속할 수 없습니다.", translations: { ko: "대화 흐름 설정 오류로 대화를 계속할 수 없습니다.", en: "The conversation cannot continue because of a dialog flow configuration error.", "zh-CN": "由于对话流程配置错误，无法继续对话。", ja: "対話フロー設定エラーのため、会話を続行できません。", vi: "Khong the tiep tuc hoi thoai do loi cau hinh luong hoi thoai.", de: "Das Gesprach kann aufgrund eines Konfigurationsfehlers im Dialogfluss nicht fortgesetzt werden.", fr: "La conversation ne peut pas continuer en raison d'une erreur de configuration du flux de dialogue." }, description: "Condition, 연결선, 실행 카드 등 대화 흐름 설정 오류가 발생했을 때 출력합니다." },
+    { message_key: "runtime_module_not_found", message_name: "대화 모듈 연결 오류 메시지", category: "error", message_text: "연결할 대화 모듈을 찾지 못했습니다.", translations: { ko: "연결할 대화 모듈을 찾지 못했습니다.", en: "The dialog module to connect could not be found.", "zh-CN": "找不到要连接的对话模块。", ja: "接続する対話モジュールが見つかりません。", vi: "Khong tim thay mo-dun hoi thoai de ket noi.", de: "Das zu verbindende Dialogmodul wurde nicht gefunden.", fr: "Le module de dialogue a connecter est introuvable." }, description: "Jump 카드가 연결할 대화 모듈을 찾지 못했을 때 출력합니다." },
+    { message_key: "runtime_flow_limit", message_name: "대화 흐름 실행 한도 초과 메시지", category: "error", message_text: "대화 흐름 실행 한도를 초과했습니다.", translations: { ko: "대화 흐름 실행 한도를 초과했습니다.", en: "The dialog flow execution limit has been exceeded.", "zh-CN": "已超过对话流程执行限制。", ja: "対話フローの実行上限を超えました。", vi: "Da vuot qua gioi han thuc thi luong hoi thoai.", de: "Das Ausfuhrungslimit fur den Dialogfluss wurde uberschritten.", fr: "La limite d'execution du flux de dialogue a ete depassee." }, description: "대화 흐름이 비정상적으로 반복되어 실행 한도를 초과했을 때 출력합니다." },
+    { message_key: "system_error", message_name: "시스템 오류 메시지", category: "error", message_text: "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", translations: { ko: "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", en: "An error occurred while processing. Please try again later.", "zh-CN": "处理过程中发生错误。请稍后再试。", ja: "処理中にエラーが発生しました。しばらくしてからもう一度お試しください。", vi: "Da xay ra loi trong qua trinh xu ly. Vui long thu lai sau.", de: "Bei der Verarbeitung ist ein Fehler aufgetreten. Bitte versuchen Sie es spater erneut.", fr: "Une erreur s'est produite pendant le traitement. Veuillez reessayer plus tard." }, description: "API 또는 시스템 오류가 발생했을 때 출력합니다." },
+    { message_key: "timeout", message_name: "타임아웃 메시지", category: "session", message_text: "응답 시간이 초과되었습니다. 처음부터 다시 진행해주세요.", translations: { ko: "응답 시간이 초과되었습니다. 처음부터 다시 진행해주세요.", en: "The response time has expired. Please start again from the beginning.", "zh-CN": "响应时间已超时。请从头重新开始。", ja: "応答時間がタイムアウトしました。最初からやり直してください。", vi: "Da het thoi gian phan hoi. Vui long bat dau lai tu dau.", de: "Die Antwortzeit wurde uberschritten. Bitte beginnen Sie erneut von vorne.", fr: "Le delai de reponse est depasse. Veuillez recommencer depuis le debut." }, description: "대화 타임아웃 발생 시 출력합니다." },
+    { message_key: "session_end", message_name: "세션 종료 메시지", category: "session", message_text: "대화가 종료되었습니다.", translations: { ko: "대화가 종료되었습니다.", en: "The conversation has ended.", "zh-CN": "对话已结束。", ja: "会話が終了しました。", vi: "Cuoc hoi thoai da ket thuc.", de: "Das Gesprach wurde beendet.", fr: "La conversation est terminee." }, description: "세션 종료 시 출력합니다." },
+    { message_key: "conversation_in_progress", message_name: "진행 중 대화 안내", category: "session", message_text: "진행 중인 대화가 있습니다. 현재 대화를 먼저 완료해주세요.", translations: { ko: "진행 중인 대화가 있습니다. 현재 대화를 먼저 완료해주세요.", en: "There is already a conversation in progress. Please finish the current conversation first.", "zh-CN": "已有正在进行中的对话。请先完成当前对话。", ja: "進行中の会話があります。先に現在の会話を完了してください。", vi: "Dang co cuoc hoi thoai dang dien ra. Vui long hoan tat cuoc hoi thoai hien tai truoc.", de: "Es gibt bereits ein laufendes Gesprach. Bitte schliessen Sie zuerst das aktuelle Gesprach ab.", fr: "Une conversation est deja en cours. Veuillez d'abord terminer la conversation actuelle." }, description: "이미 진행 중인 대화가 있을 때 출력합니다." },
+    { message_key: "bot_connected", message_name: "봇 연결 안내 메시지", category: "runtime", message_text: "{botName}에 연결되었습니다.", translations: { ko: "{botName}에 연결되었습니다.", en: "You are connected to {botName}.", "zh-CN": "已连接到 {botName}。", ja: "{botName} に接続されました。", vi: "Da ket noi voi {botName}.", de: "Sie sind mit {botName} verbunden.", fr: "Vous etes connecte a {botName}." }, description: "WebChat 채팅방이 열릴 때 초기 안내로 출력합니다." },
+    { message_key: "session_end_processing", message_name: "세션 종료 처리 메시지", category: "runtime", message_text: "상담 세션을 종료합니다.", translations: { ko: "상담 세션을 종료합니다.", en: "The chat session will be closed.", "zh-CN": "即将结束会话。", ja: "会話セッションを終了します。", vi: "Dang ket thuc phien tro chuyen.", de: "Die Chatsitzung wird beendet.", fr: "La session de discussion va etre fermee." }, description: "사용자 종료 요청으로 세션을 닫는 순간 출력합니다." }
   ];
 }
 
@@ -115,8 +120,8 @@ function buildDefaultMessageSeedItems(stamp) {
     language,
     scope: "global",
     scope_label: "전체",
-    message_text: item.message_text,
-    default_message_text: item.message_text,
+    message_text: getDefaultMessageSeedText(item, language),
+    default_message_text: getDefaultMessageSeedText(item, language),
     is_modified: false,
     description: item.description,
     status: "active",
@@ -268,7 +273,12 @@ function normalizeAdminResources(resources) {
     });
     const selected = existing || seed;
     const definition = defaultMessageDefinitions.get(seed.message_key);
-    const messageText = selected.message_text || selected.message || seed.message_text;
+    const seedDefaultText = getDefaultMessageSeedText(definition, seed.language) || seed.default_message_text || "";
+    const existingDefaultText = selected.default_message_text || "";
+    const selectedMessageText = selected.message_text || selected.message || "";
+    const messageText = !existing
+      ? (selectedMessageText || seedDefaultText)
+      : (selectedMessageText && selectedMessageText !== existingDefaultText ? selectedMessageText : seedDefaultText);
     const status = selected.status === "inactive" || selected.status === "N" ? "inactive" : "active";
     normalizedDefaultMessageMap.set(compositeKey, {
       ...seed,
@@ -282,8 +292,8 @@ function normalizeAdminResources(resources) {
       scope: selected.scope === "group" ? "group" : "global",
       scope_label: selected.scope === "group" ? "그룹" : "전체",
       message_text: messageText,
-      default_message_text: definition?.message_text || seed.default_message_text || "",
-      is_modified: messageText !== (definition?.message_text || seed.default_message_text || ""),
+      default_message_text: seedDefaultText,
+      is_modified: messageText !== seedDefaultText,
       description: selected.description || seed.description || "",
       status,
       status_label: status === "active" ? "사용" : "미사용",
@@ -1915,6 +1925,7 @@ function filterAdminResourceItems(resource, query) {
   const status = String(query.get("status") || "").trim();
   const kind = String(query.get("kind") || "").trim().toLowerCase();
   const category = String(query.get("category") || "").trim().toLowerCase();
+  const language = String(query.get("language") || "").trim().toLowerCase();
   return items.filter((item) => {
     const haystack = [
       item.name,
@@ -1941,7 +1952,8 @@ function filterAdminResourceItems(resource, query) {
     const matchesStatus = !status || status === "all" || item.status === status || item.status_label === status || (status === "active" && item.status === "Y");
     const matchesKind = resource !== "common-variables" || !kind || String(item.kind || "").toLowerCase() === kind;
     const matchesCategory = resource !== "default-messages" || !category || String(item.category || "").toLowerCase() === category;
-    return matchesKeyword && matchesChannel && matchesStatus && matchesKind && matchesCategory;
+    const matchesLanguage = resource !== "default-messages" || !language || String(item.language || "").toLowerCase() === language;
+    return matchesKeyword && matchesChannel && matchesStatus && matchesKind && matchesCategory && matchesLanguage;
   });
 }
 
@@ -1986,6 +1998,11 @@ function normalizeAdminResourcePayload(resource, body, existing = null) {
     };
   }
   if (resource === "default-messages") {
+    const fallbackDefaultText = existing?.default_message_text
+      || getDefaultMessageSeedText(
+        createDefaultMessageDefinitions().find((item) => item.message_key === (existing?.message_key || body.message_key)),
+        existing?.language || "ko"
+      );
     const name = String(body.message_name ?? body.name ?? existing?.message_name ?? existing?.name ?? "").trim();
     const status = existing?.status === "inactive" ? "inactive" : "active";
     return {
@@ -2000,8 +2017,8 @@ function normalizeAdminResourcePayload(resource, body, existing = null) {
       scope: existing?.scope || "global",
       scope_label: existing?.scope === "group" ? "그룹" : "전체",
       message_text: body.message_text ?? body.message ?? existing?.message_text ?? existing?.message ?? "",
-      default_message_text: existing?.default_message_text || "",
-      is_modified: Boolean((body.message_text ?? body.message ?? existing?.message_text ?? existing?.message ?? "") !== (existing?.default_message_text || "")),
+      default_message_text: fallbackDefaultText,
+      is_modified: Boolean((body.message_text ?? body.message ?? existing?.message_text ?? existing?.message ?? "") !== fallbackDefaultText),
       description: body.description ?? existing?.description ?? "",
       status,
       status_label: status === "active" ? "사용" : "미사용",
@@ -2131,12 +2148,14 @@ async function handleAdminResourceApi(req, res, urlPath, query) {
     const definition = createDefaultMessageDefinitions().find((item) => item.message_key === target.message_key);
     const nextItems = collection.map((item) => {
       if (item.id !== parsed.id) return item;
+      const defaultMessageText = getDefaultMessageSeedText(definition, item.language || "ko") || item.default_message_text || item.message_text || "";
       return normalizeAdminResourcePayload(parsed.resource, {
-        message_text: item.default_message_text || item.message_text || "",
+        message_text: defaultMessageText,
         description: definition?.description || item.description || ""
       }, {
         ...item,
-        message_text: item.default_message_text || item.message_text || ""
+        message_text: defaultMessageText,
+        default_message_text: defaultMessageText
       });
     });
     saveAdminResources({ ...adminResources, [collectionKey]: nextItems });
