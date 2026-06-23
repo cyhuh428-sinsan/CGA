@@ -1134,6 +1134,15 @@ function normalizeBotVersionVersion(input, fallback = "v0.1") {
   return /^v?\d+(\.\d+)?$/.test(value) ? (value.startsWith("v") ? value : `v${value}`) : fallback;
 }
 
+function getCurrentWorkingVersionId(bot = getCurrentWorkspaceBot()) {
+  return normalizeBotVersionVersion(currentStudioState.bot.version || bot?.version || "v0.1");
+}
+
+function getActiveBotVersionId(bot) {
+  const activeEntry = getBotVersions(bot).find((version) => version.isActive);
+  return normalizeBotVersionVersion(activeEntry?.id || bot?.version || "v0.1");
+}
+
 function ensureBotVersionRegistryFor(bot) {
   if (!bot?.id || !bot?.group_id) return;
   if (!botVersionRegistry) botVersionRegistry = {};
@@ -1261,6 +1270,27 @@ function updateBotVersionRegistry(bot, nextVersions) {
   saveBotVersionRegistry();
 }
 
+function ensureBotVersionEntry(bot, versionId, overrides = {}) {
+  if (!bot?.id || !bot?.group_id || !versionId) return null;
+  const normalizedVersionId = normalizeBotVersionVersion(versionId, bot.version || "v0.1");
+  const versions = getBotVersions(bot);
+  const existing = versions.find((item) => item.id === normalizedVersionId);
+  if (existing) return existing;
+  const now = new Date().toISOString();
+  const next = {
+    id: normalizedVersionId,
+    status: bot.status || "draft",
+    createdAt: now,
+    updatedAt: now,
+    operator: currentAccessState.currentUserId || "system",
+    note: "패키지 반영 버전",
+    isActive: normalizedVersionId === getActiveBotVersionId(bot),
+    ...overrides
+  };
+  updateBotVersionRegistry(bot, [next, ...versions]);
+  return next;
+}
+
 function setActiveBotVersion(bot, versionId) {
   if (!bot?.id || !versionId) return;
   const versions = getBotVersions(bot).map((version) => ({
@@ -1309,12 +1339,32 @@ function applyCurrentBotToStudioState(bot) {
   ensureBotVersionRegistryFor(bot);
 }
 
-function getWorkspaceSnapshotKey(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
+function openWorkspaceBotVersion(bot, versionId, { cloneCurrentState = false } = {}) {
+  if (!bot?.id || !bot?.group_id || !versionId) return false;
+  const normalizedVersionId = normalizeBotVersionVersion(versionId, bot.version || "v0.1");
+  currentWorkspaceBotId = bot.id;
+  currentWorkspaceGroupId = bot.group_id;
+  currentApiGroupId = bot.group_id;
+  currentApiBotId = bot.id;
+  currentStudioState.bot.id = bot.id;
+  currentStudioState.bot.name = bot.name;
+  currentStudioState.bot.defaultLocale = bot.locale;
+  currentStudioState.bot.version = normalizedVersionId;
+  ensureBotVersionEntry(bot, normalizedVersionId);
+  const restored = applyCachedWorkspaceSnapshot();
+  if (!restored && cloneCurrentState) {
+    saveWorkspaceSnapshot();
+  }
+  return restored;
+}
+
+function getWorkspaceSnapshotKey(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId, versionId = getCurrentWorkingVersionId()) {
   return [
     WORKSPACE_SNAPSHOT_STORAGE_PREFIX,
     currentAccessState.currentUserId || "anonymous",
     groupId || "no-group",
-    botId || "no-bot"
+    botId || "no-bot",
+    normalizeBotVersionVersion(versionId || "v0.1")
   ].join(":");
 }
 
@@ -1330,6 +1380,7 @@ function saveWorkspaceSnapshot() {
       saved_at: Date.now(),
       group_id: currentWorkspaceGroupId,
       bot_id: currentWorkspaceBotId,
+      version_id: getCurrentWorkingVersionId(),
       workspace_bots: cloneForSnapshot(currentWorkspaceBots.filter((bot) => bot.group_id === currentWorkspaceGroupId)),
       studio_state: cloneForSnapshot(currentStudioState),
       composition_state: cloneForSnapshot(currentCompositionState),
@@ -1358,6 +1409,7 @@ function saveWorkspaceSnapshot() {
 function applyWorkspaceSnapshot(snapshot) {
   if (!snapshot || snapshot.version !== WORKSPACE_SNAPSHOT_VERSION) return false;
   if (snapshot.group_id !== currentWorkspaceGroupId || snapshot.bot_id !== currentWorkspaceBotId) return false;
+  if (normalizeBotVersionVersion(snapshot.version_id || "v0.1") !== getCurrentWorkingVersionId()) return false;
   if (Array.isArray(snapshot.workspace_bots)) {
     currentWorkspaceBots = [
       ...currentWorkspaceBots.filter((bot) => bot.group_id !== currentWorkspaceGroupId),
@@ -3166,11 +3218,12 @@ function applyAidotBotPackage(packageJson) {
   const nextName = String(botVo.botName || botVo.name || currentBot?.name || "Imported Bot");
   const nextLocale = String(botVo.defaultLanguage || botVo.defaultLocale || botVo.locale || currentStudioState.bot.defaultLocale || currentBot?.locale || "en");
   const nextVersion = String(botVo.versionName || botVo.version || currentStudioState.bot.version || currentBot?.version || "v0.1");
+  const activeVersionId = getActiveBotVersionId(currentBot);
   const importedBot = {
     id: nextId,
     group_id: currentWorkspaceGroupId,
     name: nextName,
-    version: nextVersion,
+    version: currentBot?.version || activeVersionId || nextVersion,
     status: currentBot?.status || "draft",
     locale: nextLocale,
     updated_at: "imported"
@@ -3207,10 +3260,17 @@ function applyAidotBotPackage(packageJson) {
   if (currentScenarioAssets.length) currentSelectedIntentId = currentScenarioAssets[0].id;
   currentTransferStatus = formatMessage(
     "transfer.status.imported",
-    { asset: getTransferAssetLabel("botPackage"), name: importedBot.name },
+    { asset: getTransferAssetLabel("botPackage"), name: `${importedBot.name} / ${nextVersion}` },
     "Imported {asset}: {name}"
   );
   ensureBotVersionRegistryFor(importedBot);
+  ensureBotVersionEntry(importedBot, nextVersion, {
+    status: importedBot.status || "draft",
+    updatedAt: new Date().toISOString(),
+    operator: currentAccessState.currentUserId || "system",
+    note: "Aidot 봇 패키지 업로드",
+    isActive: normalizeBotVersionVersion(nextVersion, importedBot.version) === normalizeBotVersionVersion(importedBot.version, importedBot.version)
+  });
   trackRecentWorkspaceBot(importedBot);
   saveWorkspaceSnapshot();
 }
@@ -3316,13 +3376,13 @@ function applyCgaVersionPackage(packageJson) {
   }
   const currentBot = getCurrentWorkspaceBot();
   if (currentBot) {
-    currentBot.version = currentStudioState.bot.version || currentBot.version;
     currentBot.locale = currentStudioState.bot.defaultLocale || currentBot.locale;
     currentBot.name = currentStudioState.bot.name || currentBot.name;
     currentBot.updated_at = new Date().toISOString().slice(0, 10);
+    const activeVersionId = getActiveBotVersionId(currentBot);
     const versions = getBotVersions(currentBot).map((item) => ({
       ...item,
-      isActive: item.id === currentStudioState.bot.version
+      isActive: item.id === activeVersionId
     }));
     if (!versions.some((item) => item.id === currentStudioState.bot.version)) {
       versions.unshift({
@@ -3332,7 +3392,7 @@ function applyCgaVersionPackage(packageJson) {
         updatedAt: currentBot.updated_at,
         operator: currentAccessState.currentUserId || "system",
         note: "패키지 업로드로 갱신",
-        isActive: true
+        isActive: normalizeBotVersionVersion(currentStudioState.bot.version, currentBot.version) === activeVersionId
       });
     }
     updateBotVersionRegistry(currentBot, versions);
@@ -3342,7 +3402,6 @@ function applyCgaVersionPackage(packageJson) {
       ? {
           ...bot,
           name: currentStudioState.bot.name,
-          version: currentStudioState.bot.version || bot.version,
           locale: currentStudioState.bot.defaultLocale || bot.locale,
           updated_at: "uploaded"
         }
@@ -5752,17 +5811,11 @@ function bindWorkspaceActions() {
     botVersionAdd.addEventListener("click", async () => {
       const selectedBot = getCurrentWorkspaceBot();
       if (!selectedBot || !canManageBotInCurrentWorkspace()) return;
+      saveWorkspaceSnapshot();
       const added = addWorkspaceBotVersion(selectedBot);
       if (!added) return;
-      selectedBot.version = added.id;
-      currentStudioState.bot.version = added.id;
-      currentTransferStatus = `버전 ${added.id}가 추가되었습니다.`;
-      const synced = await updateWorkspaceBotVersionOnServer(selectedBot, added.id).catch(() => false);
-      if (synced) {
-        await saveStudioStateToServer().catch(() => false);
-        await saveCompositionToServer().catch(() => false);
-      }
-      currentTransferStatus = appendTransferSyncStatus(synced);
+      openWorkspaceBotVersion(selectedBot, added.id, { cloneCurrentState: true });
+      currentTransferStatus = `버전 ${added.id}가 추가되었고, 현재 작업 버전으로 열었습니다. 운영 버전은 바뀌지 않았습니다.`;
       refreshWorkspaceManagementSurfaces();
     });
   }
@@ -5833,11 +5886,11 @@ function bindWorkspaceActions() {
       const selectedBot = getCurrentWorkspaceBot();
       const versionId = button.dataset.botVersionCopy;
       if (!selectedBot || !versionId || !canManageBotInCurrentWorkspace()) return;
+      saveWorkspaceSnapshot();
       const copied = duplicateWorkspaceBotVersion(selectedBot, versionId);
       if (!copied) return;
-      currentTransferStatus = `버전 ${copied.id} 복사본이 생성되었습니다.`;
-      const synced = await updateWorkspaceBotVersionOnServer(selectedBot, copied.id).catch(() => false);
-      currentTransferStatus = appendTransferSyncStatus(synced);
+      openWorkspaceBotVersion(selectedBot, copied.id, { cloneCurrentState: true });
+      currentTransferStatus = `버전 ${copied.id} 복사본이 생성되었고, 현재 작업 버전으로 열었습니다. 운영 버전은 바뀌지 않았습니다.`;
       refreshWorkspaceManagementSurfaces();
     });
   });
@@ -9300,6 +9353,9 @@ function renderBotManagement() {
   const webchatUrl = `http://127.0.0.1:4173/webchat/${encodeURIComponent(selectedBot?.id || currentWorkspaceBotId || "bot")}`;
   const versions = getBotVersions(selectedBot);
   const activeVersion = versions.find((version) => version.isActive) || versions.find((version) => version.id === (selectedBot?.version || "")) || versions[0];
+  const workingVersionId = selectedBot?.id === currentWorkspaceBotId
+    ? getCurrentWorkingVersionId(selectedBot)
+    : normalizeBotVersionVersion(selectedBot?.version || activeVersion?.id || "v0.1");
   const sortedVersions = versions.slice().sort((left, right) => {
     const leftTime = String(left?.updatedAt || "").toLowerCase();
     const rightTime = String(right?.updatedAt || "").toLowerCase();
@@ -9307,7 +9363,7 @@ function renderBotManagement() {
   });
   const canManage = canManageBotInCurrentWorkspace();
   const canDelete = canManage && bots.length > 1;
-  const versionHeaderCols = "1fr .8fr 1.6fr .7fr 1.1fr .9fr .8fr";
+  const versionHeaderCols = "1fr .8fr 1.4fr .7fr .7fr 1fr 1fr 1.1fr";
   const transferNote = currentTransferStatus || getLatestTransferSummary() || "최근 패키지 전송 이력이 없습니다.";
   renderWorkflowScreenShell(
     "bot-management",
@@ -9320,6 +9376,7 @@ function renderBotManagement() {
         <article><strong>봇 수</strong><span>${bots.length}개</span></article>
         <article><strong>선택 봇</strong><span>${escapeText(selectedBot?.name || selected?.name || "-")}</span></article>
         <article><strong>버전 항목</strong><span>${versions.length}개</span></article>
+        <article><strong>작업 버전</strong><span>${escapeText(workingVersionId || currentStudioState.bot.version || "v0.1")}</span></article>
         <article><strong>운영 버전</strong><span>${escapeText(activeVersion?.id || selectedBot?.version || currentStudioState.bot.version || "v0.1")}</span></article>
       </section>
       <section class="bot-management-grid bot-management-grid--compact">
@@ -9340,12 +9397,13 @@ function renderBotManagement() {
           </div>
         </article>
         <article class="command-panel command-panel--wide command-panel--wide-sticky">
-          <header><div><strong>봇 자산 / 버전</strong><span>버전 목록, 복사, 삭제, 운영 버전 설정을 수행합니다.</span></div></header>
+          <header><div><strong>봇 자산 / 버전</strong><span>작업 버전과 운영 버전을 구분해 관리합니다.</span></div></header>
           <div class="command-table" style="--command-cols:${versionHeaderCols}">
             <div class="command-row command-row--head">
               <span>버전</span>
               <span>상태</span>
               <span>비고</span>
+              <span>작업</span>
               <span>운영</span>
               <span>변경자</span>
               <span>최종수정</span>
@@ -9356,10 +9414,12 @@ function renderBotManagement() {
                 <strong>${escapeText(entry.id)}</strong>
                 <span>${escapeText(entry.status || "-")}</span>
                 <span>${escapeText(entry.note || "-")}</span>
-                <span>${entry.isActive ? "운영" : ""}${entry.id === activeVersion?.id ? "현재" : ""}</span>
+                <span>${entry.id === workingVersionId ? "작업중" : ""}</span>
+                <span>${entry.isActive ? "운영중" : ""}</span>
                 <span>${escapeText(entry.operator || "-")}</span>
                 <span>${escapeText(entry.updatedAt || "-")}</span>
                 <span class="team-task-actions">
+                  <button type="button" data-bot-version-open="${escapeText(entry.id)}">작업 열기</button>
                   <button type="button" data-bot-version-activate="${escapeText(entry.id)}" ${!canManage || entry.isActive ? "disabled" : ""}>운영 설정</button>
                   <button type="button" data-bot-version-copy="${escapeText(entry.id)}" ${canManage ? "" : "disabled"}>복사</button>
                   <button type="button" data-bot-version-delete="${escapeText(entry.id)}" ${canManage && sortedVersions.length > 1 ? "" : "disabled"}>삭제</button>
@@ -9369,15 +9429,16 @@ function renderBotManagement() {
           </div>
           <div class="command-action-stack">
             <button type="button" data-bot-version-add ${canManage ? "" : "disabled"}>버전 추가</button>
-            <button type="button" data-version-download>버전 패키지 다운로드</button>
-            <button type="button" data-version-upload>버전 패키지 업로드</button>
+            <button type="button" data-version-download>CGA 버전 패키지 다운로드</button>
+            <button type="button" data-version-upload>CGA 버전 패키지 업로드</button>
           </div>
         </article>
         <article class="command-panel command-panel--status-block command-panel--bot-detail">
-          <header><div><strong>봇 상세 정보 및 호환 운영</strong><span>봇 단위 import/export와 WebChat 접속을 관리합니다.</span></div></header>
+          <header><div><strong>봇 상세 정보 및 호환 운영</strong><span>선택한 작업 버전 패키지와 운영 버전 WebChat을 관리합니다.</span></div></header>
           <dl class="command-definition">
             <div><dt>봇 ID</dt><dd>${escapeText(selectedBot?.id || "-")}</dd></div>
             <div><dt>봇 이름</dt><dd>${escapeText(selectedBot?.name || "-")}</dd></div>
+            <div><dt>작업버전</dt><dd>${escapeText(workingVersionId || currentStudioState.bot.version || "-")}</dd></div>
             <div><dt>운영버전</dt><dd>${escapeText(activeVersion?.id || selectedBot?.version || "-")}</dd></div>
             <div><dt>상태</dt><dd>${escapeText(selectedBot?.status || "-")}</dd></div>
             <div><dt>언어</dt><dd>${escapeText(selectedBot?.locale || currentStudioState.bot.defaultLocale || "-")}</dd></div>
@@ -9386,9 +9447,9 @@ function renderBotManagement() {
             <div><dt>업데이트</dt><dd>${escapeText(selectedBot?.updated_at || "없음")}</dd></div>
           </dl>
           <div class="command-action-stack">
-            <button type="button" data-open-webchat><strong>WebChat 열기</strong><span>현재 봇 채널 연결</span></button>
-            <button type="button" data-download-bot-package><strong>봇 다운로드</strong><span>Aidot 패키지</span></button>
-            <button type="button" data-upload-bot-package><strong>봇 업로드</strong><span>Aidot 패키지 반영</span></button>
+            <button type="button" data-open-webchat><strong>WebChat 열기</strong><span>운영 버전에 연결</span></button>
+            <button type="button" data-download-bot-package><strong>Aidot 봇 패키지 다운로드</strong><span>현재 작업 버전 1개</span></button>
+            <button type="button" data-upload-bot-package><strong>Aidot 봇 패키지 업로드</strong><span>현재 작업 버전에 반영</span></button>
           </div>
           <div class="command-note" data-transfer-note>${escapeText(transferNote)}</div>
           <div class="command-history" data-transfer-history>
@@ -9411,6 +9472,15 @@ function renderBotManagement() {
   section.querySelectorAll("[data-open-webchat]").forEach((button) => button.addEventListener("click", () => {
     const popup = window.open(webchatUrl, "_blank", "noopener,noreferrer");
     if (!popup) window.location.assign(webchatUrl);
+  }));
+  section.querySelectorAll("[data-bot-version-open]").forEach((button) => button.addEventListener("click", () => {
+    const bot = getCurrentWorkspaceBot();
+    const versionId = button.dataset.botVersionOpen;
+    if (!bot || !versionId) return;
+    saveWorkspaceSnapshot();
+    openWorkspaceBotVersion(bot, versionId, { cloneCurrentState: false });
+    currentTransferStatus = `작업 버전을 ${versionId}(으)로 전환했습니다. 운영 버전은 바뀌지 않았습니다.`;
+    refreshWorkspaceManagementSurfaces();
   }));
   bindWorkspaceActions();
   refreshTransferHistory();
