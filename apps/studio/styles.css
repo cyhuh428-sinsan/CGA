@@ -4044,6 +4044,22 @@ h1 { line-height: 1; }
   padding: 16px;
   justify-self: center;
 }
+.detail-modal--settings-form .admin-variable-dialog__body {
+  gap: 10px;
+}
+.detail-modal--settings-form .admin-variable-dialog__body textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+.detail-modal--settings-form .admin-variable-dialog__body textarea[data-admin-field="auth_config"] {
+  min-height: 72px;
+}
+.detail-modal--settings-form .admin-variable-dialog__body textarea[data-admin-field="description"] {
+  min-height: 96px;
+}
+.detail-modal--settings-form .admin-variable-dialog__body label:last-of-type {
+  margin-bottom: 6px;
+}
 .detail-modal__body > article,
 .detail-modal__body > aside {
   border: 1px solid var(--muted-line);
@@ -4095,6 +4111,11 @@ h1 { line-height: 1; }
 .detail-modal--single-form .entity-editor-dialog__footer,
 .detail-modal--settings-form .entity-editor-dialog__footer {
   justify-content: flex-end;
+}
+.detail-modal--settings-form .entity-editor-dialog__footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e8edf2;
 }
 .access-detail-layout--modal {
   max-height: calc(100vh - 165px);
