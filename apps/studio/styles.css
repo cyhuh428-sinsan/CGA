@@ -3523,6 +3523,24 @@ button.management-table-row:hover,
 .admin-common-variables__file {
   display: none;
 }
+.admin-default-messages__search-row {
+  grid-template-columns: minmax(320px, 460px) 160px 160px auto minmax(0, 1fr);
+}
+.admin-default-messages__search-row .admin-history-filters__field {
+  display: grid;
+  gap: 4px;
+}
+.admin-default-messages__search-row .admin-history-filters__field span {
+  color: #64748b;
+  font-size: 11px;
+}
+.admin-default-messages__search-row .admin-history-filters__field select {
+  min-width: 120px;
+  min-height: 34px;
+  border: 1px solid #c9d4e2;
+  background: #ffffff;
+  padding: 0 10px;
+}
 .admin-page__pagination {
   display: flex;
   align-items: center;
@@ -3816,6 +3834,9 @@ h1 { line-height: 1; }
 .detail-modal--common-variable .admin-resource-modal__panel {
   width: min(560px, calc(100vw - 48px));
 }
+.detail-modal--default-message .admin-resource-modal__panel {
+  width: min(720px, calc(100vw - 48px));
+}
 .detail-modal__panel > header {
   display: flex;
   justify-content: space-between;
@@ -3844,10 +3865,19 @@ h1 { line-height: 1; }
 .detail-modal--common-variable .admin-resource-modal__body {
   grid-template-columns: 1fr;
 }
+.detail-modal--default-message .admin-resource-modal__body {
+  grid-template-columns: 1fr;
+}
 .detail-modal--common-variable [data-admin-resource-detail] {
   display: none;
 }
+.detail-modal--default-message [data-admin-resource-detail] {
+  display: none;
+}
 .detail-modal--common-variable [data-admin-resource-edit] {
+  min-height: auto;
+}
+.detail-modal--default-message [data-admin-resource-edit] {
   min-height: auto;
 }
 .detail-modal__body > article,

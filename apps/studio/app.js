@@ -123,6 +123,11 @@ let currentCommonVariableUiState = {
   pageSize: 10,
   menuOpen: false
 };
+let currentDefaultMessageUiState = {
+  query: "",
+  category: "",
+  status: ""
+};
 let currentConversationHistoryFilters = {
   channel: "all",
   startDate: "2026-06-21",
@@ -6122,7 +6127,7 @@ function renderAidotInteractiveTable(surface, config) {
     <section class="admin-page ${config.className || ""}" data-admin-resource="${config.resource || ""}">
       <h2>${config.title}</h2>
       <div class="admin-page__search-row ${config.searchClass || ""}">
-        <label class="admin-page__search"><span>⌕</span><input data-admin-query-input value="" placeholder="${config.placeholder || "검색어를 입력하세요."}" /></label>
+        <label class="admin-page__search"><span>⌕</span><input data-admin-query-input value="${escapeCell(config.queryValue || "")}" placeholder="${config.placeholder || "검색어를 입력하세요."}" /></label>
         ${config.filters || ""}
         ${config.topRight ? `<div class="admin-page__search-actions">${config.topRight}</div>` : ""}
       </div>
@@ -6281,10 +6286,51 @@ function renderCommonVariableSurface(surface) {
 
 function renderDefaultMessageSurface(surface) {
   const resource = "default-messages";
-  const rows = currentAdminResources.default_messages.map((item) => `
-    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}"><span class="data-grid__cell">${escapeCell(item.category)}</span><a class="data-grid__cell table-link" href="#">${escapeCell(item.name)}</a><span class="data-grid__cell">${escapeCell(item.key)}</span><span class="data-grid__cell">${escapeCell(item.message)}</span><span class="data-grid__cell">${escapeCell(item.status_label)}</span><span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span></div>
+  const rows = (currentAdminResources.default_messages || []).map((item) => `
+    <div class="data-grid__row" data-admin-row data-admin-resource="${resource}" data-admin-id="${escapeCell(item.id)}">
+      <span class="data-grid__cell">${escapeCell(item.category_label || item.category)}</span>
+      <a class="data-grid__cell table-link" href="#">${escapeCell(item.message_name || item.name)}</a>
+      <span class="data-grid__cell">${escapeCell(item.language)}</span>
+      <span class="data-grid__cell">${escapeCell(item.scope_label || item.scope)}</span>
+      <span class="data-grid__cell">${escapeCell(item.status_label)}</span>
+      <span class="data-grid__cell">${escapeCell(item.message_text || item.message)}</span>
+      <span class="data-grid__cell">${formatAidotAdminDate(item.updated_at)}</span>
+      <span class="data-grid__cell">${escapeCell(item.updater_name || item.updated_by || "SYSTEM")}</span>
+    </div>
   `);
-  renderAidotInteractiveTable(surface, { resource, title: "기본 메시지 관리", placeholder: "메시지 이름을 검색하세요.", topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button><button type="button" class="admin-page__primary" data-admin-create="${resource}">+ 메시지 등록</button>`, columns: ["카테고리", "메시지 이름", "메시지 키", "메시지", "사용여부", "최종수정일시"], template: "140px 180px 190px 1fr 120px 180px", rows });
+  renderAidotInteractiveTable(surface, {
+    resource,
+    title: "기본 메시지 관리",
+    placeholder: "메시지명 또는 메시지 내용을 검색하세요.",
+    queryValue: currentDefaultMessageUiState.query,
+    searchClass: "admin-default-messages__search-row",
+    filters: `
+      <label class="admin-history-filters__field">
+        <span>구분</span>
+        <select data-default-message-category>
+          <option value="" ${currentDefaultMessageUiState.category ? "" : "selected"}>전체 구분</option>
+          <option value="intent" ${currentDefaultMessageUiState.category === "intent" ? "selected" : ""}>의도</option>
+          <option value="input" ${currentDefaultMessageUiState.category === "input" ? "selected" : ""}>입력</option>
+          <option value="error" ${currentDefaultMessageUiState.category === "error" ? "selected" : ""}>오류</option>
+          <option value="session" ${currentDefaultMessageUiState.category === "session" ? "selected" : ""}>세션</option>
+          <option value="runtime" ${currentDefaultMessageUiState.category === "runtime" ? "selected" : ""}>런타임</option>
+        </select>
+      </label>
+      <label class="admin-history-filters__field">
+        <span>사용여부</span>
+        <select data-default-message-status>
+          <option value="" ${currentDefaultMessageUiState.status ? "" : "selected"}>전체 사용여부</option>
+          <option value="active" ${currentDefaultMessageUiState.status === "active" ? "selected" : ""}>사용</option>
+          <option value="inactive" ${currentDefaultMessageUiState.status === "inactive" ? "selected" : ""}>미사용</option>
+        </select>
+      </label>
+      <button type="button" class="admin-page__filter admin-page__filter--text" data-default-message-reset>초기화</button>
+    `,
+    topRight: `<button type="button" class="admin-page__primary" data-admin-query="${resource}">조회</button>`,
+    columns: ["구분", "메시지명", "언어", "적용 범위", "사용여부", "메시지", "최종수정일시", "최종수정자"],
+    template: "0.8fr 1.1fr 0.5fr 0.7fr 0.7fr 2.2fr 1.2fr 0.8fr",
+    rows
+  });
 }
 
 function renderChannelSurface(surface) {
@@ -6457,7 +6503,7 @@ const ADMIN_RESOURCE_UI = {
     collectionKey: "default_messages",
     endpoint: "/api/cga/admin/default-messages",
     title: "기본 메시지",
-    label: (item) => item?.name || "",
+    label: (item) => item?.message_name || item?.name || "",
     fields: [["category", "카테고리", "text"], ["name", "메시지 이름", "text"], ["key", "메시지 키", "text"], ["message", "메시지", "textarea"], ["status", "사용여부", "status"]]
   },
   channels: {
@@ -6527,6 +6573,7 @@ function renderAdminResourceModal() {
   const detail = modal.querySelector("[data-admin-resource-detail]");
   const edit = modal.querySelector("[data-admin-resource-edit]");
   modal.classList.toggle("detail-modal--common-variable", resource === "common-variables");
+  modal.classList.toggle("detail-modal--default-message", resource === "default-messages");
   if (title) title.textContent = `${config.title} ${mode === "create" ? "등록" : "상세"}`;
   if (subtitle) subtitle.textContent = "선택한 항목을 수정합니다.";
   if (resource === "common-variables") {
@@ -6560,6 +6607,55 @@ function renderAdminResourceModal() {
     modal.hidden = false;
     return;
   }
+  if (resource === "default-messages") {
+    if (title) title.textContent = "기본 메시지 수정";
+    if (subtitle) subtitle.textContent = "등록된 기본 메시지를 언어별로 관리합니다.";
+    modal.classList.toggle("detail-modal--default-message", true);
+    if (detail) detail.innerHTML = "";
+    if (edit) {
+      edit.innerHTML = `
+        <div class="admin-variable-dialog__body">
+          <label>
+            <span>메시지명</span>
+            <input type="text" data-admin-field="message_name" value="${escapeCell(item?.message_name || item?.name || "")}" disabled />
+          </label>
+          <label>
+            <span>구분</span>
+            <input type="text" data-admin-field="category" value="${escapeCell(item?.category_label || item?.category || "")}" disabled />
+          </label>
+          <label>
+            <span>언어</span>
+            <input type="text" data-admin-field="language" value="${escapeCell(item?.language || "ko")}" disabled />
+          </label>
+          <label>
+            <span>적용 범위</span>
+            <input type="text" data-admin-field="scope" value="${escapeCell(item?.scope_label || item?.scope || "전체")}" disabled />
+          </label>
+          <label>
+            <span>사용 여부</span>
+            <input type="text" data-admin-field="status" value="${escapeCell(item?.status_label || "사용")}" disabled />
+          </label>
+          <label>
+            <span>메시지</span>
+            <textarea data-admin-field="message_text">${escapeCell(item?.message_text || item?.message || "")}</textarea>
+          </label>
+          <label>
+            <span>설명</span>
+            <textarea data-admin-field="description">${escapeCell(item?.description || "")}</textarea>
+          </label>
+          <div class="entity-editor-dialog__footer">
+            <button type="button" class="ghost-pill" data-default-message-restore ${item?.is_modified ? "" : "disabled"}>기본값 복원</button>
+            <button type="button" class="secondary-action" data-admin-resource-modal-close>취소</button>
+            <button type="button" class="primary-action" data-admin-resource-save>저장</button>
+          </div>
+        </div>
+      `;
+    }
+    bindAdminResourceModalControls();
+    modal.hidden = false;
+    return;
+  }
+  modal.classList.toggle("detail-modal--default-message", false);
   if (detail) {
     detail.innerHTML = `
       <h4>기본 정보</h4>
@@ -6636,6 +6732,18 @@ function bindAdminResourceModalControls() {
   document.querySelector("[data-admin-resource-delete]")?.addEventListener("click", () => {
     deleteAdminResourceFromModal().catch((error) => setGlobalMessage("error", "삭제 실패", error.message || "삭제에 실패했습니다."));
   });
+  document.querySelector("[data-default-message-restore]")?.addEventListener("click", async () => {
+    if (!currentAdminResourceModal || currentAdminResourceModal.resource !== "default-messages") return;
+    try {
+      await requestCgaJson(`/api/cga/admin/default-messages/${encodeURIComponent(currentAdminResourceModal.id)}/restore`, { method: "POST" });
+      await refreshAdminResourcesFromServer();
+      closeAdminResourceModal();
+      renderAccessPanels();
+      setGlobalMessage("info", "기본 메시지 복원", "기본 메시지가 기본값으로 복원되었습니다.");
+    } catch (error) {
+      setGlobalMessage("error", "복원 실패", error.message || "기본 메시지 복원에 실패했습니다.");
+    }
+  });
 }
 
 function openAdminResourceModal(resource, id = "", mode = "edit") {
@@ -6650,11 +6758,15 @@ async function queryAdminResource(surface, resource) {
   const channel = surface.querySelector("[data-admin-channel-filter]")?.value || "";
   const status = surface.querySelector("[data-admin-status-filter]")?.value || "";
   const kind = surface.querySelector("[data-common-variable-kind]")?.value || "";
+  const category = surface.querySelector("[data-default-message-category]")?.value || "";
+  const defaultMessageStatus = surface.querySelector("[data-default-message-status]")?.value || "";
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (channel) params.set("channel", channel);
   if (status && status !== "all") params.set("status", status);
   if (resource === "common-variables" && kind) params.set("kind", kind);
+  if (resource === "default-messages" && category) params.set("category", category);
+  if (resource === "default-messages" && defaultMessageStatus) params.set("status", defaultMessageStatus);
   const started = performance.now();
   const result = await requestCgaJson(`${config.endpoint}${params.toString() ? `?${params}` : ""}`);
   const elapsed = performance.now() - started;
@@ -6688,7 +6800,27 @@ function bindAdminSurfaceControls(surface) {
         currentCommonVariableUiState.kind = surface.querySelector("[data-common-variable-kind]")?.value || "";
         currentCommonVariableUiState.page = 1;
       }
+      if (resource === "default-messages") {
+        currentDefaultMessageUiState.query = surface.querySelector("[data-admin-query-input]")?.value || "";
+        currentDefaultMessageUiState.category = surface.querySelector("[data-default-message-category]")?.value || "";
+        currentDefaultMessageUiState.status = surface.querySelector("[data-default-message-status]")?.value || "";
+      }
       queryAdminResource(surface, resource).catch((error) => setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다."));
+    });
+  });
+  surface.querySelectorAll("[data-default-message-reset]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      currentDefaultMessageUiState = { query: "", category: "", status: "" };
+      const result = await requestCgaJson("/api/cga/admin/default-messages").catch((error) => {
+        setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다.");
+        return null;
+      });
+      if (result) {
+        currentAdminResources = { ...currentAdminResources, default_messages: result.items || [] };
+        renderAccessPanels();
+      }
     });
   });
   surface.querySelectorAll("[data-common-variable-kind]").forEach((select) => {

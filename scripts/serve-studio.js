@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const root = path.resolve(__dirname, "..");
 const port = Number(process.env.PORT || 4173);
 const host = process.env.HOST || "0.0.0.0";
+const DEFAULT_MESSAGE_LANGUAGES = ["ko", "en", "zh-CN", "ja", "vi", "de", "fr"];
 const dataDir = path.resolve(process.env.CGA_DATA_DIR || path.join(root, ".cga-data"));
 const assetTransferHistoryFile = path.join(dataDir, "asset-transfer-history.json");
 const accessStateFile = path.join(dataDir, "access-state.json");
@@ -67,6 +68,65 @@ function writeJsonFile(filePath, payload) {
 
 function createAdminId(prefix) {
   return `${prefix}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
+}
+
+function getDefaultMessageCategoryLabel(category) {
+  return {
+    intent: "의도",
+    input: "입력",
+    error: "오류",
+    session: "세션",
+    runtime: "런타임"
+  }[category] || category || "";
+}
+
+function createDefaultMessageDefinitions() {
+  return [
+    { message_key: "intent_fallback", message_name: "의도 미분류 메시지", category: "intent", message_text: "질문을 이해하지 못했습니다. 다시 말씀해주세요.", description: "사용자 발화에서 의도를 찾지 못했을 때 출력합니다." },
+    { message_key: "multi_intent_guide", message_name: "다중 의도 선택 안내", category: "intent", message_text: "아래 후보 중 원하는 의도를 선택해주세요.", description: "여러 의도가 후보로 잡혔을 때 출력합니다." },
+    { message_key: "no_desired_intent", message_name: "원하는 의도 없음 메시지", category: "intent", message_text: "원하는 의도가 없습니다. 다시 말씀해주세요.", description: "사용자가 후보 의도 중 원하는 의도가 없다고 선택했을 때 출력합니다." },
+    { message_key: "intent_receipt", message_name: "의도 접수 메시지", category: "intent", message_text: "{intentName} 의도로 접수되었습니다.", description: "연결된 대화 흐름이 없고 의도만 인식되었을 때 출력합니다." },
+    { message_key: "invalid_button", message_name: "버튼 오류 메시지", category: "input", message_text: "선택할 수 없는 항목입니다. 다시 선택해주세요.", description: "유효하지 않은 버튼이나 선택지가 입력되었을 때 출력합니다." },
+    { message_key: "generic_select", message_name: "기본 선택 안내", category: "input", message_text: "선택하세요.", description: "버튼형 메시지에 안내 문구가 없을 때 출력합니다." },
+    { message_key: "table_select", message_name: "테이블 선택 안내", category: "input", message_text: "아래 중 선택하세요.", description: "테이블형 메시지에 안내 문구가 없을 때 출력합니다." },
+    { message_key: "runtime_flow_error", message_name: "대화 흐름 설정 오류 메시지", category: "error", message_text: "대화 흐름 설정 오류로 대화를 계속할 수 없습니다.", description: "Condition, 연결선, 실행 카드 등 대화 흐름 설정 오류가 발생했을 때 출력합니다." },
+    { message_key: "runtime_module_not_found", message_name: "대화 모듈 연결 오류 메시지", category: "error", message_text: "연결할 대화 모듈을 찾지 못했습니다.", description: "Jump 카드가 연결할 대화 모듈을 찾지 못했을 때 출력합니다." },
+    { message_key: "runtime_flow_limit", message_name: "대화 흐름 실행 한도 초과 메시지", category: "error", message_text: "대화 흐름 실행 한도를 초과했습니다.", description: "대화 흐름이 비정상적으로 반복되어 실행 한도를 초과했을 때 출력합니다." },
+    { message_key: "system_error", message_name: "시스템 오류 메시지", category: "error", message_text: "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", description: "API 또는 시스템 오류가 발생했을 때 출력합니다." },
+    { message_key: "timeout", message_name: "타임아웃 메시지", category: "session", message_text: "응답 시간이 초과되었습니다. 처음부터 다시 진행해주세요.", description: "대화 타임아웃 발생 시 출력합니다." },
+    { message_key: "session_end", message_name: "세션 종료 메시지", category: "session", message_text: "대화가 종료되었습니다.", description: "세션 종료 시 출력합니다." },
+    { message_key: "conversation_in_progress", message_name: "진행 중 대화 안내", category: "session", message_text: "진행 중인 대화가 있습니다. 현재 대화를 먼저 완료해주세요.", description: "이미 진행 중인 대화가 있을 때 출력합니다." },
+    { message_key: "bot_connected", message_name: "봇 연결 안내 메시지", category: "runtime", message_text: "{botName}에 연결되었습니다.", description: "WebChat 채팅방이 열릴 때 초기 안내로 출력합니다." },
+    { message_key: "session_end_processing", message_name: "세션 종료 처리 메시지", category: "runtime", message_text: "상담 세션을 종료합니다.", description: "사용자 종료 요청으로 세션을 닫는 순간 출력합니다." }
+  ];
+}
+
+function createDefaultMessageId(messageKey, language) {
+  return `dm-${String(messageKey || "").replace(/[^a-z0-9_-]/gi, "-")}-${String(language || "ko").replace(/[^a-z0-9_-]/gi, "-")}`;
+}
+
+function buildDefaultMessageSeedItems(stamp) {
+  return createDefaultMessageDefinitions().flatMap((item) => DEFAULT_MESSAGE_LANGUAGES.map((language) => ({
+    id: createDefaultMessageId(item.message_key, language),
+    message_key: item.message_key,
+    message_name: item.message_name,
+    category: item.category,
+    category_label: getDefaultMessageCategoryLabel(item.category),
+    language,
+    scope: "global",
+    scope_label: "전체",
+    message_text: item.message_text,
+    default_message_text: item.message_text,
+    is_modified: false,
+    description: item.description,
+    status: "active",
+    status_label: "사용",
+    updated_at: stamp,
+    updated_by: "SYSTEM",
+    updater_name: "SYSTEM",
+    protected: true,
+    data_json: {}
+  })));
 }
 
 function createDefaultAdminResources() {
@@ -148,25 +208,7 @@ function createDefaultAdminResources() {
     data_json: {}
   }));
   const defaultMessageStamp = "2026-06-11T07:02:10.000Z";
-  const default_messages = [
-    ["dm-dialog-config-error", "오류", "대화 흐름 설정 오류 메시지", "dialog_flow_config_error", "대화 흐름 설정 오류로 대화를 계속할 수 없습니다.", "SYSTEM"],
-    ["dm-dialog-limit-exceeded", "오류", "대화 흐름 실행 한도 초과 메시지", "dialog_flow_limit_exceeded", "대화 흐름 실행 한도를 초과했습니다.", "SYSTEM"],
-    ["dm-dialog-module-link-error", "오류", "대화 모듈 연결 오류 메시지", "dialog_module_link_error", "연결할 대화 모듈을 찾지 못했습니다.", "SYSTEM"],
-    ["dm-system-error", "오류", "시스템 오류 메시지", "system_error", "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요. 부탁합니다", "cyhuh"],
-    ["dm-default-select-guide", "입력", "기본 선택 안내", "default_select_guide", "선택하세요.", "SYSTEM"],
-    ["dm-invalid-button", "입력", "버튼 오류 메시지", "invalid_button", "선택할 수 없는 항목입니다. 다시 선택해주세요.", "SYSTEM"],
-    ["dm-table-select-guide", "입력", "테이블 선택 안내", "table_select_guide", "아래 중 선택하세요.", "SYSTEM"],
-    ["dm-intent-fallback", "의도", "의도 미분류 메시지", "intent_fallback", "질문을 이해하지 못했습니다. 다시 말씀해주세요.", "SYSTEM"],
-    ["dm-intent-received", "의도", "의도 접수 메시지", "intent_received", "{intentName} 의도로 접수되었습니다.", "SYSTEM"],
-    ["dm-multi-intent", "의도", "다중 의도 선택 안내", "multi_intent_guide", "아래 후보 중 원하는 의도를 선택해주세요.", "SYSTEM"],
-    ["dm-no-desired-intent", "의도", "원하는 의도 없음 메시지", "no_desired_intent", "원하는 의도가 없습니다. 다시 말씀해주세요.", "SYSTEM"],
-    ["dm-active-dialog-guide", "세션", "진행 중 대화 안내", "active_dialog_guide", "진행 중인 대화가 있습니다. 현재 대화를 먼저 완료해주세요.", "SYSTEM"],
-    ["dm-session-end", "세션", "세션 종료 메시지", "session_end", "대화가 종료되었습니다.", "SYSTEM"],
-    ["dm-timeout", "세션", "타임아웃 메시지", "timeout", "응답 시간이 초과되었습니다. 처음부터 다시 진행해주세요.", "SYSTEM"]
-  ].map(([id, category, name, key, message, updated_by]) => ({
-    id, category, name, key, language: "ko", scope: "전체", message, status: "Y", status_label: "사용",
-    updated_at: defaultMessageStamp, updated_by
-  }));
+  const default_messages = buildDefaultMessageSeedItems(defaultMessageStamp);
   const channels = [
     ["ch-sm-chat", "SM_CHAT", "Simulator", "simulator", "simulator", "none"],
     ["ch-webchat", "WEBCHAT", "Webchat", "webchat", "webchat", "none"],
@@ -214,11 +256,48 @@ function normalizeAdminResources(resources) {
       data_json: item.data_json && typeof item.data_json === "object" ? item.data_json : {}
     };
   });
+  const defaultMessageDefinitions = new Map(createDefaultMessageDefinitions().map((item) => [item.message_key, item]));
+  const defaultMessagesByComposite = new Map(buildDefaultMessageSeedItems("2026-06-11T07:02:10.000Z").map((item) => [`${item.message_key}:${item.language}`, item]));
+  const existingDefaultMessages = Array.isArray(next.default_messages) ? next.default_messages : [];
+  const normalizedDefaultMessageMap = new Map();
+  defaultMessagesByComposite.forEach((seed, compositeKey) => {
+    const existing = existingDefaultMessages.find((item) => {
+      const messageKey = item.message_key || item.key;
+      const language = item.language || "ko";
+      return `${messageKey}:${language}` === compositeKey;
+    });
+    const selected = existing || seed;
+    const definition = defaultMessageDefinitions.get(seed.message_key);
+    const messageText = selected.message_text || selected.message || seed.message_text;
+    const status = selected.status === "inactive" || selected.status === "N" ? "inactive" : "active";
+    normalizedDefaultMessageMap.set(compositeKey, {
+      ...seed,
+      ...selected,
+      id: selected.id || seed.id,
+      message_key: seed.message_key,
+      message_name: selected.message_name || selected.name || seed.message_name,
+      category: selected.category || seed.category,
+      category_label: getDefaultMessageCategoryLabel(selected.category || seed.category),
+      language: selected.language || seed.language,
+      scope: selected.scope === "group" ? "group" : "global",
+      scope_label: selected.scope === "group" ? "그룹" : "전체",
+      message_text: messageText,
+      default_message_text: definition?.message_text || seed.default_message_text || "",
+      is_modified: messageText !== (definition?.message_text || seed.default_message_text || ""),
+      description: selected.description || seed.description || "",
+      status,
+      status_label: status === "active" ? "사용" : "미사용",
+      updated_by: selected.updated_by || selected.updater_name || seed.updated_by || "SYSTEM",
+      updater_name: selected.updater_name || selected.updated_by || seed.updater_name || "SYSTEM",
+      protected: true,
+      data_json: selected.data_json && typeof selected.data_json === "object" ? selected.data_json : {}
+    });
+  });
   return {
     version: 1,
     templates: mergeDefaultCollection(next.templates, defaults.templates),
     common_variables: normalizedCommonVariables,
-    default_messages: mergeDefaultCollection(next.default_messages, defaults.default_messages, "id", { replaceSeedItems: true, dropExtraKeys: ["dm-no-desired", "dm-runtime-flow"] }),
+    default_messages: [...normalizedDefaultMessageMap.values()],
     channels: mergeDefaultCollection(next.channels, defaults.channels),
     botstation_links: Array.isArray(next.botstation_links) ? next.botstation_links : defaults.botstation_links,
     licenses: mergeDefaultCollection(next.licenses, defaults.licenses, "id", { replaceSeedItems: true, keepExtraItems: false })
@@ -907,6 +986,8 @@ function parseAdminResourcePath(urlPath) {
   if (urlPath === "/api/cga/admin/resources") return { resource: "all" };
   const collectionMatch = urlPath.match(/^\/api\/cga\/admin\/(templates|common-variables|default-messages|channels|botstation-links)$/);
   if (collectionMatch) return { resource: collectionMatch[1] };
+  const restoreMatch = urlPath.match(/^\/api\/cga\/admin\/(default-messages)\/([^/]+)\/restore$/);
+  if (restoreMatch) return { resource: restoreMatch[1], id: restoreMatch[2], action: "restore" };
   const itemMatch = urlPath.match(/^\/api\/cga\/admin\/(templates|common-variables|default-messages|channels|botstation-links)\/([^/]+)$/);
   if (itemMatch) return { resource: itemMatch[1], id: itemMatch[2] };
   return null;
@@ -1572,6 +1653,10 @@ async function handleAuthApi(req, res, urlPath) {
       return true;
     }
     if (req.method === "POST") {
+      if (parsed.resource === "default-messages") {
+        sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+        return true;
+      }
       const body = await readJsonRequest(req);
       if (!(body.group_id || body.id) || !body.name) {
         sendJson(res, 400, { error_code: "CGA_GROUP_REQUIRED_FIELD_MISSING", message_key: "errors.auth.groupRequired" });
@@ -1829,15 +1914,21 @@ function filterAdminResourceItems(resource, query) {
   const channel = String(query.get("channel") || "").trim().toLowerCase();
   const status = String(query.get("status") || "").trim();
   const kind = String(query.get("kind") || "").trim().toLowerCase();
+  const category = String(query.get("category") || "").trim().toLowerCase();
   return items.filter((item) => {
     const haystack = [
       item.name,
+      item.message_name,
       item.key,
+      item.message_key,
       item.category,
+      item.category_label,
       item.kind,
       item.value,
       item.description,
       item.message,
+      item.message_text,
+      item.language,
       item.channel_code,
       item.channel_name,
       item.provider,
@@ -1847,9 +1938,10 @@ function filterAdminResourceItems(resource, query) {
     ].filter(Boolean).join(" ").toLowerCase();
     const matchesKeyword = !keyword || haystack.includes(keyword);
     const matchesChannel = !channel || String(item.channel_name || item.channel_code || "").toLowerCase().includes(channel);
-    const matchesStatus = !status || status === "all" || item.status === status || item.status_label === status;
+    const matchesStatus = !status || status === "all" || item.status === status || item.status_label === status || (status === "active" && item.status === "Y");
     const matchesKind = resource !== "common-variables" || !kind || String(item.kind || "").toLowerCase() === kind;
-    return matchesKeyword && matchesChannel && matchesStatus && matchesKind;
+    const matchesCategory = resource !== "default-messages" || !category || String(item.category || "").toLowerCase() === category;
+    return matchesKeyword && matchesChannel && matchesStatus && matchesKind && matchesCategory;
   });
 }
 
@@ -1894,19 +1986,30 @@ function normalizeAdminResourcePayload(resource, body, existing = null) {
     };
   }
   if (resource === "default-messages") {
-    const name = String(body.name ?? existing?.name ?? "").trim();
+    const name = String(body.message_name ?? body.name ?? existing?.message_name ?? existing?.name ?? "").trim();
+    const status = existing?.status === "inactive" ? "inactive" : "active";
     return {
       ...(existing || {}),
       ...body,
       id: existing?.id || body.id || createAdminId("dm"),
-      category: body.category || existing?.category || "System",
-      name,
-      key: body.key || existing?.key || name,
-      message: body.message || existing?.message || "",
-      status: body.status || existing?.status || "Y",
-      status_label: body.status_label || (body.status === "N" ? "미사용" : "사용"),
+      message_name: existing?.message_name || existing?.name || name,
+      message_key: existing?.message_key || existing?.key || name,
+      category: existing?.category || "intent",
+      category_label: getDefaultMessageCategoryLabel(existing?.category || "intent"),
+      language: existing?.language || "ko",
+      scope: existing?.scope || "global",
+      scope_label: existing?.scope === "group" ? "그룹" : "전체",
+      message_text: body.message_text ?? body.message ?? existing?.message_text ?? existing?.message ?? "",
+      default_message_text: existing?.default_message_text || "",
+      is_modified: Boolean((body.message_text ?? body.message ?? existing?.message_text ?? existing?.message ?? "") !== (existing?.default_message_text || "")),
+      description: body.description ?? existing?.description ?? "",
+      status,
+      status_label: status === "active" ? "사용" : "미사용",
       updated_at: now,
-      updated_by: body.updated_by || "admin"
+      updated_by: body.updated_by || "admin",
+      updater_name: body.updater_name || body.updated_by || "admin",
+      protected: true,
+      data_json: existing?.data_json && typeof existing.data_json === "object" ? existing.data_json : {}
     };
   }
   if (resource === "channels") {
@@ -2020,9 +2123,36 @@ async function handleAdminResourceApi(req, res, urlPath, query) {
     sendJson(res, 404, { error_code: getAdminResourceNotFoundError(parsed.resource), message_key: "errors.admin.resourceNotFound" });
     return true;
   }
+  if (parsed.resource === "default-messages" && parsed.action === "restore") {
+    if (req.method !== "POST") {
+      sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+      return true;
+    }
+    const definition = createDefaultMessageDefinitions().find((item) => item.message_key === target.message_key);
+    const nextItems = collection.map((item) => {
+      if (item.id !== parsed.id) return item;
+      return normalizeAdminResourcePayload(parsed.resource, {
+        message_text: item.default_message_text || item.message_text || "",
+        description: definition?.description || item.description || ""
+      }, {
+        ...item,
+        message_text: item.default_message_text || item.message_text || ""
+      });
+    });
+    saveAdminResources({ ...adminResources, [collectionKey]: nextItems });
+    sendJson(res, 200, nextItems.find((item) => item.id === parsed.id));
+    return true;
+  }
   if (req.method === "PUT" || req.method === "PATCH") {
     if (parsed.resource === "common-variables" && target.kind === "system") {
       sendJson(res, 400, { error_code: "CGA_COMMON_VARIABLE_SYSTEM_READ_ONLY", message_key: "errors.admin.resourceReadOnly" });
+      return true;
+    }
+    if (parsed.resource === "default-messages") {
+      const body = await readJsonRequest(req);
+      const nextItems = collection.map((item) => item.id === parsed.id ? normalizeAdminResourcePayload(parsed.resource, body, item) : item);
+      saveAdminResources({ ...adminResources, [collectionKey]: nextItems });
+      sendJson(res, 200, nextItems.find((item) => item.id === parsed.id));
       return true;
     }
     const body = await readJsonRequest(req);
@@ -2036,6 +2166,10 @@ async function handleAdminResourceApi(req, res, urlPath, query) {
     return true;
   }
   if (req.method === "DELETE") {
+    if (parsed.resource === "default-messages") {
+      sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+      return true;
+    }
     if (parsed.resource === "common-variables" && target.kind === "system") {
       sendJson(res, 400, { error_code: "CGA_COMMON_VARIABLE_SYSTEM_READ_ONLY", message_key: "errors.admin.resourceReadOnly" });
       return true;
@@ -2084,7 +2218,7 @@ function serializeWebchatBot(bot) {
     activeVersionNo: Number(String(bot.version || "v0.1").match(/\d+/)?.[0] || 1),
     activatedAt: bot.updated_at || null,
     initialMessages: [
-      { type: "text", text: `${bot.name}에 연결되었습니다.` }
+      { type: "text", text: getDefaultMessageText("bot_connected", bot.locale || "ko", { botName: bot.name }) }
     ]
   };
 }
@@ -2097,6 +2231,23 @@ function getWebchatBots() {
 
 function getWorkspaceBot(botId) {
   return workspaceBots.find((item) => item.id === botId) || null;
+}
+
+function interpolateDefaultMessage(text, values = {}) {
+  let next = String(text || "");
+  Object.entries(values).forEach(([key, value]) => {
+    next = next.replaceAll(`{${key}}`, String(value ?? ""));
+  });
+  return next;
+}
+
+function getDefaultMessageText(messageKey, language = "ko", values = {}) {
+  const messages = Array.isArray(adminResources.default_messages) ? adminResources.default_messages : [];
+  const exact = messages.find((item) => item.message_key === messageKey && item.language === language);
+  const fallbackKo = messages.find((item) => item.message_key === messageKey && item.language === "ko");
+  const selected = exact || fallbackKo;
+  const raw = selected?.message_text || createDefaultMessageDefinitions().find((item) => item.message_key === messageKey)?.message_text || "";
+  return interpolateDefaultMessage(raw, values);
 }
 
 function getVersionNo(value) {
@@ -2370,7 +2521,7 @@ function buildWebchatSessionEndedSampleMessage(bot, userText) {
     participantKind: "bot",
     participantId: bot.id,
     participantName: bot.name,
-    text: "상담 세션을 종료합니다."
+    text: getDefaultMessageText("session_end_processing", bot.locale || "ko")
   });
 }
 
@@ -2855,7 +3006,7 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
         participantKind: "bot",
         participantId: bot.id,
         participantName: bot.name,
-        text: `${bot.name}에 연결되었습니다.`
+        text: getDefaultMessageText("bot_connected", bot.locale || "ko", { botName: bot.name })
       });
       room.messages = [botMessage];
       appendConversationHistoryMessage(room, botMessage);
@@ -2938,7 +3089,7 @@ async function handleWebchatChannelApi(req, res, urlPath, query) {
     const sessionEndedSampleMessage = buildWebchatSessionEndedSampleMessage(bot, body.message || "");
     const richSampleMessage = buildWebchatRichSampleMessage(bot, body.message || "");
     const { scenario, score } = selectWebchatIntent(bot, body.message || "");
-    const answer = scenario?.answer || scenario?.dialogCards?.[0] || "질문을 이해하지 못했습니다. 다시 말씀해주세요.";
+    const answer = scenario?.answer || scenario?.dialogCards?.[0] || getDefaultMessageText("intent_fallback", bot.locale || "ko");
     const botMessage = sessionEndedSampleMessage || richSampleMessage || createStoredChannelMessage({
       participantKind: "bot",
       participantId: bot.id,

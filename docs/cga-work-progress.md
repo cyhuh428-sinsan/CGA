@@ -4964,3 +4964,35 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
     - 이 아니라
     - Aidot의 공통 변수 관리 구조와 시스템/사용자 변수 규칙
     - 을 기준으로 동작하는 상태로 정렬됐다.
+
+## 2026-06-23 10:04 KST
+
+### 기본 메시지 관리를 Aidot 기준 구조와 다국어 레지스트리로 정렬
+
+- 신산님 요청 기준:
+  - `기본 메시지 관리`도 Aidot 기준으로 맞춰야 함
+  - 메시지는 언어별로 등록/관리해야 함
+  - Aidot에서 등록한 기본 메시지 외에 CGA 시스템이 사용하는 메시지도 모두 여기 등록해서 사용해야 함
+- 반영 범위:
+  - `apps/studio/app.js`
+    - 기본 메시지 화면을 Aidot형 검색/구분 필터/사용여부 필터/초기화/조회 구조로 교체
+    - 기본 메시지는 새로 생성/삭제하지 않고 기존 항목만 수정/기본값 복원하는 Aidot형 상세 팝업으로 전환
+  - `apps/studio/styles.css`
+    - 기본 메시지 검색행과 Aidot형 단일 컬럼 상세 팝업 스타일 추가
+  - `scripts/serve-studio.js`
+    - 기본 메시지 seed를 언어별(`ko`, `en`, `zh-CN`, `ja`, `vi`, `de`, `fr`) 레지스트리 구조로 재정의
+    - Aidot 계열 기본 메시지와 함께 CGA 시스템 런타임 메시지(`bot_connected`, `session_end_processing`)도 동일 레지스트리에 등록
+    - WebChat 연결 안내, 세션 종료 안내, 기본 fallback 응답이 하드코딩 문자열이 아니라 기본 메시지 레지스트리를 통해 내려가도록 변경
+    - 기본 메시지는 생성/삭제 대신 수정/복원만 허용하도록 API 동작 정렬
+  - `scripts/check-admin-resources-api.cjs`
+    - 기본 메시지 검증을 기존 CRUD 방식에서 Aidot형 `수정 -> 복원` 검증으로 교체
+- 검증:
+  - `node --check apps/studio/app.js` 통과
+  - `node --check scripts/serve-studio.js` 통과
+  - `npm run studio:validate` 예정
+- 이번 단계 의미:
+  - 이제 기본 메시지는
+    - 화면에 보이는 텍스트를 임시 하드코딩하는 구조
+    - 가 아니라
+    - Aidot 기준 메시지 목록 + 언어별 관리 + 시스템 런타임 공용 사용
+    - 구조로 정렬되는 단계에 들어갔다.

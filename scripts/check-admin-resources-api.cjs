@@ -74,11 +74,6 @@ async function main() {
         update: { value: "2", description: "검증 변수 수정" }
       },
       {
-        path: "/api/cga/admin/default-messages",
-        create: { category: "System", name: "검증 메시지", key: "verify_message", message: "검증입니다.", status: "Y" },
-        update: { message: "검증 수정입니다.", status: "N" }
-      },
-      {
         path: "/api/cga/admin/channels",
         create: { channel_code: "VERIFY", channel_name: "Verify", provider: "webchat", renderer_type: "text", auth_type: "none", status: "Y" },
         update: { channel_name: "Verify Updated", status: "N" }
@@ -96,6 +91,32 @@ async function main() {
       if (!id || !patched.json || after.json.total !== before.json.total) throw new Error(`${item.path} CRUD failed`);
       timings[item.path] = created.elapsed;
     }
+
+    const defaultMessagesBefore = await request("GET", "/api/cga/admin/default-messages");
+    const defaultMessage = defaultMessagesBefore.json?.items?.[0];
+    if (!defaultMessage?.id) throw new Error("default message seed item missing");
+
+    const defaultMessagePatched = await request(
+      "PATCH",
+      `/api/cga/admin/default-messages/${defaultMessage.id}`,
+      { message_text: "검증 수정입니다.", description: "검증 설명" }
+    );
+    const defaultMessageRestored = await request(
+      "POST",
+      `/api/cga/admin/default-messages/${defaultMessage.id}/restore`
+    );
+    const defaultMessagesAfter = await request("GET", "/api/cga/admin/default-messages");
+    const restoredItem = defaultMessagesAfter.json?.items?.find((item) => item.id === defaultMessage.id);
+    if (
+      !defaultMessagePatched.json ||
+      !defaultMessageRestored.json ||
+      !restoredItem ||
+      restoredItem.message_text !== restoredItem.default_message_text ||
+      defaultMessagesAfter.json.total !== defaultMessagesBefore.json.total
+    ) {
+      throw new Error("/api/cga/admin/default-messages restore flow failed");
+    }
+    timings["/api/cga/admin/default-messages"] = defaultMessagePatched.elapsed;
 
     console.log(JSON.stringify({
       ok: true,
