@@ -5290,3 +5290,39 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 이제 CGA는 최소한 화면과 매뉴얼 수준에서
   - `작업 버전`, `운영 버전`, `패키지 형식`, `WebChat 연결 대상`
   - 이 네 가지를 서로 다른 개념으로 구분해서 테스트할 수 있는 상태로 정리됐다.
+
+## 2026-06-26 13:35 KST
+
+### Postgres 저장소 1단계 전환
+
+- 서버 운영 기준을 `shared-db` / `cga` 데이터베이스 / `postgres` 계정으로 확정했다.
+- 코드 반영:
+  - `scripts/serve-studio.js`
+  - `CGA_STORAGE_DRIVER=postgres`일 때 `psql` 기반 Postgres key-value 저장소를 우선 사용하도록 추가
+  - 대상 컬렉션:
+    - access/auth/session
+    - workspace bots
+    - studio/composition/detail assets
+    - operations/collaboration
+    - webchat rooms
+    - admin resources
+    - asset transfer history
+  - DB에 값이 없으면 기존 `.cga-data/*.json`를 1회 읽어 DB로 이관한 뒤 계속 DB를 사용하도록 구성
+  - DB 저장 시 파일 미러도 함께 유지해 긴급 롤백과 운영 확인을 쉽게 했다.
+- 배포 반영:
+  - `Dockerfile`
+    - `postgresql-client` 추가
+  - `docker-compose.yml`
+    - `.env` 로드
+    - DB 환경변수 추가
+    - `proxy-network`, `common_default` 외부 네트워크 연결
+  - `docker-compose.prod.yml`
+    - 서비스명을 `studio`로 정정
+    - 운영형 DB 저장 모드 고정
+  - `.env.example`
+    - Postgres 환경변수 추가
+- 이번 단계 의미:
+  - CGA는 더 이상 파일 저장 전용 구조가 아니라
+  - 동일 서버의 Postgres를 사용하는 운영형 저장 구조로 진입할 수 있게 됐다.
+  - 다만 현재 스키마는 정규화 테이블이 아니라 `cga_state_store` 단일 저장소 기반 1단계 구조이며,
+  - 이후 봇/버전/이력/운영 데이터를 도메인 테이블로 분리하는 2단계 정규화가 남아 있다.

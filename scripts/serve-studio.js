@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { spawnSync } = require("child_process");
 
 const root = path.resolve(__dirname, "..");
 const port = Number(process.env.PORT || 4173);
@@ -21,6 +22,32 @@ const operationsStateRegistryFile = path.join(dataDir, "operations-state-registr
 const collaborationStateRegistryFile = path.join(dataDir, "collaboration-state-registry.json");
 const webchatRoomsFile = path.join(dataDir, "webchat-rooms.json");
 const adminResourcesFile = path.join(dataDir, "admin-resources.json");
+const storageDriver = String(process.env.CGA_STORAGE_DRIVER || (process.env.CGA_DB_HOST ? "postgres" : "file")).trim().toLowerCase();
+const postgresStorageEnabled = storageDriver === "postgres";
+const postgresConfig = {
+  host: String(process.env.CGA_DB_HOST || "").trim(),
+  port: String(process.env.CGA_DB_PORT || "5432").trim(),
+  database: String(process.env.CGA_DB_NAME || "").trim(),
+  user: String(process.env.CGA_DB_USER || "").trim(),
+  password: String(process.env.CGA_DB_PASSWORD || "")
+};
+const postgresStoreTable = "cga_state_store";
+const STORAGE_COLLECTION_KEYS = {
+  adminResources: "admin_resources",
+  authCredentials: "auth_credentials",
+  authSessions: "auth_sessions",
+  assetTransferHistory: "asset_transfer_history",
+  accessState: "access_state",
+  apiAnswerRegistry: "api_answer_registry",
+  workspaceBots: "workspace_bots",
+  studioStateRegistry: "studio_state_registry",
+  compositionRegistry: "composition_registry",
+  detailAssetRegistry: "detail_asset_registry",
+  operationsStateRegistry: "operations_state_registry",
+  collaborationStateRegistry: "collaboration_state_registry",
+  webchatRooms: "webchat_rooms"
+};
+let postgresStorageReady = false;
 let assetTransferHistory = loadAssetTransferHistory();
 let accessState = null;
 let apiAnswerRegistry = loadApiAnswerRegistry();
@@ -48,6 +75,113 @@ function send(res, status, body, type = "text/plain; charset=utf-8") {
 
 function ensureDataDir() {
   fs.mkdirSync(dataDir, { recursive: true });
+}
+
+function quoteSqlLiteral(value) {
+  return `'${String(value || "").replace(/'/g, "''")}'`;
+}
+
+function buildJsonbSqlExpression(payload) {
+  const base64 = Buffer.from(JSON.stringify(payload ?? null), "utf8").toString("base64");
+  return `convert_from(decode('${base64}', 'base64'), 'utf8')::jsonb`;
+}
+
+function runPsql(sql) {
+  const result = spawnSync(
+    "psql",
+    [
+      "-h", postgresConfig.host,
+      "-p", postgresConfig.port,
+      "-U", postgresConfig.user,
+      "-d", postgresConfig.database,
+      "-v", "ON_ERROR_STOP=1",
+      "-t",
+      "-A"
+    ],
+    {
+      input: sql,
+      encoding: "utf8",
+      env: { ...process.env, PGPASSWORD: postgresConfig.password }
+    }
+  );
+  if (result.error) {
+    throw new Error(`psql execution failed: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    throw new Error((result.stderr || result.stdout || "psql execution failed").trim());
+  }
+  return String(result.stdout || "").trim();
+}
+
+function ensurePostgresStorageReady() {
+  if (!postgresStorageEnabled) return false;
+  if (postgresStorageReady) return true;
+  if (!postgresConfig.host || !postgresConfig.database || !postgresConfig.user) {
+    throw new Error("CGA postgres storage is enabled, but CGA_DB_HOST/CGA_DB_NAME/CGA_DB_USER is missing.");
+  }
+  runPsql(`
+    CREATE TABLE IF NOT EXISTS ${postgresStoreTable} (
+      collection_key TEXT PRIMARY KEY,
+      payload JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  postgresStorageReady = true;
+  return true;
+}
+
+function readStoredCollection(collectionKey) {
+  if (!postgresStorageEnabled) return undefined;
+  ensurePostgresStorageReady();
+  const output = runPsql(`
+    SELECT payload::text
+    FROM ${postgresStoreTable}
+    WHERE collection_key = ${quoteSqlLiteral(collectionKey)}
+    LIMIT 1;
+  `);
+  if (!output) return undefined;
+  return JSON.parse(output);
+}
+
+function writeStoredCollection(collectionKey, payload) {
+  if (!postgresStorageEnabled) return payload;
+  ensurePostgresStorageReady();
+  runPsql(`
+    INSERT INTO ${postgresStoreTable} (collection_key, payload, updated_at)
+    VALUES (
+      ${quoteSqlLiteral(collectionKey)},
+      ${buildJsonbSqlExpression(payload)},
+      NOW()
+    )
+    ON CONFLICT (collection_key)
+    DO UPDATE SET
+      payload = EXCLUDED.payload,
+      updated_at = NOW();
+  `);
+  return payload;
+}
+
+function loadStoredCollection({ collectionKey, filePath, fallback }) {
+  if (!postgresStorageEnabled) return loadJsonFile(filePath, fallback);
+  const stored = readStoredCollection(collectionKey);
+  if (stored !== undefined) return stored;
+  const fileBacked = loadJsonFile(filePath, undefined);
+  if (fileBacked !== undefined) {
+    writeStoredCollection(collectionKey, fileBacked);
+    return fileBacked;
+  }
+  writeStoredCollection(collectionKey, fallback);
+  return fallback;
+}
+
+function saveStoredCollection({ collectionKey, filePath, payload, mirrorToFile = true }) {
+  if (postgresStorageEnabled) {
+    writeStoredCollection(collectionKey, payload);
+    if (mirrorToFile) writeJsonFile(filePath, payload);
+    return payload;
+  }
+  writeJsonFile(filePath, payload);
+  return payload;
 }
 
 function loadJsonFile(filePath, fallback) {
@@ -371,14 +505,26 @@ function normalizeAdminResources(resources) {
 }
 
 function loadAdminResources() {
-  const resources = normalizeAdminResources(loadJsonFile(adminResourcesFile, null));
-  writeJsonFile(adminResourcesFile, resources);
+  const resources = normalizeAdminResources(loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.adminResources,
+    filePath: adminResourcesFile,
+    fallback: null
+  }));
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.adminResources,
+    filePath: adminResourcesFile,
+    payload: resources
+  });
   return resources;
 }
 
 function saveAdminResources(resources) {
   adminResources = normalizeAdminResources(resources);
-  writeJsonFile(adminResourcesFile, adminResources);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.adminResources,
+    filePath: adminResourcesFile,
+    payload: adminResources
+  });
   return adminResources;
 }
 
@@ -421,7 +567,11 @@ function createSeedCredentials(state) {
 }
 
 function loadAuthCredentials(state) {
-  const stored = loadJsonFile(authCredentialsFile, null);
+  const stored = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.authCredentials,
+    filePath: authCredentialsFile,
+    fallback: null
+  });
   if (stored && typeof stored === "object" && stored.users && typeof stored.users === "object") {
     const missingUsers = (state.users || []).filter((user) => user.status !== "deleted" && !stored.users[user.id]);
     if (!missingUsers.length) return stored;
@@ -434,23 +584,39 @@ function loadAuthCredentials(state) {
     });
   }
   const seeded = createSeedCredentials(state);
-  writeJsonFile(authCredentialsFile, seeded);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.authCredentials,
+    filePath: authCredentialsFile,
+    payload: seeded
+  });
   return seeded;
 }
 
 function saveAuthCredentials(credentials) {
-  writeJsonFile(authCredentialsFile, credentials);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.authCredentials,
+    filePath: authCredentialsFile,
+    payload: credentials
+  });
   return credentials;
 }
 
 function loadAuthSessions() {
-  const stored = loadJsonFile(authSessionsFile, null);
+  const stored = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.authSessions,
+    filePath: authSessionsFile,
+    fallback: null
+  });
   if (stored && typeof stored === "object" && stored.sessions && typeof stored.sessions === "object") return stored;
   return { version: 1, sessions: {} };
 }
 
 function saveAuthSessions(sessions) {
-  writeJsonFile(authSessionsFile, sessions);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.authSessions,
+    filePath: authSessionsFile,
+    payload: sessions
+  });
   return sessions;
 }
 
@@ -575,29 +741,51 @@ function markLoginHistoryLoggedOut(state, sessionToken) {
   return changed ? { ...state, loginHistory } : state;
 }
 function loadAssetTransferHistory() {
-  const history = loadJsonFile(assetTransferHistoryFile, []);
+  const history = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.assetTransferHistory,
+    filePath: assetTransferHistoryFile,
+    fallback: []
+  });
   return Array.isArray(history) ? history : [];
 }
 
 function recordAssetTransfer(entry) {
   assetTransferHistory = [...assetTransferHistory, entry];
-  writeJsonFile(assetTransferHistoryFile, assetTransferHistory);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.assetTransferHistory,
+    filePath: assetTransferHistoryFile,
+    payload: assetTransferHistory
+  });
 }
 
 async function loadAccessState() {
   if (accessState) return accessState;
   const accessStateModule = await import("../packages/public-core/src/access-state.js");
-  const stored = loadJsonFile(accessStateFile, null);
+  const stored = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.accessState,
+    filePath: accessStateFile,
+    fallback: null
+  });
   const loaded = stored && typeof stored === "object" ? stored : accessStateModule.createSampleAccessState();
   const normalized = accessStateModule.normalizeAccessState(loaded);
   accessState = normalized;
-  if (JSON.stringify(normalized) !== JSON.stringify(loaded)) writeJsonFile(accessStateFile, normalized);
+  if (JSON.stringify(normalized) !== JSON.stringify(loaded)) {
+    saveStoredCollection({
+      collectionKey: STORAGE_COLLECTION_KEYS.accessState,
+      filePath: accessStateFile,
+      payload: normalized
+    });
+  }
   return accessState;
 }
 
 function saveAccessState(state) {
   accessState = state;
-  writeJsonFile(accessStateFile, state);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.accessState,
+    filePath: accessStateFile,
+    payload: state
+  });
   return state;
 }
 
@@ -610,13 +798,21 @@ function getActorId(req, state) {
 }
 
 function loadApiAnswerRegistry() {
-  const registry = loadJsonFile(apiAnswerRegistryFile, []);
+  const registry = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.apiAnswerRegistry,
+    filePath: apiAnswerRegistryFile,
+    fallback: []
+  });
   return Array.isArray(registry) ? registry : [];
 }
 
 function saveApiAnswerRegistry(registry) {
   apiAnswerRegistry = registry;
-  writeJsonFile(apiAnswerRegistryFile, registry);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.apiAnswerRegistry,
+    filePath: apiAnswerRegistryFile,
+    payload: registry
+  });
   return registry;
 }
 
@@ -653,24 +849,40 @@ function createDefaultWorkspaceBots() {
 }
 
 function loadWorkspaceBots() {
-  const bots = loadJsonFile(workspaceBotsFile, null);
+  const bots = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.workspaceBots,
+    filePath: workspaceBotsFile,
+    fallback: null
+  });
   return Array.isArray(bots) ? bots : createDefaultWorkspaceBots();
 }
 
 function saveWorkspaceBots(bots) {
   workspaceBots = bots;
-  writeJsonFile(workspaceBotsFile, bots);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.workspaceBots,
+    filePath: workspaceBotsFile,
+    payload: bots
+  });
   return bots;
 }
 
 function loadStudioStateRegistry() {
-  const registry = loadJsonFile(studioStateRegistryFile, []);
+  const registry = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.studioStateRegistry,
+    filePath: studioStateRegistryFile,
+    fallback: []
+  });
   return Array.isArray(registry) ? registry : [];
 }
 
 function saveStudioStateRegistry(registry) {
   studioStateRegistry = registry;
-  writeJsonFile(studioStateRegistryFile, registry);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.studioStateRegistry,
+    filePath: studioStateRegistryFile,
+    payload: registry
+  });
   return registry;
 }
 
@@ -782,57 +994,97 @@ function createDefaultStudioStateForBot(groupId, botId) {
 }
 
 function loadCompositionRegistry() {
-  const registry = loadJsonFile(compositionRegistryFile, []);
+  const registry = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.compositionRegistry,
+    filePath: compositionRegistryFile,
+    fallback: []
+  });
   return Array.isArray(registry) ? registry : [];
 }
 
 function saveCompositionRegistry(registry) {
   compositionRegistry = registry;
-  writeJsonFile(compositionRegistryFile, registry);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.compositionRegistry,
+    filePath: compositionRegistryFile,
+    payload: registry
+  });
   return registry;
 }
 
 function loadDetailAssetRegistry() {
-  const registry = loadJsonFile(detailAssetRegistryFile, []);
+  const registry = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.detailAssetRegistry,
+    filePath: detailAssetRegistryFile,
+    fallback: []
+  });
   return Array.isArray(registry) ? registry : [];
 }
 
 function saveDetailAssetRegistry(registry) {
   detailAssetRegistry = registry;
-  writeJsonFile(detailAssetRegistryFile, registry);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.detailAssetRegistry,
+    filePath: detailAssetRegistryFile,
+    payload: registry
+  });
   return registry;
 }
 
 function loadOperationsStateRegistry() {
-  const registry = loadJsonFile(operationsStateRegistryFile, []);
+  const registry = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.operationsStateRegistry,
+    filePath: operationsStateRegistryFile,
+    fallback: []
+  });
   return Array.isArray(registry) ? registry : [];
 }
 
 function saveOperationsStateRegistry(registry) {
   operationsStateRegistry = registry;
-  writeJsonFile(operationsStateRegistryFile, registry);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.operationsStateRegistry,
+    filePath: operationsStateRegistryFile,
+    payload: registry
+  });
   return registry;
 }
 
 function loadCollaborationStateRegistry() {
-  const registry = loadJsonFile(collaborationStateRegistryFile, []);
+  const registry = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.collaborationStateRegistry,
+    filePath: collaborationStateRegistryFile,
+    fallback: []
+  });
   return Array.isArray(registry) ? registry : [];
 }
 
 function saveCollaborationStateRegistry(registry) {
   collaborationStateRegistry = registry;
-  writeJsonFile(collaborationStateRegistryFile, registry);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.collaborationStateRegistry,
+    filePath: collaborationStateRegistryFile,
+    payload: registry
+  });
   return registry;
 }
 
 function loadWebchatRooms() {
-  const rooms = loadJsonFile(webchatRoomsFile, []);
+  const rooms = loadStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.webchatRooms,
+    filePath: webchatRoomsFile,
+    fallback: []
+  });
   return Array.isArray(rooms) ? rooms.map(normalizeWebchatRoomRecord) : [];
 }
 
 function saveWebchatRooms(rooms) {
   webchatRooms = Array.isArray(rooms) ? rooms.map(normalizeWebchatRoomRecord) : [];
-  writeJsonFile(webchatRoomsFile, rooms);
+  saveStoredCollection({
+    collectionKey: STORAGE_COLLECTION_KEYS.webchatRooms,
+    filePath: webchatRoomsFile,
+    payload: rooms
+  });
   return rooms;
 }
 
