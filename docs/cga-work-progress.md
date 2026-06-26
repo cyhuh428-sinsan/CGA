@@ -5326,3 +5326,29 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 동일 서버의 Postgres를 사용하는 운영형 저장 구조로 진입할 수 있게 됐다.
   - 다만 현재 스키마는 정규화 테이블이 아니라 `cga_state_store` 단일 저장소 기반 1단계 구조이며,
   - 이후 봇/버전/이력/운영 데이터를 도메인 테이블로 분리하는 2단계 정규화가 남아 있다.
+
+## 2026-06-26 14:40 KST
+
+### 오라클 클라우드 운영 배포 기준 문서화
+
+- 서버 운영 기준을 실제 배포 절차 문서로 정리했다.
+- 반영 파일:
+  - `README.md`
+  - `.env.server.example`
+  - `docs/cga-oracle-cloud-deploy.md`
+- 반영 내용:
+  - `cga.sinsan.kr` 기준 운영 배포 흐름 정리
+  - `shared-db` / `cga` / `postgres` 사용 기준 명시
+  - 운영용 `.env`는 저장소 예시와 서버 실값을 분리하도록 정리
+  - `docker-compose.yml` + `docker-compose.prod.yml` 결합 실행 순서 정리
+  - Nginx Proxy Manager 포워딩 기준과 DB 확인 쿼리 추가
+- 이번 단계 의미:
+  - 이제 신산님이 서버에서
+  - `.env` 작성
+  - compose 검증
+  - 컨테이너 기동
+  - 프록시 연결
+  - DB 반영 확인
+  - 재배포
+  - 장애 점검
+  - 까지 한 문서로 따라갈 수 있는 상태가 됐다.

@@ -76,13 +76,11 @@ See `docs/aidot-structure-parity.md`.
 
 CGA 개발 프로세스는 Windows 로컬 Node 프로세스로 띄우지 않는다.
 
-기본 개발 실행 방식은 WSL 안에서 Docker 컨테이너로 CGA 프로세스를 띄우는 방식이다.
+기본 개발 실행 방식은 Docker 컨테이너로 CGA 프로세스를 띄우는 방식이다.
 
 배포와 공유는 Git 기준으로 한다.
 
 ## CGA Studio 실행
-
-Windows PowerShell이 아니라 WSL 터미널에서 실행한다.
 
 ```bash
 cd ~/deploy/cga
@@ -105,8 +103,8 @@ docker-compose -p cga down
 참고:
 
 - `npm run studio`는 컨테이너 내부에서 실행되는 Studio 서버 명령이다.
-- 개발자는 원칙적으로 Windows 로컬에서 `npm run studio`를 직접 실행하지 않는다.
-- 로컬 PC, 폐쇄망, 개인 WSL 환경 모두 동일하게 컨테이너 프로세스로 실행한다.
+- 개발자는 원칙적으로 호스트에서 `npm run studio`를 직접 실행하지 않는다.
+- 로컬 PC, WSL, 오라클 클라우드 서버 모두 동일하게 컨테이너 프로세스로 실행한다.
 
 ## 인증 실행 모드
 
@@ -121,14 +119,35 @@ docker-compose -p cga up --build studio
 
 ```bash
 cd ~/deploy/cga
-docker-compose -p cga -f docker-compose.yml -f docker-compose.prod.yml up --build studio
+docker-compose -p cga -f docker-compose.yml -f docker-compose.prod.yml up --build -d studio
 ```
 
 운영형 실행 기준:
 
 - `CGA_AUTH_HEADER_FALLBACK=disabled`
+- `CGA_STORAGE_DRIVER=postgres`
 - `/api/cga/auth/login` 또는 `/api/cga/auth/signup`으로 발급된 세션만 사용자로 인정
 - 세션 없이 `/api/cga/auth/me` 또는 관리 API를 호출하면 `CGA_AUTH_REQUIRED` 반환
+
+## 오라클 클라우드 운영 배포 기준
+
+현재 운영 기준은 Aidot와 같은 서버에 올리는 방식이다.
+
+- 도메인: `cga.sinsan.kr`
+- 서비스 포트: `4173`
+- 공용 DB 컨테이너: `shared-db`
+- DB 이름: `cga`
+- DB 계정: `postgres`
+- Docker 외부 네트워크:
+  - `proxy-network`
+  - `common_default`
+
+서버용 환경값은 저장소의 `.env.example`가 아니라 별도 `.env`로 관리한다.
+
+서버 배포 절차와 예시 환경 파일은 아래 문서를 따른다.
+
+- [docs/cga-oracle-cloud-deploy.md](D:/Project/cga/docs/cga-oracle-cloud-deploy.md)
+- [.env.server.example](D:/Project/cga/.env.server.example)
 
 ## CGA Studio 검증
 
