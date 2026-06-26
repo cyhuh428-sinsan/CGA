@@ -3,7 +3,8 @@ FROM node:20-alpine
 WORKDIR /workspace
 
 COPY package*.json ./
-RUN npm ci
+RUN apk add --no-cache postgresql-client \
+  && npm ci
 
 COPY . .
 
