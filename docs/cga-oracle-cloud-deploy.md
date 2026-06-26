@@ -23,7 +23,7 @@
 아래 항목이 서버에 이미 있어야 합니다.
 
 1. Docker
-2. `docker-compose`
+2. `docker compose`
 3. Nginx Proxy Manager
 4. 공용 Postgres 컨테이너 `shared-db`
 5. Docker 네트워크
@@ -87,7 +87,7 @@ CGA_DB_PASSWORD=서버에서만_직접_입력
 
 ```bash
 cd ~/deploy/cga
-docker-compose -p cga -f docker-compose.yml -f docker-compose.prod.yml config
+docker compose -p cga -f docker-compose.yml -f docker-compose.prod.yml config
 ```
 
 확인 포인트:
@@ -101,7 +101,7 @@ docker-compose -p cga -f docker-compose.yml -f docker-compose.prod.yml config
 
 ```bash
 cd ~/deploy/cga
-docker-compose -p cga -f docker-compose.yml -f docker-compose.prod.yml up -d --build studio
+docker compose -p cga -f docker-compose.yml -f docker-compose.prod.yml up -d --build studio
 ```
 
 상태 확인:
@@ -122,8 +122,13 @@ docker logs --tail 200 cga-studio
 Nginx Proxy Manager에서 `cga.sinsan.kr`를 아래처럼 연결합니다.
 
 - Scheme: `http`
-- Forward Hostname / IP: CGA가 올라간 서버 또는 docker host
+- Forward Hostname / IP: `cga-studio`
 - Forward Port: `4173`
+
+중요:
+
+- 현재 운영 구조에서는 Nginx Proxy Manager와 `cga-studio`가 같은 `proxy-network`에 붙어 있습니다.
+- 따라서 `127.0.0.1`이나 서버 공인 IP보다 `cga-studio` 컨테이너 이름으로 연결하는 것이 기준입니다.
 
 SSL이 있다면 `cga.sinsan.kr`에 인증서를 연결합니다.
 
@@ -170,14 +175,14 @@ docker exec -it shared-db psql -U postgres -d cga -c "select collection_key, upd
 ```bash
 cd ~/deploy/cga
 git pull --ff-only
-docker-compose -p cga -f docker-compose.yml -f docker-compose.prod.yml up -d --build studio
+docker compose -p cga -f docker-compose.yml -f docker-compose.prod.yml up -d --build studio
 ```
 
 필요 시 재기동:
 
 ```bash
 cd ~/deploy/cga
-docker-compose -p cga -f docker-compose.yml -f docker-compose.prod.yml restart studio
+docker compose -p cga -f docker-compose.yml -f docker-compose.prod.yml restart studio
 ```
 
 ## 11. 장애 확인 순서

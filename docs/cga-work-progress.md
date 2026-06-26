@@ -5352,3 +5352,26 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 재배포
   - 장애 점검
   - 까지 한 문서로 따라갈 수 있는 상태가 됐다.
+
+## 2026-06-27 15:20 KST
+
+### 운영 배포 실측 결과 기준 메뉴얼 보정
+
+- 실제 서버 배포와 접속 점검 결과를 기준으로 문서 표현을 수정했다.
+- 반영 파일:
+  - `README.md`
+  - `docs/cga-oracle-cloud-deploy.md`
+  - `docs/cga-studio-user-guide-ko.md`
+  - `docs/manual/cga-user-manual/01_CGA_처음부터_봇_생성까지.md`
+- 반영 내용:
+  - `docker-compose` 표기를 서버 실환경에 맞게 `docker compose`로 수정
+  - Nginx Proxy Manager의 `Forward Hostname / IP` 기준을 `cga-studio`로 명시
+  - 운영 접속 주소를 `https://cga.sinsan.kr` 기준으로 수정
+  - 빠른 가이드의 오래된 기준일/커밋/미검증 항목 표현 정리
+  - `+ 봇 생성`과 좌측 `01 봇 생성` 메뉴의 차이를 처음 사용자 관점에서 설명
+- 이번 단계 의미:
+  - 이제 신산님이 메뉴얼대로 따라가다가
+  - compose 명령 차이
+  - 프록시 대상 혼동
+  - 봇 생성 진입 방식 혼동
+  - 같은 실제 운영 기준 오류로 다시 막힐 가능성을 줄였다.

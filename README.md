@@ -84,7 +84,7 @@ CGA 개발 프로세스는 Windows 로컬 Node 프로세스로 띄우지 않는�
 
 ```bash
 cd ~/deploy/cga
-docker-compose -p cga up --build studio
+docker compose -p cga up --build studio
 ```
 
 실행 URL:
@@ -97,7 +97,7 @@ http://127.0.0.1:4173/
 
 ```bash
 cd ~/deploy/cga
-docker-compose -p cga down
+docker compose -p cga down
 ```
 
 참고:
@@ -112,14 +112,14 @@ docker-compose -p cga down
 
 ```bash
 cd ~/deploy/cga
-docker-compose -p cga up --build studio
+docker compose -p cga up --build studio
 ```
 
 운영형 실행에서는 헤더 fallback을 끄고 로그인 세션 토큰 또는 `cga_session` 쿠키만 사용한다.
 
 ```bash
 cd ~/deploy/cga
-docker-compose -p cga -f docker-compose.yml -f docker-compose.prod.yml up --build -d studio
+docker compose -p cga -f docker-compose.yml -f docker-compose.prod.yml up --build -d studio
 ```
 
 운영형 실행 기준:
