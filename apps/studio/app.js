@@ -4741,8 +4741,8 @@ function bindCreateControls() {
       const field = control.dataset.structuralField;
       setByPath(currentStudioState, field, coerceFieldValue(field, control.value));
       applyStructuralSideEffects(field);
-      syncCreateValidationState();
-      renderAllStatePanels();
+      renderCreateSummary();
+      renderTopContext();
       scheduleStudioStateSave();
     });
     control.addEventListener("change", async () => {
