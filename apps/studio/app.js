@@ -222,23 +222,13 @@ let currentIntentUtteranceAssets = [
   { utterance: "How do I update my account?", division: "account_update" },
   { utterance: "I have a billing question", division: "billing_question" }
 ];
-let currentRuleAssets = [
-  { name: "Business hours", description: "Route after-hours questions", expression: "time.after(18:00)", target: "support_after_hours", enabled: "Y" },
-  { name: "Billing priority", description: "Route billing requests", expression: "intent == billing_question", target: "billing_question", enabled: "Y" }
-];
-let currentBlocklistAssets = [
-  { name: "아", type: "0", pattern: "아", enabled: "Y" },
-  { name: "일단", type: "0", pattern: "일단", enabled: "Y" }
-];
+let currentRuleAssets = [];
+let currentBlocklistAssets = [];
 let currentFaqDialogAssets = [
   { dialogId: "faq_password_reset", question: "비밀번호를 어떻게 재설정하나요?", answer: "계정 설정에서 비밀번호 재설정을 선택하세요.", enabled: "Y" }
 ];
-let currentFloatingButtonAssets = [
-  { buttonId: "floating-help", label: "도움말", action: "open_help", enabled: "Y", sortOrder: 1 }
-];
-let currentSmallTalkAssets = [
-  { trigger: "안녕", response: "안녕하세요. 무엇을 도와드릴까요?", enabled: "Y" }
-];
+let currentFloatingButtonAssets = [];
+let currentSmallTalkAssets = [];
 let currentScenarioAssets = [
   { id: "password_reset", type: "intent", displayName: "password_reset", answer: "Open Account Settings and choose Reset Password.", dialogCards: ["Open Account Settings and choose Reset Password."] },
   { id: "account_update", type: "intent", displayName: "account_update", answer: "Open Profile Settings and update your account information.", dialogCards: ["Open Profile Settings and update your account information."] }
@@ -4951,10 +4941,11 @@ function renderWorkflowRail() {
   const configureSubviews = [
     { id: "ai-model", label: "AI 모델 설정" },
     { id: "defaults", label: "기본값 설정" },
-    { id: "message", label: "메시지 설정" },
+    { id: "messages", label: "메시지 설정" },
     { id: "messenger", label: "메신저 편의 기능" },
-    { id: "ignore", label: "제외/무시 목록 설정" },
-    { id: "rule", label: "룰 설정" },
+    { id: "recommended-intents", label: "추천 의도" },
+    { id: "blocklist", label: "제외/무시 목록 설정" },
+    { id: "rules", label: "룰 설정" },
     { id: "smalltalk", label: "스몰토크" },
     { id: "botstation", label: "봇스테이션" }
   ];
@@ -4976,16 +4967,16 @@ function renderWorkflowRail() {
           <small data-i18n="workflow.${step.id}.subtitle">${step.subtitle}</small>
         </summary>
         <div class="workflow-step-subnav">
-          <details class="subnav-group" ${["ai-model", "defaults", "message", "messenger"].includes(currentConfigureSubview) ? "open" : ""}>
+          <details class="subnav-group" ${["ai-model", "defaults", "messages", "messenger", "recommended-intents"].includes(currentConfigureSubview) ? "open" : ""}>
             <summary>설정</summary>
             <div class="subnav-group__links">
-              ${configureSubviews.slice(0, 4).map((item) => `<a href="#configure" data-config-subview="${item.id}" class="${currentConfigureSubview === item.id ? "active" : ""}"><span>${item.label}</span></a>`).join("")}
+              ${configureSubviews.slice(0, 5).map((item) => `<a href="#configure" data-config-subview="${item.id}" class="${currentConfigureSubview === item.id ? "active" : ""}"><span>${item.label}</span></a>`).join("")}
             </div>
           </details>
-          <details class="subnav-group" ${["ignore", "rule", "smalltalk"].includes(currentConfigureSubview) ? "open" : ""}>
+          <details class="subnav-group" ${["blocklist", "rules", "smalltalk"].includes(currentConfigureSubview) ? "open" : ""}>
             <summary>기본 대화</summary>
             <div class="subnav-group__links">
-              ${configureSubviews.slice(4, 7).map((item) => `<a href="#configure" data-config-subview="${item.id}" class="${currentConfigureSubview === item.id ? "active" : ""}"><span>${item.label}</span></a>`).join("")}
+              ${configureSubviews.slice(5, 8).map((item) => `<a href="#configure" data-config-subview="${item.id}" class="${currentConfigureSubview === item.id ? "active" : ""}"><span>${item.label}</span></a>`).join("")}
             </div>
           </details>
           <details class="subnav-group" ${currentConfigureSubview === "botstation" ? "open" : ""}>
@@ -9488,38 +9479,105 @@ function renderBotManagement() {
 function renderConfigureAidotScreen() {
   const container = document.querySelector("[data-configure-aidot-screen]");
   if (!container) return;
+  const currentBot = getCurrentWorkspaceBot() || {};
+  const botName = currentStudioState.bot.name || currentBot.name || "";
+  const botId = currentBot.id || "";
+  const updatedAt = currentBot.updated_at || "";
+  const localeLabelMap = {
+    ko: "한국어",
+    en: "영어",
+    ja: "일본어",
+    "zh-CN": "중국어",
+    vi: "베트남어",
+    de: "독일어",
+    fr: "프랑스어"
+  };
+  const localeLabel = localeLabelMap[currentStudioState.bot.defaultLocale] || currentStudioState.bot.defaultLocale || "한국어";
+  const nluTypeLabel = "";
+  const nluModelLabel = "";
+  const answerModeLabel = "";
+  const floatingButtons = [...currentFloatingButtonAssets].sort((left, right) => (Number(left.sortOrder || 0) || 0) - (Number(right.sortOrder || 0) || 0));
+  const recommendedIntents = getAidotIntentRows().filter((row) => row.type !== "module");
+  const blocklistItems = [...currentBlocklistAssets];
+  const ruleItems = [...currentRuleAssets];
+  const smalltalkItems = [...currentSmallTalkAssets];
+  const moduleRows = getAidotIntentRows().filter((row) => row.type === "module");
+  const emptyState = (message) => `<div class="command-empty">${escapeText(message)}</div>`;
+  const renderReadonlyInput = (label, value, placeholder = "미설정") => `<label>${label}<input value="${escapeText(value || "")}" placeholder="${escapeText(placeholder)}" ${value ? "" : ""} readonly /></label>`;
+  const renderTextInput = (label, value = "", placeholder = "") => `<label>${label}<input value="${escapeText(value || "")}" placeholder="${escapeText(placeholder)}" /></label>`;
+  const renderSelect = (label, options, currentValue = "") => `
+    <label>${label}
+      <select>
+        ${options.map((option) => `<option value="${escapeText(option.value)}" ${String(option.value) === String(currentValue) ? "selected" : ""}>${escapeText(option.label)}</option>`).join("")}
+      </select>
+    </label>
+  `;
+  const renderModuleOptions = (selectedValue = "") => `
+    <option value="">선택 안 함</option>
+    ${moduleRows.map((row) => `<option value="${escapeText(row.id)}" ${row.id === selectedValue ? "selected" : ""}>${escapeText(row.displayName || row.id)}</option>`).join("")}
+  `;
+  const messageTitles = [
+    "첫 인사말",
+    "사용자의 의도를 이해하지 못했을 경우 답변",
+    "의도별 대화 종료시 안내 메시지",
+    "버튼에 없는 값을 입력했을 경우 제공되는 메시지",
+    "파악된 의도가 여러 개일 경우 안내 메시지",
+    "'원하는 의도 없음' 버튼 표시명",
+    "'원하는 의도 없음' 선택 시 메시지",
+    "봇 동작 오류시 안내 메시지",
+    "타임아웃 경과시 안내 메시지",
+    "Session End 안내 메시지",
+    "대화가 진행 중인 경우 안내 메시지",
+    "의도 전환시도가 최대횟수를 초과했을 때 안내 메시지",
+    "의도 전환 의사 질문 메시지 (의도명 전)",
+    "의도 전환 의사 질문 메시지 (의도명 후)",
+    "의도 복귀 실행 메시지"
+  ];
+  const emptyRecommendedOptions = recommendedIntents.length
+    ? recommendedIntents.map((row) => `<option value="${escapeText(row.id)}">${escapeText(row.displayName || row.id)}</option>`).join("")
+    : `<option value="">등록된 의도 없음</option>`;
 
   const renderAiModel = () => `
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
         <div class="aidot-field-grid">
-          <label>봇 이름 *<input value="테스트봇 - 시멘틱 RAG" /></label>
-          <label>유형<input value="텍스트형" readonly /></label>
-          <label>봇 ID<input value="828971ea-ec13-4f1b-944a-60f39936d9c3" readonly /></label>
-          <label>최근 수정<input value="2026. 06. 02 19:01" readonly /></label>
+          <label>봇 이름 *<input value="${escapeText(botName)}" placeholder="봇 이름을 입력하세요." /></label>
+          <label>유형<input value="${escapeText(currentBot.bot_kind === "hub" ? "봇 허브" : "텍스트형")}" readonly /></label>
+          <label>봇 ID<input value="${escapeText(botId)}" placeholder="저장 후 생성" readonly /></label>
+          <label>최근 수정<input value="${escapeText(updatedAt)}" placeholder="-" readonly /></label>
         </div>
         <div class="aidot-field-grid five">
-          <label>언어 *<input value="한국어" readonly /></label>
-          <label>NLU 방식<input value="Semantic - Vector Worker" readonly /></label>
-          <label>NLU 모델 *<input value="Aidot Vector Worker 기본 모델" readonly /></label>
-          <label>답변 방식<input value="Semantic Engine RAG 답변" readonly /></label>
+          <label>언어 *<input value="${escapeText(localeLabel)}" readonly /></label>
+          <label>NLU 방식 *<input value="${escapeText(nluTypeLabel)}" placeholder="미설정" readonly /></label>
+          <label>NLU 모델 *<input value="${escapeText(nluModelLabel)}" placeholder="미설정" readonly /></label>
+          <label>답변 방식 *<input value="${escapeText(answerModeLabel)}" placeholder="미설정" readonly /></label>
           <div class="profile-dots"><span></span><b></b><span></span></div>
         </div>
         <section class="aidot-setting-block">
+          <header><strong>AI 조합 안내</strong><span>언어, NLU 방식, 답변 방식은 봇 생성 시 고정됩니다. 모델은 학습 전까지 변경할 수 있고 학습 완료 후에는 고정됩니다.</span></header>
+          <div class="detail-asset-table">
+            <div class="detail-asset-row head"><span>항목</span><span>현재값</span><span>상태</span></div>
+            <div class="detail-asset-row"><strong>언어</strong><span>${escapeText(localeLabel)}</span><span>봇 생성 시 고정</span></div>
+            <div class="detail-asset-row"><strong>NLU 방식</strong><span>${escapeText(nluTypeLabel || "-")}</span><span>봇 생성 시 고정</span></div>
+            <div class="detail-asset-row"><strong>NLU 모델</strong><span>${escapeText(nluModelLabel || "-")}</span><span>학습 전 변경 가능</span></div>
+            <div class="detail-asset-row"><strong>답변 방식</strong><span>${escapeText(answerModeLabel || "-")}</span><span>봇 생성 시 고정</span></div>
+          </div>
+        </section>
+        <section class="aidot-setting-block">
           <header><strong>Intent Vector DB 연결</strong><span>Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</span></header>
-          <div class="rag-form-grid"><label>사용 여부<select><option>사용</option></select></label><label>Index 이름<input value="aidot-intent" /></label></div>
+          <div class="rag-form-grid"><label>사용 여부<select><option>미설정</option></select></label><label>Index 이름<input value="" placeholder="미설정" /></label></div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>Answer Vector DB 연결</strong><span>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 Answer Vector DB에 저장합니다.</span></header>
-          <div class="rag-form-grid"><label>사용 여부<select><option>사용</option></select></label><label>Index 이름<input value="aidot-answer" /></label></div>
+          <div class="rag-form-grid"><label>사용 여부<select><option>미설정</option></select></label><label>Index 이름<input value="" placeholder="미설정" /></label></div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>구성 자동분류 가중치</strong><span>구성 화면의 의도 후보 분류에서 사전, 개체, 단어, 글자 조각, 조사/어미 반영 비율을 조정합니다.</span></header>
           <div class="aidot-weight-grid">
-            <label>사전 대표어<input value="1.2" /></label><label>개체<input value="1.2" /></label><label>명사/동사<input value="1" /></label><label>글자 조각<input value="0.2" /></label><label>조사/어미<input value="0.05" /></label><label>대표어 일치 최소점수<input value="0.82" /></label>
+            <label>사전 대표어<input value="" placeholder="미설정" /></label><label>개체<input value="" placeholder="미설정" /></label><label>명사/동사<input value="" placeholder="미설정" /></label><label>글자 조각<input value="" placeholder="미설정" /></label><label>조사/어미<input value="" placeholder="미설정" /></label><label>대표어 일치 최소점수<input value="" placeholder="미설정" /></label>
           </div>
         </section>
-        <label>소개<textarea>봇을 설명할 수 있는 소개 문장을 입력하세요.</textarea></label>
+        <label>소개<textarea>${escapeText(currentStudioState.bot.description || "")}</textarea></label>
       </section>
     </div>
   `;
@@ -9528,51 +9586,51 @@ function renderConfigureAidotScreen() {
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="aidot-setting-block">
-          <header><strong>기본값 설정</strong><span>M/L, QA, 세션/대화 제어, 모듈 연결, 고급 설정을 분리해 관리합니다.</span></header>
+          <header><strong>기본값 설정</strong><span>M/L 설정, QA 설정, 세션/대화 제어, 모듈 연결, 고급 설정을 Aidot 기준으로 관리합니다.</span></header>
           <div class="aidot-field-grid five">
-            <label>봇 ID<input value="supportbot-draft" readonly /></label>
-            <label>의도파악 Cut-off Score<input value="0.80" /></label>
-            <label>유사의도 Score<input value="0.70" /></label>
-            <label>의도파악결과 최대개수<input value="3" /></label>
-            <label>답변 우선순위<select><option>M/L → QA</option><option>QA → M/L</option></select></label>
+            <label>봇 ID<input value="${escapeText(botId)}" readonly /></label>
+            <label>의도파악 Cut-off Score<input value="" placeholder="미설정" /></label>
+            <label>유사의도 Score<input value="" placeholder="미설정" /></label>
+            <label>의도파악결과 최대개수<input value="" placeholder="미설정" /></label>
+            <label>답변 우선순위<select><option>미설정</option></select></label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>QA 설정</strong><span>FAQ Search, Extractive QA Search 기준 점수와 결과 개수를 설정합니다.</span></header>
           <div class="aidot-field-grid five">
-            <label>FAQ Cut-off Score<input value="0.75" /></label>
-            <label>Extractive QA Cut-off Score<input value="0.72" /></label>
-            <label>검색결과 최대개수<input value="5" /></label>
-            <label>FAQ 의도파악결과 최대개수<input value="3" /></label>
-            <label>Extractive QA 의도파악결과 최대개수<input value="3" /></label>
+            <label>FAQ Cut-off Score<input value="" placeholder="미설정" /></label>
+            <label>Extractive QA Cut-off Score<input value="" placeholder="미설정" /></label>
+            <label>검색결과 최대개수<input value="" placeholder="미설정" /></label>
+            <label>FAQ 의도파악결과 최대개수<input value="" placeholder="미설정" /></label>
+            <label>Extractive QA 의도파악결과 최대개수<input value="" placeholder="미설정" /></label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>세션 / 대화 제어</strong><span>타임아웃, 개체 반복, 의도파악 시도 횟수와 실패 시 모듈 연결을 정의합니다.</span></header>
           <div class="aidot-field-grid five">
-            <label>타임아웃 사용<select><option>사용</option><option>미사용</option></select></label>
-            <label>타임아웃 시간(초)<input value="300" /></label>
-            <label>Push Message 타임아웃 적용<select><option>사용</option><option>미사용</option></select></label>
-            <label>개체 질문 최대 반복 횟수<input value="2" /></label>
-            <label>의도파악 시도 횟수<input value="3" /></label>
+            <label>타임아웃 사용<select><option>미설정</option></select></label>
+            <label>타임아웃 시간(초)<input value="" placeholder="미설정" /></label>
+            <label>Push Message 타임아웃 적용<select><option>미설정</option></select></label>
+            <label>개체 질문 최대 반복 횟수<input value="" placeholder="미설정" /></label>
+            <label>의도파악 시도 횟수<input value="" placeholder="미설정" /></label>
           </div>
           <div class="rag-form-grid">
-              <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="intent_overflow" readonly /></label>
+              <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="" placeholder="미설정" readonly /></label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>모듈 연결 / 고급 설정</strong><span>전처리, 세션 종료 전, 다중 의도 버튼 모듈과 Validation Set, Oversampling, 버튼 선택 옵션을 설정합니다.</span></header>
           <div class="rag-form-grid">
-            <label>전처리 모듈<input value="preprocess_start" readonly /></label>
-            <label>Session End 전 실행할 모듈<input value="session_end_cleanup" readonly /></label>
-            <label>다중 의도 버튼 추가 모듈<input value="multi_intent_helper" readonly /></label>
-            <label>버튼 선택 옵션<select><option>Contains</option><option>Exact</option></select></label>
+              <label>전처리 모듈<input value="" placeholder="미설정" readonly /></label>
+              <label>Session End 전 실행할 모듈<input value="" placeholder="미설정" readonly /></label>
+              <label>다중 의도 버튼 추가 모듈<input value="" placeholder="미설정" readonly /></label>
+              <label>버튼 선택 옵션<select><option>미설정</option></select></label>
           </div>
           <div class="aidot-field-grid">
-            <label>Validation Set 상태 설정<select><option>Random</option><option>Fixed</option></select></label>
-            <label>Imbalance Oversampling 설정<select><option>사용</option><option>미사용</option></select></label>
-            <label>TTS URL<input value="https://tts.example.com/voice" /></label>
-            <label>사용자 응답 사이 최대 카드 수<input value="5" /></label>
+            <label>Validation Set 상태 설정<select><option>미설정</option></select></label>
+            <label>Imbalance Oversampling 설정<select><option>미설정</option></select></label>
+            <label>TTS URL<input value="" placeholder="미설정" /></label>
+            <label>사용자 응답 사이 최대 카드 수<input value="" placeholder="미설정" /></label>
           </div>
         </section>
       </section>
@@ -9583,28 +9641,27 @@ function renderConfigureAidotScreen() {
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="aidot-setting-block">
-          <header><strong>메시지 설정</strong><span>상황별 시스템 메시지 레지스트리를 관리합니다. 직접 입력 또는 모듈 연결 방식으로 저장합니다.</span></header>
+          <header><strong>메시지 설정</strong><span>상황별 시스템 메시지를 직접 입력하거나 모듈 연결 방식으로 저장합니다.</span></header>
           <div class="configure-message-list">
-            ${[
-              "첫 인사말",
-              "사용자의 의도를 이해하지 못했을 경우 답변",
-              "의도별 대화 종료시 안내 메시지",
-              "버튼에 없는 값을 입력했을 경우 제공되는 메시지",
-              "파악된 의도가 여러 개일 경우 안내 메시지",
-              "'원하는 의도 없음' 버튼 표시명",
-              "'원하는 의도 없음' 선택 시 메시지",
-              "봇 동작 오류시 안내 메시지",
-              "타임아웃 경과시 안내 메시지",
-              "Session End 안내 메시지",
-              "대화가 진행 중인 경우 안내 메시지",
-              "의도 전환시도가 최대횟수를 초과했을 때 안내 메시지",
-              "의도 전환 의사 질문 메시지 (의도명 전)",
-              "의도 전환 의사 질문 메시지 (의도명 후)",
-              "의도 복귀 실행 메시지"
-            ].map((title, index) => `
+            ${messageTitles.map((title, index) => `
               <div class="configure-message-item">
-                <div class="configure-message-item__head"><strong>${title}</strong><label><input type="checkbox" ${index < 11 ? "checked" : ""} /> 사용</label></div>
-                <textarea rows="2">${title} 예시 메시지</textarea>
+                <div class="configure-message-item__head">
+                  <strong>${title}</strong>
+                  <label><input type="checkbox" checked /><span>사용</span></label>
+                </div>
+                <div class="configure-message-item__mode">
+                  <label><input type="radio" name="message-mode-${index}" checked /><span>메시지</span></label>
+                  <label><input type="radio" name="message-mode-${index}" /><span>모듈 연결</span></label>
+                </div>
+                <label>메시지
+                  <textarea rows="2"></textarea>
+                  <small class="muted-line">0/100</small>
+                </label>
+                <label>연결 모듈
+                  <select>
+                    ${renderModuleOptions("")}
+                  </select>
+                </label>
               </div>
             `).join("")}
           </div>
@@ -9617,19 +9674,55 @@ function renderConfigureAidotScreen() {
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="aidot-setting-block">
-          <header><strong>메신저 편의 기능</strong><span>플로팅 버튼과 추천 의도 순서를 관리합니다.</span></header>
+          <header><strong>메신저 편의 기능</strong><span>플로팅 버튼 중심으로 메신저 편의 기능을 관리합니다.</span></header>
+          <div class="button-row create-action-row">
+            <button type="button">+ 플로팅 버튼 추가</button>
+            <button type="button">위로</button>
+            <button type="button">아래로</button>
+          </div>
           <div class="detail-asset-table">
             <div class="detail-asset-row head"><span>버튼명</span><span>연결 유형</span><span>값</span></div>
-            <div class="detail-asset-row"><strong>상담원 연결</strong><span>Key</span><span>handoff_agent</span></div>
-            <div class="detail-asset-row"><strong>최근 주문</strong><span>Command</span><span>/orders/latest</span></div>
+            ${floatingButtons.map((item) => `
+              <div class="detail-asset-row">
+                <strong>${escapeText(item.label || item.buttonId || "-")}</strong>
+                <span>${escapeText(item.action === "open_help" ? "Command" : "Key")}</span>
+                <span>${escapeText(item.action || "-")}</span>
+              </div>
+            `).join("") || emptyState("등록된 플로팅 버튼이 없습니다.")}
+          </div>
+          <div class="rag-form-grid">
+            <label>버튼명<input value="" placeholder="버튼명을 입력하세요." /></label>
+            <label>연결 유형<select><option>Key</option><option>Command</option></select></label>
+            <label>값<input value="" placeholder="Key 또는 Command 값을 입력하세요." /></label>
+            <label>사용 여부<select><option>사용</option><option>미사용</option></select></label>
           </div>
         </section>
+      </section>
+    </div>
+  `;
+
+  const renderRecommendedIntents = () => `
+    <div class="aidot-settings-screen">
+      <section class="aidot-settings-main aidot-settings-main--full">
         <section class="aidot-setting-block">
-          <header><strong>추천 의도</strong><span>실제 의도 목록 기준으로 추천 의도와 노출 순서를 설정합니다.</span></header>
+          <header><strong>추천 의도</strong><span>실제 의도 목록 기준으로 추천 의도 노출 순서를 구성합니다.</span></header>
+          <div class="button-row create-action-row">
+            <button type="button">+ 추천 의도 구성</button>
+            <button type="button">위로</button>
+            <button type="button">아래로</button>
+          </div>
           <div class="detail-asset-table">
-            <div class="detail-asset-row head"><span>순서</span><span>의도명</span><span>사용 여부</span></div>
-            <div class="detail-asset-row"><strong>1</strong><span>password_reset</span><span>사용</span></div>
-            <div class="detail-asset-row"><strong>2</strong><span>billing_question</span><span>사용</span></div>
+            <div class="detail-asset-row head"><span>추천 순서</span><span>의도명</span><span>표시명</span></div>
+            ${recommendedIntents.map((item, index) => `
+              <div class="detail-asset-row">
+                <strong>${index + 1}</strong>
+                <span>${escapeText(item.id)}</span>
+                <span>${escapeText(item.displayName || item.id)}</span>
+              </div>
+            `).join("") || emptyState("구성된 추천 의도가 없습니다.")}
+          </div>
+          <div class="rag-form-grid">
+            <label>추가할 의도<select>${emptyRecommendedOptions}</select></label>
           </div>
         </section>
       </section>
@@ -9641,14 +9734,27 @@ function renderConfigureAidotScreen() {
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="aidot-setting-block">
           <header><strong>제외/무시 목록 설정</strong><span>목록과 테스트 문장을 기준으로 제외/무시 항목을 관리합니다.</span></header>
+          <div class="button-row create-action-row">
+            <button type="button">+ 제외/무시 추가</button>
+            <button type="button">파일 업로드</button>
+            <button type="button">파일 다운로드</button>
+          </div>
           <div class="detail-asset-table">
             <div class="detail-asset-row head"><span>이름</span><span>유형</span><span>패턴</span></div>
-            <div class="detail-asset-row"><strong>욕설 차단</strong><span>word</span><span>욕설 패턴</span></div>
-            <div class="detail-asset-row"><strong>광고 URL 차단</strong><span>regex</span><span>/https?:\\/\\//i</span></div>
+            ${blocklistItems.map((item) => `
+              <div class="detail-asset-row"><strong>${escapeText(item.name || "-")}</strong><span>${escapeText(item.type === "1" || item.type === "regex" ? "regex" : "word")}</span><span>${escapeText(item.pattern || "-")}</span></div>
+            `).join("") || emptyState("등록된 제외/무시 목록이 없습니다.")}
           </div>
           <div class="rag-form-grid">
-            <label>테스트 문장<textarea rows="2">광고 링크를 보내도 되나요?</textarea></label>
-            <label>매칭 결과<textarea rows="2" readonly>광고 URL 차단</textarea></label>
+            <label>제외/무시 이름<input value="" placeholder="이름을 입력하세요." /></label>
+            <label>유형<select><option>word</option><option>regex</option></select></label>
+            <label>제외/무시 텍스트 또는 정규식<input value="" placeholder="패턴을 입력하세요." /></label>
+            <label>사용 여부<select><option>사용</option><option>미사용</option></select></label>
+          </div>
+          <div class="aidot-field-grid">
+            <label style="grid-column: 1 / -1;">설명<textarea rows="3"></textarea></label>
+            <label>테스트 문장<textarea rows="3"></textarea></label>
+            <label>매칭 결과<textarea rows="3" readonly></textarea></label>
           </div>
         </section>
       </section>
@@ -9660,14 +9766,26 @@ function renderConfigureAidotScreen() {
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="aidot-setting-block">
           <header><strong>룰 설정</strong><span>룰 표현식과 대상 의도/모듈을 연결하고 테스트 문장으로 검증합니다.</span></header>
+          <div class="button-row create-action-row">
+            <button type="button">+ 룰 추가</button>
+            <button type="button">파일 업로드</button>
+            <button type="button">파일 다운로드</button>
+          </div>
           <div class="detail-asset-table">
             <div class="detail-asset-row head"><span>룰명</span><span>설명</span><span>표현식</span></div>
-            <div class="detail-asset-row"><strong>업무시간 외</strong><span>운영시간 이후 라우팅</span><span>time.after(18:00)</span></div>
-            <div class="detail-asset-row"><strong>결제 우선</strong><span>결제 문의 우선 라우팅</span><span>intent == billing_question</span></div>
+            ${ruleItems.map((item) => `
+              <div class="detail-asset-row"><strong>${escapeText(item.name || "-")}</strong><span>${escapeText(item.description || "-")}</span><span>${escapeText(item.expression || "-")}</span></div>
+            `).join("") || emptyState("등록된 룰이 없습니다.")}
           </div>
           <div class="rag-form-grid">
-            <label>대상<select><option>의도 · billing_question</option><option>모듈 · support_after_hours</option></select></label>
-            <label>정규식 테스트<textarea rows="2">결제 관련 문의입니다.</textarea></label>
+            <label>룰 이름<input value="" placeholder="룰 이름을 입력하세요." /></label>
+            <label>룰 설명<input value="" placeholder="룰 설명을 입력하세요." /></label>
+            <label>연결할 의도/모듈<select><option value="">선택 안 함</option>${getAidotIntentRows().map((row) => `<option>${escapeText(row.type === "module" ? `${row.id} (모듈)` : `${row.id} (의도)`)}</option>`).join("")}</select></label>
+            <label>사용 여부<select><option>사용</option><option>미사용</option></select></label>
+          </div>
+          <div class="rag-form-grid">
+            <label>룰 표현식<textarea rows="3"></textarea></label>
+            <label>정규식 테스트<textarea rows="3"></textarea></label>
           </div>
         </section>
       </section>
@@ -9679,14 +9797,25 @@ function renderConfigureAidotScreen() {
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="aidot-setting-block">
           <header><strong>스몰토크</strong><span>스몰토크 사용 여부, 우선순위, 다중 사용자 메시지/봇 메시지를 관리합니다.</span></header>
+          <div class="button-row create-action-row">
+            <button type="button">+ 스몰토크 추가</button>
+            <button type="button">위로</button>
+            <button type="button">아래로</button>
+          </div>
           <div class="detail-asset-table">
             <div class="detail-asset-row head"><span>스몰토크 이름</span><span>우선순위</span><span>사용자/봇 메시지 수</span></div>
-            <div class="detail-asset-row"><strong>인사</strong><span>High</span><span>3 / 2</span></div>
-            <div class="detail-asset-row"><strong>감사</strong><span>Medium</span><span>2 / 2</span></div>
+            ${smalltalkItems.map((item, index) => `
+              <div class="detail-asset-row"><strong>${escapeText(item.title || item.trigger || `스몰토크 ${index + 1}`)}</strong><span>${escapeText(item.priority || "Medium")}</span><span>${Array.isArray(item.userMessages) ? item.userMessages.length : (item.trigger ? 1 : 0)} / ${Array.isArray(item.botMessages) ? item.botMessages.length : (item.response ? 1 : 0)}</span></div>
+            `).join("") || emptyState("등록된 스몰토크가 없습니다.")}
           </div>
           <div class="rag-form-grid">
-            <label>사용자 메시지<textarea rows="4">안녕하세요\n반가워요\n좋은 아침이에요</textarea></label>
-            <label>봇 메시지<textarea rows="4">안녕하세요. 무엇을 도와드릴까요?\n반갑습니다. 문의를 말씀해주세요.</textarea></label>
+            <label>스몰토크 이름<input value="" placeholder="유일한 스몰토크 이름을 입력하세요." /></label>
+            <label>우선순위<select><option>High</option><option>Medium</option><option>Low</option></select></label>
+            <label>사용 여부<select><option>사용</option><option>미사용</option></select></label>
+          </div>
+          <div class="rag-form-grid">
+            <label>사용자 메시지<textarea rows="4"></textarea></label>
+            <label>봇 메시지<textarea rows="4"></textarea></label>
           </div>
         </section>
       </section>
@@ -9699,15 +9828,24 @@ function renderConfigureAidotScreen() {
         <section class="aidot-setting-block">
           <header><strong>봇스테이션</strong><span>운영버전 기준으로 채널과 봇을 연계합니다.</span></header>
           <div class="aidot-field-grid">
-            <label>연결 상태<input value="연결됨" readonly /></label>
-            <label>연결 일시<input value="2026-05-04 13:12" readonly /></label>
+            <label>연결 상태<input value="${escapeText(currentBot.status === "ready" || currentBot.status === "operating" ? "연결 가능" : "")}" placeholder="연결 정보 없음" readonly /></label>
+            <label>연결 일시<input value="${escapeText(updatedAt)}" placeholder="-" readonly /></label>
             <label>사용 여부<select><option>사용</option><option>미사용</option></select></label>
-            <label>운영버전 여부<input value="운영버전" readonly /></label>
+            <label>운영버전 여부<input value="${escapeText(currentBot.status === "operating" ? "운영버전" : "")}" placeholder="운영버전 필요" readonly /></label>
           </div>
           <div class="detail-asset-table">
-            <div class="detail-asset-row head"><span>채널명</span><span>봇 식별자</span><span>사용</span></div>
-            <div class="detail-asset-row"><strong>Webchat</strong><span>supportbot-draft</span><span>사용</span></div>
-            <div class="detail-asset-row"><strong>Kakao</strong><span>supportbot-draft</span><span>미사용</span></div>
+            <div class="detail-asset-row head"><span>채널</span><span>설정정보</span><span>상태</span></div>
+            ${emptyState("등록된 채널 연결 정보가 없습니다.")}
+          </div>
+          <div class="rag-form-grid">
+            <label>채널 아이디<input value="" placeholder="채널 선택 시 표시" readonly /></label>
+            <label>채널<input value="" placeholder="채널 선택 시 표시" readonly /></label>
+            <label>봇 식별값<input value="" placeholder="봇 식별값을 입력하세요." /></label>
+            <label>봇 이름<input value="${escapeText(botName)}" readonly /></label>
+            <label>App ID<input value="" /></label>
+            <label>App Secret<input value="" /></label>
+            <label>Callback URL<input value="" /></label>
+            <label>설명<textarea rows="3"></textarea></label>
           </div>
         </section>
       </section>
@@ -9717,10 +9855,11 @@ function renderConfigureAidotScreen() {
   const viewMap = {
     "ai-model": renderAiModel,
     defaults: renderDefaults,
-    message: renderMessages,
+    messages: renderMessages,
     messenger: renderMessenger,
-    ignore: renderBlocklist,
-    rule: renderRules,
+    "recommended-intents": renderRecommendedIntents,
+    blocklist: renderBlocklist,
+    rules: renderRules,
     smalltalk: renderSmalltalk,
     botstation: renderBotstation,
   };
