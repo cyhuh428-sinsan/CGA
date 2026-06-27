@@ -854,6 +854,23 @@ textarea { min-height: 84px; resize: vertical; }
   display: block;
   width: 100%;
 }
+.aidot-settings-screen input,
+.aidot-settings-screen select,
+.aidot-settings-screen textarea {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid #c9d4e2;
+  border-radius: 0;
+  background: #ffffff;
+  color: #0f2238;
+  font-size: var(--font-body);
+  padding: 0 10px;
+}
+.aidot-settings-screen textarea {
+  min-height: 88px;
+  padding: 8px 10px;
+  resize: vertical;
+}
 .aidot-rag-config {
   display: grid;
   grid-template-columns: minmax(620px, 1.2fr) minmax(420px, 0.85fr);
@@ -870,6 +887,10 @@ textarea { min-height: 84px; resize: vertical; }
 }
 .aidot-settings-main {
   width: 100%;
+}
+.aidot-settings-main--full {
+  display: grid;
+  gap: 12px;
 }
 .aidot-settings-side {
   display: grid;
@@ -888,6 +909,8 @@ textarea { min-height: 84px; resize: vertical; }
   border: 1px solid var(--line);
   background: #fff;
   padding: 10px;
+  display: grid;
+  gap: 10px;
 }
 .configure-message-item__head,
 .configure-message-item__mode {
@@ -906,6 +929,21 @@ textarea { min-height: 84px; resize: vertical; }
   align-items: center;
   gap: 6px;
   margin: 0;
+}
+.configure-message-item label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: var(--font-body);
+  font-weight: 700;
+}
+.configure-message-item textarea,
+.configure-message-item select {
+  font-weight: 400;
+}
+.configure-message-item .muted-line {
+  margin: 0;
+  text-align: right;
 }
 .bot-avatar-small,
 .bot-avatar-large {
@@ -995,6 +1033,22 @@ textarea { min-height: 84px; resize: vertical; }
 .aidot-rag-left header span {
   color: #475569;
   font-size: var(--font-desc);
+}
+.aidot-setting-block > .button-row,
+.aidot-setting-block > .detail-asset-table,
+.aidot-setting-block > .aidot-field-grid,
+.aidot-setting-block > .aidot-weight-grid,
+.aidot-setting-block > .rag-form-grid,
+.aidot-setting-block > .configure-message-list,
+.aidot-settings-main > label {
+  margin-top: 10px;
+}
+.aidot-settings-main > label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: var(--font-body);
+  font-weight: 700;
 }
 .profile-dots {
   display: flex;
