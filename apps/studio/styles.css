@@ -1050,6 +1050,361 @@ textarea { min-height: 84px; resize: vertical; }
   font-size: var(--font-body);
   font-weight: 700;
 }
+.settings-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-toolbar__select {
+  min-width: 240px;
+}
+
+.settings-toolbar__spacer {
+  flex: 1 1 auto;
+}
+
+.settings-master-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 12px;
+}
+
+.settings-list-card {
+  border: 1px solid #d8e0ea;
+  background: #ffffff;
+}
+
+.settings-list-card__header,
+.settings-list-row {
+  display: grid;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 12px;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.settings-list-card__header {
+  border-bottom: 1px solid #e8edf2;
+  color: #667184;
+  font-weight: 700;
+}
+
+.settings-list-card__header--four,
+.settings-list-row {
+  grid-template-columns: minmax(0, 1.2fr) 96px minmax(0, 1.2fr) 88px;
+}
+
+.settings-list-card__header--two {
+  grid-template-columns: 88px minmax(0, 1fr);
+}
+
+.settings-list-row--two {
+  grid-template-columns: 88px minmax(0, 1fr);
+}
+
+.settings-list-card__header--blocklist,
+.settings-list-row--blocklist {
+  grid-template-columns: 36px minmax(0, 0.95fr) 100px minmax(0, 1.2fr) 72px 132px 92px;
+}
+
+.settings-list-card__header--rule,
+.settings-list-row--rule {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 0.85fr) minmax(0, 1.1fr) minmax(0, 0.95fr) 72px 132px 92px;
+}
+
+.settings-list-card__header--smalltalk,
+.settings-list-row--smalltalk {
+  grid-template-columns: minmax(0, 1.5fr) 120px 120px 120px 180px 140px;
+}
+
+.settings-list-row {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #f0f3f6;
+  background: #ffffff;
+  color: #2a3140;
+  text-align: left;
+}
+
+.settings-list-row.is-selected {
+  background: #f6efe8;
+}
+
+.settings-list-card__check {
+  display: inline-flex;
+  justify-content: center;
+}
+
+.settings-link-button,
+.settings-sort-button {
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.settings-link-button {
+  font-weight: 700;
+  color: #48617e;
+}
+
+.settings-detail-card {
+  border: 1px solid #d8e0ea;
+  background: #ffffff;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.settings-detail-card h3 {
+  margin: 0;
+  color: #2f5d8f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.settings-detail-card label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: var(--font-body);
+  font-weight: 700;
+}
+
+.settings-detail-card__actions {
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.messenger-settings-section {
+  display: grid;
+  gap: 18px;
+}
+
+.messenger-settings__form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-message-item {
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px 9px;
+  border: 1px solid #dde3ea;
+  background: #ffffff;
+}
+
+.settings-message-item + .settings-message-item {
+  margin-top: 8px;
+}
+
+.settings-message-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-message-item__header strong {
+  color: #334155;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.settings-message-item__content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.settings-message-item__mode-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 24px;
+}
+
+.settings-message-item__textarea {
+  min-height: 74px;
+  padding: 7px 8px;
+  font-size: 10px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.settings-message-item__value {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-message-item__count {
+  justify-self: end;
+  color: #8b97a7;
+  font-size: 11px;
+}
+
+.settings-toggle,
+.settings-choice-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #556070;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.settings-accordion {
+  margin-top: 8px;
+  border: 1px solid #dde3ea;
+  background: #ffffff;
+}
+
+.settings-accordion summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: #2a3140;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.settings-accordion__body {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.settings-message-section__description {
+  margin: 0;
+  color: #6c7788;
+  font-size: 9px;
+  line-height: 1.65;
+}
+
+.botstation-settings {
+  min-height: 520px;
+  padding: 12px;
+  border: 1px solid #dce3eb;
+  background: #ffffff;
+  color: #263346;
+  font-size: 11px;
+}
+
+.botstation-settings__empty {
+  min-height: 180px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.botstation-settings__status {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1px solid #edf1f5;
+  color: #445368;
+  font-weight: 700;
+}
+
+.botstation-settings__connected {
+  margin-left: auto;
+  color: #98a2b0;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.botstation-settings__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #4f5b6c;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.botstation-settings__switch input {
+  width: 14px;
+  height: 14px;
+}
+
+.botstation-settings__switch--small {
+  min-width: 76px;
+}
+
+.botstation-settings__table-wrap {
+  margin-top: 10px;
+}
+
+.botstation-settings__count {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  color: #4f5b6c;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.botstation-settings__table {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid #dfe6ee;
+  color: #4f5b6c;
+  font-size: 11px;
+}
+
+.botstation-settings__table th,
+.botstation-settings__table td {
+  height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid #edf1f5;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.botstation-settings__table th {
+  color: #667184;
+  font-weight: 700;
+}
+
+.botstation-settings__table tr.is-selected {
+  background: #eefafb;
+}
+
+.botstation-settings__table th:nth-child(2),
+.botstation-settings__table td:nth-child(2) {
+  width: 180px;
+}
+
+.botstation-settings__table th:nth-child(3),
+.botstation-settings__table td:nth-child(3) {
+  width: 120px;
+}
+
+.botstation-settings__channel-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #335f8f;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.botstation-settings__notice {
+  margin: 18px 0 0;
+  color: #7b8796;
+  font-size: 11px;
+}
 .profile-dots {
   display: flex;
   align-items: center;

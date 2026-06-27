@@ -5466,3 +5466,32 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 새 봇인데 과거 룰/메시지/자산이 같이 저장되는 문제
   - 봇 전환 후 설정 화면이 다른 봇 데이터를 보여주는 문제
   - 를 줄이고 실제 Aidot식 draft 생성 흐름에 더 가깝게 점검할 수 있는 상태가 됐다.
+
+## 2026-06-28 02:23 KST
+
+### `02 봇 설정` Aidot 하위 화면 스타일 복원 진행
+
+- `02 봇 설정` 내부의 Aidot 하위 화면들을 CGA 공용 카드 스타일이 아니라
+  Aidot 스타일 클래스 기준으로 다시 맞추는 작업을 진행했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - `메시지 설정`, `메신저 편의 기능`, `추천 의도`, `제외/무시 목록 설정`,
+    `룰 설정`, `스몰토크`, `봇스테이션` 화면이
+    Aidot에서 쓰는 아코디언/리스트/상세카드/테이블 구조에 가깝게 보이도록
+    누락된 스타일 클래스를 추가했다.
+  - `settings-toolbar`, `settings-master-detail`, `settings-list-card`,
+    `settings-message-item`, `settings-accordion`, `botstation-settings`
+    계열 스타일을 복원해 하위 화면 간 외형 일관성을 맞췄다.
+  - `연계` 구역 서브메뉴에 `스몰토크`가 중복 노출되던 버그를 수정해
+    `봇스테이션`만 보이도록 정리했다.
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check`
+  - `npm run studio:check`
+  - `http://127.0.0.1:4173/#configure` 브라우저 재확인으로
+    `02 봇 설정` 메인 화면이 깨지지 않고 렌더링되는 것을 확인했다.
+- 남은 점검:
+  - Aidot 실제 컴포넌트 기준으로 각 하위 화면의 입력/선택/저장 로직을
+    화면 구조뿐 아니라 데이터 흐름까지 더 세밀하게 맞추는 작업이 이어서 필요하다.
