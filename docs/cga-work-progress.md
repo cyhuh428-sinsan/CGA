@@ -5434,3 +5434,35 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 그룹 선택 입력 잘림
   - 봇 이름 입력 중 포커스 끊김
   - 같은 기본 UI 막힘 없이 다음 점검을 진행할 수 있는 상태로 맞추는 단계다.
+
+## 2026-06-28 01:40 KST
+
+### 새 봇 draft 진입 시 기존 봇 설정 오염 차단
+
+- `+ 봇 생성` 동선과 봇 전환 시 상태 오염 문제를 우선 수정했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `scripts/serve-studio.js`
+- 반영 내용:
+  - 작업공간에서 `+ 봇 생성`을 누르면 기존 선택 봇을 그대로 들고 가는 대신
+    새 draft 봇 레코드를 만든 뒤 `01 봇 생성`으로 진입하도록 수정했다.
+  - 새 draft 생성 직후에는 studio state / composition / detail assets / operations 상태를 빈값 기준으로 초기화해서
+    이전 봇의 설정값, 메시지, 룰, 스몰토크가 새 봇에 따라붙지 않도록 차단했다.
+  - 봇 선택 전환 시에는 운영/협업 상태만 새로 읽던 구조를 바꿔
+    studio state / composition / detail assets / operations / collaboration / API registry 전체를 다시 읽도록 보강했다.
+  - 서버 기본값에서 빈 봇 이름을 강제로 `New Bot`으로 채우던 처리도 제거해서
+    새 draft의 `봇 이름` 입력란이 실제로 빈 상태로 열리도록 수정했다.
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `node --check scripts/serve-studio.js`
+  - `git diff --check`
+  - `npm run studio:check`
+  - 로컬 스튜디오 서버 재시작 후
+    `봇 작업공간 > + 봇 생성 > 01 봇 생성` 브라우저 검증으로
+    `봇 이름` 입력란이 빈 상태로 열리는 것을 확인했다.
+- 이번 단계 의미:
+  - 이제 신산님이 새 봇을 만들 때
+  - 이전 봇 이름/설정값이 섞여 보이는 문제
+  - 새 봇인데 과거 룰/메시지/자산이 같이 저장되는 문제
+  - 봇 전환 후 설정 화면이 다른 봇 데이터를 보여주는 문제
+  - 를 줄이고 실제 Aidot식 draft 생성 흐름에 더 가깝게 점검할 수 있는 상태가 됐다.

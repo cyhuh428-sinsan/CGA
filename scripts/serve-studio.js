@@ -948,7 +948,7 @@ function createDefaultStudioStateForBot(groupId, botId) {
   return {
     bot: {
       id: botId,
-      name: bot.name || "New Bot",
+      name: typeof bot.name === "string" ? bot.name : "",
       description: "",
       version: bot.version || "v0.1",
       defaultLocale: bot.locale || "en",
@@ -1510,7 +1510,7 @@ async function handleWorkspaceBotApi(req, res, urlPath) {
     const bot = {
       id,
       group_id: groupId,
-      name: body.name || "New Bot",
+      name: typeof body.name === "string" ? body.name : "",
       version: body.version || "v0.1",
       status: body.status || "draft",
       locale: body.locale || "en",

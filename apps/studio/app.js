@@ -2,7 +2,7 @@ import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdmin
 import { getVisibleLayout } from "./data/layout.js?v=20260618-10";
 import { sampleStudioState } from "./data/sample-state.js";
 import { buildVersionAssetMetadataSnapshot, createEmptyVersionAssetMetadataState, readVersionAssetMetadataSnapshot } from "./data/version-asset-metadata.js";
-import { deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
+import { createEmptyStudioState, deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
 import { createGroupManagedApiAnswerDraft } from "/packages/contracts/src/api-answer-contract.js";
 import { AIDOT_CONTRACT_VERSION, AIDOT_SUPPORTED_CONTRACT_VERSIONS, createAidotPackageManifest } from "/packages/contracts/src/aidot-package-contract.js";
@@ -1310,6 +1310,91 @@ function canOperateCurrentBot() {
 
 function canAnalyzeCurrentBot() {
   return getEffectiveGroupScopes(currentAccessState, currentAccessState.currentUserId, currentWorkspaceGroupId, currentWorkspaceBotId).includes("bot.analyze");
+}
+
+function createEmptyCompositionStateForBot(bot) {
+  return {
+    group_id: bot?.group_id || currentWorkspaceGroupId || "",
+    bot_id: bot?.id || currentWorkspaceBotId || "",
+    input_mode: "utterances",
+    document_title: "",
+    utterances: [],
+    requested_intent_count: 0,
+    pdf: null,
+    intent_candidates: []
+  };
+}
+
+function createEmptyOperationsStateForBot(bot) {
+  return {
+    group_id: bot?.group_id || currentWorkspaceGroupId || "",
+    bot_id: bot?.id || currentWorkspaceBotId || "",
+    build: {
+      status: "ready",
+      bot_info: "incomplete",
+      intent_count: 0,
+      llm_status: "not_needed",
+      webchat_contract: "unchanged",
+      last_run_at: null
+    },
+    test: {
+      last_user_message: "",
+      last_bot_message: "",
+      matched_intent: "",
+      method: "",
+      similarity: 0,
+      latency_ms: 0,
+      last_run_at: null
+    },
+    operate: {
+      deployment_status: "draft",
+      channel_status: "web_ok",
+      channel_detail: "",
+      conversation_volume: 0,
+      volume_status: "normal",
+      undefined_intents: 0,
+      container_health: "healthy",
+      llm_cost_status: "below_threshold",
+      compatibility: "preserved",
+      last_deployed_at: null
+    },
+    updated_at: null
+  };
+}
+
+function resetWorkspaceEditorStateForNewBot(bot) {
+  const emptyStudioState = createEmptyStudioState();
+  currentVersionDocumentExtraFields = createEmptyVersionAssetMetadataState().documentExtraFields;
+  currentVersionSystemConfigExtraFields = createEmptyVersionAssetMetadataState().systemConfigExtraFields;
+  currentVersionLegacyExtraFields = createEmptyVersionAssetMetadataState().legacyVersionExtraFields;
+  currentStudioState.bot = {
+    ...emptyStudioState.bot,
+    id: bot?.id || null,
+    name: bot?.name || "",
+    description: "",
+    version: bot?.version || "v0.1",
+    defaultLocale: bot?.locale || emptyStudioState.bot.defaultLocale
+  };
+  currentStudioState.structuralChoices = { ...emptyStudioState.structuralChoices };
+  currentStudioState.orchestrator = { ...emptyStudioState.orchestrator };
+  currentStudioState.llm = { ...emptyStudioState.llm };
+  currentStudioState.workflow = { ...emptyStudioState.workflow };
+  currentStudioState.counts = { ...emptyStudioState.counts };
+  currentStudioState.channels = { ...emptyStudioState.channels };
+  currentStudioState.commercialModules = {};
+  currentCompositionState = createEmptyCompositionStateForBot(bot);
+  currentOperationsState = createEmptyOperationsStateForBot(bot);
+  currentRuleAssets = [];
+  currentBlocklistAssets = [];
+  currentFaqDialogAssets = [];
+  currentFloatingButtonAssets = [];
+  currentSmallTalkAssets = [];
+  currentScenarioAssets = [];
+  currentEntityAssets = [];
+  currentDictionaryAssets = [];
+  currentIntentUtteranceAssets = [];
+  currentSelectedIntentId = "";
+  currentBuildAidotView = "list";
 }
 
 function applyCurrentBotToStudioState(bot) {
@@ -5704,37 +5789,7 @@ function bindWorkspaceActions() {
   if (createButton && createButton.dataset.bound !== "true") {
     createButton.dataset.bound = "true";
     createButton.addEventListener("click", async () => {
-      if (!canCreateBotInCurrentWorkspace()) return;
-      const id = `bot-${Date.now()}`;
-      const bot = {
-        id,
-        group_id: currentWorkspaceGroupId,
-        name: "",
-        status: "draft",
-        locale: currentStudioState.bot.defaultLocale,
-        version: "v0.1",
-        updated_at: "2026-06-04"
-      };
-      try {
-        const created = await createWorkspaceBotOnServer(bot);
-        currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== created.bot?.id), created.bot || bot];
-        applyCurrentBotToStudioState(created.bot || bot);
-        await saveStudioStateToServer();
-        await saveCompositionToServer();
-        await saveDetailAssetsToServer();
-        await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
-        await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
-      } catch (error) {
-        if (error.status) {
-          showApiErrorMessage(error, "message.actionForbiddenTitle");
-        } else {
-        currentWorkspaceBots = [...currentWorkspaceBots, bot];
-        applyCurrentBotToStudioState(bot);
-        }
-      }
-      renderWorkspaceHome();
-      renderAllStatePanels();
-      document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+      await createWorkspaceBotDraftAndOpen();
     });
   }
   if (createVersionAdd && createVersionAdd.dataset.bound !== "true") {
@@ -9187,8 +9242,50 @@ async function saveCurrentWorkspaceState() {
   renderGlobalMessage();
 }
 
+async function createWorkspaceBotDraftAndOpen() {
+  if (!canCreateBotInCurrentWorkspace()) return;
+  const draftBot = {
+    id: `bot-${Date.now()}`,
+    group_id: currentWorkspaceGroupId,
+    name: "",
+    status: "draft",
+    locale: currentStudioState.bot.defaultLocale || "ko",
+    version: "v0.1",
+    updated_at: new Date().toISOString().slice(0, 10)
+  };
+  try {
+    const created = await createWorkspaceBotOnServer(draftBot);
+    const nextBot = created.bot || draftBot;
+    currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== nextBot.id), nextBot];
+    applyCurrentBotToStudioState(nextBot);
+    resetWorkspaceEditorStateForNewBot(nextBot);
+    await saveStudioStateToServer();
+    await saveCompositionToServer();
+    await saveDetailAssetsToServer();
+    await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+    await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
+  } catch (error) {
+    if (error.status) {
+      showApiErrorMessage(error, "message.actionForbiddenTitle");
+      return;
+    }
+    currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== draftBot.id), draftBot];
+    applyCurrentBotToStudioState(draftBot);
+    resetWorkspaceEditorStateForNewBot(draftBot);
+  }
+  renderWorkspaceHome();
+  renderAllStatePanels();
+  rerenderAdminAndAccess();
+  renderTopContext();
+  document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+  setActiveScreen("create");
+}
+
 async function syncSelectedBotServerState(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
   if (!groupId || !botId) return;
+  await refreshStudioStateFromServer(groupId, botId).catch(() => false);
+  await refreshCompositionFromServer(groupId, botId).catch(() => false);
+  await refreshDetailAssetsFromServer(groupId, botId).catch(() => false);
   await refreshOperationsStateFromServer(groupId, botId).catch(() => false);
   await refreshCollaborationStateFromServer(groupId, botId).catch(() => false);
   await refreshApiRegistryFromServer().catch(() => false);
@@ -9324,8 +9421,8 @@ function renderWorkspaceHome() {
     renderTopContext();
     setActiveScreen("configure");
   }));
-  shell.querySelectorAll("[data-workspace-create]").forEach((button) => button.addEventListener("click", () => {
-    setActiveScreen("create");
+  shell.querySelectorAll("[data-workspace-create]").forEach((button) => button.addEventListener("click", async () => {
+    await createWorkspaceBotDraftAndOpen();
   }));
   shell.querySelectorAll("[data-jump-screen]").forEach((button) => {
     button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen));
