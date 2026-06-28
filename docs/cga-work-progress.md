@@ -5714,3 +5714,33 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js`
   - `npm run studio:check`
+
+## 2026-06-28 04:55 KST
+
+### `AI 모델 설정` 상단 구조를 Aidot 카드 레이아웃 기준으로 재배치
+
+- `02 봇 설정 > AI 모델 설정`이
+  값은 어느 정도 정리됐지만
+  화면 구조는 아직 Aidot 원형과 차이가 커서,
+  Aidot가 사용하는 카드형 레이아웃 클래스를 CGA에 직접 반영했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - `AI 모델 설정`
+    - `생성 정보`를 `bot-settings-card` 기반 카드 영역으로 재배치
+    - `언어 / NLU 방식 / NLU 모델 / 답변 방식 / 버전 수`를 Aidot형 카드 묶음으로 정리
+    - `선택 조합` 요약 박스를 Aidot 스타일에 맞춘 compact 박스로 정리
+    - Vector DB / 자동분류 가중치 영역도 Aidot `bot-settings-vector` 카드 묶음 구조로 재배치
+    - 소개 입력란 역시 Aidot `bot-settings-intro` 형식으로 정리
+  - 스타일
+    - `bot-settings-grid`
+    - `bot-settings-card`
+    - `bot-settings-vector`
+    - `bot-ai-combinations`
+    - `bot-settings-intro`
+    계열 스타일을 Aidot 기준으로 추가
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
+  - `npm run studio:check`

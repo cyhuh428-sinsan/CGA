@@ -9623,6 +9623,10 @@ function renderConfigureAidotScreen() {
   const nluTypeLabel = nluTypeLabelMap[derivedNluType] || "ML";
   const nluModelLabel = nluModelLabelMap[derivedNluModel] || derivedNluModel;
   const answerModeLabel = answerModeLabelMap[derivedAnswerMode] || derivedAnswerMode;
+  const usesSemanticNlu = derivedNluType === "semantic_vector" || derivedNluType === "semantic_external";
+  const usesSemanticAnswer = derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag";
+  const modelLockHint = "학습 전 변경 가능";
+  const fixedModeMessage = "언어, NLU 방식, 답변 방식은 봇 생성 시 고정됩니다.";
   const aiExtraConfig = currentVersionSystemConfigExtraFields.ai_config && typeof currentVersionSystemConfigExtraFields.ai_config === "object" && !Array.isArray(currentVersionSystemConfigExtraFields.ai_config)
     ? currentVersionSystemConfigExtraFields.ai_config
     : currentVersionLegacyExtraFields.ai_config && typeof currentVersionLegacyExtraFields.ai_config === "object" && !Array.isArray(currentVersionLegacyExtraFields.ai_config)
@@ -9951,50 +9955,127 @@ function renderConfigureAidotScreen() {
   const renderAiModel = () => `
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
-        <div class="aidot-field-grid">
-          <label>봇 이름 *<input value="${escapeText(botName)}" placeholder="봇 이름을 입력하세요." /></label>
-          <label>유형<input value="${escapeText(currentBot.bot_kind === "hub" ? "봇 허브" : "텍스트형")}" readonly /></label>
-          <label>봇 ID<input value="${escapeText(botId)}" placeholder="저장 후 생성" readonly /></label>
-          <label>최근 수정<input value="${escapeText(updatedAt)}" placeholder="-" readonly /></label>
-        </div>
-        <div class="aidot-field-grid five">
-          <label>언어 *<input value="${escapeText(localeLabel)}" readonly /></label>
-          <label>NLU 방식 *<input value="${escapeText(nluTypeLabel)}" placeholder="미설정" readonly /></label>
-          <label>NLU 모델 *<input value="${escapeText(nluModelLabel)}" placeholder="미설정" readonly /></label>
-          <label>답변 방식 *<input value="${escapeText(answerModeLabel)}" placeholder="미설정" readonly /></label>
-          <div class="profile-dots"><span></span><span></span><span></span></div>
-        </div>
-        <section class="aidot-setting-block">
-          <header><strong>AI 조합 안내</strong><span>언어, NLU 방식, 답변 방식은 봇 생성 시 고정됩니다. 모델은 학습 전까지 변경할 수 있고 학습 완료 후에는 고정됩니다.</span></header>
-          <div class="detail-asset-table">
-            <div class="detail-asset-row head"><span>항목</span><span>현재값</span><span>상태</span></div>
-            <div class="detail-asset-row"><strong>언어</strong><span>${escapeText(localeLabel)}</span><span>봇 생성 시 고정</span></div>
-            <div class="detail-asset-row"><strong>NLU 방식</strong><span>${escapeText(nluTypeLabel || "-")}</span><span>봇 생성 시 고정</span></div>
-            <div class="detail-asset-row"><strong>NLU 모델</strong><span>${escapeText(nluModelLabel || "-")}</span><span>학습 전 변경 가능</span></div>
-            <div class="detail-asset-row"><strong>답변 방식</strong><span>${escapeText(answerModeLabel || "-")}</span><span>봇 생성 시 고정</span></div>
+        <section class="bot-settings-section">
+          <h2>생성 정보</h2>
+          <div class="bot-settings-grid bot-settings-grid--5">
+            <label class="bot-settings-card">
+              <span>봇 이름 <em>*</em></span>
+              <input class="bot-settings-card__input" value="${escapeText(botName)}" placeholder="봇 이름을 입력하세요." />
+            </label>
+            <div class="bot-settings-card">
+              <span>유형</span>
+              <strong>${escapeText(currentBot.bot_kind === "hub" ? "봇 허브" : "텍스트형")}</strong>
+            </div>
+            <div class="bot-settings-card">
+              <span>봇 ID</span>
+              <strong>${escapeText(botId || "-")}</strong>
+            </div>
+            <div class="bot-settings-card">
+              <span>최근 수정</span>
+              <strong>${escapeText(updatedAt || "-")}</strong>
+            </div>
+            <div class="bot-settings-card">
+              <span>프로필</span>
+              <div class="bot-settings-card__profiles"><div class="profile-dots"><span></span><span></span><span></span></div></div>
+            </div>
           </div>
-        </section>
-        ${derivedNluType === "semantic_vector" || derivedNluType === "semantic_external" ? `
-        <section class="aidot-setting-block">
-          <header><strong>Intent Vector DB 연결</strong><span>Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</span></header>
-          <div class="rag-form-grid"><label>사용 여부${renderBooleanSelect(vectorIntentEnabled)}</label><label>Index 이름<input value="${escapeText(formatInputValue(vectorIntentIndex))}" placeholder="미설정" /></label></div>
-        </section>
-        ` : ""}
-        ${derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag" ? `
-        <section class="aidot-setting-block">
-          <header><strong>Answer Vector DB 연결</strong><span>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 Answer Vector DB에 저장합니다.</span></header>
-          <div class="rag-form-grid"><label>사용 여부${renderBooleanSelect(vectorAnswerEnabled)}</label><label>Index 이름<input value="${escapeText(formatInputValue(vectorAnswerIndex))}" placeholder="미설정" /></label></div>
-        </section>
-        ` : ""}
-        ${derivedNluType !== "llm" ? `
-        <section class="aidot-setting-block">
-          <header><strong>구성 자동분류 가중치</strong><span>구성 화면의 의도 후보 분류에서 사전, 개체, 단어, 글자 조각, 조사/어미 반영 비율을 조정합니다.</span></header>
-          <div class="aidot-weight-grid">
-            <label>사전 대표어<input value="${escapeText(formatInputValue(configurationScoring.dictionaryWeight))}" placeholder="미설정" /></label><label>개체<input value="${escapeText(formatInputValue(configurationScoring.entityWeight))}" placeholder="미설정" /></label><label>명사/동사<input value="${escapeText(formatInputValue(configurationScoring.wordWeight))}" placeholder="미설정" /></label><label>글자 조각<input value="${escapeText(formatInputValue(configurationScoring.gramWeight))}" placeholder="미설정" /></label><label>조사/어미<input value="${escapeText(formatInputValue(configurationScoring.particleEndingWeight))}" placeholder="미설정" /></label><label>대표어 일치 최소점수<input value="${escapeText(formatInputValue(configurationScoring.keyMatchScore))}" placeholder="미설정" /></label>
+
+          <div class="bot-settings-grid bot-settings-grid--5">
+            <div class="bot-settings-card">
+              <span>언어 <em>*</em></span>
+              <strong>${escapeText(localeLabel)}</strong>
+              <small class="bot-settings-card__hint">봇 생성 시 고정</small>
+            </div>
+            <div class="bot-settings-card">
+              <span>NLU 방식</span>
+              <strong>${escapeText(nluTypeLabel || "미설정")}</strong>
+              <small class="bot-settings-card__hint">봇 생성 시 고정</small>
+            </div>
+            <div class="bot-settings-card">
+              <span>NLU 모델 <em>*</em></span>
+              <strong>${escapeText(nluModelLabel || "미설정")}</strong>
+              <small class="bot-settings-card__hint">${escapeText(modelLockHint)}</small>
+            </div>
+            <div class="bot-settings-card">
+              <span>답변 방식</span>
+              <strong>${escapeText(answerModeLabel || "미설정")}</strong>
+              <small class="bot-settings-card__hint">봇 생성 시 고정</small>
+            </div>
+            <div class="bot-settings-card">
+              <span>버전 수</span>
+              <strong>${escapeText(String(getBotVersions(currentBot).length || 1))}</strong>
+            </div>
           </div>
+
+          <div class="bot-ai-combinations bot-ai-combinations--compact">
+            <div class="bot-ai-combinations__summary">
+              <strong>선택 조합</strong>
+              <span>의도인식: ${escapeText(nluTypeLabel || "미설정")} / 답변: ${escapeText(answerModeLabel || "미설정")}</span>
+              <em class="bot-ai-combinations__badge bot-ai-combinations__badge--implemented">구성됨</em>
+            </div>
+            <p class="bot-ai-combinations__lock">${escapeText(fixedModeMessage)}</p>
+          </div>
+
+          ${usesSemanticNlu ? `
+            <div class="bot-settings-vector">
+              <div class="bot-settings-vector__header">
+                <strong>Intent Vector DB 연결</strong>
+                <span>Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</span>
+              </div>
+              <div class="bot-settings-grid bot-settings-grid--4">
+                <label class="bot-settings-card">
+                  <span>사용 여부</span>
+                  ${renderBooleanSelect(vectorIntentEnabled).replace('<select>', '<select class="bot-settings-card__select">')}
+                </label>
+                <label class="bot-settings-card">
+                  <span>Index 이름</span>
+                  <input class="bot-settings-card__input" value="${escapeText(formatInputValue(vectorIntentIndex))}" placeholder="미설정" />
+                </label>
+              </div>
+            </div>
+          ` : ""}
+
+          ${usesSemanticAnswer ? `
+            <div class="bot-settings-vector">
+              <div class="bot-settings-vector__header">
+                <strong>Answer Vector DB 연결</strong>
+                <span>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 Answer Vector DB에 저장합니다.</span>
+              </div>
+              <div class="bot-settings-grid bot-settings-grid--4">
+                <label class="bot-settings-card">
+                  <span>사용 여부</span>
+                  ${renderBooleanSelect(vectorAnswerEnabled).replace('<select>', '<select class="bot-settings-card__select">')}
+                </label>
+                <label class="bot-settings-card">
+                  <span>Index 이름</span>
+                  <input class="bot-settings-card__input" value="${escapeText(formatInputValue(vectorAnswerIndex))}" placeholder="미설정" />
+                </label>
+              </div>
+            </div>
+          ` : ""}
+
+          ${derivedNluType !== "llm" ? `
+            <div class="bot-settings-vector">
+              <div class="bot-settings-vector__header">
+                <strong>구성 자동분류 가중치</strong>
+                <span>구성 화면의 의도 후보 분류에서 사전, 개체, 단어, 글자 조각, 조사/어미 반영 비율을 조정합니다.</span>
+              </div>
+              <div class="bot-settings-grid bot-settings-grid--6">
+                <label class="bot-settings-card"><span>사전 대표어</span><input class="bot-settings-card__input" value="${escapeText(formatInputValue(configurationScoring.dictionaryWeight))}" placeholder="미설정" /></label>
+                <label class="bot-settings-card"><span>개체</span><input class="bot-settings-card__input" value="${escapeText(formatInputValue(configurationScoring.entityWeight))}" placeholder="미설정" /></label>
+                <label class="bot-settings-card"><span>명사/동사</span><input class="bot-settings-card__input" value="${escapeText(formatInputValue(configurationScoring.wordWeight))}" placeholder="미설정" /></label>
+                <label class="bot-settings-card"><span>글자 조각</span><input class="bot-settings-card__input" value="${escapeText(formatInputValue(configurationScoring.gramWeight))}" placeholder="미설정" /></label>
+                <label class="bot-settings-card"><span>조사/어미</span><input class="bot-settings-card__input" value="${escapeText(formatInputValue(configurationScoring.particleEndingWeight))}" placeholder="미설정" /></label>
+                <label class="bot-settings-card"><span>대표어 일치 최소점수</span><input class="bot-settings-card__input" value="${escapeText(formatInputValue(configurationScoring.keyMatchScore))}" placeholder="미설정" /></label>
+              </div>
+            </div>
+          ` : ""}
+
+          <label class="bot-settings-intro">
+            <span>소개</span>
+            <textarea class="bot-settings-intro__textarea" placeholder="봇을 설명할 수 있는 소개 문장을 입력하세요.">${escapeText(currentStudioState.bot.description || "")}</textarea>
+          </label>
         </section>
-        ` : ""}
-        <label>소개<textarea>${escapeText(currentStudioState.bot.description || "")}</textarea></label>
       </section>
     </div>
   `;
