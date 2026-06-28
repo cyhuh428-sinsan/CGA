@@ -1334,11 +1334,12 @@ function parseAuthApiPath(urlPath) {
 }
 
 function parseApiAnswerPath(urlPath) {
-  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/api-answers$/);
+  const match = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)\/api-answers(?:\/([^/]+))?$/);
   if (!match) return null;
   return {
     groupId: match[1],
-    botId: match[2]
+    botId: match[2],
+    apiId: match[3] || null
   };
 }
 
@@ -1859,11 +1860,121 @@ async function canManageApiAnswer(req, groupId, botId) {
   return accessStateModule.getEffectiveGroupScopes(state, actorId, groupId, botId).includes("apiAnswer.manage");
 }
 
+function normalizeApiAnswerMethod(method, methodIndex = 0, fallbackUrl = "", fallbackHttpMethod = "GET") {
+  if (!method || typeof method !== "object") {
+    return {
+      id: `method-${methodIndex + 1}`,
+      name: "default",
+      httpMethod: String(fallbackHttpMethod || "GET").toUpperCase(),
+      methodUrl: String(fallbackUrl || ""),
+      description: "",
+      loggingEnabled: false,
+      proxyEnabled: true,
+      transferMode: "sync",
+      parameters: [],
+      outputParameters: [],
+      outputSample: ""
+    };
+  }
+  return {
+    id: String(method.id || `method-${methodIndex + 1}`),
+    name: String(method.name || "default"),
+    httpMethod: String(method.httpMethod || method.method || fallbackHttpMethod || "GET").toUpperCase(),
+    methodUrl: String(method.methodUrl || method.path || method.url || fallbackUrl || ""),
+    description: String(method.description || ""),
+    loggingEnabled: method.loggingEnabled === true,
+    proxyEnabled: method.proxyEnabled !== false,
+    transferMode: "sync",
+    parameters: Array.isArray(method.parameters) ? method.parameters : [],
+    outputParameters: Array.isArray(method.outputParameters) ? method.outputParameters : [],
+    outputSample: String(method.outputSample || method.output_sample || "")
+  };
+}
+
+function normalizeApiAnswerEntry({ body, draft, groupId, botId, actorId, existing = null }) {
+  const baseUrl = String(
+    body.baseUrl
+    || body.destinationBaseUrl
+    || body.destinationUrl
+    || body.endpoint_url
+    || body.endpoint
+    || existing?.baseUrl
+    || existing?.endpoint_url
+    || ""
+  ).trim();
+  const methods = Array.isArray(body.methods) && body.methods.length
+    ? body.methods.map((method, index) => normalizeApiAnswerMethod(method, index, baseUrl, body.method || existing?.method || "GET"))
+    : (Array.isArray(existing?.methods) && existing.methods.length
+      ? existing.methods.map((method, index) => normalizeApiAnswerMethod(method, index, baseUrl, existing.method || "GET"))
+      : [normalizeApiAnswerMethod(null, 0, baseUrl, body.method || existing?.method || "GET")]);
+  const primaryMethod = methods[0] || normalizeApiAnswerMethod(null, 0, baseUrl, body.method || existing?.method || "GET");
+  const responsePath = String(
+    body.response_path
+    || body.responsePath
+    || body.response_mapping?.answer_text_path
+    || existing?.response_path
+    || existing?.response_mapping?.answer_text_path
+    || "data.answer"
+  );
+  const now = new Date().toISOString();
+  const createdAt = existing?.created_at || existing?.updated_at || now;
+  const createdBy = existing?.created_by || existing?.updated_by || actorId;
+  return {
+    ...draft,
+    ...(existing || {}),
+    id: String(body.id || existing?.id || `api-${Date.now()}`),
+    group_id: groupId,
+    bot_id: botId,
+    managed_by: "group",
+    name: String(body.name || existing?.name || "").trim(),
+    description: String(body.description || existing?.description || ""),
+    category: String(body.category || existing?.category || "API"),
+    apiKey: String(body.apiKey || body.api_key || existing?.apiKey || existing?.api_key || `api-key-${Date.now()}`),
+    endpoint_url: baseUrl,
+    baseUrl,
+    destinationBaseUrl: baseUrl,
+    method: String(primaryMethod.httpMethod || body.method || existing?.method || "GET").toUpperCase(),
+    methods,
+    methodCount: methods.length,
+    usageCount: Number(body.usageCount ?? body.usage_count ?? existing?.usageCount ?? existing?.usage_count ?? 0) || 0,
+    auth_type: String(body.auth_type || body.authType || existing?.auth_type || "none"),
+    secret_ref: String(body.secret_ref || body.secretRef || existing?.secret_ref || ""),
+    response_path: responsePath,
+    response_mapping: {
+      ...draft.response_mapping,
+      ...(existing?.response_mapping || {}),
+      ...(body.response_mapping || {}),
+      answer_text_path: responsePath
+    },
+    request_mapping: {
+      ...(draft.request_mapping || {}),
+      ...(existing?.request_mapping || {}),
+      ...(body.request_mapping || {})
+    },
+    timeout_ms: Number(body.timeout_ms || existing?.timeout_ms || draft.timeout_ms || 5000),
+    fallback_answer: String(body.fallback_answer || existing?.fallback_answer || draft.fallback_answer || ""),
+    created_at: createdAt,
+    created_by: createdBy,
+    updated_at: now,
+    updated_by: actorId
+  };
+}
+
 async function handleApiAnswerApi(req, res, urlPath) {
   const parsed = parseApiAnswerPath(urlPath);
   if (!parsed) return false;
-  const { groupId, botId } = parsed;
+  const { groupId, botId, apiId } = parsed;
   const items = apiAnswerRegistry.filter((item) => item.group_id === groupId && item.bot_id === botId);
+  const item = apiId ? items.find((entry) => entry.id === apiId) || null : null;
+
+  if (req.method === "GET" && apiId) {
+    if (!item) {
+      sendJson(res, 404, { error_code: "CGA_API_ANSWER_NOT_FOUND", message_key: "errors.apiAnswer.requiredField" });
+      return true;
+    }
+    sendJson(res, 200, { item });
+    return true;
+  }
 
   if (req.method === "GET") {
     sendJson(res, 200, { group_id: groupId, bot_id: botId, items });
@@ -1878,32 +1989,61 @@ async function handleApiAnswerApi(req, res, urlPath) {
     const contract = await import("../packages/contracts/src/api-answer-contract.js");
     const body = await readJsonRequest(req);
     const draft = contract.createGroupManagedApiAnswerDraft({ groupId, botId });
-    const entry = {
-      ...draft,
-      id: body.id || `api-${Date.now()}`,
-      name: body.name || "",
-      endpoint_url: body.endpoint_url || body.endpoint || "",
-      method: body.method || "GET",
-      auth_type: body.auth_type || "none",
-      secret_ref: body.secret_ref || "",
-      response_path: body.response_path || body.response_mapping?.answer_text_path || "data.answer",
-      response_mapping: {
-        ...draft.response_mapping,
-        ...(body.response_mapping || {}),
-        answer_text_path: body.response_path || body.response_mapping?.answer_text_path || "data.answer"
-      },
-      updated_at: new Date().toISOString()
-    };
-    if (!entry.name || !entry.endpoint_url) {
+    const actorId = getActorId(req, await loadAccessState());
+    const entry = normalizeApiAnswerEntry({ body, draft, groupId, botId, actorId });
+    if (!entry.name || !entry.endpoint_url || !entry.apiKey) {
       sendJson(res, 400, { error_code: "CGA_API_ANSWER_REQUIRED_FIELD_MISSING", message_key: "errors.apiAnswer.requiredField" });
       return true;
     }
     const next = [
-      ...apiAnswerRegistry.filter((item) => !(item.group_id === groupId && item.bot_id === botId && item.name === entry.name)),
+      ...apiAnswerRegistry.filter((item) => item.id !== entry.id),
       entry
     ];
     saveApiAnswerRegistry(next);
     sendJson(res, 201, { status: "created", item: entry });
+    return true;
+  }
+
+  if (req.method === "PATCH" && apiId) {
+    if (!(await canManageApiAnswer(req, groupId, botId))) {
+      sendJson(res, 403, { error_code: "CGA_API_ANSWER_MANAGE_FORBIDDEN", message_key: "errors.apiAnswer.manageForbidden" });
+      return true;
+    }
+    if (!item) {
+      sendJson(res, 404, { error_code: "CGA_API_ANSWER_NOT_FOUND", message_key: "errors.apiAnswer.requiredField" });
+      return true;
+    }
+    const contract = await import("../packages/contracts/src/api-answer-contract.js");
+    const body = await readJsonRequest(req);
+    const actorId = getActorId(req, await loadAccessState());
+    const entry = normalizeApiAnswerEntry({
+      body: { ...item, ...body, id: apiId },
+      draft: contract.createGroupManagedApiAnswerDraft({ groupId, botId }),
+      groupId,
+      botId,
+      actorId,
+      existing: item
+    });
+    if (!entry.name || !entry.endpoint_url || !entry.apiKey) {
+      sendJson(res, 400, { error_code: "CGA_API_ANSWER_REQUIRED_FIELD_MISSING", message_key: "errors.apiAnswer.requiredField" });
+      return true;
+    }
+    saveApiAnswerRegistry(apiAnswerRegistry.map((entryItem) => (entryItem.id === apiId ? entry : entryItem)));
+    sendJson(res, 200, { status: "saved", item: entry });
+    return true;
+  }
+
+  if (req.method === "DELETE" && apiId) {
+    if (!(await canManageApiAnswer(req, groupId, botId))) {
+      sendJson(res, 403, { error_code: "CGA_API_ANSWER_MANAGE_FORBIDDEN", message_key: "errors.apiAnswer.manageForbidden" });
+      return true;
+    }
+    if (!item) {
+      sendJson(res, 404, { error_code: "CGA_API_ANSWER_NOT_FOUND", message_key: "errors.apiAnswer.requiredField" });
+      return true;
+    }
+    saveApiAnswerRegistry(apiAnswerRegistry.filter((entryItem) => entryItem.id !== apiId));
+    sendJson(res, 200, { status: "deleted", id: apiId });
     return true;
   }
 

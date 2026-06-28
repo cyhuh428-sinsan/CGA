@@ -2,6 +2,48 @@
 
 ## 2026-06-28
 
+### API 메뉴를 Aidot 원형 흐름으로 전환 시작
+
+- 신산님 요청에 따라 `그룹 API 레지스트리` 화면의 CGA 임의 목록/샘플 데이터를 중단하고, Aidot API 화면 구조로 교체하기 시작했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+  - `scripts/serve-studio.js`
+- 핵심 변경:
+  - API 목록 화면에서 가짜 `JSONPlaceholder/httpbin/restcountries` fallback 10건 제거
+  - Aidot 기준의 `API` 목록 화면으로 전환
+    - 검색
+    - `+ API 등록`
+    - 더보기 메뉴
+    - `업로드 / 전체 다운로드 / 선택 다운로드`
+    - 페이지 크기 / 페이지 이동
+  - Aidot 기준의 `API > API 조회` 상세 화면 추가
+    - API 등록기본
+    - API 메서드
+    - 파라미터 / 파라미터 응답
+    - Test Output
+    - `삭제 / 수정 / 목록`
+  - Aidot 기준의 `API 메서드 정보를 입력하세요.` 등록/수정 화면 추가
+    - API 기본 정보
+    - 메서드 추가/삭제
+    - 파라미터 추가/삭제
+    - `취소 / 저장`
+- 서버 API 보강:
+  - 기존 `/api-answers`의 `GET 목록 / POST 생성`만 있던 구조를 확장
+  - `GET 상세`
+  - `PATCH 수정`
+  - `DELETE 삭제`
+    가 가능하도록 `scripts/serve-studio.js`를 보강
+  - 저장 시 Aidot형 필드(`apiKey`, `baseUrl`, `methods`, `description`, `usageCount`, `response_mapping`)를 함께 유지하도록 정규화 로직 추가
+- 업로드 처리:
+  - Aidot 호환 API 패키지 JSON을 읽어 현재 봇의 API 자산으로 반영하도록 연결
+  - 같은 `id` 또는 `apiKey`가 있으면 수정, 없으면 신규 생성하도록 정리
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `node --check scripts/serve-studio.js`
+  - `git diff --check -- apps/studio/app.js apps/studio/styles.css scripts/serve-studio.js`
+  - `node scripts/check-api-answer-api.mjs`
+
 ### Aidot 재배치 원칙 확정 및 봇 설정 가짜 데이터 제거 시작
 
 - 신산님 기준을 작업 원칙으로 확정했다.

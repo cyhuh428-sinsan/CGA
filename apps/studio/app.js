@@ -60,6 +60,23 @@ let currentWorkspaceBots = [];
 let currentApiRegistry = [];
 let currentApiGroupId = "";
 let currentApiBotId = "";
+let currentApiUiState = {
+  mode: "list",
+  query: "",
+  selectedIds: [],
+  page: 1,
+  pageSize: 10,
+  sortKey: "updatedAt",
+  sortDirection: "desc",
+  actionMenuOpen: false,
+  activeApiId: "",
+  editingDraft: null,
+  editingExisting: false,
+  editorSampleInput: null,
+  testInputs: {},
+  testOutputs: {},
+  testingMethodId: ""
+};
 let currentTransferStatus = "";
 let currentTransferHistory = [];
 let currentAuthMessage = null;
@@ -2224,6 +2241,144 @@ function getApiAnswerRegistryUrl(groupId = currentApiGroupId, botId = currentApi
   return `/api/cga/groups/${encodeURIComponent(groupId || "g-support")}/bots/${encodeURIComponent(botId || "supportbot-draft")}/api-answers`;
 }
 
+function getApiAnswerItemUrl(groupId = currentApiGroupId, botId = currentApiBotId, apiId = "") {
+  return `${getApiAnswerRegistryUrl(groupId, botId)}/${encodeURIComponent(apiId)}`;
+}
+
+function createAidotApiMethodDraft(index = 0) {
+  return {
+    id: `method-${Date.now()}-${index + 1}`,
+    name: "default",
+    httpMethod: "GET",
+    methodUrl: "",
+    description: "",
+    loggingEnabled: false,
+    proxyEnabled: true,
+    transferMode: "sync",
+    parameters: [],
+    outputParameters: [],
+    outputSample: ""
+  };
+}
+
+function createAidotApiParameterDraft(location = "query") {
+  return {
+    id: `parameter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: "",
+    location,
+    dataType: "string",
+    defaultValue: "",
+    required: false,
+    visible: true,
+    description: ""
+  };
+}
+
+function createAidotApiDraft() {
+  const draft = createGroupManagedApiAnswerDraft({ groupId: currentApiGroupId, botId: currentApiBotId });
+  return {
+    ...draft,
+    id: `api-${Date.now()}`,
+    apiKey: crypto.randomUUID ? crypto.randomUUID() : `api-key-${Date.now()}`,
+    description: "",
+    category: "API",
+    baseUrl: "",
+    methods: [createAidotApiMethodDraft(0)],
+    methodCount: 1,
+    usageCount: 0,
+    created_at: "",
+    created_by: "",
+    updatedAt: "",
+    updatedBy: ""
+  };
+}
+
+function normalizeAidotApiParameter(parameter = {}, index = 0) {
+  return {
+    id: String(parameter.id || `parameter-${index + 1}`),
+    name: String(parameter.name || parameter.parameterName || ""),
+    location: String(parameter.location || parameter.parameterType || "query"),
+    dataType: String(parameter.dataType || "string"),
+    defaultValue: String(parameter.defaultValue || parameter.default || ""),
+    required: parameter.required === true || parameter.requiredYn === true,
+    visible: parameter.visible !== false && parameter.visibleYn !== false,
+    description: String(parameter.description || "")
+  };
+}
+
+function normalizeAidotApiOutputParameter(parameter = {}, index = 0) {
+  const path = String(parameter.path || parameter.jsonPath || parameter.name || parameter.parameterName || "");
+  return {
+    id: String(parameter.id || `output-parameter-${index + 1}`),
+    name: String(parameter.name || parameter.parameterName || path || ""),
+    path,
+    dataType: String(parameter.dataType || "string"),
+    description: String(parameter.description || "")
+  };
+}
+
+function normalizeAidotApiMethod(method = {}, index = 0, fallbackUrl = "", fallbackMethod = "GET") {
+  if (!method || typeof method !== "object") {
+    return createAidotApiMethodDraft(index);
+  }
+  return {
+    id: String(method.id || `method-${index + 1}`),
+    name: String(method.name || method.methodName || "default"),
+    httpMethod: String(method.httpMethod || method.method || fallbackMethod || "GET").toUpperCase(),
+    methodUrl: String(method.methodUrl || method.path || method.url || fallbackUrl || ""),
+    description: String(method.description || ""),
+    loggingEnabled: method.loggingEnabled === true || method.logging === true,
+    proxyEnabled: method.proxyEnabled !== false && method.proxy !== false,
+    transferMode: "sync",
+    parameters: Array.isArray(method.parameters) ? method.parameters.map((parameter, parameterIndex) => normalizeAidotApiParameter(parameter, parameterIndex)) : [],
+    outputParameters: Array.isArray(method.outputParameters) ? method.outputParameters.map((parameter, parameterIndex) => normalizeAidotApiOutputParameter(parameter, parameterIndex)) : [],
+    outputSample: String(method.outputSample || method.output_sample || "")
+  };
+}
+
+function normalizeAidotApiEntry(api = {}, index = 0) {
+  const baseUrl = String(api.baseUrl || api.destinationBaseUrl || api.destinationUrl || api.endpoint_url || api.endpoint || "");
+  const methods = Array.isArray(api.methods) && api.methods.length
+    ? api.methods.map((method, methodIndex) => normalizeAidotApiMethod(method, methodIndex, baseUrl, api.method || "GET"))
+    : [normalizeAidotApiMethod(null, 0, baseUrl, api.method || "GET")];
+  return {
+    ...createGroupManagedApiAnswerDraft({
+      groupId: api.group_id || currentApiGroupId,
+      botId: api.bot_id || currentApiBotId
+    }),
+    ...api,
+    id: String(api.id || `api-${index + 1}`),
+    group_id: String(api.group_id || currentApiGroupId),
+    bot_id: String(api.bot_id || currentApiBotId),
+    name: String(api.name || `api_${index + 1}`),
+    description: String(api.description || ""),
+    category: String(api.category || "API"),
+    apiKey: String(api.apiKey || api.api_key || `api-key-${index + 1}`),
+    endpoint_url: String(api.endpoint_url || baseUrl || ""),
+    baseUrl: String(baseUrl || api.endpoint_url || ""),
+    method: String(api.method || methods[0]?.httpMethod || "GET").toUpperCase(),
+    methods,
+    methodCount: Number(api.methodCount || api.method_count || methods.length || 1),
+    usageCount: Number(api.usageCount || api.usage_count || 0) || 0,
+    auth_type: String(api.auth_type || api.authType || "none"),
+    secret_ref: String(api.secret_ref || api.secretRef || ""),
+    response_path: String(api.response_path || api.responsePath || api.response_mapping?.answer_text_path || "data.answer"),
+    response_mapping: {
+      ...(api.response_mapping || {}),
+      answer_text_path: String(api.response_path || api.responsePath || api.response_mapping?.answer_text_path || "data.answer")
+    },
+    created_at: String(api.created_at || api.updated_at || ""),
+    created_by: String(api.created_by || api.updated_by || ""),
+    updatedAt: String(api.updatedAt || api.updated_at || ""),
+    updatedBy: String(api.updatedBy || api.updated_by || "")
+  };
+}
+
+function syncApiUiPageSize() {
+  currentApiUiState.pageSize = adminTablePageSizeByKey["api-answer-source"] || currentApiUiState.pageSize || 10;
+  adminTablePageSizeByKey["api-answer-source"] = currentApiUiState.pageSize;
+}
+
 async function refreshApiRegistryFromServer() {
   if (!currentApiGroupId || !currentApiBotId) return false;
   const groupId = currentApiGroupId;
@@ -2238,7 +2393,7 @@ async function refreshApiRegistryFromServer() {
       if (!Array.isArray(payload.items)) return false;
       currentApiRegistry = [
         ...currentApiRegistry.filter((api) => !(api.group_id === groupId && api.bot_id === botId)),
-        ...payload.items
+        ...payload.items.map((api, index) => normalizeAidotApiEntry(api, index))
       ];
       apiRegistryLoadedAtByKey.set(key, Date.now());
       return true;
@@ -2255,20 +2410,59 @@ async function saveApiAnswerToServer(api) {
   const cacheKey = `${api.group_id}:${api.bot_id}`;
   const result = await requestCgaJson(getApiAnswerRegistryUrl(api.group_id, api.bot_id), {
     method: "POST",
-    body: {
-      name: api.name,
-      endpoint_url: api.endpoint_url,
-      method: api.method || "GET",
-      auth_type: api.auth_type || "none",
-      secret_ref: api.secret_ref || "",
-      response_path: api.response_path || api.response_mapping?.answer_text_path || "data.answer"
-    }
+    body: api
   });
   apiRegistryLoadedAtByKey.delete(cacheKey);
   if (apiRegistryRefreshKey === cacheKey) {
     apiRegistryRefreshPromise = null;
   }
   return result;
+}
+
+async function updateApiAnswerOnServer(api) {
+  const cacheKey = `${api.group_id}:${api.bot_id}`;
+  const result = await requestCgaJson(getApiAnswerItemUrl(api.group_id, api.bot_id, api.id), {
+    method: "PATCH",
+    body: api
+  });
+  apiRegistryLoadedAtByKey.delete(cacheKey);
+  if (apiRegistryRefreshKey === cacheKey) {
+    apiRegistryRefreshPromise = null;
+  }
+  return result;
+}
+
+async function deleteApiAnswerOnServer(groupId, botId, apiId) {
+  const cacheKey = `${groupId}:${botId}`;
+  const result = await requestCgaJson(getApiAnswerItemUrl(groupId, botId, apiId), {
+    method: "DELETE"
+  });
+  apiRegistryLoadedAtByKey.delete(cacheKey);
+  if (apiRegistryRefreshKey === cacheKey) {
+    apiRegistryRefreshPromise = null;
+  }
+  return result;
+}
+
+function getCurrentApiEntries() {
+  syncApiUiPageSize();
+  return currentApiRegistry
+    .filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId)
+    .map((api, index) => normalizeAidotApiEntry(api, index));
+}
+
+function getCurrentApiEntryById(apiId = currentApiUiState.activeApiId) {
+  return getCurrentApiEntries().find((api) => api.id === apiId) || null;
+}
+
+function resetApiSelectionIfMissing() {
+  const entries = getCurrentApiEntries();
+  const ids = new Set(entries.map((api) => api.id));
+  currentApiUiState.selectedIds = currentApiUiState.selectedIds.filter((id) => ids.has(id));
+  if (currentApiUiState.activeApiId && !ids.has(currentApiUiState.activeApiId)) {
+    currentApiUiState.activeApiId = "";
+    currentApiUiState.mode = "list";
+  }
 }
 
 function renderTransferHistoryItems(container, items) {
@@ -8508,13 +8702,8 @@ function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) 
 }
 
 function renderApiRegistry() {
-  const apiGroup = document.querySelector("[data-api-group]");
-  const apiBot = document.querySelector("[data-api-bot]");
   const apiSection = document.querySelector('[data-screen-id="api-answer-source"]');
-  const apiRegistry = document.querySelector("[data-api-registry]");
-  const apiOwnerMeta = document.querySelector("[data-api-owner-meta]");
-  const apiAdd = document.querySelector("[data-api-add]");
-  if (!apiSection && (!apiGroup || !apiBot || !apiRegistry)) return;
+  if (!apiSection) return;
   const groups = getActiveGroupsForCurrentUser();
   if (!groups.some((group) => group.id === currentApiGroupId)) {
     currentApiGroupId = groups[0]?.id || currentWorkspaceGroupId;
@@ -8523,73 +8712,65 @@ function renderApiRegistry() {
   if (!bots.some((bot) => bot.id === currentApiBotId)) {
     currentApiBotId = bots[0]?.id || currentWorkspaceBotId;
   }
+  syncApiUiPageSize();
+  resetApiSelectionIfMissing();
   const canManageApi = canManageApiAnswerForCurrentSelection();
-  if (apiGroup) {
-    apiGroup.innerHTML = groups
-      .map((group) => `<option value="${group.id}" ${group.id === currentApiGroupId ? "selected" : ""}>${group.name}</option>`)
-      .join("");
+  const allApis = getCurrentApiEntries();
+  const query = currentApiUiState.query.trim().toLowerCase();
+  const sortRows = [...allApis]
+    .filter((api) => {
+      if (!query) return true;
+      return [api.name, api.description, api.baseUrl, api.apiKey].some((value) => String(value || "").toLowerCase().includes(query));
+    })
+    .sort((left, right) => {
+      const leftValue = currentApiUiState.sortKey === "name"
+        ? left.name
+        : currentApiUiState.sortKey === "baseUrl"
+          ? left.baseUrl
+          : currentApiUiState.sortKey === "methods"
+            ? Number(left.methodCount || left.methods.length || 0)
+            : currentApiUiState.sortKey === "usage"
+              ? Number(left.usageCount || 0)
+              : currentApiUiState.sortKey === "updatedBy"
+                ? left.updatedBy
+                : left.updatedAt;
+      const rightValue = currentApiUiState.sortKey === "name"
+        ? right.name
+        : currentApiUiState.sortKey === "baseUrl"
+          ? right.baseUrl
+          : currentApiUiState.sortKey === "methods"
+            ? Number(right.methodCount || right.methods.length || 0)
+            : currentApiUiState.sortKey === "usage"
+              ? Number(right.usageCount || 0)
+              : currentApiUiState.sortKey === "updatedBy"
+                ? right.updatedBy
+                : right.updatedAt;
+      const compare = typeof leftValue === "number" && typeof rightValue === "number"
+        ? leftValue - rightValue
+        : String(leftValue || "").localeCompare(String(rightValue || ""), "ko-KR");
+      return currentApiUiState.sortDirection === "asc" ? compare : compare * -1;
+    });
+  const totalPages = Math.max(1, Math.ceil(sortRows.length / currentApiUiState.pageSize));
+  currentApiUiState.page = Math.min(Math.max(1, currentApiUiState.page), totalPages);
+  const startIndex = (currentApiUiState.page - 1) * currentApiUiState.pageSize;
+  const pagedApis = sortRows.slice(startIndex, startIndex + currentApiUiState.pageSize);
+  const selectedApi = getCurrentApiEntryById();
+  if ((currentApiUiState.mode === "detail" || currentApiUiState.mode === "edit") && !selectedApi && currentApiUiState.mode !== "edit") {
+    currentApiUiState.mode = "list";
   }
-  if (apiBot) {
-    apiBot.innerHTML = bots
-      .map((bot) => `<option value="${bot.id}" ${bot.id === currentApiBotId ? "selected" : ""}>${bot.name}</option>`)
-      .join("");
-  }
-  if (apiOwnerMeta) {
-    apiOwnerMeta.textContent = `group_id: ${currentApiGroupId} · bot_id: ${currentApiBotId || t("common.none", "None")}`;
-    apiOwnerMeta.dataset.manageAllowedLabel = t("apiAnswer.manageAllowed", "Can manage API answers");
-    apiOwnerMeta.dataset.manageBlockedLabel = t("apiAnswer.manageBlocked", "Blocked: apiAnswer.manage");
-  }
-  if (apiAdd) {
-    apiAdd.disabled = !canManageApi || !currentApiBotId;
-  }
-  const aidotApiRows = [
-    ["JSONPlaceholder 게시글", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 09:46", "aidot_1"],
-    ["JSONPlaceholder 게시글", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 09:46", "aidot_1"],
-    ["httpbin 요청 확인", "https://httpbin.org", 1, 1, "2026-05-03 09:22", "aidot_1"],
-    ["httpbin 요청 확인", "https://httpbin.org", 1, 1, "2026-05-03 09:22", "aidot_1"],
-    ["REST Countries 국가 조회", "https://restcountries.com", 1, 0, "2026-05-03 08:27", "aidot_1"],
-    ["REST Countries 국가 조회", "https://restcountries.com", 1, 0, "2026-05-03 08:27", "aidot_1"],
-    ["JSONPlaceholder 사용자", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 08:05", "aidot_1"],
-    ["JSONPlaceholder 사용자", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 08:05", "aidot_1"],
-    ["JSONPlaceholder 할 일", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 07:59", "aidot_1"],
-    ["JSONPlaceholder 할 일", "https://api.jsonplaceholder.dev", 1, 0, "2026-05-03 07:59", "aidot_1"]
-  ].map(([name, endpoint_url, methodCount, usageCount, updatedAt, updatedBy]) => ({
-    group_id: currentApiGroupId,
-    bot_id: currentApiBotId,
-    name,
-    endpoint_url,
-    methodCount,
-    usageCount,
-    updatedAt,
-    updatedBy
-  }));
-  const filteredApis = currentApiRegistry.filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId);
-  const visibleApis = filteredApis.length >= 10 ? filteredApis : aidotApiRows;
+  const allPageSelected = pagedApis.length > 0 && pagedApis.every((api) => currentApiUiState.selectedIds.includes(api.id));
   const tableColumns = "44px 120px 260px minmax(280px, 1fr) 110px 130px 160px 140px";
-  const renderApiRows = (rows) => {
-    if (!rows.length) {
-      return "";
-    }
-    return rows
-      .map((api) => {
-        const methodCount = api.methodCount || (Array.isArray(api.methods) ? api.methods.length : 1);
-        const usageCount = api.usageCount ?? api.usage_count ?? 0;
-        return `
-          <div class="data-grid__row">
-            <div class="data-grid__cell"><input type="checkbox" aria-label="${escapeText(api.name || "")} 선택" /></div>
-            <div class="data-grid__cell">API</div>
-            <div class="data-grid__cell"><a href="#">${escapeText(api.name || "-")}</a></div>
-            <div class="data-grid__cell">${escapeText(api.base_url || api.endpoint_url || "-")}</div>
-            <div class="data-grid__cell">${methodCount}</div>
-            <div class="data-grid__cell">${usageCount}</div>
-            <div class="data-grid__cell">${normalizeDateText(api.updated_at || api.updatedAt || api.updated_at_text || "2026-05-03 09:46")}</div>
-            <div class="data-grid__cell">${escapeText(api.updated_by || api.updatedBy || "aidot_1")}</div>
-          </div>
-        `;
-      })
-      .join("");
-  };
-  const renderApiPage = (rows) => `
+  const formatDate = (value) => value ? normalizeDateText(value.replace("T", " ").slice(0, 16)) : "-";
+  const renderPagination = () => `
+    <div class="studio-table-page__pagination">
+      <button type="button" data-api-page-first ${currentApiUiState.page <= 1 ? "disabled" : ""}>◀</button>
+      <button type="button" data-api-page-prev ${currentApiUiState.page <= 1 ? "disabled" : ""}>‹</button>
+      <span>${currentApiUiState.page}</span>
+      <button type="button" data-api-page-next ${currentApiUiState.page >= totalPages ? "disabled" : ""}>›</button>
+      <button type="button" data-api-page-last ${currentApiUiState.page >= totalPages ? "disabled" : ""}>▶</button>
+    </div>
+  `;
+  const renderList = () => `
     <section class="manual-main api-store-page group-api-page">
       <header class="studio-table-page__title-row">
         <h1>API</h1>
@@ -8597,69 +8778,759 @@ function renderApiRegistry() {
       <div class="studio-table-page__search-row">
         <label class="studio-table-page__search">
           <span aria-hidden="true">⌕</span>
-          <input type="text" placeholder="API 이름, 상세설명, 목적지 Base URL을 검색하세요." />
+          <input type="text" value="${escapeText(currentApiUiState.query)}" data-api-query placeholder="API 이름, 상세설명, 목적지 Base URL을 검색하세요." />
         </label>
+        <button type="button" class="studio-table-page__filter" aria-label="필터">▾</button>
         <div class="studio-table-page__search-actions">
-          <button type="button" class="studio-table-page__primary" data-api-add>+ API 등록</button>
+          ${canManageApi ? `<button type="button" class="studio-table-page__primary" data-api-create>+ API 등록</button>` : ""}
+          <button type="button" class="studio-table-page__ghost studio-table-page__more" data-api-action-toggle aria-label="더보기">⋮</button>
+          ${currentApiUiState.actionMenuOpen ? `
+            <div class="api-store-page__action-menu">
+              <button type="button" data-api-upload-open>업로드</button>
+              <button type="button" data-api-download-all>전체 다운로드</button>
+              <button type="button" data-api-download-selected ${currentApiUiState.selectedIds.length ? "" : "disabled"}>선택 다운로드</button>
+            </div>
+          ` : ""}
         </div>
       </div>
       <div class="studio-table-page__toolbar">
         <div class="studio-table-page__toolbar-left">
-          <strong>전체 ${rows.length}건</strong>
+          <strong>전체 ${sortRows.length}건</strong>
           <label class="manual-main__mini-select manual-main__mini-select--select">
-            ${renderWorkflowPageSize("api-answer-source", adminTablePageSizeByKey["api-answer-source"] || 10)}
+            ${renderWorkflowPageSize("api-answer-source", currentApiUiState.pageSize)}
           </label>
+          ${currentApiUiState.selectedIds.length ? `<button type="button" class="studio-table-page__ghost" data-api-delete-selected ${canManageApi ? "" : "disabled"}>삭제</button>` : ""}
         </div>
       </div>
       <div class="data-grid data-grid--studio" style="--data-grid-template:${tableColumns}">
         <div class="data-grid__row data-grid__row--header">
-          <div class="data-grid__cell"><input type="checkbox" aria-label="전체 선택" /></div>
+          <div class="data-grid__cell"><input type="checkbox" data-api-select-all aria-label="전체 선택" ${allPageSelected ? "checked" : ""} /></div>
           <div class="data-grid__cell">구분 ↕</div>
-          <div class="data-grid__cell">API 이름 ↕</div>
-          <div class="data-grid__cell">목적지 Base URL ↕</div>
-          <div class="data-grid__cell">메서드 수 ↕</div>
-          <div class="data-grid__cell">사용중인 의도 ↕</div>
-          <div class="data-grid__cell">최종수정일시 ↕</div>
-          <div class="data-grid__cell">최종수정자 ↕</div>
+          <div class="data-grid__cell"><button type="button" class="api-sort-button" data-api-sort="name">API 이름 ↕</button></div>
+          <div class="data-grid__cell"><button type="button" class="api-sort-button" data-api-sort="baseUrl">목적지 Base URL ↕</button></div>
+          <div class="data-grid__cell"><button type="button" class="api-sort-button" data-api-sort="methods">메서드 수 ↕</button></div>
+          <div class="data-grid__cell"><button type="button" class="api-sort-button" data-api-sort="usage">사용중인 의도 ↕</button></div>
+          <div class="data-grid__cell"><button type="button" class="api-sort-button" data-api-sort="updatedAt">최종수정일시 ↕</button></div>
+          <div class="data-grid__cell"><button type="button" class="api-sort-button" data-api-sort="updatedBy">최종수정자 ↕</button></div>
         </div>
-        ${renderApiRows(rows)}
+        ${pagedApis.map((api) => `
+          <div class="data-grid__row">
+            <div class="data-grid__cell"><input type="checkbox" data-api-select="${escapeText(api.id)}" aria-label="${escapeText(api.name)} 선택" ${currentApiUiState.selectedIds.includes(api.id) ? "checked" : ""} /></div>
+            <div class="data-grid__cell">API</div>
+            <div class="data-grid__cell"><button type="button" class="api-link-button" data-api-open="${escapeText(api.id)}">${escapeText(api.name)}</button></div>
+            <div class="data-grid__cell">${escapeText(api.baseUrl || "-")}</div>
+            <div class="data-grid__cell">${Number(api.methodCount || api.methods.length || 0)}</div>
+            <div class="data-grid__cell">${Number(api.usageCount || 0)}</div>
+            <div class="data-grid__cell">${formatDate(api.updatedAt || api.updated_at)}</div>
+            <div class="data-grid__cell">${escapeText(api.updatedBy || "-")}</div>
+          </div>
+        `).join("")}
       </div>
-      <input data-api-name value="JSONPlaceholder 게시글" hidden />
-      <input data-api-endpoint value="https://api.jsonplaceholder.dev" hidden />
-      <input data-api-response-path value="data.answer" hidden />
-      <select data-api-group hidden>${groups.map((group) => `<option value="${group.id}" ${group.id === currentApiGroupId ? "selected" : ""}>${group.name}</option>`).join("")}</select>
-      <select data-api-bot hidden>${bots.map((bot) => `<option value="${bot.id}" ${bot.id === currentApiBotId ? "selected" : ""}>${bot.name}</option>`).join("")}</select>
-      <span data-api-owner-meta hidden></span>
-      <div data-api-registry hidden></div>
+      ${renderPagination()}
+      <input type="file" accept=".json,.txt" data-api-upload-file hidden />
     </section>
   `;
-  if (apiSection) {
-    apiSection.innerHTML = renderApiPage(visibleApis);
-    bindWorkflowTableControls(apiSection, "api-answer-source");
-    bindAccessManagementControls();
-  } else if (apiRegistry) {
-    apiRegistry.innerHTML = renderApiRows(visibleApis);
-    bindWorkflowTableControls(apiRegistry, "api-answer-source");
-    bindAccessManagementControls();
+  const renderMethodDetail = (method) => `
+    <details class="api-detail-page__method" open>
+      <summary>
+        <span class="api-detail-page__method-summary">
+          <span>
+            <span class="api-detail-page__method-badge api-detail-page__method-badge--get">${escapeText(method.httpMethod || "GET")}</span>
+            <span class="api-detail-page__method-url">${escapeText(method.methodUrl || "-")}</span>
+          </span>
+          <span>
+            <span class="api-detail-page__method-badge api-detail-page__method-badge--sync">Sync</span>
+            <span class="api-detail-page__method-description">${escapeText(method.description || "")}</span>
+          </span>
+        </span>
+        <span class="api-detail-page__method-chevron">⌃</span>
+      </summary>
+      <div class="api-detail-page__method-body">
+        <strong class="api-detail-page__method-subhead">기본 정보</strong>
+        <div class="api-detail-page__method-config">
+          <dl>
+            <dt>메서드 URL</dt>
+            <dd>${escapeText(method.methodUrl || "-")}</dd>
+            <dt>유형</dt>
+            <dd>
+              <label><input type="checkbox" ${method.loggingEnabled ? "checked" : ""} disabled /> 로깅</label>
+              <label><input type="checkbox" ${method.proxyEnabled ? "checked" : ""} disabled /> 프록시</label>
+            </dd>
+          </dl>
+          <dl>
+            <dt>상세설명</dt>
+            <dd>${escapeText(method.description || "-")}</dd>
+            <dt>전송방식</dt>
+            <dd>
+              <label><input type="radio" checked disabled /> 동기</label>
+              <label class="is-disabled"><input type="radio" disabled /> 비동기</label>
+            </dd>
+          </dl>
+        </div>
+        <div class="api-detail-page__method-main">
+          <section>
+            <strong>파라미터</strong>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>설명</th>
+                  <th>유형</th>
+                  <th>Data type</th>
+                  <th>테스트 입력값</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(method.parameters || []).length ? method.parameters.map((parameter) => `
+                  <tr>
+                    <td>${escapeText(parameter.name || "-")}</td>
+                    <td>${escapeText(parameter.description || "-")}</td>
+                    <td>${escapeText(parameter.location || "query")}</td>
+                    <td>${escapeText(parameter.dataType || "string")}</td>
+                    <td><input type="text" data-api-test-input="${escapeText(method.id)}::${escapeText(parameter.name || parameter.id || "")}" value="${escapeText(currentApiUiState.testInputs?.[method.id]?.[parameter.name || parameter.id || ""] || parameter.defaultValue || "")}" /></td>
+                  </tr>
+                `).join("") : `<tr><td colspan="5"></td></tr>`}
+              </tbody>
+            </table>
+          </section>
+          <section>
+            <strong>파라미터 응답</strong>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Data type</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(method.outputParameters || []).length ? method.outputParameters.map((parameter) => `
+                  <tr>
+                    <td>${escapeText(parameter.name || parameter.path || "-")}</td>
+                    <td>${escapeText(parameter.dataType || "string")}</td>
+                  </tr>
+                `).join("") : `<tr><td>root</td><td>object</td></tr>`}
+              </tbody>
+            </table>
+          </section>
+        </div>
+        <div class="api-detail-page__test-output">
+          <div class="api-detail-page__test-output-head">
+            <strong>Test Output</strong>
+            <button type="button" class="studio-table-page__ghost" data-api-run-test="${escapeText(method.id)}">Test</button>
+          </div>
+          <pre>${escapeText(currentApiUiState.testOutputs?.[method.id] || "")}</pre>
+        </div>
+      </div>
+    </details>
+  `;
+  const renderDetail = (api) => `
+    <section class="studio-table-page api-detail-page">
+      <header class="studio-table-page__title-row">
+        <div>
+          <h1><span>API</span><span>&gt;</span><span>API 조회</span></h1>
+        </div>
+        <div class="api-detail-page__actions">
+          ${canManageApi ? `
+            <button type="button" class="studio-table-page__ghost" data-api-delete="${escapeText(api.id)}">삭제</button>
+            <button type="button" class="studio-table-page__primary" data-api-edit="${escapeText(api.id)}">수정</button>
+          ` : ""}
+          <button type="button" class="studio-table-page__ghost" data-api-back-list>목록</button>
+        </div>
+      </header>
+      <div class="api-detail-page__body">
+        <div class="api-detail-page__content">
+          <section class="api-detail-page__section">
+            <strong>API 등록기본</strong>
+            <div class="api-detail-page__info-grid">
+              <dl>
+                <dt>API 이름</dt><dd>${escapeText(api.name)}</dd>
+                <dt>상세설명</dt><dd>${escapeText(api.description || "-")}</dd>
+                <dt>생성일시</dt><dd>${formatDate(api.created_at || api.updatedAt)}</dd>
+                <dt>최종수정일시</dt><dd>${formatDate(api.updatedAt)}</dd>
+              </dl>
+              <dl>
+                <dt>API Key</dt><dd>${escapeText(api.apiKey)}</dd>
+                <dt>목적지 Base URL</dt><dd>${escapeText(api.baseUrl || "-")}</dd>
+                <dt>생성자</dt><dd>${escapeText(api.created_by || api.updatedBy || "-")}</dd>
+                <dt>최종수정자</dt><dd>${escapeText(api.updatedBy || "-")}</dd>
+              </dl>
+            </div>
+          </section>
+          <section class="api-detail-page__section">
+            <strong>API 메서드</strong>
+            <div class="api-detail-page__method-list">
+              ${(api.methods || []).map((method) => renderMethodDetail(method)).join("")}
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  `;
+  const renderEditorMethod = (method, methodIndex) => `
+    <section class="api-store-dialog__method-panel" data-api-method-panel="${escapeText(method.id)}">
+      <div class="api-store-dialog__method-top">
+        <strong>API 메서드</strong>
+        <div class="api-store-dialog__method-actions">
+          <button type="button" class="api-store-dialog__method-toggle${method.httpMethod === "GET" ? " is-active" : ""}" data-api-method-http="${escapeText(method.id)}::GET">GET</button>
+          <button type="button" class="api-store-dialog__method-toggle${method.httpMethod === "POST" ? " is-active" : ""}" data-api-method-http="${escapeText(method.id)}::POST">POST</button>
+        </div>
+        <button type="button" class="api-store-dialog__collapse" data-api-method-collapse="${escapeText(method.id)}" aria-label="접기">^</button>
+      </div>
+      <div class="api-store-dialog__subhead"><strong>기본 정보</strong></div>
+      <div class="api-store-dialog__basic-grid">
+        <label class="api-store-dialog__field api-store-dialog__field--method-url">
+          <span>메서드 URL <em>*</em></span>
+          <div class="api-store-dialog__count-field">
+            <input class="api-store-dialog__input" data-api-method-url="${escapeText(method.id)}" value="${escapeText(method.methodUrl || "")}" maxlength="500" placeholder="메서드 URL을 입력하세요." />
+            <small>${String(method.methodUrl || "").length}/500</small>
+          </div>
+        </label>
+        <label class="api-store-dialog__field api-store-dialog__field--description">
+          <span>상세설명</span>
+          <div class="api-store-dialog__count-field">
+            <input class="api-store-dialog__input" data-api-method-description="${escapeText(method.id)}" value="${escapeText(method.description || "")}" maxlength="50" placeholder="메서드에 대한 상세 설명을 입력하세요." />
+            <small>${String(method.description || "").length}/50</small>
+          </div>
+        </label>
+        <div class="api-store-dialog__type-row">
+          <span>유형</span>
+          <label class="api-store-dialog__check"><input type="checkbox" data-api-method-logging="${escapeText(method.id)}" ${method.loggingEnabled ? "checked" : ""} /><span>로깅</span></label>
+          <label class="api-store-dialog__check"><input type="checkbox" data-api-method-proxy="${escapeText(method.id)}" ${method.proxyEnabled ? "checked" : ""} /><span>프록시</span></label>
+        </div>
+        <div class="api-store-dialog__radio-group api-store-dialog__radio-group--transfer">
+          <span>전송방식</span>
+          <label><input type="radio" checked disabled /> 동기</label>
+          <label class="is-disabled"><input type="radio" disabled /> 비동기</label>
+        </div>
+      </div>
+      <div class="api-store-dialog__method-body">
+        <section class="api-store-dialog__parameters">
+          <div class="api-store-dialog__table-toolbar">
+            <strong>파라미터</strong>
+            <button type="button" data-api-param-add="${escapeText(method.id)}">+ 파라미터 추가</button>
+          </div>
+          <div class="api-store-dialog__param-table">
+            <div class="api-store-dialog__param-head">
+              <span>Name</span><span>설명</span><span>유형</span><span>데이터 유형</span><span>Default 값</span><span>필수</span><span>보이기</span><span></span>
+            </div>
+            ${(method.parameters || []).length ? method.parameters.map((parameter) => `
+              <div class="api-store-dialog__param-row">
+                <input data-api-param-name="${escapeText(method.id)}::${escapeText(parameter.id)}" value="${escapeText(parameter.name || "")}" placeholder="최대 30자 입력" />
+                <input data-api-param-description="${escapeText(method.id)}::${escapeText(parameter.id)}" value="${escapeText(parameter.description || "")}" placeholder="최대 30자 입력" />
+                <select data-api-param-location="${escapeText(method.id)}::${escapeText(parameter.id)}">
+                  ${["query", "path", "header", "body"].map((option) => `<option value="${option}" ${parameter.location === option ? "selected" : ""}>${option}</option>`).join("")}
+                </select>
+                <select data-api-param-type="${escapeText(method.id)}::${escapeText(parameter.id)}">
+                  ${["string", "number", "boolean", "object", "array"].map((option) => `<option value="${option}" ${parameter.dataType === option ? "selected" : ""}>${option}</option>`).join("")}
+                </select>
+                <input data-api-param-default="${escapeText(method.id)}::${escapeText(parameter.id)}" value="${escapeText(parameter.defaultValue || "")}" placeholder="default" />
+                <input type="checkbox" data-api-param-required="${escapeText(method.id)}::${escapeText(parameter.id)}" ${parameter.required ? "checked" : ""} />
+                <input type="checkbox" data-api-param-visible="${escapeText(method.id)}::${escapeText(parameter.id)}" ${parameter.visible ? "checked" : ""} />
+                <button type="button" class="api-store-dialog__param-icon-button" data-api-param-delete="${escapeText(method.id)}::${escapeText(parameter.id)}" aria-label="파라미터 삭제"><span class="api-store-dialog__trash-icon" aria-hidden="true"></span></button>
+              </div>
+            `).join("") : `<div class="api-store-dialog__param-empty">파라미터를 추가하세요.</div>`}
+          </div>
+        </section>
+        <section class="api-store-dialog__output">
+          <div class="api-store-dialog__output-head">
+            <strong>파라미터 응답 설정</strong>
+            <div>
+              <label><input type="checkbox" data-api-output-text="${escapeText(method.id)}" ${String(method.outputSample || "").trim() ? "checked" : ""} /> TEXT 편집</label>
+              <button type="button" data-api-sample-open="${escapeText(method.id)}">Sample 입력</button>
+            </div>
+          </div>
+          <div class="api-store-dialog__output-table">
+            <div class="api-store-dialog__output-row api-store-dialog__output-row--head"><span>Name</span><span>Data type</span></div>
+            ${(method.outputParameters || []).length ? method.outputParameters.map((parameter) => `
+              <div class="api-store-dialog__output-row">
+                <span>${escapeText(parameter.name || parameter.path || "-")}</span>
+                <span>${escapeText(parameter.dataType || "string")}</span>
+              </div>
+            `).join("") : `<div class="api-store-dialog__output-empty"></div>`}
+          </div>
+        </section>
+      </div>
+      <div class="api-store-dialog__method-footer">
+        <button type="button" data-api-method-delete="${escapeText(method.id)}" ${methodIndex === 0 && (currentApiUiState.editingDraft?.methods || []).length <= 1 ? "disabled" : ""}>삭제</button>
+      </div>
+    </section>
+  `;
+  const renderEditor = (api) => `
+    <section class="studio-table-page api-store-page api-store-page--editor">
+      <section class="api-store-dialog" role="region" aria-label="API 등록">
+        <header class="api-store-dialog__header">
+          <div><strong>API 메서드 정보를 입력하세요.</strong></div>
+          <button type="button" class="api-store-dialog__close" data-api-back-list aria-label="닫기">×</button>
+        </header>
+        <div class="api-store-dialog__body">
+          <section class="api-store-dialog__api-base">
+            <div class="api-store-dialog__subhead"><strong>API 기본 정보</strong></div>
+            <div class="api-store-dialog__api-grid">
+              <label class="api-store-dialog__field">
+                <span>API 이름 <em>*</em></span>
+                <div class="api-store-dialog__count-field">
+                  <input class="api-store-dialog__input" data-api-name value="${escapeText(api.name || "")}" maxlength="30" placeholder="다른 사용자가 입력하는 의미를 알 수 있게 입력해주세요." />
+                  <small>${String(api.name || "").length}/30</small>
+                </div>
+              </label>
+              <label class="api-store-dialog__field">
+                <span>API Key <em>*</em></span>
+                <div class="api-store-dialog__count-field">
+                  <input class="api-store-dialog__input" data-api-key value="${escapeText(api.apiKey || "")}" maxlength="40" ${currentApiUiState.editingExisting ? "disabled" : ""} placeholder="c436730e-b006-4d38-94fd-997da2a77d83" />
+                  <small>${String(api.apiKey || "").length}/40</small>
+                </div>
+              </label>
+              <label class="api-store-dialog__field">
+                <span>상세설명</span>
+                <div class="api-store-dialog__count-field">
+                  <input class="api-store-dialog__input" data-api-description value="${escapeText(api.description || "")}" maxlength="50" placeholder="API를 설명하여 알 수 있는 문장을 입력하세요." />
+                  <small>${String(api.description || "").length}/50</small>
+                </div>
+              </label>
+              <label class="api-store-dialog__field">
+                <span>목적지 Base URL <em>*</em></span>
+                <div class="api-store-dialog__count-field">
+                  <input class="api-store-dialog__input" data-api-base-url value="${escapeText(api.baseUrl || api.endpoint_url || "")}" maxlength="500" placeholder="URL을 입력하세요. ex) http://{domain}:{port}" />
+                  <small>${String(api.baseUrl || api.endpoint_url || "").length}/500</small>
+                </div>
+              </label>
+            </div>
+          </section>
+          ${(api.methods || []).map((method, methodIndex) => renderEditorMethod(method, methodIndex)).join("")}
+          <button type="button" class="api-store-dialog__add-method" data-api-method-add>+ 메서드 추가</button>
+        </div>
+        <footer class="api-store-dialog__footer">
+          <button type="button" class="api-store-dialog__button" data-api-back-list>취소</button>
+          <button type="button" class="api-store-dialog__button api-store-dialog__button--primary" data-api-save>저장</button>
+        </footer>
+      </section>
+    </section>
+  `;
+  if (currentApiUiState.mode === "detail" && selectedApi) {
+    apiSection.innerHTML = renderDetail(selectedApi);
+  } else if (currentApiUiState.mode === "edit") {
+    currentApiUiState.editingDraft = normalizeAidotApiEntry(currentApiUiState.editingDraft || selectedApi || createAidotApiDraft());
+    apiSection.innerHTML = renderEditor(currentApiUiState.editingDraft);
+  } else {
+    apiSection.innerHTML = renderList();
   }
-  refreshApiRegistryFromServer()
-    .then((loaded) => {
-      if (loaded) {
-        const nextItems = currentApiRegistry.filter((api) => api.group_id === currentApiGroupId && api.bot_id === currentApiBotId);
-        const nextVisibleItems = nextItems.length >= 10 ? nextItems : aidotApiRows;
-        if (apiSection) {
-          apiSection.innerHTML = renderApiPage(nextVisibleItems);
-          bindWorkflowTableControls(apiSection, "api-answer-source");
-          bindAccessManagementControls();
-        } else if (apiRegistry) {
-          apiRegistry.innerHTML = renderApiRows(nextVisibleItems);
-          bindWorkflowTableControls(apiRegistry, "api-answer-source");
-          bindAccessManagementControls();
+  bindWorkflowTableControls(apiSection, "api-answer-source");
+  bindAccessManagementControls();
+  bindApiRegistryControls();
+  const cacheKey = `${currentApiGroupId}:${currentApiBotId}`;
+  const loadedAt = apiRegistryLoadedAtByKey.get(cacheKey) || 0;
+  if (Date.now() - loadedAt >= API_REGISTRY_CACHE_TTL_MS) {
+    refreshApiRegistryFromServer()
+      .then((loaded) => {
+        if (loaded) {
+          renderApiRegistry();
+          document.dispatchEvent(new CustomEvent("cga:content-rendered"));
         }
-        document.dispatchEvent(new CustomEvent("cga:content-rendered"));
+      })
+      .catch(() => {});
+  }
+}
+
+function bindApiRegistryControls() {
+  const root = document.querySelector('[data-screen-id="api-answer-source"]');
+  if (!root) return;
+  root.querySelectorAll("[data-api-query]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("input", () => {
+      currentApiUiState.query = input.value || "";
+      currentApiUiState.page = 1;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-action-toggle]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentApiUiState.actionMenuOpen = !currentApiUiState.actionMenuOpen;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-create]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentApiUiState.mode = "edit";
+      currentApiUiState.editingExisting = false;
+      currentApiUiState.activeApiId = "";
+      currentApiUiState.editingDraft = createAidotApiDraft();
+      currentApiUiState.actionMenuOpen = false;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-open]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentApiUiState.mode = "detail";
+      currentApiUiState.activeApiId = button.dataset.apiOpen || "";
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-back-list]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentApiUiState.mode = "list";
+      currentApiUiState.editingDraft = null;
+      currentApiUiState.editingExisting = false;
+      currentApiUiState.actionMenuOpen = false;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-edit]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const api = getCurrentApiEntryById(button.dataset.apiEdit || "");
+      if (!api) return;
+      currentApiUiState.mode = "edit";
+      currentApiUiState.activeApiId = api.id;
+      currentApiUiState.editingExisting = true;
+      currentApiUiState.editingDraft = normalizeAidotApiEntry(api);
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-delete]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      const apiId = button.dataset.apiDelete || "";
+      if (!apiId || !window.confirm("API를 삭제하시겠습니까?")) return;
+      await deleteApiAnswerOnServer(currentApiGroupId, currentApiBotId, apiId);
+      await refreshApiRegistryFromServer();
+      currentApiUiState.mode = "list";
+      currentApiUiState.activeApiId = "";
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-delete-selected]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      if (!currentApiUiState.selectedIds.length || !window.confirm("선택한 API를 삭제하시겠습니까?")) return;
+      for (const apiId of [...currentApiUiState.selectedIds]) {
+        await deleteApiAnswerOnServer(currentApiGroupId, currentApiBotId, apiId);
       }
-    })
-    .catch(() => {});
+      currentApiUiState.selectedIds = [];
+      await refreshApiRegistryFromServer();
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-select-all]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("change", () => {
+      const pageIds = [...root.querySelectorAll("[data-api-select]")].map((checkbox) => checkbox.dataset.apiSelect).filter(Boolean);
+      currentApiUiState.selectedIds = input.checked
+        ? [...new Set([...currentApiUiState.selectedIds, ...pageIds])]
+        : currentApiUiState.selectedIds.filter((id) => !pageIds.includes(id));
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-select]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("change", () => {
+      const apiId = input.dataset.apiSelect || "";
+      currentApiUiState.selectedIds = input.checked
+        ? [...new Set([...currentApiUiState.selectedIds, apiId])]
+        : currentApiUiState.selectedIds.filter((id) => id !== apiId);
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-sort]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const nextKey = button.dataset.apiSort || "updatedAt";
+      if (currentApiUiState.sortKey === nextKey) {
+        currentApiUiState.sortDirection = currentApiUiState.sortDirection === "asc" ? "desc" : "asc";
+      } else {
+        currentApiUiState.sortKey = nextKey;
+        currentApiUiState.sortDirection = "asc";
+      }
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-page-first]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentApiUiState.page = 1;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-page-prev]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentApiUiState.page = Math.max(1, currentApiUiState.page - 1);
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-page-next]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentApiUiState.page += 1;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-page-last]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const total = Math.max(1, Math.ceil(getCurrentApiEntries().filter((api) => !currentApiUiState.query || [api.name, api.description, api.baseUrl, api.apiKey].some((value) => String(value || "").toLowerCase().includes(currentApiUiState.query.trim().toLowerCase()))).length / currentApiUiState.pageSize));
+      currentApiUiState.page = total;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-upload-open]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      root.querySelector("[data-api-upload-file]")?.click();
+    });
+  });
+  root.querySelectorAll("[data-api-upload-file]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const payload = JSON.parse(await file.text());
+      const imported = extractApiListFromPackage(payload).map((api, index) => normalizeAidotApiEntry({
+        ...api,
+        group_id: currentApiGroupId,
+        bot_id: currentApiBotId
+      }, index));
+      for (const api of imported) {
+        const existing = getCurrentApiEntries().find((item) => item.id === api.id || (item.apiKey && item.apiKey === api.apiKey));
+        if (existing) {
+          await updateApiAnswerOnServer({ ...existing, ...api, id: existing.id, group_id: currentApiGroupId, bot_id: currentApiBotId });
+        } else {
+          await saveApiAnswerToServer({ ...api, group_id: currentApiGroupId, bot_id: currentApiBotId });
+        }
+      }
+      input.value = "";
+      currentApiUiState.actionMenuOpen = false;
+      await refreshApiRegistryFromServer();
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-download-all]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const payload = buildApiMappingPackage();
+      downloadTextFile("api-all.json", JSON.stringify(payload, null, 2));
+      currentApiUiState.actionMenuOpen = false;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-download-selected]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const selected = getCurrentApiEntries().filter((api) => currentApiUiState.selectedIds.includes(api.id));
+      if (!selected.length) return;
+      const payload = buildApiMappingPackage();
+      payload.apis = payload.apis.filter((api) => selected.some((entry) => entry.id === api.id || entry.apiKey === api.apiKey));
+      payload.apiList = payload.apiList.filter((api) => selected.some((entry) => entry.name === api.name && entry.endpoint_url === api.endpoint_url));
+      downloadTextFile("api-selected.json", JSON.stringify(payload, null, 2));
+      currentApiUiState.actionMenuOpen = false;
+      renderApiRegistry();
+    });
+  });
+  const bindDraftText = (selector, updater) => {
+    root.querySelectorAll(selector).forEach((input) => {
+      if (input.dataset.bound === "true") return;
+      input.dataset.bound = "true";
+      input.addEventListener("input", () => {
+        currentApiUiState.editingDraft = updater(currentApiUiState.editingDraft, input);
+        renderApiRegistry();
+      });
+    });
+  };
+  bindDraftText("[data-api-name]", (draft, input) => ({ ...draft, name: input.value }));
+  bindDraftText("[data-api-key]", (draft, input) => ({ ...draft, apiKey: input.value }));
+  bindDraftText("[data-api-description]", (draft, input) => ({ ...draft, description: input.value }));
+  bindDraftText("[data-api-base-url]", (draft, input) => ({
+    ...draft,
+    baseUrl: input.value,
+    endpoint_url: input.value,
+    methods: (draft.methods || []).map((method) => ({
+      ...method,
+      methodUrl: method.methodUrl || input.value
+    }))
+  }));
+  root.querySelectorAll("[data-api-method-http]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const [methodId, httpMethod] = String(button.dataset.apiMethodHttp || "").split("::");
+      currentApiUiState.editingDraft = {
+        ...currentApiUiState.editingDraft,
+        methods: (currentApiUiState.editingDraft.methods || []).map((method) => method.id === methodId ? { ...method, httpMethod } : method)
+      };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-method-url], [data-api-method-description]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("input", () => {
+      const methodId = input.dataset.apiMethodUrl || input.dataset.apiMethodDescription || "";
+      const field = input.dataset.apiMethodUrl ? "methodUrl" : "description";
+      currentApiUiState.editingDraft = {
+        ...currentApiUiState.editingDraft,
+        methods: (currentApiUiState.editingDraft.methods || []).map((method) => method.id === methodId ? { ...method, [field]: input.value } : method)
+      };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-method-logging], [data-api-method-proxy]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("change", () => {
+      const methodId = input.dataset.apiMethodLogging || input.dataset.apiMethodProxy || "";
+      const field = input.dataset.apiMethodLogging ? "loggingEnabled" : "proxyEnabled";
+      currentApiUiState.editingDraft = {
+        ...currentApiUiState.editingDraft,
+        methods: (currentApiUiState.editingDraft.methods || []).map((method) => method.id === methodId ? { ...method, [field]: input.checked } : method)
+      };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-method-add]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      currentApiUiState.editingDraft = {
+        ...currentApiUiState.editingDraft,
+        methods: [...(currentApiUiState.editingDraft.methods || []), createAidotApiMethodDraft((currentApiUiState.editingDraft.methods || []).length)]
+      };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-method-delete]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const methodId = button.dataset.apiMethodDelete || "";
+      currentApiUiState.editingDraft = {
+        ...currentApiUiState.editingDraft,
+        methods: (currentApiUiState.editingDraft.methods || []).filter((method) => method.id !== methodId)
+      };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-param-add]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const methodId = button.dataset.apiParamAdd || "";
+      currentApiUiState.editingDraft = {
+        ...currentApiUiState.editingDraft,
+        methods: (currentApiUiState.editingDraft.methods || []).map((method) => method.id === methodId ? { ...method, parameters: [...(method.parameters || []), createAidotApiParameterDraft("query")] } : method)
+      };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-param-delete]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const [methodId, parameterId] = String(button.dataset.apiParamDelete || "").split("::");
+      currentApiUiState.editingDraft = {
+        ...currentApiUiState.editingDraft,
+        methods: (currentApiUiState.editingDraft.methods || []).map((method) => method.id === methodId ? { ...method, parameters: (method.parameters || []).filter((parameter) => parameter.id !== parameterId) } : method)
+      };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-param-name], [data-api-param-description], [data-api-param-location], [data-api-param-type], [data-api-param-default], [data-api-param-required], [data-api-param-visible]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    const key = input.dataset.apiParamName || input.dataset.apiParamDescription || input.dataset.apiParamLocation || input.dataset.apiParamType || input.dataset.apiParamDefault || input.dataset.apiParamRequired || input.dataset.apiParamVisible || "";
+    input.addEventListener(input.type === "checkbox" || input.tagName === "SELECT" ? "change" : "input", () => {
+      const [methodId, parameterId] = String(key).split("::");
+      const field = input.dataset.apiParamName ? "name"
+        : input.dataset.apiParamDescription ? "description"
+        : input.dataset.apiParamLocation ? "location"
+        : input.dataset.apiParamType ? "dataType"
+        : input.dataset.apiParamDefault ? "defaultValue"
+        : input.dataset.apiParamRequired ? "required"
+        : "visible";
+      const value = input.type === "checkbox" ? input.checked : input.value;
+      currentApiUiState.editingDraft = {
+        ...currentApiUiState.editingDraft,
+        methods: (currentApiUiState.editingDraft.methods || []).map((method) => method.id === methodId ? {
+          ...method,
+          parameters: (method.parameters || []).map((parameter) => parameter.id === parameterId ? { ...parameter, [field]: value } : parameter)
+        } : method)
+      };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-save]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      const draft = normalizeAidotApiEntry({
+        ...currentApiUiState.editingDraft,
+        group_id: currentApiGroupId,
+        bot_id: currentApiBotId
+      });
+      if (!draft.name.trim() || !draft.apiKey.trim() || !draft.baseUrl.trim()) return;
+      if (currentApiUiState.editingExisting) {
+        await updateApiAnswerOnServer(draft);
+      } else {
+        await saveApiAnswerToServer(draft);
+      }
+      await refreshApiRegistryFromServer();
+      currentApiUiState.mode = "detail";
+      currentApiUiState.editingExisting = false;
+      currentApiUiState.editingDraft = null;
+      currentApiUiState.activeApiId = draft.id;
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-test-input]").forEach((input) => {
+    if (input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+    input.addEventListener("input", () => {
+      const [methodId, parameterName] = String(input.dataset.apiTestInput || "").split("::");
+      currentApiUiState.testInputs[methodId] = {
+        ...(currentApiUiState.testInputs[methodId] || {}),
+        [parameterName]: input.value
+      };
+    });
+  });
+  root.querySelectorAll("[data-api-run-test]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const api = getCurrentApiEntryById();
+      const methodId = button.dataset.apiRunTest || "";
+      const method = api?.methods?.find((item) => item.id === methodId);
+      if (!api || !method) return;
+      currentApiUiState.testOutputs[methodId] = JSON.stringify({
+        apiKey: api.apiKey,
+        baseUrl: api.baseUrl,
+        method: method.httpMethod,
+        methodUrl: method.methodUrl,
+        parameterValues: currentApiUiState.testInputs[methodId] || {}
+      }, null, 2);
+      renderApiRegistry();
+    });
+  });
 }
 
 function rerenderAdminAndAccess() {
