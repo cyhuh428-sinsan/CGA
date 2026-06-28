@@ -2467,6 +2467,57 @@ function getAidotApiOutputRows(method = {}) {
   return [{ key: "root", name: "root", dataType: "object", depth: 0 }];
 }
 
+function collectAidotApiOutputParametersFromSample(value, parentPath = "root") {
+  if (Array.isArray(value)) {
+    if (!value.length) {
+      return [{
+        id: parentPath,
+        name: parentPath === "root" ? "root" : parentPath.replace(/^root\./, ""),
+        path: parentPath,
+        dataType: "array",
+        description: ""
+      }];
+    }
+    const rows = [{
+      id: parentPath,
+      name: parentPath === "root" ? "root" : parentPath.replace(/^root\./, ""),
+      path: parentPath,
+      dataType: "array",
+      description: ""
+    }];
+    return rows.concat(collectAidotApiOutputParametersFromSample(value[0], `${parentPath}[]`));
+  }
+  if (value && typeof value === "object") {
+    const rows = [{
+      id: parentPath,
+      name: parentPath === "root" ? "root" : parentPath.replace(/^root\./, ""),
+      path: parentPath,
+      dataType: "object",
+      description: ""
+    }];
+    Object.entries(value).forEach(([key, childValue]) => {
+      rows.push(...collectAidotApiOutputParametersFromSample(childValue, parentPath === "root" ? `root.${key}` : `${parentPath}.${key}`));
+    });
+    return rows;
+  }
+  return [{
+    id: parentPath,
+    name: parentPath === "root" ? "root" : parentPath.replace(/^root\./, ""),
+    path: parentPath,
+    dataType: value == null ? "string" : (typeof value === "number" ? "number" : typeof value === "boolean" ? "boolean" : "string"),
+    description: ""
+  }];
+}
+
+function buildAidotApiOutputParametersFromSampleText(sampleText = "") {
+  const trimmed = String(sampleText || "").trim();
+  if (!trimmed) return [];
+  const parsed = JSON.parse(trimmed);
+  return collectAidotApiOutputParametersFromSample(parsed)
+    .filter((parameter, index, array) => index === 0 || parameter.path !== "root")
+    .map((parameter, index) => normalizeAidotApiOutputParameter(parameter, index));
+}
+
 function syncApiUiPageSize() {
   currentApiUiState.pageSize = adminTablePageSizeByKey["api-answer-source"] || currentApiUiState.pageSize || 10;
   adminTablePageSizeByKey["api-answer-source"] = currentApiUiState.pageSize;
@@ -9146,13 +9197,19 @@ function renderApiRegistry() {
           </div>
           <div class="api-store-dialog__output-table">
             <div class="api-store-dialog__output-row api-store-dialog__output-row--head"><span>Name</span><span>Data type</span></div>
-            ${(method.outputParameters || []).length ? method.outputParameters.map((parameter) => `
+            ${getAidotApiOutputRows(method).map((row) => `
               <div class="api-store-dialog__output-row">
-                <span>${escapeText(parameter.name || parameter.path || "-")}</span>
-                <span>${escapeText(parameter.dataType || "string")}</span>
+                <span style="padding-left:${Number(row.depth || 0) * 12}px">${escapeText(row.name)}</span>
+                <span>${escapeText(row.dataType || "string")}</span>
               </div>
             `).join("") : `<div class="api-store-dialog__output-empty"></div>`}
           </div>
+          ${String(method.outputSample || "").trim() ? `
+            <label class="api-store-dialog__field api-store-dialog__field--sample">
+              <span>응답 Sample TEXT</span>
+              <textarea class="api-store-dialog__textarea" data-api-output-sample="${escapeText(method.id)}" placeholder='{"root":{"message":"sample"}}'>${escapeText(method.outputSample || "")}</textarea>
+            </label>
+          ` : ""}
         </section>
       </div>
       <div class="api-store-dialog__method-footer">
@@ -9620,6 +9677,61 @@ function bindApiRegistryControls() {
           parameters: (method.parameters || []).map((parameter) => parameter.id === parameterId ? { ...parameter, [field]: value } : parameter)
         } : method)
       };
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-output-text]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const methodId = input.dataset.apiOutputText;
+      currentApiUiState.editingDraft = updateApiMethodDraft(currentApiUiState.editingDraft, methodId, (method) => ({
+        ...method,
+        outputSample: input.checked ? (String(method.outputSample || "").trim() || "{\n  \n}") : ""
+      }));
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-output-sample]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const methodId = input.dataset.apiOutputSample;
+      currentApiUiState.editingDraft = updateApiMethodDraft(currentApiUiState.editingDraft, methodId, (method) => ({
+        ...method,
+        outputSample: input.value
+      }));
+    });
+    input.addEventListener("blur", () => {
+      const methodId = input.dataset.apiOutputSample;
+      try {
+        const outputParameters = buildAidotApiOutputParametersFromSampleText(input.value);
+        currentApiUiState.editingDraft = updateApiMethodDraft(currentApiUiState.editingDraft, methodId, (method) => ({
+          ...method,
+          outputSample: input.value,
+          outputParameters
+        }));
+        currentApiUiState.errorMessage = "";
+      } catch (error) {
+        currentApiUiState.errorMessage = "응답 Sample TEXT는 JSON 형식이어야 합니다.";
+      }
+      renderApiRegistry();
+    });
+  });
+  root.querySelectorAll("[data-api-sample-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const methodId = button.dataset.apiSampleOpen;
+      const method = (currentApiUiState.editingDraft?.methods || []).find((item) => item.id === methodId);
+      if (!method) return;
+      const sampleText = window.prompt("응답 Sample JSON을 입력하세요.", String(method.outputSample || "{\n  \n}"));
+      if (sampleText == null) return;
+      try {
+        const outputParameters = buildAidotApiOutputParametersFromSampleText(sampleText);
+        currentApiUiState.editingDraft = updateApiMethodDraft(currentApiUiState.editingDraft, methodId, (draftMethod) => ({
+          ...draftMethod,
+          outputSample: sampleText,
+          outputParameters
+        }));
+        currentApiUiState.errorMessage = "";
+      } catch (error) {
+        currentApiUiState.errorMessage = "응답 Sample TEXT는 JSON 형식이어야 합니다.";
+      }
       renderApiRegistry();
     });
   });

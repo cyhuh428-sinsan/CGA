@@ -1113,31 +1113,12 @@ function createDefaultDetailAssetsForBot(groupId, botId) {
   return {
     group_id: groupId,
     bot_id: botId,
-    intent_utterances: [
-      { utterance: "I need to reset my password", division: "password_reset" },
-      { utterance: "How do I update my account?", division: "account_update" },
-      { utterance: "I have a billing question", division: "billing_question" }
-    ],
-    entities: [
-      { name: "email", value: "email", rowType: "P", detail: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b" },
-      { name: "channel", value: "web", rowType: "S", detail: "webchat" }
-    ],
-    dictionary: [
-      { word: "password", synonyms: ["login password", "account password"] },
-      { word: "plan", synonyms: ["subscription", "membership"] }
-    ],
-    rules: [
-      { name: "Business hours", description: "Route after-hours questions", expression: "time.after(18:00)", target: "support_after_hours", enabled: "Y" },
-      { name: "Billing priority", description: "Route billing requests", expression: "intent == billing_question", target: "billing_question", enabled: "Y" }
-    ],
-    blocklists: [
-      { name: "아", type: "0", pattern: "아", enabled: "Y" },
-      { name: "일단", type: "0", pattern: "일단", enabled: "Y" }
-    ],
-    scenarios: [
-      { id: "password_reset", type: "intent", displayName: "password_reset", answer: "Open Account Settings and choose Reset Password.", dialogCards: ["Open Account Settings and choose Reset Password."] },
-      { id: "account_update", type: "intent", displayName: "account_update", answer: "Open Profile Settings and update your account information.", dialogCards: ["Open Profile Settings and update your account information."] }
-    ],
+    intent_utterances: [],
+    entities: [],
+    dictionary: [],
+    rules: [],
+    blocklists: [],
+    scenarios: [],
     updated_at: null
   };
 }

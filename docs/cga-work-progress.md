@@ -6231,3 +6231,18 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 상세 제목 아래에 Base URL 보조 문구 추가
   - 메서드 요약 설명의 빈값 fallback 문구를 Aidot 기준으로 보정
   - 파라미터 응답 표를 Aidot처럼 `root` 포함 계층형 출력 기준으로 표시
+
+### API 편집 응답 Sample 동작 연결 및 기본 seed 정리
+
+- 요청:
+  - API 등록/수정 하위 화면도 Aidot 흐름에 맞게 계속 보강
+  - 가짜 기본 데이터는 제거
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `scripts/serve-studio.js`
+- 반영 내용:
+  - `TEXT 편집` 체크 시 응답 Sample TEXT 입력 영역이 열리도록 연결
+  - `Sample 입력` 버튼에 JSON prompt 입력을 연결하고, 입력 JSON을 기준으로 `outputParameters`를 자동 생성
+  - 응답 Sample TEXT blur 시 JSON이면 Aidot식 출력 파라미터 트리를 다시 계산하고, JSON이 아니면 오류 문구를 표시
+  - API 편집 화면의 출력 파라미터 표도 상세 화면과 동일하게 `root` 기준 계층형 표시로 맞춤
+  - 새 봇 기본 Detail seed에 남아 있던 예시 의도/개체/사전/룰/시나리오/차단어 샘플 데이터를 제거해 빈 기본값으로 시작하도록 정리
