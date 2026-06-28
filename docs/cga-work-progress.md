@@ -5854,3 +5854,29 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js docs/cga-work-progress.md`
   - `npm run studio:check`
+
+### `01 봇 생성` / `02 AI 모델 설정`을 Aidot 항목 체계로 재정렬
+
+- 문제:
+  - `01 봇 생성` 화면이 Aidot 생성 항목 대신 CGA 임의 구조 결정 항목 위주로 보였다.
+  - `02 AI 모델 설정`도 실제 Aidot 생성값이 아니라 구조 추론값 중심으로 표출되어
+    생성 화면과 설정 화면이 서로 다르게 보였다.
+- 반영 파일:
+  - `apps/studio/index.html`
+  - `apps/studio/app.js`
+- 반영 내용:
+  - `01 봇 생성`
+    - `봇 유형 / 봇 모드 / 봇 프로필 / 봇 이름 / 소개`
+    - `언어 / NLU 방식 / NLU 모델 / 답변 방식 / LLM Provider / LLM 세부 모델 / 버전 이름`
+    순서로 Aidot 생성 항목을 먼저 배치
+  - 생성 화면용 `ai_config` 기본 구조를 추가하고
+    선택값이 `currentStudioState`와 `ai_config`에 함께 반영되도록 연결
+  - `NLU 방식` 변경 시 `NLU 모델` 목록이 같이 바뀌고
+    `LLM Provider` 변경 시 `LLM 세부 모델` 목록도 같이 바뀌도록 보강
+  - `02 AI 모델 설정`은 구조 추론 대신 `ai_config` 기준으로
+    유형, 언어, NLU 방식/모델, 답변 방식, LLM 정보를 읽어오도록 정리
+  - 고정 안내 문구는 Aidot 기준 문장으로 보강
+- 검증 예정:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js apps/studio/index.html docs/cga-work-progress.md`
+  - `npm run studio:check`

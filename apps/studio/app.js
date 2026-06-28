@@ -1304,13 +1304,14 @@ function resetWorkspaceEditorStateForNewBot(bot) {
   currentVersionDocumentExtraFields = createEmptyVersionAssetMetadataState().documentExtraFields;
   currentVersionSystemConfigExtraFields = createEmptyVersionAssetMetadataState().systemConfigExtraFields;
   currentVersionLegacyExtraFields = createEmptyVersionAssetMetadataState().legacyVersionExtraFields;
+  currentVersionSystemConfigExtraFields.ai_config = createDefaultAiConfig();
   currentStudioState.bot = {
     ...emptyStudioState.bot,
     id: bot?.id || null,
     name: bot?.name || "",
     description: "",
     version: bot?.version || "v0.1",
-    defaultLocale: bot?.locale || emptyStudioState.bot.defaultLocale
+    defaultLocale: bot?.locale || "ko"
   };
   currentStudioState.structuralChoices = { ...emptyStudioState.structuralChoices };
   currentStudioState.orchestrator = { ...emptyStudioState.orchestrator };
@@ -1333,6 +1334,7 @@ function resetWorkspaceEditorStateForNewBot(bot) {
   currentIntentUtteranceAssets = [];
   currentSelectedIntentId = "";
   currentBuildAidotView = "list";
+  syncAiConfigToStudioState();
 }
 
 function applyCurrentBotToStudioState(bot) {
@@ -3513,6 +3515,39 @@ function coerceFieldValue(field, value) {
   return value;
 }
 
+function syncAiConfigToStudioState() {
+  const aiConfig = getCurrentAiConfig();
+  currentStudioState.bot.defaultLocale = String(aiConfig.language || "ko");
+  currentStudioState.bot.description = String(aiConfig.introduction || "");
+  const nluType = String(aiConfig.nlu_type || "ml");
+  const answerMode = String(aiConfig.answer_mode || "fixed");
+  const usesLlm = nluType === "llm" || answerMode === "llm_rag" || answerMode === "llm";
+  const usesPdf = answerMode === "semantic_rag" || answerMode === "llm_rag";
+  currentStudioState.structuralChoices.useLlm = usesLlm;
+  currentStudioState.structuralChoices.allowPdf = usesPdf;
+  currentStudioState.structuralChoices.compositionInput = usesPdf ? "both" : "utterances";
+  currentStudioState.llm.status = usesLlm ? "connected" : "not_connected";
+  currentStudioState.llm.provider = usesLlm ? String(aiConfig.llm_provider || "chatgpt") : null;
+  currentStudioState.llm.model = usesLlm ? String(aiConfig.llm_model || "gpt-4o-mini") : null;
+  currentStudioState.channels.kakaoKr = currentStudioState.bot.defaultLocale === "ko" ? "not_configured" : "disabled";
+}
+
+function syncCreateAiOptionLists() {
+  const aiConfig = getCurrentAiConfig();
+  const nluModelSelect = document.querySelector('[data-create-config="nlu_model"]');
+  const llmModelSelect = document.querySelector('[data-create-config="llm_model"]');
+  if (nluModelSelect) {
+    const nluOptions = CREATE_NLU_MODEL_OPTIONS_BY_TYPE[String(aiConfig.nlu_type || "ml")] || CREATE_NLU_MODEL_OPTIONS_BY_TYPE.ml;
+    nluModelSelect.innerHTML = nluOptions.map((option) => `<option value="${escapeText(option.value)}">${escapeText(option.label)} (${escapeText(option.note)})</option>`).join("");
+    nluModelSelect.value = String(aiConfig.nlu_model || nluOptions[0]?.value || "deep_learning_lite");
+  }
+  if (llmModelSelect) {
+    const llmOptions = CREATE_LLM_MODEL_OPTIONS_BY_PROVIDER[String(aiConfig.llm_provider || "chatgpt")] || CREATE_LLM_MODEL_OPTIONS_BY_PROVIDER.chatgpt;
+    llmModelSelect.innerHTML = llmOptions.map((option) => `<option value="${escapeText(option.value)}">${escapeText(option.label)} (${escapeText(option.note)})</option>`).join("");
+    llmModelSelect.value = String(aiConfig.llm_model || llmOptions[0]?.value || "gpt-4o-mini");
+  }
+}
+
 function syncCreateControlsFromState() {
   document.querySelectorAll("[data-structural-field]").forEach((control) => {
     const field = control.dataset.structuralField;
@@ -3520,12 +3555,19 @@ function syncCreateControlsFromState() {
     if (typeof value === "boolean") control.value = String(value);
     else if (value != null) control.value = value;
   });
+  const aiConfig = getCurrentAiConfig();
+  document.querySelectorAll("[data-create-config]").forEach((control) => {
+    const field = control.dataset.createConfig || "";
+    const value = getByPath(aiConfig, field);
+    if (typeof value === "boolean") control.value = String(value);
+    else if (value != null && "value" in control) control.value = value;
+  });
+  syncCreateAiOptionLists();
 }
 
 function getCreateRequiredFieldIssues() {
   const issues = [];
   if (!String(currentStudioState?.bot?.name || "").trim()) issues.push("bot.name");
-  if (!String(currentStudioState?.bot?.version || "").trim()) issues.push("bot.version");
   return issues;
 }
 
@@ -3550,14 +3592,15 @@ function applyStructuralSideEffects(field) {
 function renderCreateSummary() {
   const container = document.querySelector("[data-create-summary]");
   if (!container) return;
-  const choices = currentStudioState.structuralChoices;
+  const aiConfig = getCurrentAiConfig();
+  const llmEnabled = currentStudioState.llm.status === "connected";
   container.innerHTML = `
-    <p><b data-i18n="summary.language">Language</b><span>${currentStudioState.bot.defaultLocale}</span></p>
-    <p><b data-i18n="summary.input">Input</b><span>${choices.compositionInput}</span></p>
-    <p><b data-i18n="summary.llm">LLM</b><span class="${choices.useLlm ? "" : "warn"}">${choices.useLlm ? t("summary.llmUsed", "LLM composition") : t("summary.llmNotUsed", "LLM off")}</span></p>
-    <p><b data-i18n="summary.pdfQa">PDF Q&A</b><span class="${choices.allowPdf ? "" : "warn"}">${choices.allowPdf ? t("summary.allowed", "Allowed") : t("summary.disabled", "Disabled")}</span></p>
-    <p><b data-i18n="summary.orchestrator">Orchestrator</b><span>${choices.orchestratorMode}</span></p>
-    <p><b data-i18n="summary.botServer">Bot Server</b><span>${choices.botServerLocation}</span></p>
+    <p><b>언어</b><span>${escapeText(String(aiConfig.language || "ko"))}</span></p>
+    <p><b>NLU 방식</b><span>${escapeText(String(aiConfig.nlu_type || "ml"))}</span></p>
+    <p><b>NLU 모델</b><span>${escapeText(String(aiConfig.nlu_model || "-"))}</span></p>
+    <p><b>답변 방식</b><span>${escapeText(String(aiConfig.answer_mode || "fixed"))}</span></p>
+    <p><b>LLM</b><span class="${llmEnabled ? "" : "warn"}">${llmEnabled ? escapeText(String(aiConfig.llm_model || aiConfig.llm_provider || "enabled")) : "사용 안 함"}</span></p>
+    <p><b>버전</b><span>${escapeText(currentStudioState.bot.version || "v0.1")}</span></p>
   `;
   syncCreateValidationState();
 }
@@ -4747,6 +4790,7 @@ function bindConfigureComposition() {
 }
 
 function bindCreateControls() {
+  syncAiConfigToStudioState();
   syncCreateControlsFromState();
   syncCreateValidationState();
   document.querySelectorAll("[data-structural-field]").forEach((control) => {
@@ -4768,6 +4812,63 @@ function bindCreateControls() {
       renderAllStatePanels();
       await saveStudioStateToServer().catch(() => false);
       renderWorkspaceHome();
+    });
+  });
+  document.querySelectorAll("[data-create-config]").forEach((control) => {
+    if (control.dataset.createConfigBound === "true") return;
+    control.dataset.createConfigBound = "true";
+    const handleSync = async (rerenderAll = false) => {
+      const field = control.dataset.createConfig || "";
+      const aiConfig = getCurrentAiConfig();
+      setByPath(aiConfig, field, control.type === "checkbox" ? control.checked : control.value);
+      if (field === "nlu_type") {
+        const nextType = String(control.value || "ml");
+        const nextModel = CREATE_NLU_MODEL_OPTIONS_BY_TYPE[nextType]?.[0]?.value || "deep_learning_lite";
+        aiConfig.nlu_model = nextModel;
+        if (nextType === "semantic_vector") {
+          aiConfig.vector_connections.intent = {
+            ...aiConfig.vector_connections.intent,
+            enabled: true,
+            index_name: aiConfig.vector_connections.intent.index_name || "aidot-intent"
+          };
+        }
+        syncCreateControlsFromState();
+      }
+      if (field === "answer_mode") {
+        const nextMode = String(control.value || "fixed");
+        if (nextMode === "semantic_rag") {
+          aiConfig.vector_connections.answer = {
+            ...aiConfig.vector_connections.answer,
+            enabled: true,
+            index_name: aiConfig.vector_connections.answer.index_name || "aidot-answer"
+          };
+        }
+      }
+      if (field === "llm_provider") {
+        const nextProvider = String(control.value || "chatgpt");
+        aiConfig.llm_model = CREATE_LLM_MODEL_OPTIONS_BY_PROVIDER[nextProvider]?.[0]?.value || "gpt-4o-mini";
+        syncCreateControlsFromState();
+      }
+      syncAiConfigToStudioState();
+      renderCreateSummary();
+      renderTopContext();
+      if (rerenderAll) {
+        renderAllStatePanels();
+        renderWorkspaceHome();
+      }
+      await saveStudioStateToServer().catch(() => false);
+    };
+    control.addEventListener("input", () => {
+      const field = control.dataset.createConfig || "";
+      const aiConfig = getCurrentAiConfig();
+      setByPath(aiConfig, field, control.type === "checkbox" ? control.checked : control.value);
+      syncAiConfigToStudioState();
+      renderCreateSummary();
+      renderTopContext();
+      scheduleStudioStateSave();
+    });
+    control.addEventListener("change", async () => {
+      await handleSync(true);
     });
   });
 }
@@ -6961,6 +7062,87 @@ const ADMIN_RESOURCE_UI = {
   }
 };
 
+const CREATE_NLU_TYPE_OPTIONS = [
+  { value: "ml", label: "ML", note: "1.0/1.5 지원" },
+  { value: "semantic_vector", label: "Semantic - Vector Worker", note: "Aidot 자체 Vector DB" },
+  { value: "semantic_external", label: "Semantic - External Embedding", note: "외부 임베딩 + Local Vector DB" },
+  { value: "llm", label: "LLM Engine", note: "1.5 설정" }
+];
+
+const CREATE_NLU_MODEL_OPTIONS_BY_TYPE = {
+  ml: [
+    { value: "deep_learning_lite", label: "DeepLearning Lite", note: "1.0 지원" },
+    { value: "ml_tfidf_linear", label: "TF-IDF Linear", note: "1.5 설정" },
+    { value: "ml_keyword_baseline", label: "Keyword Baseline", note: "1.5 설정" }
+  ],
+  semantic_vector: [
+    { value: "semantic_engine_default", label: "Aidot Vector Worker 기본 모델", note: "Local Vector DB" }
+  ],
+  semantic_external: [
+    { value: "semantic_embedding_mini", label: "ko-sroberta", note: "한국어 일반 문서" },
+    { value: "semantic_embedding_large", label: "multilingual-e5", note: "다국어/표·서식" }
+  ],
+  llm: [
+    { value: "llm_engine_default", label: "LLM Engine 기본 모델", note: "1.5 설정" },
+    { value: "llm_intent_fast", label: "LLM Intent Fast", note: "1.5 설정" },
+    { value: "llm_intent_reasoning", label: "LLM Intent Reasoning", note: "1.5 설정" }
+  ]
+};
+
+const CREATE_ANSWER_MODE_OPTIONS = [
+  { value: "fixed", label: "정해진 답변", note: "1.0/1.5 지원" },
+  { value: "semantic_rag", label: "Semantic Engine RAG 답변", note: "1.5 설정" },
+  { value: "llm_rag", label: "LLM Engine RAG 답변", note: "1.5 설정" },
+  { value: "llm", label: "LLM Engine 답변", note: "1.5 설정" }
+];
+
+const CREATE_LLM_PROVIDER_OPTIONS = [
+  { value: "gemini", label: "Gemini", note: "Google" },
+  { value: "chatgpt", label: "ChatGPT", note: "OpenAI" },
+  { value: "claude", label: "Claude", note: "Anthropic" },
+  { value: "groq", label: "Groq", note: "GroqCloud" },
+  { value: "cerebras", label: "Cerebras", note: "Cerebras Inference" },
+  { value: "mistral", label: "Mistral", note: "Mistral AI" },
+  { value: "ollama", label: "Ollama", note: "localhost/localPC" },
+  { value: "openrouter", label: "OpenRouter", note: "Router" }
+];
+
+const CREATE_LLM_MODEL_OPTIONS_BY_PROVIDER = {
+  gemini: [
+    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash", note: "빠른 응답" },
+    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro", note: "고품질 응답" }
+  ],
+  chatgpt: [
+    { value: "gpt-4o-mini", label: "GPT-4o mini", note: "기본" },
+    { value: "gpt-4o", label: "GPT-4o", note: "고품질" }
+  ],
+  claude: [
+    { value: "claude-3-5-haiku", label: "Claude 3.5 Haiku", note: "빠른 응답" },
+    { value: "claude-3-5-sonnet", label: "Claude 3.5 Sonnet", note: "고품질" }
+  ],
+  groq: [
+    { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile", note: "기본" },
+    { value: "mixtral-8x7b", label: "Mixtral 8x7B", note: "대체" }
+  ],
+  cerebras: [
+    { value: "llama3.1-8b", label: "Llama 3.1 8B", note: "빠른 응답" },
+    { value: "qwen-3-32b", label: "Qwen 3 32B", note: "고품질" }
+  ],
+  mistral: [
+    { value: "mistral-small", label: "Mistral Small", note: "기본" },
+    { value: "mistral-medium", label: "Mistral Medium", note: "균형" },
+    { value: "mistral-large", label: "Mistral Large", note: "고품질" }
+  ],
+  ollama: [
+    { value: "ollama-local", label: "Ollama Local", note: "localhost/localPC" },
+    { value: "llama3.1-local", label: "Llama 3.1 Local", note: "localPC" }
+  ],
+  openrouter: [
+    { value: "openrouter-auto", label: "OpenRouter Auto", note: "자동 선택" },
+    { value: "openrouter-gpt-4o-mini", label: "OpenRouter GPT-4o mini", note: "OpenAI 경유" }
+  ]
+};
+
 function createEmptyCollaborationState() {
   const sample = createSampleCollaborationState();
   return {
@@ -6968,6 +7150,58 @@ function createEmptyCollaborationState() {
     users: [],
     workItems: []
   };
+}
+
+function createDefaultAiConfig() {
+  return {
+    bot_kind: "bot",
+    bot_mode: "text",
+    profile_key: "accent",
+    language: "ko",
+    nlu_type: "ml",
+    nlu_model: "deep_learning_lite",
+    answer_mode: "fixed",
+    llm_provider: "chatgpt",
+    llm_model: "gpt-4o-mini",
+    llm_base_url: "",
+    introduction: "",
+    vector_connections: {
+      intent: {
+        enabled: false,
+        endpoint_url: "",
+        index_name: "",
+        api_key: ""
+      },
+      answer: {
+        enabled: false,
+        endpoint_url: "",
+        index_name: "",
+        api_key: ""
+      }
+    }
+  };
+}
+
+function getCurrentAiConfig() {
+  if (!currentVersionSystemConfigExtraFields.ai_config || typeof currentVersionSystemConfigExtraFields.ai_config !== "object" || Array.isArray(currentVersionSystemConfigExtraFields.ai_config)) {
+    currentVersionSystemConfigExtraFields.ai_config = createDefaultAiConfig();
+  }
+  const base = createDefaultAiConfig();
+  currentVersionSystemConfigExtraFields.ai_config = {
+    ...base,
+    ...currentVersionSystemConfigExtraFields.ai_config,
+    vector_connections: {
+      intent: {
+        ...base.vector_connections.intent,
+        ...(currentVersionSystemConfigExtraFields.ai_config.vector_connections?.intent || {})
+      },
+      answer: {
+        ...base.vector_connections.answer,
+        ...(currentVersionSystemConfigExtraFields.ai_config.vector_connections?.answer || {})
+      }
+    }
+  };
+  return currentVersionSystemConfigExtraFields.ai_config;
 }
 
 function getAdminResourceUi(resource) {
@@ -9526,6 +9760,7 @@ function renderConfigureAidotScreen() {
   const container = document.querySelector("[data-configure-aidot-screen]");
   if (!container) return;
   const currentBot = getCurrentWorkspaceBot() || {};
+  const aiConfig = getCurrentAiConfig();
   const botName = currentStudioState.bot.name || currentBot.name || "";
   const botId = currentBot.id || "";
   const updatedAt = currentBot.updated_at || "";
@@ -9561,21 +9796,21 @@ function renderConfigureAidotScreen() {
     llm_rag: "LLM Engine RAG 답변",
     llm: "LLM Engine 답변"
   };
-  const localeLabel = localeLabelMap[currentStudioState.bot.defaultLocale] || currentStudioState.bot.defaultLocale || "한국어";
-  const derivedNluType = currentStudioState.structuralChoices.useLlm ? "llm" : "ml";
-  const derivedNluModel = currentStudioState.structuralChoices.useLlm
-    ? (currentStudioState.llm.model || "llm_engine_default")
-    : "deep_learning_lite";
-  const derivedAnswerMode = currentStudioState.structuralChoices.allowPdf
-    ? (currentStudioState.structuralChoices.useLlm ? "llm_rag" : "semantic_rag")
-    : "fixed";
+  const botKind = String(aiConfig.bot_kind || "bot");
+  const botMode = String(aiConfig.bot_mode || "text");
+  const typeLabel = botKind === "hub" ? "봇 허브" : botMode === "voice" ? "보이스형" : "텍스트형";
+  const localeCode = String(aiConfig.language || currentStudioState.bot.defaultLocale || "ko");
+  const derivedNluType = String(aiConfig.nlu_type || "ml");
+  const derivedNluModel = String(aiConfig.nlu_model || CREATE_NLU_MODEL_OPTIONS_BY_TYPE[derivedNluType]?.[0]?.value || "deep_learning_lite");
+  const derivedAnswerMode = String(aiConfig.answer_mode || "fixed");
   const nluTypeLabel = nluTypeLabelMap[derivedNluType] || "ML";
   const nluModelLabel = nluModelLabelMap[derivedNluModel] || derivedNluModel;
   const answerModeLabel = answerModeLabelMap[derivedAnswerMode] || derivedAnswerMode;
   const usesSemanticNlu = derivedNluType === "semantic_vector" || derivedNluType === "semantic_external";
   const usesSemanticAnswer = derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag";
+  const usesLlmEngine = derivedNluType === "llm" || derivedAnswerMode === "llm_rag" || derivedAnswerMode === "llm";
   const modelLockHint = "학습 전 변경 가능";
-  const fixedModeMessage = "언어, NLU 방식, 답변 방식은 봇 생성 시 고정됩니다.";
+  const fixedModeMessage = "언어, NLU 방식, 답변 방식은 봇 생성 시 고정됩니다. 모델은 학습 전까지 변경할 수 있고 학습 완료 후에는 고정됩니다.";
   const aiExtraConfig = currentVersionSystemConfigExtraFields.ai_config && typeof currentVersionSystemConfigExtraFields.ai_config === "object" && !Array.isArray(currentVersionSystemConfigExtraFields.ai_config)
     ? currentVersionSystemConfigExtraFields.ai_config
     : currentVersionLegacyExtraFields.ai_config && typeof currentVersionLegacyExtraFields.ai_config === "object" && !Array.isArray(currentVersionLegacyExtraFields.ai_config)
@@ -9683,9 +9918,9 @@ function renderConfigureAidotScreen() {
       maxCardsBetweenUserResponses: readConfigValue([conversationExtraConfig, aiExtraConfig], [["runtime", "maxCardsBetweenUserResponses"], ["runtime", "max_cards_between_user_responses"], ["max_cards_between_user_responses"]]),
     }
   };
-  const vectorIntentEnabled = readConfigValue([aiExtraConfig], [["vectorConnections", "intent", "enabled"], ["vector_connections", "intent", "enabled"], ["intent_vector_enabled"]]);
+  const vectorIntentEnabled = readConfigValue([aiExtraConfig], [["vectorConnections", "intent", "enabled"], ["vector_connections", "intent", "enabled"], ["intent_vector_enabled"]], false);
   const vectorIntentIndex = readConfigValue([aiExtraConfig], [["vectorConnections", "intent", "index_name"], ["vector_connections", "intent", "index_name"], ["intent_index_name"]], "");
-  const vectorAnswerEnabled = readConfigValue([aiExtraConfig], [["vectorConnections", "answer", "enabled"], ["vector_connections", "answer", "enabled"], ["answer_vector_enabled"]]);
+  const vectorAnswerEnabled = readConfigValue([aiExtraConfig], [["vectorConnections", "answer", "enabled"], ["vector_connections", "answer", "enabled"], ["answer_vector_enabled"]], false);
   const vectorAnswerIndex = readConfigValue([aiExtraConfig], [["vectorConnections", "answer", "index_name"], ["vector_connections", "answer", "index_name"], ["answer_index_name"]], "");
   const configurationScoring = {
     dictionaryWeight: readConfigValue([scoringExtraConfig, aiExtraConfig], [["dictionaryWeight"], ["dictionary_weight"]]),
@@ -9919,7 +10154,7 @@ function renderConfigureAidotScreen() {
             </label>
             <div class="bot-settings-card">
               <span>유형</span>
-              <strong>${escapeText(currentBot.bot_kind === "hub" ? "봇 허브" : "텍스트형")}</strong>
+              <strong>${escapeText(typeLabel)}</strong>
             </div>
             <div class="bot-settings-card">
               <span>봇 ID</span>
@@ -9938,7 +10173,7 @@ function renderConfigureAidotScreen() {
           <div class="bot-settings-grid bot-settings-grid--5">
             <div class="bot-settings-card">
               <span>언어 <em>*</em></span>
-              <strong>${escapeText(localeLabel)}</strong>
+              <strong>${escapeText(localeLabelMap[localeCode] || localeCode || "한국어")}</strong>
               <small class="bot-settings-card__hint">봇 생성 시 고정</small>
             </div>
             <div class="bot-settings-card">
@@ -9961,6 +10196,26 @@ function renderConfigureAidotScreen() {
               <strong>${escapeText(String(getBotVersions(currentBot).length || 1))}</strong>
             </div>
           </div>
+
+          ${usesLlmEngine ? `
+            <div class="bot-settings-grid bot-settings-grid--4 bot-settings-grid--llm">
+              <div class="bot-settings-card">
+                <span>LLM Provider <em>*</em></span>
+                <strong>${escapeText(String(aiConfig.llm_provider || "chatgpt"))}</strong>
+              </div>
+              <div class="bot-settings-card">
+                <span>LLM 세부 모델 <em>*</em></span>
+                <strong>${escapeText(String(aiConfig.llm_model || "gpt-4o-mini"))}</strong>
+                <small class="bot-settings-card__hint">${escapeText(modelLockHint)}</small>
+              </div>
+              ${String(aiConfig.llm_provider || "") === "ollama" ? `
+                <div class="bot-settings-card">
+                  <span>Ollama 주소</span>
+                  <strong>${escapeText(String(aiConfig.llm_base_url || "-"))}</strong>
+                </div>
+              ` : ""}
+            </div>
+          ` : ""}
 
           <div class="bot-ai-combinations bot-ai-combinations--compact">
             <div class="bot-ai-combinations__summary">
