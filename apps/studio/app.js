@@ -1751,6 +1751,19 @@ async function requestCgaJson(path, { method = "GET", body } = {}) {
   return payload;
 }
 
+async function executeApiMethodTest(payload) {
+  const response = await fetch("/api/function/execute", {
+    method: "POST",
+    headers: {
+      ...getCgaAuthHeaders(),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  return result;
+}
+
 function applyAccessStatePayload(payload) {
   if (!payload || typeof payload !== "object") return false;
   if (!Array.isArray(payload.users) || !Array.isArray(payload.groups) || !Array.isArray(payload.memberships)) return false;
@@ -8916,7 +8929,7 @@ function renderApiRegistry() {
         <div class="api-detail-page__test-output">
           <div class="api-detail-page__test-output-head">
             <strong>Test Output</strong>
-            <button type="button" class="studio-table-page__ghost" data-api-run-test="${escapeText(method.id)}">Test</button>
+            <button type="button" class="studio-table-page__ghost" data-api-run-test="${escapeText(method.id)}" ${currentApiUiState.testingMethodId === method.id ? "disabled" : ""}>Test</button>
           </div>
           <pre>${escapeText(currentApiUiState.testOutputs?.[method.id] || "")}</pre>
         </div>
@@ -9516,18 +9529,31 @@ function bindApiRegistryControls() {
   root.querySelectorAll("[data-api-run-test]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const api = getCurrentApiEntryById();
       const methodId = button.dataset.apiRunTest || "";
       const method = api?.methods?.find((item) => item.id === methodId);
       if (!api || !method) return;
-      currentApiUiState.testOutputs[methodId] = JSON.stringify({
-        apiKey: api.apiKey,
-        baseUrl: api.baseUrl,
-        method: method.httpMethod,
-        methodUrl: method.methodUrl,
-        parameterValues: currentApiUiState.testInputs[methodId] || {}
-      }, null, 2);
+      const parameterValues = (method.parameters || []).reduce((values, parameter) => {
+        values[parameter.name] = currentApiUiState.testInputs?.[methodId]?.[parameter.name] ?? parameter.defaultValue ?? "";
+        return values;
+      }, {});
+      currentApiUiState.testingMethodId = methodId;
+      currentApiUiState.testOutputs[methodId] = "실행 중...";
+      renderApiRegistry();
+      try {
+        const result = await executeApiMethodTest({
+          api,
+          methodId,
+          variables: {},
+          parameterValues
+        });
+        currentApiUiState.testOutputs[methodId] = JSON.stringify(result, null, 2);
+      } catch (error) {
+        currentApiUiState.testOutputs[methodId] = error instanceof Error ? error.message : "API 테스트 중 오류가 발생했습니다.";
+      } finally {
+        currentApiUiState.testingMethodId = "";
+      }
       renderApiRegistry();
     });
   });

@@ -6191,3 +6191,16 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 평가 화면의 샘플 점수/그래프/매트릭스 제거
   - 분석 화면의 고정 비율/건수 제거
   - 재학습 화면의 고정 날짜 기본값 제거
+
+### API Test Output 실동작 연결
+
+- 요청:
+  - API 상세 화면의 `Test Output`이 더 이상 가짜 JSON이 아니라 실제 호출 결과를 보여주도록 Aidot 흐름에 맞춰 수정
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `scripts/serve-studio.js`
+- 반영 내용:
+  - `/api/function/execute` 서버 라우트 추가
+  - 상세 화면 `Test` 버튼이 실제로 위 라우트를 호출하도록 변경
+  - `path/query/header/body` 파라미터를 분리해 실제 요청 URL, 헤더, 바디를 조합하도록 반영
+  - 호출 결과를 `ok/status/statusText/body/text/elapsedMs` 구조로 반환하도록 정리

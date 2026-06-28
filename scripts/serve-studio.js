@@ -1343,6 +1343,10 @@ function parseApiAnswerPath(urlPath) {
   };
 }
 
+function parseFunctionExecutePath(urlPath) {
+  return urlPath === "/api/function/execute";
+}
+
 function parseWorkspaceBotPath(urlPath) {
   const itemMatch = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/bots\/([^/]+)$/);
   if (itemMatch) {
@@ -1891,6 +1895,86 @@ function normalizeApiAnswerMethod(method, methodIndex = 0, fallbackUrl = "", fal
   };
 }
 
+function replaceFunctionVariables(value, variables = {}) {
+  return String(value || "").replace(/\{\{\s*\$?([\p{ID_Start}_][$_\u200C\u200D\p{ID_Continue}]*)\s*\}\}/gu, (_token, name) => {
+    return variables[name] == null ? "" : String(variables[name]);
+  });
+}
+
+function coerceFunctionParameterValue(value, dataType = "string") {
+  if (dataType === "number") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : value;
+  }
+  if (dataType === "boolean") {
+    return value === "true" || value === "Y" || value === "1";
+  }
+  if (dataType === "object" || dataType === "array") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+}
+
+function joinFunctionApiUrl(baseUrl, methodUrl, variables = {}) {
+  const base = String(baseUrl || "").trim().replace(/\/+$/, "");
+  let nextPath = String(methodUrl || "").trim();
+
+  for (const [key, value] of Object.entries(variables)) {
+    nextPath = nextPath.replace(new RegExp(`\\{${key}\\}`, "g"), encodeURIComponent(String(value ?? "")));
+  }
+
+  if (/^https?:\/\//i.test(nextPath)) {
+    return nextPath;
+  }
+
+  return `${base}/${nextPath.replace(/^\/+/, "")}`;
+}
+
+function buildFunctionExecuteRequest(method, url, parameterValues = {}) {
+  const headers = {};
+  const requestUrl = new URL(url);
+  const body = {};
+
+  for (const parameter of Array.isArray(method.parameters) ? method.parameters : []) {
+    const parameterName = String(parameter.name || "");
+    const rawValue = parameterValues[parameterName] ?? parameter.defaultValue ?? "";
+    const value = String(rawValue ?? "").trim();
+    if (!value && parameter.required) {
+      throw new Error(`필수 파라미터 '${parameterName}' 값이 없습니다.`);
+    }
+    if (!value) continue;
+
+    if (parameter.location === "query") {
+      requestUrl.searchParams.set(parameterName, value);
+      continue;
+    }
+    if (parameter.location === "header") {
+      headers[parameterName] = value;
+      continue;
+    }
+    if (parameter.location === "body") {
+      body[parameterName] = coerceFunctionParameterValue(value, parameter.dataType);
+    }
+  }
+
+  const requestInit = {
+    method: String(method.httpMethod || "GET").toUpperCase(),
+    headers,
+    cache: "no-store"
+  };
+
+  if (requestInit.method !== "GET" && requestInit.method !== "HEAD") {
+    headers["Content-Type"] = "application/json";
+    requestInit.body = JSON.stringify(body);
+  }
+
+  return { url: requestUrl.toString(), init: requestInit };
+}
+
 function normalizeApiAnswerEntry({ body, draft, groupId, botId, actorId, existing = null }) {
   const baseUrl = String(
     body.baseUrl
@@ -2049,6 +2133,82 @@ async function handleApiAnswerApi(req, res, urlPath) {
 
   sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
   return true;
+}
+
+async function handleFunctionExecuteApi(req, res, urlPath) {
+  if (!parseFunctionExecutePath(urlPath)) return false;
+
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+    return true;
+  }
+
+  const startedAt = Date.now();
+  try {
+    const payload = await readJsonRequest(req);
+    const source = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+    const api = normalizeApiAnswerEntry({
+      body: source.api || {},
+      draft: {
+        response_mapping: {},
+        request_mapping: {},
+        timeout_ms: 5000
+      },
+      groupId: String(source.api?.group_id || ""),
+      botId: String(source.api?.bot_id || ""),
+      actorId: "system"
+    });
+    const methodId = typeof source.methodId === "string" ? source.methodId : "";
+    const variables = source.variables && typeof source.variables === "object" && !Array.isArray(source.variables) ? source.variables : {};
+    const rawParameterValues = source.parameterValues && typeof source.parameterValues === "object" && !Array.isArray(source.parameterValues) ? source.parameterValues : {};
+
+    if (!api || !Array.isArray(api.methods) || !api.methods.length) {
+      throw new Error("API 정보가 없습니다.");
+    }
+
+    const method = api.methods.find((item) => item.id === methodId);
+    if (!method) {
+      throw new Error("Method 정보가 없습니다.");
+    }
+
+    const parameterValues = Object.fromEntries(
+      Object.entries(rawParameterValues).map(([key, value]) => [key, replaceFunctionVariables(String(value ?? ""), variables)])
+    );
+    const pathValues = Object.fromEntries(
+      (method.parameters || [])
+        .filter((parameter) => parameter.location === "path")
+        .map((parameter) => [parameter.name, parameterValues[parameter.name] ?? parameter.defaultValue ?? ""])
+    );
+    const requestUrl = joinFunctionApiUrl(api.baseUrl || api.endpoint_url || "", method.methodUrl || "", pathValues);
+    const requestConfig = buildFunctionExecuteRequest(method, requestUrl, parameterValues);
+    const response = await fetch(requestConfig.url, requestConfig.init);
+    const responseText = await response.text();
+    let responseBody = responseText;
+    try {
+      responseBody = responseText ? JSON.parse(responseText) : null;
+    } catch {}
+
+    sendJson(res, response.ok ? 200 : 502, {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      elapsedMs: Date.now() - startedAt,
+      body: responseBody,
+      text: responseText
+    });
+    return true;
+  } catch (error) {
+    sendJson(res, 500, {
+      ok: false,
+      status: 500,
+      statusText: "Function Execute Error",
+      elapsedMs: Date.now() - startedAt,
+      body: null,
+      text: "",
+      message: error instanceof Error ? error.message : "API 호출 중 오류가 발생했습니다."
+    });
+    return true;
+  }
 }
 
 async function createAccessSessionResponse(state, userId = state.currentUserId, session = null) {
@@ -4161,6 +4321,7 @@ const server = http.createServer(async (req, res) => {
   const query = new URL(req.url || "/", "http://localhost").searchParams;
   try {
     if (await handleWebchatChannelApi(req, res, urlPath, query)) return;
+    if (await handleFunctionExecuteApi(req, res, urlPath)) return;
     if (await handleAuthApi(req, res, urlPath)) return;
     if (await handleStudioStateApi(req, res, urlPath)) return;
     if (await handleCompositionApi(req, res, urlPath)) return;
