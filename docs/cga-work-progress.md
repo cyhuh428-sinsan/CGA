@@ -5880,3 +5880,33 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js apps/studio/index.html docs/cga-work-progress.md`
   - `npm run studio:check`
+
+### 설정 하위 화면을 Aidot의 목록/모달 편집 흐름으로 재정렬
+
+- 문제:
+  - `메신저 편의 기능`, `추천 의도`, `제외/무시 목록`, `룰 설정`, `스몰토크`, `봇스테이션`이
+    Aidot처럼 `목록 + 툴바 + 모달 편집` 흐름이 아니라
+    CGA식 인라인 상세 패널 중심으로 남아 있었다.
+  - `봇스테이션`은 관리자 채널 정보를 읽으면서도
+    실제 값 대신 강제 fallback 또는 빈 의미 안내를 섞어 보여줄 여지가 있었다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - `메신저 편의 기능`
+    - 우측 인라인 상세 패널을 제거하고 Aidot처럼 목록 화면 + 모달 편집 구조로 변경
+  - `추천 의도`
+    - Aidot처럼 상단 선택 박스, `+ 추천 의도 구성`, 이동 버튼, 2열 목록 구조로 단순화
+  - `제외/무시 목록`, `룰 설정`, `스몰토크`
+    - 인라인 상세 패널 대신 Aidot형 모달 레이아웃으로 정리
+  - `봇스테이션`
+    - 관리자 채널 메타를 정규화해서 표와 연결 팝업에 직접 사용하도록 정리
+    - `기본 webhook 사용` 같은 해석성 문구 대신 실제 endpoint 값만 표시
+    - 채널 상세도 Aidot형 팝업 레이아웃으로 통일
+  - 공통 스타일
+    - 설정 팝업용 backdrop/static width 규칙 추가
+    - 메신저/스몰토크/봇스테이션 팝업 폭을 Aidot 쪽에 가깝게 재조정
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
+  - `npm run studio:check`

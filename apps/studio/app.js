@@ -9996,17 +9996,18 @@ function renderConfigureAidotScreen() {
   const selectedBlocklist = blocklistItems[0] || null;
   const selectedRule = ruleItems[0] || null;
   const selectedSmalltalk = smalltalkItems[0] || null;
-  const selectedBotstationChannel = adminChannels[0] || null;
-  const selectedBotstationMeta = selectedBotstationChannel
-    ? {
-        provider: selectedBotstationChannel.provider || "",
-        rendererType: selectedBotstationChannel.renderer_type || "",
-        authType: selectedBotstationChannel.auth_type || "",
-        endpointUrl: selectedBotstationChannel.endpoint_url || "",
-        code: selectedBotstationChannel.code || selectedBotstationChannel.channel_code || selectedBotstationChannel.id || "",
-        name: selectedBotstationChannel.name || selectedBotstationChannel.channel_name || "",
-      }
-    : null;
+  const botstationChannels = adminChannels.map((item) => ({
+    raw: item,
+    id: String(item.id || item.channel_id || item.code || "").trim(),
+    code: String(item.code || item.channel_code || item.id || "").trim(),
+    name: String(item.name || item.channel_name || "").trim(),
+    provider: String(item.provider || item.data_json?.provider || "").trim(),
+    rendererType: String(item.renderer_type || item.data_json?.renderer_type || "").trim(),
+    authType: String(item.auth_type || item.data_json?.auth_type || "").trim(),
+    endpointUrl: String(item.endpoint_url || item.data_json?.endpoint_url || "").trim(),
+    enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() !== "N",
+  }));
+  const selectedBotstationChannel = botstationChannels[0] || null;
   const ruleTargetOptions = [
     { value: "", label: "선택 안 함" },
     ...recommendedIntents.map((row) => ({ value: row.id, label: row.displayName || row.id })),
@@ -10635,41 +10636,38 @@ function renderConfigureAidotScreen() {
   const renderMessenger = () => `
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
-        <section class="bot-settings-section messenger-settings-section">
+        <section class="bot-settings-section">
           <h2>메신저 편의 기능</h2>
-          <div class="messenger-settings-layout">
-            <div class="messenger-settings-layout__list">
-              <div class="messenger-settings__detail-header">
-                <h3>플로팅 버튼 목록</h3>
-                <div class="messenger-settings__arrow-actions">
-                  <button type="button" class="secondary-action">↑</button>
-                  <button type="button" class="secondary-action">↓</button>
-                </div>
-              </div>
-              <button type="button" class="secondary-action messenger-settings__add">+ 플로팅 버튼 추가</button>
-              <div class="settings-list-card">
-                <div class="settings-list-card__header settings-list-card__header--four">
-                  <span>버튼명</span><span>연결 유형</span><span>값</span><span>사용</span>
-                </div>
-                ${floatingButtons.map((item) => `
-                  <div class="settings-list-row settings-list-row--four${selectedFloatingButton && item.buttonId === selectedFloatingButton.buttonId ? " is-selected" : ""}">
-                    <button type="button" class="settings-link-button">${escapeText(item.label || item.buttonId || "-")}</button>
-                    <span>${escapeText(item.actionType === "command" ? "Command" : "Key")}</span>
-                    <span>${escapeText(item.actionValue || "-")}</span>
-                    <label class="settings-toggle settings-list-card__check">
-                      <input type="checkbox" ${item.enabled ? "checked" : ""} />
-                      <span>${item.enabled ? "사용" : "미사용"}</span>
-                    </label>
-                  </div>
-                `).join("") || emptyState("등록된 플로팅 버튼이 없습니다.")}
-              </div>
+          <div class="settings-toolbar">
+            <button type="button" class="secondary-action">+ 플로팅 버튼 추가</button>
+            <div class="settings-toolbar__spacer"></div>
+            <button type="button" class="secondary-action" ${selectedFloatingButton ? "" : "disabled"}>↑</button>
+            <button type="button" class="secondary-action" ${selectedFloatingButton ? "" : "disabled"}>↓</button>
+          </div>
+          <div class="settings-list-card">
+            <div class="settings-list-card__header settings-list-card__header--four">
+              <span>버튼명</span><span>연결 유형</span><span>값</span><span>사용</span>
             </div>
-            <div class="messenger-settings-layout__detail">
-              <div class="settings-detail-card">
-                <div class="messenger-settings__detail-header">
-                  <h3>플로팅 버튼</h3>
+            ${floatingButtons.map((item) => `
+              <div class="settings-list-row settings-list-row--four${selectedFloatingButton && item.buttonId === selectedFloatingButton.buttonId ? " is-selected" : ""}">
+                <button type="button" class="settings-link-button">${escapeText(item.label || item.buttonId || "-")}</button>
+                <span>${escapeText(item.actionType === "command" ? "Command" : "Key")}</span>
+                <span>${escapeText(item.actionValue || "-")}</span>
+                <label class="settings-toggle settings-list-card__check">
+                  <input type="checkbox" ${item.enabled ? "checked" : ""} />
+                  <span>${item.enabled ? "사용" : "미사용"}</span>
+                </label>
+              </div>
+            `).join("") || emptyState("등록된 플로팅 버튼이 없습니다.")}
+          </div>
+          ${selectedFloatingButton ? `
+            <div class="settings-dialog-backdrop settings-dialog-backdrop--inline" role="presentation">
+              <div class="settings-dialog settings-dialog--wide settings-dialog--static" role="dialog" aria-label="플로팅 버튼">
+                <div class="settings-dialog__header">
+                  <strong>플로팅 버튼</strong>
+                  <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
                 </div>
-                ${selectedFloatingButton ? `
+                <div class="settings-dialog__body settings-dialog__body--form">
                   <div class="messenger-settings__form-grid">
                     <label class="settings-form-card">
                       <span>버튼명</span>
@@ -10678,8 +10676,8 @@ function renderConfigureAidotScreen() {
                     <label class="settings-form-card">
                       <span>Key/Command 옵션</span>
                       <select class="bot-settings-card__select">
-                        <option ${selectedFloatingButton.actionType === "key" ? "selected" : ""}>Key</option>
-                        <option ${selectedFloatingButton.actionType === "command" ? "selected" : ""}>Command</option>
+                        <option value="key" ${selectedFloatingButton.actionType === "key" ? "selected" : ""}>Key</option>
+                        <option value="command" ${selectedFloatingButton.actionType === "command" ? "selected" : ""}>Command</option>
                       </select>
                     </label>
                     <label class="settings-form-card">
@@ -10691,14 +10689,14 @@ function renderConfigureAidotScreen() {
                       <span>사용 여부</span>
                     </label>
                   </div>
-                  <div class="settings-detail-card__actions">
-                    <button type="button" class="secondary-action">취소</button>
-                    <button type="button" class="primary-action">확인</button>
-                  </div>
-                ` : emptyState("선택된 플로팅 버튼이 없습니다.")}
+                </div>
+                <div class="settings-dialog__footer">
+                  <button type="button" class="secondary-action">취소</button>
+                  <button type="button" class="primary-action">확인</button>
+                </div>
               </div>
             </div>
-          </div>
+          ` : ""}
         </section>
       </section>
     </div>
@@ -10709,27 +10707,20 @@ function renderConfigureAidotScreen() {
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="bot-settings-section">
           <h2>추천 의도</h2>
-          <div class="messenger-settings__recommended">
-            <div class="messenger-settings__recommended-header">
-              <strong>추천 의도 목록</strong>
-              <div class="messenger-settings__arrow-actions">
-                <button type="button" class="secondary-action">↑</button>
-                <button type="button" class="secondary-action">↓</button>
-              </div>
+          <div class="settings-toolbar">
+            <select class="settings-toolbar__select">${emptyRecommendedOptions}</select>
+            <button type="button" class="secondary-action">+ 추천 의도 구성</button>
+            <div class="settings-toolbar__spacer"></div>
+            <button type="button" class="secondary-action" ${recommendedIntents.length ? "" : "disabled"}>↑</button>
+            <button type="button" class="secondary-action" ${recommendedIntents.length ? "" : "disabled"}>↓</button>
+          </div>
+          <div class="settings-list-card">
+            <div class="settings-list-card__header settings-list-card__header--two">
+              <span>추천 순서</span><span>의도명</span>
             </div>
-            <div class="settings-toolbar">
-              <select class="settings-toolbar__select">${emptyRecommendedOptions}</select>
-              <button type="button" class="secondary-action">+ 추천 의도 구성</button>
-              <div class="settings-toolbar__spacer"></div>
-            </div>
-            <div class="settings-list-card">
-              <div class="settings-list-card__header settings-list-card__header--two">
-                <span>추천 순서</span><span>의도명</span>
-              </div>
-              ${recommendedIntents.map((item, index) => `
-                <button type="button" class="settings-list-row settings-list-row--two${index === 0 ? " is-selected" : ""}"><span>${index + 1}</span><span>${escapeText(item.displayName || item.id)}</span></button>
-              `).join("") || emptyState("구성된 추천 의도가 없습니다.")}
-            </div>
+            ${recommendedIntents.map((item, index) => `
+              <button type="button" class="settings-list-row settings-list-row--two${index === 0 ? " is-selected" : ""}"><span>${index + 1}</span><span>${escapeText(item.displayName || item.id)}</span></button>
+            `).join("") || emptyState("구성된 추천 의도가 없습니다.")}
           </div>
         </section>
       </section>
@@ -10787,7 +10778,8 @@ function renderConfigureAidotScreen() {
             }
           </div>
           ${selectedBlocklist ? `
-            <div class="settings-dialog settings-dialog--wide settings-dialog--inline" role="dialog" aria-label="제외/무시 목록 상세">
+            <div class="settings-dialog-backdrop settings-dialog-backdrop--inline" role="presentation">
+            <div class="settings-dialog settings-dialog--wide settings-dialog--static" role="dialog" aria-label="제외/무시 목록 상세">
               <div class="settings-dialog__header">
                 <strong>제외/무시 목록 상세</strong>
                 <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
@@ -10824,6 +10816,7 @@ function renderConfigureAidotScreen() {
                 <button type="button" class="primary-action">확인</button>
               </div>
             </div>
+            </div>
           ` : ""}
         </section>
       </section>
@@ -10857,7 +10850,8 @@ function renderConfigureAidotScreen() {
             `).join("") || emptyState("등록된 룰이 없습니다.")}
           </div>
           ${selectedRule ? `
-            <div class="settings-dialog settings-dialog--wide settings-dialog--inline" role="dialog" aria-label="룰 상세 정보">
+            <div class="settings-dialog-backdrop settings-dialog-backdrop--inline" role="presentation">
+            <div class="settings-dialog settings-dialog--wide settings-dialog--static" role="dialog" aria-label="룰 상세 정보">
               <div class="settings-dialog__header">
                 <strong>룰 상세 정보</strong>
                 <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
@@ -10901,6 +10895,7 @@ function renderConfigureAidotScreen() {
                 <button type="button" class="primary-action">확인</button>
               </div>
             </div>
+            </div>
           ` : ""}
         </section>
       </section>
@@ -10939,7 +10934,8 @@ function renderConfigureAidotScreen() {
             `).join("") || emptyState("등록된 스몰토크가 없습니다.")}
           </div>
           ${selectedSmalltalk ? `
-            <div class="settings-dialog settings-dialog--smalltalk settings-dialog--inline" role="dialog" aria-label="스몰토크 상세">
+            <div class="settings-dialog-backdrop settings-dialog-backdrop--inline" role="presentation">
+            <div class="settings-dialog settings-dialog--smalltalk settings-dialog--static" role="dialog" aria-label="스몰토크 상세">
               <div class="settings-dialog__header">
                 <strong>스몰토크 수정</strong>
                 <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
@@ -11012,6 +11008,7 @@ function renderConfigureAidotScreen() {
                 <button type="button" class="primary-action">확인</button>
               </div>
             </div>
+            </div>
           ` : ""}
         </section>
       </section>
@@ -11028,21 +11025,21 @@ function renderConfigureAidotScreen() {
             <div class="botstation-settings__status">
               <span>봇스테이션</span>
               <label class="botstation-settings__switch"><input type="checkbox" checked /><span>사용</span></label>
-              <span class="botstation-settings__connected"></span>
+              <span class="botstation-settings__connected">${botstationChannels.length ? `연결 가능한 채널 ${botstationChannels.length}개` : ""}</span>
             </div>
             <div class="botstation-settings__table-wrap">
-              <div class="botstation-settings__count">전체 ${adminChannels.length}개</div>
+              <div class="botstation-settings__count">전체 ${botstationChannels.length}개</div>
               <table class="botstation-settings__table">
                 <thead><tr><th>채널</th><th>설정정보</th><th>상태</th></tr></thead>
                 <tbody>
-                  ${adminChannels.map((channel) => `
-                    <tr${selectedBotstationChannel && channel === selectedBotstationChannel ? ` class="is-selected"` : ""}>
-                      <td><button type="button" class="botstation-settings__channel-link">${escapeText(channel.name || channel.channel_name || channel.code || channel.id || "-")}</button></td>
-                      <td>${escapeText(channel.endpoint_url || "-")}</td>
+                  ${botstationChannels.map((channel) => `
+                    <tr${selectedBotstationChannel && channel.id === selectedBotstationChannel.id ? ` class="is-selected"` : ""}>
+                      <td><button type="button" class="botstation-settings__channel-link">${escapeText(channel.name || channel.code || channel.id || "-")}</button></td>
+                      <td>${escapeText(channel.endpointUrl || "-")}</td>
                       <td>
                         <label class="botstation-settings__switch botstation-settings__switch--small">
-                          <input type="checkbox" ${currentStudioState.channels.web === "not_configured" ? "" : "checked"} />
-                          <span>${currentStudioState.channels.web === "not_configured" ? "미사용" : "사용"}</span>
+                          <input type="checkbox" ${channel.enabled ? "checked" : ""} />
+                          <span>${channel.enabled ? "사용" : "미사용"}</span>
                         </label>
                       </td>
                     </tr>
@@ -11050,29 +11047,31 @@ function renderConfigureAidotScreen() {
                 </tbody>
               </table>
             </div>
-            ${selectedBotstationMeta ? `
-              <div class="botstation-dialog botstation-dialog--inline" role="dialog" aria-label="채널 연결 정보">
+            ${selectedBotstationChannel ? `
+              <div class="settings-dialog-backdrop settings-dialog-backdrop--inline" role="presentation">
+              <div class="botstation-dialog botstation-dialog--static" role="dialog" aria-label="채널 연결 정보">
                 <div class="settings-dialog__header">
-                  <strong>${escapeText(selectedBotstationMeta.name)}</strong>
+                  <strong>${escapeText(selectedBotstationChannel.name || selectedBotstationChannel.code || "-")}</strong>
                   <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
                 </div>
                 <div class="botstation-dialog__body">
-                  <label class="botstation-dialog__field"><span>Provider</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.provider || "-")}" readonly /></label>
-                  <label class="botstation-dialog__field"><span>렌더러</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.rendererType || "-")}" readonly /></label>
-                  <label class="botstation-dialog__field"><span>인증방식</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.authType || "-")}" readonly /></label>
-                  <label class="botstation-dialog__field"><span>채널 아이디</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.code || "-")}" readonly /></label>
-                  <label class="botstation-dialog__field"><span>채널</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.name || "-")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>Provider</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationChannel.provider || "")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>렌더러</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationChannel.rendererType || "")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>인증방식</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationChannel.authType || "")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>채널 아이디</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationChannel.code || selectedBotstationChannel.id || "")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>채널</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationChannel.name || "")}" readonly /></label>
                   <label class="botstation-dialog__field"><span>봇 식별값</span><input class="bot-settings-card__input" value="${escapeText(botId)}" /></label>
                   <label class="botstation-dialog__field"><span>봇 이름</span><input class="bot-settings-card__input" value="${escapeText(botName)}" readonly /></label>
                   <label class="botstation-dialog__field"><span>App ID</span><input class="bot-settings-card__input" value="" /></label>
                   <label class="botstation-dialog__field"><span>App Secret</span><input class="bot-settings-card__input" value="" /></label>
-                  <label class="botstation-dialog__field botstation-dialog__field--wide"><span>Callback URL</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.endpointUrl)}" /></label>
+                  <label class="botstation-dialog__field botstation-dialog__field--wide"><span>Callback URL</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationChannel.endpointUrl || "")}" /></label>
                   <label class="botstation-dialog__field botstation-dialog__field--wide"><span>설명</span><textarea class="bot-settings-intro__textarea"></textarea></label>
                 </div>
                 <div class="settings-dialog__footer">
                   <button type="button" class="secondary-action">취소</button>
                   <button type="button" class="primary-action">확인</button>
                 </div>
+              </div>
               </div>
             ` : ""}
           `}
