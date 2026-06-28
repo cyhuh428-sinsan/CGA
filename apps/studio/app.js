@@ -9202,7 +9202,7 @@ function renderApiRegistry() {
                 <span style="padding-left:${Number(row.depth || 0) * 12}px">${escapeText(row.name)}</span>
                 <span>${escapeText(row.dataType || "string")}</span>
               </div>
-            `).join("") : `<div class="api-store-dialog__output-empty"></div>`}
+            `).join("")}
           </div>
           ${String(method.outputSample || "").trim() ? `
             <label class="api-store-dialog__field api-store-dialog__field--sample">

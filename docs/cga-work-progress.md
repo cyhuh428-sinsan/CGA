@@ -6258,3 +6258,15 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `apps/studio/index.html`
 - 반영 내용:
   - `i18n.js`, `entry-auth.js`, `app.js` 스크립트 URL에 동일 버전 query를 부여해 서버/로컬이 같은 정적 리소스를 강제로 다시 받도록 조정
+
+### 로그인 버튼 무반응 원인 수정
+
+- 확인:
+  - `cga.sinsan.kr` 로그인 화면에서 버튼이 눌려도 반응이 없었음
+- 원인:
+  - `apps/studio/app.js`의 API 편집 화면 템플릿 문자열에 남아 있던 잘못된 `: <empty>` 조각 때문에 브라우저에서 `SyntaxError: Missing } in template expression`가 발생했고,
+  - 그 결과 `bootApp()`과 `bindAdminWorkbench()`까지 실행되지 않아 로그인 버튼 이벤트도 연결되지 않았음
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - `api-store-dialog__output-table` 템플릿의 잘못된 삼항식 잔여 문법을 제거해 `app.js`가 브라우저에서 정상 실행되도록 수정
