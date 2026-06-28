@@ -9670,6 +9670,23 @@ function renderConfigureAidotScreen() {
       ${options.map((option) => `<option value="${escapeText(option.value)}" ${String(value || "") === String(option.value) ? "selected" : ""}>${escapeText(option.label)}</option>`).join("")}
     </select>
   `;
+  const defaultMessageItems = Array.isArray(currentAdminResources.default_messages) ? currentAdminResources.default_messages : [];
+  const resolveDefaultMessageText = (...candidates) => {
+    const botLocale = String(currentStudioState.bot.defaultLocale || "").trim().toLowerCase();
+    const normalizedCandidates = candidates.map((value) => String(value || "").trim().toLowerCase()).filter(Boolean);
+    if (!normalizedCandidates.length) return "";
+    const matched = defaultMessageItems.find((item) => {
+      const itemLocale = String(item.language || "").trim().toLowerCase();
+      if (botLocale && itemLocale && itemLocale !== botLocale) return false;
+      const keys = [
+        item.message_name,
+        item.message_key,
+        item.name,
+      ].map((value) => String(value || "").trim().toLowerCase()).filter(Boolean);
+      return normalizedCandidates.some((candidate) => keys.includes(candidate));
+    });
+    return String(matched?.message_text || matched?.message || "").trim();
+  };
   const conversationDefaults = {
     ml: {
       cutOffScore: readConfigValue([conversationExtraConfig, aiExtraConfig], [["ml", "cutOffScore"], ["ml", "cut_off_score"], ["cut_off_score"]]),
@@ -9832,48 +9849,52 @@ function renderConfigureAidotScreen() {
     ${moduleRows.map((row) => `<option value="${escapeText(row.id)}" ${row.id === selectedValue ? "selected" : ""}>${escapeText(row.displayName || row.id)}</option>`).join("")}
   `;
   const messageSettings = {
-    greeting: { enabled: true, mode: "text", value: "안녕하세요." },
-    fallback: { enabled: true, mode: "text", value: "질문을 이해하지 못했습니다. 다시 말씀해주세요." },
-    intentEndGuide: { enabled: true, mode: "text", value: "다음으로 필요한 업무를 말씀해주세요." },
-    buttonMismatch: { enabled: true, mode: "text", value: "목록에 있는 버튼 중 하나를 선택해주세요." },
+    greeting: { enabled: false, mode: "text", value: "" },
+    fallback: { enabled: Boolean(resolveDefaultMessageText("의도 미분류 메시지")), mode: "text", value: resolveDefaultMessageText("의도 미분류 메시지") },
+    intentEndGuide: { enabled: false, mode: "text", value: "" },
+    buttonMismatch: {
+      enabled: Boolean(resolveDefaultMessageText("버튼 오류 메시지", "기본 선택 안내")),
+      mode: "text",
+      value: resolveDefaultMessageText("버튼 오류 메시지", "기본 선택 안내"),
+    },
     multiIntentGuide: {
-      enabled: true,
-      message: "아래 후보 중 원하는 의도를 선택해주세요.",
-      noIntentButtonLabel: "원하는 의도 없음",
-      noIntentButtonMessage: "다시 질문해주시면 다른 의도를 찾겠습니다."
+      enabled: Boolean(resolveDefaultMessageText("다중 의도 선택 안내")),
+      message: resolveDefaultMessageText("다중 의도 선택 안내"),
+      noIntentButtonLabel: "",
+      noIntentButtonMessage: resolveDefaultMessageText("원하는 의도 없음 메시지"),
     },
     system: {
-      errorMessage: { enabled: true, mode: "text", value: "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
-      timeoutMessage: { enabled: true, mode: "text", value: "응답이 없어 대화를 종료합니다." },
-      sessionEndMessage: { enabled: true, mode: "text", value: "세션이 종료되었습니다. 다시 시작하려면 말씀해주세요." },
-      inProgressMessage: { enabled: true, mode: "text", value: "현재 진행 중인 대화가 있습니다." }
+      errorMessage: { enabled: Boolean(resolveDefaultMessageText("시스템 오류 메시지", "대화 흐름 설정 오류 메시지")), mode: "text", value: resolveDefaultMessageText("시스템 오류 메시지", "대화 흐름 설정 오류 메시지") },
+      timeoutMessage: { enabled: Boolean(resolveDefaultMessageText("타임아웃 메시지")), mode: "text", value: resolveDefaultMessageText("타임아웃 메시지") },
+      sessionEndMessage: { enabled: Boolean(resolveDefaultMessageText("세션 종료 메시지")), mode: "text", value: resolveDefaultMessageText("세션 종료 메시지") },
+      inProgressMessage: { enabled: Boolean(resolveDefaultMessageText("진행 중 대화 안내")), mode: "text", value: resolveDefaultMessageText("진행 중 대화 안내") }
     },
     intentSwitch: {
-      maxExceededMessage: "의도 전환 시도가 많아 현재 대화를 유지합니다.",
-      beforeIntentNameMessage: "지금",
-      afterIntentNameMessage: "의도로 이동할까요?"
+      maxExceededMessage: resolveDefaultMessageText("대화 흐름 실행 한도 초과 메시지"),
+      beforeIntentNameMessage: "",
+      afterIntentNameMessage: ""
     },
     intentReturn: {
-      enabled: true,
-      message: "이전 의도로 돌아갈까요?"
+      enabled: false,
+      message: ""
     },
     parallelWork: {
-      firstMessage: "진행 중인 업무 외에 추가로 처리할 업무가 있습니다.",
-      skipButtonLabel: "처리하지 않음",
-      skipButtonMessage: "현재 업무만 계속 진행하겠습니다.",
-      forcedPriorityMessage: "우선순위가 높은 업무를 먼저 진행합니다.",
-      forcedCloseMessage: "진행 중인 업무가 종료되었습니다."
+      firstMessage: "",
+      skipButtonLabel: "",
+      skipButtonMessage: "",
+      forcedPriorityMessage: "",
+      forcedCloseMessage: ""
     },
     feedback: {
       mode: "none",
-      promptMessage: "이번 답변이 도움이 되었나요?",
+      promptMessage: "",
       scale: "binary",
       scaleLabels: {
-        one: "네",
-        two: "아니오",
-        three: "3점",
-        four: "4점",
-        five: "5점"
+        one: "",
+        two: "",
+        three: "",
+        four: "",
+        five: ""
       }
     }
   };

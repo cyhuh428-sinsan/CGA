@@ -5685,3 +5685,32 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js`
   - `npm run studio:check`
+
+## 2026-06-28 04:43 KST
+
+### `메시지 설정` 예시 문구 축소 및 기본 메시지 자원 연계
+
+- `메시지 설정` 화면에 남아 있던
+  임의 예시 문구를 줄이고,
+  관리자 `기본 메시지 관리` 자원과 연결 가능한 항목은 우선 그 값을 읽도록 정리했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - 봇 언어 기준으로 `default_messages` 자원을 조회하는 헬퍼 추가
+  - 아래 항목은 자원값이 있으면 그 값을 사용하고,
+    없으면 빈값으로 표출
+    - `의도 미분류 메시지`
+    - `버튼 오류 메시지`
+    - `다중 의도 선택 안내`
+    - `원하는 의도 없음 메시지`
+    - `시스템 오류 메시지`
+    - `타임아웃 메시지`
+    - `세션 종료 메시지`
+    - `진행 중 대화 안내`
+    - `대화 흐름 실행 한도 초과 메시지`
+  - 따라서 이제 `메시지 설정` 화면에서
+    어울이 임의로 만든 문장이 기본값처럼 보이지 않도록 정리
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js`
+  - `npm run studio:check`
