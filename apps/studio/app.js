@@ -10427,63 +10427,68 @@ function renderConfigureAidotScreen() {
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="bot-settings-section messenger-settings-section">
           <h2>메신저 편의 기능</h2>
-          <div class="settings-toolbar">
-            <button type="button" class="secondary-action">+ 플로팅 버튼 추가</button>
-            <div class="settings-toolbar__spacer"></div>
-            <button type="button" class="secondary-action">↑</button>
-            <button type="button" class="secondary-action">↓</button>
-          </div>
-          <div class="settings-list-card">
-            <div class="settings-list-card__header settings-list-card__header--four">
-              <span>버튼명</span><span>연결 유형</span><span>값</span><span>사용</span>
-            </div>
-            ${floatingButtons.map((item) => `
-              <div class="settings-list-row settings-list-row--four${selectedFloatingButton && item.buttonId === selectedFloatingButton.buttonId ? " is-selected" : ""}">
-                <button type="button" class="settings-link-button">${escapeText(item.label || item.buttonId || "-")}</button>
-                <span>${escapeText(item.actionType === "command" ? "Command" : "Key")}</span>
-                <span>${escapeText(item.actionValue || "-")}</span>
-                <label class="settings-toggle settings-list-card__check">
-                  <input type="checkbox" ${item.enabled ? "checked" : ""} />
-                  <span>${item.enabled ? "사용" : "미사용"}</span>
-                </label>
-              </div>
-            `).join("") || emptyState("등록된 플로팅 버튼이 없습니다.")}
-          </div>
-          ${selectedFloatingButton ? `
-            <div class="settings-dialog settings-dialog--wide settings-dialog--inline" role="dialog" aria-label="플로팅 버튼">
-              <div class="settings-dialog__header">
-                <strong>플로팅 버튼</strong>
-                <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
-              </div>
-              <div class="settings-dialog__body settings-dialog__body--form">
-                <div class="messenger-settings__form-grid">
-                  <label class="settings-form-card">
-                    <span>버튼명</span>
-                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedFloatingButton.label || "")}" />
-                  </label>
-                  <label class="settings-form-card">
-                    <span>Key/Command 옵션</span>
-                    <select class="bot-settings-card__select">
-                      <option ${selectedFloatingButton.actionType === "key" ? "selected" : ""}>Key</option>
-                      <option ${selectedFloatingButton.actionType === "command" ? "selected" : ""}>Command</option>
-                    </select>
-                  </label>
-                  <label class="settings-form-card">
-                    <span>Key/Command 값</span>
-                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedFloatingButton.actionValue || "")}" />
-                  </label>
-                  <label class="settings-form-card settings-form-card--check">
-                    <input type="checkbox" ${selectedFloatingButton.enabled ? "checked" : ""} />
-                    <span>사용 여부</span>
-                  </label>
+          <div class="messenger-settings-layout">
+            <div class="messenger-settings-layout__list">
+              <div class="messenger-settings__detail-header">
+                <h3>플로팅 버튼 목록</h3>
+                <div class="messenger-settings__arrow-actions">
+                  <button type="button" class="secondary-action">↑</button>
+                  <button type="button" class="secondary-action">↓</button>
                 </div>
               </div>
-              <div class="settings-dialog__footer">
-                <button type="button" class="secondary-action">취소</button>
-                <button type="button" class="primary-action">확인</button>
+              <button type="button" class="secondary-action messenger-settings__add">+ 플로팅 버튼 추가</button>
+              <div class="settings-list-card">
+                <div class="settings-list-card__header settings-list-card__header--four">
+                  <span>버튼명</span><span>연결 유형</span><span>값</span><span>사용</span>
+                </div>
+                ${floatingButtons.map((item) => `
+                  <div class="settings-list-row settings-list-row--four${selectedFloatingButton && item.buttonId === selectedFloatingButton.buttonId ? " is-selected" : ""}">
+                    <button type="button" class="settings-link-button">${escapeText(item.label || item.buttonId || "-")}</button>
+                    <span>${escapeText(item.actionType === "command" ? "Command" : "Key")}</span>
+                    <span>${escapeText(item.actionValue || "-")}</span>
+                    <label class="settings-toggle settings-list-card__check">
+                      <input type="checkbox" ${item.enabled ? "checked" : ""} />
+                      <span>${item.enabled ? "사용" : "미사용"}</span>
+                    </label>
+                  </div>
+                `).join("") || emptyState("등록된 플로팅 버튼이 없습니다.")}
               </div>
             </div>
-          ` : ""}
+            <div class="messenger-settings-layout__detail">
+              <div class="settings-detail-card">
+                <div class="messenger-settings__detail-header">
+                  <h3>플로팅 버튼</h3>
+                </div>
+                ${selectedFloatingButton ? `
+                  <div class="messenger-settings__form-grid">
+                    <label class="settings-form-card">
+                      <span>버튼명</span>
+                      <input type="text" class="bot-settings-card__input" value="${escapeText(selectedFloatingButton.label || "")}" />
+                    </label>
+                    <label class="settings-form-card">
+                      <span>Key/Command 옵션</span>
+                      <select class="bot-settings-card__select">
+                        <option ${selectedFloatingButton.actionType === "key" ? "selected" : ""}>Key</option>
+                        <option ${selectedFloatingButton.actionType === "command" ? "selected" : ""}>Command</option>
+                      </select>
+                    </label>
+                    <label class="settings-form-card">
+                      <span>Key/Command 값</span>
+                      <input type="text" class="bot-settings-card__input" value="${escapeText(selectedFloatingButton.actionValue || "")}" />
+                    </label>
+                    <label class="settings-form-card settings-form-card--check">
+                      <input type="checkbox" ${selectedFloatingButton.enabled ? "checked" : ""} />
+                      <span>사용 여부</span>
+                    </label>
+                  </div>
+                  <div class="settings-detail-card__actions">
+                    <button type="button" class="secondary-action">취소</button>
+                    <button type="button" class="primary-action">확인</button>
+                  </div>
+                ` : emptyState("선택된 플로팅 버튼이 없습니다.")}
+              </div>
+            </div>
+          </div>
         </section>
       </section>
     </div>
@@ -10494,20 +10499,27 @@ function renderConfigureAidotScreen() {
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="bot-settings-section">
           <h2>추천 의도</h2>
-          <div class="settings-toolbar">
-            <select class="settings-toolbar__select">${emptyRecommendedOptions}</select>
-            <button type="button" class="secondary-action">+ 추천 의도 구성</button>
-            <div class="settings-toolbar__spacer"></div>
-            <button type="button" class="secondary-action">↑</button>
-            <button type="button" class="secondary-action">↓</button>
-          </div>
-          <div class="settings-list-card">
+          <div class="messenger-settings__recommended">
+            <div class="messenger-settings__recommended-header">
+              <strong>추천 의도 목록</strong>
+              <div class="messenger-settings__arrow-actions">
+                <button type="button" class="secondary-action">↑</button>
+                <button type="button" class="secondary-action">↓</button>
+              </div>
+            </div>
+            <div class="settings-toolbar">
+              <select class="settings-toolbar__select">${emptyRecommendedOptions}</select>
+              <button type="button" class="secondary-action">+ 추천 의도 구성</button>
+              <div class="settings-toolbar__spacer"></div>
+            </div>
+            <div class="settings-list-card">
               <div class="settings-list-card__header settings-list-card__header--two">
                 <span>추천 순서</span><span>의도명</span>
               </div>
               ${recommendedIntents.map((item, index) => `
-              <button type="button" class="settings-list-row settings-list-row--two${index === 0 ? " is-selected" : ""}"><span>${index + 1}</span><span>${escapeText(item.displayName || item.id)}</span></button>
-            `).join("") || emptyState("구성된 추천 의도가 없습니다.")}
+                <button type="button" class="settings-list-row settings-list-row--two${index === 0 ? " is-selected" : ""}"><span>${index + 1}</span><span>${escapeText(item.displayName || item.id)}</span></button>
+              `).join("") || emptyState("구성된 추천 의도가 없습니다.")}
+            </div>
           </div>
         </section>
       </section>

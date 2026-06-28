@@ -5775,3 +5775,24 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
   - `npm run studio:check`
+
+### `메신저 편의 기능` / `추천 의도` 구조를 Aidot 목록-상세 흐름으로 정리
+
+- `메신저 편의 기능`은
+  이전까지 모달 중심으로 보여서 Aidot의 목록 + 우측 상세 편집 구조와 달랐다.
+- `추천 의도`도
+  상단 추가/순서 조정 영역과 목록 영역의 구분이 약했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - `메신저 편의 기능`
+    - `플로팅 버튼 목록`과 `플로팅 버튼 상세`를 한 화면에 같이 보이도록 재배치
+    - 화살표 순서 조정 버튼을 목록 헤더 쪽으로 이동
+    - 상세 편집 하단에 `취소 / 확인` 액션을 Aidot 흐름에 맞춰 배치
+  - `추천 의도`
+    - `추천 의도 목록` 헤더와 순서 조정 버튼을 분리
+    - 상단 추가 툴바와 하단 목록 카드 구조를 Aidot 흐름에 맞게 정리
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js`
+  - `npm run studio:config-check`
