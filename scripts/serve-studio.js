@@ -3996,10 +3996,10 @@ function getAssetTransferScopeExportFileName(scope, botId, fileFormat) {
 function buildSampleTextAsset(scope) {
   const samples = {
     intent_utterance: "I need to reset my password,password_reset\r\nHow do I update my account?,account_update",
-    entity: "개체명,개체값,유형(S/P),상세\r\nemail,email,P,\\\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}\\\\b",
-    dictionary: "대표어,유의어1,유의어2\r\npassword,login password,account password",
-    blocklist: "Blocklist 이름,유형,제외 단어/정규 표현식,사용여부\r\nsample_blocklist,word,forbidden,Y",
-    rule: "룰 이름,룰 설명,룰 표현식,연결 의도/모듈,사용여부(Y/N)\r\nBusiness hours,Route after-hours questions,time.after(18:00),support_after_hours,Y"
+    entity: "개체명,개체값,유형(S/P),상세\r\n",
+    dictionary: "대표어,유의어1,유의어2\r\n",
+    blocklist: "Blocklist 이름,유형,제외 단어/정규 표현식,사용여부\r\n",
+    rule: "룰 이름,룰 설명,룰 표현식,연결 의도/모듈,사용여부(Y/N)\r\n"
   };
   return samples[scope] || "";
 }
@@ -4008,67 +4008,11 @@ function buildSampleJsonAsset(scope, groupId, botId, botLocale) {
   const contractVersion = "v1.0";
   const supportedContractVersions = [contractVersion];
   if (scope === "api") {
-    const sampleMethods = [
-      {
-        id: `sample:${groupId}:${botId}:order_status_lookup:get`,
-        name: "default",
-        httpMethod: "GET",
-        methodUrl: "https://api.example.com/orders/{order_id}",
-        description: "",
-        loggingEnabled: false,
-        proxyEnabled: true,
-        transferMode: "sync",
-        parameters: [
-          {
-            id: "order_id",
-            name: "order_id",
-            location: "path",
-            dataType: "string",
-            defaultValue: "",
-            required: true,
-            visible: true,
-            description: "조회할 주문 ID"
-          }
-        ],
-        outputParameters: [
-          {
-            id: "status",
-            name: "status",
-            path: "status",
-            dataType: "string",
-            description: "주문 상태"
-          }
-        ],
-        outputSample: ""
-      }
-    ];
     return {
       asset_format_version: 1,
       exported_at: new Date().toISOString(),
-      apis: [
-        {
-          id: `sample:${groupId}:${botId}:order_status_lookup`,
-          type: "api",
-          apiKey: `sample:${groupId}:${botId}:order_status_lookup`,
-          name: "order_status_lookup",
-          baseUrl: "https://api.example.com/orders/{order_id}",
-          description: "",
-          category: "API",
-          methods: sampleMethods,
-          updatedAt: new Date().toISOString(),
-          updatedBy: "cga"
-        }
-      ],
-      apiList: [
-        {
-          name: "order_status_lookup",
-          endpoint_url: "https://api.example.com/orders/{order_id}",
-          method: "GET",
-          auth_type: "bearer",
-          secret_ref: "secret:group/" + groupId + "/order-status",
-          response_path: "data.answer"
-        }
-      ]
+      apis: [],
+      apiList: []
     };
   }
   if (scope === "dialog") {

@@ -6246,3 +6246,4 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 응답 Sample TEXT blur 시 JSON이면 Aidot식 출력 파라미터 트리를 다시 계산하고, JSON이 아니면 오류 문구를 표시
   - API 편집 화면의 출력 파라미터 표도 상세 화면과 동일하게 `root` 기준 계층형 표시로 맞춤
   - 새 봇 기본 Detail seed에 남아 있던 예시 의도/개체/사전/룰/시나리오/차단어 샘플 데이터를 제거해 빈 기본값으로 시작하도록 정리
+  - 자산 다운로드 fallback에서도 entity/dictionary/blocklist/rule/API 예시 샘플을 제거하고 빈 헤더/빈 리스트만 내려가도록 정리
