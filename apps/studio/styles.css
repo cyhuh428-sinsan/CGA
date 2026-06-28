@@ -1324,8 +1324,8 @@ textarea { min-height: 84px; resize: vertical; }
 .settings-list-row {
   display: grid;
   align-items: center;
-  min-height: 40px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 10px;
   gap: 8px;
   font-size: 11px;
 }
@@ -1462,8 +1462,8 @@ textarea { min-height: 84px; resize: vertical; }
 }
 
 .settings-dialog--smalltalk {
-  width: min(1120px, calc(100vw - 48px));
-  max-height: min(820px, calc(100vh - 48px));
+  width: min(980px, calc(100vw - 48px));
+  max-height: min(760px, calc(100vh - 48px));
 }
 
 .settings-dialog--inline {
@@ -1614,7 +1614,7 @@ textarea { min-height: 84px; resize: vertical; }
 .settings-message-item__content {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 8px;
   align-items: start;
 }
 
@@ -1626,7 +1626,7 @@ textarea { min-height: 84px; resize: vertical; }
 }
 
 .settings-message-item__textarea {
-  min-height: 74px;
+  min-height: 60px;
   padding: 7px 8px;
   font-size: 10px;
   line-height: 1.45;
@@ -1795,8 +1795,8 @@ textarea { min-height: 84px; resize: vertical; }
 .settings-smalltalk-meta-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.7fr);
-  gap: 28px;
-  padding: 22px;
+  gap: 16px;
+  padding: 16px;
   border: 1px solid #d8e0ea;
   background: #ffffff;
 }
@@ -1805,7 +1805,7 @@ textarea { min-height: 84px; resize: vertical; }
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
   align-items: start;
-  gap: 16px;
+  gap: 12px;
   color: #1f2d3d;
   font-size: 12px;
   font-weight: 700;
@@ -1827,7 +1827,7 @@ textarea { min-height: 84px; resize: vertical; }
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  gap: 12px;
   color: #1f2d3d;
   font-size: 12px;
 }
@@ -1844,16 +1844,16 @@ textarea { min-height: 84px; resize: vertical; }
 
 .settings-message-grid--smalltalk {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-  margin-top: 22px;
+  gap: 16px;
+  margin-top: 16px;
 }
 
 .settings-message-panel {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
-  min-height: 410px;
-  padding: 20px 24px;
+  min-height: 320px;
+  padding: 16px;
   border: 1px solid #d8e0ea;
   background: #ffffff;
 }
@@ -1909,8 +1909,8 @@ textarea { min-height: 84px; resize: vertical; }
 }
 
 .settings-message-list {
-  min-height: 260px;
-  max-height: 360px;
+  min-height: 180px;
+  max-height: 260px;
   overflow: auto;
   border: 1px solid #e4e9f0;
   background: #ffffff;

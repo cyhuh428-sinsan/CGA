@@ -5947,3 +5947,18 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
   - `npm run studio:check`
+
+### 설정 하위 화면의 기본 진입 상태와 세로 밀도를 Aidot 기준으로 정리
+
+- 문제:
+  - `메신저 편의 기능`, `제외/무시 목록`, `룰 설정`, `스몰토크`, `봇스테이션`은
+    첫 진입 시 첫 항목 상세가 자동으로 펼쳐져 실제 저장값과 예시 화면이 섞여 보였다.
+  - `스몰토크` 계열 화면은 상하 폭이 과도하게 커서 Aidot 대비 정보 밀도가 낮았다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - 기본 진입 상태에서는 상세 패널을 자동 선택하지 않도록 변경
+  - 추천 의도/스몰토크 목록의 강제 선택 표시 제거
+  - 설정 목록 행 높이와 스몰토크 상세 패널 높이/간격을 축소해
+    Aidot처럼 목록 중심으로 먼저 보이도록 조정

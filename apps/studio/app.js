@@ -9994,10 +9994,10 @@ function renderConfigureAidotScreen() {
   });
   const moduleRows = getAidotIntentRows().filter((row) => row.type === "module");
   const adminChannels = Array.isArray(currentAdminResources.channels) ? currentAdminResources.channels : [];
-  const selectedFloatingButton = floatingButtons[0] || null;
-  const selectedBlocklist = blocklistItems[0] || null;
-  const selectedRule = ruleItems[0] || null;
-  const selectedSmalltalk = smalltalkItems[0] || null;
+  const selectedFloatingButton = null;
+  const selectedBlocklist = null;
+  const selectedRule = null;
+  const selectedSmalltalk = null;
   const botstationChannels = adminChannels.map((item) => ({
     raw: item,
     id: String(item.id || item.channel_id || item.code || "").trim(),
@@ -10009,7 +10009,7 @@ function renderConfigureAidotScreen() {
     endpointUrl: String(item.endpoint_url || item.data_json?.endpoint_url || "").trim(),
     enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() !== "N",
   }));
-  const selectedBotstationChannel = botstationChannels[0] || null;
+  const selectedBotstationChannel = null;
   const ruleTargetOptions = [
     { value: "", label: "선택 안 함" },
     ...recommendedIntents.map((row) => ({ value: row.id, label: row.displayName || row.id })),
@@ -10742,7 +10742,7 @@ function renderConfigureAidotScreen() {
               <span>추천 순서</span><span>의도명</span>
             </div>
             ${recommendedIntents.map((item, index) => `
-              <button type="button" class="settings-list-row settings-list-row--two${index === 0 ? " is-selected" : ""}"><span>${index + 1}</span><span>${escapeText(item.displayName || item.id)}</span></button>
+              <button type="button" class="settings-list-row settings-list-row--two"><span>${index + 1}</span><span>${escapeText(item.displayName || item.id)}</span></button>
             `).join("") || emptyState("구성된 추천 의도가 없습니다.")}
           </div>
         </section>
@@ -10946,7 +10946,7 @@ function renderConfigureAidotScreen() {
                 <span>스몰토크명</span><span>우선순위</span><span>사용자 메시지</span><span>봇 메시지</span><span>최종수정</span><span>수정자</span>
               </div>
             ${smalltalkItems.map((item, index) => `
-              <button type="button" class="settings-list-row settings-list-row--smalltalk${index === 0 ? " is-selected" : ""}">
+              <button type="button" class="settings-list-row settings-list-row--smalltalk">
                 <span>${escapeText(item.title || item.trigger || "-")}</span>
                 <span>${escapeText(item.priority || "-")}</span>
                 <span>${countMessageList(item.userMessages, item.trigger || "")}</span>
