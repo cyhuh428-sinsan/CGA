@@ -80,6 +80,22 @@
   순으로 진행 중이다.
 - 다음 작업은 Aidot 각 설정 화면의 본문 구조와 조작 흐름을 더 직접적으로 복사하는 것이다.
 
+### 봇 설정 하위 메뉴 Aidot 정렬 재시작
+
+- `02 봇 설정`의 하위 메뉴 이름만 Aidot를 따라가고, 본문 내용은 CGA식 재구성이 남아 있던 문제를 다시 점검했다.
+- 원본 대조 파일:
+  - `D:\Project\cga\Aidot\apps\web\components\messenger-settings-page.tsx`
+  - `D:\Project\cga\Aidot\apps\web\components\messenger-recommended-intents-page.tsx`
+  - `D:\Project\cga\Aidot\apps\web\components\blocklist-settings-page.tsx`
+  - `D:\Project\cga\Aidot\apps\web\components\rule-settings-page.tsx`
+  - `D:\Project\cga\Aidot\apps\web\components\smalltalk-settings-page.tsx`
+  - `D:\Project\cga\Aidot\apps\web\components\botstation-settings-page.tsx`
+- 우선 `추천 의도` 화면에서 실제 추천 설정이 없는데도 전체 의도 목록을 그대로 추천 의도처럼 보여주던 가짜 표시를 제거했다.
+  - 실제 추천 구성값이 없는 경우 빈 목록으로 시작
+  - `+ 추천 의도 구성`용 선택 옵션만 의도 목록에서 유지
+- `봇스테이션` 화면에서도 실제 연결 상태와 무관하게 항상 `사용`, `연결 가능한 채널 n개`처럼 보이던 하드코딩 상태 문구를 제거/보정했다.
+- 다음 단계는 각 하위 화면의 본문 배치와 편집 흐름을 Aidot 원본 컴포넌트 기준으로 더 직접적으로 맞추는 것이다.
+
 ## 2026-06-18
 
 ### Studio 검증 오류 정리 (동적 i18n)

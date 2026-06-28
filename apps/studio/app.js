@@ -11101,7 +11101,8 @@ function renderConfigureAidotScreen() {
     })
     .filter((item) => item.buttonId && item.label)
     .sort((left, right) => left.sortOrder - right.sortOrder);
-  const recommendedIntents = getAidotIntentRows().filter((row) => row.type !== "module");
+  const availableRecommendedIntentOptions = getAidotIntentRows().filter((row) => row.type !== "module");
+  const recommendedIntents = [];
   const blocklistItems = [...currentBlocklistAssets].map((item, index) => ({
     ...item,
     id: String(item.id || item.name || `blocklist-${index + 1}`),
@@ -11163,9 +11164,10 @@ function renderConfigureAidotScreen() {
     enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() !== "N",
   }));
   const selectedBotstationChannel = null;
+  const enabledBotstationChannelCount = botstationChannels.filter((channel) => channel.enabled).length;
   const ruleTargetOptions = [
     { value: "", label: "선택 안 함" },
-    ...recommendedIntents.map((row) => ({ value: row.id, label: row.displayName || row.id })),
+    ...availableRecommendedIntentOptions.map((row) => ({ value: row.id, label: row.displayName || row.id })),
     ...moduleRows.map((row) => ({ value: row.id, label: row.displayName || row.id })),
   ];
   const emptyState = (message) => `<div class="command-empty">${escapeText(message)}</div>`;
@@ -11248,8 +11250,8 @@ function renderConfigureAidotScreen() {
       }
     }
   };
-  const emptyRecommendedOptions = recommendedIntents.length
-    ? recommendedIntents.map((row) => `<option value="${escapeText(row.id)}">${escapeText(row.displayName || row.id)}</option>`).join("")
+  const emptyRecommendedOptions = availableRecommendedIntentOptions.length
+    ? availableRecommendedIntentOptions.map((row) => `<option value="${escapeText(row.id)}">${escapeText(row.displayName || row.id)}</option>`).join("")
     : `<option value="">등록된 의도 없음</option>`;
   const messageTextMaxLength = 100;
   const renderMessageModeRow = (name, mode = "text") => `
@@ -12208,8 +12210,8 @@ function renderConfigureAidotScreen() {
           ` : `
             <div class="botstation-settings__status">
               <span>봇스테이션</span>
-              <label class="botstation-settings__switch"><input type="checkbox" checked /><span>사용</span></label>
-              <span class="botstation-settings__connected">${botstationChannels.length ? `연결 가능한 채널 ${botstationChannels.length}개` : ""}</span>
+              <label class="botstation-settings__switch"><input type="checkbox" ${enabledBotstationChannelCount ? "checked" : ""} /><span>${enabledBotstationChannelCount ? "사용" : "미사용"}</span></label>
+              <span class="botstation-settings__connected">${botstationChannels.length ? `등록된 채널 ${botstationChannels.length}개` : ""}</span>
             </div>
             <div class="botstation-settings__table-wrap">
               <div class="botstation-settings__count">전체 ${botstationChannels.length}개</div>
