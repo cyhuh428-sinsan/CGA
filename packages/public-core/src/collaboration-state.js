@@ -4,17 +4,12 @@ export function createSampleCollaborationState() {
   return {
     buildTarget: DEFAULT_BUILD_TARGET,
     users: [
-      { id: "u-owner", name: "Owner", role: "owner" },
-      { id: "u-builder", name: "Builder", role: "builder" },
-      { id: "u-reviewer", name: "Reviewer", role: "reviewer" },
-      { id: "u-operator", name: "Operator", role: "operator" }
+      { id: "u-owner", name: "소유자", role: "owner" },
+      { id: "u-builder", name: "제작자", role: "builder" },
+      { id: "u-reviewer", name: "검수자", role: "reviewer" },
+      { id: "u-operator", name: "운영자", role: "operator" }
     ],
-    workItems: [
-      createWorkItem({ id: "wi-intent-password", type: WORK_ITEM_TYPE.INTENT, title: "password_reset", assigneeId: "u-builder", status: WORK_ITEM_STATUS.IN_PROGRESS }),
-      createWorkItem({ id: "wi-answer-password", type: WORK_ITEM_TYPE.ANSWER, title: "password_reset answer", assigneeId: "u-reviewer", status: WORK_ITEM_STATUS.REVIEW }),
-      createWorkItem({ id: "wi-api-order", type: WORK_ITEM_TYPE.API_ANSWER, title: "order_status_lookup", assigneeId: "u-builder", status: WORK_ITEM_STATUS.TODO }),
-      createWorkItem({ id: "wi-deploy-web", type: WORK_ITEM_TYPE.DEPLOYMENT, title: "web deployment", assigneeId: "u-operator", status: WORK_ITEM_STATUS.BLOCKED })
-    ]
+    workItems: []
   };
 }
 

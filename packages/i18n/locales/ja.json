@@ -31,7 +31,7 @@
   "i18n.botErrorGroup": "ボットエラー",
   "i18n.noHardcode": "ユーザー向けエラー文をハードコードしない",
   "app.subtitle": "ボット制作スタジオ",
-  "top.bot": "ボット: SupportBot Draft",
+  "top.bot": "ボット",
   "top.version": "バージョン: v0.1",
   "top.apiUnchanged": "Aidot API変更なし",
   "common.save": "保存",
