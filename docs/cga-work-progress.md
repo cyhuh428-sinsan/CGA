@@ -5595,3 +5595,38 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js`
   - `npm run studio:check`
+
+## 2026-06-28 03:55 KST
+
+### `메신저 편의 기능` / `룰 설정` / `스몰토크` / `봇스테이션` 상세 레이어 구조 복원
+
+- Aidot 대비 아직 부족했던
+  상세 팝업/상세 레이어 구조를
+  CGA 쪽 `02 봇 설정`에도 다시 붙였다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - `메신저 편의 기능`
+    - Aidot의 `플로팅 버튼` 상세 다이얼로그 구조를
+      인라인 레이어 형태로 복원
+  - `룰 설정`
+    - `룰 상세 정보` 다이얼로그 구조를 복원하고
+      `룰 이름 / 설명 / 표현식 / 정규식 테스트 / 연결 대상 / 사용 여부` 필드를 정리
+  - `스몰토크`
+    - Aidot의 대형 상세 다이얼로그 구조를 복원
+    - `스몰토크 이름`, `우선순위`, `사용자 메시지`, `봇 메시지` 패널 구성을 반영
+  - `봇스테이션`
+    - 채널 목록 하단에
+      Aidot `채널 연결 정보` 상세 레이어 구조를 복원
+  - 스타일
+    - `settings-dialog`
+    - `settings-dialog--wide`
+    - `settings-dialog--smalltalk`
+    - `settings-message-panel`
+    - `botstation-dialog`
+    등 Aidot 상세 레이어에 필요한 스타일을 추가
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
+  - `npm run studio:check`

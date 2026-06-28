@@ -9673,6 +9673,20 @@ function renderConfigureAidotScreen() {
   const smalltalkItems = [...currentSmallTalkAssets];
   const moduleRows = getAidotIntentRows().filter((row) => row.type === "module");
   const adminChannels = Array.isArray(currentAdminResources.channels) ? currentAdminResources.channels : [];
+  const selectedFloatingButton = floatingButtons[0] || null;
+  const selectedRule = ruleItems[0] || null;
+  const selectedSmalltalk = smalltalkItems[0] || null;
+  const selectedBotstationChannel = adminChannels[0] || null;
+  const selectedBotstationMeta = selectedBotstationChannel
+    ? {
+        provider: selectedBotstationChannel.provider || "webchat",
+        rendererType: selectedBotstationChannel.renderer_type || "webchat",
+        authType: selectedBotstationChannel.auth_type || "none",
+        endpointUrl: selectedBotstationChannel.endpoint_url || "",
+        code: selectedBotstationChannel.code || selectedBotstationChannel.channel_code || selectedBotstationChannel.id || "",
+        name: selectedBotstationChannel.name || selectedBotstationChannel.channel_name || "-",
+      }
+    : null;
   const emptyState = (message) => `<div class="command-empty">${escapeText(message)}</div>`;
   const formatSettingsDateTime = (value) => {
     if (!value) return "-";
@@ -10087,7 +10101,41 @@ function renderConfigureAidotScreen() {
               </div>
             `).join("") || emptyState("등록된 플로팅 버튼이 없습니다.")}
           </div>
-          <p class="muted-line">버튼명을 선택하면 Aidot와 동일한 상세 편집 흐름으로 연결되도록 후속 작업을 이어갑니다.</p>
+          ${selectedFloatingButton ? `
+            <div class="settings-dialog settings-dialog--wide settings-dialog--inline" role="dialog" aria-label="플로팅 버튼">
+              <div class="settings-dialog__header">
+                <strong>플로팅 버튼</strong>
+                <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
+              </div>
+              <div class="settings-dialog__body settings-dialog__body--form">
+                <div class="messenger-settings__form-grid">
+                  <label class="settings-form-card">
+                    <span>버튼명</span>
+                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedFloatingButton.label || "")}" />
+                  </label>
+                  <label class="settings-form-card">
+                    <span>Key/Command 옵션</span>
+                    <select class="bot-settings-card__select">
+                      <option ${selectedFloatingButton.action === "open_help" ? "" : "selected"}>Key</option>
+                      <option ${selectedFloatingButton.action === "open_help" ? "selected" : ""}>Command</option>
+                    </select>
+                  </label>
+                  <label class="settings-form-card">
+                    <span>Key/Command 값</span>
+                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedFloatingButton.action || "")}" />
+                  </label>
+                  <label class="settings-form-card settings-form-card--check">
+                    <input type="checkbox" ${selectedFloatingButton.enabled === "N" ? "" : "checked"} />
+                    <span>사용 여부</span>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-dialog__footer">
+                <button type="button" class="secondary-action">취소</button>
+                <button type="button" class="primary-action">확인</button>
+              </div>
+            </div>
+          ` : ""}
         </section>
       </section>
     </div>
@@ -10191,6 +10239,49 @@ function renderConfigureAidotScreen() {
               <label><span>테스트 결과</span><textarea rows="4" readonly>${escapeText(ruleItems[0]?.expression ? "정규식 확인 대기" : "등록된 룰이 없습니다.")}</textarea></label>
             </div>
           </div>
+          ${selectedRule ? `
+            <div class="settings-dialog settings-dialog--wide settings-dialog--inline" role="dialog" aria-label="룰 상세 정보">
+              <div class="settings-dialog__header">
+                <strong>룰 상세 정보</strong>
+                <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
+              </div>
+              <div class="settings-dialog__body settings-dialog__body--form">
+                <div class="settings-form-grid settings-form-grid--compact">
+                  <label class="settings-form-card">
+                    <span>룰 이름</span>
+                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedRule.name || "")}" />
+                  </label>
+                  <label class="settings-form-card">
+                    <span>룰 설명</span>
+                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedRule.description || "")}" />
+                  </label>
+                  <label class="settings-form-card settings-form-card--wide">
+                    <span>룰 표현식</span>
+                    <textarea class="bot-settings-intro__textarea">${escapeText(selectedRule.expression || "")}</textarea>
+                  </label>
+                  <div class="settings-form-card settings-form-card--wide">
+                    <span>정규식 테스트</span>
+                    <div class="entity-value-dialog__pattern-test-row">
+                      <input type="text" class="rule-settings__regex-test-input" value="" placeholder="테스트할 문장을 입력하세요." />
+                      <button type="button" class="secondary-action">테스트</button>
+                    </div>
+                  </div>
+                  <label class="settings-form-card">
+                    <span>연결할 의도/모듈</span>
+                    <select class="rule-settings__target-select"><option>${escapeText(selectedRule.target || "선택 안 함")}</option></select>
+                  </label>
+                  <label class="settings-form-card settings-form-card--check">
+                    <input type="checkbox" ${selectedRule.enabled === "N" ? "" : "checked"} />
+                    <span>사용 여부</span>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-dialog__footer">
+                <button type="button" class="secondary-action">취소</button>
+                <button type="button" class="primary-action">확인</button>
+              </div>
+            </div>
+          ` : ""}
         </section>
       </section>
     </div>
@@ -10226,9 +10317,72 @@ function renderConfigureAidotScreen() {
             <div class="settings-detail-card">
               <h3>스몰토크 사용</h3>
               <label class="settings-toggle"><input type="checkbox" ${smalltalkItems.length ? "checked" : ""} /><span>${smalltalkItems.length ? "사용" : "미사용"}</span></label>
-              <p class="muted-line">Aidot 원형처럼 목록 선택 후 팝업 상세 편집 흐름으로 이어지도록 다음 단계에서 연결합니다.</p>
+              <p class="muted-line">목록 선택 기준으로 Aidot 상세 편집 레이어를 아래에 맞췄습니다.</p>
             </div>
           </div>
+          ${selectedSmalltalk ? `
+            <div class="settings-dialog settings-dialog--smalltalk settings-dialog--inline" role="dialog" aria-label="스몰토크 상세">
+              <div class="settings-dialog__header">
+                <strong>스몰토크 수정</strong>
+                <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
+              </div>
+              <div class="settings-dialog__body settings-dialog__body--form">
+                <div class="settings-smalltalk-meta-grid">
+                  <label class="settings-smalltalk-field">
+                    <span>스몰토크 이름*</span>
+                    <span>
+                      <input type="text" class="bot-settings-card__input" value="${escapeText(selectedSmalltalk.title || selectedSmalltalk.trigger || "")}" maxLength="40" placeholder="유일한 스몰토크 이름을 입력하세요." />
+                      <em>한글/영문/숫자/공백/특수문자 -_()[]:; 만 입력/40</em>
+                    </span>
+                  </label>
+                  <label class="settings-smalltalk-field">
+                    <span>우선순위*</span>
+                    <select class="bot-settings-card__select"><option>Medium</option></select>
+                  </label>
+                  <div class="settings-smalltalk-meta">
+                    <span><strong>등록자</strong>-</span>
+                    <span><strong>등록일자</strong>-</span>
+                    <span><strong>최종수정자</strong>-</span>
+                    <span><strong>최종수정일시</strong>-</span>
+                  </div>
+                </div>
+                <div class="settings-message-grid settings-message-grid--smalltalk">
+                  <section class="settings-message-panel">
+                    <div class="settings-message-panel__header">
+                      <span class="settings-message-panel__title">사용자 메시지*<strong class="settings-message-panel__count">${countMessageList(selectedSmalltalk.userMessages, selectedSmalltalk.trigger || "")}</strong></span>
+                      <button type="button" class="secondary-action">삭제</button>
+                    </div>
+                    <div class="settings-message-input-row">
+                      <input type="text" value="" placeholder="사용자 메시지가 될 수 있는 문장을 입력하세요." />
+                      <button type="button" aria-label="사용자 메시지 추가">+</button>
+                    </div>
+                    <div class="settings-message-list">
+                      <div class="settings-message-list__header"><input type="checkbox" /><span>사용자 메시지</span></div>
+                      <label class="settings-message-list__row"><input type="checkbox" /><span>${escapeText(selectedSmalltalk.trigger || "")}</span></label>
+                    </div>
+                  </section>
+                  <section class="settings-message-panel">
+                    <div class="settings-message-panel__header">
+                      <span class="settings-message-panel__title">봇 메시지*<strong class="settings-message-panel__count">${countMessageList(selectedSmalltalk.botMessages, selectedSmalltalk.response || "")}</strong></span>
+                      <button type="button" class="secondary-action">삭제</button>
+                    </div>
+                    <div class="settings-message-input-row">
+                      <input type="text" value="" placeholder="봇 메시지가 될 수 있는 문장을 입력하십시오. 메시지는 사용자에게 무작위로 표시됩니다." />
+                      <button type="button" aria-label="봇 메시지 추가">+</button>
+                    </div>
+                    <div class="settings-message-list">
+                      <div class="settings-message-list__header"><input type="checkbox" /><span>봇 메시지</span></div>
+                      <label class="settings-message-list__row"><input type="checkbox" /><span>${escapeText(selectedSmalltalk.response || "")}</span></label>
+                    </div>
+                  </section>
+                </div>
+              </div>
+              <div class="settings-dialog__footer">
+                <button type="button" class="secondary-action">취소</button>
+                <button type="button" class="primary-action">확인</button>
+              </div>
+            </div>
+          ` : ""}
         </section>
       </section>
     </div>
@@ -10252,7 +10406,7 @@ function renderConfigureAidotScreen() {
                 <thead><tr><th>채널</th><th>설정정보</th><th>상태</th></tr></thead>
                 <tbody>
                   ${adminChannels.map((channel) => `
-                    <tr>
+                    <tr${selectedBotstationChannel && channel === selectedBotstationChannel ? ` class="is-selected"` : ""}>
                       <td><button type="button" class="botstation-settings__channel-link">${escapeText(channel.name || channel.channel_name || channel.code || channel.id || "-")}</button></td>
                       <td>${escapeText(channel.code || channel.channel_code || "-")}</td>
                       <td>
@@ -10266,6 +10420,31 @@ function renderConfigureAidotScreen() {
                 </tbody>
               </table>
             </div>
+            ${selectedBotstationMeta ? `
+              <div class="botstation-dialog botstation-dialog--inline" role="dialog" aria-label="채널 연결 정보">
+                <div class="settings-dialog__header">
+                  <strong>${escapeText(selectedBotstationMeta.name)}</strong>
+                  <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
+                </div>
+                <div class="botstation-dialog__body">
+                  <label class="botstation-dialog__field"><span>Provider</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.provider)}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>렌더러</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.rendererType)}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>인증방식</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.authType)}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>채널 아이디</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.code)}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>채널</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.name)}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>봇 식별값</span><input class="bot-settings-card__input" value="${escapeText(botId)}" /></label>
+                  <label class="botstation-dialog__field"><span>봇 이름</span><input class="bot-settings-card__input" value="${escapeText(botName)}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>App ID</span><input class="bot-settings-card__input" value="" /></label>
+                  <label class="botstation-dialog__field"><span>App Secret</span><input class="bot-settings-card__input" value="" /></label>
+                  <label class="botstation-dialog__field botstation-dialog__field--wide"><span>Callback URL</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.endpointUrl)}" /></label>
+                  <label class="botstation-dialog__field botstation-dialog__field--wide"><span>설명</span><textarea class="bot-settings-intro__textarea"></textarea></label>
+                </div>
+                <div class="settings-dialog__footer">
+                  <button type="button" class="secondary-action">취소</button>
+                  <button type="button" class="primary-action">확인</button>
+                </div>
+              </div>
+            ` : ""}
           `}
         </section>
       </section>
