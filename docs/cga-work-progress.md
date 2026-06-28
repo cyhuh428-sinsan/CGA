@@ -5744,3 +5744,34 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
   - `npm run studio:check`
+
+## 2026-06-28 05:20 KST
+
+### `기본값 설정` 화면을 Aidot 패널 구조 기준으로 재배치
+
+- `02 봇 설정 > 기본값 설정`은 값 바인딩은 일부 되어 있었지만
+  화면 구조가 Aidot 원본의 패널형 배치와 달라
+  실제 검토 시 항목 관계가 잘 보이지 않는 상태였다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - `기본값 설정` 화면을 Aidot 기준 패널 구조로 재배치
+    - `기본 정보`
+    - `NLU 판정 기준`
+    - `타임아웃`
+    - `개체 파악`
+    - `실행 제한`
+    - `QA 설정`
+    - `의도 파악`
+    - `모듈 연결`
+    - `고급 설정`
+  - 기존 `conversationDefaults` 값을 그대로 사용하도록 유지하고
+    임의 수치/문구는 추가하지 않음
+  - 모듈 연결 값은 읽기 전용 입력 + `선택` 버튼 형태로 Aidot UI 흐름에 맞춰 정리
+  - `settings-defaults-input`, `settings-module-field` 계열 스타일을 추가해
+    Aidot 패널형 입력 레이아웃과 간격을 맞춤
+- 검증 예정:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
+  - `npm run studio:check`

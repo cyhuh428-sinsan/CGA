@@ -10080,60 +10080,186 @@ function renderConfigureAidotScreen() {
     </div>
   `;
 
-  const renderDefaults = () => `
-    <div class="aidot-settings-screen">
-      <section class="aidot-settings-main aidot-settings-main--full">
-        <section class="aidot-setting-block">
-          <header><strong>기본값 설정</strong><span>M/L 설정, QA 설정, 세션/대화 제어, 모듈 연결, 고급 설정을 Aidot 기준으로 관리합니다.</span></header>
-          <div class="aidot-field-grid five">
-            <label>봇 ID<input value="${escapeText(botId)}" readonly /></label>
-            <label>의도파악 Cut-off Score<input value="${escapeText(formatInputValue(conversationDefaults.ml.cutOffScore))}" placeholder="미설정" /></label>
-            <label>유사의도 Score<input value="${escapeText(formatInputValue(conversationDefaults.ml.similarIntentScore))}" placeholder="미설정" /></label>
-            <label>의도파악결과 최대개수<input value="${escapeText(formatInputValue(conversationDefaults.ml.maxIntentResults))}" placeholder="미설정" /></label>
-            <label>답변 우선순위${renderOptionSelect(conversationDefaults.qa.answerPriority, [{ value: "qa-first", label: "Q/A 우선" }, { value: "ml-first", label: "M/L 우선" }])}</label>
-          </div>
+  const renderDefaults = () => {
+    const renderDefaultsInput = (value, { readonly = false, placeholder = "미설정" } = {}) =>
+      `<input class="settings-defaults-input" value="${escapeText(formatInputValue(value))}" ${readonly ? "readonly" : ""} placeholder="${escapeText(placeholder)}" />`;
+    const renderDefaultsSelect = (value, options) =>
+      renderOptionSelect(value, options).replace("<select>", '<select class="settings-defaults-input">');
+    const renderDefaultsBoolean = (value) =>
+      renderBooleanSelect(value).replace("<select>", '<select class="settings-defaults-input">');
+    const renderModuleField = (title, value) => `
+      <label class="settings-defaults-field settings-defaults-field--wide">
+        <span class="settings-field-label">${escapeText(title)}</span>
+        <div class="settings-module-field">
+          <input class="settings-module-field__input" value="${escapeText(formatInputValue(value))}" placeholder="미설정" readonly />
+          <button type="button" class="settings-module-field__button">선택</button>
+        </div>
+      </label>
+    `;
+    const ttsUrl = readConfigValue([conversationExtraConfig, aiExtraConfig], [["voice", "ttsUrl"], ["voice", "tts_url"], ["tts_url"]], "");
+
+    return `
+      <div class="aidot-settings-screen">
+        <section class="aidot-settings-main aidot-settings-main--full">
+          <section class="bot-settings-section">
+            <h2>기본값 설정</h2>
+            <div class="settings-defaults-stack">
+              <section class="settings-defaults-group settings-defaults-group--panel">
+                <h3>기본 정보</h3>
+                <div class="settings-defaults-grid settings-defaults-grid--two">
+                  <div class="settings-defaults-field settings-defaults-field--readonly">
+                    <span class="settings-field-label">봇 ID</span>
+                    <strong>${escapeText(botId || "-")}</strong>
+                  </div>
+                  <label class="settings-defaults-field settings-defaults-field--wide-mobile">
+                    <span class="settings-field-label">TTS URL</span>
+                    ${renderDefaultsInput(ttsUrl)}
+                  </label>
+                </div>
+              </section>
+
+              <div class="settings-defaults-two-column">
+                <section class="settings-defaults-group settings-defaults-group--panel">
+                  <h3>NLU 판정 기준</h3>
+                  <div class="settings-defaults-grid settings-defaults-grid--three">
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">의도파악 Cut-off Score</span>
+                      ${renderDefaultsInput(conversationDefaults.ml.cutOffScore)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">유사의도 Score</span>
+                      ${renderDefaultsInput(conversationDefaults.ml.similarIntentScore)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">의도파악결과 최대개수</span>
+                      ${renderDefaultsInput(conversationDefaults.ml.maxIntentResults)}
+                    </label>
+                  </div>
+                  <div class="settings-defaults-grid settings-defaults-grid--two">
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">Validation Set 상태 설정</span>
+                      ${renderDefaultsSelect(conversationDefaults.validation.mode, [{ value: "random", label: "Random" }, { value: "fixed", label: "Fixed" }])}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">Exacting Matching</span>
+                      ${renderDefaultsBoolean(conversationDefaults.exactingMatching.enabled)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">Imbalance Oversampling 설정</span>
+                      ${renderDefaultsBoolean(conversationDefaults.validation.imbalanceOversampling)}
+                    </label>
+                  </div>
+                </section>
+              </div>
+
+              <div class="settings-defaults-two-column">
+                <section class="settings-defaults-group settings-defaults-group--panel">
+                  <h3>타임아웃</h3>
+                  <div class="settings-defaults-grid settings-defaults-grid--two">
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">타임아웃 사용</span>
+                      ${renderDefaultsBoolean(conversationDefaults.timeout.enabled)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">타임아웃 시간(초)</span>
+                      ${renderDefaultsInput(conversationDefaults.timeout.seconds)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">Push Message 타임아웃 적용</span>
+                      ${renderDefaultsBoolean(conversationDefaults.timeout.applyToPushMessage)}
+                    </label>
+                  </div>
+                </section>
+
+                <section class="settings-defaults-group settings-defaults-group--panel">
+                  <h3>개체 파악</h3>
+                  <div class="settings-defaults-grid settings-defaults-grid--two">
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">사용자에게 개체를 얻기 위한 질문의 최대 반복 횟수</span>
+                      ${renderDefaultsInput(conversationDefaults.entityPrompt.maxRepeatCount)}
+                    </label>
+                  </div>
+                </section>
+              </div>
+
+              <div class="settings-defaults-two-column">
+                <section class="settings-defaults-group settings-defaults-group--panel">
+                  <h3>실행 제한</h3>
+                  <div class="settings-defaults-grid settings-defaults-grid--two">
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">사용자 응답 사이 최대 카드 수</span>
+                      ${renderDefaultsInput(conversationDefaults.runtime.maxCardsBetweenUserResponses)}
+                    </label>
+                  </div>
+                </section>
+                <section class="settings-defaults-group settings-defaults-group--panel">
+                  <h3>QA 설정</h3>
+                  <div class="settings-defaults-grid settings-defaults-grid--three">
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">FAQ Cut-off Score</span>
+                      ${renderDefaultsInput(conversationDefaults.qa.faqCutOffScore)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">Extractive QA Cut-off Score</span>
+                      ${renderDefaultsInput(conversationDefaults.qa.extractiveCutOffScore)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">검색결과 최대개수</span>
+                      ${renderDefaultsInput(conversationDefaults.qa.searchMaxResults)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">FAQ 의도파악결과 최대개수</span>
+                      ${renderDefaultsInput(conversationDefaults.qa.faqMaxIntentResults)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">Extractive QA 의도파악결과 최대개수</span>
+                      ${renderDefaultsInput(conversationDefaults.qa.extractiveMaxIntentResults)}
+                    </label>
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">답변 우선순위</span>
+                      ${renderDefaultsSelect(conversationDefaults.qa.answerPriority, [{ value: "ml-first", label: "M/L → QA" }, { value: "qa-first", label: "QA → M/L" }])}
+                    </label>
+                  </div>
+                </section>
+              </div>
+
+              <div class="settings-defaults-two-column">
+                <section class="settings-defaults-group settings-defaults-group--panel">
+                  <h3>의도 파악</h3>
+                  <div class="settings-defaults-grid settings-defaults-grid--two">
+                    <label class="settings-defaults-field">
+                      <span class="settings-field-label">의도파악 시도 횟수</span>
+                      ${renderDefaultsInput(conversationDefaults.intentDetection.retryCount)}
+                    </label>
+                    ${renderModuleField("의도파악 시도 횟수 초과시 실행할 모듈", conversationDefaults.intentDetection.overflowModule)}
+                  </div>
+                </section>
+
+                <section class="settings-defaults-group settings-defaults-group--panel">
+                  <h3>모듈 연결</h3>
+                  <div class="settings-defaults-grid settings-defaults-grid--one">
+                    ${renderModuleField("전처리 모듈", conversationDefaults.intentDetection.preprocessModule)}
+                    ${renderModuleField("Session End 전 실행할 모듈", conversationDefaults.intentDetection.beforeSessionEndModule)}
+                    ${renderModuleField("파악된 의도가 여러 개일 경우 버튼에 추가할 모듈", conversationDefaults.intentDetection.multiIntentButtonModule)}
+                  </div>
+                </section>
+              </div>
+
+              <section class="settings-defaults-group settings-defaults-group--panel">
+                <h3>고급 설정</h3>
+                <div class="settings-defaults-grid settings-defaults-grid--two">
+                  <label class="settings-defaults-field">
+                    <span class="settings-field-label">버튼 선택 옵션</span>
+                    ${renderDefaultsSelect(conversationDefaults.buttonSelection.option, [{ value: "contains", label: "Contains" }, { value: "exact", label: "Exact" }])}
+                  </label>
+                </div>
+              </section>
+            </div>
+          </section>
         </section>
-        <section class="aidot-setting-block">
-          <header><strong>QA 설정</strong><span>FAQ Search, Extractive QA Search 기준 점수와 결과 개수를 설정합니다.</span></header>
-          <div class="aidot-field-grid five">
-            <label>FAQ Cut-off Score<input value="${escapeText(formatInputValue(conversationDefaults.qa.faqCutOffScore))}" placeholder="미설정" /></label>
-            <label>Extractive QA Cut-off Score<input value="${escapeText(formatInputValue(conversationDefaults.qa.extractiveCutOffScore))}" placeholder="미설정" /></label>
-            <label>검색결과 최대개수<input value="${escapeText(formatInputValue(conversationDefaults.qa.searchMaxResults))}" placeholder="미설정" /></label>
-            <label>FAQ 의도파악결과 최대개수<input value="${escapeText(formatInputValue(conversationDefaults.qa.faqMaxIntentResults))}" placeholder="미설정" /></label>
-            <label>Extractive QA 의도파악결과 최대개수<input value="${escapeText(formatInputValue(conversationDefaults.qa.extractiveMaxIntentResults))}" placeholder="미설정" /></label>
-          </div>
-        </section>
-        <section class="aidot-setting-block">
-          <header><strong>세션 / 대화 제어</strong><span>타임아웃, 개체 반복, 의도파악 시도 횟수와 실패 시 모듈 연결을 정의합니다.</span></header>
-          <div class="aidot-field-grid five">
-            <label>타임아웃 사용${renderBooleanSelect(conversationDefaults.timeout.enabled)}</label>
-            <label>타임아웃 시간(초)<input value="${escapeText(formatInputValue(conversationDefaults.timeout.seconds))}" placeholder="미설정" /></label>
-            <label>Push Message 타임아웃 적용${renderBooleanSelect(conversationDefaults.timeout.applyToPushMessage)}</label>
-            <label>개체 질문 최대 반복 횟수<input value="${escapeText(formatInputValue(conversationDefaults.entityPrompt.maxRepeatCount))}" placeholder="미설정" /></label>
-            <label>의도파악 시도 횟수<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.retryCount))}" placeholder="미설정" /></label>
-          </div>
-          <div class="rag-form-grid">
-              <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.overflowModule))}" placeholder="미설정" readonly /></label>
-          </div>
-        </section>
-        <section class="aidot-setting-block">
-          <header><strong>모듈 연결 / 고급 설정</strong><span>전처리, 세션 종료 전, 다중 의도 버튼 모듈과 Validation Set, Oversampling, 버튼 선택 옵션을 설정합니다.</span></header>
-          <div class="rag-form-grid">
-              <label>전처리 모듈<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.preprocessModule))}" placeholder="미설정" readonly /></label>
-              <label>Session End 전 실행할 모듈<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.beforeSessionEndModule))}" placeholder="미설정" readonly /></label>
-              <label>다중 의도 버튼 추가 모듈<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.multiIntentButtonModule))}" placeholder="미설정" readonly /></label>
-              <label>버튼 선택 옵션${renderOptionSelect(conversationDefaults.buttonSelection.option, [{ value: "contains", label: "Contains" }, { value: "exact", label: "Exact" }])}</label>
-          </div>
-          <div class="aidot-field-grid">
-            <label>Validation Set 상태 설정${renderOptionSelect(conversationDefaults.validation.mode, [{ value: "random", label: "Random" }, { value: "fixed", label: "Fixed" }])}</label>
-            <label>Imbalance Oversampling 설정${renderBooleanSelect(conversationDefaults.validation.imbalanceOversampling)}</label>
-            <label>TTS URL<input value="" placeholder="미설정" /></label>
-            <label>사용자 응답 사이 최대 카드 수<input value="${escapeText(formatInputValue(conversationDefaults.runtime.maxCardsBetweenUserResponses))}" placeholder="미설정" /></label>
-          </div>
-        </section>
-      </section>
-    </div>
-  `;
+      </div>
+    `;
+  };
 
   const renderMessages = () => `
     <div class="aidot-settings-screen">

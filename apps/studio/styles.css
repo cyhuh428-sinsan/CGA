@@ -1538,6 +1538,83 @@ textarea { min-height: 84px; resize: vertical; }
   line-height: 1.3;
 }
 
+.settings-defaults-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d6dde6;
+  border-radius: 0;
+  background: #ffffff;
+  color: #20252d;
+  font-size: 12px;
+  outline: none;
+}
+
+.settings-defaults-input[readonly] {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.settings-defaults-group select.settings-defaults-input {
+  appearance: auto;
+}
+
+.settings-module-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-module-field__input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d6dde6;
+  border-radius: 0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  outline: none;
+}
+
+.settings-module-field__button {
+  min-height: 34px;
+  border: 1px solid #c9d2dd;
+  border-radius: 0;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.settings-module-field__button:hover {
+  background: #f8fafc;
+}
+
+@media (max-width: 1200px) {
+  .settings-defaults-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-defaults-grid--three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .settings-defaults-grid--two,
+  .settings-defaults-grid--three {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-module-field {
+    grid-template-columns: 1fr;
+  }
+}
+
 .settings-accordion {
   margin-top: 8px;
   border: 1px solid #dde3ea;
