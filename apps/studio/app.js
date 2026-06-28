@@ -1,6 +1,5 @@
 import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-10";
 import { getVisibleLayout } from "./data/layout.js?v=20260618-10";
-import { sampleStudioState } from "./data/sample-state.js";
 import { buildVersionAssetMetadataSnapshot, createEmptyVersionAssetMetadataState, readVersionAssetMetadataSnapshot } from "./data/version-asset-metadata.js";
 import { createEmptyStudioState, deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
@@ -41,8 +40,8 @@ const WORKSPACE_SNAPSHOT_VERSION = 1;
 const WORKSPACE_SNAPSHOT_TTL_MS = 60000;
 const LOGIN_ID_STORAGE_KEY = "cga-studio-login-id";
 
-const currentStudioState = structuredClone(sampleStudioState);
-let currentCollaborationState = createSampleCollaborationState();
+const currentStudioState = createEmptyStudioState();
+let currentCollaborationState = createEmptyCollaborationState();
 let currentAccessState = normalizeAccessState(createSampleAccessState());
 let botVersionRegistry = {};
 let currentWorkspaceRecentBots = [];
@@ -55,51 +54,12 @@ let currentAdminResources = {
   licenses: [],
   login_history: []
 };
-let currentWorkspaceGroupId = "g-support";
-let currentWorkspaceBotId = "supportbot-draft";
-let currentWorkspaceBots = [
-  {
-    id: "supportbot-draft",
-    group_id: "g-support",
-    name: "SupportBot Draft",
-    version: "v0.1",
-    status: "draft",
-    locale: "ko",
-    updated_at: "2026-06-04"
-  },
-  {
-    id: "faqbot-v1",
-    group_id: "g-support",
-    name: "FAQ Bot v1",
-    version: "v1.0",
-    status: "ready",
-    locale: "en",
-    updated_at: "2026-06-03"
-  },
-  {
-    id: "ops-assistant",
-    group_id: "g-ops",
-    name: "Ops Assistant",
-    version: "v0.3",
-    status: "operating",
-    locale: "en",
-    updated_at: "2026-06-02"
-  }
-];
-let currentApiRegistry = [
-  {
-    group_id: "g-support",
-    bot_id: "supportbot-draft",
-    name: "order_status_lookup",
-    endpoint_url: "https://api.example.com/orders/{order_id}",
-    method: "GET",
-    auth_type: "bearer",
-    secret_ref: "secret:group/g-support/order-status",
-    response_path: "data.answer"
-  }
-];
-let currentApiGroupId = "g-support";
-let currentApiBotId = "supportbot-draft";
+let currentWorkspaceGroupId = "";
+let currentWorkspaceBotId = "";
+let currentWorkspaceBots = [];
+let currentApiRegistry = [];
+let currentApiGroupId = "";
+let currentApiBotId = "";
 let currentTransferStatus = "";
 let currentTransferHistory = [];
 let currentAuthMessage = null;
@@ -189,83 +149,60 @@ let currentIntentFilter = "all";
 let currentDetailTab = "intent";
 let currentBuildAidotView = "list";
 let currentConfigureSubview = "ai-model";
-let selectedBotManagementId = "supportbot-draft";
+let selectedBotManagementId = "";
 let selectedBotManagementVersionId = "";
 let currentCompositionState = {
-  group_id: "g-support",
-  bot_id: "supportbot-draft",
-  input_mode: "pdf",
+  group_id: "",
+  bot_id: "",
+  input_mode: "utterances",
   document_title: "",
-  utterances: [
-    "How do I reset my password?",
-    "I forgot my login password.",
-    "Where can I change my email?",
-    "How do I cancel my plan?"
-  ],
-  requested_intent_count: 2,
+  utterances: [],
+  requested_intent_count: 0,
   pdf: null,
-  intent_candidates: [
-    { intent: "password_reset", utterance_count: 6, status: "answer_required" },
-    { intent: "account_update", utterance_count: 4, status: "ready" }
-  ]
+  intent_candidates: []
 };
-let currentDictionaryAssets = [
-  { word: "password", synonyms: ["login password", "account password"] },
-  { word: "plan", synonyms: ["subscription", "membership"] }
-];
-let currentEntityAssets = [
-  { name: "email", value: "email", rowType: "P", detail: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b" },
-  { name: "channel", value: "web", rowType: "S", detail: "webchat" }
-];
-let currentIntentUtteranceAssets = [
-  { utterance: "I need to reset my password", division: "password_reset" },
-  { utterance: "How do I update my account?", division: "account_update" },
-  { utterance: "I have a billing question", division: "billing_question" }
-];
+let currentDictionaryAssets = [];
+let currentEntityAssets = [];
+let currentIntentUtteranceAssets = [];
 let currentRuleAssets = [];
 let currentBlocklistAssets = [];
-let currentFaqDialogAssets = [
-  { dialogId: "faq_password_reset", question: "비밀번호를 어떻게 재설정하나요?", answer: "계정 설정에서 비밀번호 재설정을 선택하세요.", enabled: "Y" }
-];
+let currentFaqDialogAssets = [];
 let currentFloatingButtonAssets = [];
 let currentSmallTalkAssets = [];
-let currentScenarioAssets = [
-  { id: "password_reset", type: "intent", displayName: "password_reset", answer: "Open Account Settings and choose Reset Password.", dialogCards: ["Open Account Settings and choose Reset Password."] },
-  { id: "account_update", type: "intent", displayName: "account_update", answer: "Open Profile Settings and update your account information.", dialogCards: ["Open Profile Settings and update your account information."] }
-];
-let currentSelectedIntentId = "password_reset";
+let currentScenarioAssets = [];
+let currentSelectedIntentId = "";
 let currentVersionDocumentExtraFields = createEmptyVersionAssetMetadataState().documentExtraFields;
 let currentVersionSystemConfigExtraFields = createEmptyVersionAssetMetadataState().systemConfigExtraFields;
 let currentVersionLegacyExtraFields = createEmptyVersionAssetMetadataState().legacyVersionExtraFields;
 let currentSelectedCompositionCandidates = new Set();
 let currentBuildSelectedUtterances = new Set();
 let currentOperationsState = {
-  group_id: "g-support",
-  bot_id: "supportbot-draft",
+  group_id: "",
+  bot_id: "",
   build: {
     status: "ready",
-    bot_info: "complete",
-    intent_count: 12,
-    llm_status: "needed_for_pdf",
+    bot_info: "incomplete",
+    intent_count: 0,
+    llm_status: "not_needed",
     webchat_contract: "unchanged",
     last_run_at: null
   },
   test: {
-    last_user_message: "I forgot my password.",
-    last_bot_message: "Open Account Settings and choose Reset Password.",
-    matched_intent: "password_reset",
-    method: "LLM intent classification",
-    similarity: 0.94,
-    latency_ms: 14,
+    last_user_message: "",
+    last_bot_message: "",
+    matched_intent: "",
+    method: "",
+    similarity: 0,
+    latency_ms: 0,
     last_run_at: null
   },
   operate: {
     deployment_status: "draft",
     channel_status: "web_ok",
-    channel_detail: "desktop_kakao_pending",
-    conversation_volume: 1284,
+    channel_detail: "",
+    conversation_volume: 0,
     volume_status: "normal",
-    undefined_intents: 1,
+    undefined_intents: 0,
     container_health: "healthy",
     llm_cost_status: "below_threshold",
     compatibility: "preserved",
@@ -1384,6 +1321,7 @@ function resetWorkspaceEditorStateForNewBot(bot) {
   currentStudioState.commercialModules = {};
   currentCompositionState = createEmptyCompositionStateForBot(bot);
   currentOperationsState = createEmptyOperationsStateForBot(bot);
+  currentCollaborationState = createEmptyCollaborationState();
   currentRuleAssets = [];
   currentBlocklistAssets = [];
   currentFaqDialogAssets = [];
@@ -3806,6 +3744,8 @@ function renderTestAidotScreen() {
   const runtimeStatus = test.runtime || "운영 중단";
   const vars = test.variables || { locale: currentStudioState.bot?.defaultLocale || "en" };
   const traceValue = rows.length ? rows.join(" / ") : "trace 없음";
+  const simulatorBotName = currentStudioState.bot.name || getCurrentWorkspaceBot()?.name || "-";
+  const simulatorVersion = currentStudioState.bot.version || getCurrentWorkspaceBot()?.version || "-";
   renderWorkflowScreenShell(
     "test",
     "05",
@@ -3817,14 +3757,14 @@ function renderTestAidotScreen() {
           <div class="aidot-simulator-window__title">
             <div class="bot-avatar-large"></div>
             <div>
-              <strong>Aidot 봇</strong>
-              <span>v1 / Simulator</span>
+              <strong>${escapeText(simulatorBotName)}</strong>
+              <span>${escapeText(simulatorVersion)} / Simulator</span>
             </div>
           </div>
         </div>
         <div class="aidot-simulator-window__body">
           <div class="aidot-simulator-canvas">
-            <div class="aidot-simulator-time">${escapeText(test.created_at || "2026-05-05 02:55:35")}</div>
+            <div class="aidot-simulator-time">${escapeText(test.created_at || "-")}</div>
           </div>
           <div class="aidot-simulator-compose">
             <div class="aidot-simulator-input-row">
@@ -7020,6 +6960,15 @@ const ADMIN_RESOURCE_UI = {
     fields: [["bot_name", "봇 이름", "text"], ["group_name", "그룹", "text"], ["channel_name", "채널", "text"], ["operating_version", "운영버전", "text"], ["issue_message", "메시지", "textarea"], ["status", "상태", "text"]]
   }
 };
+
+function createEmptyCollaborationState() {
+  const sample = createSampleCollaborationState();
+  return {
+    buildTarget: structuredClone(sample.buildTarget),
+    users: [],
+    workItems: []
+  };
+}
 
 function getAdminResourceUi(resource) {
   return ADMIN_RESOURCE_UI[resource] || null;

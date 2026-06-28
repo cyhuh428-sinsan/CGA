@@ -5834,3 +5834,23 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
 - 검증:
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js`
+
+### 작업공간 / 봇 설정 초기 샘플 상태 제거
+
+- 문제:
+  - `apps/studio/app.js` 시작부에 샘플 봇, 샘플 그룹, 샘플 API, 샘플 의도/답변/운영 상태가 기본값으로 남아 있어
+    실제 서버 데이터를 받기 전에도 가짜 값이 화면에 먼저 보였다.
+  - 새 봇 draft 생성 시 협업 상태가 초기화되지 않아 이전 봇의 작업 흔적이 섞일 여지가 있었다.
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - `sampleStudioState` 기반 초기화 제거 후 `createEmptyStudioState()` 기준으로 시작하도록 변경
+  - `currentWorkspaceBots`, `currentApiRegistry`, `currentCompositionState`, `currentOperationsState`,
+    의도/엔터티/사전/FAQ/시나리오 자산의 샘플 기본값 제거
+  - 협업 상태는 `buildTarget`만 유지하고 `users/workItems`는 빈 상태로 시작하도록 정리
+  - 새 봇 생성 시 `currentCollaborationState`도 함께 초기화하도록 보강
+  - 테스트 화면의 고정 `Aidot 봇`, 고정 버전/시간 표시 제거 후 현재 작업 봇 정보 또는 `-`만 표시
+- 검증 예정:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js docs/cga-work-progress.md`
+  - `npm run studio:check`
