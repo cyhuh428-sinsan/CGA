@@ -6204,3 +6204,16 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 상세 화면 `Test` 버튼이 실제로 위 라우트를 호출하도록 변경
   - `path/query/header/body` 파라미터를 분리해 실제 요청 URL, 헤더, 바디를 조합하도록 반영
   - 호출 결과를 `ok/status/statusText/body/text/elapsedMs` 구조로 반환하도록 정리
+
+### API 업로드/다운로드 문구 및 포맷 정밀 일치 보정
+
+- 요청:
+  - API 메뉴의 `업로드 / 전체 다운로드 / 선택 다운로드`와 상세 편집 후 안내 문구를 Aidot 기준에 더 가깝게 맞추기
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - 검색 placeholder를 `API 이름 또는 목적지 Base URL을 검색하세요.`로 조정
+  - API 목록/상세 화면에 성공/오류 상태 문구 슬롯 추가
+  - 전체/선택 다운로드를 Aidot 형식(`asset_format_version`, `exported_at`, `apis`) payload로 내보내도록 조정
+  - 업로드 시 Aidot 형식 payload를 우선 해석하고, `apiKey` 기준으로 덮어쓰기/추가 동작을 맞춤
+  - 저장 후 안내 문구를 `API가 등록되었습니다.`, `API가 수정되었습니다. 대화에 반영하려면 대화 설계 화면에서 한 번 더 저장하세요.`로 조정

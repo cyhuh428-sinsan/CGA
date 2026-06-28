@@ -75,7 +75,9 @@ let currentApiUiState = {
   editorSampleInput: null,
   testInputs: {},
   testOutputs: {},
-  testingMethodId: ""
+  testingMethodId: "",
+  message: "",
+  errorMessage: ""
 };
 let currentTransferStatus = "";
 let currentTransferHistory = [];
@@ -2385,6 +2387,65 @@ function normalizeAidotApiEntry(api = {}, index = 0) {
     updatedAt: String(api.updatedAt || api.updated_at || ""),
     updatedBy: String(api.updatedBy || api.updated_by || "")
   };
+}
+
+function buildAidotApiExportPayload(apis = []) {
+  return {
+    asset_format_version: 1,
+    exported_at: new Date().toISOString(),
+    apis: apis.map((api, index) => {
+      const normalized = normalizeAidotApiEntry(api, index);
+      return {
+        id: normalized.id,
+        type: "api",
+        apiKey: normalized.apiKey,
+        name: normalized.name,
+        baseUrl: normalized.baseUrl,
+        description: normalized.description,
+        category: normalized.category || "API",
+        methods: (normalized.methods || []).map((method, methodIndex) => ({
+          id: String(method.id || `method-${methodIndex + 1}`),
+          name: String(method.name || `Method ${methodIndex + 1}`),
+          httpMethod: String(method.httpMethod || "GET").toUpperCase(),
+          methodUrl: String(method.methodUrl || ""),
+          description: String(method.description || ""),
+          loggingEnabled: method.loggingEnabled === true,
+          proxyEnabled: method.proxyEnabled !== false,
+          transferMode: "sync",
+          parameters: Array.isArray(method.parameters) ? method.parameters.map((parameter, parameterIndex) => ({
+            id: String(parameter.id || `parameter-${parameterIndex + 1}`),
+            name: String(parameter.name || ""),
+            location: String(parameter.location || "query"),
+            dataType: String(parameter.dataType || "string"),
+            defaultValue: String(parameter.defaultValue || ""),
+            required: parameter.required === true,
+            visible: parameter.visible !== false,
+            description: String(parameter.description || "")
+          })) : [],
+          outputParameters: Array.isArray(method.outputParameters) ? method.outputParameters.map((parameter, parameterIndex) => ({
+            id: String(parameter.id || `output-parameter-${parameterIndex + 1}`),
+            name: String(parameter.name || parameter.path || ""),
+            path: String(parameter.path || parameter.name || ""),
+            dataType: String(parameter.dataType || "string"),
+            description: String(parameter.description || "")
+          })) : [],
+          outputSample: ""
+        })),
+        updatedAt: String(normalized.updatedAt || new Date().toISOString()),
+        updatedBy: String(normalized.updatedBy || "")
+      };
+    })
+  };
+}
+
+function parseAidotApiImportPayload(payload) {
+  if (Array.isArray(payload?.apis)) {
+    return payload.apis.map((api, index) => normalizeAidotApiEntry(api, index));
+  }
+  if (Array.isArray(payload)) {
+    return payload.map((api, index) => normalizeAidotApiEntry(api, index));
+  }
+  return extractApiListFromPackage(payload).map((api, index) => normalizeAidotApiEntry(api, index));
 }
 
 function syncApiUiPageSize() {
@@ -8791,7 +8852,7 @@ function renderApiRegistry() {
       <div class="studio-table-page__search-row">
         <label class="studio-table-page__search">
           <span aria-hidden="true">⌕</span>
-          <input type="text" value="${escapeText(currentApiUiState.query)}" data-api-query placeholder="API 이름, 상세설명, 목적지 Base URL을 검색하세요." />
+          <input type="text" value="${escapeText(currentApiUiState.query)}" data-api-query placeholder="API 이름 또는 목적지 Base URL을 검색하세요." />
         </label>
         <button type="button" class="studio-table-page__filter" aria-label="필터">▾</button>
         <div class="studio-table-page__search-actions">
@@ -8815,6 +8876,8 @@ function renderApiRegistry() {
           ${currentApiUiState.selectedIds.length ? `<button type="button" class="studio-table-page__ghost" data-api-delete-selected ${canManageApi ? "" : "disabled"}>삭제</button>` : ""}
         </div>
       </div>
+      ${currentApiUiState.message ? `<p class="manual-main__status manual-main__status--success">${escapeText(currentApiUiState.message)}</p>` : ""}
+      ${currentApiUiState.errorMessage ? `<p class="manual-main__status manual-main__status--error">${escapeText(currentApiUiState.errorMessage)}</p>` : ""}
       <div class="data-grid data-grid--studio" style="--data-grid-template:${tableColumns}">
         <div class="data-grid__row data-grid__row--header">
           <div class="data-grid__cell"><input type="checkbox" data-api-select-all aria-label="전체 선택" ${allPageSelected ? "checked" : ""} /></div>
@@ -8951,6 +9014,12 @@ function renderApiRegistry() {
         </div>
       </header>
       <div class="api-detail-page__body">
+        ${currentApiUiState.message || currentApiUiState.errorMessage ? `
+          <div class="api-detail-page__status-slot">
+            ${currentApiUiState.message ? `<p class="manual-main__status manual-main__status--success">${escapeText(currentApiUiState.message)}</p>` : ""}
+            ${currentApiUiState.errorMessage ? `<p class="manual-main__status manual-main__status--error">${escapeText(currentApiUiState.errorMessage)}</p>` : ""}
+          </div>
+        ` : ""}
         <div class="api-detail-page__content">
           <section class="api-detail-page__section">
             <strong>API 등록기본</strong>
@@ -9173,6 +9242,8 @@ function bindApiRegistryControls() {
       currentApiUiState.activeApiId = "";
       currentApiUiState.editingDraft = createAidotApiDraft();
       currentApiUiState.actionMenuOpen = false;
+      currentApiUiState.message = "";
+      currentApiUiState.errorMessage = "";
       renderApiRegistry();
     });
   });
@@ -9206,6 +9277,8 @@ function bindApiRegistryControls() {
       currentApiUiState.activeApiId = api.id;
       currentApiUiState.editingExisting = true;
       currentApiUiState.editingDraft = normalizeAidotApiEntry(api);
+      currentApiUiState.message = "";
+      currentApiUiState.errorMessage = "";
       renderApiRegistry();
     });
   });
@@ -9219,6 +9292,8 @@ function bindApiRegistryControls() {
       await refreshApiRegistryFromServer();
       currentApiUiState.mode = "list";
       currentApiUiState.activeApiId = "";
+      currentApiUiState.message = "";
+      currentApiUiState.errorMessage = "";
       renderApiRegistry();
     });
   });
@@ -9232,6 +9307,8 @@ function bindApiRegistryControls() {
       }
       currentApiUiState.selectedIds = [];
       await refreshApiRegistryFromServer();
+      currentApiUiState.message = "";
+      currentApiUiState.errorMessage = "";
       renderApiRegistry();
     });
   });
@@ -9317,32 +9394,57 @@ function bindApiRegistryControls() {
     input.addEventListener("change", async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const payload = JSON.parse(await file.text());
-      const imported = extractApiListFromPackage(payload).map((api, index) => normalizeAidotApiEntry({
-        ...api,
-        group_id: currentApiGroupId,
-        bot_id: currentApiBotId
-      }, index));
-      for (const api of imported) {
-        const existing = getCurrentApiEntries().find((item) => item.id === api.id || (item.apiKey && item.apiKey === api.apiKey));
-        if (existing) {
-          await updateApiAnswerOnServer({ ...existing, ...api, id: existing.id, group_id: currentApiGroupId, bot_id: currentApiBotId });
-        } else {
-          await saveApiAnswerToServer({ ...api, group_id: currentApiGroupId, bot_id: currentApiBotId });
+      try {
+        const payload = JSON.parse(await file.text());
+        const imported = parseAidotApiImportPayload(payload);
+        if (!imported.length) {
+          currentApiUiState.errorMessage = "업로드할 API 데이터가 없습니다.";
+          currentApiUiState.message = "";
+          return;
         }
+        for (const [index, api] of imported.entries()) {
+          const normalized = normalizeAidotApiEntry({
+            ...api,
+            group_id: currentApiGroupId,
+            bot_id: currentApiBotId,
+            updatedAt: new Date().toISOString()
+          }, index);
+          const existing = getCurrentApiEntries().find((item) => item.apiKey && item.apiKey === normalized.apiKey);
+          if (existing) {
+            await updateApiAnswerOnServer({ ...normalized, id: existing.id, group_id: currentApiGroupId, bot_id: currentApiBotId });
+          } else {
+            await saveApiAnswerToServer({ ...normalized, group_id: currentApiGroupId, bot_id: currentApiBotId });
+          }
+        }
+        currentApiUiState.message = `${imported.length}개 API를 업로드했습니다.`;
+        currentApiUiState.errorMessage = "";
+      } catch (error) {
+        currentApiUiState.errorMessage = error instanceof Error ? error.message : "API 업로드 파일을 읽지 못했습니다.";
+        currentApiUiState.message = "";
+      } finally {
+        input.value = "";
+        currentApiUiState.actionMenuOpen = false;
+        await refreshApiRegistryFromServer();
+        renderApiRegistry();
       }
-      input.value = "";
-      currentApiUiState.actionMenuOpen = false;
-      await refreshApiRegistryFromServer();
-      renderApiRegistry();
     });
   });
   root.querySelectorAll("[data-api-download-all]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
-      const payload = buildApiMappingPackage();
+      const entries = getCurrentApiEntries();
+      if (!entries.length) {
+        currentApiUiState.errorMessage = "다운로드할 API가 없습니다.";
+        currentApiUiState.message = "";
+        currentApiUiState.actionMenuOpen = false;
+        renderApiRegistry();
+        return;
+      }
+      const payload = buildAidotApiExportPayload(entries);
       downloadTextFile("api-all.json", JSON.stringify(payload, null, 2));
+      currentApiUiState.message = "전체 API를 다운로드했습니다.";
+      currentApiUiState.errorMessage = "";
       currentApiUiState.actionMenuOpen = false;
       renderApiRegistry();
     });
@@ -9352,11 +9454,17 @@ function bindApiRegistryControls() {
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
       const selected = getCurrentApiEntries().filter((api) => currentApiUiState.selectedIds.includes(api.id));
-      if (!selected.length) return;
-      const payload = buildApiMappingPackage();
-      payload.apis = payload.apis.filter((api) => selected.some((entry) => entry.id === api.id || entry.apiKey === api.apiKey));
-      payload.apiList = payload.apiList.filter((api) => selected.some((entry) => entry.name === api.name && entry.endpoint_url === api.endpoint_url));
+      if (!selected.length) {
+        currentApiUiState.errorMessage = "다운로드할 API를 선택해주세요.";
+        currentApiUiState.message = "";
+        currentApiUiState.actionMenuOpen = false;
+        renderApiRegistry();
+        return;
+      }
+      const payload = buildAidotApiExportPayload(selected);
       downloadTextFile("api-selected.json", JSON.stringify(payload, null, 2));
+      currentApiUiState.message = `${selected.length}개 API를 다운로드했습니다.`;
+      currentApiUiState.errorMessage = "";
       currentApiUiState.actionMenuOpen = false;
       renderApiRegistry();
     });
@@ -9504,9 +9612,12 @@ function bindApiRegistryControls() {
       if (!draft.name.trim() || !draft.apiKey.trim() || !draft.baseUrl.trim()) return;
       if (currentApiUiState.editingExisting) {
         await updateApiAnswerOnServer(draft);
+        currentApiUiState.message = "API가 수정되었습니다. 대화에 반영하려면 대화 설계 화면에서 한 번 더 저장하세요.";
       } else {
         await saveApiAnswerToServer(draft);
+        currentApiUiState.message = "API가 등록되었습니다.";
       }
+      currentApiUiState.errorMessage = "";
       await refreshApiRegistryFromServer();
       currentApiUiState.mode = "detail";
       currentApiUiState.editingExisting = false;
