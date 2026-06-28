@@ -5076,12 +5076,14 @@ function renderWorkflowRail() {
     { id: "botstation", label: "봇스테이션" }
   ];
   nav.innerHTML = workflowSteps.map((step) => {
+    const localizedTitle = t(`workflow.${step.id}.title`, step.title);
+    const localizedSubtitle = t(`workflow.${step.id}.subtitle`, step.subtitle);
     if (step.id !== "configure") {
       return `
         <a href="#${step.id}" class="${step.id === activeScreenId ? "active" : ""}">
           <span>${step.number}</span>
-          <strong data-i18n="workflow.${step.id}.title">${step.title}</strong>
-          <small data-i18n="workflow.${step.id}.subtitle">${step.subtitle}</small>
+          <strong data-i18n="workflow.${step.id}.title">${localizedTitle}</strong>
+          <small data-i18n="workflow.${step.id}.subtitle">${localizedSubtitle}</small>
         </a>
       `;
     }
@@ -5089,8 +5091,8 @@ function renderWorkflowRail() {
       <details class="workflow-step-group" ${activeScreenId === "configure" ? "open" : ""}>
         <summary class="workflow-step-group__summary ${step.id === activeScreenId ? "active" : ""}">
           <span>${step.number}</span>
-          <strong data-i18n="workflow.${step.id}.title">${step.title}</strong>
-          <small data-i18n="workflow.${step.id}.subtitle">${step.subtitle}</small>
+          <strong data-i18n="workflow.${step.id}.title">${localizedTitle}</strong>
+          <small data-i18n="workflow.${step.id}.subtitle">${localizedSubtitle}</small>
         </summary>
         <div class="workflow-step-subnav">
           <details class="subnav-group" ${["ai-model", "defaults", "messages", "messenger", "recommended-intents"].includes(currentConfigureSubview) ? "open" : ""}>
@@ -5135,8 +5137,8 @@ function renderLinkRail(selector, links) {
   nav.innerHTML = links.map((link) => `
     <a href="#${link.id}" class="${link.id === activeScreenId ? "active" : ""}">
       <span>${link.code}</span>
-      <strong data-i18n="${link.titleKey}">${link.title}</strong>
-      <small data-i18n="${link.subtitleKey}">${link.subtitle}</small>
+      <strong data-i18n="${link.titleKey}">${t(link.titleKey, link.title)}</strong>
+      <small data-i18n="${link.subtitleKey}">${t(link.subtitleKey, link.subtitle)}</small>
     </a>
   `).join("");
 }
@@ -5173,7 +5175,7 @@ function renderBoundaryMatrix() {
     <div class="boundary-head">${t("module.publicCore", "Public Core")}</div>
     <div class="boundary-head">${t("module.commercialCandidate", "Commercial Candidate")}</div>
     ${workflowSteps.map((step) => `
-      <div>${step.number} ${step.title}</div>
+      <div>${step.number} ${t(`workflow.${step.id}.title`, step.title)}</div>
       <div>${step.publicCore.join(", ")}</div>
       <div>${step.commercial.join(", ")}</div>
     `).join("")}
@@ -10097,11 +10099,10 @@ function renderConfigureAidotScreen() {
     ? recommendedIntents.map((row) => `<option value="${escapeText(row.id)}">${escapeText(row.displayName || row.id)}</option>`).join("")
     : `<option value="">등록된 의도 없음</option>`;
   const messageTextMaxLength = 100;
-  const renderMessageModeRow = (name, mode = "text", includeDisabled = true) => `
+  const renderMessageModeRow = (name, mode = "text") => `
     <div class="settings-message-item__mode-row">
       <label class="settings-choice-option"><input type="radio" name="${escapeText(name)}" ${mode !== "module" ? "checked" : ""} /><span>메시지</span></label>
       <label class="settings-choice-option"><input type="radio" name="${escapeText(name)}" ${mode === "module" ? "checked" : ""} /><span>모듈 연결</span></label>
-      ${includeDisabled ? `<label class="settings-choice-option"><input type="radio" name="${escapeText(name)}" disabled /><span>미사용</span></label>` : ""}
     </div>
   `;
   const renderMessageEditor = ({ title, enabled = true, mode = "text", value = "", radioName, rows = 3 }) => `
@@ -10114,7 +10115,12 @@ function renderConfigureAidotScreen() {
         ${renderMessageModeRow(radioName, mode)}
         ${
           mode === "module"
-            ? `<label class="settings-message-item__value"><input value="${escapeText(value)}" placeholder="선택 안 함" readonly /><small class="settings-message-item__count">모듈 연결</small></label>`
+            ? `<div class="settings-message-item__value">
+                <div class="settings-module-field">
+                  <input class="settings-module-field__input" value="${escapeText(value)}" placeholder="우측 버튼을 클릭해 연결할 모듈을 선택하세요." readonly />
+                  <button type="button" class="settings-module-field__button">모듈 목록</button>
+                </div>
+              </div>`
             : `<label class="settings-message-item__value"><textarea class="settings-message-item__textarea" rows="${rows}">${escapeText(value)}</textarea><small class="settings-message-item__count">${String(value).length}/${messageTextMaxLength}</small></label>`
         }
       </div>

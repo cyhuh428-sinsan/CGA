@@ -5910,3 +5910,22 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
   - `npm run studio:check`
+
+### 워크플로우/설정 메뉴의 언어 렌더와 메시지 설정 표현 보정
+
+- 문제:
+  - 워크플로우/좌측 생산 메뉴 일부는 번역 키가 있어도 렌더 시점에 영어 기본 문자열이 먼저 들어가
+    현재 언어와 다른 문구가 섞여 보일 수 있었다.
+  - `메시지 설정`의 `모듈 연결` 표현도 Aidot처럼 `모듈 목록` 버튼을 갖는 형태가 아니었다.
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - `renderWorkflowRail()`, `renderLinkRail()`, `renderBoundaryMatrix()`에서
+    번역 키를 `t(...)`로 직접 해석한 문자열을 사용하도록 정리
+  - `메시지 설정`
+    - 메시지/모듈 연결 라디오를 Aidot 흐름에 맞춰 단순화
+    - 모듈 연결 시 readonly 입력 + `모듈 목록` 버튼 형태로 변경
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js`
+  - `npm run studio:check`
