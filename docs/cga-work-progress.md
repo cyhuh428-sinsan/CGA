@@ -5819,3 +5819,18 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
   - `npm run studio:config-check`
+
+### `봇스테이션` / `스몰토크` 잔여 가짜 표시값 제거
+
+- `봇스테이션`
+  - `provider`, `renderer`, `authType`, `채널명` 등에 임의 fallback 문자열이 보이지 않도록 정리
+  - 목록의 `설정정보` 컬럼은 `기본 webhook 사용` 같은 해석 문구 대신 실제 `endpoint_url` 또는 `-`만 표시
+  - 상단 연결 상태의 임의 문구를 제거
+- `스몰토크`
+  - 목록 제목 fallback `스몰토크 n` 제거
+  - 우선순위가 실제로 없을 때는 `Medium`을 강제 표시하지 않고 `-`만 표시
+- 반영 파일:
+  - `apps/studio/app.js`
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js`

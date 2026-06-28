@@ -9815,12 +9815,12 @@ function renderConfigureAidotScreen() {
   const selectedBotstationChannel = adminChannels[0] || null;
   const selectedBotstationMeta = selectedBotstationChannel
     ? {
-        provider: selectedBotstationChannel.provider || "webchat",
-        rendererType: selectedBotstationChannel.renderer_type || "webchat",
-        authType: selectedBotstationChannel.auth_type || "none",
+        provider: selectedBotstationChannel.provider || "",
+        rendererType: selectedBotstationChannel.renderer_type || "",
+        authType: selectedBotstationChannel.auth_type || "",
         endpointUrl: selectedBotstationChannel.endpoint_url || "",
         code: selectedBotstationChannel.code || selectedBotstationChannel.channel_code || selectedBotstationChannel.id || "",
-        name: selectedBotstationChannel.name || selectedBotstationChannel.channel_name || "-",
+        name: selectedBotstationChannel.name || selectedBotstationChannel.channel_name || "",
       }
     : null;
   const ruleTargetOptions = [
@@ -10725,8 +10725,8 @@ function renderConfigureAidotScreen() {
               </div>
             ${smalltalkItems.map((item, index) => `
               <button type="button" class="settings-list-row settings-list-row--smalltalk${index === 0 ? " is-selected" : ""}">
-                <span>${escapeText(item.title || item.trigger || `스몰토크 ${index + 1}`)}</span>
-                <span>${escapeText(item.priority || "Medium")}</span>
+                <span>${escapeText(item.title || item.trigger || "-")}</span>
+                <span>${escapeText(item.priority || "-")}</span>
                 <span>${countMessageList(item.userMessages, item.trigger || "")}</span>
                 <span>${countMessageList(item.botMessages, item.response || "")}</span>
                 <span>${formatSettingsDateTime(item.updatedAt || item.updated_at || item.createdAt || "")}</span>
@@ -10824,7 +10824,7 @@ function renderConfigureAidotScreen() {
             <div class="botstation-settings__status">
               <span>봇스테이션</span>
               <label class="botstation-settings__switch"><input type="checkbox" checked /><span>사용</span></label>
-              <span class="botstation-settings__connected">${adminChannels.length ? "봇이 연결되었습니다." : ""}</span>
+              <span class="botstation-settings__connected"></span>
             </div>
             <div class="botstation-settings__table-wrap">
               <div class="botstation-settings__count">전체 ${adminChannels.length}개</div>
@@ -10834,7 +10834,7 @@ function renderConfigureAidotScreen() {
                   ${adminChannels.map((channel) => `
                     <tr${selectedBotstationChannel && channel === selectedBotstationChannel ? ` class="is-selected"` : ""}>
                       <td><button type="button" class="botstation-settings__channel-link">${escapeText(channel.name || channel.channel_name || channel.code || channel.id || "-")}</button></td>
-                      <td>${escapeText(channel.endpoint_url ? "기본 webhook 사용" : "저장되지 않음")}</td>
+                      <td>${escapeText(channel.endpoint_url || "-")}</td>
                       <td>
                         <label class="botstation-settings__switch botstation-settings__switch--small">
                           <input type="checkbox" ${currentStudioState.channels.web === "not_configured" ? "" : "checked"} />
@@ -10853,11 +10853,11 @@ function renderConfigureAidotScreen() {
                   <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
                 </div>
                 <div class="botstation-dialog__body">
-                  <label class="botstation-dialog__field"><span>Provider</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.provider)}" readonly /></label>
-                  <label class="botstation-dialog__field"><span>렌더러</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.rendererType)}" readonly /></label>
-                  <label class="botstation-dialog__field"><span>인증방식</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.authType)}" readonly /></label>
-                  <label class="botstation-dialog__field"><span>채널 아이디</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.code)}" readonly /></label>
-                  <label class="botstation-dialog__field"><span>채널</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.name)}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>Provider</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.provider || "-")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>렌더러</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.rendererType || "-")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>인증방식</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.authType || "-")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>채널 아이디</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.code || "-")}" readonly /></label>
+                  <label class="botstation-dialog__field"><span>채널</span><input class="bot-settings-card__input" value="${escapeText(selectedBotstationMeta.name || "-")}" readonly /></label>
                   <label class="botstation-dialog__field"><span>봇 식별값</span><input class="bot-settings-card__input" value="${escapeText(botId)}" /></label>
                   <label class="botstation-dialog__field"><span>봇 이름</span><input class="bot-settings-card__input" value="${escapeText(botName)}" readonly /></label>
                   <label class="botstation-dialog__field"><span>App ID</span><input class="bot-settings-card__input" value="" /></label>
