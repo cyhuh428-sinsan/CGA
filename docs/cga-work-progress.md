@@ -6247,3 +6247,14 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - API 편집 화면의 출력 파라미터 표도 상세 화면과 동일하게 `root` 기준 계층형 표시로 맞춤
   - 새 봇 기본 Detail seed에 남아 있던 예시 의도/개체/사전/룰/시나리오/차단어 샘플 데이터를 제거해 빈 기본값으로 시작하도록 정리
   - 자산 다운로드 fallback에서도 entity/dictionary/blocklist/rule/API 예시 샘플을 제거하고 빈 헤더/빈 리스트만 내려가도록 정리
+
+### 로그인 화면 서버/로컬 불일치 원인 수정
+
+- 확인:
+  - `cga.sinsan.kr`와 `127.0.0.1:4173` 로그인 화면이 동일 커밋인데도 `CGA STUDIO · 한국어`, `로그아웃 완료` 문구 반영 상태가 달랐음
+- 원인:
+  - `apps/studio/index.html`에서 `i18n.js`는 cache-buster 없이 로드되고 있었고, 서버 브라우저가 예전 번역 스크립트를 계속 사용할 수 있는 상태였음
+- 반영 파일:
+  - `apps/studio/index.html`
+- 반영 내용:
+  - `i18n.js`, `entry-auth.js`, `app.js` 스크립트 URL에 동일 버전 query를 부여해 서버/로컬이 같은 정적 리소스를 강제로 다시 받도록 조정
