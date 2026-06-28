@@ -9666,11 +9666,66 @@ function renderConfigureAidotScreen() {
       maxCardsBetweenUserResponses: 100
     }
   };
-  const floatingButtons = [...currentFloatingButtonAssets].sort((left, right) => (Number(left.sortOrder || 0) || 0) - (Number(right.sortOrder || 0) || 0));
+  const floatingButtons = [...currentFloatingButtonAssets]
+    .map((item, index) => {
+      const actionValue = String(item.actionValue || item.action || "").trim();
+      const actionType = String(item.actionType || (actionValue === "처음으로" ? "command" : "key")).trim().toLowerCase() === "command" ? "command" : "key";
+      return {
+        ...item,
+        buttonId: String(item.buttonId || item.id || `floating-${index + 1}`).trim(),
+        label: String(item.label || item.name || item.title || "").trim(),
+        actionType,
+        actionValue,
+        enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() !== "N",
+        sortOrder: Number(item.sortOrder || item.order || index + 1) || index + 1,
+      };
+    })
+    .filter((item) => item.buttonId && item.label)
+    .sort((left, right) => left.sortOrder - right.sortOrder);
   const recommendedIntents = getAidotIntentRows().filter((row) => row.type !== "module");
-  const blocklistItems = [...currentBlocklistAssets];
-  const ruleItems = [...currentRuleAssets];
-  const smalltalkItems = [...currentSmallTalkAssets];
+  const blocklistItems = [...currentBlocklistAssets].map((item, index) => ({
+    ...item,
+    id: String(item.id || item.name || `blocklist-${index + 1}`),
+    name: String(item.name || item.blacklistName || "").trim(),
+    type: String(item.type || item.blacklistType || "0").trim(),
+    pattern: String(item.pattern || item.expression || item.value || "").trim(),
+    description: String(item.description || "").trim(),
+    enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() !== "N",
+  }));
+  const ruleItems = [...currentRuleAssets].map((item, index) => ({
+    ...item,
+    id: String(item.id || item.name || `rule-${index + 1}`),
+    name: String(item.name || item.ruleName || "").trim(),
+    description: String(item.description || item.ruleDescription || "").trim(),
+    expression: String(item.expression || item.ruleExpression || "").trim(),
+    target: String(item.target || item.targetDialogId || "").trim(),
+    enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() !== "N",
+  }));
+  const smalltalkItems = [...currentSmallTalkAssets].map((item, index) => {
+    const userMessages = Array.isArray(item.userMessages)
+      ? item.userMessages.map((message) => String(message || "").trim()).filter(Boolean)
+      : [];
+    const botMessages = Array.isArray(item.botMessages)
+      ? item.botMessages.map((message) => String(message || "").trim()).filter(Boolean)
+      : [];
+    const trigger = String(item.trigger || item.utterance || item.question || "").trim();
+    const response = String(item.response || item.answer || item.message || "").trim();
+    return {
+      ...item,
+      id: String(item.id || item.title || trigger || `smalltalk-${index + 1}`),
+      title: String(item.title || "").trim(),
+      priority: String(item.priority || "Medium").trim() || "Medium",
+      trigger,
+      response,
+      userMessages: userMessages.length ? userMessages : (trigger ? [trigger] : []),
+      botMessages: botMessages.length ? botMessages : (response ? [response] : []),
+      createdBy: String(item.createdBy || item.created_by || "").trim(),
+      updatedBy: String(item.updatedBy || item.updated_by || item.createdBy || item.created_by || "").trim(),
+      createdAt: String(item.createdAt || item.created_at || "").trim(),
+      updatedAt: String(item.updatedAt || item.updated_at || item.createdAt || item.created_at || "").trim(),
+      enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() !== "N",
+    };
+  });
   const moduleRows = getAidotIntentRows().filter((row) => row.type === "module");
   const adminChannels = Array.isArray(currentAdminResources.channels) ? currentAdminResources.channels : [];
   const selectedFloatingButton = floatingButtons[0] || null;
@@ -10090,13 +10145,13 @@ function renderConfigureAidotScreen() {
               <span>버튼명</span><span>연결 유형</span><span>값</span><span>사용</span>
             </div>
             ${floatingButtons.map((item) => `
-              <div class="settings-list-row settings-list-row--four${item.enabled === false ? "" : " is-selected"}">
+              <div class="settings-list-row settings-list-row--four${selectedFloatingButton && item.buttonId === selectedFloatingButton.buttonId ? " is-selected" : ""}">
                 <button type="button" class="settings-link-button">${escapeText(item.label || item.buttonId || "-")}</button>
-                <span>${escapeText(item.action === "open_help" ? "Command" : "Key")}</span>
-                <span>${escapeText(item.action || "-")}</span>
+                <span>${escapeText(item.actionType === "command" ? "Command" : "Key")}</span>
+                <span>${escapeText(item.actionValue || "-")}</span>
                 <label class="settings-toggle settings-list-card__check">
-                  <input type="checkbox" ${item.enabled === false ? "" : "checked"} />
-                  <span>${item.enabled === false ? "미사용" : "사용"}</span>
+                  <input type="checkbox" ${item.enabled ? "checked" : ""} />
+                  <span>${item.enabled ? "사용" : "미사용"}</span>
                 </label>
               </div>
             `).join("") || emptyState("등록된 플로팅 버튼이 없습니다.")}
@@ -10116,16 +10171,16 @@ function renderConfigureAidotScreen() {
                   <label class="settings-form-card">
                     <span>Key/Command 옵션</span>
                     <select class="bot-settings-card__select">
-                      <option ${selectedFloatingButton.action === "open_help" ? "" : "selected"}>Key</option>
-                      <option ${selectedFloatingButton.action === "open_help" ? "selected" : ""}>Command</option>
+                      <option ${selectedFloatingButton.actionType === "key" ? "selected" : ""}>Key</option>
+                      <option ${selectedFloatingButton.actionType === "command" ? "selected" : ""}>Command</option>
                     </select>
                   </label>
                   <label class="settings-form-card">
                     <span>Key/Command 값</span>
-                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedFloatingButton.action || "")}" />
+                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedFloatingButton.actionValue || "")}" />
                   </label>
                   <label class="settings-form-card settings-form-card--check">
-                    <input type="checkbox" ${selectedFloatingButton.enabled === "N" ? "" : "checked"} />
+                    <input type="checkbox" ${selectedFloatingButton.enabled ? "checked" : ""} />
                     <span>사용 여부</span>
                   </label>
                 </div>
@@ -10189,7 +10244,7 @@ function renderConfigureAidotScreen() {
                 <button type="button" class="settings-link-button">${escapeText(item.name || "-")}</button>
                 <span>${escapeText(item.type === "1" || item.type === "regex" ? "정규식" : "텍스트")}</span>
                 <span>${escapeText(item.pattern || "-")}</span>
-                <span>${item.enabled === false ? "미사용" : "사용"}</span>
+                <span>${item.enabled ? "사용" : "미사용"}</span>
                 <span>${formatSettingsDateTime(item.updatedAt || item.updated_at || "")}</span>
                 <span>${escapeText(item.updatedBy || item.updated_by || "-")}</span>
               </div>
@@ -10197,8 +10252,8 @@ function renderConfigureAidotScreen() {
             </div>
             <div class="settings-detail-card">
               <h3>제외/무시 규칙 테스트 결과</h3>
-              <label><span>발화 제외/무시 테스트</span><input value="광고 링크를 보내도 되나요?" /></label>
-              <label><span>매칭 결과</span><textarea rows="4" readonly>${escapeText(blocklistItems[0]?.name || "적용되는 제외/무시 규칙이 없습니다.")}</textarea></label>
+              <label><span>발화 제외/무시 테스트</span><input value="" placeholder="제외/무시 규칙을 시험할 발화를 입력하세요." /></label>
+              <label><span>매칭 결과</span><textarea rows="4" readonly>${escapeText(blocklistItems.length ? "테스트 문장을 입력한 뒤 결과를 확인하세요." : "등록된 제외/무시 목록이 없습니다.")}</textarea></label>
             </div>
           </div>
         </section>
@@ -10222,12 +10277,12 @@ function renderConfigureAidotScreen() {
                 <span>룰명</span><span>설명</span><span>표현식</span><span>연결 대상</span><span>사용</span><span>최종수정</span><span>수정자</span>
               </div>
             ${ruleItems.map((item) => `
-              <button type="button" class="settings-list-row settings-list-row--rule">
+              <button type="button" class="settings-list-row settings-list-row--rule${selectedRule && item.id === selectedRule.id ? " is-selected" : ""}">
                 <span>${escapeText(item.name || "-")}</span>
                 <span>${escapeText(item.description || "-")}</span>
                 <span>${escapeText(item.expression || "-")}</span>
                 <span>${escapeText(item.target || "-")}</span>
-                <span>${item.enabled === false ? "미사용" : "사용"}</span>
+                <span>${item.enabled ? "사용" : "미사용"}</span>
                 <span>${formatSettingsDateTime(item.updatedAt || item.updated_at || "")}</span>
                 <span>${escapeText(item.updatedBy || item.updated_by || "-")}</span>
               </button>
@@ -10236,7 +10291,7 @@ function renderConfigureAidotScreen() {
             <div class="settings-detail-card">
               <h3>정규식 테스트</h3>
               <label><span>정규식 테스트 문장</span><input value="" placeholder="테스트할 문장을 입력하세요." /></label>
-              <label><span>테스트 결과</span><textarea rows="4" readonly>${escapeText(ruleItems[0]?.expression ? "정규식 확인 대기" : "등록된 룰이 없습니다.")}</textarea></label>
+              <label><span>테스트 결과</span><textarea rows="4" readonly>${escapeText(ruleItems.length ? "테스트 문장을 입력한 뒤 결과를 확인하세요." : "등록된 룰이 없습니다.")}</textarea></label>
             </div>
           </div>
           ${selectedRule ? `
@@ -10268,10 +10323,12 @@ function renderConfigureAidotScreen() {
                   </div>
                   <label class="settings-form-card">
                     <span>연결할 의도/모듈</span>
-                    <select class="rule-settings__target-select"><option>${escapeText(selectedRule.target || "선택 안 함")}</option></select>
+                    <select class="rule-settings__target-select">
+                      <option>${escapeText(selectedRule.target || "선택 안 함")}</option>
+                    </select>
                   </label>
                   <label class="settings-form-card settings-form-card--check">
-                    <input type="checkbox" ${selectedRule.enabled === "N" ? "" : "checked"} />
+                    <input type="checkbox" ${selectedRule.enabled ? "checked" : ""} />
                     <span>사용 여부</span>
                   </label>
                 </div>
@@ -10307,7 +10364,7 @@ function renderConfigureAidotScreen() {
               <button type="button" class="settings-list-row settings-list-row--smalltalk${index === 0 ? " is-selected" : ""}">
                 <span>${escapeText(item.title || item.trigger || `스몰토크 ${index + 1}`)}</span>
                 <span>${escapeText(item.priority || "Medium")}</span>
-                <span>${countMessageList(item.userMessages, item.utterance || item.trigger || "")}</span>
+                <span>${countMessageList(item.userMessages, item.trigger || "")}</span>
                 <span>${countMessageList(item.botMessages, item.response || "")}</span>
                 <span>${formatSettingsDateTime(item.updatedAt || item.updated_at || item.createdAt || "")}</span>
                 <span>${escapeText(item.updatedBy || item.updated_by || item.createdBy || "-")}</span>
@@ -10358,7 +10415,11 @@ function renderConfigureAidotScreen() {
                     </div>
                     <div class="settings-message-list">
                       <div class="settings-message-list__header"><input type="checkbox" /><span>사용자 메시지</span></div>
-                      <label class="settings-message-list__row"><input type="checkbox" /><span>${escapeText(selectedSmalltalk.trigger || "")}</span></label>
+                      ${
+                        selectedSmalltalk.userMessages.length
+                          ? selectedSmalltalk.userMessages.map((message) => `<label class="settings-message-list__row"><input type="checkbox" /><span>${escapeText(message)}</span></label>`).join("")
+                          : `<p class="settings-message-list__empty">등록된 사용자 메시지가 없습니다.</p>`
+                      }
                     </div>
                   </section>
                   <section class="settings-message-panel">
@@ -10372,7 +10433,11 @@ function renderConfigureAidotScreen() {
                     </div>
                     <div class="settings-message-list">
                       <div class="settings-message-list__header"><input type="checkbox" /><span>봇 메시지</span></div>
-                      <label class="settings-message-list__row"><input type="checkbox" /><span>${escapeText(selectedSmalltalk.response || "")}</span></label>
+                      ${
+                        selectedSmalltalk.botMessages.length
+                          ? selectedSmalltalk.botMessages.map((message) => `<label class="settings-message-list__row"><input type="checkbox" /><span>${escapeText(message)}</span></label>`).join("")
+                          : `<p class="settings-message-list__empty">등록된 봇 메시지가 없습니다.</p>`
+                      }
                     </div>
                   </section>
                 </div>
@@ -10408,7 +10473,7 @@ function renderConfigureAidotScreen() {
                   ${adminChannels.map((channel) => `
                     <tr${selectedBotstationChannel && channel === selectedBotstationChannel ? ` class="is-selected"` : ""}>
                       <td><button type="button" class="botstation-settings__channel-link">${escapeText(channel.name || channel.channel_name || channel.code || channel.id || "-")}</button></td>
-                      <td>${escapeText(channel.code || channel.channel_code || "-")}</td>
+                      <td>${escapeText(channel.endpoint_url ? "기본 webhook 사용" : "저장되지 않음")}</td>
                       <td>
                         <label class="botstation-settings__switch botstation-settings__switch--small">
                           <input type="checkbox" ${currentStudioState.channels.web === "not_configured" ? "" : "checked"} />

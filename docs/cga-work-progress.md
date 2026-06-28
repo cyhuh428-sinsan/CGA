@@ -5630,3 +5630,35 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
   - `npm run studio:check`
+
+## 2026-06-28 04:18 KST
+
+### `02 봇 설정` 상세 레이어 가짜값 제거 및 현재 데이터 기준 정렬
+
+- Aidot 형태를 따라가던 상세 레이어 안에
+  임시 예시 문장, 임의 선택 강조, 섞여 보이는 샘플 값이 남아 있어서
+  실제 데이터 기준으로 다시 정리했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - `메신저 편의 기능`
+    - 플로팅 버튼의 `actionType / actionValue / enabled / sortOrder`를 정규화
+    - 선택 강조가 전체 활성 항목에 잘못 붙던 문제를
+      첫 선택 항목 기준으로 정리
+  - `제외/무시 목록 설정`
+    - 하드코딩된 테스트 문장(`광고 링크...`) 제거
+    - 결과 영역을 실제 테스트 대기 문구 기준으로 변경
+  - `룰 설정`
+    - 하드코딩된 테스트 결과 문구를 제거
+    - 선택된 룰만 강조되도록 정리
+  - `스몰토크`
+    - `userMessages / botMessages` 배열이 있으면 그대로 표출
+    - 단일 `trigger / response`만 있던 예전 표시를 실제 메시지 목록 기준으로 변경
+  - `봇스테이션`
+    - 채널 목록 `설정정보`를 코드값 대신 연결 상태 문구로 정리
+    - 상세 팝업의 빈 필드는 빈 값 그대로 유지하고
+      가짜 예시값을 추가하지 않도록 정리
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js`
+  - `npm run studio:check`
