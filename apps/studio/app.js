@@ -3774,9 +3774,15 @@ function renderWorkflowScreenShell(sectionId, code, title, subtitle, bodyHtml) {
     <div class="screen-heading aidot-screen-heading">
       <span>${escapeText(code)}</span>
       <div><h3>${escapeText(title)}</h3>${subtitle ? `<p>${escapeText(subtitle)}</p>` : ""}</div>
+      <div class="screen-heading__actions">
+        <button type="button" class="ghost" data-screen-save>${t("common.save", "Save")}</button>
+      </div>
     </div>
     ${bodyHtml || ""}
   `;
+  section.querySelector("[data-screen-save]")?.addEventListener("click", async () => {
+    await runQueuedSave("screen-save", saveCurrentWorkspaceState);
+  });
   return section;
 }
 
@@ -3857,11 +3863,6 @@ function renderTestAidotScreen() {
 function renderEvaluateAidotScreen() {
   const section = document.querySelector('[data-screen-id="evaluate"]');
   if (!section) return;
-  const intents = getCurrentIntentRowsForWorkflow();
-  const intentCount = Math.max(13, intents.length || 13);
-  const utteranceCount = Math.max(228, intents.reduce((sum, row) => sum + Number(row.utteranceCount || 0), 0));
-  const balanceItems = ["콜백 예약", "상담사 전환 요청", "통화 독려", "통화 불가", "소요시간 문의", "발신자 확인", "해지 요청", "인콜 진행 예정", "통화 거부", "상품 설명 요청"];
-  const matrixItems = [13, 21, 26, 22, 36, 11, 17, 15, 10, 8, 20, 14];
   section.innerHTML = `
     <section class="aidot-feature-page aidot-feature-page--evaluate">
       <div class="evaluation-dashboard evaluation-dashboard--real">
@@ -3881,58 +3882,36 @@ function renderEvaluateAidotScreen() {
           <div class="evaluation-card__title-row">
             <h2>학습모델 평가 <span class="evaluation-info-icon">i</span></h2>
           </div>
-          <div class="evaluation-score">
-            <div class="evaluation-score__ring"><strong>65.4%</strong><span>Random</span></div>
-            <div class="evaluation-score__gap"><strong>0.87%</strong><span>차이</span></div>
-            <div class="evaluation-score__ring"><strong>64.5%</strong><span>Fixed</span></div>
+          <div class="evaluation-card__empty">
+            <strong>평가 결과 데이터가 없습니다.</strong>
+            <span>실제 평가 실행 후 결과를 표시합니다.</span>
           </div>
         </section>
         <section class="evaluation-card evaluation-card--wide">
           <div class="evaluation-card__title-row">
             <h2>평가 이력</h2>
           </div>
-          <div class="evaluation-history">
-            <svg class="evaluation-history__line" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <polyline class="evaluation-history__line-random" points="4,24 12,10 20,28 28,8 36,44 44,26 52,39" />
-              <polyline class="evaluation-history__line-fixed" points="4,34 12,28 20,26 28,30 36,50 44,42 52,47" />
-            </svg>
-            <span class="evaluation-history__point" style="left:4%;top:24%"></span>
-            <span class="evaluation-history__point" style="left:12%;top:10%"></span>
-            <span class="evaluation-history__point" style="left:20%;top:28%"></span>
-            <span class="evaluation-history__point" style="left:28%;top:8%"></span>
-            <span class="evaluation-history__point" style="left:36%;top:44%"></span>
-            <span class="evaluation-history__point" style="left:44%;top:26%"></span>
-            <span class="evaluation-history__point" style="left:52%;top:39%"></span>
-            <div class="evaluation-history__x-axis">${["05.04", "05.04", "05.04", "05.04", "05.04", "05.04", "05.05"].map((label) => `<span>${label}</span>`).join("")}</div>
-          </div>
-          <div class="evaluation-history__summary">
-            <span>의도 <strong>${intentCount}개</strong></span>
-            <span>학습문장 <strong>${utteranceCount}개</strong></span>
+          <div class="evaluation-card__empty">
+            <strong>평가 이력이 없습니다.</strong>
+            <span>평가 실행 후 실제 이력만 표시합니다.</span>
           </div>
         </section>
         <section class="evaluation-card evaluation-card--feature">
           <div class="evaluation-card__title-row">
             <h2>학습문장 / Feature Balance <span class="evaluation-info-icon">i</span></h2>
           </div>
-          <div class="evaluation-balance">
-            <div class="evaluation-balance__y-axis">${[110,100,90,80,70,60,50,40,30,20,10,0].map((value) => `<span>${value}</span>`).join("")}</div>
-            ${balanceItems.map((label, index) => {
-              const a = [75, 19, 55, 46, 34, 32, 30, 26, 48, 25][index];
-              const b = [75, 21, 71, 64, 31, 34, 38, 38, 51, 43][index];
-              return `<div class="evaluation-balance__item"><i style="height:${a}%"></i><b style="height:${b}%"></b><em>${escapeText(label)}</em></div>`;
-            }).join("")}
-            <div class="evaluation-balance__legend"><span><i></i>학습문장</span><span><b></b>Feature</span></div>
+          <div class="evaluation-card__empty">
+            <strong>Balance 데이터가 없습니다.</strong>
+            <span>평가 데이터 업로드 후 실제 분포를 표시합니다.</span>
           </div>
         </section>
         <section class="evaluation-card evaluation-card--matrix">
           <div class="evaluation-card__title-row">
             <h2>Confusion Matrix <span class="evaluation-info-icon">i</span></h2>
           </div>
-          <div class="evaluation-matrix-wrap">
-            <div class="evaluation-matrix evaluation-matrix--real">
-              ${matrixItems.map((value, index) => `<span class="${index % 2 === 0 ? "is-dark" : "is-dark"}" style="grid-column:${index + 1};grid-row:${index + 1}">${value}</span>`).join("")}
-            </div>
-            <div class="evaluation-matrix__scale">${[100,90,80,70,60,50,40,30,20].map((value) => `<span>${value}</span>`).join("")}</div>
+          <div class="evaluation-card__empty">
+            <strong>Confusion Matrix 데이터가 없습니다.</strong>
+            <span>실제 평가 결과만 표시합니다.</span>
           </div>
         </section>
       </div>
@@ -3979,8 +3958,8 @@ function renderOperateAidotScreen() {
         <select aria-label="실행결과"><option>전체</option><option>정상분류</option><option>의도 추출 오류</option><option>유사의도발생</option></select>
         <select aria-label="분류방식"><option>전체</option><option>M/L</option><option>Rule</option><option>Small Talk</option><option>Exact Matching</option><option>대화 Queue</option></select>
         <select aria-label="학습상태"><option>전체</option><option>미학습</option><option>보류</option><option>재학습제외</option><option>재학습완료</option></select>
-        <input type="date" value="2026-03-17" aria-label="발생기간 시작" />
-        <input type="date" value="2026-06-17" aria-label="발생기간 종료" />
+        <input type="date" value="" aria-label="발생기간 시작" />
+        <input type="date" value="" aria-label="발생기간 종료" />
       </section>
       <section class="retraining-actions">
         <strong>전체 ${rows.length}</strong>
@@ -4005,51 +3984,27 @@ function renderOperateAidotScreen() {
 }
 
 function renderAnalysisAidotScreen() {
-  const operate = currentOperationsState.operate || {};
-  const history = [
-    ...Array.from({ length: 5 }).map((_, index) => {
-      const fallbackDate = operate.lastConversationAt || (index < 2 ? "2026-06-17 01:22" : "2026-06-12 12:12");
-      return [
-        fallbackDate,
-        normalizeDateText(operate.lastUtterance || (index === 0 ? "{\"webchatRichFormVersion\":\"1.0\",\"response\":\"...\"}" : "-")),
-        normalizeDateText(operate.lastIntent || "-"),
-        normalizeDateText(index === 0 ? "대화종료" : (operate.lastRuntimeResult || "completed"))
-      ];
-    })
-  ];
   const section = document.querySelector('[data-screen-id="analysis"]');
   if (!section) return;
   section.innerHTML = `
     <section class="aidot-feature-page aidot-feature-page--analysis">
       <div class="analysis-page">
       <div class="analysis-page__filters">
-        <select aria-label="채널 선택"><option>webchat</option></select>
-        <strong>2026-06</strong>
+        <select aria-label="채널 선택"><option>전체 채널</option></select>
+        <strong>-</strong>
       </div>
       <div class="analysis-page__summary">
         <h2>누적 대화량 <span class="analysis-info-icon">i</span></h2>
         <div class="analysis-page__legend">
-          <span>제외/무시 0% (0건)</span>
-          <span>스몰토크 0% (0건)</span>
-          <span>Exacting Matching 0% (0건)</span>
-          <span>룰 58% (11건)</span>
-          <span>ML 0% (0건)</span>
-          <span>시멘틱 0% (0건)</span>
-          <span>LLM 0% (0건)</span>
-          <span>미응답 42% (8건)</span>
+          <span>분석 데이터가 없습니다.</span>
         </div>
       </div>
       <div class="analysis-dashboard analysis-dashboard--manual">
         <section class="analysis-panel analysis-panel--ring">
           <h3>기간내 대화량 <span class="analysis-info-icon">i</span></h3>
-          <div class="analysis-ring">
-            <div class="analysis-ring__circle"><strong>100%</strong><span>응답률</span><small>19 / 19</small></div>
-            <div class="analysis-ring__breakdown">
-              <div class="analysis-ring__breakdown-head"><span></span><span>비율</span><span>건</span></div>
-              <div class="analysis-ring__breakdown-row analysis-ring__breakdown-row--group"><strong>응답</strong><span>100%</span><span>19</span></div>
-              ${["제외/무시", "스몰토크", "Exacting Matching", "룰", "ML", "시멘틱", "LLM"].map((label, index) => `<div class="analysis-ring__breakdown-row"><strong>${label}</strong><span>${index === 3 ? "57.9%" : "0%"}</span><span>${index === 3 ? "11" : "0"}</span></div>`).join("")}
-              <div class="analysis-ring__breakdown-row analysis-ring__breakdown-row--group"><strong>미응답</strong><span>0%</span><span>0</span></div>
-            </div>
+          <div class="analysis-panel__empty">
+            <strong>분석 가능한 대화 데이터가 없습니다.</strong>
+            <span>실제 운영 이력이 누적되면 분석 지표를 표시합니다.</span>
           </div>
         </section>
         <section class="analysis-panel">
@@ -4829,7 +4784,7 @@ function bindCreateControls() {
           aiConfig.vector_connections.intent = {
             ...aiConfig.vector_connections.intent,
             enabled: true,
-            index_name: aiConfig.vector_connections.intent.index_name || "aidot-intent"
+            index_name: aiConfig.vector_connections.intent.index_name || ""
           };
         }
         syncCreateControlsFromState();
@@ -4840,7 +4795,7 @@ function bindCreateControls() {
           aiConfig.vector_connections.answer = {
             ...aiConfig.vector_connections.answer,
             enabled: true,
-            index_name: aiConfig.vector_connections.answer.index_name || "aidot-answer"
+            index_name: aiConfig.vector_connections.answer.index_name || ""
           };
         }
       }
@@ -5701,7 +5656,6 @@ function bindOperationsActions() {
   const testSend = document.querySelector("[data-test-send]");
   const analysisToggle = document.querySelector("[data-test-analysis-toggle]");
   const deploy = document.querySelector("[data-deploy-action]");
-  const topSave = document.querySelector("[data-top-save]");
   const runTest = async () => {
     const message = testInput?.value?.trim();
     if (!message) return;
@@ -5759,12 +5713,6 @@ function bindOperationsActions() {
     });
   }
 
-  if (topSave && topSave.dataset.bound !== "true") {
-    topSave.dataset.bound = "true";
-    topSave.addEventListener("click", async () => {
-      await runQueuedSave("top-save", saveCurrentWorkspaceState);
-    });
-  }
 }
 
 function renderTopContext() {
@@ -10161,6 +10109,14 @@ function renderConfigureAidotScreen() {
         ["five", "5점"],
       ];
 
+  const validationModeLabel = conversationDefaults.validation.mode
+    ? String(conversationDefaults.validation.mode).toLowerCase() === "fixed"
+      ? "Fixed"
+      : String(conversationDefaults.validation.mode).toLowerCase() === "random"
+        ? "Random"
+        : formatInputValue(conversationDefaults.validation.mode)
+    : "미설정";
+
   const renderAiModel = () => `
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
@@ -11150,7 +11106,7 @@ function renderBuildAidotScreen() {
   const utterances = selected.utterances?.length ? selected.utterances : currentIntentUtteranceAssets.filter((item) => item.division === selected.id);
   const renderStart = () => `
     <div class="aidot-dialog-head"><strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb aidot-dialog-breadcrumb--active" data-open-dialog-start>대화 시작</button></strong><div><button type="button" data-return-build-list>목록으로</button><button type="button" data-build-save-start>저장하기</button><button type="button" data-open-dialog-design data-build-save-and-design>저장 후 대화설계</button></div></div>
-    <div class="aidot-dialog-start"><section><div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><button type="button" data-build-delete-utterance>삭제</button></div><div class="aidot-add-row"><span>구분</span><span>학습문장</span><button type="button" data-build-add-utterance>추가</button></div><p class="muted-line">Validation Set 상태: Random</p><div class="aidot-utterance-table"><div><strong>구분</strong><strong>학습문장</strong></div>${utterances.map((item, index) => `<div><span><input type="checkbox" data-build-utterance-check="${escapeText(item.utterance)}__${index}" ${currentBuildSelectedUtterances.has(`${item.utterance}__${index}`) ? "checked" : ""} /></span><span class="round-token">T</span><span>${escapeText(item.utterance)}</span></div>`).join("")}</div></section></div>
+    <div class="aidot-dialog-start"><section><div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><button type="button" data-build-delete-utterance>삭제</button></div><div class="aidot-add-row"><span>구분</span><span>학습문장</span><button type="button" data-build-add-utterance>추가</button></div><p class="muted-line">Validation Set 상태: ${escapeText(validationModeLabel)}</p><div class="aidot-utterance-table"><div><strong>구분</strong><strong>학습문장</strong></div>${utterances.map((item, index) => `<div><span><input type="checkbox" data-build-utterance-check="${escapeText(item.utterance)}__${index}" ${currentBuildSelectedUtterances.has(`${item.utterance}__${index}`) ? "checked" : ""} /></span><span class="round-token">T</span><span>${escapeText(item.utterance)}</span></div>`).join("")}</div></section></div>
   `;
   const renderDesign = () => `
     <div class="aidot-dialog-head"><strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb" data-open-dialog-start>대화 시작</button> &gt; <button type="button" class="aidot-dialog-breadcrumb aidot-dialog-breadcrumb--active" data-open-dialog-design>대화 설계</button></strong><div><button type="button" data-return-build-list>목록으로</button><button type="button" data-build-save-design>저장</button></div></div>
