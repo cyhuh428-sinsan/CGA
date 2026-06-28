@@ -10076,26 +10076,18 @@ function renderConfigureAidotScreen() {
               <span>버튼명</span><span>연결 유형</span><span>값</span><span>사용</span>
             </div>
             ${floatingButtons.map((item) => `
-              <div class="settings-list-row settings-list-row--four">
-                <strong>${escapeText(item.label || item.buttonId || "-")}</strong>
+              <div class="settings-list-row settings-list-row--four${item.enabled === false ? "" : " is-selected"}">
+                <button type="button" class="settings-link-button">${escapeText(item.label || item.buttonId || "-")}</button>
                 <span>${escapeText(item.action === "open_help" ? "Command" : "Key")}</span>
                 <span>${escapeText(item.action || "-")}</span>
-                <span>${item.enabled === false ? "미사용" : "사용"}</span>
+                <label class="settings-toggle settings-list-card__check">
+                  <input type="checkbox" ${item.enabled === false ? "" : "checked"} />
+                  <span>${item.enabled === false ? "미사용" : "사용"}</span>
+                </label>
               </div>
             `).join("") || emptyState("등록된 플로팅 버튼이 없습니다.")}
           </div>
-          <div class="settings-detail-card">
-            <h3>플로팅 버튼</h3>
-            <div class="messenger-settings__form-grid">
-              <label><span>버튼명</span><input value="" placeholder="버튼명을 입력하세요." /></label>
-              <label><span>연결 유형</span><select><option>Key</option><option>Command</option></select></label>
-              <label><span>값</span><input value="" placeholder="Key 또는 Command 값을 입력하세요." /></label>
-              <label><span>사용 여부</span><select><option>사용</option><option>미사용</option></select></label>
-            </div>
-            <div class="settings-detail-card__actions">
-              <button type="button" class="primary-action">반영</button>
-            </div>
-          </div>
+          <p class="muted-line">버튼명을 선택하면 Aidot와 동일한 상세 편집 흐름으로 연결되도록 후속 작업을 이어갑니다.</p>
         </section>
       </section>
     </div>
@@ -10114,11 +10106,11 @@ function renderConfigureAidotScreen() {
             <button type="button" class="secondary-action">↓</button>
           </div>
           <div class="settings-list-card">
-            <div class="settings-list-card__header settings-list-card__header--two">
-              <span>추천 순서</span><span>의도명</span>
-            </div>
-            ${recommendedIntents.map((item, index) => `
-              <button type="button" class="settings-list-row settings-list-row--two"><span>${index + 1}</span><span>${escapeText(item.displayName || item.id)}</span></button>
+              <div class="settings-list-card__header settings-list-card__header--two">
+                <span>추천 순서</span><span>의도명</span>
+              </div>
+              ${recommendedIntents.map((item, index) => `
+              <button type="button" class="settings-list-row settings-list-row--two${index === 0 ? " is-selected" : ""}"><span>${index + 1}</span><span>${escapeText(item.displayName || item.id)}</span></button>
             `).join("") || emptyState("구성된 추천 의도가 없습니다.")}
           </div>
         </section>
@@ -10146,8 +10138,8 @@ function renderConfigureAidotScreen() {
             ${blocklistItems.map((item) => `
               <div class="settings-list-row settings-list-row--blocklist">
                 <span class="settings-list-card__check"><input type="checkbox" /></span>
-                <strong>${escapeText(item.name || "-")}</strong>
-                <span>${escapeText(item.type === "1" || item.type === "regex" ? "regex" : "word")}</span>
+                <button type="button" class="settings-link-button">${escapeText(item.name || "-")}</button>
+                <span>${escapeText(item.type === "1" || item.type === "regex" ? "정규식" : "텍스트")}</span>
                 <span>${escapeText(item.pattern || "-")}</span>
                 <span>${item.enabled === false ? "미사용" : "사용"}</span>
                 <span>${formatSettingsDateTime(item.updatedAt || item.updated_at || "")}</span>
@@ -10156,16 +10148,9 @@ function renderConfigureAidotScreen() {
             `).join("") || emptyState("등록된 제외/무시 목록이 없습니다.")}
             </div>
             <div class="settings-detail-card">
-              <h3>제외/무시 목록</h3>
-              <label><span>이름</span><input value="" placeholder="이름을 입력하세요." /></label>
-              <label><span>유형</span><select><option>word</option><option>regex</option></select></label>
-              <label><span>제외/무시 텍스트 또는 정규식</span><input value="" placeholder="패턴을 입력하세요." /></label>
-              <label><span>설명</span><textarea rows="4"></textarea></label>
-              <label><span>테스트 문장</span><textarea rows="3"></textarea></label>
-              <label><span>매칭 결과</span><textarea rows="3" readonly></textarea></label>
-              <div class="settings-detail-card__actions">
-                <button type="button" class="primary-action">반영</button>
-              </div>
+              <h3>제외/무시 규칙 테스트 결과</h3>
+              <label><span>발화 제외/무시 테스트</span><input value="광고 링크를 보내도 되나요?" /></label>
+              <label><span>매칭 결과</span><textarea rows="4" readonly>${escapeText(blocklistItems[0]?.name || "적용되는 제외/무시 규칙이 없습니다.")}</textarea></label>
             </div>
           </div>
         </section>
@@ -10189,28 +10174,21 @@ function renderConfigureAidotScreen() {
                 <span>룰명</span><span>설명</span><span>표현식</span><span>연결 대상</span><span>사용</span><span>최종수정</span><span>수정자</span>
               </div>
             ${ruleItems.map((item) => `
-              <div class="settings-list-row settings-list-row--rule">
-                <strong>${escapeText(item.name || "-")}</strong>
+              <button type="button" class="settings-list-row settings-list-row--rule">
+                <span>${escapeText(item.name || "-")}</span>
                 <span>${escapeText(item.description || "-")}</span>
                 <span>${escapeText(item.expression || "-")}</span>
                 <span>${escapeText(item.target || "-")}</span>
                 <span>${item.enabled === false ? "미사용" : "사용"}</span>
                 <span>${formatSettingsDateTime(item.updatedAt || item.updated_at || "")}</span>
                 <span>${escapeText(item.updatedBy || item.updated_by || "-")}</span>
-              </div>
+              </button>
             `).join("") || emptyState("등록된 룰이 없습니다.")}
             </div>
             <div class="settings-detail-card">
-              <h3>룰</h3>
-              <label><span>룰 이름</span><input value="" placeholder="룰 이름을 입력하세요." /></label>
-              <label><span>룰 설명</span><input value="" placeholder="룰 설명을 입력하세요." /></label>
-              <label><span>연결할 의도/모듈</span><select><option value="">선택 안 함</option>${getAidotIntentRows().map((row) => `<option>${escapeText(row.type === "module" ? `${row.id} (모듈)` : `${row.id} (의도)`)}</option>`).join("")}</select></label>
-              <label><span>룰 표현식</span><textarea rows="4"></textarea></label>
-              <label><span>정규식 테스트 문장</span><textarea rows="3"></textarea></label>
-              <div class="settings-detail-card__actions">
-                <button type="button" class="secondary-action">문법 확인</button>
-                <button type="button" class="primary-action">반영</button>
-              </div>
+              <h3>정규식 테스트</h3>
+              <label><span>정규식 테스트 문장</span><input value="" placeholder="테스트할 문장을 입력하세요." /></label>
+              <label><span>테스트 결과</span><textarea rows="4" readonly>${escapeText(ruleItems[0]?.expression ? "정규식 확인 대기" : "등록된 룰이 없습니다.")}</textarea></label>
             </div>
           </div>
         </section>
@@ -10235,25 +10213,20 @@ function renderConfigureAidotScreen() {
                 <span>스몰토크명</span><span>우선순위</span><span>사용자 메시지</span><span>봇 메시지</span><span>최종수정</span><span>수정자</span>
               </div>
             ${smalltalkItems.map((item, index) => `
-              <div class="settings-list-row settings-list-row--smalltalk">
-                <strong>${escapeText(item.title || item.trigger || `스몰토크 ${index + 1}`)}</strong>
+              <button type="button" class="settings-list-row settings-list-row--smalltalk${index === 0 ? " is-selected" : ""}">
+                <span>${escapeText(item.title || item.trigger || `스몰토크 ${index + 1}`)}</span>
                 <span>${escapeText(item.priority || "Medium")}</span>
                 <span>${countMessageList(item.userMessages, item.utterance || item.trigger || "")}</span>
                 <span>${countMessageList(item.botMessages, item.response || "")}</span>
                 <span>${formatSettingsDateTime(item.updatedAt || item.updated_at || item.createdAt || "")}</span>
                 <span>${escapeText(item.updatedBy || item.updated_by || item.createdBy || "-")}</span>
-              </div>
+              </button>
             `).join("") || emptyState("등록된 스몰토크가 없습니다.")}
             </div>
             <div class="settings-detail-card">
-              <h3>스몰토크</h3>
-              <label><span>스몰토크명</span><input value="" placeholder="유일한 스몰토크 이름을 입력하세요." /></label>
-              <label><span>우선순위</span><select><option>High</option><option>Medium</option><option>Low</option></select></label>
-              <label><span>사용자 메시지</span><textarea rows="5"></textarea></label>
-              <label><span>봇 메시지</span><textarea rows="5"></textarea></label>
-              <div class="settings-detail-card__actions">
-                <button type="button" class="primary-action">반영</button>
-              </div>
+              <h3>스몰토크 사용</h3>
+              <label class="settings-toggle"><input type="checkbox" ${smalltalkItems.length ? "checked" : ""} /><span>${smalltalkItems.length ? "사용" : "미사용"}</span></label>
+              <p class="muted-line">Aidot 원형처럼 목록 선택 후 팝업 상세 편집 흐름으로 이어지도록 다음 단계에서 연결합니다.</p>
             </div>
           </div>
         </section>
