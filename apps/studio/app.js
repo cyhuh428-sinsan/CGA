@@ -9703,26 +9703,101 @@ function renderConfigureAidotScreen() {
     <option value="">선택 안 함</option>
     ${moduleRows.map((row) => `<option value="${escapeText(row.id)}" ${row.id === selectedValue ? "selected" : ""}>${escapeText(row.displayName || row.id)}</option>`).join("")}
   `;
-  const messageTitles = [
-    "첫 인사말",
-    "사용자의 의도를 이해하지 못했을 경우 답변",
-    "의도별 대화 종료시 안내 메시지",
-    "버튼에 없는 값을 입력했을 경우 제공되는 메시지",
-    "파악된 의도가 여러 개일 경우 안내 메시지",
-    "'원하는 의도 없음' 버튼 표시명",
-    "'원하는 의도 없음' 선택 시 메시지",
-    "봇 동작 오류시 안내 메시지",
-    "타임아웃 경과시 안내 메시지",
-    "Session End 안내 메시지",
-    "대화가 진행 중인 경우 안내 메시지",
-    "의도 전환시도가 최대횟수를 초과했을 때 안내 메시지",
-    "의도 전환 의사 질문 메시지 (의도명 전)",
-    "의도 전환 의사 질문 메시지 (의도명 후)",
-    "의도 복귀 실행 메시지"
-  ];
+  const messageSettings = {
+    greeting: { enabled: true, mode: "text", value: "안녕하세요." },
+    fallback: { enabled: true, mode: "text", value: "질문을 이해하지 못했습니다. 다시 말씀해주세요." },
+    intentEndGuide: { enabled: true, mode: "text", value: "다음으로 필요한 업무를 말씀해주세요." },
+    buttonMismatch: { enabled: true, mode: "text", value: "목록에 있는 버튼 중 하나를 선택해주세요." },
+    multiIntentGuide: {
+      enabled: true,
+      message: "아래 후보 중 원하는 의도를 선택해주세요.",
+      noIntentButtonLabel: "원하는 의도 없음",
+      noIntentButtonMessage: "다시 질문해주시면 다른 의도를 찾겠습니다."
+    },
+    system: {
+      errorMessage: { enabled: true, mode: "text", value: "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
+      timeoutMessage: { enabled: true, mode: "text", value: "응답이 없어 대화를 종료합니다." },
+      sessionEndMessage: { enabled: true, mode: "text", value: "세션이 종료되었습니다. 다시 시작하려면 말씀해주세요." },
+      inProgressMessage: { enabled: true, mode: "text", value: "현재 진행 중인 대화가 있습니다." }
+    },
+    intentSwitch: {
+      maxExceededMessage: "의도 전환 시도가 많아 현재 대화를 유지합니다.",
+      beforeIntentNameMessage: "지금",
+      afterIntentNameMessage: "의도로 이동할까요?"
+    },
+    intentReturn: {
+      enabled: true,
+      message: "이전 의도로 돌아갈까요?"
+    },
+    parallelWork: {
+      firstMessage: "진행 중인 업무 외에 추가로 처리할 업무가 있습니다.",
+      skipButtonLabel: "처리하지 않음",
+      skipButtonMessage: "현재 업무만 계속 진행하겠습니다.",
+      forcedPriorityMessage: "우선순위가 높은 업무를 먼저 진행합니다.",
+      forcedCloseMessage: "진행 중인 업무가 종료되었습니다."
+    },
+    feedback: {
+      mode: "none",
+      promptMessage: "이번 답변이 도움이 되었나요?",
+      scale: "binary",
+      scaleLabels: {
+        one: "네",
+        two: "아니오",
+        three: "3점",
+        four: "4점",
+        five: "5점"
+      }
+    }
+  };
   const emptyRecommendedOptions = recommendedIntents.length
     ? recommendedIntents.map((row) => `<option value="${escapeText(row.id)}">${escapeText(row.displayName || row.id)}</option>`).join("")
     : `<option value="">등록된 의도 없음</option>`;
+  const messageTextMaxLength = 100;
+  const renderMessageModeRow = (name, mode = "text", includeDisabled = true) => `
+    <div class="settings-message-item__mode-row">
+      <label class="settings-choice-option"><input type="radio" name="${escapeText(name)}" ${mode !== "module" ? "checked" : ""} /><span>메시지</span></label>
+      <label class="settings-choice-option"><input type="radio" name="${escapeText(name)}" ${mode === "module" ? "checked" : ""} /><span>모듈 연결</span></label>
+      ${includeDisabled ? `<label class="settings-choice-option"><input type="radio" name="${escapeText(name)}" disabled /><span>미사용</span></label>` : ""}
+    </div>
+  `;
+  const renderMessageEditor = ({ title, enabled = true, mode = "text", value = "", radioName, rows = 3 }) => `
+    <div class="settings-message-item">
+      <div class="settings-message-item__header">
+        <strong>${escapeText(title)}</strong>
+        <label class="settings-toggle"><input type="checkbox" ${enabled ? "checked" : ""} /><span>사용</span></label>
+      </div>
+      <div class="settings-message-item__content">
+        ${renderMessageModeRow(radioName, mode)}
+        ${
+          mode === "module"
+            ? `<label class="settings-message-item__value"><input value="${escapeText(value)}" placeholder="선택 안 함" readonly /><small class="settings-message-item__count">모듈 연결</small></label>`
+            : `<label class="settings-message-item__value"><textarea class="settings-message-item__textarea" rows="${rows}">${escapeText(value)}</textarea><small class="settings-message-item__count">${String(value).length}/${messageTextMaxLength}</small></label>`
+        }
+      </div>
+    </div>
+  `;
+  const renderPlainFieldCard = (title, value, maxLength = messageTextMaxLength, rows = 3) => `
+    <div class="settings-message-item">
+      <div class="settings-message-item__header">
+        <strong>${escapeText(title)}</strong>
+      </div>
+      <div class="settings-message-item__content">
+        <label class="settings-message-item__value">
+          <textarea class="settings-message-item__textarea" rows="${rows}">${escapeText(value)}</textarea>
+          <small class="settings-message-item__count">${String(value).length}/${maxLength}</small>
+        </label>
+      </div>
+    </div>
+  `;
+  const renderMessageSection = (title, description, body, open = false) => `
+    <details class="settings-accordion" ${open ? "open" : ""}>
+      <summary>${escapeText(title)}</summary>
+      <div class="settings-accordion__body">
+        <p class="muted-line">${escapeText(description)}</p>
+        ${body}
+      </div>
+    </details>
+  `;
 
   const renderAiModel = () => `
     <div class="aidot-settings-screen">
@@ -9828,52 +9903,158 @@ function renderConfigureAidotScreen() {
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
         <div class="configure-message-list">
-          <details class="settings-accordion" open>
-            <summary>안내 메시지</summary>
-            <div class="settings-accordion__body">
-              ${messageTitles.slice(0, 8).map((title, index) => `
-                <div class="settings-message-item">
-                  <div class="settings-message-item__header">
-                    <strong>${title}</strong>
-                    <label class="settings-toggle"><input type="checkbox" checked /><span>사용</span></label>
+          ${renderMessageSection(
+            "기본 메시지(4)",
+            "대화 시작, 의도 미인식, 의도 종료, 버튼 불일치 등 기본 흐름에서 공통으로 사용하는 메시지를 설정합니다.",
+            `<div class="settings-message-grid settings-message-grid--two">
+              ${renderMessageEditor({ title: "첫 인사말", ...messageSettings.greeting, radioName: "message-greeting" })}
+              ${renderMessageEditor({ title: "사용자의 의도를 이해하지 못했을 경우 답변", ...messageSettings.fallback, radioName: "message-fallback" })}
+              ${renderMessageEditor({ title: "의도별 대화 종료시 안내 메시지", ...messageSettings.intentEndGuide, radioName: "message-intent-end" })}
+              ${renderMessageEditor({ title: "버튼에 없는 값을 입력했을 경우 제공되는 메시지", ...messageSettings.buttonMismatch, radioName: "message-button-mismatch" })}
+            </div>`,
+            true
+          )}
+          ${renderMessageSection(
+            "유사의도/되묻기(2)",
+            "유사 의도가 여러 개 잡혔을 때 사용자에게 보여줄 안내 문구와 '원하는 의도 없음' 처리 메시지를 설정합니다.",
+            `<div class="settings-message-grid settings-message-grid--two">
+              <div class="settings-message-item">
+                <div class="settings-message-item__header">
+                  <strong>파악된 의도가 여러 개일 경우 안내 메시지</strong>
+                  <label class="settings-toggle"><input type="checkbox" ${messageSettings.multiIntentGuide.enabled ? "checked" : ""} /><span>사용</span></label>
+                </div>
+                <div class="settings-message-item__content">
+                  <label class="settings-message-item__value">
+                    <textarea class="settings-message-item__textarea" rows="3">${escapeText(messageSettings.multiIntentGuide.message)}</textarea>
+                    <small class="settings-message-item__count">${messageSettings.multiIntentGuide.message.length}/${messageTextMaxLength}</small>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-message-item">
+                <div class="settings-message-item__header">
+                  <strong>'원하는 의도 없음' 버튼/메시지</strong>
+                </div>
+                <div class="settings-form-grid settings-form-grid--compact">
+                  <label class="settings-form-card">
+                    <span>'원하는 의도 없음' 버튼 표시명</span>
+                    <input type="text" value="${escapeText(messageSettings.multiIntentGuide.noIntentButtonLabel)}" />
+                  </label>
+                  <label class="settings-form-card settings-form-card--wide">
+                    <span>'원하는 의도 없음' 선택 시 메시지</span>
+                    <textarea class="bot-settings-intro__textarea">${escapeText(messageSettings.multiIntentGuide.noIntentButtonMessage)}</textarea>
+                  </label>
+                </div>
+              </div>
+            </div>`
+          )}
+          ${renderMessageSection(
+            "대화 종료(4)",
+            "대화중 시스템에 문제가 생겼거나 사용자의 마지막 발화 이후 타임아웃 설정 시간동안 아무런 응답이 없었을 경우 대화가 자동으로 종료됩니다. 사용자에게 대화가 종료된 상황을 안내하기 위한 메시지도 설정해 주세요.",
+            `<div class="settings-message-grid settings-message-grid--two">
+              ${renderMessageEditor({ title: "봇 동작 오류시 안내 메시지", ...messageSettings.system.errorMessage, radioName: "message-system-error" })}
+              ${renderMessageEditor({ title: "타임아웃 경과시 안내 메시지", ...messageSettings.system.timeoutMessage, radioName: "message-timeout" })}
+              ${renderMessageEditor({ title: "Session End 안내 메시지", ...messageSettings.system.sessionEndMessage, radioName: "message-session-end" })}
+              ${renderMessageEditor({ title: "대화가 진행 중인 경우 안내 메시지", ...messageSettings.system.inProgressMessage, radioName: "message-in-progress" })}
+            </div>`
+          )}
+          ${renderMessageSection(
+            "의도 전환/복귀(3)",
+            "의도 전환 실패, 의도 전환 질문, 의도 복귀 실행 여부와 메시지를 설정합니다.",
+            `<div class="settings-message-grid settings-message-grid--two">
+              ${renderPlainFieldCard("의도 전환시도가 최대횟수를 초과했을 때 안내 메시지", messageSettings.intentSwitch.maxExceededMessage)}
+              <div class="settings-message-item">
+                <div class="settings-message-item__header">
+                  <strong>의도 전환 의사 질문 메시지</strong>
+                </div>
+                <div class="settings-form-grid settings-form-grid--compact">
+                  <label class="settings-form-card">
+                    <span>의도명 전</span>
+                    <input type="text" value="${escapeText(messageSettings.intentSwitch.beforeIntentNameMessage)}" />
+                  </label>
+                  <label class="settings-form-card">
+                    <span>의도명 후</span>
+                    <input type="text" value="${escapeText(messageSettings.intentSwitch.afterIntentNameMessage)}" />
+                  </label>
+                </div>
+              </div>
+              <div class="settings-message-item">
+                <div class="settings-message-item__header">
+                  <strong>의도 복귀 실행 메시지</strong>
+                </div>
+                <div class="settings-message-item__content">
+                  <div class="settings-message-item__mode-row">
+                    <label class="settings-choice-option"><input type="radio" name="message-intent-return-enabled" ${messageSettings.intentReturn.enabled ? "" : "checked"} /><span>미사용</span></label>
+                    <label class="settings-choice-option"><input type="radio" name="message-intent-return-enabled" ${messageSettings.intentReturn.enabled ? "checked" : ""} /><span>사용</span></label>
                   </div>
-                  <div class="settings-message-item__content">
-                    <div class="settings-message-item__mode-row">
-                      <label class="settings-choice-option"><input type="radio" name="message-mode-${index}" checked /><span>메시지</span></label>
-                      <label class="settings-choice-option"><input type="radio" name="message-mode-${index}" /><span>모듈 연결</span></label>
-                    </div>
-                    <label class="settings-message-item__value">
-                      <textarea class="settings-message-item__textarea" rows="2"></textarea>
-                      <small class="settings-message-item__count">0/100</small>
-                    </label>
+                  <label class="settings-message-item__value">
+                    <textarea class="settings-message-item__textarea" rows="3">${escapeText(messageSettings.intentReturn.message)}</textarea>
+                    <small class="settings-message-item__count">${messageSettings.intentReturn.message.length}/${messageTextMaxLength}</small>
+                  </label>
+                </div>
+              </div>
+            </div>`
+          )}
+          ${renderMessageSection(
+            "대기업무 메시지",
+            "병렬로 처리할 다른 업무가 생겼을 때 사용자에게 보여줄 안내 문구와 강제 전환 메시지를 설정합니다.",
+            `<div class="settings-message-grid settings-message-grid--two">
+              ${renderPlainFieldCard("대기업무가 발생한 경우 사용자에게 제시할 첫 메시지", messageSettings.parallelWork.firstMessage)}
+              <div class="settings-message-item">
+                <div class="settings-message-item__header">
+                  <strong>'대기업무를 처리하지 않음' 버튼/메시지</strong>
+                </div>
+                <div class="settings-form-grid settings-form-grid--compact">
+                  <label class="settings-form-card">
+                    <span>버튼 표시명</span>
+                    <input type="text" value="${escapeText(messageSettings.parallelWork.skipButtonLabel)}" />
+                  </label>
+                  <label class="settings-form-card settings-form-card--wide">
+                    <span>선택 시 메시지</span>
+                    <textarea class="bot-settings-intro__textarea">${escapeText(messageSettings.parallelWork.skipButtonMessage)}</textarea>
+                  </label>
+                </div>
+              </div>
+              ${renderPlainFieldCard("우선순위가 높은 대기업무 강제 실행 메시지", messageSettings.parallelWork.forcedPriorityMessage)}
+              ${renderPlainFieldCard("진행중인 업무 강제 종료 메시지", messageSettings.parallelWork.forcedCloseMessage)}
+            </div>`
+          )}
+          ${renderMessageSection(
+            "피드백 수집",
+            "답변 후 사용자 만족도를 묻는 방식과 척도 표시 문구를 설정합니다.",
+            `<div class="settings-message-grid settings-message-grid--two">
+              <div class="settings-message-item">
+                <div class="settings-message-item__header">
+                  <strong>사용 유형</strong>
+                </div>
+                <div class="settings-message-item__content">
+                  <div class="settings-message-item__mode-row">
+                    <label class="settings-choice-option"><input type="radio" name="message-feedback-mode" ${messageSettings.feedback.mode === "none" ? "checked" : ""} /><span>사용 안함</span></label>
+                    <label class="settings-choice-option"><input type="radio" name="message-feedback-mode" ${messageSettings.feedback.mode === "all" ? "checked" : ""} /><span>모든 의도 사용</span></label>
+                    <label class="settings-choice-option"><input type="radio" name="message-feedback-mode" ${messageSettings.feedback.mode === "per-intent" ? "checked" : ""} /><span>의도별 사용</span></label>
+                  </div>
+                  <label class="settings-message-item__value">
+                    <textarea class="settings-message-item__textarea" rows="3">${escapeText(messageSettings.feedback.promptMessage)}</textarea>
+                    <small class="settings-message-item__count">${messageSettings.feedback.promptMessage.length}/${messageTextMaxLength}</small>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-message-item">
+                <div class="settings-message-item__header">
+                  <strong>의도별 피드백 척도</strong>
+                </div>
+                <div class="settings-message-item__content">
+                  <div class="settings-message-item__mode-row">
+                    <label class="settings-choice-option"><input type="radio" name="message-feedback-scale" ${messageSettings.feedback.scale === "binary" ? "checked" : ""} /><span>2점</span></label>
+                    <label class="settings-choice-option"><input type="radio" name="message-feedback-scale" ${messageSettings.feedback.scale === "five-point" ? "checked" : ""} /><span>5점</span></label>
+                  </div>
+                  <div class="settings-form-grid settings-form-grid--compact">
+                    <label class="settings-form-card"><span>1항목</span><input type="text" value="${escapeText(messageSettings.feedback.scaleLabels.one)}" /></label>
+                    <label class="settings-form-card"><span>2항목</span><input type="text" value="${escapeText(messageSettings.feedback.scaleLabels.two)}" /></label>
                   </div>
                 </div>
-              `).join("")}
-            </div>
-          </details>
-          <details class="settings-accordion">
-            <summary>세션 / 복귀 메시지</summary>
-            <div class="settings-accordion__body">
-              ${messageTitles.slice(8).map((title, index) => `
-                <div class="settings-message-item">
-                  <div class="settings-message-item__header">
-                    <strong>${title}</strong>
-                    <label class="settings-toggle"><input type="checkbox" checked /><span>사용</span></label>
-                  </div>
-                  <div class="settings-message-item__content">
-                    <div class="settings-message-item__mode-row">
-                      <label class="settings-choice-option"><input type="radio" name="message-mode-tail-${index}" checked /><span>메시지</span></label>
-                      <label class="settings-choice-option"><input type="radio" name="message-mode-tail-${index}" /><span>모듈 연결</span></label>
-                    </div>
-                    <label class="settings-message-item__value">
-                      <textarea class="settings-message-item__textarea" rows="2"></textarea>
-                      <small class="settings-message-item__count">0/100</small>
-                    </label>
-                  </div>
-                </div>
-              `).join("")}
-            </div>
-          </details>
+              </div>
+            </div>`
+          )}
         </div>
       </section>
     </div>
