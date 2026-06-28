@@ -6305,3 +6305,16 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `LLM Provider`, `LLM 세부 모델`, `NLU 모델`, Vector 연결 블록이 Aidot 조건에 맞게 노출/숨김 되도록 분기 로직 추가
   - Semantic External 선택 시 설명 문구와 추가 입력 필드가 바뀌도록 보강
   - 생성 화면 카드/레이아웃 스타일을 Aidot 흐름 기준으로 다시 정리 중
+
+### Aidot 원본 복사 기준으로 봇 설정/그룹 API 화면 보정 진행
+
+- 요청:
+  - `봇 설정` 좌측 하위 메뉴는 Aidot 원본 그룹 구조 그대로 복사
+  - `API` 목록 화면도 Aidot와 동일한 구조/간격 기준으로 복사
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - `봇 설정` 좌측 하위 메뉴를 `설정 / 기본 대화 / 연계` 고정 그룹 구조로 교체 시작
+  - Aidot 전용 하위 메뉴 class를 추가해 기존 접이식 submenu 스타일과 분리
+  - `API` 목록 `data-grid`에 `align-content: start`를 적용해 남는 높이가 행 사이로 분산되지 않도록 보정

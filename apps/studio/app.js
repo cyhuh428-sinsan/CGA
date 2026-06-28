@@ -5449,25 +5449,25 @@ function renderWorkflowRail() {
           <strong data-i18n="workflow.${step.id}.title">${localizedTitle}</strong>
           <small data-i18n="workflow.${step.id}.subtitle">${localizedSubtitle}</small>
         </summary>
-        <div class="workflow-step-subnav">
-          <details class="subnav-group" ${["ai-model", "defaults", "messages", "messenger", "recommended-intents"].includes(currentConfigureSubview) ? "open" : ""}>
-            <summary>설정</summary>
-            <div class="subnav-group__links">
+        <div class="workflow-step-subnav workflow-step-subnav--aidot">
+          <section class="aidot-settings-subnav-group">
+            <h4>설정</h4>
+            <div class="aidot-settings-subnav-links">
               ${configureSubviews.slice(0, 5).map((item) => `<a href="#configure" data-config-subview="${item.id}" class="${currentConfigureSubview === item.id ? "active" : ""}"><span>${item.label}</span></a>`).join("")}
             </div>
-          </details>
-          <details class="subnav-group" ${["blocklist", "rules", "smalltalk"].includes(currentConfigureSubview) ? "open" : ""}>
-            <summary>기본 대화</summary>
-            <div class="subnav-group__links">
+          </section>
+          <section class="aidot-settings-subnav-group">
+            <h4>기본 대화</h4>
+            <div class="aidot-settings-subnav-links">
               ${configureSubviews.slice(5, 8).map((item) => `<a href="#configure" data-config-subview="${item.id}" class="${currentConfigureSubview === item.id ? "active" : ""}"><span>${item.label}</span></a>`).join("")}
             </div>
-          </details>
-          <details class="subnav-group" ${currentConfigureSubview === "botstation" ? "open" : ""}>
-            <summary>연계</summary>
-            <div class="subnav-group__links">
+          </section>
+          <section class="aidot-settings-subnav-group">
+            <h4>연계</h4>
+            <div class="aidot-settings-subnav-links">
               ${configureSubviews.slice(8).map((item) => `<a href="#configure" data-config-subview="${item.id}" class="${currentConfigureSubview === item.id ? "active" : ""}"><span>${item.label}</span></a>`).join("")}
             </div>
-          </details>
+          </section>
         </div>
       </details>
     `;
