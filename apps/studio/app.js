@@ -10148,6 +10148,18 @@ function renderConfigureAidotScreen() {
       </div>
     </details>
   `;
+  const feedbackScaleFields = messageSettings.feedback.scale === "binary"
+    ? [
+        ["one", "1항목"],
+        ["two", "2항목"],
+      ]
+    : [
+        ["one", "1점"],
+        ["two", "2점"],
+        ["three", "3점"],
+        ["four", "4점"],
+        ["five", "5점"],
+      ];
 
   const renderAiModel = () => `
     <div class="aidot-settings-screen">
@@ -10626,9 +10638,14 @@ function renderConfigureAidotScreen() {
                     <label class="settings-choice-option"><input type="radio" name="message-feedback-scale" ${messageSettings.feedback.scale === "binary" ? "checked" : ""} /><span>2점</span></label>
                     <label class="settings-choice-option"><input type="radio" name="message-feedback-scale" ${messageSettings.feedback.scale === "five-point" ? "checked" : ""} /><span>5점</span></label>
                   </div>
-                  <div class="settings-form-grid settings-form-grid--compact">
-                    <label class="settings-form-card"><span>1항목</span><input type="text" value="${escapeText(messageSettings.feedback.scaleLabels.one)}" /></label>
-                    <label class="settings-form-card"><span>2항목</span><input type="text" value="${escapeText(messageSettings.feedback.scaleLabels.two)}" /></label>
+                  <div class="settings-feedback-scale-grid ${messageSettings.feedback.scale === "binary" ? "settings-feedback-scale-grid--binary" : "settings-feedback-scale-grid--five"}">
+                    ${feedbackScaleFields.map(([key, label]) => `
+                      <label class="settings-message-item__value">
+                        <span>${escapeText(label)}</span>
+                        <input type="text" class="bot-settings-card__input settings-feedback-scale-input" value="${escapeText(messageSettings.feedback.scaleLabels[key] || "")}" />
+                        <small class="settings-message-item__count">${String(messageSettings.feedback.scaleLabels[key] || "").length}/100</small>
+                      </label>
+                    `).join("")}
                   </div>
                 </div>
               </div>

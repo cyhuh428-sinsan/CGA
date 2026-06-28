@@ -5929,3 +5929,21 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js`
   - `npm run studio:check`
+
+### `메시지 설정`의 피드백 척도 레이아웃을 Aidot 구조에 맞춰 보강
+
+- 문제:
+  - `피드백 수집` 섹션에서 의도별 피드백 척도가 Aidot처럼 2점/5점 구조에 따라
+    항목 수가 바뀌는 형태가 아니라 고정 2개 입력으로 단순화되어 있었다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - `2점` 선택 시 `1항목`, `2항목`
+  - `5점` 선택 시 `1점` ~ `5점`
+    입력 필드가 보이도록 구조를 재조정
+  - 각 항목에 문자 수 카운트가 함께 보이도록 Aidot 흐름에 맞춰 보강
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
+  - `npm run studio:check`
