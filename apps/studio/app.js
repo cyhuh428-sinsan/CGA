@@ -11164,7 +11164,15 @@ function renderConfigureAidotScreen() {
     enabled: String(item.enabled || item.use_yn || "Y").trim().toUpperCase() !== "N",
   }));
   const selectedBotstationChannel = null;
+  const hasBotstationConnectionInfo = (channel) =>
+    Boolean(
+      String(channel.provider || "").trim() ||
+      String(channel.rendererType || "").trim() ||
+      String(channel.authType || "").trim() ||
+      String(channel.endpointUrl || "").trim()
+    );
   const enabledBotstationChannelCount = botstationChannels.filter((channel) => channel.enabled).length;
+  const botstationConnected = botstationChannels.length > 0;
   const ruleTargetOptions = [
     { value: "", label: "선택 안 함" },
     ...availableRecommendedIntentOptions.map((row) => ({ value: row.id, label: row.displayName || row.id })),
@@ -12205,13 +12213,13 @@ function renderConfigureAidotScreen() {
     <div class="aidot-settings-screen">
       <section class="aidot-settings-main aidot-settings-main--full">
         <section class="botstation-settings">
-          ${currentBot.status !== "ready" && currentBot.status !== "operating" ? `
+          ${!botstationConnected ? `
             <div class="botstation-settings__empty"><button type="button" class="studio-table-page__primary">연결</button></div>
           ` : `
             <div class="botstation-settings__status">
               <span>봇스테이션</span>
               <label class="botstation-settings__switch"><input type="checkbox" ${enabledBotstationChannelCount ? "checked" : ""} /><span>${enabledBotstationChannelCount ? "사용" : "미사용"}</span></label>
-              <span class="botstation-settings__connected">${botstationChannels.length ? `등록된 채널 ${botstationChannels.length}개` : ""}</span>
+              <span class="botstation-settings__connected">봇이 연결되었습니다.</span>
             </div>
             <div class="botstation-settings__table-wrap">
               <div class="botstation-settings__count">전체 ${botstationChannels.length}개</div>
@@ -12221,7 +12229,7 @@ function renderConfigureAidotScreen() {
                   ${botstationChannels.map((channel) => `
                     <tr${selectedBotstationChannel && channel.id === selectedBotstationChannel.id ? ` class="is-selected"` : ""}>
                       <td><button type="button" class="botstation-settings__channel-link">${escapeText(channel.name || channel.code || channel.id || "-")}</button></td>
-                      <td>${escapeText(channel.endpointUrl || "-")}</td>
+                      <td>${hasBotstationConnectionInfo(channel) ? "저장됨" : "저장되지 않음"}</td>
                       <td>
                         <label class="botstation-settings__switch botstation-settings__switch--small">
                           <input type="checkbox" ${channel.enabled ? "checked" : ""} />
