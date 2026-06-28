@@ -163,7 +163,7 @@
           </article>
           <aside class="status-panel compact">
             <h4 data-i18n="workspace.nextTitle">Next Action</h4>
-            <p><b data-i18n="workspace.currentBot">Current bot</b><span data-current-bot-name>SupportBot Draft</span></p>
+            <p><b data-i18n="workspace.currentBot">Current bot</b><span data-current-bot-name>-</span></p>
             <p><b data-i18n="workspace.currentGroup">Current group</b><span data-current-group-name></span></p>
             <div class="next-action" data-i18n="workspace.nextBody">Open a bot, then continue through Create Bot and the build workflow.</div>
           </aside>
@@ -448,9 +448,7 @@
               <label>구성 모델<select><option value="Aidot Vector Worker 기본 모델">Aidot Vector Worker 기본 모델</option></select></label>
             </div>
             <div class="rag-info-line">자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.</div>
-            <label>학습문장을 줄 단위로 입력하세요.<textarea data-config-utterances>예) 상담원 연결해줘
-예) 콜백 예약하고 싶어
-예) 발신자 확인해줘</textarea></label>
+            <label>학습문장을 줄 단위로 입력하세요.<textarea data-config-utterances placeholder="학습문장을 줄 단위로 입력하세요."></textarea></label>
             <div class="rag-target-row">
               <label>목표 의도 수<input type="number" min="1" value="50" data-config-intent-count /></label>
               <button type="button">자동 구성</button>
@@ -484,13 +482,13 @@
             <div class="api-flow"><span data-i18n="apiAnswer.userQuestion">User question</span><b></b><span data-i18n="apiAnswer.intent">Matched intent</span><b></b><span data-i18n="apiAnswer.externalSystem">External system API</span><b></b><span data-i18n="apiAnswer.finalAnswer">Bot answer</span></div>
           </div>
           <div class="api-config-card">
-            <label><span data-i18n="apiAnswer.name">API answer name</span><input value="order_status_lookup" /></label>
-            <label><span data-i18n="apiAnswer.endpoint">Endpoint URL</span><input value="https://api.example.com/orders/{order_id}" /></label>
+            <label><span data-i18n="apiAnswer.name">API answer name</span><input value="" placeholder="API answer name" /></label>
+            <label><span data-i18n="apiAnswer.endpoint">Endpoint URL</span><input value="" placeholder="https://..." /></label>
             <div class="row-fields">
               <label><span data-i18n="apiAnswer.method">Method</span><select><option>GET</option><option>POST</option></select></label>
               <label><span data-i18n="apiAnswer.auth">Auth type</span><select><option>Bearer</option><option>API Key</option><option>None</option></select></label>
             </div>
-            <label><span data-i18n="apiAnswer.responsePath">Answer text path</span><input value="data.answer" /></label>
+            <label><span data-i18n="apiAnswer.responsePath">Answer text path</span><input value="" placeholder="response path" /></label>
           </div>
           <div class="api-admin-panel">
             <h4 data-i18n="apiAnswer.adminTitle">Group API Registry</h4>

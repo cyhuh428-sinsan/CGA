@@ -5962,3 +5962,40 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 추천 의도/스몰토크 목록의 강제 선택 표시 제거
   - 설정 목록 행 높이와 스몰토크 상세 패널 높이/간격을 축소해
     Aidot처럼 목록 중심으로 먼저 보이도록 조정
+
+### 샘플 봇/그룹/작업/예시 입력값을 기본 화면에서 제거
+
+- 문제:
+  - `SupportBot Draft`, `Support Bot Group`, 샘플 협업 작업, 예시 학습문장,
+    예시 API 응답값 등 테스트용 데이터가 기본 상태에 섞여 있어
+    실제 운영 데이터와 구분이 어려웠다.
+- 반영 파일:
+  - `packages/public-core/src/studio-state.js`
+  - `packages/public-core/src/access-state.js`
+  - `packages/public-core/src/collaboration-state.js`
+  - `apps/studio/data/sample-state.js`
+  - `apps/studio/app.js`
+  - `apps/studio/index.html`
+  - `apps/studio/i18n.js`
+  - `packages/i18n/locales/en.json`
+  - `packages/i18n/locales/zh-CN.json`
+  - `packages/i18n/locales/ja.json`
+  - `packages/i18n/locales/fr.json`
+  - `packages/i18n/locales/vi.json`
+- 반영 내용:
+  - 빈 스튜디오 기본 언어를 `ko`로 정리
+  - 샘플 접근 상태의 사용자/그룹 이름을 중립적인 운영형 명칭으로 변경
+  - 팀 대시보드 샘플 작업 항목 제거
+  - 샘플 봇 상태의 이름/설명/카운트/채널 상태를 비워 실제 신규 봇 상태에 맞춤
+  - 대화 이력 기본 날짜 필터의 고정 과거 날짜 제거
+  - 초기 HTML의 현재 봇명 기본 텍스트 제거
+  - 번역 리소스에 박혀 있던 `SupportBot Draft` 고정 문구 제거
+  - 봇 구성/외부 API 답변 화면의 예시 입력값 제거
+  - 새 학습문장 행 추가 시 샘플 문장이 자동으로 들어가지 않도록 변경
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `node --check packages/public-core/src/studio-state.js`
+  - `node --check packages/public-core/src/access-state.js`
+  - `node --check packages/public-core/src/collaboration-state.js`
+  - `git diff --check -- ...`
+  - `npm run studio:check`

@@ -1,10 +1,10 @@
 export const sampleStudioState = {
   bot: {
-    id: "supportbot-draft",
-    name: "SupportBot Draft",
-    description: "Customer support chatbot draft for web and messenger channels.",
+    id: null,
+    name: "",
+    description: "",
     version: "v0.1",
-    defaultLocale: "en",
+    defaultLocale: "ko",
     selectedChannels: ["web"]
   },
   structuralChoices: {
@@ -32,13 +32,13 @@ export const sampleStudioState = {
     operate: "not_started"
   },
   counts: {
-    intents: 2,
-    utterances: 10,
-    documents: 1,
-    pendingApprovals: 1
+    intents: 0,
+    utterances: 0,
+    documents: 0,
+    pendingApprovals: 0
   },
   channels: {
-    web: "connected",
+    web: "not_configured",
     desktopMessenger: "not_configured",
     kakaoKr: "disabled"
   },

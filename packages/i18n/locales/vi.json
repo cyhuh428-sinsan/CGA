@@ -31,7 +31,7 @@
   "i18n.botErrorGroup": "Lỗi bot",
   "i18n.noHardcode": "Không hardcode lỗi hiển thị cho người dùng",
   "app.subtitle": "Studio sản xuất bot",
-  "top.bot": "Bot hiện tại: SupportBot Draft",
+  "top.bot": "Bot",
   "top.version": "Phiên bản: v0.1",
   "top.apiUnchanged": "Aidot API không đổi",
   "common.save": "Lưu",

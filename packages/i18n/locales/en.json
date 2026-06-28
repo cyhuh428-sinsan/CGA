@@ -31,7 +31,7 @@
   "i18n.botErrorGroup": "Bot Error",
   "i18n.noHardcode": "Never hardcode user-facing errors",
   "app.subtitle": "Bot Production Studio",
-  "top.bot": "Bot: SupportBot Draft",
+  "top.bot": "Bot",
   "top.version": "Version: v0.1",
   "top.apiUnchanged": "Aidot API unchanged",
   "common.save": "Save",

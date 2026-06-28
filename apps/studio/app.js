@@ -117,8 +117,8 @@ let currentBotstationUiState = {
 };
 let currentConversationHistoryFilters = {
   channel: "all",
-  startDate: "2026-06-21",
-  endDate: "2026-06-21"
+  startDate: "",
+  endDate: ""
 };
 let currentConversationHistoryState = {
   items: [],
@@ -4379,7 +4379,7 @@ function renderAidotIntentManager() {
         id = `new_intent_${nextNumber}`;
       }
       currentScenarioAssets = [...currentScenarioAssets, { id, type: "intent", displayName: id, answer: "", dialogCards: [] }];
-      currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: `sample utterance ${nextNumber}`, division: id }];
+      currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: "", division: id }];
       currentSelectedIntentId = id;
       currentIntentSearch = "";
       currentIntentFilter = "all";
@@ -4531,7 +4531,7 @@ function addWorkflowIntentFromBuild() {
     id = `new_intent_${nextNumber}`;
   }
   currentScenarioAssets = [...currentScenarioAssets, { id, type: "intent", displayName: id, answer: "", dialogCards: [] }];
-  currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: `sample utterance ${nextNumber}`, division: id }];
+  currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: "", division: id }];
   currentSelectedIntentId = id;
   currentBuildAidotView = "start";
   currentBuildSelectedUtterances = new Set();
@@ -11178,7 +11178,7 @@ function renderBuildAidotScreen() {
   });
   container.querySelector("[data-build-add-utterance]")?.addEventListener("click", async () => {
     const nextIndex = currentIntentUtteranceAssets.filter((item) => item.division === selected.id).length + 1;
-    currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: `sample utterance ${nextIndex}`, division: selected.id }];
+    currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: "", division: selected.id }];
     currentStudioState.counts.utterances = currentIntentUtteranceAssets.length;
     await saveDetailAssetsToServer().catch(() => false);
     renderAllStatePanels();

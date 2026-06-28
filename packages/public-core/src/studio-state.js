@@ -44,7 +44,7 @@ export function createEmptyStudioState() {
       name: "",
       description: "",
       version: "v0.1",
-      defaultLocale: "en",
+      defaultLocale: "ko",
       selectedChannels: ["web"]
     },
     structuralChoices: {

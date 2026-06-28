@@ -22,16 +22,16 @@ export function createSampleAccessState() {
     currentUserId: "u-builder",
     users: [
       createUser({ id: SYSTEM_ADMIN_USER_ID, name: "admin", locale: "en", isSystemUser: true, deletable: false }),
-      createUser({ id: "u-group-admin", name: "Group Admin", locale: "ko" }),
-      createUser({ id: "u-builder", name: "Builder", locale: "ko" }),
-      createUser({ id: "u-reviewer", name: "Reviewer", locale: "ja" }),
-      createUser({ id: "u-operator", name: "Operator", locale: "en" }),
-      createUser({ id: "u-viewer", name: "Viewer", locale: "fr" })
+      createUser({ id: "u-group-admin", name: "그룹관리자", locale: "ko" }),
+      createUser({ id: "u-builder", name: "제작자", locale: "ko" }),
+      createUser({ id: "u-reviewer", name: "검수자", locale: "ko" }),
+      createUser({ id: "u-operator", name: "운영자", locale: "ko" }),
+      createUser({ id: "u-viewer", name: "조회자", locale: "ko" })
     ],
     groups: [
-      createGroup({ id: SYSTEM_ADMIN_GROUP_ID, name: "System Admin Group" }),
-      createGroup({ id: "g-support", name: "Support Bot Group" }),
-      createGroup({ id: "g-ops", name: "Operations Group" })
+      createGroup({ id: SYSTEM_ADMIN_GROUP_ID, name: "시스템관리자 그룹" }),
+      createGroup({ id: "g-support", name: "기본그룹" }),
+      createGroup({ id: "g-ops", name: "운영그룹" })
     ],
     memberships: [
       createGroupMembership({ userId: SYSTEM_ADMIN_USER_ID, groupId: SYSTEM_ADMIN_GROUP_ID, role: USER_ROLES.SYSTEM_ADMIN }),
