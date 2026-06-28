@@ -5796,3 +5796,26 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js`
   - `npm run studio:config-check`
+
+### `제외/무시 목록`, `룰 설정`, `스몰토크`, `봇스테이션` 화면 구조를 Aidot 기준으로 추가 정렬
+
+- `제외/무시 목록 설정`
+  - Aidot처럼 `툴바 + 검색/테스트 + 목록 + 상세` 흐름으로 재배치
+  - 우측 테스트 카드 대신 Aidot형 검색/테스트 구역과 상세 패널 구조로 정리
+- `룰 설정`
+  - 목록 헤더 명칭을 Aidot 기준으로 정리
+  - 상세 패널에 `정규식 확인`, `테스트`, `연결할 의도/모듈` 선택 흐름을 Aidot 구조에 맞춰 보강
+  - 대상 선택은 실제 의도/모듈 목록을 기반으로 표시
+- `스몰토크`
+  - 상단에 `스몰토크 사용` 토글과 `삭제` 액션을 Aidot 흐름대로 배치
+  - 상세 메타 영역에 등록자/등록일자/최종수정 정보를 실제 값 기준으로 노출
+  - 우선순위 선택도 `High / Medium / Low` 구조로 맞춤
+- `봇스테이션`
+  - 상단 연결 상태 문구에서 임의 안내 표현을 제거하고 실제 연결 상태 중심으로 단순화
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js apps/studio/styles.css`
+  - `npm run studio:config-check`

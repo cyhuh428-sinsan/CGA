@@ -1269,6 +1269,46 @@ textarea { min-height: 84px; resize: vertical; }
   flex: 1 1 auto;
 }
 
+.settings-search-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.settings-inline-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-inline-actions .secondary-action {
+  min-width: 72px;
+}
+
+.settings-test-result {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #d8e0ea;
+  background: #ffffff;
+}
+
+.settings-test-result strong {
+  color: #2f5d8f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.settings-test-result p {
+  margin: 0;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .settings-master-detail {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
@@ -1464,6 +1504,58 @@ textarea { min-height: 84px; resize: vertical; }
   gap: 18px;
 }
 
+.messenger-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(420px, 0.95fr);
+  gap: 12px;
+}
+
+.messenger-settings-layout__list,
+.messenger-settings-layout__detail {
+  min-height: 300px;
+}
+
+.messenger-settings__detail-header,
+.messenger-settings__recommended-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.messenger-settings__detail-header h3,
+.messenger-settings__recommended-header h3 {
+  margin: 0;
+  color: #2b3645;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.messenger-settings__arrow-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.messenger-settings__add {
+  margin-bottom: 12px;
+}
+
+.messenger-settings__recommended {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid #e8edf2;
+}
+
+.messenger-settings__recommended-header strong {
+  display: inline-block;
+  margin-top: 4px;
+  color: #344154;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .messenger-settings__form-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1602,15 +1694,24 @@ textarea { min-height: 84px; resize: vertical; }
   .settings-defaults-grid--three {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .messenger-settings-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
+  .settings-search-grid,
   .settings-defaults-grid--two,
   .settings-defaults-grid--three {
     grid-template-columns: 1fr;
   }
 
   .settings-module-field {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-inline-actions {
     grid-template-columns: 1fr;
   }
 }

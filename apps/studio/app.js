@@ -9809,6 +9809,7 @@ function renderConfigureAidotScreen() {
   const moduleRows = getAidotIntentRows().filter((row) => row.type === "module");
   const adminChannels = Array.isArray(currentAdminResources.channels) ? currentAdminResources.channels : [];
   const selectedFloatingButton = floatingButtons[0] || null;
+  const selectedBlocklist = blocklistItems[0] || null;
   const selectedRule = ruleItems[0] || null;
   const selectedSmalltalk = smalltalkItems[0] || null;
   const selectedBotstationChannel = adminChannels[0] || null;
@@ -9822,6 +9823,11 @@ function renderConfigureAidotScreen() {
         name: selectedBotstationChannel.name || selectedBotstationChannel.channel_name || "-",
       }
     : null;
+  const ruleTargetOptions = [
+    { value: "", label: "선택 안 함" },
+    ...recommendedIntents.map((row) => ({ value: row.id, label: row.displayName || row.id })),
+    ...moduleRows.map((row) => ({ value: row.id, label: row.displayName || row.id })),
+  ];
   const emptyState = (message) => `<div class="command-empty">${escapeText(message)}</div>`;
   const formatSettingsDateTime = (value) => {
     if (!value) return "-";
@@ -10535,16 +10541,29 @@ function renderConfigureAidotScreen() {
             <button type="button" class="secondary-action">+ 제외/무시 목록 추가</button>
             <button type="button" class="secondary-action">파일 업로드</button>
             <button type="button" class="secondary-action">파일 다운로드</button>
-            <div class="settings-toolbar__spacer"></div>
-            <input value="" placeholder="제외/무시 목록 검색" />
+            <button type="button" class="secondary-action" ${selectedBlocklist ? "" : "disabled"}>↑</button>
+            <button type="button" class="secondary-action" ${selectedBlocklist ? "" : "disabled"}>↓</button>
+            <button type="button" class="secondary-action secondary-action--danger" ${selectedBlocklist ? "" : "disabled"}>삭제</button>
           </div>
-          <div class="settings-master-detail">
-            <div class="settings-list-card">
-              <div class="settings-list-card__header settings-list-card__header--blocklist">
-                <span class="settings-list-card__check"></span><span>이름</span><span>유형</span><span>패턴</span><span>사용</span><span>최종수정</span><span>수정자</span>
+          <div class="settings-search-grid">
+            <label class="settings-form-card">
+              <span>제외/무시 목록 검색</span>
+              <input type="text" class="bot-settings-card__input" value="" placeholder="제외/무시 목록 이름 또는 제외/무시 텍스트/정규식" />
+            </label>
+            <label class="settings-form-card">
+              <span>발화 제외/무시 테스트</span>
+              <div class="settings-inline-actions">
+                <input type="text" class="bot-settings-card__input" value="" placeholder="제외/무시 규칙을 시험할 발화" />
+                <button type="button" class="secondary-action">테스트</button>
               </div>
+            </label>
+          </div>
+          <div class="settings-list-card">
+            <div class="settings-list-card__header settings-list-card__header--blocklist">
+              <span class="settings-list-card__check"><input type="checkbox" /></span><span>제외/무시 목록 이름</span><span>유형</span><span>제외/무시 텍스트/정규식</span><span>사용</span><span>최종수정일시</span><span>최종수정자</span>
+            </div>
             ${blocklistItems.map((item) => `
-              <div class="settings-list-row settings-list-row--blocklist">
+              <div class="settings-list-row settings-list-row--blocklist${selectedBlocklist && item.id === selectedBlocklist.id ? " is-selected" : ""}">
                 <span class="settings-list-card__check"><input type="checkbox" /></span>
                 <button type="button" class="settings-link-button">${escapeText(item.name || "-")}</button>
                 <span>${escapeText(item.type === "1" || item.type === "regex" ? "정규식" : "텍스트")}</span>
@@ -10554,13 +10573,54 @@ function renderConfigureAidotScreen() {
                 <span>${escapeText(item.updatedBy || item.updated_by || "-")}</span>
               </div>
             `).join("") || emptyState("등록된 제외/무시 목록이 없습니다.")}
-            </div>
-            <div class="settings-detail-card">
-              <h3>제외/무시 규칙 테스트 결과</h3>
-              <label><span>발화 제외/무시 테스트</span><input value="" placeholder="제외/무시 규칙을 시험할 발화를 입력하세요." /></label>
-              <label><span>매칭 결과</span><textarea rows="4" readonly>${escapeText(blocklistItems.length ? "테스트 문장을 입력한 뒤 결과를 확인하세요." : "등록된 제외/무시 목록이 없습니다.")}</textarea></label>
-            </div>
           </div>
+          <div class="settings-test-result">
+            <strong>제외/무시 규칙 테스트 결과</strong>
+            ${
+              blocklistItems.length
+                ? `<p>테스트 발화를 입력하면 매칭된 제외/무시 목록이 여기에 표시됩니다.</p>`
+                : `<p>등록된 제외/무시 목록이 없습니다.</p>`
+            }
+          </div>
+          ${selectedBlocklist ? `
+            <div class="settings-dialog settings-dialog--wide settings-dialog--inline" role="dialog" aria-label="제외/무시 목록 상세">
+              <div class="settings-dialog__header">
+                <strong>제외/무시 목록 상세</strong>
+                <button type="button" class="settings-dialog__close" aria-label="닫기">×</button>
+              </div>
+              <div class="settings-dialog__body settings-dialog__body--form">
+                <div class="settings-form-grid settings-form-grid--compact">
+                  <label class="settings-form-card">
+                    <span>제외/무시 목록 이름</span>
+                    <input type="text" class="bot-settings-card__input" value="${escapeText(selectedBlocklist.name || "")}" />
+                  </label>
+                  <label class="settings-form-card">
+                    <span>유형</span>
+                    <select class="bot-settings-card__select">
+                      <option value="word" ${(selectedBlocklist.type === "word" || selectedBlocklist.type === "0") ? "selected" : ""}>텍스트 제외/무시</option>
+                      <option value="regex" ${(selectedBlocklist.type === "regex" || selectedBlocklist.type === "1") ? "selected" : ""}>정규식 제외/무시</option>
+                    </select>
+                  </label>
+                  <label class="settings-form-card settings-form-card--wide">
+                    <span>제외/무시 텍스트/정규식</span>
+                    <textarea class="bot-settings-intro__textarea">${escapeText(selectedBlocklist.pattern || "")}</textarea>
+                  </label>
+                  <label class="settings-form-card settings-form-card--wide">
+                    <span>설명</span>
+                    <textarea class="bot-settings-intro__textarea">${escapeText(selectedBlocklist.description || "")}</textarea>
+                  </label>
+                  <label class="settings-form-card settings-form-card--check">
+                    <input type="checkbox" ${selectedBlocklist.enabled ? "checked" : ""} />
+                    <span>사용 여부</span>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-dialog__footer">
+                <button type="button" class="secondary-action">취소</button>
+                <button type="button" class="primary-action">확인</button>
+              </div>
+            </div>
+          ` : ""}
         </section>
       </section>
     </div>
@@ -10576,10 +10636,9 @@ function renderConfigureAidotScreen() {
             <button type="button" class="secondary-action">파일 업로드</button>
             <button type="button" class="secondary-action">파일 다운로드</button>
           </div>
-          <div class="settings-master-detail">
-            <div class="settings-list-card">
+          <div class="settings-list-card">
               <div class="settings-list-card__header settings-list-card__header--rule">
-                <span>룰명</span><span>설명</span><span>표현식</span><span>연결 대상</span><span>사용</span><span>최종수정</span><span>수정자</span>
+                <span>룰 이름</span><span>룰 설명</span><span>룰 표현식</span><span>연결할 의도/모듈</span><span>사용</span><span>최종수정일시</span><span>최종수정자</span>
               </div>
             ${ruleItems.map((item) => `
               <button type="button" class="settings-list-row settings-list-row--rule${selectedRule && item.id === selectedRule.id ? " is-selected" : ""}">
@@ -10592,12 +10651,6 @@ function renderConfigureAidotScreen() {
                 <span>${escapeText(item.updatedBy || item.updated_by || "-")}</span>
               </button>
             `).join("") || emptyState("등록된 룰이 없습니다.")}
-            </div>
-            <div class="settings-detail-card">
-              <h3>정규식 테스트</h3>
-              <label><span>정규식 테스트 문장</span><input value="" placeholder="테스트할 문장을 입력하세요." /></label>
-              <label><span>테스트 결과</span><textarea rows="4" readonly>${escapeText(ruleItems.length ? "테스트 문장을 입력한 뒤 결과를 확인하세요." : "등록된 룰이 없습니다.")}</textarea></label>
-            </div>
           </div>
           ${selectedRule ? `
             <div class="settings-dialog settings-dialog--wide settings-dialog--inline" role="dialog" aria-label="룰 상세 정보">
@@ -10623,13 +10676,14 @@ function renderConfigureAidotScreen() {
                     <span>정규식 테스트</span>
                     <div class="entity-value-dialog__pattern-test-row">
                       <input type="text" class="rule-settings__regex-test-input" value="" placeholder="테스트할 문장을 입력하세요." />
+                      <button type="button" class="secondary-action">정규식 확인</button>
                       <button type="button" class="secondary-action">테스트</button>
                     </div>
                   </div>
                   <label class="settings-form-card">
                     <span>연결할 의도/모듈</span>
                     <select class="rule-settings__target-select">
-                      <option>${escapeText(selectedRule.target || "선택 안 함")}</option>
+                      ${ruleTargetOptions.map((option) => `<option value="${escapeText(option.value)}" ${String(selectedRule.target || "") === String(option.value) ? "selected" : ""}>${escapeText(option.label)}</option>`).join("")}
                     </select>
                   </label>
                   <label class="settings-form-card settings-form-card--check">
@@ -10655,13 +10709,17 @@ function renderConfigureAidotScreen() {
         <section class="bot-settings-section">
           <h2>스몰토크</h2>
           <div class="settings-toolbar">
-            <button type="button" class="secondary-action">+ 스몰토크 추가</button>
+            <label class="settings-form-card settings-form-card--check">
+              <input type="checkbox" ${smalltalkItems.length ? "checked" : ""} />
+              <span>스몰토크 사용</span>
+            </label>
             <div class="settings-toolbar__spacer"></div>
+            <button type="button" class="secondary-action">+ 스몰토크 추가</button>
             <button type="button" class="secondary-action">↑</button>
             <button type="button" class="secondary-action">↓</button>
+            <button type="button" class="secondary-action secondary-action--danger" ${selectedSmalltalk ? "" : "disabled"}>삭제</button>
           </div>
-          <div class="settings-master-detail">
-            <div class="settings-list-card">
+          <div class="settings-list-card">
               <div class="settings-list-card__header settings-list-card__header--smalltalk">
                 <span>스몰토크명</span><span>우선순위</span><span>사용자 메시지</span><span>봇 메시지</span><span>최종수정</span><span>수정자</span>
               </div>
@@ -10675,12 +10733,6 @@ function renderConfigureAidotScreen() {
                 <span>${escapeText(item.updatedBy || item.updated_by || item.createdBy || "-")}</span>
               </button>
             `).join("") || emptyState("등록된 스몰토크가 없습니다.")}
-            </div>
-            <div class="settings-detail-card">
-              <h3>스몰토크 사용</h3>
-              <label class="settings-toggle"><input type="checkbox" ${smalltalkItems.length ? "checked" : ""} /><span>${smalltalkItems.length ? "사용" : "미사용"}</span></label>
-              <p class="muted-line">목록 선택 기준으로 Aidot 상세 편집 레이어를 아래에 맞췄습니다.</p>
-            </div>
           </div>
           ${selectedSmalltalk ? `
             <div class="settings-dialog settings-dialog--smalltalk settings-dialog--inline" role="dialog" aria-label="스몰토크 상세">
@@ -10699,13 +10751,17 @@ function renderConfigureAidotScreen() {
                   </label>
                   <label class="settings-smalltalk-field">
                     <span>우선순위*</span>
-                    <select class="bot-settings-card__select"><option>Medium</option></select>
+                    <select class="bot-settings-card__select">
+                      <option value="High" ${selectedSmalltalk.priority === "High" ? "selected" : ""}>High</option>
+                      <option value="Medium" ${!selectedSmalltalk.priority || selectedSmalltalk.priority === "Medium" ? "selected" : ""}>Medium</option>
+                      <option value="Low" ${selectedSmalltalk.priority === "Low" ? "selected" : ""}>Low</option>
+                    </select>
                   </label>
                   <div class="settings-smalltalk-meta">
-                    <span><strong>등록자</strong>-</span>
-                    <span><strong>등록일자</strong>-</span>
-                    <span><strong>최종수정자</strong>-</span>
-                    <span><strong>최종수정일시</strong>-</span>
+                    <span><strong>등록자</strong>${escapeText(selectedSmalltalk.createdBy || "-")}</span>
+                    <span><strong>등록일자</strong>${formatSettingsDateTime(selectedSmalltalk.createdAt || "")}</span>
+                    <span><strong>최종수정자</strong>${escapeText(selectedSmalltalk.updatedBy || selectedSmalltalk.createdBy || "-")}</span>
+                    <span><strong>최종수정일시</strong>${formatSettingsDateTime(selectedSmalltalk.updatedAt || selectedSmalltalk.createdAt || "")}</span>
                   </div>
                 </div>
                 <div class="settings-message-grid settings-message-grid--smalltalk">
@@ -10768,7 +10824,7 @@ function renderConfigureAidotScreen() {
             <div class="botstation-settings__status">
               <span>봇스테이션</span>
               <label class="botstation-settings__switch"><input type="checkbox" checked /><span>사용</span></label>
-              <span class="botstation-settings__connected">${currentBot.status === "operating" ? "운영버전 연결 가능" : "연결 가능"}</span>
+              <span class="botstation-settings__connected">${adminChannels.length ? "봇이 연결되었습니다." : ""}</span>
             </div>
             <div class="botstation-settings__table-wrap">
               <div class="botstation-settings__count">전체 ${adminChannels.length}개</div>
