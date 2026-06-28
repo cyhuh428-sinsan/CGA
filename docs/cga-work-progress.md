@@ -5662,3 +5662,26 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `node --check apps/studio/app.js`
   - `git diff --check -- apps/studio/app.js`
   - `npm run studio:check`
+
+## 2026-06-28 04:34 KST
+
+### `AI 모델 설정` / `기본값 설정` 하드코딩 값 제거
+
+- `02 봇 설정`의 상단 두 화면이
+  실제 저장값이 아니라 임의 기본 수치로 보이던 문제를 정리했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - `AI 모델 설정`
+    - `ai_config`, `conversation_defaults`, `configuration_scoring` 계열 추가 필드가 있으면 그 값을 우선 사용
+    - 값이 없으면 임의 숫자를 넣지 않고 `미설정` 기준으로 표출
+    - Vector DB, 자동분류 가중치 영역도
+      모드와 저장값 기준으로만 표시하도록 정리
+  - `기본값 설정`
+    - Cut-off, QA, 타임아웃, 모듈 연결, Validation, Oversampling, 버튼 선택 옵션에 남아 있던
+      임의 숫자/선택값 제거
+    - boolean / option 필드는 `미설정` 상태를 명시적으로 표출하도록 정리
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check -- apps/studio/app.js`
+  - `npm run studio:check`

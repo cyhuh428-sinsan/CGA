@@ -9623,48 +9623,107 @@ function renderConfigureAidotScreen() {
   const nluTypeLabel = nluTypeLabelMap[derivedNluType] || "ML";
   const nluModelLabel = nluModelLabelMap[derivedNluModel] || derivedNluModel;
   const answerModeLabel = answerModeLabelMap[derivedAnswerMode] || derivedAnswerMode;
+  const aiExtraConfig = currentVersionSystemConfigExtraFields.ai_config && typeof currentVersionSystemConfigExtraFields.ai_config === "object" && !Array.isArray(currentVersionSystemConfigExtraFields.ai_config)
+    ? currentVersionSystemConfigExtraFields.ai_config
+    : currentVersionLegacyExtraFields.ai_config && typeof currentVersionLegacyExtraFields.ai_config === "object" && !Array.isArray(currentVersionLegacyExtraFields.ai_config)
+      ? currentVersionLegacyExtraFields.ai_config
+      : {};
+  const conversationExtraConfig = currentVersionSystemConfigExtraFields.conversation_defaults && typeof currentVersionSystemConfigExtraFields.conversation_defaults === "object" && !Array.isArray(currentVersionSystemConfigExtraFields.conversation_defaults)
+    ? currentVersionSystemConfigExtraFields.conversation_defaults
+    : currentVersionLegacyExtraFields.conversation_defaults && typeof currentVersionLegacyExtraFields.conversation_defaults === "object" && !Array.isArray(currentVersionLegacyExtraFields.conversation_defaults)
+      ? currentVersionLegacyExtraFields.conversation_defaults
+      : {};
+  const scoringExtraConfig = currentVersionSystemConfigExtraFields.configuration_scoring && typeof currentVersionSystemConfigExtraFields.configuration_scoring === "object" && !Array.isArray(currentVersionSystemConfigExtraFields.configuration_scoring)
+    ? currentVersionSystemConfigExtraFields.configuration_scoring
+    : currentVersionLegacyExtraFields.configuration_scoring && typeof currentVersionLegacyExtraFields.configuration_scoring === "object" && !Array.isArray(currentVersionLegacyExtraFields.configuration_scoring)
+      ? currentVersionLegacyExtraFields.configuration_scoring
+      : {};
+  const readConfigValue = (sources, paths, fallback = undefined) => {
+    for (const source of sources) {
+      if (!source || typeof source !== "object") continue;
+      for (const path of paths) {
+        let current = source;
+        let valid = true;
+        for (const key of path) {
+          if (!current || typeof current !== "object" || !(key in current)) {
+            valid = false;
+            break;
+          }
+          current = current[key];
+        }
+        if (valid && current !== undefined && current !== null && current !== "") return current;
+      }
+    }
+    return fallback;
+  };
+  const formatInputValue = (value) => value === undefined || value === null ? "" : String(value);
+  const renderBooleanSelect = (value) => `
+    <select>
+      <option value="" ${typeof value !== "boolean" ? "selected" : ""}>미설정</option>
+      <option value="true" ${value === true ? "selected" : ""}>사용</option>
+      <option value="false" ${value === false ? "selected" : ""}>미사용</option>
+    </select>
+  `;
+  const renderOptionSelect = (value, options) => `
+    <select>
+      <option value="" ${!value ? "selected" : ""}>미설정</option>
+      ${options.map((option) => `<option value="${escapeText(option.value)}" ${String(value || "") === String(option.value) ? "selected" : ""}>${escapeText(option.label)}</option>`).join("")}
+    </select>
+  `;
   const conversationDefaults = {
     ml: {
-      cutOffScore: 0.75,
-      similarIntentScore: 0.85,
-      maxIntentResults: 3
+      cutOffScore: readConfigValue([conversationExtraConfig, aiExtraConfig], [["ml", "cutOffScore"], ["ml", "cut_off_score"], ["cut_off_score"]]),
+      similarIntentScore: readConfigValue([conversationExtraConfig, aiExtraConfig], [["ml", "similarIntentScore"], ["ml", "similar_intent_score"], ["similar_intent_score"]]),
+      maxIntentResults: readConfigValue([conversationExtraConfig, aiExtraConfig], [["ml", "maxIntentResults"], ["ml", "max_intent_results"], ["max_intent_results"]]),
     },
     qa: {
-      faqCutOffScore: 0.5,
-      extractiveCutOffScore: 0.5,
-      searchMaxResults: 3,
-      faqMaxIntentResults: 1,
-      extractiveMaxIntentResults: 3,
-      answerPriority: "qa-first"
+      faqCutOffScore: readConfigValue([conversationExtraConfig, aiExtraConfig], [["qa", "faqCutOffScore"], ["qa", "faq_cut_off_score"], ["faq_cut_off_score"]]),
+      extractiveCutOffScore: readConfigValue([conversationExtraConfig, aiExtraConfig], [["qa", "extractiveCutOffScore"], ["qa", "extractive_cut_off_score"], ["extractive_cut_off_score"]]),
+      searchMaxResults: readConfigValue([conversationExtraConfig, aiExtraConfig], [["qa", "searchMaxResults"], ["qa", "search_max_results"], ["search_max_results"]]),
+      faqMaxIntentResults: readConfigValue([conversationExtraConfig, aiExtraConfig], [["qa", "faqMaxIntentResults"], ["qa", "faq_max_intent_results"], ["faq_max_intent_results"]]),
+      extractiveMaxIntentResults: readConfigValue([conversationExtraConfig, aiExtraConfig], [["qa", "extractiveMaxIntentResults"], ["qa", "extractive_max_intent_results"], ["extractive_max_intent_results"]]),
+      answerPriority: readConfigValue([conversationExtraConfig, aiExtraConfig], [["qa", "answerPriority"], ["qa", "answer_priority"], ["answer_priority"]]),
     },
     timeout: {
-      enabled: true,
-      seconds: 120,
-      applyToPushMessage: false
+      enabled: readConfigValue([conversationExtraConfig, aiExtraConfig], [["timeout", "enabled"], ["timeout", "use"], ["timeout_use"]]),
+      seconds: readConfigValue([conversationExtraConfig, aiExtraConfig], [["timeout", "seconds"], ["timeout", "time"], ["timeout_seconds"], ["timeout_time"]]),
+      applyToPushMessage: readConfigValue([conversationExtraConfig, aiExtraConfig], [["timeout", "applyToPushMessage"], ["timeout", "apply_to_push_message"], ["push_message_timeout"]]),
     },
     entityPrompt: {
-      maxRepeatCount: 2
+      maxRepeatCount: readConfigValue([conversationExtraConfig, aiExtraConfig], [["entityPrompt", "maxRepeatCount"], ["entityPrompt", "max_repeat_count"], ["entity_prompt_max_repeat_count"]]),
     },
     intentDetection: {
-      retryCount: 2,
-      overflowModule: "",
-      preprocessModule: "",
-      beforeSessionEndModule: "",
-      multiIntentButtonModule: ""
+      retryCount: readConfigValue([conversationExtraConfig, aiExtraConfig], [["intentDetection", "retryCount"], ["intentDetection", "retry_count"], ["intent_retry_count"]]),
+      overflowModule: readConfigValue([conversationExtraConfig, aiExtraConfig], [["intentDetection", "overflowModule"], ["intentDetection", "overflow_module"], ["intent_overflow_module"]], ""),
+      preprocessModule: readConfigValue([conversationExtraConfig, aiExtraConfig], [["intentDetection", "preprocessModule"], ["intentDetection", "preprocess_module"], ["preprocess_module"]], ""),
+      beforeSessionEndModule: readConfigValue([conversationExtraConfig, aiExtraConfig], [["intentDetection", "beforeSessionEndModule"], ["intentDetection", "before_session_end_module"], ["before_session_end_module"]], ""),
+      multiIntentButtonModule: readConfigValue([conversationExtraConfig, aiExtraConfig], [["intentDetection", "multiIntentButtonModule"], ["intentDetection", "multi_intent_button_module"], ["multi_intent_button_module"]], ""),
     },
     validation: {
-      mode: "random",
-      imbalanceOversampling: false
+      mode: readConfigValue([conversationExtraConfig, aiExtraConfig], [["validation", "mode"], ["validation", "status_mode"], ["validation_mode"]]),
+      imbalanceOversampling: readConfigValue([conversationExtraConfig, aiExtraConfig], [["validation", "imbalanceOversampling"], ["validation", "imbalance_oversampling"], ["imbalance_oversampling"]]),
     },
     buttonSelection: {
-      option: "exact"
+      option: readConfigValue([conversationExtraConfig, aiExtraConfig], [["buttonSelection", "option"], ["buttonSelection", "selection_option"], ["button_selection_option"]]),
     },
     exactingMatching: {
-      enabled: true
+      enabled: readConfigValue([conversationExtraConfig, aiExtraConfig], [["exactingMatching", "enabled"], ["exactingMatching", "use"], ["exacting_matching"]]),
     },
     runtime: {
-      maxCardsBetweenUserResponses: 100
+      maxCardsBetweenUserResponses: readConfigValue([conversationExtraConfig, aiExtraConfig], [["runtime", "maxCardsBetweenUserResponses"], ["runtime", "max_cards_between_user_responses"], ["max_cards_between_user_responses"]]),
     }
+  };
+  const vectorIntentEnabled = readConfigValue([aiExtraConfig], [["vectorConnections", "intent", "enabled"], ["vector_connections", "intent", "enabled"], ["intent_vector_enabled"]]);
+  const vectorIntentIndex = readConfigValue([aiExtraConfig], [["vectorConnections", "intent", "index_name"], ["vector_connections", "intent", "index_name"], ["intent_index_name"]], "");
+  const vectorAnswerEnabled = readConfigValue([aiExtraConfig], [["vectorConnections", "answer", "enabled"], ["vector_connections", "answer", "enabled"], ["answer_vector_enabled"]]);
+  const vectorAnswerIndex = readConfigValue([aiExtraConfig], [["vectorConnections", "answer", "index_name"], ["vector_connections", "answer", "index_name"], ["answer_index_name"]], "");
+  const configurationScoring = {
+    dictionaryWeight: readConfigValue([scoringExtraConfig, aiExtraConfig], [["dictionaryWeight"], ["dictionary_weight"]]),
+    entityWeight: readConfigValue([scoringExtraConfig, aiExtraConfig], [["entityWeight"], ["entity_weight"]]),
+    wordWeight: readConfigValue([scoringExtraConfig, aiExtraConfig], [["wordWeight"], ["word_weight"]]),
+    gramWeight: readConfigValue([scoringExtraConfig, aiExtraConfig], [["gramWeight"], ["gram_weight"]]),
+    particleEndingWeight: readConfigValue([scoringExtraConfig, aiExtraConfig], [["particleEndingWeight"], ["particle_ending_weight"]]),
+    keyMatchScore: readConfigValue([scoringExtraConfig, aiExtraConfig], [["keyMatchScore"], ["key_match_score"]]),
   };
   const floatingButtons = [...currentFloatingButtonAssets]
     .map((item, index) => {
@@ -9882,7 +9941,7 @@ function renderConfigureAidotScreen() {
           <label>NLU 방식 *<input value="${escapeText(nluTypeLabel)}" placeholder="미설정" readonly /></label>
           <label>NLU 모델 *<input value="${escapeText(nluModelLabel)}" placeholder="미설정" readonly /></label>
           <label>답변 방식 *<input value="${escapeText(answerModeLabel)}" placeholder="미설정" readonly /></label>
-          <div class="profile-dots"><span></span><b></b><span></span></div>
+          <div class="profile-dots"><span></span><span></span><span></span></div>
         </div>
         <section class="aidot-setting-block">
           <header><strong>AI 조합 안내</strong><span>언어, NLU 방식, 답변 방식은 봇 생성 시 고정됩니다. 모델은 학습 전까지 변경할 수 있고 학습 완료 후에는 고정됩니다.</span></header>
@@ -9894,20 +9953,26 @@ function renderConfigureAidotScreen() {
             <div class="detail-asset-row"><strong>답변 방식</strong><span>${escapeText(answerModeLabel || "-")}</span><span>봇 생성 시 고정</span></div>
           </div>
         </section>
+        ${derivedNluType === "semantic_vector" || derivedNluType === "semantic_external" ? `
         <section class="aidot-setting-block">
           <header><strong>Intent Vector DB 연결</strong><span>Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</span></header>
-          <div class="rag-form-grid"><label>사용 여부<select><option ${derivedNluType === "semantic_vector" ? "selected" : ""}>${derivedNluType === "semantic_vector" ? "사용" : "미설정"}</option></select></label><label>Index 이름<input value="${escapeText(derivedNluType === "semantic_vector" ? `${botId || "bot"}-intent` : "")}" placeholder="미설정" /></label></div>
+          <div class="rag-form-grid"><label>사용 여부${renderBooleanSelect(vectorIntentEnabled)}</label><label>Index 이름<input value="${escapeText(formatInputValue(vectorIntentIndex))}" placeholder="미설정" /></label></div>
         </section>
+        ` : ""}
+        ${derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag" ? `
         <section class="aidot-setting-block">
           <header><strong>Answer Vector DB 연결</strong><span>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 Answer Vector DB에 저장합니다.</span></header>
-          <div class="rag-form-grid"><label>사용 여부<select><option ${derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag" ? "selected" : ""}>${derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag" ? "사용" : "미설정"}</option></select></label><label>Index 이름<input value="${escapeText(derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag" ? `${botId || "bot"}-answer` : "")}" placeholder="미설정" /></label></div>
+          <div class="rag-form-grid"><label>사용 여부${renderBooleanSelect(vectorAnswerEnabled)}</label><label>Index 이름<input value="${escapeText(formatInputValue(vectorAnswerIndex))}" placeholder="미설정" /></label></div>
         </section>
+        ` : ""}
+        ${derivedNluType !== "llm" ? `
         <section class="aidot-setting-block">
           <header><strong>구성 자동분류 가중치</strong><span>구성 화면의 의도 후보 분류에서 사전, 개체, 단어, 글자 조각, 조사/어미 반영 비율을 조정합니다.</span></header>
           <div class="aidot-weight-grid">
-            <label>사전 대표어<input value="1.2" /></label><label>개체<input value="1.2" /></label><label>명사/동사<input value="1" /></label><label>글자 조각<input value="0.2" /></label><label>조사/어미<input value="0.05" /></label><label>대표어 일치 최소점수<input value="0.82" /></label>
+            <label>사전 대표어<input value="${escapeText(formatInputValue(configurationScoring.dictionaryWeight))}" placeholder="미설정" /></label><label>개체<input value="${escapeText(formatInputValue(configurationScoring.entityWeight))}" placeholder="미설정" /></label><label>명사/동사<input value="${escapeText(formatInputValue(configurationScoring.wordWeight))}" placeholder="미설정" /></label><label>글자 조각<input value="${escapeText(formatInputValue(configurationScoring.gramWeight))}" placeholder="미설정" /></label><label>조사/어미<input value="${escapeText(formatInputValue(configurationScoring.particleEndingWeight))}" placeholder="미설정" /></label><label>대표어 일치 최소점수<input value="${escapeText(formatInputValue(configurationScoring.keyMatchScore))}" placeholder="미설정" /></label>
           </div>
         </section>
+        ` : ""}
         <label>소개<textarea>${escapeText(currentStudioState.bot.description || "")}</textarea></label>
       </section>
     </div>
@@ -9920,48 +9985,48 @@ function renderConfigureAidotScreen() {
           <header><strong>기본값 설정</strong><span>M/L 설정, QA 설정, 세션/대화 제어, 모듈 연결, 고급 설정을 Aidot 기준으로 관리합니다.</span></header>
           <div class="aidot-field-grid five">
             <label>봇 ID<input value="${escapeText(botId)}" readonly /></label>
-            <label>의도파악 Cut-off Score<input value="${conversationDefaults.ml.cutOffScore}" /></label>
-            <label>유사의도 Score<input value="${conversationDefaults.ml.similarIntentScore}" /></label>
-            <label>의도파악결과 최대개수<input value="${conversationDefaults.ml.maxIntentResults}" /></label>
-            <label>답변 우선순위<select><option ${conversationDefaults.qa.answerPriority === "qa-first" ? "selected" : ""}>Q/A 우선</option><option ${conversationDefaults.qa.answerPriority === "ml-first" ? "selected" : ""}>M/L 우선</option></select></label>
+            <label>의도파악 Cut-off Score<input value="${escapeText(formatInputValue(conversationDefaults.ml.cutOffScore))}" placeholder="미설정" /></label>
+            <label>유사의도 Score<input value="${escapeText(formatInputValue(conversationDefaults.ml.similarIntentScore))}" placeholder="미설정" /></label>
+            <label>의도파악결과 최대개수<input value="${escapeText(formatInputValue(conversationDefaults.ml.maxIntentResults))}" placeholder="미설정" /></label>
+            <label>답변 우선순위${renderOptionSelect(conversationDefaults.qa.answerPriority, [{ value: "qa-first", label: "Q/A 우선" }, { value: "ml-first", label: "M/L 우선" }])}</label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>QA 설정</strong><span>FAQ Search, Extractive QA Search 기준 점수와 결과 개수를 설정합니다.</span></header>
           <div class="aidot-field-grid five">
-            <label>FAQ Cut-off Score<input value="${conversationDefaults.qa.faqCutOffScore}" /></label>
-            <label>Extractive QA Cut-off Score<input value="${conversationDefaults.qa.extractiveCutOffScore}" /></label>
-            <label>검색결과 최대개수<input value="${conversationDefaults.qa.searchMaxResults}" /></label>
-            <label>FAQ 의도파악결과 최대개수<input value="${conversationDefaults.qa.faqMaxIntentResults}" /></label>
-            <label>Extractive QA 의도파악결과 최대개수<input value="${conversationDefaults.qa.extractiveMaxIntentResults}" /></label>
+            <label>FAQ Cut-off Score<input value="${escapeText(formatInputValue(conversationDefaults.qa.faqCutOffScore))}" placeholder="미설정" /></label>
+            <label>Extractive QA Cut-off Score<input value="${escapeText(formatInputValue(conversationDefaults.qa.extractiveCutOffScore))}" placeholder="미설정" /></label>
+            <label>검색결과 최대개수<input value="${escapeText(formatInputValue(conversationDefaults.qa.searchMaxResults))}" placeholder="미설정" /></label>
+            <label>FAQ 의도파악결과 최대개수<input value="${escapeText(formatInputValue(conversationDefaults.qa.faqMaxIntentResults))}" placeholder="미설정" /></label>
+            <label>Extractive QA 의도파악결과 최대개수<input value="${escapeText(formatInputValue(conversationDefaults.qa.extractiveMaxIntentResults))}" placeholder="미설정" /></label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>세션 / 대화 제어</strong><span>타임아웃, 개체 반복, 의도파악 시도 횟수와 실패 시 모듈 연결을 정의합니다.</span></header>
           <div class="aidot-field-grid five">
-            <label>타임아웃 사용<select><option ${conversationDefaults.timeout.enabled ? "selected" : ""}>${conversationDefaults.timeout.enabled ? "사용" : "미사용"}</option></select></label>
-            <label>타임아웃 시간(초)<input value="${conversationDefaults.timeout.seconds}" /></label>
-            <label>Push Message 타임아웃 적용<select><option ${conversationDefaults.timeout.applyToPushMessage ? "selected" : ""}>${conversationDefaults.timeout.applyToPushMessage ? "사용" : "미사용"}</option></select></label>
-            <label>개체 질문 최대 반복 횟수<input value="${conversationDefaults.entityPrompt.maxRepeatCount}" /></label>
-            <label>의도파악 시도 횟수<input value="${conversationDefaults.intentDetection.retryCount}" /></label>
+            <label>타임아웃 사용${renderBooleanSelect(conversationDefaults.timeout.enabled)}</label>
+            <label>타임아웃 시간(초)<input value="${escapeText(formatInputValue(conversationDefaults.timeout.seconds))}" placeholder="미설정" /></label>
+            <label>Push Message 타임아웃 적용${renderBooleanSelect(conversationDefaults.timeout.applyToPushMessage)}</label>
+            <label>개체 질문 최대 반복 횟수<input value="${escapeText(formatInputValue(conversationDefaults.entityPrompt.maxRepeatCount))}" placeholder="미설정" /></label>
+            <label>의도파악 시도 횟수<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.retryCount))}" placeholder="미설정" /></label>
           </div>
           <div class="rag-form-grid">
-              <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="${escapeText(conversationDefaults.intentDetection.overflowModule)}" placeholder="미설정" readonly /></label>
+              <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.overflowModule))}" placeholder="미설정" readonly /></label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>모듈 연결 / 고급 설정</strong><span>전처리, 세션 종료 전, 다중 의도 버튼 모듈과 Validation Set, Oversampling, 버튼 선택 옵션을 설정합니다.</span></header>
           <div class="rag-form-grid">
-              <label>전처리 모듈<input value="${escapeText(conversationDefaults.intentDetection.preprocessModule)}" placeholder="미설정" readonly /></label>
-              <label>Session End 전 실행할 모듈<input value="${escapeText(conversationDefaults.intentDetection.beforeSessionEndModule)}" placeholder="미설정" readonly /></label>
-              <label>다중 의도 버튼 추가 모듈<input value="${escapeText(conversationDefaults.intentDetection.multiIntentButtonModule)}" placeholder="미설정" readonly /></label>
-              <label>버튼 선택 옵션<select><option ${conversationDefaults.buttonSelection.option === "exact" ? "selected" : ""}>Exact</option><option ${conversationDefaults.buttonSelection.option === "contains" ? "selected" : ""}>Contains</option></select></label>
+              <label>전처리 모듈<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.preprocessModule))}" placeholder="미설정" readonly /></label>
+              <label>Session End 전 실행할 모듈<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.beforeSessionEndModule))}" placeholder="미설정" readonly /></label>
+              <label>다중 의도 버튼 추가 모듈<input value="${escapeText(formatInputValue(conversationDefaults.intentDetection.multiIntentButtonModule))}" placeholder="미설정" readonly /></label>
+              <label>버튼 선택 옵션${renderOptionSelect(conversationDefaults.buttonSelection.option, [{ value: "contains", label: "Contains" }, { value: "exact", label: "Exact" }])}</label>
           </div>
           <div class="aidot-field-grid">
-            <label>Validation Set 상태 설정<select><option ${conversationDefaults.validation.mode === "random" ? "selected" : ""}>Random</option><option ${conversationDefaults.validation.mode === "fixed" ? "selected" : ""}>Fixed</option></select></label>
-            <label>Imbalance Oversampling 설정<select><option ${conversationDefaults.validation.imbalanceOversampling ? "selected" : ""}>${conversationDefaults.validation.imbalanceOversampling ? "사용" : "미사용"}</option></select></label>
+            <label>Validation Set 상태 설정${renderOptionSelect(conversationDefaults.validation.mode, [{ value: "random", label: "Random" }, { value: "fixed", label: "Fixed" }])}</label>
+            <label>Imbalance Oversampling 설정${renderBooleanSelect(conversationDefaults.validation.imbalanceOversampling)}</label>
             <label>TTS URL<input value="" placeholder="미설정" /></label>
-            <label>사용자 응답 사이 최대 카드 수<input value="${conversationDefaults.runtime.maxCardsBetweenUserResponses}" /></label>
+            <label>사용자 응답 사이 최대 카드 수<input value="${escapeText(formatInputValue(conversationDefaults.runtime.maxCardsBetweenUserResponses))}" placeholder="미설정" /></label>
           </div>
         </section>
       </section>
