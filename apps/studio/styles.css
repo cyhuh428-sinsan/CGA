@@ -654,9 +654,16 @@ button:disabled { opacity: .48; }
 
 .screen-card { padding: 16px; scroll-margin-top: 0; }
 .screen-card.selected { border-color: var(--muted-line); box-shadow: none; }
-.screen-heading { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; margin-bottom: 14px; }
+.screen-heading { display: grid; grid-template-columns: 42px 1fr auto; align-items: start; gap: 12px; margin-bottom: 16px; }
 .screen-heading > span { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: var(--teal); color: #fff; font-weight: 800; }
-.screen-heading h3 { font-size: var(--font-title); }
+.screen-heading__title,
+.screen-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+.screen-heading h3 { font-size: var(--font-title); line-height: 1.2; }
 .screen-heading p { color: var(--muted); margin-top: 4px; font-size: var(--font-desc); }
 .screen-heading__actions { display: flex; justify-content: flex-end; align-items: center; }
 .screen-heading__actions .ghost { min-width: 64px; }
@@ -729,8 +736,8 @@ textarea { min-height: 84px; resize: vertical; }
 .aidot-intent-empty { padding: 12px; color: var(--muted); font-size: var(--font-body); }
 .create-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.75fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.75fr);
+  gap: 18px;
   align-items: start;
   min-height: 0;
   height: calc(100vh - 195px);
@@ -740,39 +747,44 @@ textarea { min-height: 84px; resize: vertical; }
 .create-form-panel,
 .create-layout .status-panel.compact {
   border: 1px solid #d9e2ec;
-  border-radius: 8px;
-  background: #f8fafc;
-  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 
 .create-form-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
   align-items: start;
   min-height: 0;
   overflow: auto;
+  align-content: start;
 }
 
-.create-form-panel > .notice,
-.create-form-panel > .create-section:first-of-type {
-  grid-column: 1 / -1;
+.create-lower-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+  gap: 18px;
+  align-items: start;
 }
 
 .create-section {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 14px;
+  padding: 18px;
   border: 1px solid #d7e3f0;
-  border-radius: 8px;
+  border-radius: 14px;
   background: #ffffff;
 }
 
 .create-section__head {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 10px;
-  align-items: baseline;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #edf2f7;
 }
 
 .create-section__head strong {
@@ -780,16 +792,14 @@ textarea { min-height: 84px; resize: vertical; }
   font-size: var(--font-title);
 }
 
-.create-section__head span {
-  color: #64748b;
-  font-size: var(--font-desc);
-  line-height: 1.4;
-}
-
 .create-meta-grid {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.create-meta-grid--dense {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
 }
 
 .create-field--full {
@@ -811,6 +821,12 @@ textarea { min-height: 84px; resize: vertical; }
 
 .create-form-panel label {
   margin-bottom: 0;
+}
+
+.create-field__hint {
+  color: #94a3b8;
+  font-size: var(--font-desc);
+  line-height: 1.45;
 }
 
 .create-form-panel .create-field__missing {
@@ -867,6 +883,60 @@ textarea { min-height: 84px; resize: vertical; }
   margin: 0;
 }
 
+.create-action-copy {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.create-action-copy strong {
+  color: #0f2238;
+  font-size: var(--font-body);
+}
+
+.create-action-copy p {
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.create-dynamic-panels {
+  display: grid;
+  gap: 12px;
+}
+
+.create-context-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #d7e3f0;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.create-context-card__head {
+  display: grid;
+  gap: 6px;
+}
+
+.create-context-card__head strong {
+  color: #0f2238;
+  font-size: var(--font-body);
+}
+
+.create-context-card__head p {
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.create-context-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
 .channel-choice-row {
   display: grid;
   grid-template-columns: auto repeat(3, auto);
@@ -911,6 +981,19 @@ textarea { min-height: 84px; resize: vertical; }
   min-height: 0;
   height: 100%;
   overflow: auto;
+}
+
+.create-summary-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.create-summary-panel__head span {
+  color: #64748b;
+  font-size: var(--font-desc);
 }
 
 .create-layout .status-panel.compact .next-action {
@@ -4027,6 +4110,49 @@ button.management-table-row:hover,
   font-weight: 800;
   line-height: 1;
   padding: 0;
+}
+
+.help-icon--static {
+  display: inline-grid;
+  place-items: center;
+}
+
+.inline-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  outline: none;
+}
+
+.inline-help::after {
+  content: attr(data-help);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: var(--font-desc);
+  line-height: 1.55;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 10;
+  white-space: normal;
+}
+
+.inline-help:hover::after,
+.inline-help:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .help-modal {

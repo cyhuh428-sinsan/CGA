@@ -293,32 +293,38 @@
       <section id="create" data-screen-id="create" class="screen-card">
         <div class="screen-heading">
           <span>01</span>
-          <div><h3 data-i18n="create.title">Bot Creation</h3><p data-i18n="create.body">Decide bot-level structural settings before entering the detailed bot setup screen.</p></div>
+          <div class="screen-heading__title">
+            <h3 data-i18n="create.title">Bot Creation</h3>
+            <span class="inline-help" tabindex="0" data-help="이후 설정 화면에 들어가기 전에 봇 수준의 구조 선택을 확정합니다.">
+              <span class="help-icon help-icon--static" aria-hidden="true">i</span>
+            </span>
+          </div>
         </div>
         <div class="create-layout">
           <article class="create-form-panel">
-            <div class="notice info">Aidot 학습 이후 변경할 수 없는 항목은 모두 봇 생성에서 먼저 설정해야 합니다.</div>
             <section class="create-section">
               <div class="create-section__head">
                 <strong>기본 정보</strong>
-                <span>Aidot 봇 생성 항목 기준으로 필수값을 먼저 확정합니다.</span>
+                <span class="inline-help" tabindex="0" data-help="Aidot 봇 생성 항목 기준으로 필수값을 먼저 확정합니다.">
+                  <span class="help-icon help-icon--static" aria-hidden="true">i</span>
+                </span>
               </div>
               <div class="create-meta-grid">
-                <label class="create-field create-field--full">
+                <label class="create-field">
                   <span>봇 유형</span>
                   <select data-create-config="bot_kind">
                     <option value="bot">봇</option>
                     <option value="hub">봇 허브</option>
                   </select>
                 </label>
-                <label class="create-field create-field--full">
+                <label class="create-field">
                   <span>봇 모드</span>
                   <select data-create-config="bot_mode">
                     <option value="text">텍스트형</option>
                     <option value="voice">보이스형</option>
                   </select>
                 </label>
-                <label class="create-field create-field--full">
+                <label class="create-field">
                   <span>봇 프로필</span>
                   <select data-create-config="profile_key">
                     <option value="gray">gray</option>
@@ -337,85 +343,148 @@
               </div>
               <div class="notice warning create-validation" data-create-required-notice hidden>필수 입력 항목을 먼저 입력해야 저장할 수 있습니다. 봇 이름을 확인하세요.</div>
             </section>
-            <section class="create-section">
-              <div class="create-section__head">
-                <strong>AI 생성 항목</strong>
-                <span>Aidot 생성 화면과 동일한 순서로 언어, NLU, 답변 방식을 선택합니다.</span>
-              </div>
-              <div class="create-meta-grid">
-                <label class="create-field">
-                  <span>언어 <span class="field-required-mark" aria-hidden="true">*</span></span>
-                  <select data-create-config="language">
-                    <option value="ko">한국어</option>
-                  </select>
-                </label>
-                <label class="create-field">
-                  <span>NLU 방식 <span class="field-required-mark" aria-hidden="true">*</span></span>
-                  <select data-create-config="nlu_type">
-                    <option value="ml">ML (1.0/1.5 지원)</option>
-                    <option value="semantic_vector">Semantic - Vector Worker (Aidot 자체 Vector DB)</option>
-                    <option value="semantic_external">Semantic - External Embedding (외부 임베딩 + Local Vector DB)</option>
-                    <option value="llm">LLM Engine (1.5 설정)</option>
-                  </select>
-                </label>
-                <label class="create-field">
-                  <span>NLU 모델 <span class="field-required-mark" aria-hidden="true">*</span></span>
-                  <select data-create-config="nlu_model">
-                    <option value="deep_learning_lite">DeepLearning Lite (1.0 지원)</option>
-                    <option value="ml_tfidf_linear">TF-IDF Linear (1.5 설정)</option>
-                    <option value="ml_keyword_baseline">Keyword Baseline (1.5 설정)</option>
-                  </select>
-                </label>
-                <label class="create-field">
-                  <span>답변 방식 <span class="field-required-mark" aria-hidden="true">*</span></span>
-                  <select data-create-config="answer_mode">
-                    <option value="fixed">정해진 답변 (1.0/1.5 지원)</option>
-                    <option value="semantic_rag">Semantic Engine RAG 답변 (1.5 설정)</option>
-                    <option value="llm_rag">LLM Engine RAG 답변 (1.5 설정)</option>
-                    <option value="llm">LLM Engine 답변 (1.5 설정)</option>
-                  </select>
-                </label>
-                <label class="create-field">
-                  <span>LLM Provider</span>
-                  <select data-create-config="llm_provider">
-                    <option value="gemini">Gemini (Google)</option>
-                    <option value="chatgpt">ChatGPT (OpenAI)</option>
-                    <option value="claude">Claude (Anthropic)</option>
-                    <option value="groq">Groq (GroqCloud)</option>
-                    <option value="cerebras">Cerebras (Cerebras Inference)</option>
-                    <option value="mistral">Mistral (Mistral AI)</option>
-                    <option value="ollama">Ollama (localhost/localPC)</option>
-                    <option value="openrouter">OpenRouter (Router)</option>
-                  </select>
-                </label>
-                <label class="create-field">
-                  <span>LLM 세부 모델</span>
-                  <select data-create-config="llm_model">
-                    <option value="gpt-4o-mini">GPT-4o mini (기본)</option>
-                    <option value="gpt-4o">GPT-4o (고품질)</option>
-                  </select>
-                </label>
+            <div class="create-lower-grid">
+              <section class="create-section">
+                <div class="create-section__head">
+                  <strong>AI 생성 항목</strong>
+                  <span class="inline-help" tabindex="0" data-help="Aidot 생성 화면과 동일한 순서로 언어, NLU, 답변 방식을 선택합니다.">
+                    <span class="help-icon help-icon--static" aria-hidden="true">i</span>
+                  </span>
+                </div>
+                <div class="create-meta-grid create-meta-grid--dense">
+                  <label class="create-field">
+                    <span>언어 <span class="field-required-mark" aria-hidden="true">*</span></span>
+                    <select data-create-config="language">
+                      <option value="ko">한국어</option>
+                    </select>
+                  </label>
+                  <label class="create-field">
+                    <span>NLU 방식 <span class="field-required-mark" aria-hidden="true">*</span></span>
+                    <select data-create-config="nlu_type">
+                      <option value="ml">ML (1.0/1.5 지원)</option>
+                      <option value="semantic_vector">Semantic - Vector Worker (Aidot 자체 Vector DB)</option>
+                      <option value="semantic_external">Semantic - External Embedding (외부 임베딩 + Local Vector DB)</option>
+                      <option value="llm">LLM Engine (1.5 설정)</option>
+                    </select>
+                  </label>
+                  <label class="create-field" data-create-nlu-model-field>
+                    <span>NLU 모델 <span class="field-required-mark" aria-hidden="true">*</span></span>
+                    <select data-create-config="nlu_model">
+                      <option value="deep_learning_lite">DeepLearning Lite (1.0 지원)</option>
+                      <option value="ml_tfidf_linear">TF-IDF Linear (1.5 설정)</option>
+                      <option value="ml_keyword_baseline">Keyword Baseline (1.5 설정)</option>
+                    </select>
+                    <small class="create-field__hint" data-create-nlu-model-description hidden></small>
+                  </label>
+                  <label class="create-field">
+                    <span>답변 방식 <span class="field-required-mark" aria-hidden="true">*</span></span>
+                    <select data-create-config="answer_mode">
+                      <option value="fixed">정해진 답변 (1.0/1.5 지원)</option>
+                      <option value="semantic_rag">Semantic Engine RAG 답변 (1.5 설정)</option>
+                      <option value="llm_rag">LLM Engine RAG 답변 (1.5 설정)</option>
+                      <option value="llm">LLM Engine 답변 (1.5 설정)</option>
+                    </select>
+                  </label>
+                  <label class="create-field" data-create-llm-field>
+                    <span>LLM Provider <span class="field-required-mark" aria-hidden="true">*</span></span>
+                    <select data-create-config="llm_provider">
+                      <option value="gemini">Gemini (Google)</option>
+                      <option value="chatgpt">ChatGPT (OpenAI)</option>
+                      <option value="claude">Claude (Anthropic)</option>
+                      <option value="groq">Groq (GroqCloud)</option>
+                      <option value="cerebras">Cerebras (Cerebras Inference)</option>
+                      <option value="mistral">Mistral (Mistral AI)</option>
+                      <option value="ollama">Ollama (localhost/localPC)</option>
+                      <option value="openrouter">OpenRouter (Router)</option>
+                    </select>
+                  </label>
+                  <label class="create-field" data-create-llm-field>
+                    <span>LLM 세부 모델 <span class="field-required-mark" aria-hidden="true">*</span></span>
+                    <select data-create-config="llm_model">
+                      <option value="gpt-4o-mini">GPT-4o mini (기본)</option>
+                      <option value="gpt-4o">GPT-4o (고품질)</option>
+                    </select>
+                  </label>
                 <label class="create-field create-field--full">
                   <span>버전 이름</span>
                   <input data-structural-field="bot.version" placeholder="예: v0.1" />
                 </label>
               </div>
-            </section>
-            <section class="create-section">
-              <div class="create-section__head">
-                <strong>버전 및 자산</strong>
-                <span>신규 버전 생성과 Aidot 호환 자산 작업으로 이동합니다.</span>
+              <div class="create-dynamic-panels">
+                <section class="create-context-card" data-create-panel="intent-vector" hidden>
+                  <div class="create-context-card__head">
+                    <strong>Intent Vector DB 연결</strong>
+                    <p data-create-panel-copy="intent-vector-local">Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</p>
+                    <p data-create-panel-copy="intent-vector-external" hidden>외부에서 만든 Vector DB의 검색 API를 연결합니다. 응답 규격과 임베딩 모델 호환이 필요합니다.</p>
+                  </div>
+                  <div class="create-context-grid">
+                    <label class="create-field">
+                      <span>사용 여부</span>
+                      <select data-create-config="vector_connections.intent.enabled" data-create-value-type="boolean">
+                        <option value="true">사용</option>
+                        <option value="false">미사용</option>
+                      </select>
+                    </label>
+                    <label class="create-field">
+                      <span>Index 이름</span>
+                      <input data-create-config="vector_connections.intent.index_name" placeholder="aidot-intent" />
+                    </label>
+                    <label class="create-field create-field--full" data-create-panel="intent-vector-external-only" hidden>
+                      <span>검색 API URL</span>
+                      <input data-create-config="vector_connections.intent.endpoint_url" placeholder="https://vector.example.com/intent/search" />
+                    </label>
+                    <label class="create-field create-field--full" data-create-panel="intent-vector-external-only" hidden>
+                      <span>API Key</span>
+                      <input data-create-config="vector_connections.intent.api_key" placeholder="Intent Vector API Key" />
+                    </label>
+                  </div>
+                </section>
+                <section class="create-context-card" data-create-panel="answer-vector" hidden>
+                  <div class="create-context-card__head">
+                    <strong>Answer Vector DB 연결</strong>
+                    <p>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색 지식은 Answer Vector DB에 저장됩니다.</p>
+                  </div>
+                  <div class="create-context-grid">
+                    <label class="create-field">
+                      <span>사용 여부</span>
+                      <select data-create-config="vector_connections.answer.enabled" data-create-value-type="boolean">
+                        <option value="true">사용</option>
+                        <option value="false">미사용</option>
+                      </select>
+                    </label>
+                    <label class="create-field">
+                      <span>Index 이름</span>
+                      <input data-create-config="vector_connections.answer.index_name" placeholder="aidot-answer" />
+                    </label>
+                  </div>
+                </section>
               </div>
-              <div class="button-row create-action-row">
-                <button type="button" data-create-version-add>버전 추가</button>
-                <button type="button" data-create-bot-copy>봇 복사</button>
-                <button type="button" data-create-version-manage>버전 관리</button>
-                <button type="button" data-create-version-upload>버전 업로드</button>
-              </div>
             </section>
+              <section class="create-section create-section--actions">
+                <div class="create-section__head">
+                  <strong>버전 및 자산</strong>
+                  <span class="inline-help" tabindex="0" data-help="신규 버전 생성과 Aidot 호환 자산 작업으로 이동합니다.">
+                    <span class="help-icon help-icon--static" aria-hidden="true">i</span>
+                  </span>
+                </div>
+                <div class="create-action-copy">
+                  <strong>버전 작업</strong>
+                  <p>현재 초안 버전에서 바로 자산 작업으로 이어갈 수 있습니다.</p>
+                </div>
+                <div class="button-row create-action-row">
+                  <button type="button" data-create-version-add>버전 추가</button>
+                  <button type="button" data-create-bot-copy>봇 복사</button>
+                  <button type="button" data-create-version-manage>버전 관리</button>
+                  <button type="button" data-create-version-upload>버전 업로드</button>
+                </div>
+              </section>
+            </div>
           </article>
-          <aside class="status-panel compact">
-            <h4 data-i18n="summary.structure">Structure Summary</h4>
+          <aside class="status-panel compact create-summary-panel">
+            <div class="create-summary-panel__head">
+              <h4 data-i18n="summary.structure">Structure Summary</h4>
+              <span>선택 상태</span>
+            </div>
             <div data-create-summary></div>
             <div class="next-action">Next: configure using the selected input structure.</div>
           </aside>

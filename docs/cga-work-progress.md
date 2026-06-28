@@ -6270,3 +6270,18 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `apps/studio/app.js`
 - 반영 내용:
   - `api-store-dialog__output-table` 템플릿의 잘못된 삼항식 잔여 문법을 제거해 `app.js`가 브라우저에서 정상 실행되도록 수정
+
+### 봇 생성 화면 Aidot 분기 구조 반영 시작
+
+- 요청:
+  - Aidot 봇 생성 원본처럼 `NLU 방식`, `답변 방식`에 따라 보이는 항목이 달라져야 함
+  - `시멘틱 + 정해진 답변`인데 LLM 선택 항목이 계속 보이는 문제 수정
+- 반영 파일:
+  - `apps/studio/index.html`
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+- 반영 내용:
+  - 봇 생성 화면에 `Intent Vector DB 연결`, `Answer Vector DB 연결` 블록을 추가할 기본 구조를 반영
+  - `LLM Provider`, `LLM 세부 모델`, `NLU 모델`, Vector 연결 블록이 Aidot 조건에 맞게 노출/숨김 되도록 분기 로직 추가
+  - Semantic External 선택 시 설명 문구와 추가 입력 필드가 바뀌도록 보강
+  - 생성 화면 카드/레이아웃 스타일을 Aidot 흐름 기준으로 다시 정리 중

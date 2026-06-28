@@ -3853,6 +3853,63 @@ function coerceFieldValue(field, value) {
   return value;
 }
 
+function coerceCreateConfigValue(control) {
+  if (control.dataset.createValueType === "boolean") {
+    return String(control.value) === "true";
+  }
+  return control.type === "checkbox" ? control.checked : control.value;
+}
+
+function normalizeCreateVectorConnection(value) {
+  return {
+    enabled: value?.enabled === true,
+    endpoint_url: String(value?.endpoint_url || ""),
+    index_name: String(value?.index_name || ""),
+    api_key: String(value?.api_key || "")
+  };
+}
+
+function createInternalVectorConnection(kind, value) {
+  const current = normalizeCreateVectorConnection(value);
+  return {
+    enabled: true,
+    endpoint_url: "",
+    index_name: current.index_name || (kind === "intent" ? "aidot-intent" : "aidot-answer"),
+    api_key: ""
+  };
+}
+
+function syncCreateConditionalFields() {
+  const aiConfig = getCurrentAiConfig();
+  const nluType = String(aiConfig.nlu_type || "ml");
+  const answerMode = String(aiConfig.answer_mode || "fixed");
+  const usesLlm = nluType === "llm" || answerMode === "llm_rag" || answerMode === "llm";
+  const usesSemanticNlu = nluType === "semantic_vector" || nluType === "semantic_external";
+  const usesSemanticAnswer = answerMode === "semantic_rag";
+
+  document.querySelectorAll("[data-create-llm-field]").forEach((node) => {
+    node.hidden = !usesLlm;
+  });
+  document.querySelectorAll("[data-create-nlu-model-field]").forEach((node) => {
+    node.hidden = nluType === "llm";
+  });
+  document.querySelectorAll('[data-create-panel="intent-vector"]').forEach((node) => {
+    node.hidden = !usesSemanticNlu;
+  });
+  document.querySelectorAll('[data-create-panel="answer-vector"]').forEach((node) => {
+    node.hidden = !usesSemanticAnswer;
+  });
+  document.querySelectorAll('[data-create-panel="intent-vector-external-only"]').forEach((node) => {
+    node.hidden = nluType !== "semantic_external";
+  });
+  document.querySelectorAll('[data-create-panel-copy="intent-vector-local"]').forEach((node) => {
+    node.hidden = nluType === "semantic_external";
+  });
+  document.querySelectorAll('[data-create-panel-copy="intent-vector-external"]').forEach((node) => {
+    node.hidden = nluType !== "semantic_external";
+  });
+}
+
 function syncAiConfigToStudioState() {
   const aiConfig = getCurrentAiConfig();
   currentStudioState.bot.defaultLocale = String(aiConfig.language || "ko");
@@ -3874,16 +3931,24 @@ function syncCreateAiOptionLists() {
   const aiConfig = getCurrentAiConfig();
   const nluModelSelect = document.querySelector('[data-create-config="nlu_model"]');
   const llmModelSelect = document.querySelector('[data-create-config="llm_model"]');
+  const nluModelDescription = document.querySelector("[data-create-nlu-model-description]");
   if (nluModelSelect) {
     const nluOptions = CREATE_NLU_MODEL_OPTIONS_BY_TYPE[String(aiConfig.nlu_type || "ml")] || CREATE_NLU_MODEL_OPTIONS_BY_TYPE.ml;
     nluModelSelect.innerHTML = nluOptions.map((option) => `<option value="${escapeText(option.value)}">${escapeText(option.label)} (${escapeText(option.note)})</option>`).join("");
     nluModelSelect.value = String(aiConfig.nlu_model || nluOptions[0]?.value || "deep_learning_lite");
+    if (nluModelDescription) {
+      const selectedOption = nluOptions.find((option) => option.value === nluModelSelect.value) || nluOptions[0];
+      const shouldShow = String(aiConfig.nlu_type || "ml") === "semantic_external" && selectedOption?.note;
+      nluModelDescription.hidden = !shouldShow;
+      nluModelDescription.textContent = shouldShow ? selectedOption.note : "";
+    }
   }
   if (llmModelSelect) {
     const llmOptions = CREATE_LLM_MODEL_OPTIONS_BY_PROVIDER[String(aiConfig.llm_provider || "chatgpt")] || CREATE_LLM_MODEL_OPTIONS_BY_PROVIDER.chatgpt;
     llmModelSelect.innerHTML = llmOptions.map((option) => `<option value="${escapeText(option.value)}">${escapeText(option.label)} (${escapeText(option.note)})</option>`).join("");
     llmModelSelect.value = String(aiConfig.llm_model || llmOptions[0]?.value || "gpt-4o-mini");
   }
+  syncCreateConditionalFields();
 }
 
 function syncCreateControlsFromState() {
@@ -5113,28 +5178,24 @@ function bindCreateControls() {
     const handleSync = async (rerenderAll = false) => {
       const field = control.dataset.createConfig || "";
       const aiConfig = getCurrentAiConfig();
-      setByPath(aiConfig, field, control.type === "checkbox" ? control.checked : control.value);
+      setByPath(aiConfig, field, coerceCreateConfigValue(control));
       if (field === "nlu_type") {
         const nextType = String(control.value || "ml");
         const nextModel = CREATE_NLU_MODEL_OPTIONS_BY_TYPE[nextType]?.[0]?.value || "deep_learning_lite";
         aiConfig.nlu_model = nextModel;
         if (nextType === "semantic_vector") {
-          aiConfig.vector_connections.intent = {
-            ...aiConfig.vector_connections.intent,
-            enabled: true,
-            index_name: aiConfig.vector_connections.intent.index_name || ""
-          };
+          aiConfig.vector_connections.intent = createInternalVectorConnection("intent", aiConfig.vector_connections.intent);
+        } else {
+          aiConfig.vector_connections.intent = normalizeCreateVectorConnection(aiConfig.vector_connections.intent);
         }
         syncCreateControlsFromState();
       }
       if (field === "answer_mode") {
         const nextMode = String(control.value || "fixed");
         if (nextMode === "semantic_rag") {
-          aiConfig.vector_connections.answer = {
-            ...aiConfig.vector_connections.answer,
-            enabled: true,
-            index_name: aiConfig.vector_connections.answer.index_name || ""
-          };
+          aiConfig.vector_connections.answer = createInternalVectorConnection("answer", aiConfig.vector_connections.answer);
+        } else {
+          aiConfig.vector_connections.answer = normalizeCreateVectorConnection(aiConfig.vector_connections.answer);
         }
       }
       if (field === "llm_provider") {
@@ -5154,8 +5215,9 @@ function bindCreateControls() {
     control.addEventListener("input", () => {
       const field = control.dataset.createConfig || "";
       const aiConfig = getCurrentAiConfig();
-      setByPath(aiConfig, field, control.type === "checkbox" ? control.checked : control.value);
+      setByPath(aiConfig, field, coerceCreateConfigValue(control));
       syncAiConfigToStudioState();
+      syncCreateAiOptionLists();
       renderCreateSummary();
       renderTopContext();
       scheduleStudioStateSave();
