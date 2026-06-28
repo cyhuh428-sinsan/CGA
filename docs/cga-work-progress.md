@@ -6217,3 +6217,17 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 전체/선택 다운로드를 Aidot 형식(`asset_format_version`, `exported_at`, `apis`) payload로 내보내도록 조정
   - 업로드 시 Aidot 형식 payload를 우선 해석하고, `apiKey` 기준으로 덮어쓰기/추가 동작을 맞춤
   - 저장 후 안내 문구를 `API가 등록되었습니다.`, `API가 수정되었습니다. 대화에 반영하려면 대화 설계 화면에서 한 번 더 저장하세요.`로 조정
+
+### API 목록/상세 배치 2차 Aidot 정렬
+
+- 요청:
+  - API 화면의 남은 배치 차이도 Aidot 기준으로 계속 줄이기
+- 반영 파일:
+  - `apps/studio/app.js`
+- 반영 내용:
+  - 목록 그리드 컬럼 폭을 Aidot 표 폭 기준으로 재조정
+  - 툴바를 `전체 수 + 페이지 크기 + 선택 수` / `삭제 버튼` 구조로 재배치
+  - 업로드 메뉴 노출을 쓰기 권한 보유 시에만 보이도록 조정
+  - 상세 제목 아래에 Base URL 보조 문구 추가
+  - 메서드 요약 설명의 빈값 fallback 문구를 Aidot 기준으로 보정
+  - 파라미터 응답 표를 Aidot처럼 `root` 포함 계층형 출력 기준으로 표시

@@ -2448,6 +2448,25 @@ function parseAidotApiImportPayload(payload) {
   return extractApiListFromPackage(payload).map((api, index) => normalizeAidotApiEntry(api, index));
 }
 
+function getAidotApiOutputDepth(path = "") {
+  const normalizedPath = String(path).replace(/^root\.?/, "").replace(/\[\]/g, "");
+  return normalizedPath.split(".").filter(Boolean).length;
+}
+
+function getAidotApiOutputRows(method = {}) {
+  if (Array.isArray(method.outputParameters) && method.outputParameters.length > 0) {
+    const rows = method.outputParameters.map((parameter) => ({
+      key: String(parameter.id || parameter.path || parameter.name || "row"),
+      name: String(parameter.name || parameter.path || "-"),
+      dataType: String(parameter.dataType || "string"),
+      depth: getAidotApiOutputDepth(parameter.path || parameter.name || "")
+    }));
+    const hasRoot = method.outputParameters.some((parameter) => String(parameter.path || "") === "root");
+    return hasRoot ? rows : [{ key: "root", name: "root", dataType: "object", depth: 0 }, ...rows];
+  }
+  return [{ key: "root", name: "root", dataType: "object", depth: 0 }];
+}
+
 function syncApiUiPageSize() {
   currentApiUiState.pageSize = adminTablePageSizeByKey["api-answer-source"] || currentApiUiState.pageSize || 10;
   adminTablePageSizeByKey["api-answer-source"] = currentApiUiState.pageSize;
@@ -8833,7 +8852,7 @@ function renderApiRegistry() {
     currentApiUiState.mode = "list";
   }
   const allPageSelected = pagedApis.length > 0 && pagedApis.every((api) => currentApiUiState.selectedIds.includes(api.id));
-  const tableColumns = "44px 120px 260px minmax(280px, 1fr) 110px 130px 160px 140px";
+  const tableColumns = "44px 120px 220px 1fr 120px 140px 180px 160px";
   const formatDate = (value) => value ? normalizeDateText(value.replace("T", " ").slice(0, 16)) : "-";
   const renderPagination = () => `
     <div class="studio-table-page__pagination">
@@ -8860,7 +8879,7 @@ function renderApiRegistry() {
           <button type="button" class="studio-table-page__ghost studio-table-page__more" data-api-action-toggle aria-label="더보기">⋮</button>
           ${currentApiUiState.actionMenuOpen ? `
             <div class="api-store-page__action-menu">
-              <button type="button" data-api-upload-open>업로드</button>
+              ${canManageApi ? `<button type="button" data-api-upload-open>업로드</button>` : ""}
               <button type="button" data-api-download-all>전체 다운로드</button>
               <button type="button" data-api-download-selected ${currentApiUiState.selectedIds.length ? "" : "disabled"}>선택 다운로드</button>
             </div>
@@ -8869,12 +8888,15 @@ function renderApiRegistry() {
       </div>
       <div class="studio-table-page__toolbar">
         <div class="studio-table-page__toolbar-left">
-          <strong>전체 ${sortRows.length}건</strong>
+          <strong>전체 ${sortRows.length}</strong>
           <label class="manual-main__mini-select manual-main__mini-select--select">
             ${renderWorkflowPageSize("api-answer-source", currentApiUiState.pageSize)}
           </label>
-          ${currentApiUiState.selectedIds.length ? `<button type="button" class="studio-table-page__ghost" data-api-delete-selected ${canManageApi ? "" : "disabled"}>삭제</button>` : ""}
+          ${currentApiUiState.selectedIds.length ? `<span class="studio-table-page__selection">${currentApiUiState.selectedIds.length}개 선택</span>` : ""}
         </div>
+        ${canManageApi ? `<div class="studio-table-page__toolbar-right">
+          <button type="button" class="studio-table-page__ghost" data-api-delete-selected ${currentApiUiState.selectedIds.length ? "" : "disabled"}>삭제</button>
+        </div>` : ""}
       </div>
       ${currentApiUiState.message ? `<p class="manual-main__status manual-main__status--success">${escapeText(currentApiUiState.message)}</p>` : ""}
       ${currentApiUiState.errorMessage ? `<p class="manual-main__status manual-main__status--error">${escapeText(currentApiUiState.errorMessage)}</p>` : ""}
@@ -8903,7 +8925,7 @@ function renderApiRegistry() {
         `).join("")}
       </div>
       ${renderPagination()}
-      <input type="file" accept=".json,.txt" data-api-upload-file hidden />
+      <input type="file" accept=".json,application/json,text/plain" data-api-upload-file hidden />
     </section>
   `;
   const renderMethodDetail = (method) => `
@@ -8916,7 +8938,7 @@ function renderApiRegistry() {
           </span>
           <span>
             <span class="api-detail-page__method-badge api-detail-page__method-badge--sync">Sync</span>
-            <span class="api-detail-page__method-description">${escapeText(method.description || "")}</span>
+            <span class="api-detail-page__method-description">${escapeText(method.description || "메서드에 대한 상세 설명을 입력하세요.")}</span>
           </span>
         </span>
         <span class="api-detail-page__method-chevron">⌃</span>
@@ -8979,12 +9001,12 @@ function renderApiRegistry() {
                 </tr>
               </thead>
               <tbody>
-                ${(method.outputParameters || []).length ? method.outputParameters.map((parameter) => `
+                ${getAidotApiOutputRows(method).length ? getAidotApiOutputRows(method).map((row) => `
                   <tr>
-                    <td>${escapeText(parameter.name || parameter.path || "-")}</td>
-                    <td>${escapeText(parameter.dataType || "string")}</td>
+                    <td><span class="api-detail-page__output-name" style="padding-left:${Number(row.depth || 0) * 12}px">${escapeText(row.name)}</span></td>
+                    <td>${escapeText(row.dataType || "string")}</td>
                   </tr>
-                `).join("") : `<tr><td>root</td><td>object</td></tr>`}
+                `).join("") : `<tr><td colspan="2"></td></tr>`}
               </tbody>
             </table>
           </section>
@@ -9004,6 +9026,7 @@ function renderApiRegistry() {
       <header class="studio-table-page__title-row">
         <div>
           <h1><span>API</span><span>&gt;</span><span>API 조회</span></h1>
+          <p>${escapeText(api.baseUrl || "등록된 API 정보를 확인합니다.")}</p>
         </div>
         <div class="api-detail-page__actions">
           ${canManageApi ? `
