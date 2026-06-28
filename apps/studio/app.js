@@ -9589,10 +9589,83 @@ function renderConfigureAidotScreen() {
     de: "독일어",
     fr: "프랑스어"
   };
+  const nluTypeLabelMap = {
+    ml: "ML",
+    semantic_vector: "Semantic - Vector Worker",
+    semantic_external: "Semantic - External Embedding",
+    llm: "LLM Engine"
+  };
+  const nluModelLabelMap = {
+    deep_learning_lite: "DeepLearning Lite",
+    ml_tfidf_linear: "TF-IDF Linear",
+    ml_keyword_baseline: "Keyword Baseline",
+    semantic_engine_default: "Aidot Vector Worker 기본 모델",
+    semantic_embedding_mini: "ko-sroberta",
+    semantic_embedding_large: "multilingual-e5",
+    llm_engine_default: "LLM Engine 기본 모델",
+    llm_intent_fast: "LLM Intent Fast",
+    llm_intent_reasoning: "LLM Intent Reasoning"
+  };
+  const answerModeLabelMap = {
+    fixed: "정해진 답변",
+    semantic_rag: "Semantic Engine RAG 답변",
+    llm_rag: "LLM Engine RAG 답변",
+    llm: "LLM Engine 답변"
+  };
   const localeLabel = localeLabelMap[currentStudioState.bot.defaultLocale] || currentStudioState.bot.defaultLocale || "한국어";
-  const nluTypeLabel = "";
-  const nluModelLabel = "";
-  const answerModeLabel = "";
+  const derivedNluType = currentStudioState.structuralChoices.useLlm ? "llm" : "ml";
+  const derivedNluModel = currentStudioState.structuralChoices.useLlm
+    ? (currentStudioState.llm.model || "llm_engine_default")
+    : "deep_learning_lite";
+  const derivedAnswerMode = currentStudioState.structuralChoices.allowPdf
+    ? (currentStudioState.structuralChoices.useLlm ? "llm_rag" : "semantic_rag")
+    : "fixed";
+  const nluTypeLabel = nluTypeLabelMap[derivedNluType] || "ML";
+  const nluModelLabel = nluModelLabelMap[derivedNluModel] || derivedNluModel;
+  const answerModeLabel = answerModeLabelMap[derivedAnswerMode] || derivedAnswerMode;
+  const conversationDefaults = {
+    ml: {
+      cutOffScore: 0.75,
+      similarIntentScore: 0.85,
+      maxIntentResults: 3
+    },
+    qa: {
+      faqCutOffScore: 0.5,
+      extractiveCutOffScore: 0.5,
+      searchMaxResults: 3,
+      faqMaxIntentResults: 1,
+      extractiveMaxIntentResults: 3,
+      answerPriority: "qa-first"
+    },
+    timeout: {
+      enabled: true,
+      seconds: 120,
+      applyToPushMessage: false
+    },
+    entityPrompt: {
+      maxRepeatCount: 2
+    },
+    intentDetection: {
+      retryCount: 2,
+      overflowModule: "",
+      preprocessModule: "",
+      beforeSessionEndModule: "",
+      multiIntentButtonModule: ""
+    },
+    validation: {
+      mode: "random",
+      imbalanceOversampling: false
+    },
+    buttonSelection: {
+      option: "exact"
+    },
+    exactingMatching: {
+      enabled: true
+    },
+    runtime: {
+      maxCardsBetweenUserResponses: 100
+    }
+  };
   const floatingButtons = [...currentFloatingButtonAssets].sort((left, right) => (Number(left.sortOrder || 0) || 0) - (Number(right.sortOrder || 0) || 0));
   const recommendedIntents = getAidotIntentRows().filter((row) => row.type !== "module");
   const blocklistItems = [...currentBlocklistAssets];
@@ -9679,16 +9752,16 @@ function renderConfigureAidotScreen() {
         </section>
         <section class="aidot-setting-block">
           <header><strong>Intent Vector DB 연결</strong><span>Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</span></header>
-          <div class="rag-form-grid"><label>사용 여부<select><option>미설정</option></select></label><label>Index 이름<input value="" placeholder="미설정" /></label></div>
+          <div class="rag-form-grid"><label>사용 여부<select><option ${derivedNluType === "semantic_vector" ? "selected" : ""}>${derivedNluType === "semantic_vector" ? "사용" : "미설정"}</option></select></label><label>Index 이름<input value="${escapeText(derivedNluType === "semantic_vector" ? `${botId || "bot"}-intent` : "")}" placeholder="미설정" /></label></div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>Answer Vector DB 연결</strong><span>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 Answer Vector DB에 저장합니다.</span></header>
-          <div class="rag-form-grid"><label>사용 여부<select><option>미설정</option></select></label><label>Index 이름<input value="" placeholder="미설정" /></label></div>
+          <div class="rag-form-grid"><label>사용 여부<select><option ${derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag" ? "selected" : ""}>${derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag" ? "사용" : "미설정"}</option></select></label><label>Index 이름<input value="${escapeText(derivedAnswerMode === "semantic_rag" || derivedAnswerMode === "llm_rag" ? `${botId || "bot"}-answer` : "")}" placeholder="미설정" /></label></div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>구성 자동분류 가중치</strong><span>구성 화면의 의도 후보 분류에서 사전, 개체, 단어, 글자 조각, 조사/어미 반영 비율을 조정합니다.</span></header>
           <div class="aidot-weight-grid">
-            <label>사전 대표어<input value="" placeholder="미설정" /></label><label>개체<input value="" placeholder="미설정" /></label><label>명사/동사<input value="" placeholder="미설정" /></label><label>글자 조각<input value="" placeholder="미설정" /></label><label>조사/어미<input value="" placeholder="미설정" /></label><label>대표어 일치 최소점수<input value="" placeholder="미설정" /></label>
+            <label>사전 대표어<input value="1.2" /></label><label>개체<input value="1.2" /></label><label>명사/동사<input value="1" /></label><label>글자 조각<input value="0.2" /></label><label>조사/어미<input value="0.05" /></label><label>대표어 일치 최소점수<input value="0.82" /></label>
           </div>
         </section>
         <label>소개<textarea>${escapeText(currentStudioState.bot.description || "")}</textarea></label>
@@ -9703,48 +9776,48 @@ function renderConfigureAidotScreen() {
           <header><strong>기본값 설정</strong><span>M/L 설정, QA 설정, 세션/대화 제어, 모듈 연결, 고급 설정을 Aidot 기준으로 관리합니다.</span></header>
           <div class="aidot-field-grid five">
             <label>봇 ID<input value="${escapeText(botId)}" readonly /></label>
-            <label>의도파악 Cut-off Score<input value="" placeholder="미설정" /></label>
-            <label>유사의도 Score<input value="" placeholder="미설정" /></label>
-            <label>의도파악결과 최대개수<input value="" placeholder="미설정" /></label>
-            <label>답변 우선순위<select><option>미설정</option></select></label>
+            <label>의도파악 Cut-off Score<input value="${conversationDefaults.ml.cutOffScore}" /></label>
+            <label>유사의도 Score<input value="${conversationDefaults.ml.similarIntentScore}" /></label>
+            <label>의도파악결과 최대개수<input value="${conversationDefaults.ml.maxIntentResults}" /></label>
+            <label>답변 우선순위<select><option ${conversationDefaults.qa.answerPriority === "qa-first" ? "selected" : ""}>Q/A 우선</option><option ${conversationDefaults.qa.answerPriority === "ml-first" ? "selected" : ""}>M/L 우선</option></select></label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>QA 설정</strong><span>FAQ Search, Extractive QA Search 기준 점수와 결과 개수를 설정합니다.</span></header>
           <div class="aidot-field-grid five">
-            <label>FAQ Cut-off Score<input value="" placeholder="미설정" /></label>
-            <label>Extractive QA Cut-off Score<input value="" placeholder="미설정" /></label>
-            <label>검색결과 최대개수<input value="" placeholder="미설정" /></label>
-            <label>FAQ 의도파악결과 최대개수<input value="" placeholder="미설정" /></label>
-            <label>Extractive QA 의도파악결과 최대개수<input value="" placeholder="미설정" /></label>
+            <label>FAQ Cut-off Score<input value="${conversationDefaults.qa.faqCutOffScore}" /></label>
+            <label>Extractive QA Cut-off Score<input value="${conversationDefaults.qa.extractiveCutOffScore}" /></label>
+            <label>검색결과 최대개수<input value="${conversationDefaults.qa.searchMaxResults}" /></label>
+            <label>FAQ 의도파악결과 최대개수<input value="${conversationDefaults.qa.faqMaxIntentResults}" /></label>
+            <label>Extractive QA 의도파악결과 최대개수<input value="${conversationDefaults.qa.extractiveMaxIntentResults}" /></label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>세션 / 대화 제어</strong><span>타임아웃, 개체 반복, 의도파악 시도 횟수와 실패 시 모듈 연결을 정의합니다.</span></header>
           <div class="aidot-field-grid five">
-            <label>타임아웃 사용<select><option>미설정</option></select></label>
-            <label>타임아웃 시간(초)<input value="" placeholder="미설정" /></label>
-            <label>Push Message 타임아웃 적용<select><option>미설정</option></select></label>
-            <label>개체 질문 최대 반복 횟수<input value="" placeholder="미설정" /></label>
-            <label>의도파악 시도 횟수<input value="" placeholder="미설정" /></label>
+            <label>타임아웃 사용<select><option ${conversationDefaults.timeout.enabled ? "selected" : ""}>${conversationDefaults.timeout.enabled ? "사용" : "미사용"}</option></select></label>
+            <label>타임아웃 시간(초)<input value="${conversationDefaults.timeout.seconds}" /></label>
+            <label>Push Message 타임아웃 적용<select><option ${conversationDefaults.timeout.applyToPushMessage ? "selected" : ""}>${conversationDefaults.timeout.applyToPushMessage ? "사용" : "미사용"}</option></select></label>
+            <label>개체 질문 최대 반복 횟수<input value="${conversationDefaults.entityPrompt.maxRepeatCount}" /></label>
+            <label>의도파악 시도 횟수<input value="${conversationDefaults.intentDetection.retryCount}" /></label>
           </div>
           <div class="rag-form-grid">
-              <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="" placeholder="미설정" readonly /></label>
+              <label>의도파악 시도 횟수 초과시 실행할 모듈<input value="${escapeText(conversationDefaults.intentDetection.overflowModule)}" placeholder="미설정" readonly /></label>
           </div>
         </section>
         <section class="aidot-setting-block">
           <header><strong>모듈 연결 / 고급 설정</strong><span>전처리, 세션 종료 전, 다중 의도 버튼 모듈과 Validation Set, Oversampling, 버튼 선택 옵션을 설정합니다.</span></header>
           <div class="rag-form-grid">
-              <label>전처리 모듈<input value="" placeholder="미설정" readonly /></label>
-              <label>Session End 전 실행할 모듈<input value="" placeholder="미설정" readonly /></label>
-              <label>다중 의도 버튼 추가 모듈<input value="" placeholder="미설정" readonly /></label>
-              <label>버튼 선택 옵션<select><option>미설정</option></select></label>
+              <label>전처리 모듈<input value="${escapeText(conversationDefaults.intentDetection.preprocessModule)}" placeholder="미설정" readonly /></label>
+              <label>Session End 전 실행할 모듈<input value="${escapeText(conversationDefaults.intentDetection.beforeSessionEndModule)}" placeholder="미설정" readonly /></label>
+              <label>다중 의도 버튼 추가 모듈<input value="${escapeText(conversationDefaults.intentDetection.multiIntentButtonModule)}" placeholder="미설정" readonly /></label>
+              <label>버튼 선택 옵션<select><option ${conversationDefaults.buttonSelection.option === "exact" ? "selected" : ""}>Exact</option><option ${conversationDefaults.buttonSelection.option === "contains" ? "selected" : ""}>Contains</option></select></label>
           </div>
           <div class="aidot-field-grid">
-            <label>Validation Set 상태 설정<select><option>미설정</option></select></label>
-            <label>Imbalance Oversampling 설정<select><option>미설정</option></select></label>
+            <label>Validation Set 상태 설정<select><option ${conversationDefaults.validation.mode === "random" ? "selected" : ""}>Random</option><option ${conversationDefaults.validation.mode === "fixed" ? "selected" : ""}>Fixed</option></select></label>
+            <label>Imbalance Oversampling 설정<select><option ${conversationDefaults.validation.imbalanceOversampling ? "selected" : ""}>${conversationDefaults.validation.imbalanceOversampling ? "사용" : "미사용"}</option></select></label>
             <label>TTS URL<input value="" placeholder="미설정" /></label>
-            <label>사용자 응답 사이 최대 카드 수<input value="" placeholder="미설정" /></label>
+            <label>사용자 응답 사이 최대 카드 수<input value="${conversationDefaults.runtime.maxCardsBetweenUserResponses}" /></label>
           </div>
         </section>
       </section>

@@ -5495,3 +5495,43 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
 - 남은 점검:
   - Aidot 실제 컴포넌트 기준으로 각 하위 화면의 입력/선택/저장 로직을
     화면 구조뿐 아니라 데이터 흐름까지 더 세밀하게 맞추는 작업이 이어서 필요하다.
+
+## 2026-06-28 02:45 KST
+
+### `AI 모델 설정` / `기본값 설정` 실제 기본값 연결 및 캐시 갱신
+
+- `02 봇 설정`의 상단 두 화면이
+  빈칸/임시 텍스트 위주로 보이던 문제를 줄이기 위해
+  Aidot 기본 규칙 기준의 실제 기본값과 현재 상태값을 연결했다.
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `apps/studio/index.html`
+- 반영 내용:
+  - `AI 모델 설정`에서
+    - 언어
+    - NLU 방식
+    - NLU 모델
+    - 답변 방식
+    이 `미설정`만 보이던 상태를 정리하고,
+    현재 CGA 구조 선택값 기준으로 `ML / DeepLearning Lite / 정해진 답변` 등
+    Aidot 기본 조합이 보이도록 맞췄다.
+  - `기본값 설정`에서
+    - 의도파악 Cut-off Score
+    - 유사의도 Score
+    - QA 설정
+    - 세션/대화 제어
+    - Validation / Oversampling / 버튼 선택 옵션
+    을 Aidot 기본 설정값 기준으로 채워
+    실제 점검 가능한 화면으로 바꿨다.
+  - 브라우저가 이전 `app.js`, `styles.css`를 캐시해
+    수정 화면이 안 보이던 문제를 막기 위해
+    `apps/studio/index.html`의 정적 리소스 버전 쿼리를 갱신했다.
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `git diff --check`
+  - `npm run studio:check`
+  - `http://127.0.0.1:4173` `200`
+  - 브라우저에서
+    - `AI 모델 설정` 화면에 `ML / DeepLearning Lite / 정해진 답변` 반영 확인
+    - `기본값 설정` 화면에 `0.75 / 0.85 / 3 / 120` 등 기본값 반영 확인
+    - `02 봇 설정` 서브메뉴 중복 `스몰토크` 제거 확인
