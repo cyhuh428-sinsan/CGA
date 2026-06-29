@@ -6,7 +6,7 @@ import { join } from "node:path";
 const port = String(4293 + Math.floor(Math.random() * 100));
 const baseUrl = `http://localhost:${port}`;
 const dataDir = mkdtempSync(join(tmpdir(), "cga-auth-api-"));
-let server = spawnServer({ PORT: port, CGA_DATA_DIR: dataDir });
+let server = spawnServer({ PORT: port, CGA_DATA_DIR: dataDir, CGA_AUTH_HEADER_FALLBACK: "enabled" });
 
 function spawnServer(env) {
   return spawn("node", ["scripts/serve-studio.js"], {
@@ -190,6 +190,37 @@ async function main() {
   }, 200, "group admin should update group member role");
   if (roleUpdate.membership?.role !== "reviewer") fail("role update endpoint did not return updated membership");
 
+  const userUpdate = await expectStatus("/api/cga/users/u-api", {
+    method: "PATCH",
+    userId: "u-group-admin",
+    body: {
+      name: "API User Updated",
+      status: "inactive",
+      source_group_id: "g-support",
+      group_id: "g-support",
+      role: "reviewer"
+    }
+  }, 200, "group admin should update managed user");
+  if (userUpdate.user?.name !== "API User Updated") fail("user update endpoint did not change user name");
+  if (userUpdate.user?.status !== "inactive") fail("user update endpoint did not change account status");
+
+  await expectStatus("/api/cga/auth/login", {
+    method: "POST",
+    body: { user_id: "u-api", password: "api-pass-1" }
+  }, 403, "inactive user should not login");
+
+  await expectStatus("/api/cga/users/u-api", {
+    method: "PATCH",
+    userId: "u-group-admin",
+    body: {
+      name: "API User Updated",
+      status: "active",
+      source_group_id: "g-support",
+      group_id: "g-support",
+      role: "reviewer"
+    }
+  }, 200, "group admin should reactivate managed user");
+
   await expectStatus("/api/cga/groups", {
     method: "POST",
     userId: "u-api",
@@ -274,6 +305,27 @@ async function main() {
     sessionToken: strictLoginResult.payload.session_token
   }, "session token should work when header fallback is disabled");
   if (strictMeResult.payload.user?.id !== "u-api") fail("strict mode did not resolve session token user");
+
+  const adminLoginResult = await expectOk("/api/cga/auth/login", {
+    method: "POST",
+    body: { user_id: "admin", password: "admin" }
+  }, "admin login should work when header fallback is disabled");
+
+  const deletedByAdmin = await expectStatus("/api/cga/users/u-api", {
+    method: "DELETE",
+    userId: "admin",
+    sessionToken: adminLoginResult.payload.session_token
+  }, 200, "system admin should delete managed user");
+  if (deletedByAdmin.user_id !== "u-api") fail("user delete endpoint did not return deleted user id");
+
+  await expectStatus("/api/cga/auth/login", {
+    method: "POST",
+    body: { user_id: "u-api", password: "api-pass-1" }
+  }, 401, "deleted user should not login");
+
+  const storedAfterDelete = JSON.parse(readFileSync(accessStateFile, "utf8"));
+  if (!storedAfterDelete.users?.some((user) => user.id === "u-api")) fail("access state file did not persist signup user");
+  if (!storedAfterDelete.users?.some((user) => user.id === "u-api" && user.status === "deleted")) fail("access state file did not persist deleted user status");
 
   console.log("OK auth and group API endpoints passed");
 }

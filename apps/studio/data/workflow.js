@@ -70,7 +70,7 @@ export const queryLinks = [
     titleKey: "production.workspace.title",
     subtitleKey: "production.workspace.subtitle",
     title: "Bot Workspace",
-    subtitle: "Groups · bots · entry"
+    subtitle: "Groups · bots · work"
   },
   {
     id: "team-dashboard",
