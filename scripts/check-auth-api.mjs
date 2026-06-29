@@ -85,7 +85,7 @@ async function main() {
   if (me.user?.id !== "u-builder") fail("me endpoint did not resolve header user");
   if (!Array.isArray(me.memberships) || !me.memberships.some((item) => item.group_id === "g-support")) fail("me endpoint did not return active memberships");
 
-  const signup = await expectStatus("/api/cga/auth/signup", {
+  const signupResult = await requestJson("/api/cga/auth/signup", {
     method: "POST",
     body: {
       user_id: "u-api",
@@ -95,35 +95,20 @@ async function main() {
       group_id: "g-support",
       requested_role: "viewer"
     }
-  }, 201, "signup endpoint failed");
-  if (signup.user?.id !== "u-api" || signup.locale !== "vi") fail("signup endpoint did not return created user session");
+  });
+  if (signupResult.response.status !== 202) fail(`signup endpoint failed: expected 202, got ${signupResult.response.status}`);
+  const signup = signupResult.payload;
+  if (signup.user?.id !== "u-api" || signup.locale !== "vi") fail("signup endpoint did not return pending user payload");
+  if (signup.session_token) fail("signup endpoint should not issue a session token before approval");
+  if (signupResult.setCookie.includes("cga_session=")) fail("signup endpoint should not set a login session cookie before approval");
+  if (signup.status !== "pending") fail("signup endpoint should return pending status");
   if (signup.groups?.some((group) => group.id === "g-u-api")) fail("signup endpoint should not create personal group");
   if (signup.memberships?.some((membership) => membership.group_id === "g-u-api")) fail("signup endpoint should not assign personal group membership");
 
-  const loginResult = await expectOk("/api/cga/auth/login", {
+  await expectStatus("/api/cga/auth/login", {
     method: "POST",
     body: { user_id: "u-api", password: "api-pass-1" }
-  }, "login endpoint failed");
-  const login = loginResult.payload;
-  if (login.user?.id !== "u-api") fail("login endpoint did not switch current user");
-  if (!login.session_token) fail("login endpoint did not return session token");
-  if (!loginResult.setCookie.includes("cga_session=")) fail("login endpoint did not set session cookie");
-
-  const tokenMeResult = await expectOk("/api/cga/auth/me", {
-    userId: "admin",
-    sessionToken: login.session_token
-  }, "me endpoint with session token failed");
-  if (tokenMeResult.payload.user?.id !== "u-api") fail("me endpoint did not resolve session token user");
-
-  const timedGroupsResult = await expectOkUnder("/api/cga/groups", {
-    userId: "admin",
-    sessionToken: login.session_token
-  }, 5000, "groups endpoint with login history was too slow");
-  const loginHistoryAfterLogin = timedGroupsResult.payload.login_history || [];
-  const loginRecord = loginHistoryAfterLogin.find((entry) => entry.session_token === login.session_token);
-  if (!loginRecord) fail("groups endpoint did not return real login history");
-  if (!loginRecord.login_at || loginRecord.login_at === "-") fail("login history did not include login_at");
-  if (loginRecord.logout_at) fail("active login history should not include logout_at before logout");
+  }, 403, "pending approval user should not login");
 
   await expectStatus("/api/cga/auth/me", {
     userId: "admin",
@@ -166,6 +151,31 @@ async function main() {
   const joinedMeResult = await expectOk("/api/cga/auth/me", { userId: "u-api" }, "me after join failed");
   const joinedMe = joinedMeResult.payload;
   if (!joinedMe.memberships?.some((item) => item.group_id === "g-support" && item.role === "builder")) fail("approved join did not create group membership");
+
+  const loginResult = await expectOk("/api/cga/auth/login", {
+    method: "POST",
+    body: { user_id: "u-api", password: "api-pass-1" }
+  }, "approved user login failed");
+  const login = loginResult.payload;
+  if (login.user?.id !== "u-api") fail("login endpoint did not switch current user");
+  if (!login.session_token) fail("login endpoint did not return session token");
+  if (!loginResult.setCookie.includes("cga_session=")) fail("login endpoint did not set session cookie");
+
+  const tokenMeResult = await expectOk("/api/cga/auth/me", {
+    userId: "admin",
+    sessionToken: login.session_token
+  }, "me endpoint with session token failed");
+  if (tokenMeResult.payload.user?.id !== "u-api") fail("me endpoint did not resolve session token user");
+
+  const timedGroupsResult = await expectOkUnder("/api/cga/groups", {
+    userId: "admin",
+    sessionToken: login.session_token
+  }, 5000, "groups endpoint with login history was too slow");
+  const loginHistoryAfterLogin = timedGroupsResult.payload.login_history || [];
+  const loginRecord = loginHistoryAfterLogin.find((entry) => entry.session_token === login.session_token);
+  if (!loginRecord) fail("groups endpoint did not return real login history");
+  if (!loginRecord.login_at || loginRecord.login_at === "-") fail("login history did not include login_at");
+  if (loginRecord.logout_at) fail("active login history should not include logout_at before logout");
 
   await expectStatus("/api/cga/groups/g-support/members/u-api/role", {
     method: "PATCH",

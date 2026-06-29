@@ -79,7 +79,7 @@ export function applySignup(state, { userId, name, locale = "en", groupId, reque
   ));
   return {
     ...state,
-    users: [...state.users, createUser({ id: userId, name, locale })],
+    users: [...state.users, createUser({ id: userId, name, locale, status: "pending" })],
     joinRequests: targetGroupId && !requestExists
       ? [
           ...state.joinRequests,
@@ -239,6 +239,11 @@ export function approveGroupJoinRequest(state, { requestId, reviewerId, groupId 
   const approvedRole = requestedRole || request.requested_role;
   return {
     ...state,
+    users: state.users.map((user) => (
+      user.id === request.user_id && user.status === "pending"
+        ? { ...user, status: "active" }
+        : user
+    )),
     joinRequests: state.joinRequests.map((item) => item.id === requestId ? { ...item, group_id: approvedGroupId, requested_role: approvedRole, status: "approved", reviewed_by: reviewerId, reviewed_at: new Date(0).toISOString() } : item),
     memberships: [
       ...state.memberships,
