@@ -2331,8 +2331,11 @@ async function handleAuthApi(req, res, urlPath) {
         [body.user_id]: hashPassword(body.password)
       }
     });
-    const session = createAuthSession(body.user_id);
-    sendJson(res, 201, await createAccessSessionResponse(next, body.user_id, session), { "Set-Cookie": createSessionCookie(session.token) });
+    sendJson(res, 202, {
+      status: "pending",
+      message_key: "errors.auth.pendingApproval",
+      ...(await createAccessSessionResponse(next, body.user_id, null))
+    });
     return true;
   }
 
@@ -2345,10 +2348,18 @@ async function handleAuthApi(req, res, urlPath) {
     const userId = body.user_id || body.userId;
     const password = body.password || "";
     const credentials = loadAuthCredentials(state);
-    const userExists = state.users.some((user) => user.id === userId && user.status !== "deleted");
+    const user = state.users.find((item) => item.id === userId && item.status !== "deleted") || null;
     const passwordOk = verifyPassword(password, credentials.users?.[userId]);
-    if (!userId || !password || !userExists || !passwordOk) {
+    if (!userId || !password || !user || !passwordOk) {
       sendJson(res, 401, { error_code: "CGA_LOGIN_FAILED", message_key: "errors.auth.loginFailed" });
+      return true;
+    }
+    const hasApprovedMembership = state.memberships.some((membership) => (
+      membership.user_id === userId &&
+      membership.status === "active"
+    ));
+    if (user.status !== "active" || !hasApprovedMembership) {
+      sendJson(res, 403, { error_code: "CGA_PENDING_APPROVAL", message_key: "errors.auth.pendingApproval" });
       return true;
     }
     const session = createAuthSession(userId);

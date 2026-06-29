@@ -8608,6 +8608,14 @@ function renderAccessPanels() {
       rowStatus: user?.status || "active",
       request: null
     })));
+  const uniqueActiveUserRecords = [];
+  const activeUserIds = new Set();
+  activeUserRecords.forEach((record) => {
+    const userId = record.user?.id;
+    if (!userId || activeUserIds.has(userId)) return;
+    activeUserIds.add(userId);
+    uniqueActiveUserRecords.push(record);
+  });
   const pendingUserRecords = summarizeJoinRequests(currentAccessState)
     .filter((request) => request.status === "pending" && visibleGroupIds.has(request.group_id))
     .map((request) => ({
@@ -8618,7 +8626,14 @@ function renderAccessPanels() {
       rowStatus: request.status,
       request
     }));
-  const userRecords = [...activeUserRecords, ...pendingUserRecords];
+  const userRecords = [...uniqueActiveUserRecords];
+  pendingUserRecords.forEach((record) => {
+    const userId = record.user?.id || record.request?.user_id;
+    const hasActiveRecord = uniqueActiveUserRecords.some((activeRecord) => (
+      (activeRecord.user?.id || activeRecord.request?.user_id) === userId
+    ));
+    if (!hasActiveRecord) userRecords.push(record);
+  });
   const userSearchText = (userSearch?.value || "").trim().toLowerCase();
   const selectedGroupFilter = userGroupFilter?.value || "all";
   const selectedRoleFilter = userRoleFilter?.value || "all";
@@ -8827,7 +8842,10 @@ function renderAccessPanels() {
     const members = selectedGroupRecord
       ? currentAccessState.memberships.filter((membership) => membership.group_id === selectedGroupRecord.id && membership.status === "active")
       : [];
-    groupDetail.innerHTML = selectedGroupRecord ? `
+    groupDetail.innerHTML = accessGroupCreateMode ? `
+      <h4>기본 정보</h4>
+      <p>새 그룹을 생성합니다.</p>
+    ` : selectedGroupRecord ? `
       <h4>기본 정보</h4>
       <dl class="detail-definition detail-definition--two">
         <dt>그룹 아이디</dt><dd>${selectedGroupRecord.id}</dd>
@@ -8840,7 +8858,12 @@ function renderAccessPanels() {
     ` : `<h4>기본 정보</h4><p>${t("common.none", "None")}</p>`;
   }
   if (groupEdit) {
-    groupEdit.innerHTML = selectedGroupRecord ? `
+    groupEdit.innerHTML = accessGroupCreateMode ? `
+      <h4>그룹 생성</h4>
+      <label><span>그룹 아이디</span><input data-group-id placeholder="예: g-new" /></label>
+      <label><span>그룹 이름</span><input data-group-name placeholder="그룹 이름을 입력하세요." /></label>
+      <button type="button" data-group-create>${t("common.save", "Save")}</button>
+    ` : selectedGroupRecord ? `
       <h4>그룹 수정</h4>
       <label><span>그룹 이름</span><input value="${selectedGroupRecord.name}" disabled /></label>
       <label><span>사용 여부</span><select disabled><option selected>${selectedGroupRecord.status || "active"}</option></select></label>
@@ -9952,6 +9975,16 @@ function bindAccessManagementControls() {
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
       selectedAccessGroupId = button.dataset.selectGroup;
+      accessGroupCreateMode = false;
+      accessGroupModalOpen = true;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-open-group-create]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      accessGroupCreateMode = true;
       accessGroupModalOpen = true;
       renderAccessPanels();
     });
@@ -9960,6 +9993,7 @@ function bindAccessManagementControls() {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
     button.addEventListener("click", () => {
+      accessGroupCreateMode = false;
       accessGroupModalOpen = false;
       renderAccessPanels();
     });
@@ -9969,6 +10003,7 @@ function bindAccessManagementControls() {
     modal.dataset.bound = "true";
     modal.addEventListener("click", (event) => {
       if (event.target !== modal) return;
+      accessGroupCreateMode = false;
       accessGroupModalOpen = false;
       renderAccessPanels();
     });
@@ -10032,6 +10067,20 @@ function bindAccessManagementControls() {
       renderAccessPanels();
     });
   });
+  document.querySelectorAll("[data-user-search-submit]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      userListPage = 1;
+      try {
+        await refreshAccessStateFromServer();
+        clearGlobalMessage();
+      } catch (error) {
+        setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다.");
+      }
+      renderAccessPanels();
+    });
+  });
   document.querySelectorAll("[data-group-search-reset]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
@@ -10041,6 +10090,20 @@ function bindAccessManagementControls() {
       if (search) search.value = "";
       if (statusFilter) statusFilter.value = "active";
       groupListPage = 1;
+      renderAccessPanels();
+    });
+  });
+  document.querySelectorAll("[data-group-search-submit]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      groupListPage = 1;
+      try {
+        await refreshAccessStateFromServer();
+        clearGlobalMessage();
+      } catch (error) {
+        setGlobalMessage("error", "조회 실패", error.message || "조회에 실패했습니다.");
+      }
       renderAccessPanels();
     });
   });
@@ -10235,15 +10298,8 @@ function bindAdminWorkbench() {
         rerenderAdminAndAccess();
         return;
       }
-      currentAccessState = loginAsUser(currentAccessState, { userId });
-      postAuthDefaultScreenPending = !hasExplicitHashRoute();
-      activeScreenId = hasExplicitHashRoute() ? parseHashRoute(window.location.hash).screenId || activeScreenId : DEFAULT_ACTIVE_SCREEN_ID;
-      if (!hasExplicitHashRoute()) {
-        history.replaceState(null, "", `#${DEFAULT_ACTIVE_SCREEN_ID}`);
-      }
-      applyScreenLayout();
+      setAuthMessage("error", "admin.loginFailedTitle", t("message.actionFailedBody", "작업을 완료할 수 없습니다."));
       rerenderAdminAndAccess();
-      queuePostLoginLandingScreen();
     }
   };
   if (loginSubmit && loginSubmit.dataset.bound !== "true") {
@@ -10316,10 +10372,10 @@ function bindAdminWorkbench() {
             requested_role: "viewer"
           }
         });
-        rememberAuthSession(session);
-        clearAuthMessage();
-        currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || id };
+        clearAuthSession();
+        setAuthMessage("info", "admin.signupPendingTitle", session?.message_key || "errors.auth.pendingApproval");
         await refreshAccessStateFromServer();
+        selectedAccessUserId = id;
         rerenderAdminAndAccess();
       } catch (error) {
         if (error.status) {
@@ -10327,7 +10383,7 @@ function bindAdminWorkbench() {
           rerenderAdminAndAccess();
           return;
         }
-        currentAccessState = applySignup(currentAccessState, { userId: id, name, locale, groupId, requestedRole: "viewer" });
+        setAuthMessage("error", "admin.signupFailedTitle", t("message.actionFailedBody", "작업을 완료할 수 없습니다."));
         rerenderAdminAndAccess();
       }
     });
@@ -10350,11 +10406,12 @@ function bindAdminWorkbench() {
           requested_role: "viewer"
         }
       });
-      rememberAuthSession(session);
-      clearAuthMessage();
-      currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || id };
+      clearAuthSession();
+      setAuthMessage("info", "admin.signupPendingTitle", session?.message_key || "errors.auth.pendingApproval");
       await refreshAccessStateFromServer();
+      setEntryAuthMode("login");
       applyScreenLayout();
+      renderEntryAuthMessage();
       rerenderAdminAndAccess();
     } catch (error) {
       if (error.status) {
@@ -10363,14 +10420,8 @@ function bindAdminWorkbench() {
         rerenderAdminAndAccess();
         return;
       }
-      currentAccessState = applySignup(currentAccessState, {
-        userId: id,
-        name,
-        locale,
-        groupId: groupId || currentAccessState.policy?.signupDefaultGroupId || "g-support",
-        requestedRole: "viewer"
-      });
-      applyScreenLayout();
+      setAuthMessage("error", "admin.signupFailedTitle", t("message.actionFailedBody", "작업을 완료할 수 없습니다."));
+      renderEntryAuthMessage();
       rerenderAdminAndAccess();
     }
   };
@@ -10398,6 +10449,10 @@ function bindAdminWorkbench() {
           currentAccessState = createManagedGroup(currentAccessState, { id, name, actorId: currentAccessState.currentUserId });
         }
       );
+      selectedAccessGroupId = id;
+      accessGroupCreateMode = false;
+      accessGroupModalOpen = false;
+      renderAccessPanels();
     });
   }
   if (joinSubmit && joinSubmit.dataset.bound !== "true") {
