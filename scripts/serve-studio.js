@@ -534,6 +534,7 @@ const PASSWORD_DIGEST = "sha256";
 const SESSION_COOKIE = "cga_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const HEADER_AUTH_FALLBACK_DISABLED = "disabled";
+const HEADER_AUTH_FALLBACK_ENABLED = "enabled";
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
   return {
@@ -647,7 +648,7 @@ function hasSessionToken(req) {
 }
 
 function isHeaderAuthFallbackEnabled() {
-  return process.env.CGA_AUTH_HEADER_FALLBACK !== HEADER_AUTH_FALLBACK_DISABLED;
+  return process.env.CGA_AUTH_HEADER_FALLBACK === HEADER_AUTH_FALLBACK_ENABLED;
 }
 
 function createAuthSession(userId) {
@@ -1303,11 +1304,15 @@ function parseAuthApiPath(urlPath) {
   if (urlPath === "/api/cga/auth/logout") return { action: "logout" };
   if (urlPath === "/api/cga/auth/me") return { action: "me" };
   if (urlPath === "/api/cga/groups") return { action: "groups" };
-  const membershipRole = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/members\/([^/]+)\/role$/);
-  if (membershipRole) return { action: "membershipRole", groupId: membershipRole[1], userId: membershipRole[2] };
   if (urlPath === "/api/cga/groups/join-requests") return { action: "joinRequests" };
   const joinApprove = urlPath.match(/^\/api\/cga\/groups\/join-requests\/([^/]+)\/approve$/);
   if (joinApprove) return { action: "approveJoinRequest", requestId: joinApprove[1] };
+  const groupRecord = urlPath.match(/^\/api\/cga\/groups\/([^/]+)$/);
+  if (groupRecord) return { action: "groupRecord", groupId: groupRecord[1] };
+  const userRecord = urlPath.match(/^\/api\/cga\/users\/([^/]+)$/);
+  if (userRecord) return { action: "userRecord", userId: userRecord[1] };
+  const membershipRole = urlPath.match(/^\/api\/cga\/groups\/([^/]+)\/members\/([^/]+)\/role$/);
+  if (membershipRole) return { action: "membershipRole", groupId: membershipRole[1], userId: membershipRole[2] };
   if (urlPath === "/api/cga/admin/permission-requests") return { action: "adminPermissionRequests" };
   const adminApprove = urlPath.match(/^\/api\/cga\/admin\/permission-requests\/([^/]+)\/approve$/);
   if (adminApprove) return { action: "approveAdminPermissionRequest", requestId: adminApprove[1] };
@@ -2278,6 +2283,43 @@ async function handleAuthApi(req, res, urlPath) {
     return true;
   }
 
+  if (parsed.action === "groupRecord") {
+    if (req.method === "PATCH") {
+      const body = await readJsonRequest(req);
+      const next = accessStateModule.updateManagedGroup(state, {
+        actorId,
+        groupId: parsed.groupId,
+        name: body.name,
+        status: body.status
+      });
+      if (next === state) {
+        sendJson(res, 403, { error_code: "CGA_GROUP_UPDATE_FORBIDDEN", message_key: "errors.auth.groupUpdateForbidden" });
+        return true;
+      }
+      saveAccessState(next);
+      sendJson(res, 200, {
+        status: "updated",
+        group: next.groups.find((group) => group.id === parsed.groupId) || null
+      });
+      return true;
+    }
+    if (req.method === "DELETE") {
+      const next = accessStateModule.deleteManagedGroup(state, {
+        actorId,
+        groupId: parsed.groupId
+      });
+      if (next === state) {
+        sendJson(res, 403, { error_code: "CGA_GROUP_DELETE_FORBIDDEN", message_key: "errors.auth.groupDeleteForbidden" });
+        return true;
+      }
+      saveAccessState(next);
+      sendJson(res, 200, { status: "deleted", group_id: parsed.groupId });
+      return true;
+    }
+    sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
+    return true;
+  }
+
   if (parsed.action === "membershipRole") {
     if (req.method !== "PATCH") {
       sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
@@ -2299,6 +2341,48 @@ async function handleAuthApi(req, res, urlPath) {
       status: "updated",
       membership: next.memberships.find((item) => item.user_id === parsed.userId && item.group_id === parsed.groupId && item.status === "active")
     });
+    return true;
+  }
+
+  if (parsed.action === "userRecord") {
+    if (req.method === "PATCH") {
+      const body = await readJsonRequest(req);
+      const next = accessStateModule.updateManagedUser(state, {
+        actorId,
+        userId: parsed.userId,
+        name: body.name,
+        locale: body.locale,
+        status: body.status,
+        sourceGroupId: body.source_group_id || body.sourceGroupId || null,
+        targetGroupId: body.group_id || body.groupId || body.target_group_id || body.targetGroupId || null,
+        role: body.role || body.requested_role || null
+      });
+      if (next === state) {
+        sendJson(res, 403, { error_code: "CGA_USER_UPDATE_FORBIDDEN", message_key: "errors.auth.userUpdateForbidden" });
+        return true;
+      }
+      saveAccessState(next);
+      sendJson(res, 200, {
+        status: "updated",
+        user: next.users.find((item) => item.id === parsed.userId) || null,
+        memberships: next.memberships.filter((item) => item.user_id === parsed.userId)
+      });
+      return true;
+    }
+    if (req.method === "DELETE") {
+      const next = accessStateModule.deleteManagedUser(state, {
+        actorId,
+        userId: parsed.userId
+      });
+      if (next === state) {
+        sendJson(res, 403, { error_code: "CGA_USER_DELETE_FORBIDDEN", message_key: "errors.auth.userDeleteForbidden" });
+        return true;
+      }
+      saveAccessState(next);
+      sendJson(res, 200, { status: "deleted", user_id: parsed.userId });
+      return true;
+    }
+    sendJson(res, 405, { error_code: "CGA_METHOD_NOT_ALLOWED", message_key: "errors.http.methodNotAllowed" });
     return true;
   }
 

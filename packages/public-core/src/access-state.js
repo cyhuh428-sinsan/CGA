@@ -174,6 +174,113 @@ export function canManageGroupMembership(state, { actorId = state?.currentUserId
   return isSystemAdmin(state, actorId) || isGroupAdminForGroup(state, actorId, groupId);
 }
 
+function isManageableUser(state, userId) {
+  const user = state.users.find((item) => item.id === userId);
+  return Boolean(user && user.id !== SYSTEM_ADMIN_USER_ID && user.deletable !== false);
+}
+
+function canManageUserRecord(state, { actorId = state?.currentUserId, userId, sourceGroupId = null, targetGroupId = null }) {
+  if (!isManageableUser(state, userId)) return false;
+  if (isSystemAdmin(state, actorId)) return true;
+  if (sourceGroupId && canManageGroupMembership(state, { actorId, groupId: sourceGroupId })) return true;
+  if (targetGroupId && canManageGroupMembership(state, { actorId, groupId: targetGroupId })) return true;
+  return state.memberships.some((item) => (
+    item.user_id === userId &&
+    item.status === "active" &&
+    canManageGroupMembership(state, { actorId, groupId: item.group_id })
+  ));
+}
+
+export function updateManagedUser(state, {
+  actorId = state?.currentUserId,
+  userId,
+  name,
+  locale,
+  status,
+  sourceGroupId = null,
+  targetGroupId = null,
+  role = null
+}) {
+  const user = state.users.find((item) => item.id === userId);
+  if (!user) return state;
+  const nextGroupId = targetGroupId || sourceGroupId;
+  if (!canManageUserRecord(state, { actorId, userId, sourceGroupId, targetGroupId: nextGroupId })) return state;
+  const updates = {};
+  if (typeof name === "string" && name.trim()) updates.name = name.trim();
+  if (typeof locale === "string" && locale.trim()) updates.locale = locale.trim();
+  if (typeof status === "string" && status.trim()) updates.status = status.trim();
+
+  let memberships = [...state.memberships];
+  const activeMembership = memberships.find((item) => (
+    item.user_id === userId &&
+    item.status === "active" &&
+    (!sourceGroupId || item.group_id === sourceGroupId)
+  ));
+  if (nextGroupId && role && activeMembership) {
+    if (activeMembership.group_id === nextGroupId) {
+      memberships = memberships.map((item) => (
+        item.user_id === userId && item.group_id === nextGroupId && item.status === "active"
+          ? { ...item, role }
+          : item
+      ));
+    } else {
+      memberships = memberships.map((item) => (
+        item.user_id === userId && item.group_id === activeMembership.group_id && item.status === "active"
+          ? { ...item, status: "removed" }
+          : item
+      ));
+      const existingTargetMembership = memberships.find((item) => (
+        item.user_id === userId &&
+        item.group_id === nextGroupId &&
+        item.status === "active"
+      ));
+      memberships = existingTargetMembership
+        ? memberships.map((item) => (
+            item.user_id === userId && item.group_id === nextGroupId && item.status === "active"
+              ? { ...item, role }
+              : item
+          ))
+        : [...memberships, createGroupMembership({ userId, groupId: nextGroupId, role })];
+    }
+  }
+
+  return {
+    ...state,
+    users: state.users.map((item) => (item.id === userId ? { ...item, ...updates } : item)),
+    memberships
+  };
+}
+
+export function deleteManagedUser(state, {
+  actorId = state?.currentUserId,
+  userId
+}) {
+  if (!canManageUserRecord(state, { actorId, userId })) return state;
+  return {
+    ...state,
+    users: state.users.map((item) => (
+      item.id === userId
+        ? { ...item, status: "deleted" }
+        : item
+    )),
+    memberships: state.memberships.map((item) => (
+      item.user_id === userId && item.status === "active"
+        ? { ...item, status: "removed" }
+        : item
+    )),
+    joinRequests: state.joinRequests.map((item) => (
+      item.user_id === userId && item.status === "pending"
+        ? { ...item, status: "cancelled" }
+        : item
+    )),
+    adminRequests: state.adminRequests.map((item) => (
+      item.user_id === userId && item.status === "pending"
+        ? { ...item, status: "cancelled" }
+        : item
+    ))
+  };
+}
+
 export function updateGroupMembershipRole(state, { actorId = state?.currentUserId, userId, groupId, role }) {
   if (!userId || !groupId || !role || !canManageGroupMembership(state, { actorId, groupId })) return state;
   const membership = state.memberships.find((item) => item.user_id === userId && item.group_id === groupId && item.status === "active");
@@ -219,6 +326,48 @@ export function createManagedGroup(state, { id, name, actorId = state?.currentUs
   return {
     ...state,
     groups: [...state.groups, createGroup({ id, name })]
+  };
+}
+
+export function updateManagedGroup(state, { groupId, name, status, actorId = state?.currentUserId }) {
+  if (!groupId || groupId === SYSTEM_ADMIN_GROUP_ID) return state;
+  if (!canManageGroupMembership(state, { actorId, groupId })) return state;
+  const targetGroup = state.groups.find((group) => group.id === groupId);
+  if (!targetGroup) return state;
+  const updates = {};
+  if (typeof name === "string" && name.trim()) updates.name = name.trim();
+  if (typeof status === "string" && status.trim()) updates.status = status.trim();
+  return {
+    ...state,
+    groups: state.groups.map((group) => (
+      group.id === groupId ? { ...group, ...updates } : group
+    ))
+  };
+}
+
+export function deleteManagedGroup(state, { groupId, actorId = state?.currentUserId }) {
+  if (!groupId || groupId === SYSTEM_ADMIN_GROUP_ID) return state;
+  if (!canManageGroupMembership(state, { actorId, groupId })) return state;
+  return {
+    ...state,
+    groups: state.groups.map((group) => (
+      group.id === groupId ? { ...group, status: "deleted" } : group
+    )),
+    memberships: state.memberships.map((membership) => (
+      membership.group_id === groupId && membership.status === "active"
+        ? { ...membership, status: "removed" }
+        : membership
+    )),
+    joinRequests: state.joinRequests.map((request) => (
+      request.group_id === groupId && request.status === "pending"
+        ? { ...request, status: "cancelled" }
+        : request
+    )),
+    adminRequests: state.adminRequests.map((request) => (
+      request.group_id === groupId && request.status === "pending"
+        ? { ...request, status: "cancelled" }
+        : request
+    ))
   };
 }
 

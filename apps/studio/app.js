@@ -5,6 +5,7 @@ import { createEmptyStudioState, deriveReadiness, canGeneratePdfQa, canUseKakaoC
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
 import { createGroupManagedApiAnswerDraft } from "/packages/contracts/src/api-answer-contract.js";
 import { AIDOT_CONTRACT_VERSION, AIDOT_SUPPORTED_CONTRACT_VERSIONS, createAidotPackageManifest } from "/packages/contracts/src/aidot-package-contract.js";
+import { SYSTEM_ADMIN_GROUP_ID } from "/packages/contracts/src/access-contract.js";
 import { createSampleCollaborationState, lockWorkItem, releaseWorkItemLock, submitReviewDecision, summarizeCollaboration, summarizeTeamDashboard } from "/packages/public-core/src/collaboration-state.js";
 import {
   approveAdminPermissionRequest,
@@ -13,8 +14,11 @@ import {
   canApproveAdminPermissionRequest,
   canApproveGroupJoinRequest,
   canCreateManagedGroup,
+  canManageGroupMembership,
   createManagedGroup,
   createSampleAccessState,
+  deleteManagedGroup,
+  deleteManagedUser,
   isSystemAdmin,
   loginAsUser,
   normalizeAccessState,
@@ -28,6 +32,8 @@ import {
   summarizeGroupBotAccess,
   summarizeGroupUsers,
   summarizeJoinRequests,
+  updateManagedGroup,
+  updateManagedUser,
   updateGroupMembershipRole
 } from "/packages/public-core/src/access-state.js";
 
@@ -991,11 +997,15 @@ function syncWorkspaceSelection() {
   if (selectedBot) {
     currentWorkspaceBotId = selectedBot.id;
     selectedBotManagementId = selectedBot.id;
+    currentApiGroupId = selectedBot.group_id;
+    currentApiBotId = selectedBot.id;
     if (currentStudioState.bot.id !== selectedBot.id || currentStudioState.bot.name !== selectedBot.name || currentStudioState.bot.version !== selectedBot.version) {
       applyCurrentBotToStudioState(selectedBot);
     }
   } else {
     currentWorkspaceBotId = "";
+    currentApiGroupId = currentWorkspaceGroupId;
+    currentApiBotId = "";
     if (!bots.length) selectedBotManagementId = "";
   }
 
@@ -1656,10 +1666,10 @@ function getFileNameFromContentDisposition(value) {
 
 function getCgaAuthHeaders() {
   const headers = {
-    "Content-Type": "application/json; charset=utf-8",
-    "X-CGA-User-Id": currentAccessState.currentUserId || "admin"
+    "Content-Type": "application/json; charset=utf-8"
   };
   const token = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+  if (currentAccessState.currentUserId && token) headers["X-CGA-User-Id"] = currentAccessState.currentUserId;
   if (token) headers["X-CGA-Session-Token"] = token;
   return headers;
 }
@@ -4389,6 +4399,10 @@ function renderOperateAidotScreen() {
 function renderAnalysisAidotScreen() {
   const section = document.querySelector('[data-screen-id="analysis"]');
   if (!section) return;
+  const operate = currentOperationsState.operate || {};
+  const historyRows = Array.isArray(currentOperationsState.operate?.history)
+    ? currentOperationsState.operate.history
+    : [];
   section.innerHTML = `
     <section class="aidot-feature-page aidot-feature-page--analysis">
       <div class="analysis-page">
@@ -4432,7 +4446,7 @@ function renderAnalysisAidotScreen() {
           <h3>선택일자 대화 이력 <span class="analysis-info-icon">i</span></h3>
           <div class="data-grid data-grid--studio" style="--data-grid-template:150px 1fr 180px 120px">
             <div class="data-grid__row data-grid__row--header"><div class="data-grid__cell">발화일시 ↕</div><div class="data-grid__cell">사용자 발화 ↕</div><div class="data-grid__cell">의도/모듈명 ⓘ ↕</div><div class="data-grid__cell">실행 결과 ↕</div></div>
-            ${history.slice(0, 2).map((row) => `<div class="data-grid__row"><div class="data-grid__cell">${escapeText(row[0])}</div><div class="data-grid__cell">${escapeText(row[1])}</div><div class="data-grid__cell">${escapeText(row[2])}</div><div class="data-grid__cell">${escapeText(row[3])}</div></div>`).join("")}
+            ${historyRows.slice(0, 2).map((row) => `<div class="data-grid__row"><div class="data-grid__cell">${escapeText(row[0])}</div><div class="data-grid__cell">${escapeText(row[1])}</div><div class="data-grid__cell">${escapeText(row[2])}</div><div class="data-grid__cell">${escapeText(row[3])}</div></div>`).join("")}
           </div>
         </section>
       </div>
@@ -4576,6 +4590,17 @@ function escapeText(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function isElementVisible(element) {
+  return Boolean(element && (element.offsetWidth || element.offsetHeight || element.getClientRects?.().length));
+}
+
+function getVisibleElement(selector, root = document) {
+  const elements = Array.from(root.querySelectorAll(selector));
+  const visible = elements.filter((element) => isElementVisible(element));
+  if (visible.length > 0) return visible[visible.length - 1];
+  return elements.length > 0 ? elements[elements.length - 1] : null;
 }
 
 function renderDetailAssetRows(items, columns) {
@@ -6146,7 +6171,6 @@ function renderTopContext() {
 
 function bindWorkspaceActions() {
   const groupSelect = document.querySelector("[data-workspace-group]");
-  const createButton = document.querySelector("[data-workspace-create]");
   const createVersionAdd = document.querySelector("[data-create-version-add]");
   const createBotCopy = document.querySelector("[data-create-bot-copy]");
   const createVersionManage = document.querySelector("[data-create-version-manage]");
@@ -6175,12 +6199,6 @@ function bindWorkspaceActions() {
       renderWorkspaceHome();
       renderAllStatePanels();
       rerenderAdminAndAccess();
-    });
-  }
-  if (createButton && createButton.dataset.bound !== "true") {
-    createButton.dataset.bound = "true";
-    createButton.addEventListener("click", async () => {
-      await createWorkspaceBotDraftAndOpen();
     });
   }
   if (createVersionAdd && createVersionAdd.dataset.bound !== "true") {
@@ -8749,10 +8767,19 @@ function renderAccessPanels() {
     const userId = selectedUserRecord?.user?.id || selectedUserRecord?.request?.user_id || "";
     const groupId = selectedUserRecord?.group?.id || "";
     const isPendingUser = selectedUserRecord?.rowStatus === "pending" && selectedUserRecord?.request?.id;
-    const editable = Boolean((selectedUserRecord?.membership || isPendingUser) && selectedUserRecord.role !== "system_admin");
+    const canManageSelectedUser = Boolean(
+      (selectedUserRecord?.membership || isPendingUser) &&
+      selectedUserRecord.role !== "system_admin" &&
+      (
+        isSystemAdmin(currentAccessState, currentAccessState.currentUserId) ||
+        (groupId && canManageGroupMembership(currentAccessState, { actorId: currentAccessState.currentUserId, groupId }))
+      )
+    );
+    const editable = canManageSelectedUser;
+    const canDeleteUser = Boolean(!isPendingUser && editable && selectedUserRecord?.user?.id);
     userEdit.innerHTML = `
       <h4>${isPendingUser ? "사용자 승인" : "사용자 정보 수정"}</h4>
-      <label><span>사용자 이름</span><input value="${selectedUserRecord?.user?.name || ""}" /></label>
+      <label><span>사용자 이름</span><input data-inline-user-name="${userId}" value="${selectedUserRecord?.user?.name || ""}" ${selectedUserRecord?.user ? "" : "disabled"} /></label>
       <label><span>역할</span><select data-inline-role-user="${userId}" data-inline-role-group="${groupId}" ${editable ? "" : "disabled"}>${MANAGED_GROUP_ROLES.map((role) => `<option value="${role}" ${role === selectedUserRecord?.role ? "selected" : ""}>${role}</option>`).join("")}</select></label>
       <label><span>그룹</span><select data-inline-group-user="${userId}" ${editable ? "" : "disabled"}>${activeGroups.map((group) => `<option value="${group.id}" ${group.id === groupId ? "selected" : ""}>${group.name}</option>`).join("")}</select></label>
       <label><span>계정 상태</span><select data-inline-account-status="${userId}" ${selectedUserRecord?.user ? "" : "disabled"}>
@@ -8762,7 +8789,7 @@ function renderAccessPanels() {
         <option value="password_reset" ${selectedUserRecord?.user?.status === "password_reset" ? "selected" : ""}>비밀번호 초기화</option>
       </select></label>
       <button type="button" data-inline-role-save="${userId}" data-inline-role-group-save="${groupId}" data-inline-request-save="${selectedUserRecord?.request?.id || ""}" ${editable ? "" : "disabled"}>${isPendingUser ? "승인" : t("common.save", "Save")}</button>
-      ${isPendingUser ? "" : `<button type="button" disabled>삭제</button>`}
+      ${isPendingUser ? "" : `<button type="button" data-inline-user-delete="${userId}" ${canDeleteUser ? "" : "disabled"}>삭제</button>`}
     `;
   }
   joinRequests.innerHTML = summarizeJoinRequests(currentAccessState).map((request) => `
@@ -8858,6 +8885,14 @@ function renderAccessPanels() {
     ` : `<h4>기본 정보</h4><p>${t("common.none", "None")}</p>`;
   }
   if (groupEdit) {
+    const canManageSelectedGroup = Boolean(
+      selectedGroupRecord
+      && selectedGroupRecord.id !== SYSTEM_ADMIN_GROUP_ID
+      && canManageGroupMembership(currentAccessState, {
+        actorId: currentAccessState.currentUserId,
+        groupId: selectedGroupRecord.id
+      })
+    );
     groupEdit.innerHTML = accessGroupCreateMode ? `
       <h4>그룹 생성</h4>
       <label><span>그룹 아이디</span><input data-group-id placeholder="예: g-new" /></label>
@@ -8865,11 +8900,13 @@ function renderAccessPanels() {
       <button type="button" data-group-create>${t("common.save", "Save")}</button>
     ` : selectedGroupRecord ? `
       <h4>그룹 수정</h4>
-      <label><span>그룹 이름</span><input value="${selectedGroupRecord.name}" disabled /></label>
-      <label><span>사용 여부</span><select disabled><option selected>${selectedGroupRecord.status || "active"}</option></select></label>
-      <button type="button" disabled>${t("common.save", "Save")}</button>
-      <button type="button" disabled>삭제</button>
-      <p class="edit-note">그룹 수정 저장은 Aidot admin API 연결 후 활성화합니다.</p>
+      <label><span>그룹 이름</span><input data-group-edit-name value="${selectedGroupRecord.name}" ${canManageSelectedGroup ? "" : "disabled"} /></label>
+      <label><span>사용 여부</span><select data-group-edit-status ${canManageSelectedGroup ? "" : "disabled"}>
+        <option value="active" ${(selectedGroupRecord.status || "active") === "active" ? "selected" : ""}>active</option>
+        <option value="inactive" ${selectedGroupRecord.status === "inactive" ? "selected" : ""}>inactive</option>
+      </select></label>
+      <button type="button" data-group-update ${canManageSelectedGroup ? "" : "disabled"}>${t("common.save", "Save")}</button>
+      <button type="button" data-group-delete ${canManageSelectedGroup ? "" : "disabled"}>삭제</button>
     ` : "";
   }
   bindAccessManagementControls();
@@ -8933,11 +8970,12 @@ function applyAccessToNavigation(current = summarizeAccess(currentAccessState)) 
 function renderApiRegistry() {
   const apiSection = document.querySelector('[data-screen-id="api-answer-source"]');
   if (!apiSection) return;
+  syncWorkspaceSelection();
   const groups = getActiveGroupsForCurrentUser();
   if (!groups.some((group) => group.id === currentApiGroupId)) {
     currentApiGroupId = groups[0]?.id || currentWorkspaceGroupId;
   }
-  const bots = getBotsForGroup(currentApiGroupId);
+  const bots = getAccessibleBotListForGroup(currentApiGroupId);
   if (!bots.some((bot) => bot.id === currentApiBotId)) {
     currentApiBotId = bots[0]?.id || currentWorkspaceBotId;
   }
@@ -9899,10 +9937,13 @@ function rerenderAdminAndAccess() {
   renderAccessPanels();
   refreshAdminResourcesFromServer().then(() => renderAccessPanels()).catch(() => {});
   renderApiRegistry();
+  bindAdminWorkbench();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }
 
 function bindAccessManagementControls() {
+  const groupCreate = getVisibleElement("[data-group-create]");
+  const joinSubmit = document.querySelector("[data-join-submit]");
   document.querySelectorAll("[data-select-user]").forEach((button) => {
     if (button.dataset.bound === "true") return;
     button.dataset.bound = "true";
@@ -10139,23 +10180,153 @@ function bindAccessManagementControls() {
       const userId = button.dataset.inlineRoleSave;
       const groupId = button.dataset.inlineRoleGroupSave;
       const requestId = button.dataset.inlineRequestSave || "";
-      const targetGroupId = document.querySelector(`[data-inline-group-user="${userId}"]`)?.value || groupId;
-      const role = document.querySelector(`[data-inline-role-user="${userId}"][data-inline-role-group="${groupId}"]`)?.value;
+      const targetGroupId = getVisibleElement(`[data-inline-group-user="${userId}"]`)?.value || groupId;
+      const role = getVisibleElement(`[data-inline-role-user="${userId}"][data-inline-role-group="${groupId}"]`)?.value;
+      const status = getVisibleElement(`[data-inline-account-status="${userId}"]`)?.value || "active";
+      const name = getVisibleElement(`[data-inline-user-name="${userId}"]`)?.value?.trim() || "";
       if (!userId || !targetGroupId || !role) return;
       await runAccessServerAction(
-        () => requestCgaJson(requestId ? `/api/cga/groups/join-requests/${encodeURIComponent(requestId)}/approve` : `/api/cga/groups/${encodeURIComponent(targetGroupId)}/members/${encodeURIComponent(userId)}/role`, {
-          method: requestId ? "POST" : "PATCH",
-          body: requestId ? { group_id: targetGroupId, requested_role: role } : { role }
-        }),
+        () => requestCgaJson(
+          requestId
+            ? `/api/cga/groups/join-requests/${encodeURIComponent(requestId)}/approve`
+            : `/api/cga/users/${encodeURIComponent(userId)}`,
+          {
+            method: requestId ? "POST" : "PATCH",
+            body: requestId
+              ? { group_id: targetGroupId, requested_role: role }
+              : { name, status, source_group_id: groupId, group_id: targetGroupId, role }
+          }
+        ),
         () => {
           currentAccessState = requestId
             ? approveGroupJoinRequest(currentAccessState, { requestId, reviewerId: currentAccessState.currentUserId, groupId: targetGroupId, requestedRole: role })
-            : updateGroupMembershipRole(currentAccessState, { actorId: currentAccessState.currentUserId, userId, groupId: targetGroupId, role });
+            : updateManagedUser(currentAccessState, {
+                actorId: currentAccessState.currentUserId,
+                userId,
+                name,
+                status,
+                sourceGroupId: groupId,
+                targetGroupId,
+                role
+              });
           accessUserModalOpen = false;
         }
       );
     });
   });
+  document.querySelectorAll("[data-inline-user-delete]").forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.inlineUserDelete;
+      if (!userId) return;
+      await runAccessServerAction(
+        () => requestCgaJson(`/api/cga/users/${encodeURIComponent(userId)}`, { method: "DELETE" }),
+        () => {
+          currentAccessState = deleteManagedUser(currentAccessState, {
+            actorId: currentAccessState.currentUserId,
+            userId
+          });
+          accessUserModalOpen = false;
+        }
+      );
+    });
+  });
+  if (groupCreate && groupCreate.dataset.bound !== "true") {
+    groupCreate.dataset.bound = "true";
+    groupCreate.addEventListener("click", async () => {
+      const id = getVisibleElement("[data-group-id]")?.value?.trim();
+      const name = getVisibleElement("[data-group-name]")?.value?.trim();
+      if (!id || !name) return;
+      await runAccessServerAction(
+        () => requestCgaJson("/api/cga/groups", { method: "POST", body: { group_id: id, name } }),
+        () => {
+          currentAccessState = createManagedGroup(currentAccessState, { id, name, actorId: currentAccessState.currentUserId });
+        }
+      );
+      selectedAccessGroupId = id;
+      accessGroupCreateMode = false;
+      accessGroupModalOpen = false;
+      renderAccessPanels();
+    });
+  }
+  const groupUpdate = document.querySelector("[data-group-update]");
+  if (groupUpdate && groupUpdate.dataset.bound !== "true") {
+    groupUpdate.dataset.bound = "true";
+    groupUpdate.addEventListener("click", async () => {
+      const selectedGroupId = selectedAccessGroupId;
+      const name = getVisibleElement("[data-group-edit-name]")?.value?.trim();
+      const status = getVisibleElement("[data-group-edit-status]")?.value?.trim() || "active";
+      if (!selectedGroupId || !name) return;
+      await runAccessServerAction(
+        () => requestCgaJson(`/api/cga/groups/${encodeURIComponent(selectedGroupId)}`, {
+          method: "PATCH",
+          body: {
+            name,
+            status
+          }
+        }),
+        () => {
+          currentAccessState = updateManagedGroup(currentAccessState, {
+            actorId: currentAccessState.currentUserId,
+            groupId: selectedGroupId,
+            name,
+            status
+          });
+        }
+      );
+      renderAccessPanels();
+    });
+  }
+  const groupDelete = document.querySelector("[data-group-delete]");
+  if (groupDelete && groupDelete.dataset.bound !== "true") {
+    groupDelete.dataset.bound = "true";
+    groupDelete.addEventListener("click", async () => {
+      const selectedGroupId = selectedAccessGroupId;
+      if (!selectedGroupId) return;
+      await runAccessServerAction(
+        () => requestCgaJson(`/api/cga/groups/${encodeURIComponent(selectedGroupId)}`, {
+          method: "DELETE"
+        }),
+        () => {
+          currentAccessState = deleteManagedGroup(currentAccessState, {
+            actorId: currentAccessState.currentUserId,
+            groupId: selectedGroupId
+          });
+        }
+      );
+      accessGroupCreateMode = false;
+      accessGroupModalOpen = false;
+      selectedAccessGroupId = "";
+      renderAccessPanels();
+    });
+  }
+  if (joinSubmit && joinSubmit.dataset.bound !== "true") {
+    joinSubmit.dataset.bound = "true";
+    joinSubmit.addEventListener("click", async () => {
+      const id = `jr-${Date.now()}`;
+      const groupId = document.querySelector("[data-join-group]")?.value;
+      const requestedRole = document.querySelector("[data-join-role]")?.value || "viewer";
+      await runAccessServerAction(
+        () => requestCgaJson("/api/cga/groups/join-requests", {
+          method: "POST",
+          body: {
+            id,
+            group_id: groupId,
+            requested_role: requestedRole
+          }
+        }),
+        () => {
+          currentAccessState = requestGroupJoin(currentAccessState, {
+            id,
+            userId: currentAccessState.currentUserId,
+            groupId,
+            requestedRole
+          });
+        }
+      );
+    });
+  }
 }
 
 function bindAdminActionButtons() {
@@ -10223,8 +10394,6 @@ function bindAdminWorkbench() {
   const logoutSubmit = document.querySelector("[data-logout-submit]");
   const topLogoutSubmit = document.querySelector("[data-top-logout-submit]");
   const signupSubmit = document.querySelector("[data-signup-submit]");
-  const groupCreate = document.querySelector("[data-group-create]");
-  const joinSubmit = document.querySelector("[data-join-submit]");
   const apiGroup = document.querySelector("[data-api-group]");
   const apiBot = document.querySelector("[data-api-bot]");
   const apiAdd = document.querySelector("[data-api-add]");
@@ -10284,6 +10453,8 @@ function bindAdminWorkbench() {
       clearAuthMessage();
       currentAccessState = { ...currentAccessState, currentUserId: session.user?.id || userId };
       await refreshAccessStateFromServer();
+      await refreshWorkspaceDataFromServer({ includeBots: true }).catch(() => false);
+      await refreshAdminResourcesFromServer().catch(() => false);
       postAuthDefaultScreenPending = !hasExplicitHashRoute();
       activeScreenId = hasExplicitHashRoute() ? parseHashRoute(window.location.hash).screenId || activeScreenId : DEFAULT_ACTIVE_SCREEN_ID;
       if (!hasExplicitHashRoute()) {
@@ -10305,27 +10476,27 @@ function bindAdminWorkbench() {
   if (loginSubmit && loginSubmit.dataset.bound !== "true") {
     loginSubmit.dataset.bound = "true";
     loginSubmit.addEventListener("click", async () => {
-      const selectedUserId = document.querySelector("[data-login-user]")?.value;
-      const userId = document.querySelector("[data-login-id]")?.value?.trim() || selectedUserId;
-      const password = document.querySelector("[data-login-password]")?.value || "";
+      const selectedUserId = getVisibleElement("[data-login-user]")?.value;
+      const userId = getVisibleElement("[data-login-id]")?.value?.trim() || selectedUserId;
+      const password = getVisibleElement("[data-login-password]")?.value || "";
       await runLogin({ userId, password });
     });
   }
   if (entryLoginSubmit && entryLoginSubmit.dataset.bound !== "true") {
     entryLoginSubmit.dataset.bound = "true";
     entryLoginSubmit.addEventListener("click", async () => {
-      const userId = document.querySelector("[data-entry-login-id]")?.value?.trim();
-      const password = document.querySelector("[data-entry-login-password]")?.value || "";
+      const userId = getVisibleElement("[data-entry-login-id]")?.value?.trim();
+      const password = getVisibleElement("[data-entry-login-password]")?.value || "";
       await runLogin({ userId, password });
     });
   }
-  const entryLoginPassword = document.querySelector("[data-entry-login-password]");
+  const entryLoginPassword = getVisibleElement("[data-entry-login-password]");
   if (entryLoginPassword && entryLoginPassword.dataset.bound !== "true") {
     entryLoginPassword.dataset.bound = "true";
     entryLoginPassword.addEventListener("keydown", async (event) => {
       if (event.key !== "Enter") return;
-      const userId = document.querySelector("[data-entry-login-id]")?.value?.trim();
-      const password = document.querySelector("[data-entry-login-password]")?.value || "";
+      const userId = getVisibleElement("[data-entry-login-id]")?.value?.trim();
+      const password = getVisibleElement("[data-entry-login-password]")?.value || "";
       await runLogin({ userId, password });
     });
   }
@@ -10335,8 +10506,12 @@ function bindAdminWorkbench() {
     } catch {
     }
     clearAuthSession();
+    setEntryAuthMode("login");
     setAuthMessage("info", "admin.logoutTitle", "admin.logoutSuccess");
-    currentAccessState = loginAsUser(currentAccessState, { userId: "admin" });
+    currentAccessState = {
+      ...currentAccessState,
+      currentUserId: ""
+    };
     postAuthDefaultScreenPending = false;
     activeScreenId = "";
     history.replaceState(null, "", "#");
@@ -10354,11 +10529,11 @@ function bindAdminWorkbench() {
   if (signupSubmit && signupSubmit.dataset.bound !== "true") {
     signupSubmit.dataset.bound = "true";
     signupSubmit.addEventListener("click", async () => {
-      const id = document.querySelector("[data-signup-id]")?.value?.trim();
-      const name = document.querySelector("[data-signup-name]")?.value?.trim();
-      const password = document.querySelector("[data-signup-password]")?.value || "";
+      const id = getVisibleElement("[data-signup-id]")?.value?.trim();
+      const name = getVisibleElement("[data-signup-name]")?.value?.trim();
+      const password = getVisibleElement("[data-signup-password]")?.value || "";
       if (!id || !name || !password) return;
-      const locale = document.querySelector("[data-signup-locale]")?.value || "en";
+      const locale = getVisibleElement("[data-signup-locale]")?.value || "en";
       const groupId = currentAccessState.policy?.signupDefaultGroupId || "g-support";
       try {
         const session = await requestCgaJson("/api/cga/auth/signup", {
@@ -10429,64 +10604,20 @@ function bindAdminWorkbench() {
     entrySignupSubmit.dataset.bound = "true";
     entrySignupSubmit.addEventListener("click", async () => {
       await runSignup({
-        id: document.querySelector("[data-entry-signup-id]")?.value?.trim(),
-        name: document.querySelector("[data-entry-signup-name]")?.value?.trim(),
-        password: document.querySelector("[data-entry-signup-password]")?.value || "",
-        locale: document.querySelector("[data-entry-signup-locale]")?.value || getCurrentLocale(),
-        groupId: document.querySelector("[data-entry-signup-group]")?.value || currentAccessState.policy?.signupDefaultGroupId || "g-support"
+        id: getVisibleElement("[data-entry-signup-id]")?.value?.trim(),
+        name: getVisibleElement("[data-entry-signup-name]")?.value?.trim(),
+        password: getVisibleElement("[data-entry-signup-password]")?.value || "",
+        locale: getVisibleElement("[data-entry-signup-locale]")?.value || getCurrentLocale(),
+        groupId: getVisibleElement("[data-entry-signup-group]")?.value || currentAccessState.policy?.signupDefaultGroupId || "g-support"
       });
-    });
-  }
-  if (groupCreate && groupCreate.dataset.bound !== "true") {
-    groupCreate.dataset.bound = "true";
-    groupCreate.addEventListener("click", async () => {
-      const id = document.querySelector("[data-group-id]")?.value?.trim();
-      const name = document.querySelector("[data-group-name]")?.value?.trim();
-      if (!id || !name) return;
-      await runAccessServerAction(
-        () => requestCgaJson("/api/cga/groups", { method: "POST", body: { group_id: id, name } }),
-        () => {
-          currentAccessState = createManagedGroup(currentAccessState, { id, name, actorId: currentAccessState.currentUserId });
-        }
-      );
-      selectedAccessGroupId = id;
-      accessGroupCreateMode = false;
-      accessGroupModalOpen = false;
-      renderAccessPanels();
-    });
-  }
-  if (joinSubmit && joinSubmit.dataset.bound !== "true") {
-    joinSubmit.dataset.bound = "true";
-    joinSubmit.addEventListener("click", async () => {
-      const id = `jr-${Date.now()}`;
-      const groupId = document.querySelector("[data-join-group]")?.value;
-      const requestedRole = document.querySelector("[data-join-role]")?.value || "viewer";
-      await runAccessServerAction(
-        () => requestCgaJson("/api/cga/groups/join-requests", {
-          method: "POST",
-          body: {
-            id,
-            group_id: groupId,
-            requested_role: requestedRole
-          }
-        }),
-        () => {
-          currentAccessState = requestGroupJoin(currentAccessState, {
-            id,
-            userId: currentAccessState.currentUserId,
-            groupId,
-            requestedRole
-          });
-        }
-      );
     });
   }
   if (apiAdd && apiAdd.dataset.bound !== "true") {
     apiAdd.dataset.bound = "true";
     apiAdd.addEventListener("click", async () => {
       if (!canManageApiAnswerForCurrentSelection()) return;
-      const name = document.querySelector("[data-api-name]")?.value?.trim();
-      const endpoint = document.querySelector("[data-api-endpoint]")?.value?.trim();
+      const name = getVisibleElement("[data-api-name]")?.value?.trim();
+      const endpoint = getVisibleElement("[data-api-endpoint]")?.value?.trim();
       if (!name || !endpoint) return;
       const draft = createGroupManagedApiAnswerDraft({ groupId: currentApiGroupId, botId: currentApiBotId });
       const api = {
@@ -10495,7 +10626,7 @@ function bindAdminWorkbench() {
         endpoint_url: endpoint,
         method: "GET",
         auth_type: "none",
-        response_path: document.querySelector("[data-api-response-path]")?.value?.trim() || "data.answer"
+        response_path: getVisibleElement("[data-api-response-path]")?.value?.trim() || "data.answer"
       };
       try {
         await saveApiAnswerToServer(api);
@@ -10635,45 +10766,6 @@ async function saveCurrentWorkspaceState() {
   renderGlobalMessage();
 }
 
-async function createWorkspaceBotDraftAndOpen() {
-  if (!canCreateBotInCurrentWorkspace()) return;
-  const draftBot = {
-    id: `bot-${Date.now()}`,
-    group_id: currentWorkspaceGroupId,
-    name: "",
-    status: "draft",
-    locale: currentStudioState.bot.defaultLocale || "ko",
-    version: "v0.1",
-    updated_at: new Date().toISOString().slice(0, 10)
-  };
-  try {
-    const created = await createWorkspaceBotOnServer(draftBot);
-    const nextBot = created.bot || draftBot;
-    currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== nextBot.id), nextBot];
-    applyCurrentBotToStudioState(nextBot);
-    resetWorkspaceEditorStateForNewBot(nextBot);
-    await saveStudioStateToServer();
-    await saveCompositionToServer();
-    await saveDetailAssetsToServer();
-    await refreshOperationsStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
-    await refreshCollaborationStateFromServer(currentWorkspaceGroupId, currentWorkspaceBotId).catch(() => false);
-  } catch (error) {
-    if (error.status) {
-      showApiErrorMessage(error, "message.actionForbiddenTitle");
-      return;
-    }
-    currentWorkspaceBots = [...currentWorkspaceBots.filter((item) => item.id !== draftBot.id), draftBot];
-    applyCurrentBotToStudioState(draftBot);
-    resetWorkspaceEditorStateForNewBot(draftBot);
-  }
-  renderWorkspaceHome();
-  renderAllStatePanels();
-  rerenderAdminAndAccess();
-  renderTopContext();
-  document.dispatchEvent(new CustomEvent("cga:content-rendered"));
-  setActiveScreen("create");
-}
-
 async function syncSelectedBotServerState(groupId = currentWorkspaceGroupId, botId = currentWorkspaceBotId) {
   if (!groupId || !botId) return;
   await refreshStudioStateFromServer(groupId, botId).catch(() => false);
@@ -10698,9 +10790,9 @@ function renderWorkspaceHome() {
     "workspace-home",
     "BOT",
     "봇 작업공간",
-    "그룹을 선택하고 작업할 봇을 고른 뒤 작업 흐름을 시작합니다.",
-    `<div class="cga-command-page workspace-command-page">
-      <section class="command-summary">
+    "이미 생성된 봇과 버전을 선택해 작업을 이어가는 공간입니다.",
+    `<div class="cga-command-page workspace-command-page workspace-command-page--aidot">
+      <section class="command-summary command-summary--workspace">
         <article>
           <strong>그룹 선택</strong>
           <select data-workspace-group>${groupOptions}</select>
@@ -10718,13 +10810,12 @@ function renderWorkspaceHome() {
           <span>${recentBots.length}개</span>
         </article>
       </section>
-      <section class="workspace-command-grid workspace-command-grid--workspace">
-        <article class="command-panel command-panel--wide">
+      <section class="workspace-command-grid workspace-command-grid--workspace workspace-command-grid--aidot">
+        <article class="command-panel command-panel--wide command-panel--workspace-main">
           <header>
             <div><strong>그룹 봇 목록</strong><span>${escapeText(currentGroup?.name || currentWorkspaceGroupId)} 안에서 작업할 봇을 선택합니다.</span></div>
-            <button type="button" data-workspace-create ${canCreateBotInCurrentWorkspace() ? "" : "disabled"}>+ 봇 생성</button>
           </header>
-          <div class="command-table" style="--command-cols:1.2fr 1.2fr .8fr .7fr .9fr .9fr .8fr">
+          <div class="command-table command-table--workspace-bots" style="--command-cols:1.3fr 1.3fr .8fr .8fr .8fr 1fr .8fr">
             <div class="command-row command-row--head"><span>봇 ID</span><span>봇 이름</span><span>버전</span><span>상태</span><span>언어</span><span>마지막수정</span><span>작업</span></div>
             ${accessibleBots.map((bot) => `
               <button type="button" class="command-row command-row--button ${bot.id === currentWorkspaceBotId ? "selected" : ""} ${bot.id === currentWorkspaceBotId ? "command-row--highlighted" : ""}" data-open-bot="${escapeText(bot.id)}">
@@ -10736,7 +10827,7 @@ function renderWorkspaceHome() {
                 <span>${escapeText(bot.updated_at || bot.created_at || "-")}</span>
                 <span>${bot.id === currentWorkspaceBotId ? "작업중" : "열기"}</span>
               </button>
-            `).join("") || `<div class="command-empty">이 그룹에 작업 가능한 봇이 없습니다. 새 봇을 생성해서 작업을 시작하세요.</div>`}
+            `).join("") || `<div class="command-empty">이 그룹에 작업 가능한 봇이 없습니다. 봇 관리 또는 봇 생성 메뉴에서 먼저 봇을 생성하세요.</div>`}
           </div>
           <div class="workspace-command-footer">
             <div class="workspace-command-footer__meta">
@@ -10748,7 +10839,7 @@ function renderWorkspaceHome() {
             <button type="button" data-workspace-open-current ${currentBot ? "" : "disabled"}>작업 봇 열기</button>
           </div>
         </article>
-        <aside class="command-panel">
+        <aside class="command-panel command-panel--workspace-side">
           <header><div><strong>현재 작업 대상</strong><span>선택된 봇 기준으로 Aidot 호환 제작 흐름이 시작됩니다.</span></div></header>
           <dl class="command-definition">
             <div><dt>그룹</dt><dd>${escapeText(currentGroup?.name || currentWorkspaceGroupId)}</dd></div>
@@ -10765,7 +10856,7 @@ function renderWorkspaceHome() {
           </div>
           <div class="workspace-recent-list">
             <strong>최근 작업 봇</strong>
-            <div class="command-table" style="--command-cols:1.5fr 1fr .9fr .8fr 1.1fr">
+            <div class="command-table command-table--workspace-recent" style="--command-cols:1.5fr 1fr .8fr .8fr 1.1fr">
               <div class="command-row command-row--head"><span>봇</span><span>ID</span><span>버전</span><span>상태</span><span>작업시각</span></div>
               ${recentBots.length ? recentBots.map((item) => `
                 <button type="button" class="command-row command-row--button" data-open-recent-bot="${escapeText(item.botId)}">
@@ -10814,9 +10905,6 @@ function renderWorkspaceHome() {
     renderTopContext();
     setActiveScreen("configure");
   }));
-  shell.querySelectorAll("[data-workspace-create]").forEach((button) => button.addEventListener("click", async () => {
-    await createWorkspaceBotDraftAndOpen();
-  }));
   shell.querySelectorAll("[data-jump-screen]").forEach((button) => {
     button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen));
   });
@@ -10842,17 +10930,24 @@ function renderBotManagement() {
     const rightTime = String(right?.updatedAt || "").toLowerCase();
     return rightTime.localeCompare(leftTime);
   });
+  const scenarioRows = currentScenarioAssets.filter((item) => item.type !== "module");
+  const moduleRows = currentScenarioAssets.filter((item) => item.type === "module");
+  const apiRows = currentApiRegistry.filter((item) => {
+    const groupMatched = !currentWorkspaceGroupId || String(item.group_id || item.groupId || "") === String(currentWorkspaceGroupId);
+    const botMatched = !selectedBot?.id || String(item.bot_id || item.botId || "") === String(selectedBot.id);
+    return groupMatched && botMatched;
+  });
   const canManage = canManageBotInCurrentWorkspace();
   const canDelete = canManage && bots.length > 1;
-  const versionHeaderCols = "1fr .8fr 1.4fr .7fr .7fr 1fr 1fr 1.1fr";
+  const versionHeaderCols = ".7fr .8fr 1.5fr .55fr .55fr .55fr .55fr .7fr 1.1fr .9fr 1fr";
   const transferNote = currentTransferStatus || getLatestTransferSummary() || "최근 패키지 전송 이력이 없습니다.";
   renderWorkflowScreenShell(
     "bot-management",
     "BM",
     "봇 관리",
     "봇 단위 자산/버전/운영 상태를 Aidot 호환 기준으로 관리합니다.",
-    `<div class="cga-command-page bot-management-command-page">
-      <section class="command-summary">
+    `<div class="cga-command-page bot-management-command-page bot-management-command-page--aidot">
+      <section class="command-summary command-summary--management">
         <article><strong>그룹</strong><span>${escapeText(group?.name || currentWorkspaceGroupId || "-")}</span></article>
         <article><strong>봇 수</strong><span>${bots.length}개</span></article>
         <article><strong>선택 봇</strong><span>${escapeText(selectedBot?.name || selected?.name || "-")}</span></article>
@@ -10860,8 +10955,8 @@ function renderBotManagement() {
         <article><strong>작업 버전</strong><span>${escapeText(workingVersionId || currentStudioState.bot.version || "v0.1")}</span></article>
         <article><strong>운영 버전</strong><span>${escapeText(activeVersion?.id || selectedBot?.version || currentStudioState.bot.version || "v0.1")}</span></article>
       </section>
-      <section class="bot-management-grid bot-management-grid--compact">
-        <article class="command-panel">
+      <section class="bot-management-grid bot-management-grid--compact bot-management-grid--aidot">
+        <article class="command-panel command-panel--bot-list">
           <header><div><strong>봇 목록 조회</strong><span>그룹 내 봇 목록과 기본 상태입니다.</span></div></header>
           <div class="bot-card-list">
             ${bots.map((bot) => `
@@ -10879,36 +10974,48 @@ function renderBotManagement() {
         </article>
         <article class="command-panel command-panel--wide command-panel--wide-sticky">
           <header><div><strong>봇 자산 / 버전</strong><span>작업 버전과 운영 버전을 구분해 관리합니다.</span></div></header>
-          <div class="command-table" style="--command-cols:${versionHeaderCols}">
+          <div class="command-inline-actions">
+            <button type="button" data-bot-version-add ${canManage ? "" : "disabled"}>버전 추가</button>
+            <button type="button" data-bot-version-copy="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"}>복사</button>
+            <button type="button" data-bot-version-delete="${escapeText(workingVersionId || "")}" ${canManage && sortedVersions.length > 1 && workingVersionId ? "" : "disabled"}>삭제</button>
+            <button type="button" data-version-upload>버전 파일 업로드</button>
+            <button type="button" data-version-download>버전 파일 다운로드</button>
+            <button type="button" data-bot-version-activate="${escapeText(workingVersionId || "")}" ${!canManage || !workingVersionId || workingVersionId === activeVersion?.id ? "disabled" : ""}>운영/해제</button>
+          </div>
+          <div class="command-inline-meta">운영 버전: ${escapeText(activeVersion?.id || "-")} / 선택 버전: ${escapeText(workingVersionId || "-")}</div>
+          <div class="command-table command-table--bot-versions" style="--command-cols:${versionHeaderCols}">
             <div class="command-row command-row--head">
+              <span>선택</span>
               <span>버전</span>
               <span>상태</span>
+              <span>최종 학습 엔진</span>
+              <span>의도</span>
+              <span>개체</span>
+              <span>사전</span>
+              <span>API</span>
+              <span>평가</span>
+              <span>최종수정일시</span>
+              <span>최종수정자</span>
               <span>비고</span>
-              <span>작업</span>
-              <span>운영</span>
-              <span>변경자</span>
-              <span>최종수정</span>
-              <span>작업</span>
             </div>
             ${sortedVersions.map((entry) => `
               <div class="command-row command-row--bot-version">
+                <span>${entry.id === workingVersionId ? "●" : ""}</span>
                 <strong>${escapeText(entry.id)}</strong>
                 <span>${escapeText(entry.status || "-")}</span>
-                <span>${escapeText(entry.note || "-")}</span>
-                <span>${entry.id === workingVersionId ? "작업중" : ""}</span>
-                <span>${entry.isActive ? "운영중" : ""}</span>
-                <span>${escapeText(entry.operator || "-")}</span>
+                <span>${escapeText(getCurrentAiConfig().nlu_model || "-")}</span>
+                <span>${entry.id === workingVersionId ? scenarioRows.length : "-"}</span>
+                <span>${entry.id === workingVersionId ? currentEntityAssets.length : "-"}</span>
+                <span>${entry.id === workingVersionId ? currentDictionaryAssets.length : "-"}</span>
+                <span>${entry.id === workingVersionId ? apiRows.length : "-"}</span>
+                <span>-</span>
                 <span>${escapeText(entry.updatedAt || "-")}</span>
-                <span class="team-task-actions">
-                  <button type="button" data-bot-version-open="${escapeText(entry.id)}">작업 열기</button>
-                  <button type="button" data-bot-version-activate="${escapeText(entry.id)}" ${!canManage || entry.isActive ? "disabled" : ""}>운영 설정</button>
-                  <button type="button" data-bot-version-copy="${escapeText(entry.id)}" ${canManage ? "" : "disabled"}>복사</button>
-                  <button type="button" data-bot-version-delete="${escapeText(entry.id)}" ${canManage && sortedVersions.length > 1 ? "" : "disabled"}>삭제</button>
-                </span>
+                <span>${escapeText(entry.operator || "-")}</span>
+                <span>${escapeText(entry.note || (entry.isActive ? "운영 버전" : entry.id === workingVersionId ? "작업 버전" : "-"))}</span>
               </div>
             `).join("") || `<div class="command-empty">버전 이력이 없습니다.</div>`}
           </div>
-          <div class="command-action-stack">
+          <div class="command-action-stack command-action-stack--bot-version">
             <button type="button" data-bot-version-add ${canManage ? "" : "disabled"}>버전 추가</button>
             <button type="button" data-version-download>CGA 버전 패키지 다운로드</button>
             <button type="button" data-version-upload>CGA 버전 패키지 업로드</button>

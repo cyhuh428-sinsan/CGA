@@ -152,19 +152,18 @@
       <section id="workspace-home" data-screen-id="workspace-home" class="screen-card workspace-home-card">
         <div class="screen-heading">
           <span aria-label="Bot Workspace">BW</span>
-          <div><h3 data-i18n="workspace.title">Bot Workspace</h3><p data-i18n="workspace.body">After login, users first choose a group and open or create a bot inside that group.</p></div>
+          <div><h3 data-i18n="workspace.title">Bot Workspace</h3><p data-i18n="workspace.body">After login, users choose a group and continue work on an existing bot and version.</p></div>
         </div>
         <div class="workspace-home-layout">
           <article class="workspace-selector">
             <h4 data-i18n="workspace.groupTitle">Current Group</h4>
-            <p data-i18n="workspace.groupBody">Bots and APIs are managed by group. The selected group decides which bots are visible.</p>
+            <p data-i18n="workspace.groupBody">Bots and APIs are managed by group. The selected group decides which existing bots are visible.</p>
             <select data-workspace-group></select>
             <div class="workspace-summary" data-workspace-summary></div>
           </article>
           <article class="workspace-bot-list">
             <div class="workspace-list-head">
               <h4 data-i18n="workspace.botListTitle">Group Bots</h4>
-              <button type="button" data-workspace-create data-i18n="workspace.createBot">Create Bot</button>
             </div>
             <div class="bot-list" data-workspace-bots></div>
           </article>
@@ -172,7 +171,7 @@
             <h4 data-i18n="workspace.nextTitle">Next Action</h4>
             <p><b data-i18n="workspace.currentBot">Current bot</b><span data-current-bot-name>-</span></p>
             <p><b data-i18n="workspace.currentGroup">Current group</b><span data-current-group-name></span></p>
-            <div class="next-action" data-i18n="workspace.nextBody">Open a bot, then continue through Create Bot and the build workflow.</div>
+            <div class="next-action" data-i18n="workspace.nextBody">Open an existing bot, then continue through the configured work workflow.</div>
           </aside>
         </div>
       </section>
@@ -476,8 +475,8 @@
                   </span>
                 </div>
                 <div class="create-action-copy">
-                  <strong>버전 작업</strong>
-                  <p>현재 초안 버전에서 바로 자산 작업으로 이어갈 수 있습니다.</p>
+                  <strong>버전 및 자산</strong>
+                  <p>봇 생성 시 최초 버전 v0.1이 함께 만들어지며, 이후 버전은 버전 관리에서 추가합니다.</p>
                 </div>
                 <div class="button-row create-action-row">
                   <button type="button" data-create-version-add>버전 추가</button>
@@ -730,9 +729,9 @@
       </section>
     </div>
   </div>
-  <script src="/apps/studio/i18n.js?v=20260629-1"></script>
-  <script src="/apps/studio/entry-auth.js?v=20260629-1"></script>
-  <script type="module" src="/apps/studio/app.js?v=20260629-1"></script>
+  <script src="/apps/studio/i18n.js?v=20260629-2"></script>
+  <script src="/apps/studio/entry-auth.js?v=20260629-2"></script>
+  <script type="module" src="/apps/studio/app.js?v=20260629-2"></script>
   <script>
     (() => {
       const DEFAULT_SCREEN_ID = "workspace-home";
