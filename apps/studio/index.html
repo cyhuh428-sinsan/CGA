@@ -96,6 +96,10 @@
         </div>
         <div class="auth-form-card" data-entry-signup-panel hidden>
           <div class="auth-form-card__header">
+            <div class="brand-wordmark brand-wordmark--signup">
+              <span data-i18n="app.brandEyebrow">CGA STUDIO</span>
+              <strong>CGA Studio</strong>
+            </div>
             <h1>회원 가입</h1>
             <p>관리자 승인 후 로그인할 수 있습니다.</p>
           </div>
@@ -104,14 +108,16 @@
               <span>아이디</span>
               <input class="input-control" data-entry-signup-id placeholder="아이디를 입력하세요." />
             </label>
-            <label class="field-block">
-              <span>비밀번호</span>
-              <input class="input-control" data-entry-signup-password type="password" placeholder="비밀번호를 입력하세요." />
-            </label>
-            <label class="field-block">
-              <span>비밀번호 확인</span>
-              <input class="input-control" data-entry-signup-password-confirm type="password" placeholder="비밀번호를 다시 입력하세요." />
-            </label>
+            <div class="auth-form-card__field-grid">
+              <label class="field-block">
+                <span>비밀번호</span>
+                <input class="input-control" data-entry-signup-password type="password" placeholder="비밀번호를 입력하세요." />
+              </label>
+              <label class="field-block">
+                <span>비밀번호 확인</span>
+                <input class="input-control" data-entry-signup-password-confirm type="password" placeholder="비밀번호를 다시 입력하세요." />
+              </label>
+            </div>
             <label class="field-block">
               <span>이름</span>
               <input class="input-control" data-entry-signup-name placeholder="이름을 입력하세요." />
@@ -120,16 +126,18 @@
               <span>코멘트</span>
               <textarea class="textarea-control" data-entry-signup-comment placeholder="코멘트를 입력하세요."></textarea>
             </label>
-            <label class="field-block">
-              <span>서버</span>
-              <input class="input-control" value="기본 서버" readonly disabled />
-            </label>
-            <label class="field-block">
-              <span>그룹</span>
-              <select class="login-select" data-entry-signup-group>
-                <option value="g-support">기본그룹</option>
-              </select>
-            </label>
+            <div class="auth-form-card__meta-grid">
+              <label class="field-block">
+                <span>서버</span>
+                <input class="input-control" value="기본 서버" readonly disabled />
+              </label>
+              <label class="field-block">
+                <span>그룹</span>
+                <select class="login-select" data-entry-signup-group>
+                  <option value="g-support">기본그룹</option>
+                </select>
+              </label>
+            </div>
             <input type="hidden" data-entry-signup-locale value="ko" />
             <button type="button" class="primary-action primary-action--full" data-entry-signup-submit>회원가입 신청</button>
           </div>
