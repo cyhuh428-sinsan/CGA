@@ -919,15 +919,15 @@ textarea { min-height: 84px; resize: vertical; }
 
 .create-layout {
   display: grid;
-  grid-template-rows: minmax(0, 322px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 296px) minmax(0, 1fr);
   gap: 10px;
   min-height: 0;
-  height: calc(100vh - 190px);
+  height: calc(100vh - 218px);
 }
 
 .create-top-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 0.82fr) minmax(300px, 0.84fr);
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 0.98fr) minmax(240px, 0.68fr);
   gap: 10px;
   min-height: 0;
 }
@@ -949,7 +949,7 @@ textarea { min-height: 84px; resize: vertical; }
 }
 
 .create-section--ai {
-  min-height: 236px;
+  min-height: 208px;
 }
 
 .create-section--basic,
