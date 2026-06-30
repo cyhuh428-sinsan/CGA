@@ -5777,7 +5777,7 @@ h1 { line-height: 1; }
 }
 
 .bot-management-grid--compact {
-  grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.45fr) minmax(320px, 0.92fr);
+  grid-template-columns: minmax(210px, 0.58fr) minmax(0, 1.8fr) minmax(260px, 0.74fr);
   gap: 10px;
 }
 
@@ -6048,6 +6048,12 @@ h1 { line-height: 1; }
   flex-wrap: wrap;
 }
 
+.command-inline-actions--header {
+  justify-content: flex-end;
+  padding: 0;
+  margin-left: auto;
+}
+
 .command-inline-actions button {
   min-height: 28px;
   border: 1px solid #cbd5e1;
@@ -6084,6 +6090,29 @@ h1 { line-height: 1; }
   min-height: 0;
   overflow: auto;
   padding: 12px;
+}
+
+.command-panel--bot-list .bot-card-list {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.command-panel--bot-detail .command-definition,
+.command-panel--bot-detail .command-action-stack,
+.command-panel--bot-detail .command-history {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.command-panel--bot-detail .command-definition,
+.command-panel--bot-detail .command-action-stack {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.command-panel--bot-detail .command-note {
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 .bot-select-card {

@@ -10,12 +10,19 @@
   - 하단에 중복으로 배치되어 있던 `버전 추가`, `CGA 버전 패키지 다운로드`, `CGA 버전 패키지 업로드` 버튼 묶음 제거
 - 좌측 봇 목록 하단의 별도 `봇 복사`, `봇 삭제` 버튼 묶음을 제거했다.
 - 봇 관리 화면 우측 상단 공통 `저장` 버튼은 `+ 봇 생성` 버튼으로 교체하고, 봇 생성 화면으로 이동하도록 변경했다.
+- 중복으로 보이던 `운영 버전 / 선택 버전` 보조 문구를 제거했다.
+- Aidot 버전관리 기준에 맞춰 `버전 추가`, `복사`, `삭제`, `버전 파일 업로드`, `버전 파일 다운로드`, `운영/해제` 버튼을 `봇 자산 / 버전` 제목 줄 오른쪽으로 이동했다.
+- 마지막 버전 삭제는 봇 삭제와 동일한 의미이므로, 마지막 버전 삭제 시 추가 확인 후 봇 삭제 흐름으로 연결하도록 수정했다.
+- `봇 복사`, `봇 삭제` 버튼은 신산님 재지시에 따라 하단과 봇 목록 제목 줄 모두에서 제거했다.
+- 봇 관리 3열 레이아웃에서 좌우 영역 폭을 줄이고 가운데 `봇 자산 / 버전` 영역을 확장했다.
 
 검증:
 
 - `node --check apps/studio/app.js` 통과
 - `git diff --check -- apps/studio/app.js apps/studio/styles.css docs/cga-work-progress.md` 통과
 - `npm run studio:validate` 통과
+- 추가 보정 후 `node --check apps/studio/app.js`, `git diff --check`, `npm run studio:validate` 재통과
+- 마지막 버전 삭제/좌우 레이아웃 보정 후 `node --check apps/studio/app.js`, `git diff --check`, `npm run studio:validate` 재통과
 
 ### CGA 전용 3개 화면 재배치 반영
 

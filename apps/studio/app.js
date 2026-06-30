@@ -6356,6 +6356,26 @@ function bindWorkspaceActions() {
       const selectedBot = getCurrentWorkspaceBot();
       const versionId = button.dataset.botVersionDelete;
       if (!selectedBot || !versionId || !canManageBotInCurrentWorkspace()) return;
+      const versions = getBotVersions(selectedBot);
+      if (versions.length <= 1) {
+        if (!confirm(`버전 ${versionId}는 마지막 버전입니다. 삭제하면 "${selectedBot.name}" 봇이 삭제됩니다. 계속하시겠습니까?`)) return;
+        const deleted = await deleteWorkspaceBotOnServer(selectedBot.group_id, selectedBot.id).catch(() => ({ ok: false, status: "fallback" }));
+        if (!deleted || deleted?.ok === false) {
+          removeWorkspaceBotVersionRegistry(selectedBot);
+          currentWorkspaceBots = currentWorkspaceBots.filter((bot) => bot.id !== selectedBot.id);
+        }
+        const nextBot = currentWorkspaceBots.find((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
+        if (nextBot) {
+          selectedBotManagementId = nextBot.id;
+          applyCurrentBotToStudioState(nextBot);
+        } else {
+          selectedBotManagementId = "";
+          currentWorkspaceBotId = "";
+        }
+        currentTransferStatus = "마지막 버전 삭제로 봇 삭제가 반영되었습니다.";
+        refreshWorkspaceManagementSurfaces();
+        return;
+      }
       if (!confirm(`버전 ${versionId}를 삭제하시겠습니까?`)) return;
       const next = removeWorkspaceBotVersion(selectedBot, versionId);
       if (!next.length) {
@@ -11083,7 +11103,7 @@ function renderBotManagement() {
     return groupMatched && botMatched;
   });
   const canManage = canManageBotInCurrentWorkspace();
-  const canDelete = canManage && bots.length > 1;
+  const canDelete = canManage && Boolean(selectedBot?.id);
   const versionHeaderCols = ".55fr .65fr .75fr 1.35fr .45fr .45fr .45fr .45fr .55fr .95fr .85fr 1fr";
   const transferNote = currentTransferStatus || getLatestTransferSummary() || "최근 패키지 전송 이력이 없습니다.";
   const renderedSection = renderWorkflowScreenShell(
@@ -11114,16 +11134,17 @@ function renderBotManagement() {
           </div>
         </article>
         <article class="command-panel command-panel--wide command-panel--wide-sticky">
-          <header><div><strong>봇 자산 / 버전</strong><span>작업 버전과 운영 버전을 구분해 관리합니다.</span></div></header>
-          <div class="command-inline-actions">
-            <button type="button" data-bot-version-add ${canManage ? "" : "disabled"}>버전 추가</button>
-            <button type="button" data-bot-version-copy="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"}>복사</button>
-            <button type="button" data-bot-version-delete="${escapeText(workingVersionId || "")}" ${canManage && sortedVersions.length > 1 && workingVersionId ? "" : "disabled"}>삭제</button>
-            <button type="button" data-version-upload>버전 파일 업로드</button>
-            <button type="button" data-version-download>버전 파일 다운로드</button>
-            <button type="button" data-bot-version-activate="${escapeText(workingVersionId || "")}" ${!canManage || !workingVersionId || workingVersionId === activeVersion?.id ? "disabled" : ""}>운영/해제</button>
-          </div>
-          <div class="command-inline-meta">운영 버전: ${escapeText(activeVersion?.id || "-")} / 선택 버전: ${escapeText(workingVersionId || "-")}</div>
+          <header>
+            <div><strong>봇 자산 / 버전</strong><span>작업 버전과 운영 버전을 구분해 관리합니다.</span></div>
+            <div class="command-inline-actions command-inline-actions--header">
+              <button type="button" data-bot-version-add ${canManage ? "" : "disabled"}>버전 추가</button>
+              <button type="button" data-bot-version-copy="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"}>복사</button>
+              <button type="button" data-bot-version-delete="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"}>삭제</button>
+              <button type="button" data-version-upload>버전 파일 업로드</button>
+              <button type="button" data-version-download>버전 파일 다운로드</button>
+              <button type="button" data-bot-version-activate="${escapeText(workingVersionId || "")}" ${!canManage || !workingVersionId || workingVersionId === activeVersion?.id ? "disabled" : ""}>운영/해제</button>
+            </div>
+          </header>
           <div class="command-table command-table--bot-versions" style="--command-cols:${versionHeaderCols}">
             <div class="command-row command-row--head">
               <span>선택</span>
