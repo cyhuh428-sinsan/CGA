@@ -5818,6 +5818,7 @@ h1 { line-height: 1; }
 .command-panel--wide-sticky {
   min-height: 0;
   border-color: #d0dced;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
 }
 
 .command-panel--status-block {
@@ -6037,6 +6038,42 @@ h1 { line-height: 1; }
   align-self: end;
   padding: 12px;
   border-top: 1px solid #e5ebf2;
+}
+
+.command-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 0;
+  flex-wrap: wrap;
+}
+
+.command-inline-actions button {
+  min-height: 28px;
+  border: 1px solid #cbd5e1;
+  border-radius: 0;
+  background: #ffffff;
+  color: #334155;
+  padding: 0 12px;
+  font-size: var(--font-body);
+  font-weight: 700;
+}
+
+.command-inline-actions button:disabled {
+  opacity: .4;
+}
+
+.command-inline-meta {
+  padding: 4px 12px 6px;
+  color: #52657a;
+  text-align: right;
+  font-size: var(--font-desc);
+  font-weight: 700;
+}
+
+.command-table--bot-versions {
+  border-top: 1px solid #e5ebf2;
+  align-self: start;
 }
 
 .bot-card-list,

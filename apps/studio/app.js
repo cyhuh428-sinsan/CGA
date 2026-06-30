@@ -11084,9 +11084,9 @@ function renderBotManagement() {
   });
   const canManage = canManageBotInCurrentWorkspace();
   const canDelete = canManage && bots.length > 1;
-  const versionHeaderCols = ".7fr .8fr 1.5fr .55fr .55fr .55fr .55fr .7fr 1.1fr .9fr 1fr";
+  const versionHeaderCols = ".55fr .65fr .75fr 1.35fr .45fr .45fr .45fr .45fr .55fr .95fr .85fr 1fr";
   const transferNote = currentTransferStatus || getLatestTransferSummary() || "최근 패키지 전송 이력이 없습니다.";
-  renderWorkflowScreenShell(
+  const renderedSection = renderWorkflowScreenShell(
     "bot-management",
     "BM",
     "봇 관리",
@@ -11111,10 +11111,6 @@ function renderBotManagement() {
                 <span>locale: ${escapeText(bot.locale || currentStudioState.bot.defaultLocale || "-")}</span>
               </button>
             `).join("") || `<div class="command-empty">관리할 봇이 없습니다.</div>`}
-          </div>
-          <div class="command-action-stack">
-            <button type="button" data-create-bot-copy ${canManage ? "" : "disabled"}>봇 복사</button>
-            <button type="button" data-delete-workspace-bot ${canDelete ? "" : "disabled"}>봇 삭제</button>
           </div>
         </article>
         <article class="command-panel command-panel--wide command-panel--wide-sticky">
@@ -11160,11 +11156,6 @@ function renderBotManagement() {
               </div>
             `).join("") || `<div class="command-empty">버전 이력이 없습니다.</div>`}
           </div>
-          <div class="command-action-stack command-action-stack--bot-version">
-            <button type="button" data-bot-version-add ${canManage ? "" : "disabled"}>버전 추가</button>
-            <button type="button" data-version-download>CGA 버전 패키지 다운로드</button>
-            <button type="button" data-version-upload>CGA 버전 패키지 업로드</button>
-          </div>
         </article>
         <article class="command-panel command-panel--status-block command-panel--bot-detail">
           <header><div><strong>봇 상세 정보 및 호환 운영</strong><span>선택한 작업 버전 패키지와 운영 버전 WebChat을 관리합니다.</span></div></header>
@@ -11192,6 +11183,14 @@ function renderBotManagement() {
       </section>
     </div>`
   );
+  const createButton = renderedSection?.querySelector("[data-screen-save]");
+  if (createButton) {
+    const replacement = createButton.cloneNode(true);
+    replacement.textContent = "+ 봇 생성";
+    replacement.removeAttribute("data-screen-save");
+    replacement.addEventListener("click", () => setActiveScreen("create"));
+    createButton.replaceWith(replacement);
+  }
   section.querySelectorAll("[data-manage-bot]").forEach((button) => button.addEventListener("click", async () => {
     const bot = bots.find((item) => item.id === button.dataset.manageBot);
     if (bot) {
