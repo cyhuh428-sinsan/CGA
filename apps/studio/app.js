@@ -4027,27 +4027,83 @@ function renderCreateStructureGrid(aiConfig = getCurrentAiConfig()) {
   const nluTypeLabel = getCreateOptionLabel("nlu_type", aiConfig.nlu_type || "ml");
   const nluModelLabel = getCreateOptionLabel("nlu_model", aiConfig.nlu_model || "deep_learning_lite");
   const answerModeLabel = getCreateOptionLabel("answer_mode", aiConfig.answer_mode || "fixed");
-  const llmProviderLabel = aiConfig.llm_provider ? getCreateOptionLabel("llm_provider", aiConfig.llm_provider) : "사용 안 함";
-  const llmModelLabel = aiConfig.llm_model ? getCreateOptionLabel("llm_model", aiConfig.llm_model) : "사용 안 함";
-  const cards = [
-    { title: "의도인식 엔진", value: nluTypeLabel, note: "선택 엔진", selected: true },
-    { title: "의도인식 엔진", value: nluModelLabel, note: "모델", selected: true },
-    { title: "답변 엔진", value: answerModeLabel, note: "선택 엔진", selected: true },
-    { title: "답변 엔진", value: llmProviderLabel, note: "LLM Provider", selected: Boolean(aiConfig.llm_provider) },
-    { title: "답변 엔진", value: llmModelLabel, note: "LLM Model", selected: Boolean(aiConfig.llm_model) },
-    { title: "의도인식 엔진", value: "Semantic - Vector Worker", note: "사용 불가", disabled: aiConfig.nlu_type !== "semantic_vector" },
-    { title: "의도인식 엔진", value: "Semantic - External Embedding", note: "사용 불가", disabled: aiConfig.nlu_type !== "semantic_external" },
-    { title: "의도인식 엔진", value: "LLM Engine", note: "사용 불가", disabled: aiConfig.nlu_type !== "llm" },
-    { title: "답변 엔진", value: "Semantic Engine RAG", note: "사용 불가", disabled: aiConfig.answer_mode !== "semantic_rag" },
-    { title: "답변 엔진", value: "LLM Engine RAG", note: "사용 불가", disabled: aiConfig.answer_mode !== "llm_rag" }
+  const answerColumns = [
+    { key: "fixed", title: "답변 엔진", value: getCreateOptionLabel("answer_mode", "fixed") },
+    { key: "semantic_rag", title: "답변 엔진", value: "Semantic Engine RAG" },
+    { key: "llm", title: "답변 엔진", value: "LLM Engine" },
+    { key: "llm_rag", title: "답변 엔진", value: "LLM Engine RAG" }
   ];
-  container.innerHTML = cards.map((card) => `
-    <article class="create-structure-card${card.selected ? " is-selected" : ""}${card.disabled ? " is-disabled" : ""}">
-      <span>${escapeText(card.title)}</span>
-      <b>${escapeText(card.value)}</b>
-      <strong>${escapeText(card.note)}</strong>
-    </article>
-  `).join("");
+  const nluRows = [
+    {
+      key: "ml",
+      title: "의도인식 엔진",
+      value: "ML",
+      detail: aiConfig.nlu_type === "ml" ? nluModelLabel : "DeepLearning Lite"
+    },
+    {
+      key: "semantic_vector",
+      title: "의도인식 엔진",
+      value: "Semantic - Vector Worker",
+      detail: "Aidot Vector Worker 기본 모델"
+    },
+    {
+      key: "semantic_external",
+      title: "의도인식 엔진",
+      value: "Semantic - External Embedding",
+      detail: "ko-sroberta"
+    },
+    {
+      key: "llm",
+      title: "의도인식 엔진",
+      value: "LLM Engine",
+      detail: "LLM Engine 기본 모델"
+    }
+  ];
+  const validCombinations = new Set([
+    "ml:fixed",
+    "semantic_vector:fixed",
+    "semantic_vector:semantic_rag",
+    "semantic_external:fixed",
+    "semantic_external:semantic_rag",
+    "llm:fixed",
+    "llm:llm",
+    "llm:llm_rag"
+  ]);
+  const selectedNluKey = aiConfig.nlu_type || "ml";
+  const selectedAnswerKey = aiConfig.answer_mode || "fixed";
+  const matrixMarkup = [];
+  answerColumns.forEach((column) => {
+    matrixMarkup.push(`
+      <article class="create-structure-cell create-structure-cell--engine">
+        <span>${escapeText(column.title)}</span>
+        <strong>${escapeText(column.value)}</strong>
+      </article>
+    `);
+  });
+  nluRows.forEach((row) => {
+    matrixMarkup.push(`
+      <article class="create-structure-cell create-structure-cell--engine">
+        <span>${escapeText(row.title)}</span>
+        <strong>${escapeText(row.value)}</strong>
+        <b>${escapeText(row.detail)}</b>
+      </article>
+    `);
+    answerColumns.forEach((column) => {
+      const comboKey = `${row.key}:${column.key}`;
+      const isSelected = row.key === selectedNluKey && column.key === selectedAnswerKey;
+      const isAvailable = validCombinations.has(comboKey);
+      const stateTitle = isSelected ? "실행/학습 가능" : (isAvailable ? "설정 전" : "사용 못함");
+      const stateDetail = isSelected ? "현재 선택" : (isAvailable ? "선택 가능" : "사용 불가");
+      matrixMarkup.push(`
+        <article class="create-structure-cell create-structure-cell--state${isSelected ? " is-selected" : ""}${isAvailable ? "" : " is-disabled"}">
+          <span>조합 상태</span>
+          <strong>${escapeText(stateTitle)}</strong>
+          <b>${escapeText(stateDetail)}</b>
+        </article>
+      `);
+    });
+  });
+  container.innerHTML = `<div class="create-structure-matrix">${matrixMarkup.join("")}</div>`;
   if (caption) caption.textContent = `선택 조합  의도인식: ${nluTypeLabel} / ${nluModelLabel} / 답변: ${answerModeLabel}`;
   if (badge) badge.textContent = "실행/학습 가능";
 }
