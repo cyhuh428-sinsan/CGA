@@ -1008,7 +1008,9 @@ function syncWorkspaceSelection() {
     selectedBotManagementId = selectedBot.id;
     currentApiGroupId = selectedBot.group_id;
     currentApiBotId = selectedBot.id;
-    if (currentStudioState.bot.id !== selectedBot.id || currentStudioState.bot.name !== selectedBot.name || currentStudioState.bot.version !== selectedBot.version) {
+    // Keep the current working version when the user stays on the same bot.
+    // `selectedBot.version` is the operating/default version, not always the selected working version.
+    if (currentStudioState.bot.id !== selectedBot.id || currentStudioState.bot.name !== selectedBot.name) {
       applyCurrentBotToStudioState(selectedBot);
     }
   } else {

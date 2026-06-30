@@ -6909,3 +6909,14 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 버전 레지스트리가 빈 배열인 경우에도 `v0.1` 초기 버전이 복구되도록 보강
   - 서버 저장이 되지 않은 상태를 `로컬 저장 완료`처럼 표시하지 않고 저장 실패 메시지로 표시
   - 운영 브라우저 캐시 갱신을 위해 Studio 정적 파일 query version을 `20260701-2`로 갱신
+
+### 2026-07-01 봇 관리 작업 버전 선택 유지 수정
+
+- 요청:
+  - 봇 관리 화면에서 `v0.2`를 눌러도 선택이 `v0.1`로 되돌아감
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `docs/cga-work-progress.md`
+- 반영 내용:
+  - `syncWorkspaceSelection()`이 같은 봇에서 작업 버전만 바뀐 상황까지 `applyCurrentBotToStudioState()`로 다시 덮어쓰던 흐름 수정
+  - 같은 봇을 유지하는 동안에는 `currentStudioState.bot.version`을 작업 버전 기준으로 유지하고, 봇 자체가 바뀔 때만 운영 기본값으로 동기화
