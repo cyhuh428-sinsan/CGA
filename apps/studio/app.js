@@ -5251,6 +5251,20 @@ function bindCreateControls() {
       await handleSync(true);
     });
   });
+  const createCancel = document.querySelector("[data-create-cancel]");
+  if (createCancel && createCancel.dataset.bound !== "true") {
+    createCancel.dataset.bound = "true";
+    createCancel.addEventListener("click", () => {
+      setActiveScreen("bot-management");
+    });
+  }
+  const createConfirm = document.querySelector("[data-create-confirm]");
+  if (createConfirm && createConfirm.dataset.bound !== "true") {
+    createConfirm.dataset.bound = "true";
+    createConfirm.addEventListener("click", async () => {
+      await runQueuedSave("create-confirm", saveCurrentWorkspaceState);
+    });
+  }
 }
 
 function getVisibleExistingScreenIds(workspace = document.querySelector(".workspace")) {
@@ -6252,7 +6266,7 @@ function bindWorkspaceActions() {
   }
   if (createVersionManage && createVersionManage.dataset.bound !== "true") {
     createVersionManage.dataset.bound = "true";
-    createVersionManage.addEventListener("click", () => openWorkspaceActionPopup("management"));
+    createVersionManage.addEventListener("click", () => openCreateVersionManagementPopup());
   }
   if (createVersionUpload && createVersionUpload.dataset.bound !== "true") {
     createVersionUpload.dataset.bound = "true";
@@ -10926,6 +10940,111 @@ function openWorkspaceActionPopup(kind) {
     refreshWorkspaceManagementSurfaces({ rerenderAdmin: true });
   }));
   document.body.appendChild(backdrop);
+}
+
+function openCreateVersionManagementPopup() {
+  const workspaceBot = getCurrentWorkspaceBot();
+  const draftBot = workspaceBot || {
+    id: currentStudioState.bot.id || "draft-bot",
+    name: currentStudioState.bot.name || "New Bot",
+    version: currentStudioState.bot.version || "v0.1",
+    locale: currentStudioState.bot.defaultLocale || "ko",
+    status: "draft",
+    group_id: currentWorkspaceGroupId,
+    updated_at: new Date().toISOString().slice(0, 10)
+  };
+  const versions = getBotVersions(draftBot).length
+    ? getBotVersions(draftBot)
+    : [{
+        id: draftBot.version || "v0.1",
+        status: draftBot.status || "draft",
+        isActive: true,
+        updatedAt: draftBot.updated_at || new Date().toISOString().slice(0, 10),
+        operator: currentAccessState.currentUserId || "system",
+        note: "초기 생성 버전"
+      }];
+  const activeVersion = versions.find((item) => item.isActive) || versions.find((item) => item.id === draftBot.version) || versions[0];
+  const workingVersionId = getCurrentWorkingVersionId(draftBot) || currentStudioState.bot.version || draftBot.version || versions[0]?.id || "v0.1";
+  const canManage = canManageBotInCurrentWorkspace();
+  const scenarioCount = currentScenarioAssets.filter((item) => item.type !== "module").length;
+  const entityCount = currentEntityAssets.length;
+  const dictionaryCount = currentDictionaryAssets.length;
+  const apiCount = currentApiRegistry.filter((item) => !draftBot.id || String(item.bot_id || item.botId || "") === String(draftBot.id)).length;
+  const closeLabel = "닫기";
+  const backdrop = document.createElement("div");
+  backdrop.className = "version-manage-popup-backdrop";
+  backdrop.innerHTML = `
+    <div class="version-manage-popup" role="dialog" aria-modal="true" aria-label="버전 관리">
+      <div class="version-manage-popup__header">
+        <div>
+          <strong>버전 관리</strong>
+          <p>버전을 선택한 후 원하는 기능을 실행하세요.</p>
+        </div>
+        <button type="button" class="version-manage-popup__close" data-version-popup-close aria-label="${closeLabel}">×</button>
+      </div>
+      <div class="version-manage-popup__toolbar">
+        <button type="button" data-bot-version-add ${canManage ? "" : "disabled"} data-version-popup-refresh>버전 추가</button>
+        <button type="button" data-bot-version-copy="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"} data-version-popup-refresh>복사</button>
+        <button type="button" data-bot-version-delete="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"} data-version-popup-refresh>삭제</button>
+        <button type="button" data-version-upload data-version-popup-refresh>버전 파일 업로드</button>
+        <button type="button" data-version-download data-version-popup-refresh>버전 파일 다운로드</button>
+        <button type="button" data-bot-version-activate="${escapeText(workingVersionId || "")}" ${!canManage || !workingVersionId || workingVersionId === activeVersion?.id ? "disabled" : ""} data-version-popup-refresh>운영/해제</button>
+      </div>
+      <div class="version-manage-popup__meta">운영 버전: ${escapeText(activeVersion?.id || "-")} / 선택 버전: ${escapeText(workingVersionId || "-")}</div>
+      <div class="version-manage-popup__table">
+        <div class="version-manage-popup__row version-manage-popup__row--head">
+          <span>선택</span>
+          <span>버전</span>
+          <span>상태</span>
+          <span>최종 학습 엔진</span>
+          <span>의도</span>
+          <span>개체</span>
+          <span>사전</span>
+          <span>API</span>
+          <span>평가</span>
+          <span>최종수정일시</span>
+          <span>최종수정자</span>
+          <span>비고</span>
+        </div>
+        ${versions.map((entry) => `
+          <div class="version-manage-popup__row">
+            <span>${entry.id === workingVersionId ? "◉" : "○"}</span>
+            <strong>${escapeText(entry.id)}</strong>
+            <span>${escapeText(entry.status || "-")}</span>
+            <span>${escapeText(getCurrentAiConfig().nlu_model || "DeepLearning Lite")}</span>
+            <span>${entry.id === workingVersionId ? scenarioCount : "-"}</span>
+            <span>${entry.id === workingVersionId ? entityCount : "-"}</span>
+            <span>${entry.id === workingVersionId ? dictionaryCount : "-"}</span>
+            <span>${entry.id === workingVersionId ? apiCount : "-"}</span>
+            <span>-</span>
+            <span>${escapeText(entry.updatedAt || "-")}</span>
+            <span>${escapeText(entry.operator || currentAccessState.currentUserId || "system")}</span>
+            <span>${escapeText(entry.note || (entry.isActive ? "운영 버전" : entry.id === workingVersionId ? "작업 버전" : "-"))}</span>
+          </div>
+        `).join("")}
+      </div>
+      <div class="version-manage-popup__footer-note">운영 버전은 외부 메신저 연결에서 실행되는 버전이며, 시뮬레이터 테스트 대상과 구분됩니다.</div>
+      <div class="version-manage-popup__footer-actions">
+        <button type="button" data-version-popup-close>${closeLabel}</button>
+      </div>
+    </div>
+  `;
+  const close = () => backdrop.remove();
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) close();
+  });
+  backdrop.querySelectorAll("[data-version-popup-close]").forEach((button) => button.addEventListener("click", close));
+  document.body.appendChild(backdrop);
+  bindWorkspaceActions();
+  backdrop.querySelectorAll("[data-version-popup-refresh]").forEach((button) => {
+    button.addEventListener("click", () => {
+      window.setTimeout(() => {
+        if (!document.body.contains(backdrop)) return;
+        close();
+        openCreateVersionManagementPopup();
+      }, 250);
+    });
+  });
 }
 
 function renderWorkspaceHome() {
