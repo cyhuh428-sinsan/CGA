@@ -6539,7 +6539,7 @@ function bindWorkspaceActions() {
       if (!added) return;
       openWorkspaceBotVersion(selectedBot, added.id, { cloneCurrentState: true });
       currentTransferStatus = `버전 ${added.id}가 추가되었고, 현재 작업 버전으로 열었습니다. 운영 버전은 바뀌지 않았습니다.`;
-      refreshWorkspaceManagementSurfaces();
+      refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
     });
   });
   botVersionDownloadButtons.forEach((button) => {
@@ -6558,12 +6558,12 @@ function bindWorkspaceActions() {
       const fileName = `Version_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getSafeFileName(version, "v0_1")}_${getTodayStamp()}.json`;
       if (serverFileName) {
         currentTransferStatus = formatTransferDownloaded("versionPackage", serverFileName, "server");
-        refreshWorkspaceManagementSurfaces();
+        refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
         return;
       }
       downloadJsonFile(fileName, buildCgaVersionPackage());
       currentTransferStatus = formatTransferDownloaded("versionPackage", fileName);
-      refreshWorkspaceManagementSurfaces();
+      refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
     });
   });
   botVersionUploadButtons.forEach((button) => {
@@ -6584,7 +6584,7 @@ function bindWorkspaceActions() {
           }
         }
         currentTransferStatus = `${appendTransferSyncStatus(synced)}${buildAssetImportMetadataNote(uploadResponse)}`;
-        refreshWorkspaceManagementSurfaces();
+        refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
       });
     });
   });
@@ -6630,7 +6630,7 @@ function bindWorkspaceActions() {
       if (!copied) return;
       openWorkspaceBotVersion(selectedBot, copied.id, { cloneCurrentState: true });
       currentTransferStatus = `버전 ${copied.id} 복사본이 생성되었고, 현재 작업 버전으로 열었습니다. 운영 버전은 바뀌지 않았습니다.`;
-      refreshWorkspaceManagementSurfaces();
+      refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
     });
   });
   deleteVersionButtons.forEach((button) => {
@@ -6654,7 +6654,7 @@ function bindWorkspaceActions() {
           currentWorkspaceBotId = "";
         }
         currentTransferStatus = "마지막 버전 삭제로 봇 삭제가 반영되었습니다.";
-        refreshWorkspaceManagementSurfaces();
+        refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
         return;
       }
       if (!confirm(`버전 ${versionId}를 삭제하시겠습니까?`)) return;
@@ -6667,7 +6667,7 @@ function bindWorkspaceActions() {
         currentStudioState.bot.version = next[0].id;
       }
       currentTransferStatus = appendTransferSyncStatus(await updateWorkspaceBotVersionOnServer(selectedBot, selectedBot.version).catch(() => false));
-      refreshWorkspaceManagementSurfaces();
+      refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
     });
   });
   activateVersionButtons.forEach((button) => {
@@ -6685,7 +6685,7 @@ function bindWorkspaceActions() {
       selectedBot.version = versionId;
       currentStudioState.bot.version = versionId;
       currentTransferStatus = appendTransferSyncStatus(synced);
-      refreshWorkspaceManagementSurfaces();
+      refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
     });
   });
   if (downloadBot && downloadBot.dataset.bound !== "true") {
@@ -11122,13 +11122,18 @@ function setActiveScreen(screenId, { replaceHash = false, adminSubview = "" } = 
   applyScreenLayout();
 }
 
-function refreshWorkspaceManagementSurfaces({ rerenderAdmin = false } = {}) {
+function refreshWorkspaceManagementSurfaces({ rerenderAdmin = false, rerenderVersionPopup = false } = {}) {
+  const shouldReopenVersionPopup = rerenderVersionPopup && !!document.querySelector(".version-manage-popup");
+  if (shouldReopenVersionPopup) {
+    document.querySelector(".version-manage-popup")?.closest(".version-manage-popup-backdrop")?.remove();
+  }
   renderWorkspaceHome();
   renderBotManagement();
   renderAllStatePanels();
   renderTopContext();
   renderGlobalMessage();
   if (rerenderAdmin) rerenderAdminAndAccess();
+  if (shouldReopenVersionPopup) openCreateVersionManagementPopup();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
 }
 
@@ -11387,8 +11392,8 @@ function openCreateVersionManagementPopup() {
           <span>비고</span>
         </div>
         ${versions.map((entry) => `
-          <div class="version-manage-popup__row">
-            <span>${entry.id === workingVersionId ? "◉" : "○"}</span>
+          <button type="button" class="version-manage-popup__row version-manage-popup__row--selectable" data-version-popup-select="${escapeText(entry.id)}">
+            <span><input type="radio" name="version-popup-selected" value="${escapeText(entry.id)}" ${entry.id === workingVersionId ? "checked" : ""} aria-label="${escapeText(entry.id)} 선택" /></span>
             <strong>${escapeText(entry.id)}</strong>
             <span>${escapeText(entry.status || "-")}</span>
             <span>${escapeText(getCurrentAiConfig().nlu_model || "DeepLearning Lite")}</span>
@@ -11400,7 +11405,7 @@ function openCreateVersionManagementPopup() {
             <span>${escapeText(entry.updatedAt || "-")}</span>
             <span>${escapeText(entry.operator || currentAccessState.currentUserId || "system")}</span>
             <span>${escapeText(entry.note || (entry.isActive ? "운영 버전" : entry.id === workingVersionId ? "작업 버전" : "-"))}</span>
-          </div>
+          </button>
         `).join("")}
       </div>
       <div class="version-manage-popup__footer-note">운영 버전은 외부 메신저 연결에서 실행되는 버전이며, 시뮬레이터 테스트 대상과 구분됩니다.</div>
@@ -11416,6 +11421,18 @@ function openCreateVersionManagementPopup() {
   backdrop.querySelectorAll("[data-version-popup-close]").forEach((button) => button.addEventListener("click", close));
   document.body.appendChild(backdrop);
   bindWorkspaceActions();
+  backdrop.querySelectorAll("[data-version-popup-select]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const versionId = button.dataset.versionPopupSelect;
+      const bot = getCurrentWorkspaceBot();
+      if (!bot || !versionId) return;
+      openWorkspaceBotVersion(bot, versionId, { cloneCurrentState: false });
+      close();
+      openCreateVersionManagementPopup();
+      renderTopContext();
+      renderCreateSummary();
+    });
+  });
 }
 
 function renderWorkspaceHome() {
@@ -11651,8 +11668,8 @@ function renderBotManagement() {
               <span>비고</span>
             </div>
             ${sortedVersions.map((entry) => `
-              <div class="command-row command-row--bot-version">
-                <span>${entry.id === workingVersionId ? "●" : ""}</span>
+              <button type="button" class="command-row command-row--bot-version command-row--selectable" data-bot-version-open="${escapeText(entry.id)}">
+                <span><input type="radio" name="bot-management-version" value="${escapeText(entry.id)}" ${entry.id === workingVersionId ? "checked" : ""} aria-label="${escapeText(entry.id)} 선택" /></span>
                 <strong>${escapeText(entry.id)}</strong>
                 <span>${escapeText(entry.status || "-")}</span>
                 <span>${escapeText(getCurrentAiConfig().nlu_model || "-")}</span>
@@ -11664,7 +11681,7 @@ function renderBotManagement() {
                 <span>${escapeText(entry.updatedAt || "-")}</span>
                 <span>${escapeText(entry.operator || "-")}</span>
                 <span>${escapeText(entry.note || (entry.isActive ? "운영 버전" : entry.id === workingVersionId ? "작업 버전" : "-"))}</span>
-              </div>
+              </button>
             `).join("") || `<div class="command-empty">버전 이력이 없습니다.</div>`}
           </div>
         </article>
