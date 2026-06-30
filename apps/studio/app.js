@@ -11707,7 +11707,15 @@ function renderBotManagement() {
   const webchatUrl = `http://127.0.0.1:4173/webchat/${encodeURIComponent(selectedBot?.id || currentWorkspaceBotId || "bot")}`;
   const versions = getBotVersions(selectedBot);
   const activeVersion = versions.find((version) => version.isActive) || versions.find((version) => version.id === (selectedBot?.version || "")) || versions[0];
-  const workingVersionId = selectedBot?.id === currentWorkspaceBotId
+  const selectedBotIsCurrent = Boolean(
+    selectedBot?.id
+    && (
+      selectedBot.id === currentWorkspaceBotId
+      || selectedBot.id === currentStudioState.bot.id
+      || selectedBot.id === selectedBotManagementId
+    )
+  );
+  const workingVersionId = selectedBotIsCurrent
     ? getCurrentWorkingVersionId(selectedBot)
     : normalizeBotVersionVersion(selectedBot?.version || activeVersion?.id || "v0.1");
   const sortedVersions = versions.slice().sort((left, right) => {

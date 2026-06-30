@@ -6923,3 +6923,4 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 작업 버전을 `workspaceWorkingVersionByBot`에 별도로 저장해 봇 기본 버전(`selectedBot.version`)과 분리
   - 버전 선택/운영 전환/마지막 운영 버전 삭제 후 다음 버전 승격 시에도 작업 버전 저장값을 함께 갱신
   - `applyCachedWorkspaceSnapshot()` 이후에도 선택한 작업 버전이 다시 덮어써지지 않도록 `snapshot.version_id` 기준으로 최종 버전값을 재고정
+  - 봇 관리 화면의 작업 버전 계산 시 `currentWorkspaceBotId`뿐 아니라 `currentStudioState.bot.id`, `selectedBotManagementId`까지 함께 확인해 선택된 봇의 작업 버전을 안정적으로 표시
