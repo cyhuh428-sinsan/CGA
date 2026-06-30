@@ -4,7 +4,7 @@ const path = require("path");
 const { spawn } = require("child_process");
 
 const root = path.resolve(__dirname, "..");
-const port = 49173;
+const port = 14000 + Math.floor(Math.random() * 10000);
 const dataDir = path.join(root, ".cga-data-admin-check");
 
 function request(method, pathName, body) {
@@ -37,7 +37,7 @@ function request(method, pathName, body) {
 }
 
 async function waitReady() {
-  const deadline = Date.now() + 10000;
+  const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
     try { return await request("GET", "/api/cga/admin/resources"); } catch { await new Promise((r) => setTimeout(r, 200)); }
   }
@@ -46,11 +46,13 @@ async function waitReady() {
 
 async function main() {
   fs.rmSync(dataDir, { recursive: true, force: true });
+  let stderr = "";
   const child = spawn(process.execPath, [path.join(root, "scripts", "serve-studio.js")], {
     cwd: root,
     env: { ...process.env, PORT: String(port), CGA_DATA_DIR: dataDir },
     stdio: ["ignore", "pipe", "pipe"]
   });
+  child.stderr.on("data", (chunk) => { stderr += String(chunk); });
   try {
     const ready = await waitReady();
     const resources = ready.json;
@@ -124,6 +126,7 @@ async function main() {
       counts: { templates: resources.templates.length, common_variables: resources.common_variables.length, default_messages: resources.default_messages.length, channels: resources.channels.length }
     }, null, 2));
   } finally {
+    if (child.exitCode !== null && child.exitCode !== 0 && stderr.trim()) console.error(stderr.trim());
     child.kill();
     fs.rmSync(dataDir, { recursive: true, force: true });
   }

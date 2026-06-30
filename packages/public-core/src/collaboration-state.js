@@ -9,7 +9,22 @@ export function createSampleCollaborationState() {
       { id: "u-reviewer", name: "검수자", role: "reviewer" },
       { id: "u-operator", name: "운영자", role: "operator" }
     ],
-    workItems: []
+    workItems: [
+      createWorkItem({
+        id: "wi-intent-password",
+        type: WORK_ITEM_TYPE.INTENT,
+        title: "password_reset",
+        assigneeId: "u-builder",
+        status: WORK_ITEM_STATUS.TODO
+      }),
+      createWorkItem({
+        id: "wi-answer-password",
+        type: WORK_ITEM_TYPE.ANSWER,
+        title: "password_reset answer",
+        assigneeId: "u-reviewer",
+        status: WORK_ITEM_STATUS.REVIEW
+      })
+    ]
   };
 }
 

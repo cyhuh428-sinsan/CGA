@@ -8,7 +8,7 @@ const baseUrl = `http://localhost:${port}`;
 const dataDir = mkdtempSync(join(tmpdir(), "cga-workspace-bots-"));
 const server = spawn("node", ["scripts/serve-studio.js"], {
   cwd: process.cwd(),
-  env: { ...process.env, PORT: port, CGA_DATA_DIR: dataDir },
+  env: { ...process.env, PORT: port, CGA_DATA_DIR: dataDir, CGA_AUTH_HEADER_FALLBACK: "enabled" },
   stdio: "pipe"
 });
 
