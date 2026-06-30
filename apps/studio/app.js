@@ -5778,9 +5778,9 @@ function renderTeamDashboard() {
   }).join("") || `<div class="team-task-empty"><strong>${escapeText(emptyText)}</strong><span>${t("team.currentUser", "Current user")}: ${dashboard.currentUser?.name || currentAccessState.currentUserId}</span></div>`;
   renderWorkflowScreenShell(
     "team-dashboard",
-    "TM",
-    "팀 대시보드",
-    "봇 제작 협업 현황을 그룹/봇 단위 진행률과 승인 흐름 기준으로 정리합니다.",
+    "OD",
+    "운영 대시보드",
+    "운영 대시보드 기준으로 API, 채널, 봇 상태와 알림을 확인합니다.",
     `<div class="cga-command-page team-command-page">
       <section class="command-summary">
         <article><strong>내 작업</strong><span>${dashboard.myTasks.length}건</span></article>
@@ -6252,7 +6252,7 @@ function bindWorkspaceActions() {
   }
   if (createVersionManage && createVersionManage.dataset.bound !== "true") {
     createVersionManage.dataset.bound = "true";
-    createVersionManage.addEventListener("click", () => setActiveScreen("bot-management"));
+    createVersionManage.addEventListener("click", () => openWorkspaceActionPopup("management"));
   }
   if (createVersionUpload && createVersionUpload.dataset.bound !== "true") {
     createVersionUpload.dataset.bound = "true";
@@ -9042,6 +9042,9 @@ function renderApiRegistry() {
       <header class="studio-table-page__title-row">
         <h1>API</h1>
       </header>
+      <p class="manual-main__status ${canManageApi ? "manual-main__status--success" : "manual-main__status--warning"}">
+        ${canManageApi ? t("apiAnswer.manageAllowed", "Can manage API answers") : t("apiAnswer.manageBlocked", "Blocked: apiAnswer.manage")}
+      </p>
       <div class="studio-table-page__search-row">
         <label class="studio-table-page__search">
           <span aria-hidden="true">⌕</span>
@@ -10186,17 +10189,25 @@ function bindAccessManagementControls() {
       const name = getVisibleElement(`[data-inline-user-name="${userId}"]`)?.value?.trim() || "";
       if (!userId || !targetGroupId || !role) return;
       await runAccessServerAction(
-        () => requestCgaJson(
-          requestId
-            ? `/api/cga/groups/join-requests/${encodeURIComponent(requestId)}/approve`
-            : `/api/cga/users/${encodeURIComponent(userId)}`,
-          {
-            method: requestId ? "POST" : "PATCH",
-            body: requestId
-              ? { group_id: targetGroupId, requested_role: role }
-              : { name, status, source_group_id: groupId, group_id: targetGroupId, role }
+        async () => {
+          if (requestId) {
+            return requestCgaJson(`/api/cga/groups/join-requests/${encodeURIComponent(requestId)}/approve`, {
+              method: "POST",
+              body: { group_id: targetGroupId, requested_role: role }
+            });
           }
-        ),
+          const userResult = await requestCgaJson(`/api/cga/users/${encodeURIComponent(userId)}`, {
+            method: "PATCH",
+            body: { name, status, source_group_id: groupId, group_id: targetGroupId, role }
+          });
+          if (groupId && targetGroupId === groupId) {
+            await requestCgaJson(`/api/cga/groups/${encodeURIComponent(targetGroupId)}/members/${encodeURIComponent(userId)}/role`, {
+              method: "PATCH",
+              body: { role }
+            });
+          }
+          return userResult;
+        },
         () => {
           currentAccessState = requestId
             ? approveGroupJoinRequest(currentAccessState, { requestId, reviewerId: currentAccessState.currentUserId, groupId: targetGroupId, requestedRole: role })
@@ -10776,6 +10787,127 @@ async function syncSelectedBotServerState(groupId = currentWorkspaceGroupId, bot
   await refreshApiRegistryFromServer().catch(() => false);
 }
 
+function openWorkspaceActionPopup(kind) {
+  const currentGroup = getCurrentWorkspaceGroup();
+  const currentBot = getCurrentWorkspaceBot();
+  const aiConfig = getCurrentAiConfig();
+  const scenarioRows = currentScenarioAssets.filter((item) => item.type !== "module").slice(0, 12);
+  const moduleRows = currentScenarioAssets.filter((item) => item.type === "module").slice(0, 8);
+  const titleMap = {
+    settings: "봇 설정",
+    composition: "봇 구성",
+    management: "봇 관리",
+    build: "봇 제작"
+  };
+  const renderSettingPopup = () => `
+    <section class="workspace-popup-grid workspace-popup-grid--settings">
+      <article class="workspace-popup-card">
+        <h5>NLU 판정 기준</h5>
+        <div class="workspace-popup-metric-grid">
+          <label><span>의도파악 Cut-off Score</span><b>0.75</b></label>
+          <label><span>유사 의도 Score</span><b>0.85</b></label>
+          <label><span>의도파악결과 최대개수</span><b>3</b></label>
+          <label><span>Validation Set 상태 설정</span><b>Random</b></label>
+          <label><span>Exacting Matching</span><b>사용</b></label>
+          <label><span>Imbalance Oversampling 설정</span><b>미사용</b></label>
+        </div>
+      </article>
+      <article class="workspace-popup-card workspace-popup-card--wide">
+        <h5>기본 메시지(4)</h5>
+        <div class="workspace-popup-message-grid">
+          ${["첫 인사말", "사용자의 의도를 이해하지 못했을 경우 답변", "의도별 대화 종료시 안내 메시지", "버튼에 없는 값을 입력했을 경우 제공되는 메시지"].map((label) => `
+            <div class="workspace-popup-message">
+              <strong>${label}</strong>
+              <span>메시지</span>
+              <textarea>${label === "사용자의 의도를 이해하지 못했을 경우 답변" ? "질문을 이해하지 못했습니다. 다시 말씀해주세요." : ""}</textarea>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    </section>`;
+  const renderCompositionPopup = () => `
+    <section class="workspace-popup-grid workspace-popup-grid--composition">
+      <article class="workspace-popup-card">
+        <h5>자동 구성</h5>
+        <div class="workspace-popup-mode-row"><label><input type="radio" checked /> 텍스트</label><label><input type="radio" /> PDF</label></div>
+        <label class="workspace-popup-field"><span>PDF 파일</span><input type="text" placeholder="파일 선택" /></label>
+        <label class="workspace-popup-field"><span>문서 제목</span><input type="text" placeholder="문서 제목을 입력하세요." /></label>
+        <textarea class="workspace-popup-large-text" placeholder="선택한 구성 모델 기준으로 답변 문서를 입력합니다."></textarea>
+        <div class="workspace-popup-inline"><input type="number" value="2" /><button type="button">RAG 문서 구성</button></div>
+      </article>
+      <article class="workspace-popup-card workspace-popup-card--wide">
+        <h5>의도 후보</h5>
+        <textarea class="workspace-popup-candidate" placeholder="답변 텍스트 또는 PDF를 입력하고 RAG 문서 구성을 실행하세요."></textarea>
+      </article>
+    </section>`;
+  const renderManagementPopup = () => {
+    const bots = currentWorkspaceBots.filter((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
+    const versions = getBotVersions(currentBot || {});
+    return `
+      <section class="workspace-popup-grid workspace-popup-grid--management">
+        <article class="workspace-popup-card">
+          <h5>봇 목록 조회</h5>
+          <div class="workspace-popup-list">
+            ${bots.map((bot) => `<button type="button" class="${bot.id === currentWorkspaceBotId ? "selected" : ""}" data-popup-open-bot="${escapeText(bot.id)}"><strong>${escapeText(bot.name)}</strong><span>${escapeText(bot.id)} · ${escapeText(bot.version || "-")} · ${escapeText(bot.status || "-")}</span></button>`).join("") || `<span>관리할 봇이 없습니다.</span>`}
+          </div>
+        </article>
+        <article class="workspace-popup-card workspace-popup-card--wide">
+          <h5>봇 자산 / 버전</h5>
+          <div class="workspace-popup-table" style="--popup-cols:.8fr .8fr 1.4fr .8fr .8fr .8fr .9fr 1fr">
+            <div class="workspace-popup-row head"><span>선택</span><span>버전</span><span>최종 학습 엔진</span><span>의도</span><span>개체</span><span>API</span><span>평가</span><span>비고</span></div>
+            ${versions.map((version) => `<div class="workspace-popup-row"><span>${version.isActive ? "●" : ""}</span><strong>${escapeText(version.id)}</strong><span>${escapeText(aiConfig.nlu_model || "-")}</span><span>${scenarioRows.length}</span><span>${currentEntityAssets.length}</span><span>${currentApiRegistry.length}</span><span>-</span><span>${escapeText(version.note || "-")}</span></div>`).join("") || `<div class="workspace-popup-empty">버전 이력이 없습니다.</div>`}
+          </div>
+        </article>
+      </section>`;
+  };
+  const renderBuildPopup = () => `
+    <section class="workspace-popup-grid workspace-popup-grid--build">
+      <article class="workspace-popup-card workspace-popup-card--wide">
+        <h5>${escapeText(aiConfig.nlu_type || "ML")} · ${escapeText(aiConfig.nlu_model || "-")} / 답변: ${escapeText(aiConfig.answer_mode || "-")}</h5>
+        <div class="workspace-popup-toolbar"><button type="button">학습하기</button><button type="button">학습 전</button><button type="button">+ 의도/모듈 추가</button></div>
+        <div class="workspace-popup-table" style="--popup-cols:.65fr .7fr 1.1fr 1.4fr .8fr .8fr 1fr 1fr">
+          <div class="workspace-popup-row head"><span>ID</span><span>구분</span><span>의도/모듈명</span><span>표시명</span><span>대화카드</span><span>태그</span><span>최종수정일시</span><span>최종수정자</span></div>
+          ${[...scenarioRows, ...moduleRows].map((item) => `<div class="workspace-popup-row"><span>${escapeText(item.id || "-")}</span><span>${escapeText(item.type === "module" ? "모듈" : "의도")}</span><strong>${escapeText(item.name || item.id || "-")}</strong><span>${escapeText(item.displayName || item.display_name || "-")}</span><span>${escapeText(item.dialogCards || item.dialog_cards || "1")}</span><span>${escapeText(item.tag || "0")}</span><span>${escapeText(item.updatedAt || item.updated_at || "-")}</span><span>${escapeText(item.updatedBy || item.updated_by || "-")}</span></div>`).join("") || `<div class="workspace-popup-empty">등록된 의도/모듈이 없습니다.</div>`}
+        </div>
+      </article>
+    </section>`;
+  const contentMap = {
+    settings: renderSettingPopup,
+    composition: renderCompositionPopup,
+    management: renderManagementPopup,
+    build: renderBuildPopup
+  };
+  const backdrop = document.createElement("div");
+  backdrop.className = "workspace-popup-backdrop";
+  backdrop.innerHTML = `
+    <div class="workspace-popup-panel" role="dialog" aria-modal="true">
+      <header>
+        <div>
+          <strong>${escapeText(titleMap[kind] || "작업")}</strong>
+          <span>${escapeText(currentGroup?.name || currentWorkspaceGroupId || "-")} · ${escapeText(currentBot?.name || "-")} · ${escapeText(currentBot?.version || currentStudioState.bot.version || "-")}</span>
+        </div>
+        <button type="button" data-workspace-popup-close aria-label="닫기">×</button>
+      </header>
+      <div class="workspace-popup-body">${contentMap[kind]?.() || ""}</div>
+    </div>`;
+  const close = () => backdrop.remove();
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) close();
+  });
+  backdrop.querySelector("[data-workspace-popup-close]")?.addEventListener("click", close);
+  backdrop.querySelectorAll("[data-popup-open-bot]").forEach((button) => button.addEventListener("click", async () => {
+    const bot = getAccessibleBotListForGroup(currentWorkspaceGroupId).find((item) => item.id === button.dataset.popupOpenBot);
+    if (!bot) return;
+    currentWorkspaceBotId = bot.id;
+    selectedBotManagementId = bot.id;
+    applyCurrentBotToStudioState(bot);
+    await syncSelectedBotServerState(currentWorkspaceGroupId, bot.id);
+    close();
+    refreshWorkspaceManagementSurfaces({ rerenderAdmin: true });
+  }));
+  document.body.appendChild(backdrop);
+}
+
 function renderWorkspaceHome() {
   const section = document.querySelector('[data-screen-id="workspace-home"]');
   if (!section) return;
@@ -10785,6 +10917,9 @@ function renderWorkspaceHome() {
   const currentGroup = getCurrentWorkspaceGroup();
   const currentBot = getCurrentWorkspaceBot();
   const recentBots = getRecentWorkspaceBotsByGroup(currentWorkspaceGroupId);
+  const scenarioRows = currentScenarioAssets.filter((item) => item.type !== "module").slice(0, 14);
+  const moduleRows = currentScenarioAssets.filter((item) => item.type === "module").slice(0, 6);
+  const workRows = [...moduleRows, ...scenarioRows].slice(0, 18);
   const currentBotLabel = currentBot ? `${currentBot.name} (${currentBot.id})` : "없음";
   const shell = renderWorkflowScreenShell(
     "workspace-home",
@@ -10810,37 +10945,9 @@ function renderWorkspaceHome() {
           <span>${recentBots.length}개</span>
         </article>
       </section>
-      <section class="workspace-command-grid workspace-command-grid--workspace workspace-command-grid--aidot">
-        <article class="command-panel command-panel--wide command-panel--workspace-main">
-          <header>
-            <div><strong>그룹 봇 목록</strong><span>${escapeText(currentGroup?.name || currentWorkspaceGroupId)} 안에서 작업할 봇을 선택합니다.</span></div>
-          </header>
-          <div class="command-table command-table--workspace-bots" style="--command-cols:1.3fr 1.3fr .8fr .8fr .8fr 1fr .8fr">
-            <div class="command-row command-row--head"><span>봇 ID</span><span>봇 이름</span><span>버전</span><span>상태</span><span>언어</span><span>마지막수정</span><span>작업</span></div>
-            ${accessibleBots.map((bot) => `
-              <button type="button" class="command-row command-row--button ${bot.id === currentWorkspaceBotId ? "selected" : ""} ${bot.id === currentWorkspaceBotId ? "command-row--highlighted" : ""}" data-open-bot="${escapeText(bot.id)}">
-                <span>${escapeText(bot.id)}</span>
-                <strong>${escapeText(bot.name)}</strong>
-                <span>${escapeText(bot.version || "-")}</span>
-                <span>${escapeText(bot.status || "-")}</span>
-                <span>${escapeText(bot.locale || "-")}</span>
-                <span>${escapeText(bot.updated_at || bot.created_at || "-")}</span>
-                <span>${bot.id === currentWorkspaceBotId ? "작업중" : "열기"}</span>
-              </button>
-            `).join("") || `<div class="command-empty">이 그룹에 작업 가능한 봇이 없습니다. 봇 관리 또는 봇 생성 메뉴에서 먼저 봇을 생성하세요.</div>`}
-          </div>
-          <div class="workspace-command-footer">
-            <div class="workspace-command-footer__meta">
-              <span>선택 그룹</span>
-              <strong>${escapeText(currentGroup?.name || currentWorkspaceGroupId || "-")}</strong>
-              <span>작업 가능 봇</span>
-              <strong>${accessibleBots.length}개</strong>
-            </div>
-            <button type="button" data-workspace-open-current ${currentBot ? "" : "disabled"}>작업 봇 열기</button>
-          </div>
-        </article>
-        <aside class="command-panel command-panel--workspace-side">
-          <header><div><strong>현재 작업 대상</strong><span>선택된 봇 기준으로 Aidot 호환 제작 흐름이 시작됩니다.</span></div></header>
+      <section class="workspace-command-grid workspace-command-grid--operations">
+        <aside class="command-panel command-panel--workspace-side workspace-current-panel">
+          <header><div><strong>현재 작업 대상</strong><span>선택된 봇 기준으로 작업합니다.</span></div></header>
           <dl class="command-definition">
             <div><dt>그룹</dt><dd>${escapeText(currentGroup?.name || currentWorkspaceGroupId)}</dd></div>
             <div><dt>봇</dt><dd>${escapeText(currentBot?.name || "-")}</dd></div>
@@ -10850,9 +10957,10 @@ function renderWorkspaceHome() {
             <div><dt>마지막 작업</dt><dd>${escapeText(currentBot?.updated_at || "없음")}</dd></div>
           </dl>
           <div class="command-action-stack">
-            <button type="button" data-jump-screen="configure">봇 설정 열기</button>
-            <button type="button" data-jump-screen="detail">봇 구성 열기</button>
-            <button type="button" data-jump-screen="bot-management">봇 관리 열기</button>
+            <button type="button" data-workspace-popup="settings">봇 설정 열기</button>
+            <button type="button" data-workspace-popup="composition">봇 구성 열기</button>
+            <button type="button" data-workspace-popup="management">봇 관리 열기</button>
+            <button type="button" data-workspace-popup="build">봇 제작 열기</button>
           </div>
           <div class="workspace-recent-list">
             <strong>최근 작업 봇</strong>
@@ -10867,6 +10975,43 @@ function renderWorkspaceHome() {
                   <span>${escapeText(new Date(item.touchedAt || 0).toLocaleString())}</span>
                 </button>
               `).join("") : `<div class="command-empty">최근 작업 목록 없음</div>`}
+            </div>
+          </div>
+        </aside>
+        <article class="command-panel command-panel--workspace-workitems">
+          <header>
+            <div><strong>작업 항목</strong><span>현재 봇의 의도와 모듈을 확인합니다.</span></div>
+          </header>
+          <div class="command-table command-table--workspace-items" style="--command-cols:.8fr .8fr 1.6fr">
+            <div class="command-row command-row--head"><span>ID</span><span>구분</span><span>의도/모듈명</span></div>
+            ${workRows.map((item) => `
+              <div class="command-row">
+                <span>${escapeText(item.id || "-")}</span>
+                <span>${escapeText(item.type === "module" ? "모듈" : "의도")}</span>
+                <strong>${escapeText(item.displayName || item.display_name || item.name || item.id || "-")}</strong>
+              </div>
+            `).join("") || `<div class="command-empty">등록된 작업 항목이 없습니다.</div>`}
+          </div>
+        </article>
+        <aside class="command-panel command-panel--workspace-simulator">
+          <header><div><strong>시뮬레이터 미리보기</strong><span>선택 봇의 대화 흐름을 확인합니다.</span></div></header>
+          <div class="workspace-simulator-card">
+            <div class="workspace-simulator-card__top">
+              <span class="workspace-simulator-avatar"></span>
+              <div><strong>${escapeText(currentBot?.name || "Aidot 봇")}</strong><span>${escapeText(currentBot?.version || "v0.1")} / Simulator</span></div>
+            </div>
+            <div class="workspace-simulator-body">
+              <div class="workspace-simulator-bubble">
+                <button type="button">테스트종료</button>
+                <button type="button">FORM TITLE</button>
+                <button type="button">INPUT</button>
+                <button type="button">TEXTAREA</button>
+                <button type="button">IMAGE</button>
+              </div>
+            </div>
+            <div class="workspace-simulator-input">
+              <input placeholder="챗봇과 대화를 진행하세요." />
+              <button type="button">전송</button>
             </div>
           </div>
         </aside>
@@ -10903,10 +11048,10 @@ function renderWorkspaceHome() {
     applyCurrentBotToStudioState(bot);
     await syncSelectedBotServerState(currentWorkspaceGroupId, bot.id);
     renderTopContext();
-    setActiveScreen("configure");
+    openWorkspaceActionPopup("settings");
   }));
-  shell.querySelectorAll("[data-jump-screen]").forEach((button) => {
-    button.addEventListener("click", () => setActiveScreen(button.dataset.jumpScreen));
+  shell.querySelectorAll("[data-workspace-popup]").forEach((button) => {
+    button.addEventListener("click", () => openWorkspaceActionPopup(button.dataset.workspacePopup));
   });
 }
 function renderBotManagement() {

@@ -1114,12 +1114,23 @@ function createDefaultDetailAssetsForBot(groupId, botId) {
   return {
     group_id: groupId,
     bot_id: botId,
-    intent_utterances: [],
-    entities: [],
-    dictionary: [],
+    intent_utterances: [
+      { utterance: "How do I reset my password?", division: "password_reset" },
+      { utterance: "I forgot my password.", division: "password_reset" }
+    ],
+    entities: [
+      { name: "account", value: "password", rowType: "S", detail: "login password" }
+    ],
+    dictionary: [
+      { word: "password", synonyms: ["credential", "passcode"] }
+    ],
     rules: [],
-    blocklists: [],
-    scenarios: [],
+    blocklists: [
+      { name: "아", type: "0", pattern: "아", enabled: "Y" }
+    ],
+    scenarios: [
+      { id: "password_reset", type: "intent", displayName: "password_reset", answer: "Open Account Settings and choose Reset Password.", dialogCards: ["Open Account Settings and choose Reset Password."] }
+    ],
     updated_at: null
   };
 }
@@ -2052,10 +2063,6 @@ async function handleApiAnswerApi(req, res, urlPath) {
   }
 
   if (req.method === "POST") {
-    if (!(await canManageApiAnswer(req, groupId, botId))) {
-      sendJson(res, 403, { error_code: "CGA_API_ANSWER_MANAGE_FORBIDDEN", message_key: "errors.apiAnswer.manageForbidden" });
-      return true;
-    }
     const contract = await import("../packages/contracts/src/api-answer-contract.js");
     const body = await readJsonRequest(req);
     const draft = contract.createGroupManagedApiAnswerDraft({ groupId, botId });
@@ -2063,6 +2070,10 @@ async function handleApiAnswerApi(req, res, urlPath) {
     const entry = normalizeApiAnswerEntry({ body, draft, groupId, botId, actorId });
     if (!entry.name || !entry.endpoint_url || !entry.apiKey) {
       sendJson(res, 400, { error_code: "CGA_API_ANSWER_REQUIRED_FIELD_MISSING", message_key: "errors.apiAnswer.requiredField" });
+      return true;
+    }
+    if (!(await canManageApiAnswer(req, groupId, botId))) {
+      sendJson(res, 403, { error_code: "CGA_API_ANSWER_MANAGE_FORBIDDEN", message_key: "errors.apiAnswer.manageForbidden" });
       return true;
     }
     const next = [
@@ -4103,11 +4114,69 @@ function buildSampleJsonAsset(scope, groupId, botId, botLocale) {
   const contractVersion = "v1.0";
   const supportedContractVersions = [contractVersion];
   if (scope === "api") {
+    const apiId = `api-${sanitizePathSegment(botId, "bot")}-jsonplaceholder`;
+    const defaultMethod = {
+      id: `${apiId}:get`,
+      name: "default",
+      httpMethod: "GET",
+      methodUrl: "/posts/{postId}",
+      description: "게시글 조회API",
+      loggingEnabled: false,
+      proxyEnabled: true,
+      transferMode: "sync",
+      parameters: [
+        {
+          id: "postId",
+          name: "postId",
+          location: "path",
+          dataType: "string",
+          defaultValue: "",
+          required: true,
+          visible: true,
+          description: "게시글 ID"
+        }
+      ],
+      outputParameters: [
+        {
+          id: "root",
+          name: "root",
+          path: "root",
+          dataType: "object",
+          description: "응답 객체"
+        }
+      ],
+      outputSample: ""
+    };
+    const defaultApi = {
+      id: apiId,
+      type: "api",
+      apiKey: apiId,
+      name: "JSONPlaceholder 게시글",
+      baseUrl: "https://api.jsonplaceholder.dev",
+      endpoint_url: "/posts/{postId}",
+      description: "게시글조회API",
+      category: "API",
+      auth_type: "none",
+      secret_ref: "",
+      response_path: "root",
+      methods: [defaultMethod],
+      updatedAt: "2026-05-03T09:46:00Z",
+      updatedBy: "aidot_1"
+    };
     return {
       asset_format_version: 1,
       exported_at: new Date().toISOString(),
-      apis: [],
-      apiList: []
+      apis: [defaultApi],
+      apiList: [
+        {
+          name: defaultApi.name,
+          endpoint_url: defaultMethod.methodUrl,
+          method: defaultMethod.httpMethod,
+          auth_type: defaultApi.auth_type,
+          response_path: defaultApi.response_path,
+          secret_ref: defaultApi.secret_ref
+        }
+      ]
     };
   }
   if (scope === "dialog") {

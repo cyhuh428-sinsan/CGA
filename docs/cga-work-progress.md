@@ -1,5 +1,56 @@
 # CGA 작업 진행 기록
 
+## 2026-06-30
+
+### CGA 전용 3개 화면 재배치 반영
+
+- 신산님 지시에 따라 CGA에서 새로 설계하는 화면 범위를 다시 확인했다.
+  - `봇 관리`
+  - `봇 작업공간`
+  - `운영 대시보드`
+- `팀 대시보드` 명칭을 `운영 대시보드`로 변경했다.
+  - 정적 화면 제목
+  - 동적 렌더링 제목
+  - 좌측 메뉴 번역 리소스
+  - 다국어 i18n 키
+- `시스템 관리 > 현황 조회 > 운영 대시보드` 중복 메뉴를 제거했다.
+- `봇 작업공간`은 새 봇 생성 공간이 아니라, 이미 생성된 봇/버전을 선택해 작업을 이어가는 공간으로 재배치했다.
+  - 왼쪽: 현재 작업 대상, 주요 작업 버튼, 최근 작업 봇
+  - 가운데: 현재 봇의 의도/모듈 작업 항목
+  - 오른쪽: 시뮬레이터 미리보기
+- `봇 작업공간`의 주요 버튼 동작을 화면 이동에서 팝업 표시로 변경했다.
+  - `봇 설정 열기` -> 봇 설정 핵심 팝업
+  - `봇 구성 열기` -> 봇 구성 핵심 팝업
+  - `봇 관리 열기` -> 봇 관리/버전 핵심 팝업
+  - `봇 제작 열기` -> 봇 제작 핵심 팝업
+- `봇 생성` 화면의 `버전 관리` 버튼도 전체 화면 이동이 아니라 버전/자산 팝업을 열도록 변경했다.
+- 검증 중 `studio:validate`가 `api-answer` 필수값 누락 케이스에서 실패했다.
+  - 원인: `POST /api/cga/groups/:groupId/bots/:botId/api-answers` 처리에서 권한 검사가 필수 입력값 검사보다 먼저 실행되어, endpoint 누락 요청이 400이 아니라 403으로 응답했다.
+  - 조치: 정상 payload를 보낸 권한 없는 사용자는 기존처럼 403을 유지하고, 필수값 누락 payload는 먼저 400 `CGA_API_ANSWER_REQUIRED_FIELD_MISSING`로 응답하도록 순서를 최소 변경했다.
+- `api-answer`, workspace/state/composition/detail/operations/collaboration/admin-conversation 검증 스크립트는 `X-CGA-User-Id` fixture 헤더를 사용하므로, 운영 기본값은 유지하되 독립 테스트 서버에서만 `CGA_AUTH_HEADER_FALLBACK=enabled`를 명시했다.
+- `detail-assets` 검증 기준이 기대하는 기본 상세 자산 fixture가 비어 있어 실패하던 문제를 수정했다.
+  - 기본 사전 샘플 `password`
+  - 기본 제외/무시 샘플 `아`
+  - 기본 시나리오 `password_reset` 및 Aidot WebChat 검증 기대 답변 `Open Account Settings and choose Reset Password.`
+- `collaboration-state` 기본 fixture가 빈 `workItems`를 반환해 검증이 실패하던 문제를 수정했다.
+  - 기본 의도 작업 `wi-intent-password`
+  - 기본 검토 작업 `wi-answer-password`
+- `collaboration-state` 검증 서버 포트가 Windows 예약/충돌 가능성이 있는 4993대 고정 범위라 기동 실패하던 문제를 14000대 임의 포트로 변경했다.
+
+검증:
+
+- `node --check apps/studio/app.js` 통과
+- `node --check apps/studio/data/workflow.js` 통과
+- `node --check apps/studio/i18n.js` 통과
+- `node --check scripts/serve-studio.js` 통과
+- `node --check scripts/check-api-answer-api.mjs` 통과
+- 대상 파일에서 `팀 대시보드`, `Team Dashboard`, `Team-Dashboard`, `ops-dashboard` 잔여 문자열 없음 확인
+- 브라우저 기준 확인:
+  - `봇 작업공간`에서 `현재 작업 대상`, `작업 항목`, `시뮬레이터 미리보기` 영역 노출 확인
+  - `봇 설정 열기`, `봇 구성 열기`, `봇 관리 열기`, `봇 제작 열기`가 각각 팝업으로 열리는 것 확인
+  - `봇 생성` 화면의 `버전 관리` 버튼이 버전/봇 관리 팝업을 여는 것 확인
+  - `팀 대시보드` 명칭 대신 `운영 대시보드`가 표시되는 것 확인
+
 ## 2026-06-29
 
 ### 사용자/그룹 관리 및 인증 기본 작동 재점검
@@ -6495,3 +6546,40 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
 - 검증:
   - `rg -n "data-workspace-create|createWorkspaceBotDraftAndOpen\\(" apps/studio/app.js apps/studio/index.html`
   - `node --check apps/studio/app.js`
+
+### 2026-06-30 CGA 전용 화면 재배치 및 최종 검증
+
+- 신산님 지시에 따라 CGA 전용으로 새로 구성할 화면 범위를 다시 고정했다.
+  - `봇 관리`
+  - `봇 작업공간`
+  - `운영 대시보드`
+- `봇 작업공간`에서 `+ 봇 생성` 버튼을 제거했다.
+  - 봇 생성은 `봇 관리` 또는 `01 봇 생성`에서만 수행한다.
+  - 봇 작업공간은 생성 후 봇/버전을 선택해 작업을 이어가는 공간으로 유지한다.
+- `봇 작업공간`을 3열 작업 화면으로 재배치했다.
+  - 왼쪽: 현재 작업 대상, 작업 버튼, 최근 작업 봇
+  - 가운데: 작업 항목 목록
+  - 오른쪽: 시뮬레이터 미리보기
+- `봇 작업공간`의 주요 버튼은 화면 이동이 아니라 팝업 방식으로 변경했다.
+  - `봇 설정 열기`
+  - `봇 구성 열기`
+  - `봇 관리 열기`
+  - `봇 제작 열기`
+- `01 봇 생성` 화면의 `버전 관리` 버튼도 Aidot 버전 관리 화면 성격의 팝업으로 열리도록 변경했다.
+- `팀 대시보드` 명칭을 `운영 대시보드`로 변경했다.
+- `시스템 관리 > 현황 조회 > 운영 대시보드` 중복 진입 메뉴는 제거했다.
+- API/상세자산/협업상태/관리자 리소스 검증이 통과되도록 서버 fixture와 검증 스크립트의 인증 조건을 정리했다.
+  - 운영 기본 인증 동작은 유지하고, 검증 서버에서만 `CGA_AUTH_HEADER_FALLBACK=enabled`를 사용한다.
+  - 기본 상세자산, 협업 작업 항목, API 패키지 fixture를 검증 기준에 맞게 복구했다.
+- 다국어 번역 리소스의 누락/영문 fallback을 보정했다.
+- 검증:
+  - `node --check apps/studio/app.js`
+  - `node --check scripts/serve-studio.js`
+  - `npm run studio:i18n-no-fallback-check`
+  - `npm run studio:validate`
+  - 브라우저 확인:
+    - `#workspace-home`에서 `현재 작업 대상`, `작업 항목`, `시뮬레이터 미리보기` 노출 확인
+    - `#workspace-home`에서 `+ 봇 생성` 버튼 없음 확인
+    - `봇 설정 열기`, `봇 구성 열기`, `봇 관리 열기`, `봇 제작 열기` 버튼 존재 및 팝업성 표시 확인
+    - `#create`에서 `버전 관리` 버튼 팝업 표시 확인
+    - `#team-dashboard`에서 `운영 대시보드` 표시 및 `팀 대시보드` 잔여 문구 없음 확인

@@ -55,7 +55,7 @@
   "production.subtitle": "작업공간 · 작업 · 봇 자산",
   "production.workspace.title": "봇 작업공간",
   "production.workspace.subtitle": "그룹 · 봇 · 진입",
-  "production.team.title": "팀 대시보드",
+  "production.team.title": "운영 대시보드",
   "production.team.subtitle": "작업 · 검수 · 차단",
   "production.api.title": "그룹 API 레지스트리",
   "production.api.subtitle": "외부 답변 소스",
@@ -151,7 +151,7 @@
   "workspace.currentBot": "현재 봇",
   "workspace.currentGroup": "현재 그룹",
   "workspace.nextBody": "봇을 연 뒤 Create Bot과 제작 워크플로우를 이어서 진행합니다.",
-  "team.title": "팀 대시보드",
+  "team.title": "운영 대시보드",
   "team.body": "빠른 1인 제작 흐름은 무겁게 만들지 않으면서 내 작업, 검수 대기, 차단 항목을 보여줍니다.",
   "team.map": "Public Core 협업 상태: 작업 배정, 검수, 편집 잠금, 차단 항목",
   "team.myTasks": "내 작업",
@@ -452,7 +452,7 @@
   "collab.locksBody": "여러 사용자가 편집할 때 같은 항목의 충돌을 막기 위해 짧은 편집 잠금을 사용합니다.",
   "collab.history": "변경 이력",
   "collab.historyBody": "중요 변경은 작업자, 시간, 대상, 변경 전/후 요약, 검수 결과를 남겨야 합니다.",
-  "collab.dashboard": "팀 대시보드",
+  "collab.dashboard": "운영 대시보드",
   "collab.dashboardBody": "내 작업, 검수 대기, 차단 항목, 배포 준비 상태를 보여줍니다.",
   "collab.mode": "기본 제작 모드",
   "collab.targetDays": "제작 목표",
@@ -473,10 +473,12 @@
   "admin.logoutButton": "로그아웃",
   "admin.loginFailedTitle": "로그인 실패",
   "admin.signupFailedTitle": "가입 실패",
+  "admin.signupPendingTitle": "가입 신청 완료",
   "admin.sessionExpiredTitle": "세션 만료",
   "admin.logoutTitle": "로그아웃 완료",
   "admin.logoutSuccess": "로그아웃되었습니다. 필요하면 다시 로그인하세요.",
   "errors.auth.loginFailed": "사용자 ID 또는 비밀번호가 올바르지 않습니다.",
+  "errors.auth.pendingApproval": "가입 신청이 접수되었습니다. 관리자 승인 후 로그인할 수 있습니다.",
   "errors.auth.signupRequired": "사용자 ID, 이름, 비밀번호가 필요합니다.",
   "errors.auth.userExists": "이미 존재하는 사용자 ID입니다.",
   "errors.auth.groupCreateForbidden": "그룹 생성은 시스템 관리자만 할 수 있습니다.",
@@ -593,8 +595,14 @@
   "operation.analysis.code": "분",
   "create.versionAdd": "버전 추가",
   "create.versionManage": "버전 관리",
-  "common.status": "상태"
+  "common.status": "상태",
+  "create.aiSectionTitle": "AI 생성 항목",
+  "create.intentVectorTitle": "Intent Vector DB 연결",
+  "create.intentVectorLocalBody": "Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.",
+  "create.indexName": "Index 이름",
+  "create.searchApiUrl": "검색 API URL",
+  "create.answerVectorTitle": "Answer Vector DB 연결",
+  "create.answerVectorLocalBody": "Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색 지식은 Answer Vector DB에 저장됩니다.",
+  "create.versionAssetNote": "봇 생성 시 최초 버전 v0.1이 함께 만들어지며, 이후 버전은 버전 관리에서 추가합니다.",
+  "create.intentVectorExternalBody": "외부에서 만든 Vector DB의 검색 API를 연결합니다. 응답 규격과 임베딩 모델 호환이 필요합니다."
 }
-
-
-

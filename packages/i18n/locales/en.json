@@ -55,7 +55,7 @@
   "production.subtitle": "Workspace · tasks · bot assets",
   "production.workspace.title": "Bot Workspace",
   "production.workspace.subtitle": "Groups · bots · entry",
-  "production.team.title": "Team Dashboard",
+  "production.team.title": "Operations Dashboard",
   "production.team.subtitle": "Tasks · reviews · blocks",
   "production.api.title": "Group API Registry",
   "production.api.subtitle": "External answer sources",
@@ -151,7 +151,7 @@
   "workspace.currentBot": "Current bot",
   "workspace.currentGroup": "Current group",
   "workspace.nextBody": "Open a bot, then continue through Create Bot and the build workflow.",
-  "team.title": "Team Dashboard",
+  "team.title": "Operations Dashboard",
   "team.body": "Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.",
   "team.map": "Public Core collaboration state: assignments, review, locks, and blocked work",
   "team.myTasks": "My Tasks",
@@ -452,7 +452,7 @@
   "collab.locksBody": "When multiple users edit, short-lived locks prevent conflicting changes on the same item.",
   "collab.history": "Change history",
   "collab.historyBody": "Every important change should keep actor, time, target, before/after summary, and review result.",
-  "collab.dashboard": "Team dashboard",
+  "collab.dashboard": "Operations dashboard",
   "collab.dashboardBody": "The dashboard shows my tasks, waiting reviews, blocked items, and deployment readiness.",
   "collab.mode": "Default mode",
   "collab.targetDays": "Build target",
@@ -473,10 +473,12 @@
   "admin.logoutButton": "Logout",
   "admin.loginFailedTitle": "Login failed",
   "admin.signupFailedTitle": "Signup failed",
+  "admin.signupPendingTitle": "Signup request received",
   "admin.sessionExpiredTitle": "Session expired",
   "admin.logoutTitle": "Logged out",
   "admin.logoutSuccess": "You have been logged out. Please log in again when needed.",
   "errors.auth.loginFailed": "User ID or password is incorrect.",
+  "errors.auth.pendingApproval": "Your signup request is pending approval. You can log in after an administrator approves it.",
   "errors.auth.signupRequired": "User ID, name, and password are required.",
   "errors.auth.userExists": "This user ID already exists.",
   "errors.auth.groupCreateForbidden": "Only a system administrator can create a group.",
@@ -593,8 +595,14 @@
   "operation.analysis.code": "AN",
   "create.versionAdd": "Add Version",
   "create.versionManage": "Version Management",
-  "common.status": "Status"
+  "common.status": "Status",
+  "create.aiSectionTitle": "AI generation items",
+  "create.intentVectorTitle": "Intent Vector DB connection",
+  "create.intentVectorLocalBody": "Use the default Aidot Vector Worker connection. Intent vectors are stored in the Local Vector DB.",
+  "create.indexName": "Index name",
+  "create.searchApiUrl": "Search API URL",
+  "create.answerVectorTitle": "Answer Vector DB connection",
+  "create.answerVectorLocalBody": "Use the default Aidot Vector Worker connection. Answer search knowledge is stored in the Answer Vector DB.",
+  "create.versionAssetNote": "The first version v0.1 is created when the bot is created. Add later versions in version management.",
+  "create.intentVectorExternalBody": "Connect a search API for an externally built Vector DB. Response format and embedding model compatibility are required."
 }
-
-
-

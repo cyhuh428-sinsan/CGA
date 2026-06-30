@@ -189,8 +189,8 @@
 
       <section id="team-dashboard" data-screen-id="team-dashboard" class="screen-card team-dashboard-card">
         <div class="screen-heading">
-          <span aria-label="Team Dashboard">TD</span>
-          <div><h3 data-i18n="team.title">Team Dashboard</h3><p data-i18n="team.body">Show my tasks, review queue, and blocked items without making the fast solo workflow heavier.</p></div>
+          <span aria-label="Operations Dashboard">OD</span>
+          <div><h3 data-i18n="team.title">운영 대시보드</h3><p data-i18n="team.body">봇 운영 상태와 알림을 확인합니다.</p></div>
         </div>
         <div class="team-dashboard-layout">
           <article>
@@ -262,7 +262,6 @@
             <div class="group-management-list" data-group-access></div>
           </article>
           <article class="access-list-panel" data-admin-panel="login-history"><div data-admin-surface="login-history"></div></article>
-          <article class="access-list-panel" data-admin-panel="ops-dashboard"><div data-admin-surface="ops-dashboard"></div></article>
           <article class="access-list-panel" data-admin-panel="system-log"><div data-admin-surface="system-log"></div></article>
           <article class="access-list-panel" data-admin-panel="bot-status"><div data-admin-surface="bot-status"></div></article>
           <article class="access-list-panel" data-admin-panel="training-history"><div data-admin-surface="training-history"></div></article>
@@ -353,7 +352,7 @@
             <div class="create-lower-grid">
               <section class="create-section">
                 <div class="create-section__head">
-                  <strong>AI 생성 항목</strong>
+                  <strong data-i18n="create.aiSectionTitle">AI 생성 항목</strong>
                   <span class="inline-help" tabindex="0" data-help="Aidot 생성 화면과 동일한 순서로 언어, NLU, 답변 방식을 선택합니다.">
                     <span class="help-icon help-icon--static" aria-hidden="true">i</span>
                   </span>
@@ -420,9 +419,9 @@
               <div class="create-dynamic-panels">
                 <section class="create-context-card" data-create-panel="intent-vector" hidden>
                   <div class="create-context-card__head">
-                    <strong>Intent Vector DB 연결</strong>
-                    <p data-create-panel-copy="intent-vector-local">Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</p>
-                    <p data-create-panel-copy="intent-vector-external" hidden>외부에서 만든 Vector DB의 검색 API를 연결합니다. 응답 규격과 임베딩 모델 호환이 필요합니다.</p>
+                    <strong data-i18n="create.intentVectorTitle">Intent Vector DB 연결</strong>
+                    <p data-create-panel-copy="intent-vector-local" data-i18n="create.intentVectorLocalBody">Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다.</p>
+                    <p data-create-panel-copy="intent-vector-external" data-i18n="create.intentVectorExternalBody" hidden>외부에서 만든 Vector DB의 검색 API를 연결합니다. 응답 규격과 임베딩 모델 호환이 필요합니다.</p>
                   </div>
                   <div class="create-context-grid">
                     <label class="create-field">
@@ -433,11 +432,11 @@
                       </select>
                     </label>
                     <label class="create-field">
-                      <span>Index 이름</span>
+                      <span data-i18n="create.indexName">Index 이름</span>
                       <input data-create-config="vector_connections.intent.index_name" placeholder="aidot-intent" />
                     </label>
                     <label class="create-field create-field--full" data-create-panel="intent-vector-external-only" hidden>
-                      <span>검색 API URL</span>
+                      <span data-i18n="create.searchApiUrl">검색 API URL</span>
                       <input data-create-config="vector_connections.intent.endpoint_url" placeholder="https://vector.example.com/intent/search" />
                     </label>
                     <label class="create-field create-field--full" data-create-panel="intent-vector-external-only" hidden>
@@ -448,8 +447,8 @@
                 </section>
                 <section class="create-context-card" data-create-panel="answer-vector" hidden>
                   <div class="create-context-card__head">
-                    <strong>Answer Vector DB 연결</strong>
-                    <p>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색 지식은 Answer Vector DB에 저장됩니다.</p>
+                    <strong data-i18n="create.answerVectorTitle">Answer Vector DB 연결</strong>
+                    <p data-i18n="create.answerVectorLocalBody">Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색 지식은 Answer Vector DB에 저장됩니다.</p>
                   </div>
                   <div class="create-context-grid">
                     <label class="create-field">
@@ -460,7 +459,7 @@
                       </select>
                     </label>
                     <label class="create-field">
-                      <span>Index 이름</span>
+                      <span data-i18n="create.indexName">Index 이름</span>
                       <input data-create-config="vector_connections.answer.index_name" placeholder="aidot-answer" />
                     </label>
                   </div>
@@ -476,7 +475,7 @@
                 </div>
                 <div class="create-action-copy">
                   <strong>버전 및 자산</strong>
-                  <p>봇 생성 시 최초 버전 v0.1이 함께 만들어지며, 이후 버전은 버전 관리에서 추가합니다.</p>
+                  <p data-i18n="create.versionAssetNote">봇 생성 시 최초 버전 v0.1이 함께 만들어지며, 이후 버전은 버전 관리에서 추가합니다.</p>
                 </div>
                 <div class="button-row create-action-row">
                   <button type="button" data-create-version-add>버전 추가</button>

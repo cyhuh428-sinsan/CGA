@@ -3,12 +3,12 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const port = String(4993 + Math.floor(Math.random() * 100));
+const port = String(14000 + Math.floor(Math.random() * 10000));
 const baseUrl = `http://localhost:${port}`;
 const dataDir = mkdtempSync(join(tmpdir(), "cga-collaboration-state-"));
 const server = spawn("node", ["scripts/serve-studio.js"], {
   cwd: process.cwd(),
-  env: { ...process.env, PORT: port, CGA_DATA_DIR: dataDir },
+  env: { ...process.env, PORT: port, CGA_DATA_DIR: dataDir, CGA_AUTH_HEADER_FALLBACK: "enabled" },
   stdio: "pipe"
 });
 let serverKilled = false;

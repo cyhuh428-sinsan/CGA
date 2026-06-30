@@ -77,8 +77,8 @@ export const queryLinks = [
     code: "TM",
     titleKey: "production.team.title",
     subtitleKey: "production.team.subtitle",
-    title: "Team Dashboard",
-    subtitle: "Tasks · reviews · blocks"
+    title: "Operations Dashboard",
+    subtitle: "Operations · status · alerts"
   },
   {
     id: "api-answer-source",
@@ -104,7 +104,6 @@ export const systemAdminSections = [
   {
     title: "현황 조회",
     links: [
-      { id: "access-management", subview: "ops-dashboard", label: "운영 대시보드" },
       { id: "access-management", subview: "system-log", label: "운영/시스템 로그 조회" },
       { id: "access-management", subview: "bot-status", label: "봇 현황 조회" },
       { id: "access-management", subview: "training-history", label: "학습 이력 조회" },
