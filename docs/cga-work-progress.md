@@ -6747,3 +6747,16 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - 하단 조합표를 감싸던 `create-structure-matrix` 래퍼 의존을 제거
   - `create-structure-board` 자체를 직접 grid 컨테이너로 사용하도록 변경
   - `renderCreateStructureGrid()`가 셀 마크업을 곧바로 `data-create-structure-grid`에 주입하도록 단순화
+
+### 2026-06-30 생성 화면 하단 조합표 기본 표시 보강
+
+- 요청:
+  - `선택 조합` 영역에 Aidot 기준 조합표 내용이 실제로 표시되는지 확인해야 함
+- 반영 파일:
+  - `apps/studio/index.html`
+  - `apps/studio/app.js`
+  - `docs/cga-work-progress.md`
+- 반영 내용:
+  - `data-create-structure-grid`를 빈 div로 두지 않고 Aidot 조합표 기본 셀을 정적 HTML로 배치
+  - JS 실행이 늦거나 렌더 중 오류가 발생해도 하단 조합표가 빈 화면으로 남지 않도록 보강
+  - `renderCreateStructureGrid()`의 옵션 라벨 조회에 안전 fallback을 추가해 예외 시에도 조합표 렌더링이 유지되도록 수정

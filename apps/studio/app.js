@@ -4024,11 +4024,18 @@ function renderCreateStructureGrid(aiConfig = getCurrentAiConfig()) {
   if (!container) return;
   const caption = document.querySelector("[data-create-structure-caption]");
   const badge = document.querySelector("[data-create-structure-badge]");
-  const nluTypeLabel = getCreateOptionLabel("nlu_type", aiConfig.nlu_type || "ml");
-  const nluModelLabel = getCreateOptionLabel("nlu_model", aiConfig.nlu_model || "deep_learning_lite");
-  const answerModeLabel = getCreateOptionLabel("answer_mode", aiConfig.answer_mode || "fixed");
+  const safeCreateOptionLabel = (field, value, fallback) => {
+    try {
+      return getCreateOptionLabel(field, value) || fallback;
+    } catch (error) {
+      return fallback;
+    }
+  };
+  const nluTypeLabel = safeCreateOptionLabel("nlu_type", aiConfig.nlu_type || "ml", aiConfig.nlu_type || "ML");
+  const nluModelLabel = safeCreateOptionLabel("nlu_model", aiConfig.nlu_model || "deep_learning_lite", aiConfig.nlu_model || "DeepLearning Lite");
+  const answerModeLabel = safeCreateOptionLabel("answer_mode", aiConfig.answer_mode || "fixed", aiConfig.answer_mode || "정해진 답변");
   const answerColumns = [
-    { key: "fixed", title: "답변 엔진", value: getCreateOptionLabel("answer_mode", "fixed") },
+    { key: "fixed", title: "답변 엔진", value: safeCreateOptionLabel("answer_mode", "fixed", "정해진 답변") },
     { key: "semantic_rag", title: "답변 엔진", value: "Semantic Engine RAG" },
     { key: "llm", title: "답변 엔진", value: "LLM Engine" },
     { key: "llm_rag", title: "답변 엔진", value: "LLM Engine RAG" }
