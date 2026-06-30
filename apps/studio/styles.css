@@ -1538,6 +1538,26 @@ textarea { min-height: 84px; resize: vertical; }
   border-bottom: 1px solid #e6edf5;
 }
 
+.version-manage-popup__row--selectable {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: #ffffff;
+  text-align: left;
+}
+
+.version-manage-popup__row--selectable:hover {
+  background: #f8fbff;
+}
+
+.version-manage-popup__row--selectable input {
+  margin: 0;
+}
+
 .version-manage-popup__row > span,
 .version-manage-popup__row > strong {
   padding: 10px 8px;
@@ -1582,6 +1602,10 @@ textarea { min-height: 84px; resize: vertical; }
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.2);
 }
 
+.version-action-modal--upload {
+  width: min(670px, calc(100vw - 48px));
+}
+
 .version-action-modal__header {
   display: flex;
   align-items: flex-start;
@@ -1620,6 +1644,11 @@ textarea { min-height: 84px; resize: vertical; }
   display: grid;
   gap: 12px;
   padding: 16px 20px 18px;
+}
+
+.version-action-modal--upload .version-action-modal__body {
+  gap: 12px;
+  padding-top: 18px;
 }
 
 .version-action-modal__rows {
@@ -1680,9 +1709,26 @@ textarea { min-height: 84px; resize: vertical; }
   font-size: var(--font-body);
 }
 
+.version-action-modal--upload .version-action-modal__option {
+  align-items: flex-start;
+  gap: 14px;
+  min-height: 64px;
+  padding: 14px 18px;
+  border: 1px solid #d7e3f0;
+  background: #ffffff;
+}
+
+.version-action-modal--upload .version-action-modal__option input {
+  margin-top: 3px;
+}
+
 .version-action-modal__option span {
   display: grid;
   gap: 2px;
+}
+
+.version-action-modal--upload .version-action-modal__option span {
+  gap: 6px;
 }
 
 .version-action-modal__option small {
@@ -1695,6 +1741,14 @@ textarea { min-height: 84px; resize: vertical; }
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+}
+
+.version-action-modal--upload .version-action-modal__file {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
 }
 
 .version-action-modal__file input {
@@ -6572,8 +6626,17 @@ h1 { line-height: 1; }
   cursor: pointer;
 }
 
+.command-row--selectable {
+  cursor: pointer;
+}
+
+.command-row--selectable input {
+  margin: 0;
+}
+
 .command-row--button:hover,
 .command-row--button.selected,
+.command-row--selectable:hover,
 .bot-select-card:hover,
 .bot-select-card.selected {
   background: #e9fbf7;
