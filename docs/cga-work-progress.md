@@ -6722,3 +6722,15 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `create-layout` 전체 높이를 다시 낮춰 화면 내부 초과를 줄임
   - 상단 고정 행 높이를 축소해 하단 조합표 영역과 균형을 맞춤
   - `AI 생성 항목` 카드 최소 높이도 함께 줄여 전체 레이아웃 overflow를 완화
+
+### 2026-06-30 생성 화면 하단 조합표 캐시 버전 갱신
+
+- 요청:
+  - 하단 `선택 조합` 영역이 비어 보이는 문제 확인
+- 반영 파일:
+  - `apps/studio/index.html`
+  - `docs/cga-work-progress.md`
+- 반영 내용:
+  - 하단 조합표는 `app.js` 렌더링 영역인데 정적 파일 버전이 오래 유지되고 있었음
+  - `styles.css`, `i18n.js`, `entry-auth.js`, `app.js`의 query version을 `20260630-3`으로 갱신
+  - 배포 후 브라우저가 최신 생성 화면 렌더링 코드를 강제로 다시 받도록 조정
