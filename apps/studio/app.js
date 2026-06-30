@@ -1112,7 +1112,7 @@ function ensureBotVersionRegistryFor(bot) {
   if (!bot?.id || !bot?.group_id) return;
   if (!botVersionRegistry) botVersionRegistry = {};
   const key = getBotVersionListKey(bot.group_id, bot.id);
-  if (!Array.isArray(botVersionRegistry[key])) {
+  if (!Array.isArray(botVersionRegistry[key]) || botVersionRegistry[key].length === 0) {
     const now = bot.updated_at || new Date().toISOString().slice(0, 10);
     botVersionRegistry[key] = [
       {
@@ -1630,6 +1630,27 @@ function getSafeFileName(value, fallback) {
     .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
     .replace(/\s+/g, "_");
   return normalized || fallback;
+}
+
+function buildNewWorkspaceBotId(name) {
+  const base = String(name || "bot")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    || "bot";
+  let candidate = base;
+  let index = 2;
+  const isUsed = (id) => currentWorkspaceBots.some((bot) => (
+    String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId)
+    && String(bot.id || "") === String(id)
+  ));
+  while (isUsed(candidate)) {
+    candidate = `${base}-${index}`;
+    index += 1;
+  }
+  return candidate;
 }
 
 function getTodayStamp() {
@@ -2361,6 +2382,49 @@ async function createWorkspaceBotOnServer(bot) {
     }
   });
   return payload?.bot || payload;
+}
+
+async function createWorkspaceBotFromDraft() {
+  const name = String(currentStudioState?.bot?.name || "").trim();
+  if (!name) {
+    syncCreateValidationState();
+    return false;
+  }
+  const groupId = currentWorkspaceGroupId || getCurrentWorkspaceGroup()?.id || "g-support";
+  const draftBot = {
+    id: buildNewWorkspaceBotId(name),
+    group_id: groupId,
+    name,
+    version: normalizeBotVersionVersion(currentStudioState?.bot?.version || "v0.1"),
+    status: "draft",
+    locale: currentStudioState?.bot?.defaultLocale || "ko",
+    updated_at: new Date().toISOString().slice(0, 10),
+    updated_by: currentAccessState.currentUserId || "system"
+  };
+  const created = await createWorkspaceBotOnServer(draftBot);
+  const createdBot = {
+    ...draftBot,
+    ...(created?.bot || created || {})
+  };
+  currentWorkspaceBots = [
+    ...currentWorkspaceBots.filter((bot) => !(bot.group_id === createdBot.group_id && bot.id === createdBot.id)),
+    createdBot
+  ];
+  applyCurrentBotToStudioState(createdBot);
+  selectedBotManagementId = createdBot.id;
+  ensureBotVersionRegistryFor(createdBot);
+  await saveStudioStateToServer();
+  await saveCompositionToServer().catch(() => false);
+  await saveDetailAssetsToServer().catch(() => false);
+  await refreshWorkspaceBotsFromServer(createdBot.group_id).catch(() => false);
+  if (!currentWorkspaceBots.some((bot) => bot.group_id === createdBot.group_id && bot.id === createdBot.id)) {
+    currentWorkspaceBots = [...currentWorkspaceBots, createdBot];
+  }
+  applyCurrentBotToStudioState(createdBot);
+  selectedBotManagementId = createdBot.id;
+  saveWorkspaceSnapshot();
+  setGlobalMessage("success", "봇 생성 완료", `${createdBot.name} 봇을 생성했습니다.`);
+  return true;
 }
 
 async function updateWorkspaceBotVersionOnServer(bot, versionId) {
@@ -5499,7 +5563,20 @@ function bindCreateControls() {
         syncCreateValidationState();
         return;
       }
-      await runQueuedSave("create-confirm", saveCurrentWorkspaceState);
+      try {
+        if (isCreatingNewBotDraft) {
+          await runQueuedSave("create-confirm", createWorkspaceBotFromDraft);
+        } else {
+          await runQueuedSave("create-confirm", saveCurrentWorkspaceState);
+        }
+      } catch (error) {
+        setGlobalMessage("error", "봇 생성 실패", error?.message || "봇을 생성하지 못했습니다.");
+      }
+      renderTopContext();
+      renderCreateSummary();
+      renderWorkspaceHome();
+      renderBotManagement();
+      renderGlobalMessage();
     });
   }
 }
@@ -11184,7 +11261,11 @@ async function saveCurrentWorkspaceState() {
     const detailSaved = await saveDetailAssetsToServer().catch(() => false);
     synced = Boolean(studioSaved || compositionSaved || detailSaved);
     saveWorkspaceSnapshot();
-    setGlobalMessage("success", "저장 완료", synced ? "현재 작업 내용을 서버에 저장했습니다." : "현재 작업 내용을 로컬에 저장했습니다.");
+    if (synced) {
+      setGlobalMessage("success", "저장 완료", "현재 작업 내용을 서버에 저장했습니다.");
+    } else {
+      setGlobalMessage("error", "저장 실패", "서버 저장이 완료되지 않았습니다. 봇 목록에 반영되지 않을 수 있습니다.");
+    }
   } catch (error) {
     saveWorkspaceSnapshot();
     setGlobalMessage("error", "저장 실패", error?.message || "현재 작업 내용을 저장하지 못했습니다.");
