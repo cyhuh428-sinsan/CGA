@@ -306,6 +306,15 @@
             </span>
           </div>
         </div>
+        <div class="create-toolbar">
+          <div class="create-toolbar__left">
+            <button type="button" data-create-version-manage>버전 관리</button>
+          </div>
+          <div class="create-toolbar__right">
+            <button type="button" data-create-cancel>취소</button>
+            <button type="button" class="primary" data-create-confirm>확인</button>
+          </div>
+        </div>
         <div class="create-layout">
           <article class="create-form-panel">
             <section class="create-section">
@@ -466,24 +475,6 @@
                 </section>
               </div>
             </section>
-              <section class="create-section create-section--actions">
-                <div class="create-section__head">
-                  <strong>버전 및 자산</strong>
-                  <span class="inline-help" tabindex="0" data-help="신규 버전 생성과 Aidot 호환 자산 작업으로 이동합니다.">
-                    <span class="help-icon help-icon--static" aria-hidden="true">i</span>
-                  </span>
-                </div>
-                <div class="create-action-copy">
-                  <strong>버전 및 자산</strong>
-                  <p data-i18n="create.versionAssetNote">봇 생성 시 최초 버전 v0.1이 함께 만들어지며, 이후 버전은 버전 관리에서 추가합니다.</p>
-                </div>
-                <div class="button-row create-action-row">
-                  <button type="button" data-create-version-add>버전 추가</button>
-                  <button type="button" data-create-bot-copy>봇 복사</button>
-                  <button type="button" data-create-version-manage>버전 관리</button>
-                  <button type="button" data-create-version-upload>버전 업로드</button>
-                </div>
-              </section>
             </div>
           </article>
           <aside class="status-panel compact create-summary-panel">
