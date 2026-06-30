@@ -176,6 +176,7 @@ let currentBuildAidotView = "list";
 let currentConfigureSubview = "ai-model";
 let selectedBotManagementId = "";
 let selectedBotManagementVersionId = "";
+let isCreatingNewBotDraft = false;
 let currentCompositionState = {
   group_id: "",
   bot_id: "",
@@ -967,6 +968,7 @@ function getCurrentWorkspaceGroup() {
 }
 
 function getCurrentWorkspaceBot() {
+  if (isCreatingNewBotDraft) return null;
   return currentWorkspaceBots.find((bot) => bot.id === currentWorkspaceBotId) || currentWorkspaceBots.find((bot) => bot.group_id === currentWorkspaceGroupId) || null;
 }
 
@@ -989,6 +991,13 @@ function syncWorkspaceSelection() {
   }
 
   const bots = getAccessibleBotListForGroup(currentWorkspaceGroupId);
+  if (isCreatingNewBotDraft) {
+    currentWorkspaceBotId = "";
+    currentApiGroupId = currentWorkspaceGroupId;
+    currentApiBotId = "";
+    selectedBotManagementId = "";
+    return { groups, bots };
+  }
   const selectedBot = bots.find((bot) => bot.id === currentWorkspaceBotId)
     || bots.find((bot) => bot.id === currentStudioState.bot.id)
     || bots[0]
@@ -1366,8 +1375,137 @@ function resetWorkspaceEditorStateForNewBot(bot) {
   syncAiConfigToStudioState();
 }
 
+function startNewBotCreation() {
+  isCreatingNewBotDraft = true;
+  currentWorkspaceBotId = "";
+  currentApiBotId = "";
+  selectedBotManagementId = "";
+  resetWorkspaceEditorStateForNewBot({
+    id: null,
+    name: "",
+    version: "v0.1",
+    locale: "ko"
+  });
+  currentStudioState.bot.name = "";
+  currentStudioState.bot.description = "";
+  currentVersionSystemConfigExtraFields.ai_config.introduction = "";
+  syncAiConfigToStudioState();
+  syncCreateControlsFromState();
+  renderTopContext();
+  renderCreateSummary();
+  renderWorkspaceHome();
+  renderBotManagement();
+  syncTopActionsForScreen();
+}
+
+function showVersionActionMessage(message) {
+  currentTransferStatus = message;
+  setGlobalMessage("info", "버전 관리", message);
+  refreshWorkspaceManagementSurfaces();
+}
+
+function requireSavedBotForVersionAction(selectedBot) {
+  if (selectedBot?.id && selectedBot?.group_id) return true;
+  showVersionActionMessage("봇을 먼저 생성한 후 버전 기능을 사용할 수 있습니다.");
+  return false;
+}
+
+function confirmVersionAction({ title, message, rows = [], note = "", confirmLabel = "확인" }) {
+  return new Promise((resolve) => {
+    const backdrop = document.createElement("div");
+    backdrop.className = "version-manage-popup-backdrop";
+    backdrop.innerHTML = `
+      <div class="version-action-modal" role="dialog" aria-modal="true" aria-label="${escapeText(title)}">
+        <div class="version-action-modal__header">
+          <strong>${escapeText(title)}</strong>
+          <button type="button" data-version-action-cancel aria-label="닫기">×</button>
+        </div>
+        <div class="version-action-modal__body">
+          <p>${escapeText(message)}</p>
+          ${rows.length ? `<dl class="version-action-modal__rows">${rows.map((row) => `<div><dt>${escapeText(row.label)}</dt><dd>${escapeText(row.value)}</dd></div>`).join("")}</dl>` : ""}
+          ${note ? `<p class="version-action-modal__note">${escapeText(note)}</p>` : ""}
+        </div>
+        <div class="version-action-modal__footer">
+          <button type="button" data-version-action-cancel>취소</button>
+          <button type="button" data-version-action-confirm>${escapeText(confirmLabel)}</button>
+        </div>
+      </div>
+    `;
+    const close = (value) => {
+      backdrop.remove();
+      resolve(value);
+    };
+    backdrop.addEventListener("click", (event) => {
+      if (event.target === backdrop) close(false);
+    });
+    backdrop.querySelectorAll("[data-version-action-cancel]").forEach((button) => button.addEventListener("click", () => close(false)));
+    backdrop.querySelector("[data-version-action-confirm]")?.addEventListener("click", () => close(true));
+    document.body.appendChild(backdrop);
+  });
+}
+
+function requestVersionJsonUploadWithDialog(onJson) {
+  const backdrop = document.createElement("div");
+  backdrop.className = "version-manage-popup-backdrop";
+  backdrop.innerHTML = `
+    <div class="version-action-modal version-action-modal--upload" role="dialog" aria-modal="true" aria-label="버전 파일 업로드">
+      <div class="version-action-modal__header">
+        <strong>버전 파일 업로드</strong>
+        <button type="button" data-version-upload-cancel aria-label="닫기">×</button>
+      </div>
+      <div class="version-action-modal__body">
+        <strong>업로드 방법</strong>
+        <label class="version-action-modal__option">
+          <input type="radio" name="version-upload-mode" value="new" checked />
+          <span><b>새로운 버전으로 추가</b><small>업로드 파일 기준으로 새 버전을 생성합니다.</small></span>
+        </label>
+        <label class="version-action-modal__option">
+          <input type="radio" name="version-upload-mode" value="overwrite" />
+          <span><b>기존 버전 덮어쓰기</b><small>선택한 버전에 업로드 파일 내용을 반영합니다.</small></span>
+        </label>
+        <label class="version-action-modal__file">
+          <span>업로드 파일</span>
+          <input type="file" accept=".json,application/json" data-version-upload-file />
+        </label>
+        <p class="version-action-modal__note" data-version-upload-file-name>선택된 파일 없음</p>
+      </div>
+      <div class="version-action-modal__footer">
+        <button type="button" data-version-upload-cancel>취소</button>
+        <button type="button" data-version-upload-confirm>확인</button>
+      </div>
+    </div>
+  `;
+  const close = () => backdrop.remove();
+  const fileInput = backdrop.querySelector("[data-version-upload-file]");
+  const fileName = backdrop.querySelector("[data-version-upload-file-name]");
+  fileInput?.addEventListener("change", () => {
+    fileName.textContent = fileInput.files?.[0]?.name || "선택된 파일 없음";
+  });
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) close();
+  });
+  backdrop.querySelectorAll("[data-version-upload-cancel]").forEach((button) => button.addEventListener("click", close));
+  backdrop.querySelector("[data-version-upload-confirm]")?.addEventListener("click", async () => {
+    const file = fileInput?.files?.[0];
+    if (!file) {
+      fileName.textContent = "업로드할 파일을 선택하세요.";
+      return;
+    }
+    try {
+      const mode = backdrop.querySelector('input[name="version-upload-mode"]:checked')?.value || "new";
+      const json = JSON.parse(await file.text());
+      close();
+      await onJson(json, file, mode);
+    } catch (error) {
+      fileName.textContent = error instanceof Error ? error.message : "업로드 파일을 읽지 못했습니다.";
+    }
+  });
+  document.body.appendChild(backdrop);
+}
+
 function applyCurrentBotToStudioState(bot) {
   if (!bot) return;
+  isCreatingNewBotDraft = false;
   currentWorkspaceBotId = bot.id;
   currentWorkspaceGroupId = bot.group_id;
   currentApiGroupId = bot.group_id;
@@ -1385,6 +1523,7 @@ function applyCurrentBotToStudioState(bot) {
 
 function openWorkspaceBotVersion(bot, versionId, { cloneCurrentState = false } = {}) {
   if (!bot?.id || !bot?.group_id || !versionId) return false;
+  isCreatingNewBotDraft = false;
   const normalizedVersionId = normalizeBotVersionVersion(versionId, bot.version || "v0.1");
   currentWorkspaceBotId = bot.id;
   currentWorkspaceGroupId = bot.group_id;
@@ -3984,6 +4123,22 @@ function getCreateRequiredFieldIssues() {
   return issues;
 }
 
+function isCreateExistingBotContext() {
+  if (isCreatingNewBotDraft) return false;
+  const botId = String(currentStudioState?.bot?.id || "").trim();
+  return Boolean(botId && currentWorkspaceBots.some((bot) => String(bot.id || "") === botId));
+}
+
+function canConfirmCreateBot() {
+  return getCreateRequiredFieldIssues().length === 0 && !isCreateExistingBotContext();
+}
+
+function removeDeletedWorkspaceBotFromLocalState(selectedBot) {
+  if (!selectedBot?.id) return;
+  removeWorkspaceBotVersionRegistry(selectedBot);
+  currentWorkspaceBots = currentWorkspaceBots.filter((bot) => bot.id !== selectedBot.id);
+}
+
 function syncCreateValidationState() {
   const missingFields = new Set(getCreateRequiredFieldIssues());
   document.querySelectorAll("[data-structural-field]").forEach((control) => {
@@ -3991,7 +4146,17 @@ function syncCreateValidationState() {
     control.classList.toggle("create-field__missing", missingFields.has(field));
   });
   const notice = document.querySelector("[data-create-required-notice]");
-  if (notice) notice.hidden = missingFields.size === 0;
+  if (notice) {
+    const existingBot = isCreateExistingBotContext();
+    notice.hidden = missingFields.size === 0 && !existingBot;
+    notice.textContent = existingBot
+      ? "기존 봇은 봇 생성 화면에서 다시 생성할 수 없습니다. 새 버전은 버전 관리에서 추가하세요."
+      : "필수 입력 항목을 먼저 입력해야 저장할 수 있습니다. 봇 이름을 확인하세요.";
+  }
+  const createConfirm = document.querySelector("[data-create-confirm]");
+  if (createConfirm) {
+    createConfirm.disabled = !canConfirmCreateBot();
+  }
 }
 
 function applyStructuralSideEffects(field) {
@@ -5335,6 +5500,10 @@ function bindCreateControls() {
   if (createConfirm && createConfirm.dataset.bound !== "true") {
     createConfirm.dataset.bound = "true";
     createConfirm.addEventListener("click", async () => {
+      if (!canConfirmCreateBot()) {
+        syncCreateValidationState();
+        return;
+      }
       await runQueuedSave("create-confirm", saveCurrentWorkspaceState);
     });
   }
@@ -6261,14 +6430,15 @@ function bindWorkspaceActions() {
   const createVersionAdd = document.querySelector("[data-create-version-add]");
   const createBotCopy = document.querySelector("[data-create-bot-copy]");
   const createVersionManage = document.querySelector("[data-create-version-manage]");
+  const createNewBot = document.querySelector("[data-create-new-bot]");
   const createVersionUpload = document.querySelector("[data-create-version-upload]");
   const downloadBot = document.querySelector("[data-download-bot-package]");
   const uploadBot = document.querySelector("[data-upload-bot-package]");
   const downloadVersion = document.querySelector("[data-download-version-package]");
   const uploadVersion = document.querySelector("[data-upload-version-package]");
-  const botVersionAdd = document.querySelector("[data-bot-version-add]");
-  const botVersionUpload = document.querySelector("[data-version-upload]");
-  const botVersionDownload = document.querySelector("[data-version-download]");
+  const botVersionAddButtons = document.querySelectorAll("[data-bot-version-add]");
+  const botVersionUploadButtons = document.querySelectorAll("[data-version-upload]");
+  const botVersionDownloadButtons = document.querySelectorAll("[data-version-download]");
   const deleteBot = document.querySelector("[data-delete-workspace-bot]");
   const deleteVersionButtons = document.querySelectorAll("[data-bot-version-delete]");
   const copyVersionButtons = document.querySelectorAll("[data-bot-version-copy]");
@@ -6341,6 +6511,10 @@ function bindWorkspaceActions() {
     createVersionManage.dataset.bound = "true";
     createVersionManage.addEventListener("click", () => openCreateVersionManagementPopup());
   }
+  if (createNewBot && createNewBot.dataset.bound !== "true") {
+    createNewBot.dataset.bound = "true";
+    createNewBot.addEventListener("click", () => startNewBotCreation());
+  }
   if (createVersionUpload && createVersionUpload.dataset.bound !== "true") {
     createVersionUpload.dataset.bound = "true";
     createVersionUpload.addEventListener("click", () => {
@@ -6348,11 +6522,23 @@ function bindWorkspaceActions() {
       window.setTimeout(() => document.querySelector("[data-upload-version-package]")?.click(), 0);
     });
   }
-  if (botVersionAdd && botVersionAdd.dataset.bound !== "true") {
-    botVersionAdd.dataset.bound = "true";
-    botVersionAdd.addEventListener("click", async () => {
+  botVersionAddButtons.forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
       const selectedBot = getCurrentWorkspaceBot();
-      if (!selectedBot || !canManageBotInCurrentWorkspace()) return;
+      if (!requireSavedBotForVersionAction(selectedBot) || !canManageBotInCurrentWorkspace()) return;
+      const nextId = buildNextBotVersionId(selectedBot, getBotVersions(selectedBot));
+      const confirmed = await confirmVersionAction({
+        title: "버전 추가",
+        message: "빈 새 버전을 생성하시겠습니까?",
+        rows: [
+          { label: "생성 버전", value: nextId },
+          { label: "초기 데이터", value: "없음" }
+        ],
+        note: "복사본이 아니라 의도, 개체, 사전, API가 없는 빈 버전으로 생성됩니다."
+      });
+      if (!confirmed) return;
       saveWorkspaceSnapshot();
       const added = addWorkspaceBotVersion(selectedBot);
       if (!added) return;
@@ -6360,12 +6546,19 @@ function bindWorkspaceActions() {
       currentTransferStatus = `버전 ${added.id}가 추가되었고, 현재 작업 버전으로 열었습니다. 운영 버전은 바뀌지 않았습니다.`;
       refreshWorkspaceManagementSurfaces();
     });
-  }
-  if (botVersionDownload && botVersionDownload.dataset.bound !== "true") {
-    botVersionDownload.dataset.bound = "true";
-    botVersionDownload.addEventListener("click", async () => {
+  });
+  botVersionDownloadButtons.forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", async () => {
       const bot = getCurrentWorkspaceBot();
+      if (!requireSavedBotForVersionAction(bot)) return;
       const version = bot?.version || "v0.1";
+      const confirmed = await confirmVersionAction({
+        title: "버전 파일 다운로드",
+        message: `${version} 버전 정보를 다운로드하시겠습니까?`
+      });
+      if (!confirmed) return;
       const serverFileName = await downloadAssetFromServer("versionPackage");
       const fileName = `Version_${getSafeFileName(currentStudioState.bot.name || bot?.name, "CGA_Bot")}_${getSafeFileName(version, "v0_1")}_${getTodayStamp()}.json`;
       if (serverFileName) {
@@ -6377,11 +6570,13 @@ function bindWorkspaceActions() {
       currentTransferStatus = formatTransferDownloaded("versionPackage", fileName);
       refreshWorkspaceManagementSurfaces();
     });
-  }
-  if (botVersionUpload && botVersionUpload.dataset.bound !== "true") {
-    botVersionUpload.dataset.bound = "true";
-    botVersionUpload.addEventListener("click", () => {
-      requestJsonUpload(async (json, file) => {
+  });
+  botVersionUploadButtons.forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      if (!requireSavedBotForVersionAction(getCurrentWorkspaceBot())) return;
+      requestVersionJsonUploadWithDialog(async (json, file) => {
         applyCgaVersionPackage(json);
         const uploadResponse = await uploadAssetToServer("versionPackage", JSON.stringify(json, null, 2), file?.name);
         const synced = isAssetUploadAccepted(uploadResponse);
@@ -6397,7 +6592,7 @@ function bindWorkspaceActions() {
         refreshWorkspaceManagementSurfaces();
       });
     });
-  }
+  });
   if (deleteBot && deleteBot.dataset.bound !== "true") {
     deleteBot.dataset.bound = "true";
     deleteBot.addEventListener("click", async () => {
@@ -6405,10 +6600,7 @@ function bindWorkspaceActions() {
       if (!selectedBot || !canManageBotInCurrentWorkspace()) return;
       if (!confirm(`"${selectedBot.name}"을(를) 삭제하시겠습니까?`)) return;
       const deleted = await deleteWorkspaceBotOnServer(selectedBot.group_id, selectedBot.id).catch(() => ({ ok: false, status: "fallback" }));
-      if (!deleted || deleted?.ok === false) {
-        removeWorkspaceBotVersionRegistry(selectedBot);
-        currentWorkspaceBots = currentWorkspaceBots.filter((bot) => bot.id !== selectedBot.id);
-      }
+      removeDeletedWorkspaceBotFromLocalState(selectedBot);
       const nextBot = currentWorkspaceBots.find((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
       if (nextBot) {
         selectedBotManagementId = nextBot.id;
@@ -6427,7 +6619,17 @@ function bindWorkspaceActions() {
     button.addEventListener("click", async () => {
       const selectedBot = getCurrentWorkspaceBot();
       const versionId = button.dataset.botVersionCopy;
-      if (!selectedBot || !versionId || !canManageBotInCurrentWorkspace()) return;
+      if (!requireSavedBotForVersionAction(selectedBot) || !versionId || !canManageBotInCurrentWorkspace()) return;
+      const nextId = `${normalizeBotVersionVersion(versionId)}-copy`;
+      const confirmed = await confirmVersionAction({
+        title: "버전 복사",
+        message: `${versionId} 버전을 복사하시겠습니까?`,
+        rows: [
+          { label: "복사 원본", value: versionId },
+          { label: "생성 버전", value: nextId }
+        ]
+      });
+      if (!confirmed) return;
       saveWorkspaceSnapshot();
       const copied = duplicateWorkspaceBotVersion(selectedBot, versionId);
       if (!copied) return;
@@ -6442,15 +6644,12 @@ function bindWorkspaceActions() {
     button.addEventListener("click", async () => {
       const selectedBot = getCurrentWorkspaceBot();
       const versionId = button.dataset.botVersionDelete;
-      if (!selectedBot || !versionId || !canManageBotInCurrentWorkspace()) return;
+      if (!requireSavedBotForVersionAction(selectedBot) || !versionId || !canManageBotInCurrentWorkspace()) return;
       const versions = getBotVersions(selectedBot);
       if (versions.length <= 1) {
         if (!confirm(`버전 ${versionId}는 마지막 버전입니다. 삭제하면 "${selectedBot.name}" 봇이 삭제됩니다. 계속하시겠습니까?`)) return;
         const deleted = await deleteWorkspaceBotOnServer(selectedBot.group_id, selectedBot.id).catch(() => ({ ok: false, status: "fallback" }));
-        if (!deleted || deleted?.ok === false) {
-          removeWorkspaceBotVersionRegistry(selectedBot);
-          currentWorkspaceBots = currentWorkspaceBots.filter((bot) => bot.id !== selectedBot.id);
-        }
+        removeDeletedWorkspaceBotFromLocalState(selectedBot);
         const nextBot = currentWorkspaceBots.find((bot) => String(bot.group_id || bot.groupId || "") === String(currentWorkspaceGroupId) && bot.status !== "deleted");
         if (nextBot) {
           selectedBotManagementId = nextBot.id;
@@ -7746,9 +7945,9 @@ function createDefaultAiConfig() {
     bot_mode: "text",
     profile_key: "accent",
     language: "ko",
-    nlu_type: "ml",
-    nlu_model: "deep_learning_lite",
-    answer_mode: "fixed",
+    nlu_type: "llm",
+    nlu_model: "llm_engine_default",
+    answer_mode: "llm_rag",
     llm_provider: "chatgpt",
     llm_model: "gpt-4o-mini",
     llm_base_url: "",
@@ -10945,7 +11144,7 @@ function syncTopActionsForScreen() {
   const deployScreens = new Set(["operate"]);
   if (topSave) {
     topSave.hidden = false;
-    topSave.disabled = activeScreenId === "create" && getCreateRequiredFieldIssues().length > 0;
+    topSave.disabled = activeScreenId === "create" && !canConfirmCreateBot();
   }
   if (topPreview) {
     topPreview.hidden = true;
@@ -11169,12 +11368,12 @@ function openCreateVersionManagementPopup() {
         <button type="button" class="version-manage-popup__close" data-version-popup-close aria-label="${closeLabel}">×</button>
       </div>
       <div class="version-manage-popup__toolbar">
-        <button type="button" data-bot-version-add ${canManage ? "" : "disabled"} data-version-popup-refresh>버전 추가</button>
-        <button type="button" data-bot-version-copy="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"} data-version-popup-refresh>복사</button>
-        <button type="button" data-bot-version-delete="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"} data-version-popup-refresh>삭제</button>
-        <button type="button" data-version-upload data-version-popup-refresh>버전 파일 업로드</button>
-        <button type="button" data-version-download data-version-popup-refresh>버전 파일 다운로드</button>
-        <button type="button" data-bot-version-activate="${escapeText(workingVersionId || "")}" ${!canManage || !workingVersionId || workingVersionId === activeVersion?.id ? "disabled" : ""} data-version-popup-refresh>운영/해제</button>
+        <button type="button" data-bot-version-add ${canManage ? "" : "disabled"}>버전 추가</button>
+        <button type="button" data-bot-version-copy="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"}>복사</button>
+        <button type="button" data-bot-version-delete="${escapeText(workingVersionId || "")}" ${canManage && workingVersionId ? "" : "disabled"}>삭제</button>
+        <button type="button" data-version-upload>버전 파일 업로드</button>
+        <button type="button" data-version-download>버전 파일 다운로드</button>
+        <button type="button" data-bot-version-activate="${escapeText(workingVersionId || "")}" ${!canManage || !workingVersionId || workingVersionId === activeVersion?.id ? "disabled" : ""}>운영/해제</button>
       </div>
       <div class="version-manage-popup__meta">운영 버전: ${escapeText(activeVersion?.id || "-")} / 선택 버전: ${escapeText(workingVersionId || "-")}</div>
       <div class="version-manage-popup__table">
@@ -11222,15 +11421,6 @@ function openCreateVersionManagementPopup() {
   backdrop.querySelectorAll("[data-version-popup-close]").forEach((button) => button.addEventListener("click", close));
   document.body.appendChild(backdrop);
   bindWorkspaceActions();
-  backdrop.querySelectorAll("[data-version-popup-refresh]").forEach((button) => {
-    button.addEventListener("click", () => {
-      window.setTimeout(() => {
-        if (!document.body.contains(backdrop)) return;
-        close();
-        openCreateVersionManagementPopup();
-      }, 250);
-    });
-  });
 }
 
 function renderWorkspaceHome() {
@@ -13048,6 +13238,7 @@ function bootApp() {
   bindAdminWorkbench();
   renderLockPolicy();
   bindAssetTransferActions();
+  bindWorkspaceActions();
   bindOperationsActions();
   syncStudioLocaleToCurrentUser();
   enforceActiveScreenVisibility();
