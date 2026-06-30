@@ -1182,14 +1182,9 @@ function duplicateWorkspaceBotVersion(bot, versionId) {
   const source = versions.find((item) => item.id === versionId);
   if (!source) return null;
   const now = new Date().toISOString();
-  const existingNames = new Set(versions.map((item) => item.id));
-  let suffix = 1;
-  let nextId = `${normalizeBotVersionVersion(source.id)}-copy`;
-  while (existingNames.has(nextId)) {
-    nextId = `${normalizeBotVersionVersion(source.id)}-copy-${suffix++}`;
-  }
+  const nextId = buildNextBotVersionId(bot, versions);
   const next = {
-    id: nextId,
+    id: normalizeBotVersionVersion(nextId),
     status: source.status || "draft",
     createdAt: now,
     updatedAt: now,
@@ -6620,7 +6615,7 @@ function bindWorkspaceActions() {
       const selectedBot = getCurrentWorkspaceBot();
       const versionId = button.dataset.botVersionCopy;
       if (!requireSavedBotForVersionAction(selectedBot) || !versionId || !canManageBotInCurrentWorkspace()) return;
-      const nextId = `${normalizeBotVersionVersion(versionId)}-copy`;
+      const nextId = buildNextBotVersionId(selectedBot, getBotVersions(selectedBot));
       const confirmed = await confirmVersionAction({
         title: "버전 복사",
         message: `${versionId} 버전을 복사하시겠습니까?`,
