@@ -1557,6 +1557,11 @@ function openWorkspaceBotVersion(bot, versionId, { cloneCurrentState = false } =
   if (!restored && cloneCurrentState) {
     saveWorkspaceSnapshot();
   }
+  currentStudioState.bot.id = bot.id;
+  currentStudioState.bot.name = bot.name;
+  currentStudioState.bot.defaultLocale = bot.locale;
+  currentStudioState.bot.version = normalizedVersionId;
+  setStoredWorkspaceWorkingVersion(bot, normalizedVersionId);
   return restored;
 }
 
@@ -1627,6 +1632,7 @@ function applyWorkspaceSnapshot(snapshot) {
   currentVersionLegacyExtraFields = versionAssetMetadata.legacyVersionExtraFields;
   if (snapshot.operations_state) applyOperationsStateFromServer(snapshot.operations_state);
   if (snapshot.collaboration_state) applyCollaborationStateFromServer(snapshot.collaboration_state);
+  currentStudioState.bot.version = normalizeBotVersionVersion(snapshot.version_id || currentStudioState.bot.version || "v0.1");
   return true;
 }
 
