@@ -4103,7 +4103,7 @@ function renderCreateStructureGrid(aiConfig = getCurrentAiConfig()) {
       `);
     });
   });
-  container.innerHTML = `<div class="create-structure-matrix">${matrixMarkup.join("")}</div>`;
+  container.innerHTML = matrixMarkup.join("");
   if (caption) caption.textContent = `선택 조합  의도인식: ${nluTypeLabel} / ${nluModelLabel} / 답변: ${answerModeLabel}`;
   if (badge) badge.textContent = "실행/학습 가능";
 }

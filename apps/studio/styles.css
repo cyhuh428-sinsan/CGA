@@ -1262,6 +1262,10 @@ textarea { min-height: 84px; resize: vertical; }
 
 .create-structure-board {
   min-height: 0;
+  display: grid;
+  grid-template-columns: 1.25fr repeat(4, minmax(140px, 1fr));
+  gap: 4px;
+  align-content: start;
   overflow: auto;
   padding-right: 6px;
 }
