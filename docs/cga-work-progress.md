@@ -6920,3 +6920,5 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
 - 반영 내용:
   - `syncWorkspaceSelection()`이 같은 봇에서 작업 버전만 바뀐 상황까지 `applyCurrentBotToStudioState()`로 다시 덮어쓰던 흐름 수정
   - 같은 봇을 유지하는 동안에는 `currentStudioState.bot.version`을 작업 버전 기준으로 유지하고, 봇 자체가 바뀔 때만 운영 기본값으로 동기화
+  - 작업 버전을 `workspaceWorkingVersionByBot`에 별도로 저장해 봇 기본 버전(`selectedBot.version`)과 분리
+  - 버전 선택/운영 전환/마지막 운영 버전 삭제 후 다음 버전 승격 시에도 작업 버전 저장값을 함께 갱신

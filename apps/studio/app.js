@@ -50,6 +50,7 @@ const currentStudioState = createEmptyStudioState();
 let currentCollaborationState = createEmptyCollaborationState();
 let currentAccessState = normalizeAccessState(createSampleAccessState());
 let botVersionRegistry = {};
+let workspaceWorkingVersionByBot = {};
 let currentWorkspaceRecentBots = [];
 let currentAdminResources = {
   templates: [],
@@ -1096,13 +1097,33 @@ function getBotVersionListKey(groupId, botId) {
   return `${groupId || ""}::${botId || ""}`;
 }
 
+function getWorkspaceWorkingVersionKey(bot) {
+  return getBotVersionListKey(bot?.group_id, bot?.id);
+}
+
+function getStoredWorkspaceWorkingVersion(bot) {
+  const key = getWorkspaceWorkingVersionKey(bot);
+  return key ? workspaceWorkingVersionByBot[key] || "" : "";
+}
+
+function setStoredWorkspaceWorkingVersion(bot, versionId) {
+  const key = getWorkspaceWorkingVersionKey(bot);
+  if (!key) return;
+  workspaceWorkingVersionByBot[key] = normalizeBotVersionVersion(versionId, bot?.version || "v0.1");
+}
+
 function normalizeBotVersionVersion(input, fallback = "v0.1") {
   const value = String(input || fallback).trim();
   return /^v?\d+(\.\d+)?$/.test(value) ? (value.startsWith("v") ? value : `v${value}`) : fallback;
 }
 
 function getCurrentWorkingVersionId(bot = getCurrentWorkspaceBot()) {
-  return normalizeBotVersionVersion(currentStudioState.bot.version || bot?.version || "v0.1");
+  return normalizeBotVersionVersion(
+    getStoredWorkspaceWorkingVersion(bot)
+      || currentStudioState.bot.version
+      || bot?.version
+      || "v0.1"
+  );
 }
 
 function getActiveBotVersionId(bot) {
@@ -1513,7 +1534,7 @@ function applyCurrentBotToStudioState(bot) {
   currentStudioState.bot.id = bot.id;
   currentStudioState.bot.name = bot.name;
   currentStudioState.bot.defaultLocale = bot.locale;
-  currentStudioState.bot.version = bot.version || currentStudioState.bot.version || "v0.1";
+  currentStudioState.bot.version = getStoredWorkspaceWorkingVersion(bot) || bot.version || currentStudioState.bot.version || "v0.1";
   trackRecentWorkspaceBot(bot);
   ensureBotVersionRegistryFor(bot);
 }
@@ -1530,6 +1551,7 @@ function openWorkspaceBotVersion(bot, versionId, { cloneCurrentState = false } =
   currentStudioState.bot.name = bot.name;
   currentStudioState.bot.defaultLocale = bot.locale;
   currentStudioState.bot.version = normalizedVersionId;
+  setStoredWorkspaceWorkingVersion(bot, normalizedVersionId);
   ensureBotVersionEntry(bot, normalizedVersionId);
   const restored = applyCachedWorkspaceSnapshot();
   if (!restored && cloneCurrentState) {
@@ -6744,6 +6766,7 @@ function bindWorkspaceActions() {
       if (selectedBot.version === versionId && next[0]?.id) {
         selectedBot.version = next[0].id;
         currentStudioState.bot.version = next[0].id;
+        setStoredWorkspaceWorkingVersion(selectedBot, next[0].id);
       }
       currentTransferStatus = appendTransferSyncStatus(await updateWorkspaceBotVersionOnServer(selectedBot, selectedBot.version).catch(() => false));
       refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
@@ -6763,6 +6786,7 @@ function bindWorkspaceActions() {
       }
       selectedBot.version = versionId;
       currentStudioState.bot.version = versionId;
+      setStoredWorkspaceWorkingVersion(selectedBot, versionId);
       currentTransferStatus = appendTransferSyncStatus(synced);
       refreshWorkspaceManagementSurfaces({ rerenderVersionPopup: true });
     });
