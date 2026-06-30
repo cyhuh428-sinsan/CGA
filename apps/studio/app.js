@@ -4022,97 +4022,73 @@ function renderCreateSummary() {
 function renderCreateStructureGrid(aiConfig = getCurrentAiConfig()) {
   const container = document.querySelector("[data-create-structure-grid]");
   if (!container) return;
-  const caption = document.querySelector("[data-create-structure-caption]");
-  const badge = document.querySelector("[data-create-structure-badge]");
-  const safeCreateOptionLabel = (field, value, fallback) => {
-    try {
-      return getCreateOptionLabel(field, value) || fallback;
-    } catch (error) {
-      return fallback;
-    }
-  };
-  const nluTypeLabel = safeCreateOptionLabel("nlu_type", aiConfig.nlu_type || "ml", aiConfig.nlu_type || "ML");
-  const nluModelLabel = safeCreateOptionLabel("nlu_model", aiConfig.nlu_model || "deep_learning_lite", aiConfig.nlu_model || "DeepLearning Lite");
-  const answerModeLabel = safeCreateOptionLabel("answer_mode", aiConfig.answer_mode || "fixed", aiConfig.answer_mode || "정해진 답변");
-  const answerColumns = [
-    { key: "fixed", title: "답변 엔진", value: safeCreateOptionLabel("answer_mode", "fixed", "정해진 답변") },
-    { key: "semantic_rag", title: "답변 엔진", value: "Semantic Engine RAG" },
-    { key: "llm", title: "답변 엔진", value: "LLM Engine" },
-    { key: "llm_rag", title: "답변 엔진", value: "LLM Engine RAG" }
-  ];
-  const nluRows = [
-    {
-      key: "ml",
-      title: "의도인식 엔진",
-      value: "ML",
-      detail: aiConfig.nlu_type === "ml" ? nluModelLabel : "DeepLearning Lite"
-    },
-    {
-      key: "semantic_vector",
-      title: "의도인식 엔진",
-      value: "Semantic - Vector Worker",
-      detail: "Aidot Vector Worker 기본 모델"
-    },
-    {
-      key: "semantic_external",
-      title: "의도인식 엔진",
-      value: "Semantic - External Embedding",
-      detail: "ko-sroberta"
-    },
-    {
-      key: "llm",
-      title: "의도인식 엔진",
-      value: "LLM Engine",
-      detail: "LLM Engine 기본 모델"
-    }
-  ];
-  const validCombinations = new Set([
-    "ml:fixed",
-    "semantic_vector:fixed",
-    "semantic_vector:semantic_rag",
-    "semantic_external:fixed",
-    "semantic_external:semantic_rag",
-    "llm:fixed",
-    "llm:llm",
-    "llm:llm_rag"
-  ]);
-  const selectedNluKey = aiConfig.nlu_type || "ml";
-  const selectedAnswerKey = aiConfig.answer_mode || "fixed";
-  const matrixMarkup = [];
-  answerColumns.forEach((column) => {
-    matrixMarkup.push(`
-      <article class="create-structure-cell create-structure-cell--engine">
-        <span>${escapeText(column.title)}</span>
-        <strong>${escapeText(column.value)}</strong>
-      </article>
-    `);
-  });
-  nluRows.forEach((row) => {
-    matrixMarkup.push(`
-      <article class="create-structure-cell create-structure-cell--engine">
-        <span>${escapeText(row.title)}</span>
-        <strong>${escapeText(row.value)}</strong>
-        <b>${escapeText(row.detail)}</b>
-      </article>
-    `);
-    answerColumns.forEach((column) => {
-      const comboKey = `${row.key}:${column.key}`;
-      const isSelected = row.key === selectedNluKey && column.key === selectedAnswerKey;
-      const isAvailable = validCombinations.has(comboKey);
-      const stateTitle = isSelected ? "실행/학습 가능" : (isAvailable ? "설정 전" : "사용 못함");
-      const stateDetail = isSelected ? "현재 선택" : (isAvailable ? "선택 가능" : "사용 불가");
-      matrixMarkup.push(`
-        <article class="create-structure-cell create-structure-cell--state${isSelected ? " is-selected" : ""}${isAvailable ? "" : " is-disabled"}">
-          <span>조합 상태</span>
-          <strong>${escapeText(stateTitle)}</strong>
-          <b>${escapeText(stateDetail)}</b>
-        </article>
-      `);
+  const nluType = normalizeCreateNluType(aiConfig.nlu_type);
+  const nluModel = normalizeCreateNluModel(nluType, aiConfig.nlu_model);
+  const answerMode = normalizeCreateAnswerMode(aiConfig.answer_mode);
+  const selectedCombination = selectedCreateBotAiCombination(nluType, nluModel, answerMode);
+  const rows = buildCreateBotAiCombinationRows();
+  container.innerHTML = `
+    <div class="bot-ai-combinations__summary">
+      <strong>선택 조합</strong>
+      <span>${selectedCombination
+        ? `의도인식: ${escapeText(selectedCombination.nluLabel)} · ${escapeText(selectedCombination.nluModelLabel)} / 답변: ${escapeText(selectedCombination.answerLabel)}`
+        : "선택된 조합을 확인할 수 없습니다."}</span>
+      ${selectedCombination ? `<em class="bot-ai-combinations__badge bot-ai-combinations__badge--${escapeText(selectedCombination.status)}">${escapeText(selectedCombination.statusLabel)}</em>` : ""}
+    </div>
+    <div class="bot-ai-combinations__matrix">
+      <div class="bot-ai-combinations__axis bot-ai-combinations__axis--corner">
+        <span>의도인식 엔진</span>
+        <strong>답변 엔진</strong>
+      </div>
+      ${CREATE_ANSWER_MODE_OPTIONS.map((option) => `
+        <div class="bot-ai-combinations__axis bot-ai-combinations__axis--answer">
+          <span>답변 엔진</span>
+          <strong>${escapeText(option.label)}</strong>
+        </div>
+      `).join("")}
+      ${rows.map((row) => `
+        <div class="bot-ai-combinations__row">
+          <div class="bot-ai-combinations__axis bot-ai-combinations__axis--nlu">
+            <span>의도인식 엔진</span>
+            <strong>${escapeText(row.nluLabel)}</strong>
+            <small>${escapeText(row.nluModelLabel)}</small>
+          </div>
+          ${row.combinations.map((item) => {
+            const selected = item.nluType === nluType && item.answerMode === answerMode;
+            const unsupported = item.status === "unsupported";
+            return `
+              <button
+                type="button"
+                class="bot-ai-combinations__item bot-ai-combinations__item--${escapeText(item.status)}${selected ? " is-selected" : ""}"
+                data-create-ai-combination-nlu="${escapeText(item.nluType)}"
+                data-create-ai-combination-answer="${escapeText(item.answerMode)}"
+                ${unsupported ? "disabled" : ""}
+                aria-pressed="${selected ? "true" : "false"}"
+              >
+                <span>조합 상태</span>
+                <strong>${escapeText(item.statusLabel)}</strong>
+                <small>${unsupported ? "사용 불가" : selected ? "현재 선택" : "선택 가능"}</small>
+              </button>
+            `;
+          }).join("")}
+        </div>
+      `).join("")}
+    </div>
+    <p>${escapeText(selectedCombination?.note || "현재 선택한 조합의 지원 상태를 확인해주세요.")}</p>
+  `;
+  container.querySelectorAll("[data-create-ai-combination-nlu]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextNluType = normalizeCreateNluType(button.dataset.createAiCombinationNlu);
+      const nextAnswerMode = normalizeCreateAnswerMode(button.dataset.createAiCombinationAnswer);
+      aiConfig.nlu_type = nextNluType;
+      aiConfig.nlu_model = defaultCreateNluModelForType(nextNluType);
+      aiConfig.answer_mode = nextAnswerMode;
+      syncCreateControlsFromState();
+      renderCreateSummary();
+      syncCreateConditionalFields();
+      syncCreateValidationState();
     });
   });
-  container.innerHTML = matrixMarkup.join("");
-  if (caption) caption.textContent = `선택 조합  의도인식: ${nluTypeLabel} / ${nluModelLabel} / 답변: ${answerModeLabel}`;
-  if (badge) badge.textContent = "실행/학습 가능";
 }
 
 function getSimulatorIntentRow(test) {
@@ -7594,6 +7570,119 @@ const CREATE_ANSWER_MODE_OPTIONS = [
   { value: "llm_rag", label: "LLM Engine RAG 답변", note: "1.5 설정" },
   { value: "llm", label: "LLM Engine 답변", note: "1.5 설정" }
 ];
+
+function normalizeCreateNluType(value) {
+  if (value === "semantic") return "semantic_vector";
+  return CREATE_NLU_TYPE_OPTIONS.some((option) => option.value === value) ? value : "ml";
+}
+
+function defaultCreateNluModelForType(type) {
+  return CREATE_NLU_MODEL_OPTIONS_BY_TYPE[type]?.find((option) => !option.disabled)?.value || "deep_learning_lite";
+}
+
+function normalizeCreateNluModel(type, value) {
+  const options = CREATE_NLU_MODEL_OPTIONS_BY_TYPE[type] || CREATE_NLU_MODEL_OPTIONS_BY_TYPE.ml;
+  return options.some((option) => option.value === value) ? value : defaultCreateNluModelForType(type);
+}
+
+function normalizeCreateAnswerMode(value) {
+  return CREATE_ANSWER_MODE_OPTIONS.some((option) => option.value === value) ? value : "fixed";
+}
+
+function createBotAiCombinationStatus(nluType, nluModel, answerMode) {
+  if (nluType === "ml" && answerMode !== "fixed") {
+    return "unsupported";
+  }
+  if ((nluType === "semantic_vector" || nluType === "semantic_external") && (answerMode === "llm_rag" || answerMode === "llm")) {
+    return "unsupported";
+  }
+  if (nluType === "llm" && answerMode === "semantic_rag") {
+    return "unsupported";
+  }
+  if (nluType === "llm" && (answerMode === "llm" || answerMode === "llm_rag")) {
+    return "implemented";
+  }
+  return nluType === "ml" && nluModel === "deep_learning_lite" && answerMode === "fixed"
+    ? "implemented"
+    : "configured";
+}
+
+function createBotAiCombinationStatusLabel(status) {
+  if (status === "implemented") {
+    return "실행/학습 가능";
+  }
+  if (status === "unsupported") {
+    return "사용 못함";
+  }
+  return "설정 저장만 가능";
+}
+
+function createBotAiCombinationNote(status) {
+  if (status === "implemented") {
+    return "현재 1.0 런타임과 학습 엔진에 연결된 조합입니다.";
+  }
+  if (status === "unsupported") {
+    return "논리적으로 사용할 수 없는 조합입니다. 다른 답변 엔진을 선택해주세요.";
+  }
+  return "학습 전까지 모델을 변경할 수 있고, 학습 완료 후 해당 엔진 기준으로 고정됩니다.";
+}
+
+function buildCreateBotAiCombinations() {
+  return CREATE_NLU_TYPE_OPTIONS.flatMap((nluTypeOption) => {
+    const nluModelOption = CREATE_NLU_MODEL_OPTIONS_BY_TYPE[nluTypeOption.value][0];
+    return CREATE_ANSWER_MODE_OPTIONS.map((answerOption) => {
+      const status = createBotAiCombinationStatus(nluTypeOption.value, nluModelOption.value, answerOption.value);
+      return {
+        id: `${nluTypeOption.value}:${nluModelOption.value}:${answerOption.value}`,
+        nluType: nluTypeOption.value,
+        nluModel: nluModelOption.value,
+        answerMode: answerOption.value,
+        nluLabel: nluTypeOption.label,
+        nluModelLabel: nluModelOption.label,
+        answerLabel: answerOption.label,
+        status,
+        statusLabel: createBotAiCombinationStatusLabel(status),
+        note: createBotAiCombinationNote(status)
+      };
+    });
+  });
+}
+
+function buildCreateBotAiCombinationRows() {
+  const combinations = buildCreateBotAiCombinations();
+  return CREATE_NLU_TYPE_OPTIONS.map((nluTypeOption) => {
+    const modelOption = CREATE_NLU_MODEL_OPTIONS_BY_TYPE[nluTypeOption.value][0];
+    return {
+      nluType: nluTypeOption.value,
+      nluLabel: nluTypeOption.label,
+      nluModelLabel: modelOption.label,
+      combinations: combinations.filter((item) => item.nluType === nluTypeOption.value)
+    };
+  });
+}
+
+function selectedCreateBotAiCombination(nluType, nluModel, answerMode) {
+  const normalizedType = normalizeCreateNluType(nluType);
+  const normalizedModel = normalizeCreateNluModel(normalizedType, nluModel);
+  const normalizedAnswerMode = normalizeCreateAnswerMode(answerMode);
+  const base = buildCreateBotAiCombinations().find(
+    (item) => item.nluType === normalizedType && item.answerMode === normalizedAnswerMode
+  );
+  const modelOption = CREATE_NLU_MODEL_OPTIONS_BY_TYPE[normalizedType].find((item) => item.value === normalizedModel);
+  if (!base || !modelOption) {
+    return undefined;
+  }
+  const status = createBotAiCombinationStatus(normalizedType, normalizedModel, normalizedAnswerMode);
+  return {
+    ...base,
+    id: `${normalizedType}:${normalizedModel}:${normalizedAnswerMode}`,
+    nluModel: normalizedModel,
+    nluModelLabel: modelOption.label,
+    status,
+    statusLabel: createBotAiCombinationStatusLabel(status),
+    note: createBotAiCombinationNote(status)
+  };
+}
 
 const CREATE_LLM_PROVIDER_OPTIONS = [
   { value: "gemini", label: "Gemini", note: "Google" },

@@ -6760,3 +6760,23 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `data-create-structure-grid`를 빈 div로 두지 않고 Aidot 조합표 기본 셀을 정적 HTML로 배치
   - JS 실행이 늦거나 렌더 중 오류가 발생해도 하단 조합표가 빈 화면으로 남지 않도록 보강
   - `renderCreateStructureGrid()`의 옵션 라벨 조회에 안전 fallback을 추가해 예외 시에도 조합표 렌더링이 유지되도록 수정
+
+### 2026-06-30 생성 화면 하단 조합표 Aidot 원형 복사 반영
+
+- 요청:
+  - 땜빵 방식 금지
+  - Aidot 원형의 `봇/봇 허브 생성` 조합표 구조를 기준으로 복사해야 함
+- 참조 Aidot 원본:
+  - `D:\Project\Aidot\apps\web\components\bot-create-dialog.tsx`
+  - `D:\Project\Aidot\apps\web\lib\bot-ai-combinations.ts`
+  - `D:\Project\Aidot\apps\web\app\globals.css`
+- 반영 파일:
+  - `apps/studio/index.html`
+  - `apps/studio/app.js`
+  - `apps/studio/styles.css`
+  - `docs/cga-work-progress.md`
+- 반영 내용:
+  - 이전 정적 HTML/fallback 방식 제거
+  - Aidot의 `bot-ai-combinations__summary`, `bot-ai-combinations__matrix`, `bot-ai-combinations__row`, `bot-ai-combinations__item` 구조로 렌더링 변경
+  - Aidot의 `botAiCombinationStatus`, `statusLabel`, `note`, `rows` 계산 규칙을 CGA 생성 화면에 반영
+  - Aidot 원본 CSS 클래스 기준으로 조합표 스타일을 적용
