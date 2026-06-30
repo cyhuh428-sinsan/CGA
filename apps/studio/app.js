@@ -4015,7 +4015,41 @@ function renderCreateSummary() {
     <p><b>LLM</b><span class="${llmEnabled ? "" : "warn"}">${llmEnabled ? escapeText(String(aiConfig.llm_model || aiConfig.llm_provider || "enabled")) : "사용 안 함"}</span></p>
     <p><b>버전</b><span>${escapeText(currentStudioState.bot.version || "v0.1")}</span></p>
   `;
+  renderCreateStructureGrid(aiConfig);
   syncCreateValidationState();
+}
+
+function renderCreateStructureGrid(aiConfig = getCurrentAiConfig()) {
+  const container = document.querySelector("[data-create-structure-grid]");
+  if (!container) return;
+  const caption = document.querySelector("[data-create-structure-caption]");
+  const badge = document.querySelector("[data-create-structure-badge]");
+  const nluTypeLabel = getCreateOptionLabel("nlu_type", aiConfig.nlu_type || "ml");
+  const nluModelLabel = getCreateOptionLabel("nlu_model", aiConfig.nlu_model || "deep_learning_lite");
+  const answerModeLabel = getCreateOptionLabel("answer_mode", aiConfig.answer_mode || "fixed");
+  const llmProviderLabel = aiConfig.llm_provider ? getCreateOptionLabel("llm_provider", aiConfig.llm_provider) : "사용 안 함";
+  const llmModelLabel = aiConfig.llm_model ? getCreateOptionLabel("llm_model", aiConfig.llm_model) : "사용 안 함";
+  const cards = [
+    { title: "의도인식 엔진", value: nluTypeLabel, note: "선택 엔진", selected: true },
+    { title: "의도인식 엔진", value: nluModelLabel, note: "모델", selected: true },
+    { title: "답변 엔진", value: answerModeLabel, note: "선택 엔진", selected: true },
+    { title: "답변 엔진", value: llmProviderLabel, note: "LLM Provider", selected: Boolean(aiConfig.llm_provider) },
+    { title: "답변 엔진", value: llmModelLabel, note: "LLM Model", selected: Boolean(aiConfig.llm_model) },
+    { title: "의도인식 엔진", value: "Semantic - Vector Worker", note: "사용 불가", disabled: aiConfig.nlu_type !== "semantic_vector" },
+    { title: "의도인식 엔진", value: "Semantic - External Embedding", note: "사용 불가", disabled: aiConfig.nlu_type !== "semantic_external" },
+    { title: "의도인식 엔진", value: "LLM Engine", note: "사용 불가", disabled: aiConfig.nlu_type !== "llm" },
+    { title: "답변 엔진", value: "Semantic Engine RAG", note: "사용 불가", disabled: aiConfig.answer_mode !== "semantic_rag" },
+    { title: "답변 엔진", value: "LLM Engine RAG", note: "사용 불가", disabled: aiConfig.answer_mode !== "llm_rag" }
+  ];
+  container.innerHTML = cards.map((card) => `
+    <article class="create-structure-card${card.selected ? " is-selected" : ""}${card.disabled ? " is-disabled" : ""}">
+      <span>${escapeText(card.title)}</span>
+      <b>${escapeText(card.value)}</b>
+      <strong>${escapeText(card.note)}</strong>
+    </article>
+  `).join("");
+  if (caption) caption.textContent = `선택 조합  의도인식: ${nluTypeLabel} / ${nluModelLabel} / 답변: ${answerModeLabel}`;
+  if (badge) badge.textContent = "실행/학습 가능";
 }
 
 function getSimulatorIntentRow(test) {

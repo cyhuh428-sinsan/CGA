@@ -316,8 +316,8 @@
           </div>
         </div>
         <div class="create-layout">
-          <article class="create-form-panel">
-            <section class="create-section">
+          <div class="create-top-grid">
+            <section class="create-section create-section--basic">
               <div class="create-section__head">
                 <strong>기본 정보</strong>
                 <span class="inline-help" tabindex="0" data-help="Aidot 봇 생성 항목 기준으로 필수값을 먼저 확정합니다.">
@@ -358,8 +358,7 @@
               </div>
               <div class="notice warning create-validation" data-create-required-notice hidden>필수 입력 항목을 먼저 입력해야 저장할 수 있습니다. 봇 이름을 확인하세요.</div>
             </section>
-            <div class="create-lower-grid">
-              <section class="create-section">
+            <section class="create-section create-section--ai">
                 <div class="create-section__head">
                   <strong data-i18n="create.aiSectionTitle">AI 생성 항목</strong>
                   <span class="inline-help" tabindex="0" data-help="Aidot 생성 화면과 동일한 순서로 언어, NLU, 답변 방식을 선택합니다.">
@@ -420,7 +419,7 @@
                       <option value="gpt-4o">GPT-4o (고품질)</option>
                     </select>
                   </label>
-                <label class="create-field create-field--full">
+                  <label class="create-field create-field--full">
                   <span>버전 이름</span>
                   <input data-structural-field="bot.version" placeholder="예: v0.1" />
                 </label>
@@ -473,18 +472,24 @@
                     </label>
                   </div>
                 </section>
-              </div>
             </section>
-            </div>
-          </article>
-          <aside class="status-panel compact create-summary-panel">
+            <aside class="create-summary-panel">
             <div class="create-summary-panel__head">
               <h4 data-i18n="summary.structure">Structure Summary</h4>
               <span>선택 상태</span>
             </div>
             <div data-create-summary></div>
             <div class="next-action">Next: configure using the selected input structure.</div>
-          </aside>
+            </aside>
+          </div>
+          <section class="create-structure-panel">
+            <div class="create-structure-panel__banner">
+              <strong data-create-structure-caption>선택 조합</strong>
+              <span data-create-structure-badge>실행/학습 가능</span>
+            </div>
+            <div class="create-structure-board" data-create-structure-grid></div>
+            <p class="create-structure-panel__footnote">현재 1.0 엔티티와 어순 엔진에 연결된 조합입니다.</p>
+          </section>
         </div>
       </section>
 
