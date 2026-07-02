@@ -6925,3 +6925,15 @@ efreshWorkspaceManagementSurfaces()로 전역 상태를 갱신하도록 수정. 
   - `applyCachedWorkspaceSnapshot()` 이후에도 선택한 작업 버전이 다시 덮어써지지 않도록 `snapshot.version_id` 기준으로 최종 버전값을 재고정
   - 봇 관리 화면의 작업 버전 계산 시 `currentWorkspaceBotId`뿐 아니라 `currentStudioState.bot.id`, `selectedBotManagementId`까지 함께 확인해 선택된 봇의 작업 버전을 안정적으로 표시
   - 운영 브라우저가 이전 `app.js?v=20260701-2`를 계속 사용할 수 있어 정적 파일 query version을 `20260701-3`로 갱신
+
+### 2026-07-02 8개 설정 메뉴 Aidot 원형 행 구조 재정렬
+
+- 요청:
+  - `AI 모델 설정`, `기본값 설정`, `메시지 설정`, `메신저 편의 기능`, `제외/무시 목록 설정`, `룰 설정`, `스몰토크`, `봇스테이션` 메뉴에서 Aidot 원형이 아닌 부분을 제거하고 원형 구조로 교체
+- 반영 파일:
+  - `apps/studio/app.js`
+  - `docs/cga-work-progress.md`
+- 반영 내용:
+  - Aidot 원본 JSX 기준으로 목록형 설정 화면의 행 래퍼 구조를 재정렬
+  - `메신저 편의 기능`, `제외/무시 목록 설정`, `룰 설정`, `스몰토크` 목록 행을 임의 `button` 래퍼에서 Aidot 원형 `div` 행 구조로 교체
+  - 선택용 `data-*` 속성은 유지해 기존 선택 로직이 동작할 수 있도록 보존
