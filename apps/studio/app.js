@@ -174,6 +174,10 @@ let currentIntentSearch = "";
 let currentIntentFilter = "all";
 let currentDetailTab = "intent";
 let currentBuildAidotView = "list";
+let currentBuildSelectedFlowNodeId = "";
+let currentBuildEntityExtractionDialogOpen = false;
+let currentBuildEntityExtractionPickerOpen = false;
+let currentBuildEntityExtractionKeyword = "";
 let currentConfigureSubview = "ai-model";
 let currentMessengerSettingsTab = "floating-buttons";
 let currentSelectedFloatingButtonId = "";
@@ -1989,7 +1993,9 @@ function applyAccessStatePayload(payload) {
 
 async function refreshAccessStateFromServer() {
   const payload = await requestCgaJson("/api/cga/groups");
-  return applyAccessStatePayload(payload);
+  const applied = applyAccessStatePayload(payload);
+  if (applied) syncWorkspaceSelection();
+  return applied;
 }
 
 async function runAccessServerAction(action, fallback) {
@@ -3133,6 +3139,67 @@ function createAidotFlowGraphNodes(dialogAsset, dialogType = 1) {
   ];
 }
 
+function getAidotFlowNodeId(dialogId, suffix) {
+  return `${dialogId}-${suffix}`;
+}
+
+function createAidotFlowGraph(dialogAsset, dialogType = 1) {
+  const dialogId = String(dialogAsset?.id || dialogAsset?.displayName || `dialog-${Date.now()}`);
+  const displayName = String(dialogAsset?.displayName || dialogId);
+  const answer = String(dialogAsset?.answer || dialogAsset?.dialogCards?.[0] || "");
+  const startId = getAidotFlowNodeId(dialogId, "start");
+  const talkId = getAidotFlowNodeId(dialogId, "talk-1");
+  const endId = getAidotFlowNodeId(dialogId, "end");
+  return {
+    version: 1,
+    dialogId,
+    dialogType,
+    nodes: [
+      { id: startId, type: "start", name: "대화 시작", label: `${displayName} Start`, position: { x: 120, y: 150 }, config: {} },
+      { id: talkId, type: "talk", name: "Talk 1", label: "Talk", position: { x: 360, y: 150 }, config: { cardName: "Talk 1", messages: answer ? [answer] : [], responseType: "none", responseEntityBindingIds: [], responseEntityExtractions: [] } },
+      { id: endId, type: "end", name: "End 1", label: "End", position: { x: 600, y: 150 }, config: {} }
+    ],
+    links: [
+      { id: `${startId}:next:${talkId}`, sourceNodeId: startId, sourcePort: "next", targetNodeId: talkId, kind: "default", waypoints: [] },
+      { id: `${talkId}:next:${endId}`, sourceNodeId: talkId, sourcePort: "next", targetNodeId: endId, kind: "default", waypoints: [] }
+    ]
+  };
+}
+
+function getAidotFlowGraph(dialogAsset, dialogType = 1) {
+  if (!dialogAsset || typeof dialogAsset !== "object") return createAidotFlowGraph(null, dialogType);
+  const graph = dialogAsset.flowGraphModel;
+  if (graph && Array.isArray(graph.nodes) && Array.isArray(graph.links)) return graph;
+  const created = createAidotFlowGraph(dialogAsset, dialogType);
+  dialogAsset.flowGraphModel = created;
+  return created;
+}
+
+function getBuildEntityExtractionOptions() {
+  return currentEntityAssets.map((item, index) => ({
+    id: `${item.rowType || "S"}:${item.name || index}`,
+    entityId: String(item.name || index),
+    entityName: String(item.name || ""),
+    entityValue: String(item.value || item.detail || ""),
+    category: String(item.rowType || "S").toUpperCase() === "P" ? "사용자 개체" : "시스템 개체"
+  })).filter((item) => item.entityName);
+}
+
+function renderBuildEntityExtractionDialog(node) {
+  if (!currentBuildEntityExtractionDialogOpen || node?.type !== "talk") return "";
+  const config = node.config || {};
+  const selectedIds = Array.isArray(config.responseEntityBindingIds) ? config.responseEntityBindingIds : [];
+  const term = String(currentBuildEntityExtractionKeyword || "").trim().toLowerCase();
+  const options = getBuildEntityExtractionOptions().filter((item) => !term || `${item.entityName} ${item.entityValue}`.toLowerCase().includes(term));
+  const selected = getBuildEntityExtractionOptions().filter((item) => selectedIds.includes(item.id));
+  const pickerRows = options.length ? ["사용자 개체", "시스템 개체"].map((category) => {
+    const rows = options.filter((item) => item.category === category);
+    if (!rows.length) return "";
+    return `<div class="aidot-entity-picker__group">${category}</div>` + rows.map((item) => `<label class="aidot-entity-picker__row"><input type="checkbox" data-build-entity-toggle="${escapeText(item.id)}" ${selectedIds.includes(item.id) ? "checked" : ""} /><strong>@${escapeText(item.entityName)}</strong><span>${escapeText(item.category)}</span><span>${escapeText(item.entityValue)}</span></label>`).join("");
+  }).join("") : `<div class="aidot-entity-picker__empty">등록된 개체가 없습니다.</div>`;
+  const selectedRows = selected.length ? selected.map((item) => `<div class="aidot-entity-selected__row"><input type="checkbox" checked data-build-entity-toggle="${escapeText(item.id)}" /><span>${escapeText(item.entityName)}</span><strong>@${escapeText(item.entityName)}</strong><span>${escapeText(item.entityValue)}</span><label><input type="checkbox" /> 미사용</label><label><input type="checkbox" /> 미사용</label><span>-</span></div>`).join("") : `<div class="aidot-entity-selected__empty">아직 추출할 개체가 선택되지 않았습니다.<br />개체를 검색한 뒤 선택해서 변수로 등록해주세요.</div>`;
+  return `<div class="aidot-entity-backdrop"><section class="aidot-entity-dialog" role="dialog" aria-modal="true" aria-label="응답 내 개체 추출"><header><strong>응답 내 개체 추출</strong><button type="button" data-build-entity-close aria-label="닫기">×</button></header><div class="aidot-entity-dialog__body"><div class="aidot-entity-toolbar"><strong>추출할 개체 ${selected.length}</strong><span><button type="button" data-build-entity-picker-open>선택 개체 추가</button><button type="button" data-build-entity-clear ${selected.length ? "" : "disabled"}>삭제</button></span></div><div class="aidot-entity-picker ${currentBuildEntityExtractionPickerOpen ? "is-open" : ""}"><label>⌕ <input type="search" data-build-entity-query value="${escapeText(currentBuildEntityExtractionKeyword)}" placeholder="대화에서 사용할 개체를 검색하여 파라미터로 등록하세요." /></label>${currentBuildEntityExtractionPickerOpen ? `<div class="aidot-entity-picker__table"><div class="aidot-entity-picker__head"><span></span><span>개체명</span><span>구분</span><span>개체값</span></div>${pickerRows}</div>` : ""}</div><div class="aidot-entity-selected"><div class="aidot-entity-selected__head"><span></span><span>변수명</span><span>개체명</span><span>개체값</span><span>필수 변수</span><span>로컬 변수</span><span>챗봇 메시지</span></div>${selectedRows}</div></div></section></div>`;
+}
 function buildAidotDialogPackage(kind = "intent") {
   const bot = getCurrentWorkspaceBot();
   const dialogType = kind === "scenario" ? 0 : 1;
@@ -13481,10 +13548,13 @@ function renderBuildAidotScreen() {
     `<div data-build-aidot-screen></div>`
   );
   const container = document.querySelector("[data-build-aidot-screen]");
+  const buildScreen = document.querySelector("#build");
+  buildScreen?.classList.toggle("aidot-flow-screen", currentBuildAidotView === "design");
   if (!container) return;
   const rows = getCurrentIntentRowsForWorkflow();
   if (!rows.some((row) => row.id === currentSelectedIntentId)) currentSelectedIntentId = rows[0]?.id || "";
-  const selected = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || {};
+  const selectedRow = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || {};
+  const selected = currentScenarioAssets.find((row) => String(row.id || row.displayName || "") === String(selectedRow.id || currentSelectedIntentId || "")) || selectedRow;
   const page = getWorkflowPagedRows("build-intents", rows);
   const renderHeader = () => `
     <div class="aidot-build-meta">
@@ -13501,15 +13571,68 @@ function renderBuildAidotScreen() {
     ${renderWorkflowPager(rows.length, "build-intents", page.currentPage, page.totalPages)}
   `;
   const utterances = selected.utterances?.length ? selected.utterances : currentIntentUtteranceAssets.filter((item) => item.division === selected.id);
+  const validationModeLabel = 'Random';
   const renderStart = () => `
     <div class="aidot-dialog-head"><strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb aidot-dialog-breadcrumb--active" data-open-dialog-start>대화 시작</button></strong><div><button type="button" data-return-build-list>목록으로</button><button type="button" data-build-save-start>저장하기</button><button type="button" data-open-dialog-design data-build-save-and-design>저장 후 대화설계</button></div></div>
     <div class="aidot-dialog-start"><section><div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><button type="button" data-build-delete-utterance>삭제</button></div><div class="aidot-add-row"><span>구분</span><span>학습문장</span><button type="button" data-build-add-utterance>추가</button></div><p class="muted-line">Validation Set 상태: ${escapeText(validationModeLabel)}</p><div class="aidot-utterance-table"><div><strong>구분</strong><strong>학습문장</strong></div>${utterances.map((item, index) => `<div><span><input type="checkbox" data-build-utterance-check="${escapeText(item.utterance)}__${index}" ${currentBuildSelectedUtterances.has(`${item.utterance}__${index}`) ? "checked" : ""} /></span><span class="round-token">T</span><span>${escapeText(item.utterance)}</span></div>`).join("")}</div></section></div>
   `;
-  const renderDesign = () => `
-    <div class="aidot-dialog-head"><strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb" data-open-dialog-start>대화 시작</button> &gt; <button type="button" class="aidot-dialog-breadcrumb aidot-dialog-breadcrumb--active" data-open-dialog-design>대화 설계</button></strong><div><button type="button" data-return-build-list>목록으로</button><button type="button" data-build-save-design>저장</button></div></div>
-    <div class="dialog-design-layout"><aside class="dialog-property"><label>카드 이름<input value="답변" data-build-design-card-name /></label><section><strong>기본 메시지</strong><textarea data-build-design-answer>{{$_rag_answer_text}}&#10;{{$_rag_answers}}</textarea></section></aside></div>
-  `;
-  container.innerHTML = currentBuildAidotView === "design" ? renderDesign() : currentBuildAidotView === "start" ? renderStart() : renderList();
+  const renderDesign = () => {
+    const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
+    const selectedNode = graph.nodes.find((node) => node.id === currentBuildSelectedFlowNodeId) || graph.nodes.find((node) => node.type === "talk") || graph.nodes[0];
+    const nodeIcon = (type) => type === "start" ? "▶" : type === "end" ? "■" : "“”";
+    const nodeMarkup = graph.nodes.map((node) => `
+      <button type="button" class="aidot-flow-node aidot-flow-node--${escapeText(node.type)} ${node.id === selectedNode?.id ? "is-selected" : ""}" style="left:${Number(node.position?.x || 0)}px;top:${Number(node.position?.y || 0)}px" data-build-flow-node="${escapeText(node.id)}">
+        <span class="aidot-flow-node__icon">${nodeIcon(node.type)}</span>
+        <strong>${escapeText(node.name || node.label || "Talk")}</strong>
+        <small>${escapeText(node.label || "")}</small>
+      </button>
+    `).join("");
+    const linkMarkup = graph.links.map((link) => {
+      const source = graph.nodes.find((node) => node.id === link.sourceNodeId);
+      const target = graph.nodes.find((node) => node.id === link.targetNodeId);
+      if (!source || !target) return "";
+      const x1 = Number(source.position?.x || 0) + 92;
+      const y1 = Number(source.position?.y || 0) + 48;
+      const x2 = Number(target.position?.x || 0);
+      const y2 = Number(target.position?.y || 0) + 48;
+      return `<path class="aidot-flow-link ${link.kind === "condition" ? "aidot-flow-link--condition" : ""}" d="M ${x1} ${y1} C ${x1 + 72} ${y1}, ${x2 - 72} ${y2}, ${x2} ${y2}" marker-end="url(#aidot-flow-arrow)" />`;
+    }).join("");
+    const messages = selectedNode?.config?.messages || [];
+    const responseType = selectedNode?.config?.responseType || "none";
+    const responseOptions = [["none", "사용 안함", "사용자 응답 처리를 사용하지 않습니다."], ["single-select", "단일 선택", "챗봇 사용자가 선택한 값을 대화에서 변수로 사용하도록 설정합니다."], ["relay", "응답 전달", "챗봇 사용자가 입력한 답변 전체를 대화에서 변수로 사용하도록 설정합니다."], ["extract-entity", "응답 내 개체 추출", "챗봇 사용자가 입력한 답변에서 개체를 추출해 그 값을 변수로 사용합니다."], ["form-relay", "Form 응답 전달", "JSON 형식의 응답을 변수에 전달 받기 위한 방법입니다."], ["tts-auto", "TTS 종료후 진행(응답받지않음)", "Voice Bot 전용 응답 처리입니다."]];
+    return `
+      <section class="aidot-flow-page" data-aidot-flow-page>
+        <header class="aidot-flow-page__head">
+          <strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb" data-open-dialog-start>대화 시작</button> &gt; <span>대화 설계</span><button type="button" class="help-icon" aria-label="대화 설계 도움말" title="Aidot 대화 설계와 동일한 카드·링크 기반 흐름을 편집합니다.">?</button></strong>
+          <div class="aidot-flow-page__actions"><label class="aidot-search-input">⌕ <input type="search" placeholder="봇 메시지를 검색하세요." /></label><button type="button" class="primary-action" data-build-save-design>저장</button><button type="button" class="icon-only" aria-label="추가 메뉴">⋮</button></div>
+        </header>
+        <div class="aidot-flow-layout">
+          <section class="aidot-flow-canvas-panel">
+            <div class="aidot-flow-summary"><span>의도 카드 ${graph.nodes.length}개</span><span>링크 ${graph.links.length}개</span><span>필수 변수 기본 반복 2회</span></div>
+            <div class="aidot-flow-viewport"><div class="aidot-flow-stage">
+              <svg class="aidot-flow-svg" viewBox="0 0 1160 720" aria-hidden="true"><defs><marker id="aidot-flow-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a1aebb" /></marker></defs>${linkMarkup}</svg>
+              ${nodeMarkup}
+              <div class="aidot-flow-palette"><button type="button" data-build-flow-add="link" title="연결">→</button><button type="button" data-build-flow-add="talk" title="대화 카드">“”</button><button type="button" data-build-flow-add="condition" title="조건">↳</button><button type="button" data-build-flow-add="branch" title="분기">⌘</button><button type="button" data-build-flow-add="api" title="API">API</button><button type="button" data-build-flow-add="variable" title="변수">{Var}</button><button type="button" data-build-flow-add="code" title="코드">&lt;/&gt;</button><button type="button" data-build-flow-add="end" title="종료">■</button></div>
+            </div></div>
+            <footer class="aidot-flow-zoom"><button type="button">−</button><strong>100%</strong><button type="button">＋</button></footer>
+          </section>
+          <aside class="aidot-flow-inspector">
+            <div class="aidot-flow-tools"><button type="button">→</button><button type="button">“”</button><button type="button">↳</button><button type="button">⌘</button><button type="button">API</button><button type="button">{Var}</button><button type="button">&lt;/&gt;</button></div>
+            <div class="aidot-flow-tabs"><button type="button" class="is-active">대화 텍스트</button><button type="button">속성</button><button type="button">변수</button></div>
+            <div class="aidot-flow-inspector__body">
+              <div class="aidot-flow-inspector__title"><span>${nodeIcon(selectedNode?.type)}</span><strong>${escapeText(selectedNode?.name || "Talk")}</strong></div>
+              <section class="aidot-flow-section"><h5>카드 이름</h5><input value="${escapeText(selectedNode?.config?.cardName || selectedNode?.name || "Talk 1")}" data-build-design-card-name /></section>
+              <section class="aidot-flow-section"><h5>기본 메시지</h5><label>랜덤 메시지<textarea data-build-design-answer>${escapeText(messages.join("\n"))}</textarea></label><button type="button" class="secondary-action">+ 메시지 추가</button></section>
+              <section class="aidot-flow-section"><h5>템플릿 메시지</h5><button type="button" class="aidot-flow-template-button">템플릿 메시지 설정</button></section>
+              ${selectedNode?.type === "talk" ? `<section class="aidot-flow-section"><h5>사용자 응답 처리</h5><div class="aidot-flow-radios aidot-flow-radios--response">${responseOptions.map(([value, label, help]) => `<label title="${escapeText(help)}"><input type="radio" name="aidot-talk-response" value="${escapeText(value)}" data-build-response-type ${responseType === value ? "checked" : ""} /> ${escapeText(label)}</label>`).join("")}</div></section>${responseType === "extract-entity" ? `<section class="aidot-flow-section"><div class="aidot-flow-section__head"><h5>응답 내 개체 추출</h5><button type="button" class="secondary-action" data-build-entity-open>상세 설정</button></div><p class="aidot-flow-section__hint">${(selectedNode?.config?.responseEntityBindingIds || []).length ? `선택 개체 ${(selectedNode?.config?.responseEntityBindingIds || []).length}개` : "추출할 개체를 선택해주세요."}</p></section>` : ""}` : ""}
+              <section class="aidot-flow-section"><h5>최대 반복횟수</h5><div class="aidot-flow-radios"><label><input type="radio" checked /> 봇 설정값 사용 (2회)</label><label><input type="radio" /> 직접 설정</label></div></section>
+            </div>
+          </aside>
+        </div>
+        ${renderBuildEntityExtractionDialog(selectedNode)}
+      </section>
+    `;
+  };  container.innerHTML = currentBuildAidotView === "design" ? renderDesign() : currentBuildAidotView === "start" ? renderStart() : renderList();
   bindWorkflowTableControls(container, "build-intents");
   container.querySelector("[data-build-add-intent]")?.addEventListener("click", async () => {
     addWorkflowIntentFromBuild();
@@ -13521,6 +13644,83 @@ function renderBuildAidotScreen() {
   container.querySelectorAll("[data-open-dialog-start]").forEach((button) => button.addEventListener("click", () => { currentBuildAidotView = "start"; renderBuildAidotScreen(); }));
   container.querySelector("[data-open-dialog-design]")?.addEventListener("click", () => { currentBuildAidotView = "design"; renderBuildAidotScreen(); });
   container.querySelectorAll("[data-return-build-list]").forEach((button) => button.addEventListener("click", () => { currentBuildAidotView = "list"; renderBuildAidotScreen(); }));
+  container.querySelectorAll("[data-build-flow-node]").forEach((button) => button.addEventListener("click", () => {
+    currentBuildSelectedFlowNodeId = button.dataset.buildFlowNode || "";
+    renderBuildAidotScreen();
+  }));
+  container.querySelectorAll("[data-build-flow-add]").forEach((button) => button.addEventListener("click", () => {
+    const type = button.dataset.buildFlowAdd || "";
+    if (!type || type === "link") return;
+    const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
+    const serial = graph.nodes.filter((node) => node.type === type).length + 1;
+    const nodeId = getAidotFlowNodeId(graph.dialogId, `${type}-${serial}`);
+    const node = {
+      id: nodeId,
+      type: type === "end" ? "end" : type === "talk" ? "talk" : type,
+      name: type === "talk" ? `Talk ${serial}` : type === "end" ? `End ${serial}` : `${type} ${serial}`,
+      label: type === "talk" ? "Talk" : type,
+      position: { x: 360 + ((serial - 1) * 180), y: 280 },
+      config: type === "talk" ? { cardName: `Talk ${serial}`, messages: [], responseType: "none", responseEntityBindingIds: [], responseEntityExtractions: [] } : {}
+    };
+    const sourceNode = graph.nodes.find((item) => item.id === currentBuildSelectedFlowNodeId) || graph.nodes[graph.nodes.length - 1];
+    graph.nodes.push(node);
+    if (sourceNode && sourceNode.type !== "end") graph.links.push({ id: `${sourceNode.id}:next:${nodeId}`, sourceNodeId: sourceNode.id, sourcePort: "next", targetNodeId: nodeId, kind: type === "condition" ? "condition" : "default", waypoints: [] });
+    currentBuildSelectedFlowNodeId = nodeId;
+    renderBuildAidotScreen();
+  }));
+  container.querySelectorAll("[data-build-response-type]").forEach((radio) => {
+    radio.addEventListener("change", () => {
+      const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
+      const node = graph.nodes.find((item) => item.id === currentBuildSelectedFlowNodeId) || graph.nodes.find((item) => item.type === "talk");
+      if (!node || node.type !== "talk") return;
+      node.config = { ...(node.config || {}), responseType: radio.value };
+      currentBuildEntityExtractionDialogOpen = radio.value === "extract-entity";
+      currentBuildEntityExtractionPickerOpen = false;
+      currentBuildEntityExtractionKeyword = "";
+      renderBuildAidotScreen();
+    });
+  });
+  container.querySelector("[data-build-entity-open]")?.addEventListener("click", () => {
+    currentBuildEntityExtractionDialogOpen = true;
+    currentBuildEntityExtractionPickerOpen = false;
+    currentBuildEntityExtractionKeyword = "";
+    renderBuildAidotScreen();
+  });
+  container.querySelector("[data-build-entity-close]")?.addEventListener("click", () => {
+    currentBuildEntityExtractionDialogOpen = false;
+    currentBuildEntityExtractionPickerOpen = false;
+    renderBuildAidotScreen();
+  });
+  container.querySelector("[data-build-entity-picker-open]")?.addEventListener("click", () => {
+    currentBuildEntityExtractionPickerOpen = true;
+    renderBuildAidotScreen();
+  });
+  container.querySelector("[data-build-entity-clear]")?.addEventListener("click", () => {
+    const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
+    const node = graph.nodes.find((item) => item.id === currentBuildSelectedFlowNodeId) || graph.nodes.find((item) => item.type === "talk");
+    if (node) node.config = { ...(node.config || {}), responseEntityBindingIds: [], responseEntityExtractions: [] };
+    renderBuildAidotScreen();
+  });
+  container.querySelector("[data-build-entity-query]")?.addEventListener("change", (event) => {
+    currentBuildEntityExtractionKeyword = event.target.value || "";
+    currentBuildEntityExtractionPickerOpen = true;
+    renderBuildAidotScreen();
+  });
+  container.querySelectorAll("[data-build-entity-toggle]").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      const option = getBuildEntityExtractionOptions().find((item) => item.id === checkbox.dataset.buildEntityToggle);
+      if (!option) return;
+      const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
+      const node = graph.nodes.find((item) => item.id === currentBuildSelectedFlowNodeId) || graph.nodes.find((item) => item.type === "talk");
+      if (!node) return;
+      const config = node.config || {};
+      const ids = Array.isArray(config.responseEntityBindingIds) ? config.responseEntityBindingIds : [];
+      const rows = Array.isArray(config.responseEntityExtractions) ? config.responseEntityExtractions : [];
+      node.config = { ...config, responseEntityBindingIds: checkbox.checked ? [...new Set([...ids, option.id])] : ids.filter((id) => id !== option.id), responseEntityExtractions: checkbox.checked ? (rows.some((item) => item.entityId === option.entityId) ? rows : [...rows, { id: option.id, entityId: option.entityId, entityName: option.entityName, variableName: option.entityName, required: false, local: false, chatbotMessages: [] }]) : rows.filter((item) => item.entityId !== option.entityId) };
+      currentBuildEntityExtractionPickerOpen = false;
+      renderBuildAidotScreen();
+    });
+  });
   container.querySelectorAll("[data-build-utterance-check]").forEach((checkbox) => {
     checkbox.addEventListener("change", () => {
       const key = checkbox.dataset.buildUtteranceCheck;
@@ -13563,6 +13763,12 @@ function renderBuildAidotScreen() {
   container.querySelector("[data-build-save-design]")?.addEventListener("click", async () => {
     const cardName = container.querySelector("[data-build-design-card-name]")?.value?.trim() || selected.displayName || selected.id;
     const answer = container.querySelector("[data-build-design-answer]")?.value?.trim() || "";
+    const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
+    const selectedNode = graph.nodes.find((node) => node.id === currentBuildSelectedFlowNodeId) || graph.nodes.find((node) => node.type === "talk");
+    if (selectedNode) {
+      selectedNode.name = cardName;
+      selectedNode.config = { ...(selectedNode.config || {}), cardName, messages: answer ? answer.split(/\r?\n/).map((item) => item.trim()).filter(Boolean) : [] };
+    }
     await saveCurrentBuildIntent(selected.id, {
       displayName: cardName,
       answer,
@@ -13573,6 +13779,8 @@ function renderBuildAidotScreen() {
 }
 
 function bootApp() {
+  // Authentication must be interactive even when a later workspace renderer fails.
+  bindAdminWorkbench();
   applyScreenLayout();
   renderNavigationRails();
   renderWorkflowRail();
@@ -13652,15 +13860,4 @@ document.addEventListener("change", (event) => {
     }, 0);
   }
 });
-
-
-
-
-
-
-
-
-
-
-
 

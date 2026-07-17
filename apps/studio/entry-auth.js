@@ -96,17 +96,17 @@
   }
 
   function showMessage(message) {
-    const node = $("[data-entry-auth-message]");
-    if (!node) return;
-    node.hidden = false;
-    node.innerHTML = `<strong>${message}</strong>`;
+    document.querySelectorAll("[data-entry-auth-message]").forEach((node) => {
+      node.hidden = false;
+      node.innerHTML = `<strong>${message}</strong>`;
+    });
   }
 
   function clearMessage() {
-    const node = $("[data-entry-auth-message]");
-    if (!node) return;
-    node.hidden = true;
-    node.textContent = "";
+    document.querySelectorAll("[data-entry-auth-message]").forEach((node) => {
+      node.hidden = true;
+      node.textContent = "";
+    });
   }
 
   function enterLoginShell() {
@@ -129,6 +129,63 @@
     } catch {
     }
     enterLoginShell();
+  }
+  async function runFallbackLogin() {
+    const loginId = $("[data-entry-login-id]")?.value?.trim() || "";
+    const password = $("[data-entry-login-password]")?.value || "";
+    const remember = $("[data-entry-remember-id]");
+    const button = $("[data-entry-login-submit]");
+    if (!loginId || !password) {
+      showMessage("아이디와 비밀번호를 입력하세요.");
+      return;
+    }
+    try {
+      if (button) button.disabled = true;
+      showMessage("로그인 처리 중입니다.");
+      const response = await fetch("/api/cga/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ user_id: loginId, password })
+      });
+      const payload = await response.json().catch(() => ({}));
+      // The Studio API authenticates with an HttpOnly session cookie. Older
+      // development responses also contained a token, so accept either form.
+      if (!response.ok || (!payload?.session_token && !payload?.user)) {
+        showMessage(payload?.fallback_message || payload?.message || "로그인에 실패했습니다.");
+        return;
+      }
+      if (payload.session_token) localStorage.setItem(SESSION_KEY, payload.session_token);
+      else localStorage.removeItem(SESSION_KEY);
+      if (remember?.checked) localStorage.setItem(LOGIN_ID_KEY, loginId);
+      if (remember && !remember.checked) localStorage.removeItem(LOGIN_ID_KEY);
+      clearMessage();
+      if (!window.location.hash || window.location.hash === "#") {
+        window.history.replaceState(null, "", "#workspace-home");
+      }
+      const shell = document.querySelector(".app-shell");
+      const topbar = document.querySelector(".topbar");
+      const workflow = document.querySelector(".workflow");
+      const loginEntry = document.querySelector("[data-login-entry]");
+      shell?.classList.remove("unauthenticated");
+      if (topbar) topbar.hidden = false;
+      if (workflow) workflow.hidden = false;
+      if (loginEntry) loginEntry.hidden = true;
+      window.dispatchEvent(new CustomEvent("cga:entry-login-success"));
+    } catch {
+      showMessage("로그인 요청을 처리할 수 없습니다.");
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  function bindFallbackLoginIfNeeded() {
+    const loginButton = $("[data-entry-login-submit]");
+    if (!loginButton || loginButton.dataset.entryFallbackBound === "true") return;
+    loginButton.dataset.entryFallbackBound = "true";
+    loginButton.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); runFallbackLogin(); }, true);
+    $("[data-entry-login-password]")?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") runFallbackLogin();
+    });
   }
 
   function applyEntryLocale() {
@@ -160,6 +217,9 @@
       logoutButton.addEventListener("click", runTopLogout);
     }
     localeSelect?.addEventListener("change", applyEntryLocale);
+    // The main module claims the same button during normal startup. If it has
+    // not done so, retain this fallback so a usable login is never left inert.
+    window.setTimeout(bindFallbackLoginIfNeeded, 0);
   }
 
   document.addEventListener("DOMContentLoaded", bootEntryAuth);

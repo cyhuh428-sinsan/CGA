@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CGA Studio</title>
-  <link rel="stylesheet" href="/apps/studio/styles.css?v=20260701-3" />
+  <link rel="stylesheet" href="/apps/studio/styles.css?v=20260717-16" />
 </head>
 <body>
   <div class="app-shell unauthenticated">
@@ -31,36 +31,36 @@
       </div>
     </header>
 
-    <aside class="workflow" aria-label="Bot build workflow" hidden>
-      <details class="menu-group menu-group--production" open>
-        <summary class="section-title management-title">
-          <strong data-i18n="production.title">Bot Production</strong>
-          <span data-i18n="production.subtitle">Workspace · tasks · bot assets</span>
-        </summary>
-        <nav class="management-nav production-nav" data-query-nav></nav>
-      </details>
-      <details class="menu-group menu-group--workflow" open>
-        <summary class="section-title">
-          <strong data-i18n="workflow.title">Bot Build Workflow</strong>
-          <span data-i18n="workflow.subtitle">6 visible steps · Aidot functions reused</span>
-        </summary>
-        <nav data-workflow-nav></nav>
-      </details>
-      <details class="menu-group menu-group--operation" open>
-        <summary class="section-title operation-title">
-          <strong data-i18n="operation.title">Bot Operation</strong>
-          <span data-i18n="operation.subtitle">Retrain · analysis</span>
-        </summary>
-        <nav class="management-nav operation-nav" data-operation-nav></nav>
-      </details>
-      <details class="menu-group menu-group--system-admin" open>
-        <summary class="section-title system-admin-title">
-          <strong data-i18n="systemAdmin.title">System Administration</strong>
-          <span data-i18n="systemAdmin.subtitle">Users · groups · permissions</span>
-        </summary>
-        <div class="server-sub-nav system-admin-subnav" data-system-admin-subnav></div>
-        <nav class="management-nav system-admin-nav" data-management-nav></nav>
-      </details>
+    <aside class="workflow workflow--primary-nav" aria-label="서비스 메뉴" hidden>
+      <div class="primary-service-rail">
+        <nav class="primary-icon-nav" data-primary-nav aria-label="1차 메뉴"></nav>
+        <div class="primary-service-rail__utilities">
+          <button type="button" class="primary-service-rail__utility" data-primary-utility="help" aria-label="도움말" aria-expanded="false">?</button>
+          <button type="button" class="primary-service-rail__utility" data-primary-utility="profile" aria-label="사용자 정보" aria-expanded="false" data-primary-profile-initial>사</button>
+        </div>
+        <div class="primary-utility-popover" data-primary-utility-popover="help" hidden></div>
+        <div class="primary-utility-popover" data-primary-utility-popover="profile" hidden></div>
+      </div>
+      <div class="primary-menu-content" data-primary-menu-content>
+        <section class="primary-menu-panel" data-primary-panel="operations">
+          <h2 class="primary-menu-panel__title">봇 운영</h2>
+          <nav class="management-nav production-nav" data-query-nav></nav>
+          <nav class="management-nav operation-nav" data-operation-nav></nav>
+        </section>
+        <section class="primary-menu-panel" data-primary-panel="build">
+          <h2 class="primary-menu-panel__title">봇 제작</h2>
+          <nav data-workflow-nav></nav>
+        </section>
+        <section class="primary-menu-panel" data-primary-panel="api">
+          <h2 class="primary-menu-panel__title">API</h2>
+          <nav class="management-nav" data-api-nav></nav>
+        </section>
+        <section class="primary-menu-panel" data-primary-panel="system">
+          <h2 class="primary-menu-panel__title">시스템 관리</h2>
+          <div class="server-sub-nav system-admin-subnav" data-system-admin-subnav></div>
+          <nav class="management-nav system-admin-nav" data-management-nav></nav>
+        </section>
+      </div>
     </aside>
 
     <main class="workspace">
@@ -592,6 +592,10 @@
         <div data-build-aidot-screen></div>
       </section>
 
+      <section id="entity-management" data-screen-id="entity-management" class="screen-card"></section>
+
+      <section id="dictionary-management" data-screen-id="dictionary-management" class="screen-card"></section>
+
       <section id="test" data-screen-id="test" class="screen-card">
         <div class="screen-heading">
           <span>05</span>
@@ -717,8 +721,8 @@
     </div>
   </div>
   <script src="/apps/studio/i18n.js?v=20260701-3"></script>
-  <script src="/apps/studio/entry-auth.js?v=20260701-3"></script>
-  <script type="module" src="/apps/studio/app.js?v=20260701-3"></script>
+  <script src="/apps/studio/entry-auth.js?v=20260717-16"></script>
+  <script type="module" src="/apps/studio/app.js?v=20260717-17"></script>
   <script>
     (() => {
       const DEFAULT_SCREEN_ID = "workspace-home";
@@ -773,12 +777,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
