@@ -179,6 +179,8 @@ let currentBuildSelectedFlowNodeId = "";
 let currentBuildEntityExtractionDialogOpen = false;
 let currentBuildEntityExtractionPickerOpen = false;
 let currentBuildEntityExtractionKeyword = "";
+let currentBuildIntentCreateModalOpen = false;
+let currentBuildIntentEditId = "";
 let currentConfigureSubview = "ai-model";
 let currentMessengerSettingsTab = "floating-buttons";
 let currentSelectedFloatingButtonId = "";
@@ -4593,7 +4595,7 @@ function renderWorkflowScreenShell(sectionId, code, title, subtitle, bodyHtml, o
   section.innerHTML = `
     <div class="screen-heading aidot-screen-heading">
       <span>${escapeText(code)}</span>
-      <div><h3>${escapeText(title)}</h3>${subtitle ? `<p>${escapeText(subtitle)}</p>` : ""}</div>
+      <div><h3>${escapeText(title)}</h3>${options.helpText ? `<button type="button" class="help-icon screen-heading__help" title="${escapeText(options.helpText)}" aria-label="${escapeText(title)} 도움말">i</button>` : ""}${subtitle ? `<p>${escapeText(subtitle)}</p>` : ""}</div>
       ${options.showSave === false ? "" : `<div class="screen-heading__actions"><button type="button" class="ghost" data-screen-save>${t("common.save", "Save")}</button></div>`}
     </div>
     ${bodyHtml || ""}
@@ -5208,7 +5210,9 @@ function renderAidotIntentManager() {
         nextNumber += 1;
         id = `new_intent_${nextNumber}`;
       }
-      currentScenarioAssets = [...currentScenarioAssets, { id, type: "intent", displayName: id, answer: "", dialogCards: [] }];
+      const displayName = String(draft.displayName || id).trim() || id;
+  const type = draft.type === "module" ? "module" : "intent";
+  currentScenarioAssets = [...currentScenarioAssets, { id, type, displayName, answer: "", dialogCards: [] }];
       currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: "", division: id }];
       currentSelectedIntentId = id;
       currentIntentSearch = "";
@@ -5351,16 +5355,16 @@ function syncCandidatesToCurrentVersion(candidates) {
   return true;
 }
 
-function addWorkflowIntentFromBuild() {
+function addWorkflowIntentFromBuild(draft = {}) {
   const latestRows = getAidotIntentRows();
   let nextNumber = latestRows.length + 1;
-  let id = `new_intent_${nextNumber}`;
+  let id = String(draft.id || "").trim() || `new_intent_${nextNumber}`;
   const usedIds = new Set(latestRows.map((row) => row.id));
   while (usedIds.has(id)) {
     nextNumber += 1;
     id = `new_intent_${nextNumber}`;
   }
-  currentScenarioAssets = [...currentScenarioAssets, { id, type: "intent", displayName: id, answer: "", dialogCards: [] }];
+  currentScenarioAssets = [...currentScenarioAssets, { id, type: draft.type === "module" ? "module" : "intent", displayName: String(draft.displayName || id).trim() || id, answer: "", dialogCards: [] }];
   currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: "", division: id }];
   currentSelectedIntentId = id;
   currentBuildAidotView = "start";
@@ -13659,38 +13663,68 @@ function renderBuildAidotScreen() {
     "build",
     "04",
     "봇 제작",
-    "Aidot 의도 화면 기준으로 의도/모듈을 제작하고 대화 설계로 연결합니다.",
-    `<div data-build-aidot-screen></div>`
+    "",
+    `<div data-build-aidot-screen></div>`,
+    { showSave: false, helpText: "Aidot 의도 화면 기준으로 의도와 모듈을 제작하고 대화 설계를 연결합니다." }
   );
   const container = document.querySelector("[data-build-aidot-screen]");
   const buildScreen = document.querySelector("#build");
   buildScreen?.classList.toggle("aidot-flow-screen", currentBuildAidotView === "design");
   if (!container) return;
   const rows = getCurrentIntentRowsForWorkflow();
+  const listState = renderBuildAidotScreen.listState ||= { query: "", filter: "all", selected: new Set(), sort: "rowId", direction: 1 };
+  const normalizedQuery = String(listState.query || "").trim().toLocaleLowerCase();
+  const listRows = rows.filter((row) => {
+    const matchesQuery = !normalizedQuery || [row.rowId, row.type, row.id, row.displayName, row.updatedAt, row.updatedBy].join(" ").toLocaleLowerCase().includes(normalizedQuery);
+    return matchesQuery && (listState.filter === "all" || row.type === listState.filter);
+  }).slice().sort((left, right) => {
+    const a = left[listState.sort] ?? "";
+    const b = right[listState.sort] ?? "";
+    return String(a).localeCompare(String(b), "ko", { numeric: true }) * listState.direction;
+  });
   if (!rows.some((row) => row.id === currentSelectedIntentId)) currentSelectedIntentId = rows[0]?.id || "";
   const selectedRow = rows.find((row) => row.id === currentSelectedIntentId) || rows[0] || {};
   const selected = currentScenarioAssets.find((row) => String(row.id || row.displayName || "") === String(selectedRow.id || currentSelectedIntentId || "")) || selectedRow;
-  const page = getWorkflowPagedRows("build-intents", rows);
+  if (!adminTablePageSizeByKey["build-intents"]) adminTablePageSizeByKey["build-intents"] = 50;
+  const page = getWorkflowPagedRows("build-intents", listRows);
   const renderHeader = () => `
     <div class="aidot-build-meta">
       <strong>Semantic - Vector Worker · Aidot Vector Worker 기본 모델 / 답변: Semantic Engine RAG 답변</strong>
-      <div class="train-row"><button type="button" data-build-run>학습하기</button><span>${currentOperationsState.build?.last_run_at ? `학습성공 ${escapeText(currentOperationsState.build.last_run_at)} ${escapeText(currentAccessState.currentUserId)}` : "학습 전"}</span></div>
-      <div class="aidot-build-meta__notice">운영버전은 제작 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.</div>
+      <div class="train-row"><button type="button" data-build-run>학습하기</button><span>${currentOperationsState.build?.last_run_at ? `학습성공 ${escapeText(currentOperationsState.build.last_run_at)} ${escapeText(currentAccessState.currentUserId)}` : "학습 전"}</span><button type="button" class="help-icon" title="운영버전은 제작 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요." aria-label="운영버전 제작 제한 도움말">i</button></div>
     </div>
   `;
-  const renderList = () => `
-    ${renderHeader()}
-    <div class="aidot-intent-main-toolbar"><div class="aidot-list-actions"><button type="button" data-build-add-intent>+ 의도/모듈 추가</button></div></div>
-    <div class="aidot-list-control"><strong>전체 ${rows.length}건</strong>${renderWorkflowPageSize("build-intents", page.pageSize)}</div>
-    <div class="aidot-main-table"><div class="aidot-main-table-head"><span>ID</span><span>구분</span><span>의도/모듈명</span><span>표시명</span><span>학습문장</span><span>대화카드</span><span>태그</span><span>최종수정일시</span><span>최종수정자</span></div>${page.rows.map((row) => `<div class="aidot-main-table-row"><span>${escapeText(row.rowId)}</span><span>${row.type === "module" ? "모듈" : "의도"}</span><button type="button" class="aidot-main-table-link" data-build-intent-open="${escapeText(row.id)}" title="${escapeText(row.id)}">${escapeText(row.displayName || row.id)}</button><span title="${escapeText(row.displayName || row.id)}">${escapeText(row.displayName || row.id)}</span><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${row.tagCount || 0}</span><span title="${escapeText(row.updatedAt)}">${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span></div>`).join("")}</div>
-    ${renderWorkflowPager(rows.length, "build-intents", page.currentPage, page.totalPages)}
-  `;
+  const renderList = () => {
+    const editRow = currentBuildIntentEditId ? rows.find((row) => row.id === currentBuildIntentEditId) : null;
+    const generatedIntentKey = editRow?.intentKey || editRow?.id || (globalThis.crypto?.randomUUID?.() || `intent-${Date.now().toString(36)}`);
+    const sortLabel = (key, label) => `<button type="button" class="aidot-list-sort" data-build-list-sort="${key}">${label} <span>${listState.sort === key ? (listState.direction === 1 ? "▲" : "▼") : "↕"}</span></button>`;
+    const selectedCount = [...listState.selected].filter((id) => listRows.some((row) => row.id === id)).length;
+    return `
+      ${renderHeader()}
+      <section class="aidot-build-list">
+        <div class="aidot-list-topline"><div class="aidot-search-line"><label class="aidot-search-field"><span aria-hidden="true">⌕</span><input type="search" data-build-list-query value="${escapeText(listState.query)}" placeholder="의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색하세요." /></label><select data-build-list-filter aria-label="구분 필터"><option value="all" ${listState.filter === "all" ? "selected" : ""}>전체</option><option value="intent" ${listState.filter === "intent" ? "selected" : ""}>의도</option><option value="module" ${listState.filter === "module" ? "selected" : ""}>모듈</option></select></div><div class="aidot-list-actions"><button type="button" data-build-add-intent>+ 의도/모듈 추가</button><button type="button" class="icon-button" aria-label="의도/모듈 메뉴">⋮</button></div></div>
+        <div class="aidot-list-control"><strong>전체 ${listRows.length}건</strong>${renderWorkflowPageSize("build-intents", page.pageSize)}${selectedCount ? `<button type="button" class="ghost-button" data-build-list-delete>삭제</button><span class="aidot-list-selection">${selectedCount}개 선택</span>` : `<button type="button" class="ghost-button" disabled>삭제</button>`}</div>
+        <div class="aidot-main-table"><div class="aidot-main-table-head"><span><input type="checkbox" data-build-list-all aria-label="전체 선택" /></span><span>${sortLabel("rowId", "ID")}</span><span>${sortLabel("type", "구분")}</span><span>${sortLabel("id", "의도/모듈명")}</span><span>${sortLabel("displayName", "표시명")}</span><span>${sortLabel("utteranceCount", "학습문장")}</span><span>${sortLabel("dialogCardCount", "대화카드")}</span><span>${sortLabel("tagCount", "태그")}</span><span>${sortLabel("updatedAt", "최종수정일시")}</span><span>${sortLabel("updatedBy", "최종수정자")}</span><span></span></div><div class="aidot-main-table-body">${page.rows.map((row) => `<div class="aidot-main-table-row"><span><input type="checkbox" data-build-list-select="${escapeText(row.id)}" ${listState.selected.has(row.id) ? "checked" : ""} /></span><span>${escapeText(row.rowId)}</span><span>${row.type === "module" ? "모듈" : "의도"}</span><button type="button" class="aidot-main-table-link" data-build-intent-open="${escapeText(row.id)}" title="${escapeText(row.id)}">${escapeText(row.displayName || row.id)}</button><span title="${escapeText(row.displayName || row.id)}">${escapeText(row.displayName || row.id)}</span><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${row.tagCount || 0}</span><span title="${escapeText(row.updatedAt)}">${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span><button type="button" class="aidot-row-kebab" data-build-intent-edit="${escapeText(row.id)}" aria-label="${escapeText(row.displayName || row.id)} 수정">⋮</button></div>`).join("")}</div></div>
+        ${renderWorkflowPager(listRows.length, "build-intents", page.currentPage, page.totalPages)}
+        ${currentBuildIntentCreateModalOpen ? `<div class="aidot-intent-create-backdrop"><section class="aidot-intent-create-dialog" role="dialog" aria-modal="true" aria-label="${editRow ? "의도 수정" : "의도 생성"}"><header><strong>${editRow ? "의도 수정" : "의도 생성"}</strong><button type="button" data-build-intent-create-cancel aria-label="닫기">×</button></header><p>의도명, 표시명, 의도 Key는 필수값입니다.</p><fieldset><legend>구분</legend><label><input type="radio" name="build-intent-type" data-build-intent-type value="intent" ${editRow?.type === "module" ? "" : "checked"} /> 의도</label><label><input type="radio" name="build-intent-type" data-build-intent-type value="module" ${editRow?.type === "module" ? "checked" : ""} /> 모듈</label></fieldset><div class="aidot-intent-create-fields"><label>의도명 *<input data-build-intent-id maxlength="100" value="${escapeText(editRow?.id || "")}" placeholder="의도명을 입력하세요." ${editRow ? "readonly" : ""} /><small>한글/영문/숫자/공백/특수문자/-/(_)로만 입력 <b>${editRow?.id?.length || 0}/100</b></small></label><label>표시명 *<input data-build-intent-display maxlength="40" value="${escapeText(editRow?.displayName || "")}" placeholder="표시명을 입력하세요." /><small>한글/영문/숫자/공백/특수문자/-/(_)로만 입력 <b>${editRow?.displayName?.length || 0}/40</b></small></label></div><label class="aidot-intent-key">의도 Key <button type="button" class="help-icon" title="의도 Key는 생성 후 변경하지 않습니다." aria-label="의도 Key 도움말">i</button><strong>${escapeText(generatedIntentKey)}</strong><small>영문/숫자/특수문자/-/(_)로만 입력</small></label><div class="aidot-intent-options"><label><input type="checkbox" data-build-intent-lock /> 의도전환잠금 <button type="button" class="help-icon" title="현재 의도에서 다른 의도로 전환되는 것을 제한합니다.">i</button></label><label><input type="checkbox" data-build-intent-return-block /> 의도복귀차단 <button type="button" class="help-icon" title="완료한 의도로 다시 복귀하는 것을 제한합니다.">i</button></label><label><input type="checkbox" data-build-intent-feedback disabled /> 의도별 피드백 <button type="button" class="help-icon" title="봇 설정의 메시지 설정에 따라 사용 여부가 정해집니다.">i</button></label></div><p class="aidot-intent-option-help">봇 설정의 메시지 설정에서 피드백 사용 유형이 설정되어 있어 여기서는 변경할 수 없습니다.</p><label class="aidot-intent-tags">태그 <button type="button" class="help-icon" title="태그는 Enter로 구분하여 최대 10개까지 입력할 수 있습니다.">i</button><input data-build-intent-tags placeholder="태그를 입력하고 엔터키를 눌러주세요." maxlength="100" /><small>한글/영문/숫자/공백으로만 입력, 10개까지 입력 가능 <b>0/10</b></small></label><footer><button type="button" data-build-intent-create-cancel>취소</button><button type="button" class="primary-button" data-build-intent-create-submit>확인</button></footer></section></div>` : ""}
+      </section>
+    `;
+  };
   const utterances = selected.utterances?.length ? selected.utterances : currentIntentUtteranceAssets.filter((item) => item.division === selected.id);
   const validationModeLabel = 'Random';
-  const renderStart = () => `
-    <div class="aidot-dialog-head"><strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb aidot-dialog-breadcrumb--active" data-open-dialog-start>대화 시작</button></strong><div><button type="button" data-return-build-list>목록으로</button><button type="button" data-build-save-start>저장하기</button><button type="button" data-open-dialog-design data-build-save-and-design>저장 후 대화설계</button></div></div>
-    <div class="aidot-dialog-start"><section><div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><button type="button" data-build-delete-utterance>삭제</button></div><div class="aidot-add-row"><span>구분</span><span>학습문장</span><button type="button" data-build-add-utterance>추가</button></div><p class="muted-line">Validation Set 상태: ${escapeText(validationModeLabel)}</p><div class="aidot-utterance-table"><div><strong>구분</strong><strong>학습문장</strong></div>${utterances.map((item, index) => `<div><span><input type="checkbox" data-build-utterance-check="${escapeText(item.utterance)}__${index}" ${currentBuildSelectedUtterances.has(`${item.utterance}__${index}`) ? "checked" : ""} /></span><span class="round-token">T</span><span>${escapeText(item.utterance)}</span></div>`).join("")}</div></section></div>
-  `;
+  const renderStart = () => {
+    const startGraph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
+    const startTalkNode = startGraph.nodes.find((node) => node.id === currentBuildSelectedFlowNodeId) || startGraph.nodes.find((node) => node.type === "talk");
+    const selectedBindingIds = Array.isArray(startTalkNode?.config?.responseEntityBindingIds) ? startTalkNode.config.responseEntityBindingIds : [];
+    const selectedBindings = getBuildEntityExtractionOptions().filter((item) => selectedBindingIds.includes(item.id));
+    const entityRows = selectedBindings.length
+      ? selectedBindings.map((item) => `<div class="aidot-start-entity-row"><span><input type="checkbox" data-build-entity-toggle="${escapeText(item.id)}" checked /></span><span>${escapeText(item.entityName)}</span><strong>@${escapeText(item.entityName)}</strong><span>${escapeText(item.entityValue)}</span><label><input type="checkbox" /> 미사용</label><label><input type="checkbox" /> 미사용</label><span>-</span></div>`).join("")
+      : `<div class="aidot-start-entity-empty"><div class="aidot-empty-face">··</div><p>아직 추출할 개체가 선택되지 않았습니다.<br />개체를 검색한 뒤 선택해서 변수로 등록해주세요.</p></div>`;
+    return `
+      <div class="aidot-dialog-head"><strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.displayName || selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb aidot-dialog-breadcrumb--active" data-open-dialog-start>대화 시작</button></strong><div><button type="button" data-return-build-list>목록으로</button><button type="button" data-build-save-start>저장하기</button><button type="button" data-open-dialog-design data-build-save-and-design>저장 후 대화설계</button></div></div>
+      <div class="aidot-dialog-start"><section><div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><button type="button" data-build-delete-utterance>삭제</button></div><div class="aidot-add-row"><label>구분<select data-build-utterance-type aria-label="학습문장 구분"><option value="T">T</option><option value="V">V</option></select></label><label>학습문장<input type="text" data-build-utterance-input placeholder="봇과 대화를 시작할 때 사용자가 입력할 문장을 입력하고 Enter를 눌러주세요." /></label><button type="button" data-build-add-utterance>추가</button></div><p class="muted-line">Validation Set 상태: ${escapeText(validationModeLabel)}</p><div class="aidot-utterance-table"><div><strong>구분</strong><strong>학습문장</strong></div>${utterances.map((item, index) => `<div><span><input type="checkbox" data-build-utterance-check="${escapeText(item.utterance)}__${index}" ${currentBuildSelectedUtterances.has(`${item.utterance}__${index}`) ? "checked" : ""} /></span><span class="round-token">${escapeText(item.type || "T")}</span><span>${escapeText(item.utterance)}</span></div>`).join("")}</div></section><section class="aidot-dialog-entities"><div class="aidot-section-title"><strong>추출할 개체 ${selectedBindings.length}</strong><span><button type="button" data-build-entity-open>선택 개체 추가</button><button type="button" data-build-entity-clear ${selectedBindings.length ? "" : "disabled"}>삭제</button></span></div><div class="aidot-start-entity-help" title="대화에서 사용할 개체를 선택하여 파라미터로 등록합니다.">⌕ 대화에서 사용할 개체를 검색하여 파라미터로 등록하세요.</div><div class="aidot-start-entity-table"><div class="aidot-start-entity-head"><span><input type="checkbox" aria-label="추출 개체 전체 선택" /></span><span>변수명</span><span>개체명</span><span>개체값</span><span>필수 변수</span><span>로컬 변수</span><span>챗봇 메시지</span></div>${entityRows}</div></section></div>
+      ${renderBuildEntityExtractionDialog(startTalkNode)}
+    `;
+  };
   const renderDesign = () => {
     const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
     const selectedNode = graph.nodes.find((node) => node.id === currentBuildSelectedFlowNodeId) || graph.nodes.find((node) => node.type === "talk") || graph.nodes[0];
@@ -13718,7 +13752,7 @@ function renderBuildAidotScreen() {
     return `
       <section class="aidot-flow-page" data-aidot-flow-page>
         <header class="aidot-flow-page__head">
-          <strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb" data-open-dialog-start>대화 시작</button> &gt; <span>대화 설계</span><button type="button" class="help-icon" aria-label="대화 설계 도움말" title="Aidot 대화 설계와 동일한 카드·링크 기반 흐름을 편집합니다.">?</button></strong>
+          <strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.displayName || selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb" data-open-dialog-start>대화 시작</button> &gt; <span>대화 설계</span><button type="button" class="help-icon" aria-label="대화 설계 도움말" title="Aidot 대화 설계와 동일한 카드·링크 기반 흐름을 편집합니다.">?</button></strong>
           <div class="aidot-flow-page__actions"><label class="aidot-search-input">⌕ <input type="search" placeholder="봇 메시지를 검색하세요." /></label><button type="button" class="primary-action" data-build-save-design>저장</button><button type="button" class="icon-only" aria-label="추가 메뉴">⋮</button></div>
         </header>
         <div class="aidot-flow-layout">
@@ -13749,8 +13783,42 @@ function renderBuildAidotScreen() {
     `;
   };  container.innerHTML = currentBuildAidotView === "design" ? renderDesign() : currentBuildAidotView === "start" ? renderStart() : renderList();
   bindWorkflowTableControls(container, "build-intents");
-  container.querySelector("[data-build-add-intent]")?.addEventListener("click", async () => {
-    addWorkflowIntentFromBuild();
+  container.querySelector("[data-build-list-query]")?.addEventListener("change", (event) => { listState.query = event.target.value || ""; adminTablePageByKey["build-intents"] = 1; renderBuildAidotScreen(); });
+  container.querySelector("[data-build-list-filter]")?.addEventListener("change", (event) => { listState.filter = event.target.value || "all"; adminTablePageByKey["build-intents"] = 1; renderBuildAidotScreen(); });
+  container.querySelectorAll("[data-build-list-sort]").forEach((button) => button.addEventListener("click", () => { const key = button.dataset.buildListSort; listState.direction = listState.sort === key ? -listState.direction : 1; listState.sort = key; renderBuildAidotScreen(); }));
+  container.querySelectorAll("[data-build-list-select]").forEach((checkbox) => checkbox.addEventListener("change", () => { if (checkbox.checked) listState.selected.add(checkbox.dataset.buildListSelect); else listState.selected.delete(checkbox.dataset.buildListSelect); renderBuildAidotScreen(); }));
+  container.querySelector("[data-build-list-all]")?.addEventListener("change", (event) => { page.rows.forEach((row) => event.target.checked ? listState.selected.add(row.id) : listState.selected.delete(row.id)); renderBuildAidotScreen(); });
+  container.querySelector("[data-build-list-delete]")?.addEventListener("click", () => { listState.selected.clear(); renderBuildAidotScreen(); });
+  container.querySelector("[data-build-add-intent]")?.addEventListener("click", () => {
+    currentBuildIntentEditId = "";
+    currentBuildIntentCreateModalOpen = true;
+    renderBuildAidotScreen();
+  });
+  container.querySelectorAll("[data-build-intent-edit]").forEach((button) => button.addEventListener("click", () => {
+    currentBuildIntentEditId = button.dataset.buildIntentEdit || "";
+    currentBuildIntentCreateModalOpen = true;
+    renderBuildAidotScreen();
+  }));
+  container.querySelector("[data-build-intent-create-cancel]")?.addEventListener("click", () => {
+    currentBuildIntentCreateModalOpen = false;
+    currentBuildIntentEditId = "";
+    renderBuildAidotScreen();
+  });
+  container.querySelector("[data-build-intent-create-submit]")?.addEventListener("click", async () => {
+    const id = container.querySelector("[data-build-intent-id]")?.value.trim() || "";
+    const displayName = container.querySelector("[data-build-intent-display]")?.value.trim() || "";
+    const type = container.querySelector("[data-build-intent-type]:checked")?.value || "intent";
+    if (!id || !displayName || getAidotIntentRows().some((row) => row.id === id)) return;
+    if (currentBuildIntentEditId) {
+      const editId = currentBuildIntentEditId;
+      currentScenarioAssets = currentScenarioAssets.map((item) => (item.id === editId || item.displayName === editId) ? { ...item, type: type === "module" ? "module" : "intent", displayName } : item);
+      currentSelectedIntentId = editId;
+      currentBuildAidotView = "list";
+    } else {
+      addWorkflowIntentFromBuild({ id, displayName, type });
+    }
+    currentBuildIntentCreateModalOpen = false;
+    currentBuildIntentEditId = "";
     await saveDetailAssetsToServer().catch(() => false);
     renderAllStatePanels();
     renderBuildAidotScreen();
@@ -13797,7 +13865,7 @@ function renderBuildAidotScreen() {
   });
   container.querySelector("[data-build-entity-open]")?.addEventListener("click", () => {
     currentBuildEntityExtractionDialogOpen = true;
-    currentBuildEntityExtractionPickerOpen = false;
+    currentBuildEntityExtractionPickerOpen = true;
     currentBuildEntityExtractionKeyword = "";
     renderBuildAidotScreen();
   });
@@ -13845,8 +13913,10 @@ function renderBuildAidotScreen() {
     });
   });
   container.querySelector("[data-build-add-utterance]")?.addEventListener("click", async () => {
-    const nextIndex = currentIntentUtteranceAssets.filter((item) => item.division === selected.id).length + 1;
-    currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance: "", division: selected.id }];
+    const utterance = container.querySelector("[data-build-utterance-input]")?.value.trim() || "";
+    const division = container.querySelector("[data-build-utterance-type]")?.value || "T";
+    if (!utterance) return;
+    currentIntentUtteranceAssets = [...currentIntentUtteranceAssets, { utterance, division: selected.id, type: division }];
     currentStudioState.counts.utterances = currentIntentUtteranceAssets.length;
     await saveDetailAssetsToServer().catch(() => false);
     renderAllStatePanels();
@@ -13870,10 +13940,10 @@ function renderBuildAidotScreen() {
     await saveCurrentBuildIntent(selected.id);
     renderBuildAidotScreen();
   });
-  container.querySelector("[data-build-save-and-design]")?.addEventListener("click", async () => {
-    await saveCurrentBuildIntent(selected.id);
+  container.querySelector("[data-build-save-and-design]")?.addEventListener("click", () => {
     currentBuildAidotView = "design";
     renderBuildAidotScreen();
+    saveCurrentBuildIntent(selected.id).catch(() => {});
   });
   container.querySelector("[data-build-save-design]")?.addEventListener("click", async () => {
     const cardName = container.querySelector("[data-build-design-card-name]")?.value?.trim() || selected.displayName || selected.id;
