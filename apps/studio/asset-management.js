@@ -74,12 +74,17 @@ export function createAssetManagementController(api) {
     const state = ui[kind];
     const entityMode = kind === "entity";
     const sizes = PAGE_SIZES.map((size) => '<option value="' + size + '" ' + (state.size === size ? "selected" : "") + ">" + size + "개씩 보기</option>").join("");
+    const selectionControl = state.selected.size
+      ? '<span class="asset-management__selected" aria-live="polite">' + state.selected.size + '개 선택</span>'
+      : '<button type="button" class="ghost-button" data-delete disabled>삭제</button>';
+    const dictionarySelectionActions = !entityMode && state.selected.size
+      ? '<div class="asset-management__selection-actions"><button type="button" class="ghost-button" data-bulk="on">의도 사용</button><button type="button" class="ghost-button" data-bulk="off">의도 미사용</button></div>'
+      : "";
     return '<div class="asset-management__toolbar">' +
       '<label class="asset-search">⌕ <input type="search" data-query value="' + esc(state.query) + '" placeholder="' + (entityMode ? "개체명, 개체값, 정규식 또는 패턴을 검색하세요." : "단어 또는 동의어를 검색하세요.") + '"></label>' +
-      '<div class="asset-actions"><button type="button" class="primary-button" data-add>+ ' + (entityMode ? "개체명" : "단어") + ' 추가</button><button type="button" class="asset-kebab" data-menu aria-label="파일 메뉴">⋮</button>' +
+      '<div class="asset-actions"><div class="asset-actions__primary"><button type="button" class="primary-button" data-add>+ ' + (entityMode ? "개체명" : "단어") + ' 추가</button><button type="button" class="asset-kebab" data-menu aria-label="파일 메뉴">⋮</button></div>' + dictionarySelectionActions +
       '<div class="asset-file-menu" ' + (state.menu ? "" : "hidden") + '><button type="button" data-asset-upload="' + kind + '">파일 업로드</button><button type="button" data-asset-download="' + kind + '">파일 다운로드</button></div></div></div>' +
-      '<div class="asset-management__meta"><strong>전체 ' + total + '건</strong><select data-size>' + sizes + '</select><button type="button" class="ghost-button" data-delete ' + (state.selected.size ? "" : "disabled") + '>삭제</button>' +
-      (entityMode ? "" : '<button type="button" class="ghost-button" data-bulk="on" ' + (state.selected.size ? "" : "disabled") + '>의도 사용</button><button type="button" class="ghost-button" data-bulk="off" ' + (state.selected.size ? "" : "disabled") + '>의도 미사용</button>') + "</div>";
+      '<div class="asset-management__meta"><strong>전체 ' + total + '건</strong><select data-size>' + sizes + '</select>' + selectionControl + "</div>";
   }
 
   function entityRow(group) {
