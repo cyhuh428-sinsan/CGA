@@ -217,6 +217,7 @@ let currentVersionSystemConfigExtraFields = createEmptyVersionAssetMetadataState
 let currentVersionLegacyExtraFields = createEmptyVersionAssetMetadataState().legacyVersionExtraFields;
 let currentSelectedCompositionCandidates = new Set();
 let currentBuildSelectedUtterances = new Set();
+let currentBuildSelectedEntities = new Set();
 let currentOperationsState = {
   group_id: "",
   bot_id: "",
@@ -13717,11 +13718,11 @@ function renderBuildAidotScreen() {
     const selectedBindingIds = Array.isArray(startTalkNode?.config?.responseEntityBindingIds) ? startTalkNode.config.responseEntityBindingIds : [];
     const selectedBindings = getBuildEntityExtractionOptions().filter((item) => selectedBindingIds.includes(item.id));
     const entityRows = selectedBindings.length
-      ? selectedBindings.map((item) => `<div class="aidot-start-entity-row"><span><input type="checkbox" data-build-entity-toggle="${escapeText(item.id)}" checked /></span><span>${escapeText(item.entityName)}</span><strong>@${escapeText(item.entityName)}</strong><span>${escapeText(item.entityValue)}</span><label><input type="checkbox" /> 미사용</label><label><input type="checkbox" /> 미사용</label><span>-</span></div>`).join("")
+      ? selectedBindings.map((item) => `<div class="aidot-start-entity-row"><span><input type="checkbox" data-build-entity-row-check="${escapeText(item.id)}" ${currentBuildSelectedEntities.has(item.id) ? "checked" : ""} aria-label="${escapeText(item.entityName)} 선택" /></span><span>${escapeText(item.entityName)}</span><strong>@${escapeText(item.entityName)}</strong><span>${escapeText(item.entityValue)}</span><label><input type="checkbox" /> 미사용</label><label><input type="checkbox" /> 미사용</label><span>-</span></div>`).join("")
       : `<div class="aidot-start-entity-empty"><div class="aidot-empty-face">··</div><p>아직 추출할 개체가 선택되지 않았습니다.<br />개체를 검색한 뒤 선택해서 변수로 등록해주세요.</p></div>`;
     return `
       <div class="aidot-dialog-head"><strong><button type="button" class="aidot-dialog-breadcrumb" data-return-build-list>의도 (${escapeText(selected.displayName || selected.id || "")})</button> &gt; <button type="button" class="aidot-dialog-breadcrumb aidot-dialog-breadcrumb--active" data-open-dialog-start>대화 시작</button></strong><div><button type="button" data-return-build-list>목록으로</button><button type="button" data-build-save-start>저장하기</button><button type="button" data-open-dialog-design data-build-save-and-design>저장 후 대화설계</button></div></div>
-      <div class="aidot-dialog-start"><section><div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><button type="button" data-build-delete-utterance>삭제</button></div><div class="aidot-add-row"><label>구분<select data-build-utterance-type aria-label="학습문장 구분"><option value="T">T</option><option value="V">V</option></select></label><label>학습문장<input type="text" data-build-utterance-input placeholder="봇과 대화를 시작할 때 사용자가 입력할 문장을 입력하고 Enter를 눌러주세요." /></label><button type="button" data-build-add-utterance>추가</button></div><p class="muted-line">Validation Set 상태: ${escapeText(validationModeLabel)}</p><div class="aidot-utterance-table"><div><strong>구분</strong><strong>학습문장</strong></div>${utterances.map((item, index) => `<div><span><input type="checkbox" data-build-utterance-check="${escapeText(item.utterance)}__${index}" ${currentBuildSelectedUtterances.has(`${item.utterance}__${index}`) ? "checked" : ""} /></span><span class="round-token">${escapeText(item.type || "T")}</span><span>${escapeText(item.utterance)}</span></div>`).join("")}</div></section><section class="aidot-dialog-entities"><div class="aidot-section-title"><strong>추출할 개체 ${selectedBindings.length}</strong><span><button type="button" data-build-entity-open>선택 개체 추가</button><button type="button" data-build-entity-clear ${selectedBindings.length ? "" : "disabled"}>삭제</button></span></div><div class="aidot-start-entity-help" title="대화에서 사용할 개체를 선택하여 파라미터로 등록합니다.">⌕ 대화에서 사용할 개체를 검색하여 파라미터로 등록하세요.</div><div class="aidot-start-entity-table"><div class="aidot-start-entity-head"><span><input type="checkbox" aria-label="추출 개체 전체 선택" /></span><span>변수명</span><span>개체명</span><span>개체값</span><span>필수 변수</span><span>로컬 변수</span><span>챗봇 메시지</span></div>${entityRows}</div></section></div>
+      <div class="aidot-dialog-start"><section><div class="aidot-section-title"><strong>학습문장 ${utterances.length}</strong><button type="button" data-build-delete-utterance>삭제</button></div><div class="aidot-add-row"><label>구분<select data-build-utterance-type aria-label="학습문장 구분"><option value="T">T</option><option value="V">V</option></select></label><label>학습문장<input type="text" data-build-utterance-input placeholder="봇과 대화를 시작할 때 사용자가 입력할 문장을 입력하고 Enter를 눌러주세요." /></label><button type="button" data-build-add-utterance>추가</button></div><p class="muted-line">Validation Set 상태: ${escapeText(validationModeLabel)}</p><div class="aidot-utterance-table"><div><strong>구분</strong><strong>학습문장</strong></div>${utterances.map((item, index) => `<div><span><input type="checkbox" data-build-utterance-check="${escapeText(item.utterance)}__${index}" ${currentBuildSelectedUtterances.has(`${item.utterance}__${index}`) ? "checked" : ""} /></span><span class="round-token">${escapeText(item.type || "T")}</span><span>${escapeText(item.utterance)}</span></div>`).join("")}</div></section><section class="aidot-dialog-entities"><div class="aidot-section-title"><strong>추출할 개체 ${selectedBindings.length}</strong><span><button type="button" data-build-entity-open>선택 개체 추가</button><button type="button" data-build-entity-clear ${currentBuildSelectedEntities.size ? "" : "disabled"}>삭제</button></span></div><div class="aidot-start-entity-help" title="대화에서 사용할 개체를 선택하여 파라미터로 등록합니다.">⌕ 대화에서 사용할 개체를 검색하여 파라미터로 등록하세요.</div><div class="aidot-start-entity-table"><div class="aidot-start-entity-head"><span><input type="checkbox" data-build-entity-select-all aria-label="추출 개체 전체 선택" ${selectedBindings.length && currentBuildSelectedEntities.size === selectedBindings.length ? "checked" : ""} /></span><span>변수명</span><span>개체명</span><span>개체값</span><span>필수 변수</span><span>로컬 변수</span><span>챗봇 메시지</span></div>${entityRows}</div></section></div>
       ${renderBuildEntityExtractionDialog(startTalkNode)}
     `;
   };
@@ -13879,10 +13880,35 @@ function renderBuildAidotScreen() {
     renderBuildAidotScreen();
   });
   container.querySelector("[data-build-entity-clear]")?.addEventListener("click", () => {
+    if (!currentBuildSelectedEntities.size) return;
     const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
     const node = graph.nodes.find((item) => item.id === currentBuildSelectedFlowNodeId) || graph.nodes.find((item) => item.type === "talk");
-    if (node) node.config = { ...(node.config || {}), responseEntityBindingIds: [], responseEntityExtractions: [] };
+    if (node) {
+      const config = node.config || {};
+      node.config = {
+        ...config,
+        responseEntityBindingIds: (config.responseEntityBindingIds || []).filter((id) => !currentBuildSelectedEntities.has(id)),
+        responseEntityExtractions: (config.responseEntityExtractions || []).filter((item) => !currentBuildSelectedEntities.has(item.id))
+      };
+    }
+    currentBuildSelectedEntities = new Set();
     renderBuildAidotScreen();
+  });
+  container.querySelector("[data-build-entity-select-all]")?.addEventListener("change", (event) => {
+    const graph = getAidotFlowGraph(selected, selected.type === "module" ? 0 : 1);
+    const node = graph.nodes.find((item) => item.id === currentBuildSelectedFlowNodeId) || graph.nodes.find((item) => item.type === "talk");
+    const ids = Array.isArray(node?.config?.responseEntityBindingIds) ? node.config.responseEntityBindingIds : [];
+    currentBuildSelectedEntities = event.target.checked ? new Set(ids) : new Set();
+    renderBuildAidotScreen();
+  });
+  container.querySelectorAll("[data-build-entity-row-check]").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      const id = checkbox.dataset.buildEntityRowCheck;
+      if (!id) return;
+      if (checkbox.checked) currentBuildSelectedEntities.add(id);
+      else currentBuildSelectedEntities.delete(id);
+      renderBuildAidotScreen();
+    });
   });
   container.querySelector("[data-build-entity-query]")?.addEventListener("change", (event) => {
     currentBuildEntityExtractionKeyword = event.target.value || "";
@@ -13911,6 +13937,11 @@ function renderBuildAidotScreen() {
       if (checkbox.checked) currentBuildSelectedUtterances.add(key);
       else currentBuildSelectedUtterances.delete(key);
     });
+  });
+  container.querySelector("[data-build-utterance-input]")?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.isComposing) return;
+    event.preventDefault();
+    container.querySelector("[data-build-add-utterance]")?.click();
   });
   container.querySelector("[data-build-add-utterance]")?.addEventListener("click", async () => {
     const utterance = container.querySelector("[data-build-utterance-input]")?.value.trim() || "";
