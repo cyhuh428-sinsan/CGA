@@ -3200,7 +3200,7 @@ textarea { min-height: 84px; resize: vertical; }
 .aidot-main-table-head,
 .aidot-main-table-row {
   display: grid;
-  grid-template-columns: 28px 70px 42px 65px 1.5fr 1.5fr 90px 90px 70px 110px 150px 110px 32px;
+  grid-template-columns: 70px 60px minmax(180px, 1.35fr) minmax(180px, 1.35fr) 80px 80px 70px 150px 110px;
   gap: 8px;
   align-items: center;
   min-height: 34px;
@@ -3221,6 +3221,24 @@ textarea { min-height: 84px; resize: vertical; }
   text-align: left;
 }
 .aidot-main-table-row:hover { background: #f8fafc; }
+.aidot-main-table-head > *,
+.aidot-main-table-row > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aidot-main-table-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #1f4e79;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .aidot-main-table-row strong {
   color: #1f4e79;
   text-decoration: underline;
@@ -8982,7 +9000,7 @@ h1 { line-height: 1; }
   color: #0f766e;
 }
 /* Asset management recovery: entity and dictionary list only. */
-.asset-management { display: grid; gap: 10px; min-height: calc(100vh - 220px); font-size: 12px; }
+.asset-management { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; align-content: start; gap: 10px; min-height: calc(100vh - 220px); font-size: 12px; }
 .asset-management__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .asset-search { display: flex; align-items: center; gap: 7px; flex: 1; max-width: 560px; color: #527094; border-bottom: 1px solid #cbd8e7; padding: 0 4px 6px; }
 .asset-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; }
@@ -8991,8 +9009,8 @@ h1 { line-height: 1; }
 .asset-file-menu button { border: 0; background: transparent; text-align: left; padding: 9px 10px; font: inherit; color: #203a61; }
 .asset-management__meta { display: flex; align-items: center; gap: 8px; min-height: 34px; }
 .asset-management__meta select { width: 105px; height: 32px; font: inherit; border: 1px solid #cad7e6; background: #fff; }
-.asset-management__table { display: grid; min-height: 0; border-top: 1px solid #dbe4ef; }
-.asset-management__table-body { overflow: auto; max-height: calc(100vh - 360px); }
+.asset-management__table { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; border-top: 1px solid #dbe4ef; }
+.asset-management__table-body { min-height: 0; overflow: auto; }
 .asset-management__row { display: grid; align-items: center; min-height: 48px; border-bottom: 1px solid #e1e8f0; color: #193e70; }
 .asset-management__row--header { min-height: 38px; background: #f5f8fc; font-weight: 700; color: #183b67; }
 .asset-management__table--entity .asset-management__row { grid-template-columns: 38px 120px minmax(180px, 1fr) minmax(260px, 2fr) 150px 130px; }
@@ -9012,7 +9030,8 @@ h1 { line-height: 1; }
 .asset-editor { display: grid; gap: 14px; font-size: 12px; }
 .asset-editor--small { max-width: 510px; }
 .asset-field { display: grid; gap: 6px; color: #384e6b; }
-.asset-field input, .asset-field textarea, .asset-inline input, .entity-value-row input { min-height: 34px; box-sizing: border-box; border: 1px solid #cbd8e7; padding: 7px 9px; font: inherit; }
+.asset-field input:not([type="checkbox"]):not([type="radio"]), .asset-field textarea, .asset-inline input:not([type="checkbox"]):not([type="radio"]), .entity-value-row input:not([type="checkbox"]):not([type="radio"]) { min-height: 34px; box-sizing: border-box; border: 1px solid #cbd8e7; padding: 7px 9px; font: inherit; }
+.asset-management input[type="checkbox"], .entity-value-row input[type="checkbox"], .entity-type input[type="radio"] { width: 14px; height: 14px; min-height: 0; margin: 0; padding: 0; accent-color: #2e8eaa; }
 .asset-inline { display: flex; gap: 8px; align-items: center; }
 .asset-inline input { flex: 1; }
 .asset-list-head, .modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

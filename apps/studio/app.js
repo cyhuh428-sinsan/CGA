@@ -1,6 +1,6 @@
 import { workflowSteps, managementLinks, operationLinks, queryLinks, apiLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-10";
 import { getVisibleLayout } from "./data/layout.js?v=20260618-10";
-import { createAssetManagementController } from "./asset-management.js?v=20260717-25";
+import { createAssetManagementController } from "./asset-management.js?v=20260717-26";
 import { buildVersionAssetMetadataSnapshot, createEmptyVersionAssetMetadataState, readVersionAssetMetadataSnapshot } from "./data/version-asset-metadata.js";
 import { createEmptyStudioState, deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
@@ -13682,7 +13682,7 @@ function renderBuildAidotScreen() {
     ${renderHeader()}
     <div class="aidot-intent-main-toolbar"><div class="aidot-list-actions"><button type="button" data-build-add-intent>+ 의도/모듈 추가</button></div></div>
     <div class="aidot-list-control"><strong>전체 ${rows.length}건</strong>${renderWorkflowPageSize("build-intents", page.pageSize)}</div>
-    <div class="aidot-main-table"><div class="aidot-main-table-head"><span>ID</span><span>구분</span><span>의도/모듈명</span><span>표시명</span><span>학습문장</span><span>대화카드</span><span>태그</span><span>최종수정일시</span><span>최종수정자</span></div>${page.rows.map((row) => `<div class="aidot-main-table-row"><span>${escapeText(row.rowId)}</span><span>의도</span><button type="button" class="aidot-main-table-link" data-build-intent-open="${escapeText(row.id)}">${escapeText(row.id)}</button><span>${escapeText(row.displayName)}</span><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${row.tagCount || 0}</span><span>${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span></div>`).join("")}</div>
+    <div class="aidot-main-table"><div class="aidot-main-table-head"><span>ID</span><span>구분</span><span>의도/모듈명</span><span>표시명</span><span>학습문장</span><span>대화카드</span><span>태그</span><span>최종수정일시</span><span>최종수정자</span></div>${page.rows.map((row) => `<div class="aidot-main-table-row"><span>${escapeText(row.rowId)}</span><span>${row.type === "module" ? "모듈" : "의도"}</span><button type="button" class="aidot-main-table-link" data-build-intent-open="${escapeText(row.id)}" title="${escapeText(row.id)}">${escapeText(row.displayName || row.id)}</button><span title="${escapeText(row.displayName || row.id)}">${escapeText(row.displayName || row.id)}</span><span>${row.utteranceCount || 0}</span><span>${row.dialogCardCount || 0}</span><span>${row.tagCount || 0}</span><span title="${escapeText(row.updatedAt)}">${escapeText(row.updatedAt)}</span><span>${escapeText(row.updatedBy)}</span></div>`).join("")}</div>
     ${renderWorkflowPager(rows.length, "build-intents", page.currentPage, page.totalPages)}
   `;
   const utterances = selected.utterances?.length ? selected.utterances : currentIntentUtteranceAssets.filter((item) => item.division === selected.id);
