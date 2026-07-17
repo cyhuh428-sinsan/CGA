@@ -2388,7 +2388,11 @@ async function refreshAdminResourcesFromServer() {
 async function refreshWorkspaceDataFromServer({ includeBots = false } = {}) {
   const refreshSerial = ++workspaceDataRefreshSerial;
   if (includeBots) {
-    await refreshWorkspaceBotsFromServer(currentWorkspaceGroupId).catch(() => false);
+    const accessibleGroupIds = getActiveGroupsForCurrentUser()
+      .map((group) => String(group?.id || ""))
+      .filter(Boolean);
+    await Promise.all(accessibleGroupIds.map((groupId) => refreshWorkspaceBotsFromServer(groupId).catch(() => false)));
+    syncWorkspaceSelection();
     if (refreshSerial !== workspaceDataRefreshSerial) return false;
     if (applyCachedWorkspaceSnapshot()) {
       renderWorkspaceHome();
