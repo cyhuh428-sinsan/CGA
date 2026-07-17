@@ -8953,3 +8953,31 @@ h1 { line-height: 1; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+/* 04 봇 제작의 3개 하위 메뉴는 일반 워크플로우 카드가 아닌 한 줄 링크로 표시한다. */
+.workflow-step-subnav > a {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: var(--font-body);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.workflow-step-subnav > a + a { margin-top: 4px; }
+.workflow-step-subnav > a span {
+  display: inline;
+  grid-row: auto;
+  align-self: auto;
+  color: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.workflow-step-subnav > a.active {
+  background: var(--teal-soft);
+  color: #0f766e;
+}
