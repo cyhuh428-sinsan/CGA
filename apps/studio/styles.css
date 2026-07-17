@@ -1,3 +1,14 @@
+/* Aidot 공통 도움말 아이콘 표준: 화면별 버튼 규칙보다 우선 */
+button.help-icon {
+  min-width: 18px;
+  min-height: 18px;
+  width: 18px;
+  height: 18px;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  line-height: 1;
+}
+
 :root {
   color-scheme: light;
   --bg: #f6f7f9;
