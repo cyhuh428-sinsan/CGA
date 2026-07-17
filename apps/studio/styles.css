@@ -8837,7 +8837,8 @@ h1 { line-height: 1; }
 .aidot-flow-radios--response{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px}.aidot-flow-radios--response label{min-height:24px;color:#314967;font-size:11px;cursor:pointer}.aidot-flow-section__head{display:flex;align-items:center;justify-content:space-between;gap:8px}.aidot-flow-section__head .secondary-action{min-height:28px;padding:0 9px;font-size:11px}.aidot-flow-section__hint{margin:0;color:#71849d;font-size:10px}
 
 /* Aidot-style primary navigation: compact icon rail with a single contextual submenu. */
-.app-shell { grid-template-columns: 286px minmax(0, 1fr); }
+.app-shell { grid-template-columns: 76px minmax(0, 1fr); }
+.app-shell.primary-menu-open { grid-template-columns: 286px minmax(0, 1fr); }
 .workflow.workflow--primary-nav {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
@@ -8943,4 +8944,12 @@ h1 { line-height: 1; }
 .primary-menu-panel .management-nav a,
 .primary-menu-panel [data-workflow-nav] > a {
   min-height: 44px;
+}.primary-icon-nav__glyph svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
