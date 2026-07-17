@@ -5893,7 +5893,23 @@ function renderWorkflowRail() {
   nav.innerHTML = workflowSteps.map((step) => {
     const localizedTitle = t(`workflow.${step.id}.title`, step.title);
     const localizedSubtitle = t(`workflow.${step.id}.subtitle`, step.subtitle);
-    if (step.id !== "configure") {
+    if (step.id === "build") {
+      const buildScreenIds = ["build", "entity-management", "dictionary-management"];
+      return `
+        <details class="workflow-step-group" ${buildScreenIds.includes(activeScreenId) ? "open" : ""}>
+          <summary class="workflow-step-group__summary ${buildScreenIds.includes(activeScreenId) ? "active" : ""}">
+            <span>${step.number}</span>
+            <strong data-i18n="workflow.${step.id}.title">${localizedTitle}</strong>
+            <small data-i18n="workflow.${step.id}.subtitle">${localizedSubtitle}</small>
+          </summary>
+          <div class="workflow-step-subnav">
+            <a href="#build" class="${activeScreenId === "build" ? "active" : ""}"><span>의도/모듈</span></a>
+            <a href="#entity-management" class="${activeScreenId === "entity-management" ? "active" : ""}"><span>개체</span></a>
+            <a href="#dictionary-management" class="${activeScreenId === "dictionary-management" ? "active" : ""}"><span>사전</span></a>
+          </div>
+        </details>
+      `;
+    }    if (step.id !== "configure") {
       return `
         <a href="#${step.id}" class="${step.id === activeScreenId ? "active" : ""}">
           <span>${step.number}</span>
