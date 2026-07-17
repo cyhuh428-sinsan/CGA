@@ -1,5 +1,6 @@
 import { workflowSteps, managementLinks, operationLinks, queryLinks, apiLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-10";
 import { getVisibleLayout } from "./data/layout.js?v=20260618-10";
+import { createAssetManagementController } from "./asset-management.js?v=20260717-25";
 import { buildVersionAssetMetadataSnapshot, createEmptyVersionAssetMetadataState, readVersionAssetMetadataSnapshot } from "./data/version-asset-metadata.js";
 import { createEmptyStudioState, deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
 import { createDefaultModuleRegistry, DEFAULT_COMMERCIAL_FEATURE_CHECKS, getFeatureAvailability } from "/packages/public-core/src/module-registry.js";
@@ -200,6 +201,7 @@ let currentCompositionState = {
 };
 let currentDictionaryAssets = [];
 let currentEntityAssets = [];
+let assetManagementController = null;
 let currentIntentUtteranceAssets = [];
 let currentRuleAssets = [];
 let currentBlocklistAssets = [];
@@ -4585,16 +4587,14 @@ function getWorkspaceScreenSections(workspace = document.querySelector(".workspa
   );
 }
 
-function renderWorkflowScreenShell(sectionId, code, title, subtitle, bodyHtml) {
+function renderWorkflowScreenShell(sectionId, code, title, subtitle, bodyHtml, options = {}) {
   const section = getWorkspaceScreenSections().find((item) => item.dataset.screenId === sectionId);
   if (!section) return null;
   section.innerHTML = `
     <div class="screen-heading aidot-screen-heading">
       <span>${escapeText(code)}</span>
       <div><h3>${escapeText(title)}</h3>${subtitle ? `<p>${escapeText(subtitle)}</p>` : ""}</div>
-      <div class="screen-heading__actions">
-        <button type="button" class="ghost" data-screen-save>${t("common.save", "Save")}</button>
-      </div>
+      ${options.showSave === false ? "" : `<div class="screen-heading__actions"><button type="button" class="ghost" data-screen-save>${t("common.save", "Save")}</button></div>`}
     </div>
     ${bodyHtml || ""}
   `;
@@ -4938,6 +4938,47 @@ function renderWorkflowScreens() {
   }
 }
 
+function openAssetManagementModal(title, bodyHtml) {
+  const modal = document.querySelector("[data-help-modal]");
+  const titleElement = document.querySelector("[data-help-title]");
+  const body = document.querySelector("[data-help-body]");
+  if (!modal || !titleElement || !body) return;
+  titleElement.textContent = title;
+  body.innerHTML = bodyHtml;
+  modal.hidden = false;
+}
+
+function closeAssetManagementModal() {
+  const modal = document.querySelector("[data-help-modal]");
+  modal?.classList.remove("asset-modal-open", "asset-modal-small");
+  closeHelpModal();
+}
+
+function renderAssetManagementScreens() {
+  if (!assetManagementController) {
+    assetManagementController = createAssetManagementController({
+      escapeText,
+      getEntities: () => currentEntityAssets.slice(),
+      getDictionary: () => currentDictionaryAssets.slice(),
+      setEntities: (items) => { currentEntityAssets = Array.isArray(items) ? items : []; },
+      setDictionary: (items) => { currentDictionaryAssets = Array.isArray(items) ? items : []; },
+      getActorId: () => currentAccessState.currentUserId || "system",
+      save: async () => {
+        const saved = await saveDetailAssetsToServer().catch(() => false);
+        if (saved) saveWorkspaceSnapshot();
+        return saved;
+      },
+      renderShell: (sectionId, code, title, subtitle, bodyHtml, options) => renderWorkflowScreenShell(sectionId, code, title, subtitle, bodyHtml, options),
+      openModal: openAssetManagementModal,
+      closeModal: closeAssetManagementModal,
+      bindTransfers: bindAssetTransferActions
+    });
+  }
+  assetManagementController.renderEntity();
+  assetManagementController.renderDictionary();
+}
+
+
 function renderAllStatePanels() {
   renderGlobalMessage();
   renderNavigationRails();
@@ -4957,6 +4998,7 @@ function renderAllStatePanels() {
   renderReadinessIssues();
   renderOperationsPanels();
   renderWorkflowScreens();
+  renderAssetManagementScreens();
   bindAccessNavigationGuard();
   enforceActiveScreenVisibility();
   document.dispatchEvent(new CustomEvent("cga:content-rendered"));
@@ -6103,7 +6145,10 @@ function openHelpTopic(topicId) {
 
 function closeHelpModal() {
   const modal = document.querySelector("[data-help-modal]");
-  if (modal) modal.hidden = true;
+  if (modal) {
+    modal.hidden = true;
+    modal.classList.remove("asset-modal-open", "asset-modal-small");
+  }
 }
 
 function bindHelpModal() {
@@ -13930,4 +13975,3 @@ document.addEventListener("change", (event) => {
     }, 0);
   }
 });
-
