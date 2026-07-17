@@ -5974,11 +5974,45 @@ function renderSystemAdminSubnav() {
   `).join("");
 }
 
+function getPrimaryNavigationId() {
+  if (workflowSteps.some((step) => step.id === activeScreenId) || ["entity-management", "dictionary-management", "build"].includes(activeScreenId)) return "build";
+  if (apiLinks.some((link) => link.id === activeScreenId)) return "api";
+  if (activeScreenId === "access-management") return "system";
+  return "operations";
+}
+
+function renderPrimaryNavigation() {
+  const nav = document.querySelector("[data-primary-nav]");
+  const panels = document.querySelectorAll("[data-primary-panel]");
+  if (!nav) return;
+  const activePrimaryId = getPrimaryNavigationId();
+  const items = [
+    { id: "operations", label: "운영", icon: "◎", target: "bot-management" },
+    { id: "build", label: "제작", icon: "▣", target: "create" },
+    { id: "api", label: "API", icon: "</>", target: "api-answer-source" },
+    { id: "system", label: "Admin", icon: "◉", target: "access-management", adminSubview: "users" }
+  ];
+  nav.innerHTML = items.map((item) => `
+    <button type="button" class="primary-icon-nav__item ${item.id === activePrimaryId ? "active" : ""}" data-primary-target="${item.target}" data-primary-admin-subview="${item.adminSubview || ""}" aria-current="${item.id === activePrimaryId ? "page" : "false"}">
+      <span aria-hidden="true">${item.icon}</span><strong>${item.label}</strong>
+    </button>
+  `).join("");
+  panels.forEach((panel) => { panel.hidden = panel.dataset.primaryPanel !== activePrimaryId; });
+  nav.querySelectorAll("[data-primary-target]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const target = button.dataset.primaryTarget;
+      if (target) setActiveScreen(target, { adminSubview: button.dataset.primaryAdminSubview || "" });
+    });
+  });
+}
+
 function renderNavigationRails() {
   renderLinkRail("[data-query-nav]", queryLinks);
+  renderLinkRail("[data-api-nav]", apiLinks);
   renderLinkRail("[data-management-nav]", managementLinks);
   renderLinkRail("[data-operation-nav]", operationLinks);
   renderSystemAdminSubnav();
+  renderPrimaryNavigation();
 }
 
 function renderBoundaryMatrix() {
