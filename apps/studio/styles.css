@@ -9160,3 +9160,48 @@ h1 { line-height: 1; }
 .aidot-intent-create-dialog > footer button { min-width: 64px; height: 32px; border: 1px solid #cbd7e6; background: #fff; color: #35506f; font: inherit; font-weight: 700; }
 .aidot-intent-create-dialog > footer .primary-button { border-color: #263c62; background: #2d4167; color: #fff; }
 @media (max-width: 760px) { .aidot-intent-create-fields, .aidot-intent-options { grid-template-columns: 1fr; } }
+
+/* Aidot 대화 시작: 좌측 발화문과 우측 추출 개체만 내부 스크롤 */
+.aidot-dialog-start {
+  align-items: stretch;
+  min-height: 0;
+  height: min(640px, calc(100vh - 220px));
+}
+.aidot-dialog-start > section {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  min-height: 0;
+}
+.aidot-dialog-entities {
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+}
+.aidot-utterance-table,
+.aidot-start-entity-table {
+  overflow: hidden;
+  min-height: 0;
+}
+.aidot-utterance-table__body,
+.aidot-start-entity-table {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.aidot-utterance-table__head,
+.aidot-utterance-table__body > div {
+  display: grid;
+  grid-template-columns: 42px 70px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  border-bottom: 1px solid var(--muted-line);
+}
+.aidot-utterance-table__head {
+  background: #f5f8fc;
+  color: #345171;
+  font-weight: 700;
+}
+.aidot-start-entity-head { position: sticky; top: 0; z-index: 1; }
+.aidot-utterance-table__body > div > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-height: 860px) {
+  .aidot-dialog-start { height: calc(100vh - 180px); }
+}
+
