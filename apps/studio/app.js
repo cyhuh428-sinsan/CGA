@@ -1,4 +1,4 @@
-import { workflowSteps, managementLinks, operationLinks, queryLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-10";
+import { workflowSteps, managementLinks, operationLinks, queryLinks, apiLinks, systemAdminSections, errorSamples } from "./data/workflow.js?v=20260618-10";
 import { getVisibleLayout } from "./data/layout.js?v=20260618-10";
 import { buildVersionAssetMetadataSnapshot, createEmptyVersionAssetMetadataState, readVersionAssetMetadataSnapshot } from "./data/version-asset-metadata.js";
 import { createEmptyStudioState, deriveReadiness, canGeneratePdfQa, canUseKakaoChannel, TRAINING_LOCKED_CREATE_FIELDS, RUNTIME_ADJUSTABLE_FIELDS } from "/packages/public-core/src/studio-state.js";
@@ -249,6 +249,7 @@ let currentOperationsState = {
 };
 const DEFAULT_ACTIVE_SCREEN_ID = "workspace-home";
 let activeScreenId = "";
+let activePrimaryPanelId = null;
 let screenLayoutApplying = false;
 let postAuthDefaultScreenPending = false;
 
@@ -5984,28 +5985,42 @@ function getPrimaryNavigationId() {
 function renderPrimaryNavigation() {
   const nav = document.querySelector("[data-primary-nav]");
   const panels = document.querySelectorAll("[data-primary-panel]");
+  const appShell = document.querySelector(".app-shell");
   if (!nav) return;
-  const activePrimaryId = getPrimaryNavigationId();
+  const openPrimaryId = activePrimaryPanelId;
   const items = [
-    { id: "operations", label: "운영", icon: "◎", target: "bot-management" },
-    { id: "build", label: "제작", icon: "▣", target: "create" },
-    { id: "api", label: "API", icon: "</>", target: "api-answer-source" },
-    { id: "system", label: "Admin", icon: "◉", target: "access-management", adminSubview: "users" }
+    { id: "operations", label: "운영", target: "bot-management", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="12" rx="3"></rect><path d="M9 11h.01M15 11h.01M9 15h6M12 3v3"></path></svg>' },
+    { id: "build", label: "제작", target: "create", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7V5h8v2M4 8h16v11H4zM10 12h4"></path></svg>' },
+    { id: "api", label: "API", target: "api-answer-source", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"></path></svg>' },
+    { id: "system", label: "Admin", target: "access-management", adminSubview: "users", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6zM9.5 12 11 13.5l3.5-4"></path></svg>' }
   ];
   nav.innerHTML = items.map((item) => `
-    <button type="button" class="primary-icon-nav__item ${item.id === activePrimaryId ? "active" : ""}" data-primary-target="${item.target}" data-primary-admin-subview="${item.adminSubview || ""}" aria-current="${item.id === activePrimaryId ? "page" : "false"}">
-      <span aria-hidden="true">${item.icon}</span><strong>${item.label}</strong>
+    <button type="button" class="primary-icon-nav__item ${item.id === openPrimaryId ? "active" : ""}" data-primary-id="${item.id}" aria-expanded="${item.id === openPrimaryId}">
+      <span class="primary-icon-nav__glyph">${item.icon}</span><strong>${item.label}</strong>
     </button>
   `).join("");
-  panels.forEach((panel) => { panel.hidden = panel.dataset.primaryPanel !== activePrimaryId; });
-  nav.querySelectorAll("[data-primary-target]").forEach((button) => {
+  panels.forEach((panel) => { panel.hidden = panel.dataset.primaryPanel !== openPrimaryId; });
+  appShell?.classList.toggle("primary-menu-open", Boolean(openPrimaryId));
+  nav.querySelectorAll("[data-primary-id]").forEach((button) => {
     button.addEventListener("click", () => {
-      const target = button.dataset.primaryTarget;
-      if (target) setActiveScreen(target, { adminSubview: button.dataset.primaryAdminSubview || "" });
+      const item = items.find((candidate) => candidate.id === button.dataset.primaryId);
+      if (!item) return;
+      if (item.id === "api") {
+        activePrimaryPanelId = null;
+        setActiveScreen(item.target);
+        return;
+      }
+      if (activePrimaryPanelId === item.id) {
+        activePrimaryPanelId = null;
+        renderPrimaryNavigation();
+        return;
+      }
+      setActiveScreen(item.target, { adminSubview: item.adminSubview || "" });
+      activePrimaryPanelId = item.id;
+      renderPrimaryNavigation();
     });
   });
 }
-
 function renderNavigationRails() {
   renderLinkRail("[data-query-nav]", queryLinks);
   renderLinkRail("[data-api-nav]", apiLinks);
@@ -11328,6 +11343,7 @@ function setActiveScreen(screenId, { replaceHash = false, adminSubview = "" } = 
   if (screenId === "access-management" && adminSubview) {
     currentSystemAdminSubview = adminSubview;
   }
+  activePrimaryPanelId = null;
   activeScreenId = screenId;
   localStorage.setItem(LAST_SCREEN_STORAGE_KEY, activeScreenId);
   const nextHash = buildScreenHash(screenId, {
