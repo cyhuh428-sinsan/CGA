@@ -1,2 +1,0 @@
-Blocklist 이름,유형,제외 단어/정규 표현식,사용여부
-ignore_hello,0,hello,Y

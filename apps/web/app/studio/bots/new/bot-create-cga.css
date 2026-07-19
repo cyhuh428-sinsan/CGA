@@ -1,0 +1,319 @@
+.cga-bot-create-page {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 132px);
+  max-height: none;
+  display: grid;
+  grid-template-rows: 62px minmax(0, 1fr);
+  padding: 0;
+  border: 1px solid #d9e2ec;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.cga-bot-create-page .bot-create-dialog__header {
+  min-height: 62px;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 0 16px;
+  border-bottom: 1px solid #d9e2ec;
+}
+
+.cga-bot-create-page__heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cga-bot-create-page__heading > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: #087d73;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cga-bot-create-page__heading > strong {
+  color: #10243c;
+  font-size: 18px;
+}
+
+.cga-bot-create-page__heading > button {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #9eb0c5;
+  border-radius: 50%;
+  background: #fff;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.cga-bot-create-page__version-link,
+.cga-bot-create-page__current {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid #c9d5e4;
+  border-radius: 8px;
+  background: #fff;
+  color: #24364f;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cga-bot-create-page__current {
+  color: #0f2238;
+}
+
+.cga-bot-create-page .bot-create-dialog__body {
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 1.35fr) minmax(250px, .78fr);
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 10px;
+  padding: 70px 12px 18px;
+  background: #fff;
+  overflow: auto;
+}
+
+.cga-bot-create-page__section-title {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid #d9e2ec;
+  border-bottom-color: #e7edf4;
+  color: #10243c;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.cga-bot-create-page__section-title span {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #9eb0c5;
+  border-radius: 50%;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.cga-bot-create-page__section-title--basic {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.cga-bot-create-page__section-title--ai {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.cga-bot-create-page .bot-create-dialog__field {
+  min-width: 0;
+  align-content: start;
+  padding: 10px 12px;
+  border-right: 1px solid #d9e2ec;
+  border-left: 1px solid #d9e2ec;
+  background: #fff;
+}
+
+.cga-bot-create-page__field--type {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.cga-bot-create-page__field--profile {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.cga-bot-create-page__field--name {
+  grid-column: 1;
+  grid-row: 4;
+}
+
+.cga-bot-create-page__field--introduction {
+  grid-column: 1;
+  grid-row: 5;
+  border-bottom: 1px solid #d9e2ec;
+}
+
+.cga-bot-create-page__field--language {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.cga-bot-create-page__field--hub-call,
+.cga-bot-create-page__field--nlu-type {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.cga-bot-create-page__field--nlu-model {
+  grid-column: 2;
+  grid-row: 4;
+}
+
+.cga-bot-create-page__field--answer-mode {
+  grid-column: 2;
+  grid-row: 5;
+}
+
+.cga-bot-create-page__field--llm-provider {
+  grid-column: 2;
+  grid-row: 6;
+}
+
+.cga-bot-create-page__field--llm-model {
+  grid-column: 2;
+  grid-row: 7;
+}
+
+.cga-bot-create-page__field--llm-base {
+  grid-column: 2;
+  grid-row: 8;
+}
+
+.cga-bot-create-page__field--intent-vector {
+  grid-column: 2;
+  grid-row: 9;
+}
+
+.cga-bot-create-page__field--answer-vector {
+  grid-column: 2;
+  grid-row: 10;
+  border-bottom: 1px solid #d9e2ec;
+}
+
+.cga-bot-create-page__summary {
+  grid-column: 3;
+  grid-row: 1 / span 10;
+  min-width: 0;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+}
+
+.cga-bot-create-page__summary header {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid #e5ebf2;
+}
+
+.cga-bot-create-page__summary header strong {
+  color: #10243c;
+  font-size: 16px;
+}
+
+.cga-bot-create-page__summary header span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.cga-bot-create-page__summary dl {
+  margin: 0;
+  padding: 8px 12px;
+}
+
+.cga-bot-create-page__summary dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 35px;
+  align-items: center;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.cga-bot-create-page__summary dt {
+  color: #52657a;
+  font-size: 13px;
+}
+
+.cga-bot-create-page__summary dd {
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.cga-bot-create-page__summary p {
+  margin: 10px 12px;
+  padding: 9px;
+  border-radius: 8px;
+  background: #e7f8f5;
+  color: #087d73;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cga-bot-create-page .bot-ai-combinations {
+  grid-column: 1 / -1;
+  grid-row: 20;
+  margin: 0;
+  border-radius: 0;
+}
+
+.cga-bot-create-page .bot-ai-combinations__matrix {
+  min-width: 1120px;
+}
+
+.cga-bot-create-page .form-message {
+  grid-column: 1 / -1;
+  grid-row: 21;
+}
+
+.cga-bot-create-page .bot-create-dialog__footer {
+  position: absolute;
+  top: 70px;
+  right: 16px;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.cga-bot-create-page .bot-create-dialog__ghost,
+.cga-bot-create-page .bot-create-dialog__primary {
+  min-width: 74px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.cga-bot-create-page .bot-create-dialog__primary {
+  background: #253452;
+}
+
+@media (max-width: 1180px) {
+  .cga-bot-create-page {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .cga-bot-create-page .bot-create-dialog__body {
+    grid-template-columns: 1fr;
+    padding-top: 70px;
+  }
+
+  .cga-bot-create-page__section-title,
+  .cga-bot-create-page .bot-create-dialog__field,
+  .cga-bot-create-page__summary,
+  .cga-bot-create-page .bot-ai-combinations,
+  .cga-bot-create-page .form-message {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}

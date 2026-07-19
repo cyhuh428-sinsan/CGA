@@ -1,0 +1,3375 @@
+{
+  "id": "flow-83b26d7c-e78c-4b6e-8857-71af2c6af97f",
+  "dialogId": "83b26d7c-e78c-4b6e-8857-71af2c6af97f",
+  "dialogNo": 100018,
+  "dialogType": 0,
+  "name": "Rich Form",
+  "nodes": [
+    {
+      "id": "flow-start-83b26d7c-e78c-4b6e-8857-71af2c6af97f",
+      "kind": "start",
+      "title": "대화 시작",
+      "position": {
+        "x": 34,
+        "y": 97
+      },
+      "config": {
+        "previewUtterance": "대화 시작 표현이 없습니다."
+      }
+    },
+    {
+      "id": "f9d4c8fe-4298-499e-9db1-84bb7e7b8d23",
+      "kind": "talk",
+      "title": "Talk 1",
+      "position": {
+        "x": 212,
+        "y": 95
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"vertical\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"FORM TITLE\",\n      \"value\": \"FORM TITLE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"ADDRESS\",\n      \"value\": \"ADDRESS\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"IMAGE\",\n      \"value\": \"IMAGE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TEXT\",\n      \"value\": \"TEXT\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"FIELDS\",\n      \"value\": \"FIELDS\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"CHECK, RADIO, COMBO\",\n      \"value\": \"CHECK, RADIO, COMBO\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TOGGLEBUTTON\",\n      \"value\": \"TOGGLEBUTTON\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"DATEPICKER\",\n      \"value\": \"DATEPICKER\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TIMEPICKER\",\n      \"value\": \"TIMEPICKER\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TABLE\",\n      \"value\": \"TABLE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"CAROUSEL\",\n      \"value\": \"CAROUSEL\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TAB\",\n      \"value\": \"TAB\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"KAKAOMAP\",\n      \"value\": \"KAKAOMAP\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON\",\n      \"value\": \"BUTTON\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON(POPUP)\",\n      \"value\": \"BUTTON(POPUP)\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON(REJECT/SUBMIT)\",\n      \"value\": \"BUTTON(REJECT/SUBMIT)\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT POPUP\",\n      \"value\": \"INPUT POPUP\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"STAR RATE\",\n      \"value\": \"STAR RATE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"VIDEO\",\n      \"value\": \"VIDEO\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\t\t\n    {\n      \"key\": \"textarea\",\n      \"title\": \"IMAGE LIST\",\n      \"value\": \"IMAGE LIST\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"VALIDATION\",\n      \"value\": \"VALIDATION\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "367cf522-b227-4e90-942b-a06b9b5ac1d7",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "0383744f-5ac7-4f14-80e1-4966d2ab3b4a",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"vertical\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"FORM TITLE\",\n      \"value\": \"FORM TITLE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"ADDRESS\",\n      \"value\": \"ADDRESS\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"IMAGE\",\n      \"value\": \"IMAGE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TEXT\",\n      \"value\": \"TEXT\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"FIELDS\",\n      \"value\": \"FIELDS\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"CHECK, RADIO, COMBO\",\n      \"value\": \"CHECK, RADIO, COMBO\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TOGGLEBUTTON\",\n      \"value\": \"TOGGLEBUTTON\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"DATEPICKER\",\n      \"value\": \"DATEPICKER\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TIMEPICKER\",\n      \"value\": \"TIMEPICKER\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TABLE\",\n      \"value\": \"TABLE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"CAROUSEL\",\n      \"value\": \"CAROUSEL\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TAB\",\n      \"value\": \"TAB\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"KAKAOMAP\",\n      \"value\": \"KAKAOMAP\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON\",\n      \"value\": \"BUTTON\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON(POPUP)\",\n      \"value\": \"BUTTON(POPUP)\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON(REJECT/SUBMIT)\",\n      \"value\": \"BUTTON(REJECT/SUBMIT)\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT POPUP\",\n      \"value\": \"INPUT POPUP\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"STAR RATE\",\n      \"value\": \"STAR RATE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"VIDEO\",\n      \"value\": \"VIDEO\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\t\t\n    {\n      \"key\": \"textarea\",\n      \"title\": \"IMAGE LIST\",\n      \"value\": \"IMAGE LIST\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"VALIDATION\",\n      \"value\": \"VALIDATION\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "172e2fff-028e-4a72-95a5-29ef2660c8bb",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "a91976cf-b1a6-4ae5-85b1-29cdc26686ca",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          "다음 중 선택하세요"
+        ],
+        "messages": [
+          "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"vertical\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"FORM TITLE\",\n      \"value\": \"FORM TITLE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"ADDRESS\",\n      \"value\": \"ADDRESS\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"IMAGE\",\n      \"value\": \"IMAGE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TEXT\",\n      \"value\": \"TEXT\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"FIELDS\",\n      \"value\": \"FIELDS\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"CHECK, RADIO, COMBO\",\n      \"value\": \"CHECK, RADIO, COMBO\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TOGGLEBUTTON\",\n      \"value\": \"TOGGLEBUTTON\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"DATEPICKER\",\n      \"value\": \"DATEPICKER\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TIMEPICKER\",\n      \"value\": \"TIMEPICKER\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TABLE\",\n      \"value\": \"TABLE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"CAROUSEL\",\n      \"value\": \"CAROUSEL\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"TAB\",\n      \"value\": \"TAB\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"KAKAOMAP\",\n      \"value\": \"KAKAOMAP\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON\",\n      \"value\": \"BUTTON\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON(POPUP)\",\n      \"value\": \"BUTTON(POPUP)\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"BUTTON(REJECT/SUBMIT)\",\n      \"value\": \"BUTTON(REJECT/SUBMIT)\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT POPUP\",\n      \"value\": \"INPUT POPUP\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"STAR RATE\",\n      \"value\": \"STAR RATE\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\n    {\n      \"key\": \"input\",\n      \"title\": \"VIDEO\",\n      \"value\": \"VIDEO\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\t\t\t\n    {\n      \"key\": \"textarea\",\n      \"title\": \"IMAGE LIST\",\n      \"value\": \"IMAGE LIST\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"VALIDATION\",\n      \"value\": \"VALIDATION\",\n      \"style\": \"secondary\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    }\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "367cf522-b227-4e90-942b-a06b9b5ac1d7",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "0383744f-5ac7-4f14-80e1-4966d2ab3b4a",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "single-select",
+        "responseVariableName": "$select",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "kind": "condition",
+      "title": "Condition 1",
+      "position": {
+        "x": 536,
+        "y": 91
+      },
+      "config": {
+        "variableName": "$select.response.buttonValue",
+        "hideLabels": false,
+        "branches": [
+          {
+            "id": "9c0325b4-e042-4218-b670-37db8efb5729",
+            "label": "조건 1",
+            "operator": "equals",
+            "compareValue": "FORM TITLE"
+          },
+          {
+            "id": "932e8a4f-b8b1-4853-9363-865138bcb9ec",
+            "label": "조건 2",
+            "operator": "equals",
+            "compareValue": "END"
+          },
+          {
+            "id": "d0c703c5-ef27-4070-94fb-f186384e462a",
+            "label": "조건 3",
+            "operator": "equals",
+            "compareValue": "INPUT"
+          },
+          {
+            "id": "23bc6765-3943-44c8-8c83-d858216c9b1c",
+            "label": "조건 4",
+            "operator": "equals",
+            "compareValue": "TEXTAREA"
+          },
+          {
+            "id": "962f5ed0-8b5a-4bc6-8cd1-8ab4fa16634c",
+            "label": "조건 5",
+            "operator": "equals",
+            "compareValue": "ADDRESS"
+          },
+          {
+            "id": "97780da9-69c4-442a-b2c1-2cc753c346a6",
+            "label": "조건 6",
+            "operator": "equals",
+            "compareValue": "IMAGE"
+          },
+          {
+            "id": "a83b042d-53c3-41e7-a2db-4caeb2bcd450",
+            "label": "조건 7",
+            "operator": "equals",
+            "compareValue": "TEXT"
+          },
+          {
+            "id": "a03e43b5-a89f-4f66-92d0-d974d0fd7ce9",
+            "label": "조건 8",
+            "operator": "equals",
+            "compareValue": "FIELDS"
+          },
+          {
+            "id": "8e0271a9-cf3e-472f-9d91-88c6c0c144f2",
+            "label": "조건 9",
+            "operator": "equals",
+            "compareValue": "CHECK, RADIO, COMBO"
+          },
+          {
+            "id": "b92a3e3c-947f-4f95-a2b6-240c82dc382e",
+            "label": "조건 10",
+            "operator": "equals",
+            "compareValue": "DATEPICKER"
+          },
+          {
+            "id": "827927d4-87ac-4110-94f3-721d86aba820",
+            "label": "조건 11",
+            "operator": "equals",
+            "compareValue": "TOGGLEBUTTON"
+          },
+          {
+            "id": "2e4a6a4d-96b9-4848-abb7-024a551b80d4",
+            "label": "조건 12",
+            "operator": "equals",
+            "compareValue": "TIMEPICKER"
+          },
+          {
+            "id": "c710949c-dada-48d3-87a6-d45b55f9b8b0",
+            "label": "조건 13",
+            "operator": "equals",
+            "compareValue": "TABLE"
+          },
+          {
+            "id": "39fe1207-78b0-4bb5-92f7-3f0605398362",
+            "label": "조건 14",
+            "operator": "equals",
+            "compareValue": "CAROUSEL"
+          },
+          {
+            "id": "a3606262-a0e4-4e49-8359-14bc7721a418",
+            "label": "조건 15",
+            "operator": "equals",
+            "compareValue": "TAB"
+          },
+          {
+            "id": "b045253c-1ddb-46d7-82a4-4612f3e4e6bd",
+            "label": "조건 16",
+            "operator": "equals",
+            "compareValue": "KAKAOMAP"
+          },
+          {
+            "id": "0ca0de25-cd40-4a2d-8ace-3315027d81e1",
+            "label": "조건 17",
+            "operator": "equals",
+            "compareValue": "BUTTON"
+          },
+          {
+            "id": "ab4d4589-16a0-4f9f-aca4-87ad88ee967f",
+            "label": "조건 18",
+            "operator": "equals",
+            "compareValue": "BUTTON(POPUP)"
+          },
+          {
+            "id": "84a92709-35ca-49c2-b8d4-2768cbc9e719",
+            "label": "조건 19",
+            "operator": "equals",
+            "compareValue": "BUTTON(REJECT/SUBMIT)"
+          },
+          {
+            "id": "af502ff6-4113-4a7d-b862-5c65a8133cb5",
+            "label": "조건 20",
+            "operator": "equals",
+            "compareValue": "STAR RATE"
+          },
+          {
+            "id": "d60d7b2a-90d8-41a3-a7e1-2f5f7fa9f6c7",
+            "label": "조건 21",
+            "operator": "equals",
+            "compareValue": "VIDEO"
+          },
+          {
+            "id": "a1bd8a30-a51d-4fde-ad5c-bdcfba356cce",
+            "label": "조건 22",
+            "operator": "equals",
+            "compareValue": "IMAGE LIST"
+          },
+          {
+            "id": "30a3b98f-a143-4ffd-99ff-d768e973e37f",
+            "label": "조건 23",
+            "operator": "equals",
+            "compareValue": "VALIDATION"
+          },
+          {
+            "id": "2c266089-7acb-4100-a297-61c69d04140b",
+            "label": "조건 24",
+            "operator": "equals",
+            "compareValue": "INPUT POPUP"
+          },
+          {
+            "id": "c3639d89-6b46-4a92-9735-a1aa73834a07",
+            "label": "기본",
+            "operator": "else",
+            "compareValue": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "2b223fb0-a456-467e-b642-1ee948b02d4a",
+      "kind": "talk",
+      "title": "FORM TITLE",
+      "position": {
+        "x": 755,
+        "y": 304
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"FORM_TITLE\",\n  \"title\": \"INPUT 컴포넌트 테스트\",\n  \"link\": \"http://www.naver.com\",\n  \"divider\": true\n},\n{\n  \"type\": \"TEXT\",\n  \"text\": \"텍스트1\"\n},\n{\n  \"type\": \"HR\"\n},\n{\n  \"type\": \"TEXT\",\n  \"text\": \"텍스트2\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "c298d331-61e1-423c-b517-f42c8b75e6eb",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "893e3149-b964-4a8c-bf13-0a9fa541c462",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"FORM_TITLE\",\n  \"title\": \"INPUT 컴포넌트 테스트\",\n  \"link\": \"http://www.naver.com\",\n  \"divider\": true\n},\n{\n  \"type\": \"TEXT\",\n  \"text\": \"텍스트1\"\n},\n{\n  \"type\": \"HR\"\n},\n{\n  \"type\": \"TEXT\",\n  \"text\": \"텍스트2\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "5d5cf53e-e028-4771-847a-f345469a9e2d",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "716c12fa-cb3d-4453-945a-a23b68545d29",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"FORM_TITLE\",\n  \"title\": \"INPUT 컴포넌트 테스트\",\n  \"link\": \"http://www.naver.com\",\n  \"divider\": true\n},\n{\n  \"type\": \"TEXT\",\n  \"text\": \"텍스트1\"\n},\n{\n  \"type\": \"HR\"\n},\n{\n  \"type\": \"TEXT\",\n  \"text\": \"텍스트2\"\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "5d5cf53e-e028-4771-847a-f345469a9e2d",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "716c12fa-cb3d-4453-945a-a23b68545d29",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "11172723-e2b1-4b72-b757-a9099cc1e2a6",
+      "kind": "end",
+      "title": "End 1",
+      "position": {
+        "x": 1086,
+        "y": 81
+      },
+      "config": {
+        "message": "",
+        "endSessionImmediately": false
+      }
+    },
+    {
+      "id": "f212d58b-f303-45a9-8e09-4d3c54c973ec",
+      "kind": "talk",
+      "title": "Talk 5",
+      "position": {
+        "x": 832,
+        "y": 89
+      },
+      "config": {
+        "messageType": "text",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "text",
+            "messages": [
+              ""
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "384e1af4-a9eb-48b8-8b2d-f2a5648a9f41",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "bdeba59e-bf10-4f52-ba58-6018fa65fbbd",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          "종료합니다"
+        ],
+        "messages": [
+          ""
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "384e1af4-a9eb-48b8-8b2d-f2a5648a9f41",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "bdeba59e-bf10-4f52-ba58-6018fa65fbbd",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "none",
+        "responseVariableName": "",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "da95aa95-2368-4df4-a7c5-be3e82df0dcd",
+      "kind": "talk",
+      "title": "INPUT",
+      "position": {
+        "x": 758,
+        "y": 407
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"type\": \"INPUT\",\n\t\"key\": \"name\",\n\t\"title\": \"이름\",\n\t\"value\": \"홍길동\",\n\t\"hint\": \"이름을 입력하세요\",\n\t\"maxLength\" : 10,\n\t\"disabled\" : false,\n\t\"required\": true,\n\t\"direction\" : \"horizontal\",\n\t\"validation\": {\n\t\t\"type\": \"CONDITION\",\n\t\t\"condition\": \"${name} !== ''\",\n\t\t\"message\": {\n\t\t\t\"valid\" : \"이름이 valid합니다.\",\n\t\t\t\"invalid\" : \"이름이 invalid합니다.\"\n\t\t}\n\t}\n},\n{\n  \"type\": \"BUTTON\",\n  \"direction\" : \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"submit\",\n      \"title\": \"확인\",\n      \"value\": \"submit\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"reject\",\n      \"title\": \"취소\",\n      \"value\": \"reject\",\n      \"style\": \"secondary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "1e1a6fd1-5483-4317-9ea2-da98a1453223",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "a68a8bf9-2df2-4eac-a3ba-b291f66542fe",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"type\": \"INPUT\",\n\t\"key\": \"name\",\n\t\"title\": \"이름\",\n\t\"value\": \"홍길동\",\n\t\"hint\": \"이름을 입력하세요\",\n\t\"maxLength\" : 10,\n\t\"disabled\" : false,\n\t\"required\": true,\n\t\"direction\" : \"horizontal\",\n\t\"validation\": {\n\t\t\"type\": \"CONDITION\",\n\t\t\"condition\": \"${name} !== ''\",\n\t\t\"message\": {\n\t\t\t\"valid\" : \"이름이 valid합니다.\",\n\t\t\t\"invalid\" : \"이름이 invalid합니다.\"\n\t\t}\n\t}\n},\n{\n  \"type\": \"BUTTON\",\n  \"direction\" : \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"submit\",\n      \"title\": \"확인\",\n      \"value\": \"submit\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"reject\",\n      \"title\": \"취소\",\n      \"value\": \"reject\",\n      \"style\": \"secondary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "4c587e16-38ef-443e-973b-3d84972671cf",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "cad7aa33-27f7-4e3e-a586-11587da60a78",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n\t\"type\": \"INPUT\",\n\t\"key\": \"name\",\n\t\"title\": \"이름\",\n\t\"value\": \"홍길동\",\n\t\"hint\": \"이름을 입력하세요\",\n\t\"maxLength\" : 10,\n\t\"disabled\" : false,\n\t\"required\": true,\n\t\"direction\" : \"horizontal\",\n\t\"validation\": {\n\t\t\"type\": \"CONDITION\",\n\t\t\"condition\": \"${name} !== ''\",\n\t\t\"message\": {\n\t\t\t\"valid\" : \"이름이 valid합니다.\",\n\t\t\t\"invalid\" : \"이름이 invalid합니다.\"\n\t\t}\n\t}\n},\n{\n  \"type\": \"BUTTON\",\n  \"direction\" : \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"submit\",\n      \"title\": \"확인\",\n      \"value\": \"submit\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"reject\",\n      \"title\": \"취소\",\n      \"value\": \"reject\",\n      \"style\": \"secondary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    }\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "4c587e16-38ef-443e-973b-3d84972671cf",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "cad7aa33-27f7-4e3e-a586-11587da60a78",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "talk",
+      "title": "결과표출",
+      "position": {
+        "x": 945,
+        "y": 297
+      },
+      "config": {
+        "messageType": "text",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "text",
+            "messages": [
+              ""
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "a69602ff-faa7-4cbd-8af5-743351230a4b",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "7e42dc15-4e77-4137-9d41-58b5d0907054",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          "{{$result}}"
+        ],
+        "messages": [
+          ""
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "a69602ff-faa7-4cbd-8af5-743351230a4b",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "7e42dc15-4e77-4137-9d41-58b5d0907054",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "none",
+        "responseVariableName": "",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "d344f2b3-6ed5-407d-b315-a3a131d24166",
+      "kind": "talk",
+      "title": "TEXTAREA",
+      "position": {
+        "x": 762,
+        "y": 528
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"TEXTAREA\",\n  \"key\": \"questionContent\",\n  \"title\": \"질문내용\",\n  \"maxLength\": 100,\n  \"value\": \"\",\n  \"hint\": \"예)비밀번호오류\",\n  \"disabled\": false,\n  \"required\": true,\n  \"direction\": \"horizontal\",\n  \"validation\": {\n    \"type\": \"CONDITION\",\n    \"condition\": \"${questionContent} !== ''\",\n    \"message\": {\n      \"valid\": \"질문내용이 valid합니다.\",\n      \"invalid\": \"질문내용이 invalid합니다.\"\n    }\n  }\n},\n{\n  \"type\": \"BUTTON\",\n  \"direction\": \"vertical\",\n  \"button\": [\n    {\n      \"key\": \"submit\",\n      \"title\": \"확인\",\n      \"value\": \"submit\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"reject\",\n      \"title\": \"취소\",\n      \"value\": \"reject\",\n      \"style\": \"secondary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "3856db34-0cda-4600-bbcc-6c56383cbbc3",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "d580851c-b3ff-4a9c-a6da-f1777d21a6cf",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"TEXTAREA\",\n  \"key\": \"questionContent\",\n  \"title\": \"질문내용\",\n  \"maxLength\": 100,\n  \"value\": \"\",\n  \"hint\": \"예)비밀번호오류\",\n  \"disabled\": false,\n  \"required\": true,\n  \"direction\": \"horizontal\",\n  \"validation\": {\n    \"type\": \"CONDITION\",\n    \"condition\": \"${questionContent} !== ''\",\n    \"message\": {\n      \"valid\": \"질문내용이 valid합니다.\",\n      \"invalid\": \"질문내용이 invalid합니다.\"\n    }\n  }\n},\n{\n  \"type\": \"BUTTON\",\n  \"direction\": \"vertical\",\n  \"button\": [\n    {\n      \"key\": \"submit\",\n      \"title\": \"확인\",\n      \"value\": \"submit\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"reject\",\n      \"title\": \"취소\",\n      \"value\": \"reject\",\n      \"style\": \"secondary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "683be330-8dcd-459f-b7e5-dbd69bc62921",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "3ba8cc93-3a13-47e7-a16d-b085cbb997fd",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"TEXTAREA\",\n  \"key\": \"questionContent\",\n  \"title\": \"질문내용\",\n  \"maxLength\": 100,\n  \"value\": \"\",\n  \"hint\": \"예)비밀번호오류\",\n  \"disabled\": false,\n  \"required\": true,\n  \"direction\": \"horizontal\",\n  \"validation\": {\n    \"type\": \"CONDITION\",\n    \"condition\": \"${questionContent} !== ''\",\n    \"message\": {\n      \"valid\": \"질문내용이 valid합니다.\",\n      \"invalid\": \"질문내용이 invalid합니다.\"\n    }\n  }\n},\n{\n  \"type\": \"BUTTON\",\n  \"direction\": \"vertical\",\n  \"button\": [\n    {\n      \"key\": \"submit\",\n      \"title\": \"확인\",\n      \"value\": \"submit\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"reject\",\n      \"title\": \"취소\",\n      \"value\": \"reject\",\n      \"style\": \"secondary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    }\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "683be330-8dcd-459f-b7e5-dbd69bc62921",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "3ba8cc93-3a13-47e7-a16d-b085cbb997fd",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "6aacd14a-f5ac-4c99-91cd-a0ef0210b4eb",
+      "kind": "talk",
+      "title": "ADDRESS",
+      "position": {
+        "x": 751,
+        "y": 643
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"ADDRESS\",\n  \"address\": [\n    {\n      \"type\": \"BASE_ADDRESS\",\n      \"key\": \"address\",\n      \"title\": \"주소\",\n      \"value\": \"\",\n      \"hint\": \"주소를 입력해 주세요.\",\n      \"direction\": \"horizontal\",\n      \"disabled\": false,\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${address} !== ''\",\n        \"message\": {\n          \"valid\": \"주소가 valid합니다.\",\n          \"invalid\": \"주소가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"DETAILED_ADDRESS\",\n      \"key\": \"addressDetail\",\n      \"title\": \"상세주소\",\n      \"value\": \"\",\n      \"hint\": \"상세주소를 입력해 주세요.\",\n      \"maxLength\": 50,\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${addressDetail} !== ''\",\n        \"message\": {\n          \"valid\": \"상세주소가 valid합니다.\",\n          \"invalid\": \"상세주소가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"ADDRESS_ZIPCODE\",\n      \"key\": \"addressZipCode\",\n      \"title\": \"우편번호\",\n      \"value\": \"\",\n      \"hint\": \"우편번호를 입력해 주세요.\",\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${addressZipCode} !== ''\",\n        \"message\": {\n          \"valid\": \"우편번호가 valid합니다.\",\n          \"invalid\": \"우편번호가 invalid합니다.\"\n        }\n      }\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "c7e4e3e6-c09d-4247-b221-6256ccdfd455",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "0caa113b-d97a-48cc-b4cc-382044b5dbf6",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"ADDRESS\",\n  \"address\": [\n    {\n      \"type\": \"BASE_ADDRESS\",\n      \"key\": \"address\",\n      \"title\": \"주소\",\n      \"value\": \"\",\n      \"hint\": \"주소를 입력해 주세요.\",\n      \"direction\": \"horizontal\",\n      \"disabled\": false,\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${address} !== ''\",\n        \"message\": {\n          \"valid\": \"주소가 valid합니다.\",\n          \"invalid\": \"주소가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"DETAILED_ADDRESS\",\n      \"key\": \"addressDetail\",\n      \"title\": \"상세주소\",\n      \"value\": \"\",\n      \"hint\": \"상세주소를 입력해 주세요.\",\n      \"maxLength\": 50,\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${addressDetail} !== ''\",\n        \"message\": {\n          \"valid\": \"상세주소가 valid합니다.\",\n          \"invalid\": \"상세주소가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"ADDRESS_ZIPCODE\",\n      \"key\": \"addressZipCode\",\n      \"title\": \"우편번호\",\n      \"value\": \"\",\n      \"hint\": \"우편번호를 입력해 주세요.\",\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${addressZipCode} !== ''\",\n        \"message\": {\n          \"valid\": \"우편번호가 valid합니다.\",\n          \"invalid\": \"우편번호가 invalid합니다.\"\n        }\n      }\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "c1d1131c-a71e-4210-a17d-270c6e4c60c6",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "3de4dce0-91a0-42d3-9110-4f4890c1c5f2",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"ADDRESS\",\n  \"address\": [\n    {\n      \"type\": \"BASE_ADDRESS\",\n      \"key\": \"address\",\n      \"title\": \"주소\",\n      \"value\": \"\",\n      \"hint\": \"주소를 입력해 주세요.\",\n      \"direction\": \"horizontal\",\n      \"disabled\": false,\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${address} !== ''\",\n        \"message\": {\n          \"valid\": \"주소가 valid합니다.\",\n          \"invalid\": \"주소가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"DETAILED_ADDRESS\",\n      \"key\": \"addressDetail\",\n      \"title\": \"상세주소\",\n      \"value\": \"\",\n      \"hint\": \"상세주소를 입력해 주세요.\",\n      \"maxLength\": 50,\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${addressDetail} !== ''\",\n        \"message\": {\n          \"valid\": \"상세주소가 valid합니다.\",\n          \"invalid\": \"상세주소가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"ADDRESS_ZIPCODE\",\n      \"key\": \"addressZipCode\",\n      \"title\": \"우편번호\",\n      \"value\": \"\",\n      \"hint\": \"우편번호를 입력해 주세요.\",\n      \"required\": true,\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${addressZipCode} !== ''\",\n        \"message\": {\n          \"valid\": \"우편번호가 valid합니다.\",\n          \"invalid\": \"우편번호가 invalid합니다.\"\n        }\n      }\n    }\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "c1d1131c-a71e-4210-a17d-270c6e4c60c6",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "3de4dce0-91a0-42d3-9110-4f4890c1c5f2",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "c303b034-e5c2-4540-83c5-13afc5812a6b",
+      "kind": "talk",
+      "title": "IMAGE",
+      "position": {
+        "x": 756,
+        "y": 750
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"type\" : \"IMAGE\",\n\t\"url\" : \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\"title\" : \"슬라이드\",\n\t\"text\" : \"이미지 설명\",\n\t\"link\" : \"https://sinsan.kr\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "a75d4426-bb64-42d6-98cb-40890f04c35e",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "9016905e-e43a-405b-b089-57a5c266bfaf",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"type\" : \"IMAGE\",\n\t\"url\" : \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\"title\" : \"슬라이드\",\n\t\"text\" : \"이미지 설명\",\n\t\"link\" : \"https://sinsan.kr\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "68ec103d-5cb0-4aff-b2db-57fbe86aaef2",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "485a4bb3-9d82-4498-87ea-692f9ae05e3f",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n\t\"type\" : \"IMAGE\",\n\t\"url\" : \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\"title\" : \"슬라이드\",\n\t\"text\" : \"이미지 설명\",\n\t\"link\" : \"https://sinsan.kr\"\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "a75d4426-bb64-42d6-98cb-40890f04c35e",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "9016905e-e43a-405b-b089-57a5c266bfaf",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "88528d60-0632-4b4a-9296-f0e39da92958",
+      "kind": "talk",
+      "title": "TEXT",
+      "position": {
+        "x": 759,
+        "y": 863
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t \"type\" : \"TEXT\",\n\t \"title\" : \"sHome Doorlock App연동 서비스\",\n\t \"text\" : \"<p>· 가족 귀가 알림 서비스 : 스마트폰으로 출입한 가족의 이름과 시간을 푸시 메시지로 알려주는 서비스</p><p>· 출입 이력 확인 서비스 : 스마트폰으로 가족별 출입 시간을 확인하는 서비스</p><p>· 스마트폰 문열림 서비스 : 스마트폰으로 도어록 문을 여는 서비스 </p>\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "b1eb7871-3848-40bb-b57a-6d304b805f93",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "4b150709-2798-4a93-9215-744c64f7a00c",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t \"type\" : \"TEXT\",\n\t \"title\" : \"sHome Doorlock App연동 서비스\",\n\t \"text\" : \"<p>· 가족 귀가 알림 서비스 : 스마트폰으로 출입한 가족의 이름과 시간을 푸시 메시지로 알려주는 서비스</p><p>· 출입 이력 확인 서비스 : 스마트폰으로 가족별 출입 시간을 확인하는 서비스</p><p>· 스마트폰 문열림 서비스 : 스마트폰으로 도어록 문을 여는 서비스 </p>\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "f748c620-9a6c-4cd0-8070-4a52d2474679",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "711bdca0-e6d3-467c-8def-b27fe9e8d306",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n\t \"type\" : \"TEXT\",\n\t \"title\" : \"sHome Doorlock App연동 서비스\",\n\t \"text\" : \"<p>· 가족 귀가 알림 서비스 : 스마트폰으로 출입한 가족의 이름과 시간을 푸시 메시지로 알려주는 서비스</p><p>· 출입 이력 확인 서비스 : 스마트폰으로 가족별 출입 시간을 확인하는 서비스</p><p>· 스마트폰 문열림 서비스 : 스마트폰으로 도어록 문을 여는 서비스 </p>\"\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "b1eb7871-3848-40bb-b57a-6d304b805f93",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "4b150709-2798-4a93-9215-744c64f7a00c",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "047a74a4-a8d1-4554-b900-491b7ea4e61f",
+      "kind": "talk",
+      "title": "FIELDS",
+      "position": {
+        "x": 562,
+        "y": 402
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"FIELDS\",\n  \"title\": \"*가용성 점검 불가 정보*\",\n  \"dataKey\": [\"Title\", \"REQ_NO\", \"PLANT\", \"EXE_TYPE\", \"REQUEST_BY\", \"PURCHASER_ID\", \"REQUEST_DATE\", \"QTY\"],\n  \"dataTitle\": [\n    \"<span style='color:red'>제품명</span>\",\n    \"요청번호\",\n    \"플랜트\",\n    \"실행타입\",\n    \"요청자\",\n    \"구매자아이디\",\n    \"요청일자\",\n    \"수량\"\n  ],\n  \"dataValue\": [\n    {\n      \"Title\": \"Note 10\",\n      \"REQ_NO\": \"123456\",\n      \"PLANT\": \"P520\",\n      \"EXE_TYPE\": \"0002 Development(PRA)\",\n      \"REQUEST_BY\": \"Cha.Lim\",\n      \"PURCHASER_ID\": \"HEIN.DTM\",\n      \"REQUEST_DATE\": \"2019.09.03\",\n      \"QTY\": \"100\"\n    },\n    {\n      \"Title\": \"Note 11\",\n      \"REQ_NO\": \"123456\",\n      \"PLANT\": \"P520\",\n      \"EXE_TYPE\": \"0002 Development(PRA)\",\n      \"REQUEST_BY\": \"Cha.Lim\",\n      \"PURCHASER_ID\": \"HEIN.DTM\",\n      \"REQUEST_DATE\": \"2019.09.03\",\n      \"QTY\": \"100\"\n    }\n  ],\n  \"dataValueForm\": [\n    [\n      {\n        \"type\": \"TEXT\",\n        \"text\": \"<span style='color:blue'>${Title}</span>\"\n      },\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"/files/temp/다운로드.jpeg\"\n      }\n    ],\n    \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\"\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "632cabe7-8687-4abc-8df7-8f10d31296f6",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "fa13a9b2-3b61-4192-b0f3-9379e748ec29",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"FIELDS\",\n  \"title\": \"*가용성 점검 불가 정보*\",\n  \"dataKey\": [\"Title\", \"REQ_NO\", \"PLANT\", \"EXE_TYPE\", \"REQUEST_BY\", \"PURCHASER_ID\", \"REQUEST_DATE\", \"QTY\"],\n  \"dataTitle\": [\n    \"<span style='color:red'>제품명</span>\",\n    \"요청번호\",\n    \"플랜트\",\n    \"실행타입\",\n    \"요청자\",\n    \"구매자아이디\",\n    \"요청일자\",\n    \"수량\"\n  ],\n  \"dataValue\": [\n    {\n      \"Title\": \"Note 10\",\n      \"REQ_NO\": \"123456\",\n      \"PLANT\": \"P520\",\n      \"EXE_TYPE\": \"0002 Development(PRA)\",\n      \"REQUEST_BY\": \"Cha.Lim\",\n      \"PURCHASER_ID\": \"HEIN.DTM\",\n      \"REQUEST_DATE\": \"2019.09.03\",\n      \"QTY\": \"100\"\n    },\n    {\n      \"Title\": \"Note 11\",\n      \"REQ_NO\": \"123456\",\n      \"PLANT\": \"P520\",\n      \"EXE_TYPE\": \"0002 Development(PRA)\",\n      \"REQUEST_BY\": \"Cha.Lim\",\n      \"PURCHASER_ID\": \"HEIN.DTM\",\n      \"REQUEST_DATE\": \"2019.09.03\",\n      \"QTY\": \"100\"\n    }\n  ],\n  \"dataValueForm\": [\n    [\n      {\n        \"type\": \"TEXT\",\n        \"text\": \"<span style='color:blue'>${Title}</span>\"\n      },\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"/files/temp/다운로드.jpeg\"\n      }\n    ],\n    \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\"\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "4814e0ad-be66-49b1-8d8a-0d1c05c73c8f",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "5043944a-4c05-402f-8229-a48560ab05eb",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"FIELDS\",\n  \"title\": \"*가용성 점검 불가 정보*\",\n  \"dataKey\": [\"Title\", \"REQ_NO\", \"PLANT\", \"EXE_TYPE\", \"REQUEST_BY\", \"PURCHASER_ID\", \"REQUEST_DATE\", \"QTY\"],\n  \"dataTitle\": [\n    \"<span style='color:red'>제품명</span>\",\n    \"요청번호\",\n    \"플랜트\",\n    \"실행타입\",\n    \"요청자\",\n    \"구매자아이디\",\n    \"요청일자\",\n    \"수량\"\n  ],\n  \"dataValue\": [\n    {\n      \"Title\": \"Note 10\",\n      \"REQ_NO\": \"123456\",\n      \"PLANT\": \"P520\",\n      \"EXE_TYPE\": \"0002 Development(PRA)\",\n      \"REQUEST_BY\": \"Cha.Lim\",\n      \"PURCHASER_ID\": \"HEIN.DTM\",\n      \"REQUEST_DATE\": \"2019.09.03\",\n      \"QTY\": \"100\"\n    },\n    {\n      \"Title\": \"Note 11\",\n      \"REQ_NO\": \"123456\",\n      \"PLANT\": \"P520\",\n      \"EXE_TYPE\": \"0002 Development(PRA)\",\n      \"REQUEST_BY\": \"Cha.Lim\",\n      \"PURCHASER_ID\": \"HEIN.DTM\",\n      \"REQUEST_DATE\": \"2019.09.03\",\n      \"QTY\": \"100\"\n    }\n  ],\n  \"dataValueForm\": [\n    [\n      {\n        \"type\": \"TEXT\",\n        \"text\": \"<span style='color:blue'>${Title}</span>\"\n      },\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"/files/temp/다운로드.jpeg\"\n      }\n    ],\n    \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\", \"TEXT\"\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "4814e0ad-be66-49b1-8d8a-0d1c05c73c8f",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "5043944a-4c05-402f-8229-a48560ab05eb",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "1a1a409f-af78-419e-848d-3557644bbb50",
+      "kind": "talk",
+      "title": "CHECKBOX",
+      "position": {
+        "x": 520,
+        "y": 497
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"CHECKBOX\",\n\t\t\"key\": \"drink\",\n\t\t\"title\": \"음료수\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"vertical\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t],\n\t\t\"dataDirection\": \"horizontal\"\n\t},\n\t{\n\t\t\"type\": \"RADIOBUTTON\",\n\t\t\"key\": \"drink2\",\n\t\t\"title\": \"음료수\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"horizontal\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t],\n\t\t\"dataDirection\": \"vertical\"\n\t},\n\t{\n\t\t\"type\": \"COMBOBOX\",\n\t\t\"key\": \"combobox1\",\n\t\t\"title\": \"콤보박스\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"옵션5\",\n\t\t\t\t\"code\": \"005\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"horizontal\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"옵션1\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션2\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션3\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션4\",\n\t\t\t\t\"code\": \"004\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션5\",\n\t\t\t\t\"code\": \"005\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션6\",\n\t\t\t\t\"code\": \"006\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션7\",\n\t\t\t\t\"code\": \"007\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션8\",\n\t\t\t\t\"code\": \"008\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션9\",\n\t\t\t\t\"code\": \"009\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션10\",\n\t\t\t\t\"code\": \"010\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t]\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"key\": \"reject\",\n\t\t\t\t\"title\": \"취소\",\n\t\t\t\t\"value\": \"reject\",\n\t\t\t\t\"style\": \"secondary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"reject\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "1ca9df13-d3a1-4dc3-ae72-1de6393f2147",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "51a3461a-fc8b-4c19-bdc9-257be55f2221",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"CHECKBOX\",\n\t\t\"key\": \"drink\",\n\t\t\"title\": \"음료수\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"vertical\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t],\n\t\t\"dataDirection\": \"horizontal\"\n\t},\n\t{\n\t\t\"type\": \"RADIOBUTTON\",\n\t\t\"key\": \"drink2\",\n\t\t\"title\": \"음료수\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"horizontal\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t],\n\t\t\"dataDirection\": \"vertical\"\n\t},\n\t{\n\t\t\"type\": \"COMBOBOX\",\n\t\t\"key\": \"combobox1\",\n\t\t\"title\": \"콤보박스\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"옵션5\",\n\t\t\t\t\"code\": \"005\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"horizontal\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"옵션1\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션2\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션3\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션4\",\n\t\t\t\t\"code\": \"004\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션5\",\n\t\t\t\t\"code\": \"005\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션6\",\n\t\t\t\t\"code\": \"006\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션7\",\n\t\t\t\t\"code\": \"007\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션8\",\n\t\t\t\t\"code\": \"008\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션9\",\n\t\t\t\t\"code\": \"009\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션10\",\n\t\t\t\t\"code\": \"010\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t]\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"key\": \"reject\",\n\t\t\t\t\"title\": \"취소\",\n\t\t\t\t\"value\": \"reject\",\n\t\t\t\t\"style\": \"secondary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"reject\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "f6acbba8-726b-43b4-bcfe-09cbc28ceffd",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "b0665205-0c30-4df3-8022-3c45f4a34610",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "[\n\t{\n\t\t\"type\": \"CHECKBOX\",\n\t\t\"key\": \"drink\",\n\t\t\"title\": \"음료수\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"vertical\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t],\n\t\t\"dataDirection\": \"horizontal\"\n\t},\n\t{\n\t\t\"type\": \"RADIOBUTTON\",\n\t\t\"key\": \"drink2\",\n\t\t\"title\": \"음료수\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"horizontal\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t],\n\t\t\"dataDirection\": \"vertical\"\n\t},\n\t{\n\t\t\"type\": \"COMBOBOX\",\n\t\t\"key\": \"combobox1\",\n\t\t\"title\": \"콤보박스\",\n\t\t\"required\": true,\n\t\t\"value\": [\n\t\t\t{\n\t\t\t\t\"value\": \"옵션5\",\n\t\t\t\t\"code\": \"005\"\n\t\t\t}\n\t\t],\n\t\t\"direction\": \"horizontal\",\n\t\t\"dataKey\": [\n\t\t\t\"value\",\n\t\t\t\"code\"\n\t\t],\n\t\t\"dataValue\": [\n\t\t\t{\n\t\t\t\t\"value\": \"옵션1\",\n\t\t\t\t\"code\": \"001\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션2\",\n\t\t\t\t\"code\": \"002\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션3\",\n\t\t\t\t\"code\": \"003\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션4\",\n\t\t\t\t\"code\": \"004\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션5\",\n\t\t\t\t\"code\": \"005\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션6\",\n\t\t\t\t\"code\": \"006\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션7\",\n\t\t\t\t\"code\": \"007\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션8\",\n\t\t\t\t\"code\": \"008\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션9\",\n\t\t\t\t\"code\": \"009\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"value\": \"옵션10\",\n\t\t\t\t\"code\": \"010\"\n\t\t\t}\n\t\t],\n\t\t\"selectedIndex\": [\n\t\t\t1\n\t\t]\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"key\": \"reject\",\n\t\t\t\t\"title\": \"취소\",\n\t\t\t\t\"value\": \"reject\",\n\t\t\t\t\"style\": \"secondary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"reject\"\n\t\t\t}\n\t\t]\n\t}\n]"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "1ca9df13-d3a1-4dc3-ae72-1de6393f2147",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "51a3461a-fc8b-4c19-bdc9-257be55f2221",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "67b86279-022b-409f-819f-8ae8e1006394",
+      "kind": "talk",
+      "title": "TOGGLE BUTTON",
+      "position": {
+        "x": 487,
+        "y": 602
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"TOGGLEBUTTON\",\n\t\t\"key\": \"toggle1\",\n\t\t\"title\": \"토글버튼1\",\n\t\t\"value\": false,\n\t\t\"direction\": \"right\",\n\t\t\"disabled\": true\n\t},\n\t{\n\t\t\"type\": \"TOGGLEBUTTON\",\n\t\t\"key\": \"toggle2\",\n\t\t\"title\": \"토글버튼2\",\n\t\t\"value\": true,\n\t\t\"direction\": \"left\",\n\t\t\"disabled\": false\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "2b64da16-f768-4286-ab14-4e9db12c4249",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "1fd4b062-bb50-49c0-ace4-62e09ac53809",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"TOGGLEBUTTON\",\n\t\t\"key\": \"toggle1\",\n\t\t\"title\": \"토글버튼1\",\n\t\t\"value\": false,\n\t\t\"direction\": \"right\",\n\t\t\"disabled\": true\n\t},\n\t{\n\t\t\"type\": \"TOGGLEBUTTON\",\n\t\t\"key\": \"toggle2\",\n\t\t\"title\": \"토글버튼2\",\n\t\t\"value\": true,\n\t\t\"direction\": \"left\",\n\t\t\"disabled\": false\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n][\n\t{\n\t\t\"type\": \"TOGGLEBUTTON\",\n\t\t\"key\": \"toggle1\",\n\t\t\"title\": \"토글버튼1\",\n\t\t\"value\": false,\n\t\t\"direction\": \"right\",\n\t\t\"disabled\": true\n\t},\n\t{\n\t\t\"type\": \"TOGGLEBUTTON\",\n\t\t\"key\": \"toggle2\",\n\t\t\"title\": \"토글버튼2\",\n\t\t\"value\": true,\n\t\t\"direction\": \"left\",\n\t\t\"disabled\": false\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "3d632891-9dbc-4f95-9560-c3c5c8b7f6e7",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "6f88c7a6-3e69-46c1-9ba7-2686c4088861",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "[\n\t{\n\t\t\"type\": \"TOGGLEBUTTON\",\n\t\t\"key\": \"toggle1\",\n\t\t\"title\": \"토글버튼1\",\n\t\t\"value\": false,\n\t\t\"direction\": \"right\",\n\t\t\"disabled\": true\n\t},\n\t{\n\t\t\"type\": \"TOGGLEBUTTON\",\n\t\t\"key\": \"toggle2\",\n\t\t\"title\": \"토글버튼2\",\n\t\t\"value\": true,\n\t\t\"direction\": \"left\",\n\t\t\"disabled\": false\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "2b64da16-f768-4286-ab14-4e9db12c4249",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "1fd4b062-bb50-49c0-ace4-62e09ac53809",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "3d309c7c-f63f-4072-9abe-587aed545c70",
+      "kind": "talk",
+      "title": "DATEPICKER",
+      "position": {
+        "x": 471,
+        "y": 719
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"DATEPICKER\",\n\t\t\"key\": \"visitDate\",\n\t\t\"title\": \"방문희망일\",\n\t\t\"value\": \"2020-04-16\",\n\t\t\"required\": false,\n\t\t\"disabled\": false,\n\t\t\"validation\": {\n\t\t\t\"type\": \"CONDITION\",\n\t\t\t\"condition\": \"${visitDate} !== ''\",\n\t\t\t\"message\": {\n\t\t\t\t\"valid\": \"방문희망일이 valid합니다.\",\n\t\t\t\t\"invalid\": \"방문희망일이 invalid합니다.\"\n\t\t\t}\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "d63c52a6-e536-449d-b25f-8b344c19210a",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "3a21605b-5531-488b-a7a8-6b77226b9687",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"DATEPICKER\",\n\t\t\"key\": \"visitDate\",\n\t\t\"title\": \"방문희망일\",\n\t\t\"value\": \"2020-04-16\",\n\t\t\"required\": false,\n\t\t\"disabled\": false,\n\t\t\"validation\": {\n\t\t\t\"type\": \"CONDITION\",\n\t\t\t\"condition\": \"${visitDate} !== ''\",\n\t\t\t\"message\": {\n\t\t\t\t\"valid\": \"방문희망일이 valid합니다.\",\n\t\t\t\t\"invalid\": \"방문희망일이 invalid합니다.\"\n\t\t\t}\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "a00fbfa2-7813-41e6-96cc-272485403368",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "0bd17c39-8637-4f45-9cfd-2e26a0b51421",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "[\n\t{\n\t\t\"type\": \"DATEPICKER\",\n\t\t\"key\": \"visitDate\",\n\t\t\"title\": \"방문희망일\",\n\t\t\"value\": \"2020-04-16\",\n\t\t\"required\": false,\n\t\t\"disabled\": false,\n\t\t\"validation\": {\n\t\t\t\"type\": \"CONDITION\",\n\t\t\t\"condition\": \"${visitDate} !== ''\",\n\t\t\t\"message\": {\n\t\t\t\t\"valid\": \"방문희망일이 valid합니다.\",\n\t\t\t\t\"invalid\": \"방문희망일이 invalid합니다.\"\n\t\t\t}\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "a00fbfa2-7813-41e6-96cc-272485403368",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "0bd17c39-8637-4f45-9cfd-2e26a0b51421",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "240bc072-3ea4-48ab-b066-6c2e988437af",
+      "kind": "talk",
+      "title": "TIMEPICKER",
+      "position": {
+        "x": 432,
+        "y": 822
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"TIMEPICKER\",\n\t\t\"key\": \"visitTime\",\n\t\t\"title\": \"방문시간\",\n\t\t\"value\": \"1:10 PM\",\n\t\t\"required\": false,\n\t\t\"disabled\": false,\n\t\t\"validation\": {\n\t\t\t\"type\": \"CONDITION\",\n\t\t\t\"condition\": \"${visitTime} !== ''\",\n\t\t\t\"message\": {\n\t\t\t\t\"valid\": \"방문시간이 valid합니다.\",\n\t\t\t\t\"invalid\": \"방문시간이 invalid합니다.\"\n\t\t\t}\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "f738e8fe-8427-4891-b07d-4cae701889d6",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "602789e4-1e48-492f-9b0d-cca689b36681",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"TIMEPICKER\",\n\t\t\"key\": \"visitTime\",\n\t\t\"title\": \"방문시간\",\n\t\t\"value\": \"1:10 PM\",\n\t\t\"required\": false,\n\t\t\"disabled\": false,\n\t\t\"validation\": {\n\t\t\t\"type\": \"CONDITION\",\n\t\t\t\"condition\": \"${visitTime} !== ''\",\n\t\t\t\"message\": {\n\t\t\t\t\"valid\": \"방문시간이 valid합니다.\",\n\t\t\t\t\"invalid\": \"방문시간이 invalid합니다.\"\n\t\t\t}\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "d1ba4052-8f43-4e4e-8281-8e1ca79f1817",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "85eac640-3bbd-4b1f-85fb-f5a605522df1",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "[\n\t{\n\t\t\"type\": \"TIMEPICKER\",\n\t\t\"key\": \"visitTime\",\n\t\t\"title\": \"방문시간\",\n\t\t\"value\": \"1:10 PM\",\n\t\t\"required\": false,\n\t\t\"disabled\": false,\n\t\t\"validation\": {\n\t\t\t\"type\": \"CONDITION\",\n\t\t\t\"condition\": \"${visitTime} !== ''\",\n\t\t\t\"message\": {\n\t\t\t\t\"valid\": \"방문시간이 valid합니다.\",\n\t\t\t\t\"invalid\": \"방문시간이 invalid합니다.\"\n\t\t\t}\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"submit\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"submit\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "f738e8fe-8427-4891-b07d-4cae701889d6",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "602789e4-1e48-492f-9b0d-cca689b36681",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "bb636362-71ab-4d62-882b-91e6a126b315",
+      "kind": "talk",
+      "title": "Talk 15",
+      "position": {
+        "x": 386,
+        "y": 93
+      },
+      "config": {
+        "messageType": "text",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "text",
+            "messages": [
+              ""
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "f6167bd8-cae4-4159-91b6-6f62849f7536",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "1f540be0-096a-4f34-8153-c63ccfc402ec",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          "{{$select.response}} 입니다"
+        ],
+        "messages": [
+          ""
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "f6167bd8-cae4-4159-91b6-6f62849f7536",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "1f540be0-096a-4f34-8153-c63ccfc402ec",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "none",
+        "responseVariableName": "",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "c6f6df32-ead8-469c-92ff-83374ddbf9f6",
+      "kind": "talk",
+      "title": "TABLE",
+      "position": {
+        "x": 388,
+        "y": 266
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"TABLE\",\n  \"key\": \"table2\",\n  \"title\": \"테이블입니다.\",\n  \"required\": true,\n  \"dataKey\": [\"value\", \"code\", \"value2\", \"code2\"],\n  \"dataTitle\": [\"값\", \"코드\", \"값2\", \"코드2\"],\n  \"dataValue\": [\n    {\n      \"value\": \"오랜지쥬스\",\n      \"code\": \"001\",\n      \"value2\": \"/files/temp/오랜지.jpeg\",\n      \"code2\": \"001\"\n    },\n    {\n      \"value\": \"콜라\",\n      \"code\": \"002\",\n      \"value2\": \"/files/temp/콜라.jpeg\",\n      \"code2\": \"002\"\n    },\n    {\n      \"value\": \"사이다\",\n      \"code\": \"003\",\n      \"value2\": \"/files/temp/사이다.png\",\n      \"code2\": \"003\"\n    },\n    {\n      \"value\": \"포도주스\",\n      \"code\": \"004\",\n      \"value2\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n      \"code2\": \"004\"\n    }\n  ],\n  \"selectable\": true,\n  \"listCount\": 3,\n  \"value\": \"\",\n  \"dataValueForm\": [\n    \"TEXT\",\n    \"TEXT\",\n    [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"${value2}\",\n        \"width\": \"50px\"\n      }\n    ],\n    \"TEXT\"\n  ]\n}\n"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "5940bf6e-88df-4072-bf2c-2f0f74b89879",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "3fa0f54f-3b92-4b05-9b6f-0cab13fe7d89",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"TABLE\",\n  \"key\": \"table2\",\n  \"title\": \"테이블입니다.\",\n  \"required\": true,\n  \"dataKey\": [\"value\", \"code\", \"value2\", \"code2\"],\n  \"dataTitle\": [\"값\", \"코드\", \"값2\", \"코드2\"],\n  \"dataValue\": [\n    {\n      \"value\": \"오랜지쥬스\",\n      \"code\": \"001\",\n      \"value2\": \"/files/temp/오랜지.jpeg\",\n      \"code2\": \"001\"\n    },\n    {\n      \"value\": \"콜라\",\n      \"code\": \"002\",\n      \"value2\": \"/files/temp/콜라.jpeg\",\n      \"code2\": \"002\"\n    },\n    {\n      \"value\": \"사이다\",\n      \"code\": \"003\",\n      \"value2\": \"/files/temp/사이다.png\",\n      \"code2\": \"003\"\n    },\n    {\n      \"value\": \"포도주스\",\n      \"code\": \"004\",\n      \"value2\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n      \"code2\": \"004\"\n    }\n  ],\n  \"selectable\": true,\n  \"listCount\": 3,\n  \"value\": \"\",\n  \"dataValueForm\": [\n    \"TEXT\",\n    \"TEXT\",\n    [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"${value2}\",\n        \"width\": \"50px\"\n      }\n    ],\n    \"TEXT\"\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "4eac6c45-0057-4439-862b-5d312600bc7f",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "20404c23-bc85-47c8-a1e9-b77543cdad44",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"TABLE\",\n  \"key\": \"table2\",\n  \"title\": \"테이블입니다.\",\n  \"required\": true,\n  \"dataKey\": [\"value\", \"code\", \"value2\", \"code2\"],\n  \"dataTitle\": [\"값\", \"코드\", \"값2\", \"코드2\"],\n  \"dataValue\": [\n    {\n      \"value\": \"오랜지쥬스\",\n      \"code\": \"001\",\n      \"value2\": \"/files/temp/오랜지.jpeg\",\n      \"code2\": \"001\"\n    },\n    {\n      \"value\": \"콜라\",\n      \"code\": \"002\",\n      \"value2\": \"/files/temp/콜라.jpeg\",\n      \"code2\": \"002\"\n    },\n    {\n      \"value\": \"사이다\",\n      \"code\": \"003\",\n      \"value2\": \"/files/temp/사이다.png\",\n      \"code2\": \"003\"\n    },\n    {\n      \"value\": \"포도주스\",\n      \"code\": \"004\",\n      \"value2\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n      \"code2\": \"004\"\n    }\n  ],\n  \"selectable\": true,\n  \"listCount\": 3,\n  \"value\": \"\",\n  \"dataValueForm\": [\n    \"TEXT\",\n    \"TEXT\",\n    [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"${value2}\",\n        \"width\": \"50px\"\n      }\n    ],\n    \"TEXT\"\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "4eac6c45-0057-4439-862b-5d312600bc7f",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "20404c23-bc85-47c8-a1e9-b77543cdad44",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "79baac7e-91ae-4994-9749-76df6571ce86",
+      "kind": "talk",
+      "title": "CAROUSEL",
+      "position": {
+        "x": 379,
+        "y": 345
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"webchatRichFormVersion\": \"1.0\",\n\t\"richForm\": [\n\t\t{\n\t\t\t\"type\": \"FORM_TITLE\",\n\t\t\t\"title\": \"CAROUSEL 컴포넌트 테스트\",\n\t\t\t\"link\": \"http://www.naver.com\",\n\t\t\t\"divider\": true\n\t\t},\n\t\t{\n\t\t\t\"type\": \"CAROUSEL\",\n\t\t\t\"key\": \"carousel\",\n\t\t\t\"title\": \"캐러셀 타이틀\",\n\t\t\t\"text\": \"캐러셀 설명\",\n\t\t\t\"required\": true,\n\t\t\t\"selectable\": true,\n\t\t\t\"multiLevel\": 3,\n\t\t\t\"dataValue\": [\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드2\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드3\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드4\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드5\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"5\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드6\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"6\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드7\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"7\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드8\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"8\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드9\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"9\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"multiLevelDataValue\": [\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-2\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-3\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-4\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-1\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-2\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-3\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-4\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-5\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-5\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"listForm\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\"url\": \"${url}\",\n\t\t\t\t\t\"alt\": \"${alt}\",\n\t\t\t\t\t\"title\": \"이미지 타이틀\",\n\t\t\t\t\t\"text\": \"이미지 설명\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"listCount\": 3,\n\t\t\t\"value\": \"\"\n\t\t}\n\t]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "b6d4f76b-8e81-4b13-a816-eb6218138ee0",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "1c237754-9ec2-4178-b3e0-991bdcde6fb4",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"webchatRichFormVersion\": \"1.0\",\n\t\"richForm\": [\n\t\t{\n\t\t\t\"type\": \"FORM_TITLE\",\n\t\t\t\"title\": \"CAROUSEL 컴포넌트 테스트\",\n\t\t\t\"link\": \"http://www.naver.com\",\n\t\t\t\"divider\": true\n\t\t},\n\t\t{\n\t\t\t\"type\": \"CAROUSEL\",\n\t\t\t\"key\": \"carousel\",\n\t\t\t\"title\": \"캐러셀 타이틀\",\n\t\t\t\"text\": \"캐러셀 설명\",\n\t\t\t\"required\": true,\n\t\t\t\"selectable\": true,\n\t\t\t\"multiLevel\": 3,\n\t\t\t\"dataValue\": [\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드2\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드3\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드4\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드5\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"5\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드6\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"6\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드7\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"7\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드8\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"8\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드9\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"9\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"multiLevelDataValue\": [\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-2\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-3\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-4\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-1\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-2\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-3\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-4\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-5\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-5\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"listForm\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\"url\": \"${url}\",\n\t\t\t\t\t\"alt\": \"${alt}\",\n\t\t\t\t\t\"title\": \"이미지 타이틀\",\n\t\t\t\t\t\"text\": \"이미지 설명\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"listCount\": 3,\n\t\t\t\"value\": \"\"\n\t\t}\n\t]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "ac656392-3f46-4f4d-96c0-7776b108e21a",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "e016ebd9-3925-42f7-b72c-6beca3d66a9b",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n\t\"webchatRichFormVersion\": \"1.0\",\n\t\"richForm\": [\n\t\t{\n\t\t\t\"type\": \"FORM_TITLE\",\n\t\t\t\"title\": \"CAROUSEL 컴포넌트 테스트\",\n\t\t\t\"link\": \"http://www.naver.com\",\n\t\t\t\"divider\": true\n\t\t},\n\t\t{\n\t\t\t\"type\": \"CAROUSEL\",\n\t\t\t\"key\": \"carousel\",\n\t\t\t\"title\": \"캐러셀 타이틀\",\n\t\t\t\"text\": \"캐러셀 설명\",\n\t\t\t\"required\": true,\n\t\t\t\"selectable\": true,\n\t\t\t\"multiLevel\": 3,\n\t\t\t\"dataValue\": [\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드2\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드3\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드4\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드5\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"5\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드6\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"6\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드7\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"7\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드8\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"8\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드9\",\n\t\t\t\t\t\"pid\": \"root\",\n\t\t\t\t\t\"id\": \"9\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"multiLevelDataValue\": [\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-2\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-3\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-4\",\n\t\t\t\t\t\"pid\": \"1\",\n\t\t\t\t\t\"id\": \"1-4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-1\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-1\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-2\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-2\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-3\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-3\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//267123388.png\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-4\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-4\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"url\": \"/files/temp//다운로드.jpeg\",\n\t\t\t\t\t\"alt\": \"슬라이드1-1-5\",\n\t\t\t\t\t\"pid\": \"1-1\",\n\t\t\t\t\t\"id\": \"1-1-5\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"listForm\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\"url\": \"${url}\",\n\t\t\t\t\t\"alt\": \"${alt}\",\n\t\t\t\t\t\"title\": \"이미지 타이틀\",\n\t\t\t\t\t\"text\": \"이미지 설명\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"listCount\": 3,\n\t\t\t\"value\": \"\"\n\t\t}\n\t]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "ac656392-3f46-4f4d-96c0-7776b108e21a",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "e016ebd9-3925-42f7-b72c-6beca3d66a9b",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "56debdac-d0fe-4ce5-92c9-2dcba7568650",
+      "kind": "talk",
+      "title": "TAB",
+      "position": {
+        "x": 363,
+        "y": 437
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"type\": \"TAB\",\n\t\"key\": \"tab1\",\n\t\"tab\": [\n\t\t{\n\t\t\t\"title\": \"이미지\",\n\t\t\t\"key\": \"checkModelNormalTab1\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\"url\": \"/files/temp/267123388.png\",\n\t\t\t\t\t\"title\": \"이미지입니다.\",\n\t\t\t\t\t\"text\": \"이미지 설명입니다.\"\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"title\": \"캐러셀\",\n\t\t\t\"key\": \"checkModelNormalTab2\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"CAROUSEL\",\n\t\t\t\t\t\"key\": \"carousel\",\n\t\t\t\t\t\"title\": \"캐러셀\",\n\t\t\t\t\t\"selectable\": true,\n\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\"url\",\n\t\t\t\t\t\t\"alt\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"listForm\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\t\t\"url\": \"${url}\",\n\t\t\t\t\t\t\t\"alt\": \"${alt}\",\n\t\t\t\t\t\t\t\"title\": \"이미지 타이틀\",\n\t\t\t\t\t\t\t\"text\": \"이미지 설명\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"listCount\": 1,\n\t\t\t\t\t\"value\": \"\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "6400a58f-c4e0-4035-b548-a7c1d1905ca4",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "c9048ac0-cbbd-43b2-b2d8-8175e72ea569",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"type\": \"TAB\",\n\t\"key\": \"tab1\",\n\t\"tab\": [\n\t\t{\n\t\t\t\"title\": \"이미지\",\n\t\t\t\"key\": \"checkModelNormalTab1\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\"url\": \"/files/temp/267123388.png\",\n\t\t\t\t\t\"title\": \"이미지입니다.\",\n\t\t\t\t\t\"text\": \"이미지 설명입니다.\"\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"title\": \"캐러셀\",\n\t\t\t\"key\": \"checkModelNormalTab2\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"CAROUSEL\",\n\t\t\t\t\t\"key\": \"carousel\",\n\t\t\t\t\t\"title\": \"캐러셀\",\n\t\t\t\t\t\"selectable\": true,\n\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\"url\",\n\t\t\t\t\t\t\"alt\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"listForm\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\t\t\"url\": \"${url}\",\n\t\t\t\t\t\t\t\"alt\": \"${alt}\",\n\t\t\t\t\t\t\t\"title\": \"이미지 타이틀\",\n\t\t\t\t\t\t\t\"text\": \"이미지 설명\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"listCount\": 1,\n\t\t\t\t\t\"value\": \"\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "9657a518-b438-4153-9fb1-759833aa86b8",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "13f18a09-c361-4673-960f-0a9a98d05827",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n\t\"type\": \"TAB\",\n\t\"key\": \"tab1\",\n\t\"tab\": [\n\t\t{\n\t\t\t\"title\": \"이미지\",\n\t\t\t\"key\": \"checkModelNormalTab1\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\"url\": \"/files/temp/267123388.png\",\n\t\t\t\t\t\"title\": \"이미지입니다.\",\n\t\t\t\t\t\"text\": \"이미지 설명입니다.\"\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"title\": \"캐러셀\",\n\t\t\t\"key\": \"checkModelNormalTab2\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"CAROUSEL\",\n\t\t\t\t\t\"key\": \"carousel\",\n\t\t\t\t\t\"title\": \"캐러셀\",\n\t\t\t\t\t\"selectable\": true,\n\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\"url\",\n\t\t\t\t\t\t\"alt\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/267123388.png\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"/files/temp/다운로드.jpeg\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"listForm\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\t\t\"url\": \"${url}\",\n\t\t\t\t\t\t\t\"alt\": \"${alt}\",\n\t\t\t\t\t\t\t\"title\": \"이미지 타이틀\",\n\t\t\t\t\t\t\t\"text\": \"이미지 설명\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"listCount\": 1,\n\t\t\t\t\t\"value\": \"\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "9657a518-b438-4153-9fb1-759833aa86b8",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "13f18a09-c361-4673-960f-0a9a98d05827",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "1c841f35-300c-4726-bb68-caeb8ac6b832",
+      "kind": "talk",
+      "title": "KAKAOMAP",
+      "position": {
+        "x": 361,
+        "y": 546
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"KAKAOMAP\",\n  \"key\": \"kakaoMap\",\n  \"title\": \"카카오맵\",\n  \"text\": \"아래의 맵에서 정보를 얻을 수 있습니다.\",\n  \"disabled\": false,\n  \"required\": true,\n  \"selectable\": true,\n  \"selectedDataKey\": \"branchName\",\n  \"dataValue\": [\n    {\n      \"postNo\": \"05603\",\n      \"branchPrdNm\": \"스마트홈,스마트 도어록\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 1.49,\n      \"addr1\": \"서울특별시 송파구 삼학사로13길 8 (삼전동)\",\n      \"branchName\": \"씨디케이보안시스템\",\n      \"lon\": 127.096,\n      \"openTime\": \"\",\n      \"telNo\": \"010-3752-3556\",\n      \"lat\": 37.5034,\n      \"wayPath\": \"\"\n    },\n    {\n      \"postNo\": \"05063\",\n      \"branchPrdNm\": \"스마트 도어록,대표 스토어\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 2.78,\n      \"addr1\": \"서울특별시 광진구 뚝섬로 603 (자양동)\",\n      \"branchName\": \"스마트스토어 광진점\",\n      \"lon\": 127.077,\n      \"openTime\": \"\",\n      \"telNo\": \"010-6686-1316\",\n      \"lat\": 37.533,\n      \"wayPath\": \"\"\n    },\n    {\n      \"postNo\": \"05406\",\n      \"branchPrdNm\": \"스마트 도어록,대표 스토어\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 2.99,\n      \"addr1\": \"서울특별시 강동구 강동대로53길 69(성내동)\",\n      \"branchName\": \"스마트월드\",\n      \"lon\": 127.132,\n      \"openTime\": \"\",\n      \"telNo\": \"010-3373-7867\",\n      \"lat\": 37.5259,\n      \"wayPath\": \"\"\n    }\n  ],\n  \"listForm\": [\n    {\n      \"type\": \"TEXT\",\n      \"title\": \"${branchName}\",\n      \"text\": \"${distance} KM<br>${telNo}<br>${addr1}<br>${addr2}\"\n    }\n  ],\n  \"value\": \"\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "d6184165-5fae-400d-afbc-14734a660f57",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "8abc4db1-ab22-4fa3-974f-095e6ec30f17",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"KAKAOMAP\",\n  \"key\": \"kakaoMap\",\n  \"title\": \"카카오맵\",\n  \"text\": \"아래의 맵에서 정보를 얻을 수 있습니다.\",\n  \"disabled\": false,\n  \"required\": true,\n  \"selectable\": true,\n  \"selectedDataKey\": \"branchName\",\n  \"dataValue\": [\n    {\n      \"postNo\": \"05603\",\n      \"branchPrdNm\": \"스마트홈,스마트 도어록\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 1.49,\n      \"addr1\": \"서울특별시 송파구 삼학사로13길 8 (삼전동)\",\n      \"branchName\": \"씨디케이보안시스템\",\n      \"lon\": 127.096,\n      \"openTime\": \"\",\n      \"telNo\": \"010-3752-3556\",\n      \"lat\": 37.5034,\n      \"wayPath\": \"\"\n    },\n    {\n      \"postNo\": \"05063\",\n      \"branchPrdNm\": \"스마트 도어록,대표 스토어\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 2.78,\n      \"addr1\": \"서울특별시 광진구 뚝섬로 603 (자양동)\",\n      \"branchName\": \"스마트스토어 광진점\",\n      \"lon\": 127.077,\n      \"openTime\": \"\",\n      \"telNo\": \"010-6686-1316\",\n      \"lat\": 37.533,\n      \"wayPath\": \"\"\n    },\n    {\n      \"postNo\": \"05406\",\n      \"branchPrdNm\": \"스마트 도어록,대표 스토어\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 2.99,\n      \"addr1\": \"서울특별시 강동구 강동대로53길 69(성내동)\",\n      \"branchName\": \"스마트월드\",\n      \"lon\": 127.132,\n      \"openTime\": \"\",\n      \"telNo\": \"010-3373-7867\",\n      \"lat\": 37.5259,\n      \"wayPath\": \"\"\n    }\n  ],\n  \"listForm\": [\n    {\n      \"type\": \"TEXT\",\n      \"title\": \"${branchName}\",\n      \"text\": \"${distance} KM<br>${telNo}<br>${addr1}<br>${addr2}\"\n    }\n  ],\n  \"value\": \"\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "1e93fde9-dbc6-49db-b3ed-49b3fbc63303",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "52ad5864-001b-44fb-9551-bfd38981cb51",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"KAKAOMAP\",\n  \"key\": \"kakaoMap\",\n  \"title\": \"카카오맵\",\n  \"text\": \"아래의 맵에서 정보를 얻을 수 있습니다.\",\n  \"disabled\": false,\n  \"required\": true,\n  \"selectable\": true,\n  \"selectedDataKey\": \"branchName\",\n  \"dataValue\": [\n    {\n      \"postNo\": \"05603\",\n      \"branchPrdNm\": \"스마트홈,스마트 도어록\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 1.49,\n      \"addr1\": \"서울특별시 송파구 삼학사로13길 8 (삼전동)\",\n      \"branchName\": \"씨디케이보안시스템\",\n      \"lon\": 127.096,\n      \"openTime\": \"\",\n      \"telNo\": \"010-3752-3556\",\n      \"lat\": 37.5034,\n      \"wayPath\": \"\"\n    },\n    {\n      \"postNo\": \"05063\",\n      \"branchPrdNm\": \"스마트 도어록,대표 스토어\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 2.78,\n      \"addr1\": \"서울특별시 광진구 뚝섬로 603 (자양동)\",\n      \"branchName\": \"스마트스토어 광진점\",\n      \"lon\": 127.077,\n      \"openTime\": \"\",\n      \"telNo\": \"010-6686-1316\",\n      \"lat\": 37.533,\n      \"wayPath\": \"\"\n    },\n    {\n      \"postNo\": \"05406\",\n      \"branchPrdNm\": \"스마트 도어록,대표 스토어\",\n      \"addr2\": \"\",\n      \"parkYn\": \"\",\n      \"distance\": 2.99,\n      \"addr1\": \"서울특별시 강동구 강동대로53길 69(성내동)\",\n      \"branchName\": \"스마트월드\",\n      \"lon\": 127.132,\n      \"openTime\": \"\",\n      \"telNo\": \"010-3373-7867\",\n      \"lat\": 37.5259,\n      \"wayPath\": \"\"\n    }\n  ],\n  \"listForm\": [\n    {\n      \"type\": \"TEXT\",\n      \"title\": \"${branchName}\",\n      \"text\": \"${distance} KM<br>${telNo}<br>${addr1}<br>${addr2}\"\n    }\n  ],\n  \"value\": \"\"\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "d6184165-5fae-400d-afbc-14734a660f57",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "8abc4db1-ab22-4fa3-974f-095e6ec30f17",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "f5fb115a-e29d-4f37-899b-b7dba5c09a34",
+      "kind": "talk",
+      "title": "BUTTON",
+      "position": {
+        "x": 255,
+        "y": 283
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "fa631261-cba2-448c-b47c-47c88fa0c3e3",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "f9e773e4-bb51-4675-ba47-fcc7afb65a7c",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "bc4cdfcb-9846-408d-b939-d9638c472eaf",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "50f4012c-9565-45fd-a6d9-b09b54d9cf3d",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    }\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "bc4cdfcb-9846-408d-b939-d9638c472eaf",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "50f4012c-9565-45fd-a6d9-b09b54d9cf3d",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "396121b7-6d3a-4279-848b-a2fd8312ef57",
+      "kind": "talk",
+      "title": "BUTTON(POPUP)",
+      "position": {
+        "x": 235,
+        "y": 375
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"type\": \"BUTTON\",\n\t\"direction\": \"vertical\",\n\t\"button\": [\n\t\t{\n\t\t\t\"key\": \"pp\",\n\t\t\t\"title\": \"팝업\",\n\t\t\t\"value\": \"OK\",\n\t\t\t\"style\": \"seCondary wide\",\n\t\t\t\"type\": \"popup\",\n\t\t\t\"popUp\": {\n\t\t\t\t\"key\": \"popup2\",\n\t\t\t\t\"title\": \"팝업타이틀\",\n\t\t\t\t\"description\": \"팝업 설명\",\n\t\t\t\t\"content\": [\n\t\t\t\t\t{\n\t\t\t\t\t\t\"type\": \"FIELDS\",\n\t\t\t\t\t\t\"title\": \"*가용성 점검 불가 정보*\",\n\t\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\t\"Title\",\n\t\t\t\t\t\t\t\"REQ_NO\",\n\t\t\t\t\t\t\t\"PLANT\",\n\t\t\t\t\t\t\t\"EXE_TYPE\",\n\t\t\t\t\t\t\t\"REQUEST_BY\",\n\t\t\t\t\t\t\t\"PURCHASER_ID\",\n\t\t\t\t\t\t\t\"REQUEST_DATE\",\n\t\t\t\t\t\t\t\"QTY\"\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataTitle\": [\n\t\t\t\t\t\t\t\"<span style='color:red'>제품명</span>\",\n\t\t\t\t\t\t\t\"요청번호\",\n\t\t\t\t\t\t\t\"플랜트\",\n\t\t\t\t\t\t\t\"실행타입\",\n\t\t\t\t\t\t\t\"요청자\",\n\t\t\t\t\t\t\t\"구매자아이디\",\n\t\t\t\t\t\t\t\"요청일자\",\n\t\t\t\t\t\t\t\"수량\"\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"Title\": \"Note 10\",\n\t\t\t\t\t\t\t\t\"REQ_NO\": \"123456\",\n\t\t\t\t\t\t\t\t\"PLANT\": \"P520\",\n\t\t\t\t\t\t\t\t\"EXE_TYPE\": \"0002 Development(PRA)\",\n\t\t\t\t\t\t\t\t\"REQUEST_BY\": \"Cha.Lim\",\n\t\t\t\t\t\t\t\t\"PURCHASER_ID\": \"HEIN.DTM\",\n\t\t\t\t\t\t\t\t\"REQUEST_DATE\": \"2019.09.03\",\n\t\t\t\t\t\t\t\t\"QTY\": \"100\"\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"Title\": \"Note 11\",\n\t\t\t\t\t\t\t\t\"REQ_NO\": \"123456\",\n\t\t\t\t\t\t\t\t\"PLANT\": \"P520\",\n\t\t\t\t\t\t\t\t\"EXE_TYPE\": \"0002 Development(PRA)\",\n\t\t\t\t\t\t\t\t\"REQUEST_BY\": \"Cha.Lim\",\n\t\t\t\t\t\t\t\t\"PURCHASER_ID\": \"HEIN.DTM\",\n\t\t\t\t\t\t\t\t\"REQUEST_DATE\": \"2019.09.03\",\n\t\t\t\t\t\t\t\t\"QTY\": \"100\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataValueForm\": [\n\t\t\t\t\t\t\t[\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"type\": \"TEXT\",\n\t\t\t\t\t\t\t\t\t\"text\": \"<span style='color:blue'>${Title}</span>\"\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\t\t\t\t\t\t\t\t\"width\": \"50%\"\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\"\n\t\t\t\t\t\t]\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"key\": \"ok\",\n\t\t\t\"title\": \"확인\",\n\t\t\t\"value\": \"OK\",\n\t\t\t\"style\": \"primary wide\",\n\t\t\t\"disabled\" : false,\n\t\t\t\"type\": \"submit\"\n\t\t}\n\t]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "19908d30-4369-4c95-b1ba-d35b05aa5084",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "085deda3-f331-4a86-ab05-09111d64d71a",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n\t\"type\": \"BUTTON\",\n\t\"direction\": \"vertical\",\n\t\"button\": [\n\t\t{\n\t\t\t\"key\": \"pp\",\n\t\t\t\"title\": \"팝업\",\n\t\t\t\"value\": \"OK\",\n\t\t\t\"style\": \"seCondary wide\",\n\t\t\t\"type\": \"popup\",\n\t\t\t\"popUp\": {\n\t\t\t\t\"key\": \"popup2\",\n\t\t\t\t\"title\": \"팝업타이틀\",\n\t\t\t\t\"description\": \"팝업 설명\",\n\t\t\t\t\"content\": [\n\t\t\t\t\t{\n\t\t\t\t\t\t\"type\": \"FIELDS\",\n\t\t\t\t\t\t\"title\": \"*가용성 점검 불가 정보*\",\n\t\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\t\"Title\",\n\t\t\t\t\t\t\t\"REQ_NO\",\n\t\t\t\t\t\t\t\"PLANT\",\n\t\t\t\t\t\t\t\"EXE_TYPE\",\n\t\t\t\t\t\t\t\"REQUEST_BY\",\n\t\t\t\t\t\t\t\"PURCHASER_ID\",\n\t\t\t\t\t\t\t\"REQUEST_DATE\",\n\t\t\t\t\t\t\t\"QTY\"\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataTitle\": [\n\t\t\t\t\t\t\t\"<span style='color:red'>제품명</span>\",\n\t\t\t\t\t\t\t\"요청번호\",\n\t\t\t\t\t\t\t\"플랜트\",\n\t\t\t\t\t\t\t\"실행타입\",\n\t\t\t\t\t\t\t\"요청자\",\n\t\t\t\t\t\t\t\"구매자아이디\",\n\t\t\t\t\t\t\t\"요청일자\",\n\t\t\t\t\t\t\t\"수량\"\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"Title\": \"Note 10\",\n\t\t\t\t\t\t\t\t\"REQ_NO\": \"123456\",\n\t\t\t\t\t\t\t\t\"PLANT\": \"P520\",\n\t\t\t\t\t\t\t\t\"EXE_TYPE\": \"0002 Development(PRA)\",\n\t\t\t\t\t\t\t\t\"REQUEST_BY\": \"Cha.Lim\",\n\t\t\t\t\t\t\t\t\"PURCHASER_ID\": \"HEIN.DTM\",\n\t\t\t\t\t\t\t\t\"REQUEST_DATE\": \"2019.09.03\",\n\t\t\t\t\t\t\t\t\"QTY\": \"100\"\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"Title\": \"Note 11\",\n\t\t\t\t\t\t\t\t\"REQ_NO\": \"123456\",\n\t\t\t\t\t\t\t\t\"PLANT\": \"P520\",\n\t\t\t\t\t\t\t\t\"EXE_TYPE\": \"0002 Development(PRA)\",\n\t\t\t\t\t\t\t\t\"REQUEST_BY\": \"Cha.Lim\",\n\t\t\t\t\t\t\t\t\"PURCHASER_ID\": \"HEIN.DTM\",\n\t\t\t\t\t\t\t\t\"REQUEST_DATE\": \"2019.09.03\",\n\t\t\t\t\t\t\t\t\"QTY\": \"100\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataValueForm\": [\n\t\t\t\t\t\t\t[\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"type\": \"TEXT\",\n\t\t\t\t\t\t\t\t\t\"text\": \"<span style='color:blue'>${Title}</span>\"\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\t\t\t\t\t\t\t\t\"width\": \"50%\"\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\"\n\t\t\t\t\t\t]\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"key\": \"ok\",\n\t\t\t\"title\": \"확인\",\n\t\t\t\"value\": \"OK\",\n\t\t\t\"style\": \"primary wide\",\n\t\t\t\"disabled\" : false,\n\t\t\t\"type\": \"submit\"\n\t\t}\n\t]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "e09b1c41-81c5-4064-837c-59cb31047377",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "cfc227fd-ad68-4a63-8c55-02857a829ca8",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n\t\"type\": \"BUTTON\",\n\t\"direction\": \"vertical\",\n\t\"button\": [\n\t\t{\n\t\t\t\"key\": \"pp\",\n\t\t\t\"title\": \"팝업\",\n\t\t\t\"value\": \"OK\",\n\t\t\t\"style\": \"seCondary wide\",\n\t\t\t\"type\": \"popup\",\n\t\t\t\"popUp\": {\n\t\t\t\t\"key\": \"popup2\",\n\t\t\t\t\"title\": \"팝업타이틀\",\n\t\t\t\t\"description\": \"팝업 설명\",\n\t\t\t\t\"content\": [\n\t\t\t\t\t{\n\t\t\t\t\t\t\"type\": \"FIELDS\",\n\t\t\t\t\t\t\"title\": \"*가용성 점검 불가 정보*\",\n\t\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\t\"Title\",\n\t\t\t\t\t\t\t\"REQ_NO\",\n\t\t\t\t\t\t\t\"PLANT\",\n\t\t\t\t\t\t\t\"EXE_TYPE\",\n\t\t\t\t\t\t\t\"REQUEST_BY\",\n\t\t\t\t\t\t\t\"PURCHASER_ID\",\n\t\t\t\t\t\t\t\"REQUEST_DATE\",\n\t\t\t\t\t\t\t\"QTY\"\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataTitle\": [\n\t\t\t\t\t\t\t\"<span style='color:red'>제품명</span>\",\n\t\t\t\t\t\t\t\"요청번호\",\n\t\t\t\t\t\t\t\"플랜트\",\n\t\t\t\t\t\t\t\"실행타입\",\n\t\t\t\t\t\t\t\"요청자\",\n\t\t\t\t\t\t\t\"구매자아이디\",\n\t\t\t\t\t\t\t\"요청일자\",\n\t\t\t\t\t\t\t\"수량\"\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"Title\": \"Note 10\",\n\t\t\t\t\t\t\t\t\"REQ_NO\": \"123456\",\n\t\t\t\t\t\t\t\t\"PLANT\": \"P520\",\n\t\t\t\t\t\t\t\t\"EXE_TYPE\": \"0002 Development(PRA)\",\n\t\t\t\t\t\t\t\t\"REQUEST_BY\": \"Cha.Lim\",\n\t\t\t\t\t\t\t\t\"PURCHASER_ID\": \"HEIN.DTM\",\n\t\t\t\t\t\t\t\t\"REQUEST_DATE\": \"2019.09.03\",\n\t\t\t\t\t\t\t\t\"QTY\": \"100\"\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"Title\": \"Note 11\",\n\t\t\t\t\t\t\t\t\"REQ_NO\": \"123456\",\n\t\t\t\t\t\t\t\t\"PLANT\": \"P520\",\n\t\t\t\t\t\t\t\t\"EXE_TYPE\": \"0002 Development(PRA)\",\n\t\t\t\t\t\t\t\t\"REQUEST_BY\": \"Cha.Lim\",\n\t\t\t\t\t\t\t\t\"PURCHASER_ID\": \"HEIN.DTM\",\n\t\t\t\t\t\t\t\t\"REQUEST_DATE\": \"2019.09.03\",\n\t\t\t\t\t\t\t\t\"QTY\": \"100\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t],\n\t\t\t\t\t\t\"dataValueForm\": [\n\t\t\t\t\t\t\t[\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"type\": \"TEXT\",\n\t\t\t\t\t\t\t\t\t\"text\": \"<span style='color:blue'>${Title}</span>\"\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"type\": \"IMAGE\",\n\t\t\t\t\t\t\t\t\t\"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n\t\t\t\t\t\t\t\t\t\"width\": \"50%\"\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\",\"TEXT\"\n\t\t\t\t\t\t]\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"key\": \"ok\",\n\t\t\t\"title\": \"확인\",\n\t\t\t\"value\": \"OK\",\n\t\t\t\"style\": \"primary wide\",\n\t\t\t\"disabled\" : false,\n\t\t\t\"type\": \"submit\"\n\t\t}\n\t]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "19908d30-4369-4c95-b1ba-d35b05aa5084",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "085deda3-f331-4a86-ab05-09111d64d71a",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "c940db50-3854-4691-8476-d6567873fb27",
+      "kind": "talk",
+      "title": "BUTTON(REJECT/SUBMIT)",
+      "position": {
+        "x": 235,
+        "y": 477
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"address\",\n      \"title\": \"ADDRESS\",\n      \"value\": \"ADDRESS\",\n      \"style\": \"secondary wide\",\n      \"type\": \"submit\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "59397632-39c4-4e9d-98b7-40e57f519358",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "15fa5507-c7a0-4a5e-abb1-f2c757bdb216",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"address\",\n      \"title\": \"ADDRESS\",\n      \"value\": \"ADDRESS\",\n      \"style\": \"secondary wide\",\n      \"type\": \"submit\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "04b165bf-fc31-4977-8ae3-5f312233eda9",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "298cdfb8-5562-4c15-8c12-93b5e5eb8834",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"BUTTON\",\n  \"direction\": \"horizontal\",\n  \"button\": [\n    {\n      \"key\": \"end\",\n      \"title\": \"테스트종료\",\n      \"value\": \"END\",\n      \"style\": \"primary wide\",\n      \"disabled\": false,\n      \"type\": \"reject\"\n    },\n    {\n      \"key\": \"input\",\n      \"title\": \"INPUT\",\n      \"value\": \"INPUT\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"textarea\",\n      \"title\": \"TEXTAREA\",\n      \"value\": \"TEXTAREA\",\n      \"style\": \"secondary \",\n      \"type\": \"submit\"\n    },\n    {\n      \"key\": \"address\",\n      \"title\": \"ADDRESS\",\n      \"value\": \"ADDRESS\",\n      \"style\": \"secondary wide\",\n      \"type\": \"submit\"\n    }\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "04b165bf-fc31-4977-8ae3-5f312233eda9",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "298cdfb8-5562-4c15-8c12-93b5e5eb8834",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "dd182261-e201-4a7a-abb2-a7c317f4d43c",
+      "kind": "talk",
+      "title": "STAR RATE",
+      "position": {
+        "x": 104,
+        "y": 294
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"STAR_RATE\",\n  \"key\": \"starrate\",\n  \"title\": \"코로나 증상에 관한 설문조사<br>(매우 아픔 : 10, 아프지 않음 : 1)\",\n  \"value\": \"3\",\n  \"itemValue\": \"1\",\n  \"itemLabel\": [\n    \"Label 1\", \"Label 2\", \"Label 3\", \"Label 4\", \"Label 5\",\n    \"Label 6\", \"Label 7\", \"Label 8\", \"Label 9\", \"Label 10\"\n  ],\n  \"smallSize\": true\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "f6705715-7047-47cf-89e9-eea075688bb2",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "f5cc7833-560b-4778-8fe3-9619a83c7ad9",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"STAR_RATE\",\n  \"key\": \"starrate\",\n  \"title\": \"코로나 증상에 관한 설문조사<br>(매우 아픔 : 10, 아프지 않음 : 1)\",\n  \"value\": \"3\",\n  \"itemValue\": \"1\",\n  \"itemLabel\": [\n    \"Label 1\", \"Label 2\", \"Label 3\", \"Label 4\", \"Label 5\",\n    \"Label 6\", \"Label 7\", \"Label 8\", \"Label 9\", \"Label 10\"\n  ],\n  \"smallSize\": true\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "766a8546-1d28-4a10-b883-ad0e1e2cebb4",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "52121f9f-bab7-462e-9aaf-1e985b04db30",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"STAR_RATE\",\n  \"key\": \"starrate\",\n  \"title\": \"코로나 증상에 관한 설문조사<br>(매우 아픔 : 10, 아프지 않음 : 1)\",\n  \"value\": \"3\",\n  \"itemValue\": \"1\",\n  \"itemLabel\": [\n    \"Label 1\", \"Label 2\", \"Label 3\", \"Label 4\", \"Label 5\",\n    \"Label 6\", \"Label 7\", \"Label 8\", \"Label 9\", \"Label 10\"\n  ],\n  \"smallSize\": true\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "766a8546-1d28-4a10-b883-ad0e1e2cebb4",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "52121f9f-bab7-462e-9aaf-1e985b04db30",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "8fc9e83d-9180-428b-bcc5-5fc59a11fdae",
+      "kind": "talk",
+      "title": "VIDEO",
+      "position": {
+        "x": 76,
+        "y": 383
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "SM_CHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"VIDEO\",\n  \"title\": \"동영상 제목\",\n  \"videoType\": \"youtube\",\n  \"url\": \"https://www.youtube.com/watch?v=EHVGiN40h6g\",\n  \"text\": \"동영상 설명 부분입니다.\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "a65efed5-b670-4129-9b98-3cd98c91c906",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "3a703c07-51ee-42e5-96f8-ffadb25fd913",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"VIDEO\",\n  \"title\": \"동영상 제목\",\n  \"videoType\": \"youtube\",\n  \"url\": \"https://www.youtube.com/watch?v=EHVGiN40h6g\",\n  \"text\": \"동영상 설명 부분입니다.\"\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "ea718351-5d05-48fb-83ce-aa305405903b",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "338f2e36-d92d-4118-aa15-7d23b0aa74e2",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"VIDEO\",\n  \"title\": \"동영상 제목\",\n  \"videoType\": \"youtube\",\n  \"url\": \"https://www.youtube.com/watch?v=EHVGiN40h6g\",\n  \"text\": \"동영상 설명 부분입니다.\"\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "a65efed5-b670-4129-9b98-3cd98c91c906",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "3a703c07-51ee-42e5-96f8-ffadb25fd913",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "e01c1834-e7ac-45c3-b228-8d1fa25aec3e",
+      "kind": "talk",
+      "title": "IMAGE LIST",
+      "position": {
+        "x": 76,
+        "y": 488
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"IMAGE_LIST\",\n  \"dataValue\": [\n    {\n      \"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n      \"text\": \"<div style='text-align:center'>Brightics 사용법 시리즈</div>\",\n      \"link\": \"https://www.youtube.com/watch?v=vieWXoK4iK4&list=PLc50BLDT6Bv6GRke8DN3m6f3IPVogPT0o&index=1\"\n    },\n    {\n      \"url\": \"/files/temp/다운로드.jpeg\",\n      \"text\": \"<div style='text-align:center'>Demo<br> 영상보기</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6GRke8DN3m6f3IPVogPT0o\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>분석 사례 공유 영상</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6RfsPv0EIXHHzfvSm5oAqB\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>Brightics AI Studio 사용법</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv4fbawozzErUrOWL8LT1mia\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>머신러닝 알고리즘 사용법</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6uLrAEyG-oAkdeW5F-udrZ\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "8e127d13-71a9-4955-b780-b0c4bb54897b",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "ab79617e-7f60-4a5f-a517-242e6191828b",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"type\": \"IMAGE_LIST\",\n  \"dataValue\": [\n    {\n      \"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n      \"text\": \"<div style='text-align:center'>Brightics 사용법 시리즈</div>\",\n      \"link\": \"https://www.youtube.com/watch?v=vieWXoK4iK4&list=PLc50BLDT6Bv6GRke8DN3m6f3IPVogPT0o&index=1\"\n    },\n    {\n      \"url\": \"/files/temp/다운로드.jpeg\",\n      \"text\": \"<div style='text-align:center'>Demo<br> 영상보기</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6GRke8DN3m6f3IPVogPT0o\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>분석 사례 공유 영상</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6RfsPv0EIXHHzfvSm5oAqB\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>Brightics AI Studio 사용법</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv4fbawozzErUrOWL8LT1mia\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>머신러닝 알고리즘 사용법</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6uLrAEyG-oAkdeW5F-udrZ\"\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "0fdfb637-d387-497c-813f-59d3a035c57f",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "c09e6067-4ab1-40a3-a3d5-c9d3ec9ec76b",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"type\": \"IMAGE_LIST\",\n  \"dataValue\": [\n    {\n      \"url\": \"https://www.fashion4you.co.kr/shopimages/fas1292/0010030027752.jpg?1776387941\",\n      \"text\": \"<div style='text-align:center'>Brightics 사용법 시리즈</div>\",\n      \"link\": \"https://www.youtube.com/watch?v=vieWXoK4iK4&list=PLc50BLDT6Bv6GRke8DN3m6f3IPVogPT0o&index=1\"\n    },\n    {\n      \"url\": \"/files/temp/다운로드.jpeg\",\n      \"text\": \"<div style='text-align:center'>Demo<br> 영상보기</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6GRke8DN3m6f3IPVogPT0o\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>분석 사례 공유 영상</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6RfsPv0EIXHHzfvSm5oAqB\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>Brightics AI Studio 사용법</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv4fbawozzErUrOWL8LT1mia\"\n    },\n    {\n      \"url\": \"/files/temp/267123388.png\",\n      \"text\": \"<div style='text-align:center'>머신러닝 알고리즘 사용법</div>\",\n      \"link\": \"https://www.youtube.com/playlist?list=PLc50BLDT6Bv6uLrAEyG-oAkdeW5F-udrZ\"\n    }\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "0fdfb637-d387-497c-813f-59d3a035c57f",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "c09e6067-4ab1-40a3-a3d5-c9d3ec9ec76b",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "f9f5dd74-d5e1-47a5-970a-70fcb6bee081",
+      "kind": "talk",
+      "title": "VALIDATION",
+      "position": {
+        "x": 89,
+        "y": 591
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"webChatRichFormVersion\": \"1.0\",\n  \"richForm\": [\n    {\n      \"type\": \"FORM_TITLE\",\n      \"title\": \"<span style='color:blue'>INPUT 컴포넌트 테스트</span>\",\n      \"link\": \"http://www.naver.com\",\n      \"divider\": true\n    },\n    {\n      \"type\": \"INPUT\",\n      \"key\": \"name\",\n      \"title\": \"이름\",\n      \"hint\": \"이름을 입력해 주세요.\",\n      \"value\": \"홍길동\",\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${name} !== ''\",\n        \"message\": {\n          \"valid\": \"이름이 valid합니다.\",\n          \"invalid\": \"이름이 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"INPUT\",\n      \"key\": \"tel\",\n      \"title\": \"전화번호\",\n      \"value\": \"\",\n      \"hint\": \"예) xxxx-xxxx-xxxx\",\n      \"disabled\": false,\n      \"required\": true,\n      \"direction\": \"horizontal\",\n      \"validation\": {\n        \"type\": \"REGEXPR\",\n        \"regExpr\": \"^\\\\d{2,3}-\\\\d{3,4}-\\\\d{4}$\",\n        \"message\": {\n          \"valid\": \"전화번호가 valid합니다.\",\n          \"invalid\": \"전화번호가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"BUTTON\",\n      \"direction\": \"vertical\",\n      \"button\": [\n        {\n          \"key\": \"ok\",\n          \"title\": \"확인\",\n          \"value\": \"OK\",\n          \"style\": \"primary wide\",\n          \"disabled\": false,\n          \"type\": \"submit\"\n        }\n      ]\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "54731ed1-b68e-424a-b42e-100ae2ba0371",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "0d2f823d-3a48-412d-849e-3407ef178e27",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "{\n  \"webChatRichFormVersion\": \"1.0\",\n  \"richForm\": [\n    {\n      \"type\": \"FORM_TITLE\",\n      \"title\": \"<span style='color:blue'>INPUT 컴포넌트 테스트</span>\",\n      \"link\": \"http://www.naver.com\",\n      \"divider\": true\n    },\n    {\n      \"type\": \"INPUT\",\n      \"key\": \"name\",\n      \"title\": \"이름\",\n      \"hint\": \"이름을 입력해 주세요.\",\n      \"value\": \"홍길동\",\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${name} !== ''\",\n        \"message\": {\n          \"valid\": \"이름이 valid합니다.\",\n          \"invalid\": \"이름이 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"INPUT\",\n      \"key\": \"tel\",\n      \"title\": \"전화번호\",\n      \"value\": \"\",\n      \"hint\": \"예) xxxx-xxxx-xxxx\",\n      \"disabled\": false,\n      \"required\": true,\n      \"direction\": \"horizontal\",\n      \"validation\": {\n        \"type\": \"REGEXPR\",\n        \"regExpr\": \"^\\\\d{2,3}-\\\\d{3,4}-\\\\d{4}$\",\n        \"message\": {\n          \"valid\": \"전화번호가 valid합니다.\",\n          \"invalid\": \"전화번호가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"BUTTON\",\n      \"direction\": \"vertical\",\n      \"button\": [\n        {\n          \"key\": \"ok\",\n          \"title\": \"확인\",\n          \"value\": \"OK\",\n          \"style\": \"primary wide\",\n          \"disabled\": false,\n          \"type\": \"submit\"\n        }\n      ]\n    }\n  ]\n}"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "5ffa8636-ebf8-451e-b59b-742a050bb58b",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "77153477-787c-4d1a-8d0e-b5dc883762d3",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "{\n  \"webChatRichFormVersion\": \"1.0\",\n  \"richForm\": [\n    {\n      \"type\": \"FORM_TITLE\",\n      \"title\": \"<span style='color:blue'>INPUT 컴포넌트 테스트</span>\",\n      \"link\": \"http://www.naver.com\",\n      \"divider\": true\n    },\n    {\n      \"type\": \"INPUT\",\n      \"key\": \"name\",\n      \"title\": \"이름\",\n      \"hint\": \"이름을 입력해 주세요.\",\n      \"value\": \"홍길동\",\n      \"validation\": {\n        \"type\": \"CONDITION\",\n        \"condition\": \"${name} !== ''\",\n        \"message\": {\n          \"valid\": \"이름이 valid합니다.\",\n          \"invalid\": \"이름이 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"INPUT\",\n      \"key\": \"tel\",\n      \"title\": \"전화번호\",\n      \"value\": \"\",\n      \"hint\": \"예) xxxx-xxxx-xxxx\",\n      \"disabled\": false,\n      \"required\": true,\n      \"direction\": \"horizontal\",\n      \"validation\": {\n        \"type\": \"REGEXPR\",\n        \"regExpr\": \"^\\\\d{2,3}-\\\\d{3,4}-\\\\d{4}$\",\n        \"message\": {\n          \"valid\": \"전화번호가 valid합니다.\",\n          \"invalid\": \"전화번호가 invalid합니다.\"\n        }\n      }\n    },\n    {\n      \"type\": \"BUTTON\",\n      \"direction\": \"vertical\",\n      \"button\": [\n        {\n          \"key\": \"ok\",\n          \"title\": \"확인\",\n          \"value\": \"OK\",\n          \"style\": \"primary wide\",\n          \"disabled\": false,\n          \"type\": \"submit\"\n        }\n      ]\n    }\n  ]\n}"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "5ffa8636-ebf8-451e-b59b-742a050bb58b",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "77153477-787c-4d1a-8d0e-b5dc883762d3",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "b8131caa-afd3-45ea-a676-52250c89b07a",
+      "kind": "talk",
+      "title": "INPUT POPUP",
+      "position": {
+        "x": 225,
+        "y": 628
+      },
+      "config": {
+        "messageType": "form",
+        "templateChannel": "WEBCHAT",
+        "channelTemplates": {
+          "SM_CHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"INPUT_POPUP\",\n\t\t\"key\": \"productName\",\n\t\t\"title\": \"음료수\",\n\t\t\"value\": \"\",\n\t\t\"hint\": \"음료수를 선택해주세요.\",\n\t\t\"disabled\": false,\n\t\t\"required\": true,\n\t\t\"direction\": \"horizontal\",\n\t\t\"popup\": {\n\t\t\t\"key\": \"popup1\",\n\t\t\t\"title\": \"팝업타이틀\",\n\t\t\t\"description\": \"팝업 설명\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"TABLE\",\n\t\t\t\t\t\"key\": \"table\",\n\t\t\t\t\t\"title\": \"테이블입니다.\",\n\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\"value\",\n\t\t\t\t\t\t\"code\",\n\t\t\t\t\t\t\"value2\",\n\t\t\t\t\t\t\"code2\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataTitle\": [\n\t\t\t\t\t\t\"값\",\n\t\t\t\t\t\t\"코드\",\n\t\t\t\t\t\t\"값2\",\n\t\t\t\t\t\t\"코드2\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\t\t\t\"code\": \"001\",\n\t\t\t\t\t\t\t\"value2\": \"오렌지쥬스\",\n\t\t\t\t\t\t\t\"code2\": \"001\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\t\t\t\"code\": \"002\",\n\t\t\t\t\t\t\t\"value2\": \"콜라\",\n\t\t\t\t\t\t\t\"code2\": \"002\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\t\t\t\"code\": \"003\",\n\t\t\t\t\t\t\t\"value2\": \"사이다\",\n\t\t\t\t\t\t\t\"code2\": \"003\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"포도주스\",\n\t\t\t\t\t\t\t\"code\": \"004\",\n\t\t\t\t\t\t\t\"value2\": \"포도주스\",\n\t\t\t\t\t\t\t\"code2\": \"004\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"selectable\": true,\n\t\t\t\t\t\"selectedDataKey\": \"value\",\n\t\t\t\t\t\"listCount\": 3,\n\t\t\t\t\t\"value\": \"\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"direction\": \"horizontal\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"ok\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"OK\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "27d4a1d3-d84c-4a70-88de-5ca563aa34f1",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "b53e6759-6497-4fa5-b077-49ffd551ee03",
+                "label": "",
+                "url": ""
+              }
+            ]
+          },
+          "WEBCHAT": {
+            "messageType": "form",
+            "messages": [
+              "[\n\t{\n\t\t\"type\": \"INPUT_POPUP\",\n\t\t\"key\": \"productName\",\n\t\t\"title\": \"음료수\",\n\t\t\"value\": \"\",\n\t\t\"hint\": \"음료수를 선택해주세요.\",\n\t\t\"disabled\": false,\n\t\t\"required\": true,\n\t\t\"direction\": \"horizontal\",\n\t\t\"popup\": {\n\t\t\t\"key\": \"popup1\",\n\t\t\t\"title\": \"팝업타이틀\",\n\t\t\t\"description\": \"팝업 설명\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"TABLE\",\n\t\t\t\t\t\"key\": \"table\",\n\t\t\t\t\t\"title\": \"테이블입니다.\",\n\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\"value\",\n\t\t\t\t\t\t\"code\",\n\t\t\t\t\t\t\"value2\",\n\t\t\t\t\t\t\"code2\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataTitle\": [\n\t\t\t\t\t\t\"값\",\n\t\t\t\t\t\t\"코드\",\n\t\t\t\t\t\t\"값2\",\n\t\t\t\t\t\t\"코드2\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\t\t\t\"code\": \"001\",\n\t\t\t\t\t\t\t\"value2\": \"오렌지쥬스\",\n\t\t\t\t\t\t\t\"code2\": \"001\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\t\t\t\"code\": \"002\",\n\t\t\t\t\t\t\t\"value2\": \"콜라\",\n\t\t\t\t\t\t\t\"code2\": \"002\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\t\t\t\"code\": \"003\",\n\t\t\t\t\t\t\t\"value2\": \"사이다\",\n\t\t\t\t\t\t\t\"code2\": \"003\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"포도주스\",\n\t\t\t\t\t\t\t\"code\": \"004\",\n\t\t\t\t\t\t\t\"value2\": \"포도주스\",\n\t\t\t\t\t\t\t\"code2\": \"004\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"selectable\": true,\n\t\t\t\t\t\"selectedDataKey\": \"value\",\n\t\t\t\t\t\"listCount\": 3,\n\t\t\t\t\t\"value\": \"\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"direction\": \"horizontal\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"ok\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"OK\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+            ],
+            "tableUseVariable": true,
+            "tableVariableItemId": "",
+            "tableKeyColumn": "",
+            "tableColumnMappings": [],
+            "tableManualRows": [
+              {
+                "id": "72bb79fc-455a-42a7-aac5-d34e87b568cd",
+                "key": "",
+                "values": [
+                  ""
+                ]
+              }
+            ],
+            "linkButtonItems": [
+              {
+                "id": "88ecbc2c-b3e2-4d84-b65e-311e7bee3842",
+                "label": "",
+                "url": ""
+              }
+            ]
+          }
+        },
+        "basicMessages": [
+          ""
+        ],
+        "messages": [
+          "[\n\t{\n\t\t\"type\": \"INPUT_POPUP\",\n\t\t\"key\": \"productName\",\n\t\t\"title\": \"음료수\",\n\t\t\"value\": \"\",\n\t\t\"hint\": \"음료수를 선택해주세요.\",\n\t\t\"disabled\": false,\n\t\t\"required\": true,\n\t\t\"direction\": \"horizontal\",\n\t\t\"popup\": {\n\t\t\t\"key\": \"popup1\",\n\t\t\t\"title\": \"팝업타이틀\",\n\t\t\t\"description\": \"팝업 설명\",\n\t\t\t\"content\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"TABLE\",\n\t\t\t\t\t\"key\": \"table\",\n\t\t\t\t\t\"title\": \"테이블입니다.\",\n\t\t\t\t\t\"dataKey\": [\n\t\t\t\t\t\t\"value\",\n\t\t\t\t\t\t\"code\",\n\t\t\t\t\t\t\"value2\",\n\t\t\t\t\t\t\"code2\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataTitle\": [\n\t\t\t\t\t\t\"값\",\n\t\t\t\t\t\t\"코드\",\n\t\t\t\t\t\t\"값2\",\n\t\t\t\t\t\t\"코드2\"\n\t\t\t\t\t],\n\t\t\t\t\t\"dataValue\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"오렌지쥬스\",\n\t\t\t\t\t\t\t\"code\": \"001\",\n\t\t\t\t\t\t\t\"value2\": \"오렌지쥬스\",\n\t\t\t\t\t\t\t\"code2\": \"001\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"콜라\",\n\t\t\t\t\t\t\t\"code\": \"002\",\n\t\t\t\t\t\t\t\"value2\": \"콜라\",\n\t\t\t\t\t\t\t\"code2\": \"002\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"사이다\",\n\t\t\t\t\t\t\t\"code\": \"003\",\n\t\t\t\t\t\t\t\"value2\": \"사이다\",\n\t\t\t\t\t\t\t\"code2\": \"003\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\": \"포도주스\",\n\t\t\t\t\t\t\t\"code\": \"004\",\n\t\t\t\t\t\t\t\"value2\": \"포도주스\",\n\t\t\t\t\t\t\t\"code2\": \"004\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"selectable\": true,\n\t\t\t\t\t\"selectedDataKey\": \"value\",\n\t\t\t\t\t\"listCount\": 3,\n\t\t\t\t\t\"value\": \"\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t},\n\t{\n\t\t\"type\": \"BUTTON\",\n\t\t\"direction\": \"horizontal\",\n\t\t\"button\": [\n\t\t\t{\n\t\t\t\t\"key\": \"ok\",\n\t\t\t\t\"title\": \"확인\",\n\t\t\t\t\"value\": \"OK\",\n\t\t\t\t\"style\": \"primary wide\",\n\t\t\t\t\"disabled\": false,\n\t\t\t\t\"type\": \"submit\"\n\t\t\t}\n\t\t]\n\t}\n]"
+        ],
+        "tableUseVariable": true,
+        "tableVariableItemId": "",
+        "tableKeyColumn": "",
+        "tableColumnMappings": [],
+        "tableManualRows": [
+          {
+            "id": "72bb79fc-455a-42a7-aac5-d34e87b568cd",
+            "key": "",
+            "values": [
+              ""
+            ]
+          }
+        ],
+        "linkButtonItems": [
+          {
+            "id": "88ecbc2c-b3e2-4d84-b65e-311e7bee3842",
+            "label": "",
+            "url": ""
+          }
+        ],
+        "responseType": "form-relay",
+        "responseVariableName": "$result",
+        "responseLocal": false,
+        "responseEntityBindingIds": [],
+        "responseEntityExtractions": [],
+        "intentTransitionLocked": false,
+        "repeatType": "bot-setting",
+        "repeatCount": 3,
+        "floatingButtonMode": "bot-setting",
+        "floatingButtons": []
+      }
+    },
+    {
+      "id": "3e409a3b-a56c-447c-b3bb-6cc92c67f3fe",
+      "kind": "jump",
+      "title": "Jump 1",
+      "position": {
+        "x": 1254,
+        "y": 294
+      },
+      "config": {
+        "targetType": "card",
+        "targetCardId": "f9d4c8fe-4298-499e-9db1-84bb7e7b8d23",
+        "targetDialogId": "",
+        "targetDialogName": "",
+        "targetDialogType": 1
+      }
+    },
+    {
+      "id": "eda37ca5-3b5c-4b6d-bb97-fcd770e273c6",
+      "kind": "variable",
+      "title": "Variable 1",
+      "position": {
+        "x": 1091,
+        "y": 295
+      },
+      "config": {
+        "items": [
+          {
+            "id": "8f079417-68b4-4bd6-a8dd-02ae23281813",
+            "variableName": "$select",
+            "value": "",
+            "tableEnabled": false,
+            "tableColumns": [],
+            "local": false
+          }
+        ]
+      }
+    }
+  ],
+  "links": [
+    {
+      "id": "91f542d9-f0f0-4797-82b6-851e4c0e84d8",
+      "sourceNodeId": "flow-start-83b26d7c-e78c-4b6e-8857-71af2c6af97f",
+      "sourcePort": "next",
+      "targetNodeId": "f9d4c8fe-4298-499e-9db1-84bb7e7b8d23",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "f2036185-23a4-4b63-9bd7-1e2746eb1e9f",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:c3639d89-6b46-4a92-9735-a1aa73834a07",
+      "targetNodeId": "11172723-e2b1-4b72-b757-a9099cc1e2a6",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "13599843-3858-4ef5-b728-6d7b7058dbe0",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:9c0325b4-e042-4218-b670-37db8efb5729",
+      "targetNodeId": "2b223fb0-a456-467e-b642-1ee948b02d4a",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "70467857-2254-42fa-911a-9505b2c86b4f",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:932e8a4f-b8b1-4853-9363-865138bcb9ec",
+      "targetNodeId": "f212d58b-f303-45a9-8e09-4d3c54c973ec",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "e794b68f-0eb3-4af4-b26d-8db16b4a9ab4",
+      "sourceNodeId": "f212d58b-f303-45a9-8e09-4d3c54c973ec",
+      "sourcePort": "next",
+      "targetNodeId": "11172723-e2b1-4b72-b757-a9099cc1e2a6",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "41df2ccf-d4f7-4839-80ac-dff9cca2b280",
+      "sourceNodeId": "2b223fb0-a456-467e-b642-1ee948b02d4a",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "0cfbb8dc-1a64-4c96-916f-cfcba4434783",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:d0c703c5-ef27-4070-94fb-f186384e462a",
+      "targetNodeId": "da95aa95-2368-4df4-a7c5-be3e82df0dcd",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "59b26630-e7a0-45fd-bc94-eb5d8305bd0e",
+      "sourceNodeId": "da95aa95-2368-4df4-a7c5-be3e82df0dcd",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "5ede15d5-974a-4003-aafb-450e786c0b35",
+      "sourceNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "sourcePort": "next",
+      "targetNodeId": "11172723-e2b1-4b72-b757-a9099cc1e2a6",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "17d7f436-c57e-4e33-b363-44855d42ac54",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:23bc6765-3943-44c8-8c83-d858216c9b1c",
+      "targetNodeId": "d344f2b3-6ed5-407d-b315-a3a131d24166",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "50908df5-9ad3-4e21-ac1f-9f42dfd9ca19",
+      "sourceNodeId": "d344f2b3-6ed5-407d-b315-a3a131d24166",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "73e617cf-5811-4fc1-931c-479eda7f479f",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:962f5ed0-8b5a-4bc6-8cd1-8ab4fa16634c",
+      "targetNodeId": "6aacd14a-f5ac-4c99-91cd-a0ef0210b4eb",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "3c8b559a-0630-4564-97d0-75d61208d597",
+      "sourceNodeId": "6aacd14a-f5ac-4c99-91cd-a0ef0210b4eb",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "e8925c71-13a7-496a-8aab-ef833fb4cec1",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:97780da9-69c4-442a-b2c1-2cc753c346a6",
+      "targetNodeId": "c303b034-e5c2-4540-83c5-13afc5812a6b",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "c4bbd4a1-622f-4cb4-a0f7-a04e6d70125c",
+      "sourceNodeId": "c303b034-e5c2-4540-83c5-13afc5812a6b",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "160a6e8d-61a6-45c4-be68-804c56e08d68",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:a83b042d-53c3-41e7-a2db-4caeb2bcd450",
+      "targetNodeId": "88528d60-0632-4b4a-9296-f0e39da92958",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "913960cf-bf5e-472f-b579-23a7659ce286",
+      "sourceNodeId": "88528d60-0632-4b4a-9296-f0e39da92958",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "54c2426f-bf01-4734-bd7d-dd9c804482f5",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:a03e43b5-a89f-4f66-92d0-d974d0fd7ce9",
+      "targetNodeId": "047a74a4-a8d1-4554-b900-491b7ea4e61f",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "795918b6-40d5-4116-a6ec-da6b043d7e83",
+      "sourceNodeId": "047a74a4-a8d1-4554-b900-491b7ea4e61f",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "3bc38aa2-43a1-4494-a164-bbd377143bee",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:8e0271a9-cf3e-472f-9d91-88c6c0c144f2",
+      "targetNodeId": "1a1a409f-af78-419e-848d-3557644bbb50",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "4121faf0-aebe-42c1-9c3a-24cc55951fb0",
+      "sourceNodeId": "1a1a409f-af78-419e-848d-3557644bbb50",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "e859c311-b6a3-421d-b410-6af8329bb69e",
+      "sourceNodeId": "67b86279-022b-409f-819f-8ae8e1006394",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "5189f041-4815-4509-9e34-e20b17bc4564",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:b92a3e3c-947f-4f95-a2b6-240c82dc382e",
+      "targetNodeId": "3d309c7c-f63f-4072-9abe-587aed545c70",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "72823894-71ca-4972-b05d-b9a5334c4612",
+      "sourceNodeId": "3d309c7c-f63f-4072-9abe-587aed545c70",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "58ba3b21-168b-4729-9553-15101a7a9898",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:827927d4-87ac-4110-94f3-721d86aba820",
+      "targetNodeId": "67b86279-022b-409f-819f-8ae8e1006394",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "3a8394d7-adf9-49b8-85f1-a3e83f3f8487",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:2e4a6a4d-96b9-4848-abb7-024a551b80d4",
+      "targetNodeId": "240bc072-3ea4-48ab-b066-6c2e988437af",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "90c3b2ff-3eb9-4db6-b215-e5c4fd9aade0",
+      "sourceNodeId": "240bc072-3ea4-48ab-b066-6c2e988437af",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "7a0275b0-98ca-47f0-985c-42150e8fdff8",
+      "sourceNodeId": "f9d4c8fe-4298-499e-9db1-84bb7e7b8d23",
+      "sourcePort": "next",
+      "targetNodeId": "bb636362-71ab-4d62-882b-91e6a126b315",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "112a3149-f04e-4317-a436-a03303e764ac",
+      "sourceNodeId": "bb636362-71ab-4d62-882b-91e6a126b315",
+      "sourcePort": "next",
+      "targetNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "ed5c874f-bb7b-4b9a-a7c0-7fba99b26044",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:c710949c-dada-48d3-87a6-d45b55f9b8b0",
+      "targetNodeId": "c6f6df32-ead8-469c-92ff-83374ddbf9f6",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "1edeb4eb-0edf-4f89-a2c8-78f4f99f4e5d",
+      "sourceNodeId": "c6f6df32-ead8-469c-92ff-83374ddbf9f6",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "d0b5d37e-a0a5-4f63-9c91-9690b8f4f785",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:39fe1207-78b0-4bb5-92f7-3f0605398362",
+      "targetNodeId": "79baac7e-91ae-4994-9749-76df6571ce86",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "a49b1e3b-e2c2-47e4-a87c-40f19e478240",
+      "sourceNodeId": "79baac7e-91ae-4994-9749-76df6571ce86",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "1737076c-f69e-4344-ad3b-2b7e45dff2e1",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:a3606262-a0e4-4e49-8359-14bc7721a418",
+      "targetNodeId": "56debdac-d0fe-4ce5-92c9-2dcba7568650",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "486a10da-a7fe-4466-ab8d-81cc3955d227",
+      "sourceNodeId": "56debdac-d0fe-4ce5-92c9-2dcba7568650",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "7429f79b-cf05-427d-ab93-2467d8ccb787",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:b045253c-1ddb-46d7-82a4-4612f3e4e6bd",
+      "targetNodeId": "1c841f35-300c-4726-bb68-caeb8ac6b832",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "c7286f91-a754-4333-aaae-97ae8841a2e9",
+      "sourceNodeId": "1c841f35-300c-4726-bb68-caeb8ac6b832",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "50096f83-b799-4155-b19c-4df8600ab859",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:0ca0de25-cd40-4a2d-8ace-3315027d81e1",
+      "targetNodeId": "f5fb115a-e29d-4f37-899b-b7dba5c09a34",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "c2b113c5-17c3-4edb-ba3a-10d967fc12ff",
+      "sourceNodeId": "f5fb115a-e29d-4f37-899b-b7dba5c09a34",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "a13ff89e-7268-4423-8ad3-1b60b46131dd",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:ab4d4589-16a0-4f9f-aca4-87ad88ee967f",
+      "targetNodeId": "396121b7-6d3a-4279-848b-a2fd8312ef57",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "d484db66-0798-4fad-a8c9-98ec7fe98b7f",
+      "sourceNodeId": "396121b7-6d3a-4279-848b-a2fd8312ef57",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "be94285e-164c-499c-be08-52568198b6ea",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:84a92709-35ca-49c2-b8d4-2768cbc9e719",
+      "targetNodeId": "c940db50-3854-4691-8476-d6567873fb27",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "83d3a6ca-92b4-485d-bc81-4360099d9b5f",
+      "sourceNodeId": "c940db50-3854-4691-8476-d6567873fb27",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "e9d21116-0931-48d3-b292-8219aa0789f6",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:af502ff6-4113-4a7d-b862-5c65a8133cb5",
+      "targetNodeId": "dd182261-e201-4a7a-abb2-a7c317f4d43c",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "4478e952-b4f2-4faf-8c21-05b9febe2fef",
+      "sourceNodeId": "dd182261-e201-4a7a-abb2-a7c317f4d43c",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "697dc779-08dc-4d1a-8a19-b18c82491495",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:d60d7b2a-90d8-41a3-a7e1-2f5f7fa9f6c7",
+      "targetNodeId": "8fc9e83d-9180-428b-bcc5-5fc59a11fdae",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "df702826-cf33-430a-a2f5-c5462305785a",
+      "sourceNodeId": "8fc9e83d-9180-428b-bcc5-5fc59a11fdae",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "7f2395ac-ba95-472f-ab51-b3602212b721",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:a1bd8a30-a51d-4fde-ad5c-bdcfba356cce",
+      "targetNodeId": "e01c1834-e7ac-45c3-b228-8d1fa25aec3e",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "04ad3b36-de67-4db7-81ca-2844d31be136",
+      "sourceNodeId": "e01c1834-e7ac-45c3-b228-8d1fa25aec3e",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "157086f2-6296-408c-88ef-01d6088e52c5",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:30a3b98f-a143-4ffd-99ff-d768e973e37f",
+      "targetNodeId": "f9f5dd74-d5e1-47a5-970a-70fcb6bee081",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "5b975a64-1f46-4a43-9071-934c95e904a3",
+      "sourceNodeId": "f9f5dd74-d5e1-47a5-970a-70fcb6bee081",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "19aed0ae-4d9b-4665-ba19-51a7c5653829",
+      "sourceNodeId": "1d2a8bde-595b-4b91-aee4-bff3badb1707",
+      "sourcePort": "branch:2c266089-7acb-4100-a297-61c69d04140b",
+      "targetNodeId": "b8131caa-afd3-45ea-a676-52250c89b07a",
+      "kind": "condition",
+      "waypoints": []
+    },
+    {
+      "id": "4a19bff2-7380-408a-8228-f19be7752599",
+      "sourceNodeId": "b8131caa-afd3-45ea-a676-52250c89b07a",
+      "sourcePort": "next",
+      "targetNodeId": "5fe86cf3-eeb1-49fc-962d-ac63028e62c8",
+      "kind": "default",
+      "waypoints": []
+    },
+    {
+      "id": "bbaec6c1-68c7-4d0d-a1b7-34db4a3ce695",
+      "sourceNodeId": "eda37ca5-3b5c-4b6d-bb97-fcd770e273c6",
+      "sourcePort": "next",
+      "targetNodeId": "3e409a3b-a56c-447c-b3bb-6cc92c67f3fe",
+      "kind": "default",
+      "waypoints": []
+    }
+  ],
+  "updatedAt": "2026-06-19T00:15:35.022Z",
+  "updatedBy": "cyhuh"
+}

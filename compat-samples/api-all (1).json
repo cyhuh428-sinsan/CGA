@@ -1,0 +1,1415 @@
+﻿{
+  "asset_format_version": 1,
+  "exported_at": "2026-07-18T07:01:32.460Z",
+  "apis": [
+    {
+      "id": "924d3c59-b9ba-4eca-beee-a2b2caf81758",
+      "type": "api",
+      "apiKey": "819abb84-30dd-4115-887f-f6a20546959a",
+      "name": "JSONPlaceholder 게시글",
+      "baseUrl": "https://api.jsonplaceholder.dev",
+      "description": "게시글조회API",
+      "category": "API",
+      "methods": [
+        {
+          "id": "7f8300c0-5ceb-48d2-a33f-27e9adfe094f",
+          "name": "Method 1",
+          "httpMethod": "GET",
+          "methodUrl": "/posts/{postId}",
+          "description": "게시글조회API",
+          "loggingEnabled": false,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [
+            {
+              "id": "7a7abb93-ded4-4d2a-8bcd-0ef6daf056b8",
+              "name": "postId",
+              "location": "path",
+              "dataType": "number",
+              "defaultValue": "",
+              "required": true,
+              "visible": true,
+              "description": ""
+            }
+          ],
+          "outputParameters": [
+            {
+              "id": "602dca83-31b8-4c26-aeba-11f39ca20e4e",
+              "name": "ok",
+              "path": "root.ok",
+              "dataType": "boolean",
+              "description": ""
+            },
+            {
+              "id": "db6f65e0-7e07-4231-a5ac-d10fe99f1f44",
+              "name": "status",
+              "path": "root.status",
+              "dataType": "number",
+              "description": ""
+            },
+            {
+              "id": "d07f77c4-6340-4df0-9863-1c017769075b",
+              "name": "statusText",
+              "path": "root.statusText",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "766846ee-6b1a-469b-bac6-fcf62633448f",
+              "name": "elapsedMs",
+              "path": "root.elapsedMs",
+              "dataType": "number",
+              "description": ""
+            },
+            {
+              "id": "ef676b28-c899-4391-9a59-e01cdf39acd7",
+              "name": "body",
+              "path": "root.body",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "a3fa3541-69a3-44fb-ae54-d20b5e04a750",
+              "name": "text",
+              "path": "root.text",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "5756d5a9-6915-4bcb-8bf8-a4a7d1e2afa7",
+              "name": "message",
+              "path": "root.message",
+              "dataType": "string",
+              "description": ""
+            }
+          ],
+          "outputSample": ""
+        }
+      ],
+      "updatedAt": "2026-05-03T09:46:24.068Z",
+      "updatedBy": "aidot_1"
+    },
+    {
+      "id": "4ad4387e-04da-4767-aa77-e4809c3c9c4c",
+      "type": "api",
+      "apiKey": "ffccace9-b29d-4a06-9a50-3b86d135ed60",
+      "name": "httpbin 요청 확인",
+      "baseUrl": "https://httpbin.org",
+      "description": "요청확인API",
+      "category": "API",
+      "methods": [
+        {
+          "id": "fed5e766-deed-41c5-95ee-0116eae3635a",
+          "name": "Method 1",
+          "httpMethod": "GET",
+          "methodUrl": "/get",
+          "description": "요청확인API",
+          "loggingEnabled": true,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [
+            {
+              "id": "14d5568f-559c-4c14-8224-d0f606686669",
+              "name": "keyword",
+              "location": "query",
+              "dataType": "string",
+              "defaultValue": "",
+              "required": false,
+              "visible": true,
+              "description": ""
+            }
+          ],
+          "outputParameters": [
+            {
+              "id": "bc14ed49-be16-4f6e-a31b-0393b5573d72",
+              "name": "ok",
+              "path": "root.ok",
+              "dataType": "boolean",
+              "description": ""
+            },
+            {
+              "id": "b3b602dc-982a-406e-9018-f1d7d4dde041",
+              "name": "status",
+              "path": "root.status",
+              "dataType": "number",
+              "description": ""
+            },
+            {
+              "id": "9b3f7b54-61db-4ee6-a9dd-c2f467ac0b57",
+              "name": "statusText",
+              "path": "root.statusText",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "fdd4c1d3-d3fc-48a8-a2fa-3ddc15b9a7c4",
+              "name": "elapsedMs",
+              "path": "root.elapsedMs",
+              "dataType": "number",
+              "description": ""
+            },
+            {
+              "id": "50551dcb-4097-4a97-8edb-1f9d0a713969",
+              "name": "body",
+              "path": "root.body",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "794a51f7-f1c0-410f-8b97-126bf056e77d",
+              "name": "args",
+              "path": "root.body.args",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "30816364-b81a-45c6-ab27-c6f00b54927a",
+              "name": "keyword",
+              "path": "root.body.args.keyword",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "5f8de283-70e7-4c27-84c3-d2714f50f632",
+              "name": "headers",
+              "path": "root.body.headers",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "6fe789b3-601d-4edb-8e34-dfcba3d10b7d",
+              "name": "Accept",
+              "path": "root.body.headers.Accept",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "e1e888c7-fce1-4531-838d-ed6946f1d1b8",
+              "name": "Accept-Encoding",
+              "path": "root.body.headers.Accept-Encoding",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "a0f6812c-b220-4a56-b9b4-1f16b2b4212a",
+              "name": "Accept-Language",
+              "path": "root.body.headers.Accept-Language",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "a22aed00-ede7-4dbd-8d6e-16429c1602b2",
+              "name": "Cache-Control",
+              "path": "root.body.headers.Cache-Control",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "7d27c84f-2464-49a9-acc7-07e41fa61b64",
+              "name": "Host",
+              "path": "root.body.headers.Host",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "2cd961f9-7d58-4098-8052-82ac85a8304a",
+              "name": "Pragma",
+              "path": "root.body.headers.Pragma",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "484325a9-a95c-4340-8056-e65aca2a442b",
+              "name": "Sec-Fetch-Mode",
+              "path": "root.body.headers.Sec-Fetch-Mode",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "b9f201d6-14ad-4be1-802f-8eb382bdbe2f",
+              "name": "User-Agent",
+              "path": "root.body.headers.User-Agent",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "0fdb82fa-6534-4bbc-860d-c858f974eee0",
+              "name": "X-Amzn-Trace-Id",
+              "path": "root.body.headers.X-Amzn-Trace-Id",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "25430a23-c624-49b9-bc50-b19ea1c803bf",
+              "name": "origin",
+              "path": "root.body.origin",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "def5f989-c781-48ea-9fd8-58b1147d367c",
+              "name": "url",
+              "path": "root.body.url",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "c0c1069e-3d34-4f4e-8bf4-2573a0395b00",
+              "name": "text",
+              "path": "root.text",
+              "dataType": "string",
+              "description": ""
+            }
+          ],
+          "outputSample": ""
+        }
+      ],
+      "updatedAt": "2026-05-03T09:22:17.999Z",
+      "updatedBy": "aidot_1"
+    },
+    {
+      "id": "1cc8dc49-9248-4558-a564-344f1faff7e9",
+      "type": "api",
+      "apiKey": "baea7158-8caf-4e8d-a88f-4b00d62acab2",
+      "name": "REST Countries 국가 조회",
+      "baseUrl": "https://restcountries.com",
+      "description": "국가조회API",
+      "category": "API",
+      "methods": [
+        {
+          "id": "d09577e3-8624-4619-a191-09e6edfd33bc",
+          "name": "Method 1",
+          "httpMethod": "GET",
+          "methodUrl": "/v3.1/name/{country}",
+          "description": "국가조회API",
+          "loggingEnabled": true,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [
+            {
+              "id": "edb4561a-2004-401a-9ac4-962f2aa78ab5",
+              "name": "country",
+              "location": "path",
+              "dataType": "string",
+              "defaultValue": "",
+              "required": true,
+              "visible": true,
+              "description": ""
+            }
+          ],
+          "outputParameters": [
+            {
+              "id": "92409f51-a81f-464a-8174-a7e99d0aab15",
+              "name": "root",
+              "path": "root",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "044f733c-73a6-4b46-8b2b-6389d28d7628",
+              "name": "ok",
+              "path": "root.ok",
+              "dataType": "boolean",
+              "description": ""
+            },
+            {
+              "id": "b66e746d-18ae-4359-8728-b47d665db336",
+              "name": "status",
+              "path": "root.status",
+              "dataType": "number",
+              "description": ""
+            },
+            {
+              "id": "681d8a67-5100-460b-9a0f-448c964748c1",
+              "name": "statusText",
+              "path": "root.statusText",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "66be5a32-55ab-469c-90d0-cd76fac70993",
+              "name": "elapsedMs",
+              "path": "root.elapsedMs",
+              "dataType": "number",
+              "description": ""
+            },
+            {
+              "id": "0e191386-9ff3-48f2-8fd8-a79a9f8ae173",
+              "name": "body",
+              "path": "root.body",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "0b61f37c-6076-4d90-9b9d-460f01155d77",
+              "name": "tld",
+              "path": "root.body[].tld",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "2d07b036-24b5-4a37-add9-530791345fc4",
+              "name": "cca2",
+              "path": "root.body[].cca2",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "b89bd470-1128-4a29-b06e-f4d7756572dd",
+              "name": "ccn3",
+              "path": "root.body[].ccn3",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "a2bb12f4-0017-4a8c-9fac-01d2b6aac7a3",
+              "name": "cca3",
+              "path": "root.body[].cca3",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "e28f1155-c3ef-4962-a169-cdb0f5971f89",
+              "name": "cioc",
+              "path": "root.body[].cioc",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "b14b12b6-b2f8-4505-a4d0-3e2703887382",
+              "name": "independent",
+              "path": "root.body[].independent",
+              "dataType": "boolean",
+              "description": ""
+            },
+            {
+              "id": "8684afda-3937-4311-aaea-febe4ce13c48",
+              "name": "status",
+              "path": "root.body[].status",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "e2583d23-b434-44d9-bd48-bcb8391b4a9b",
+              "name": "unMember",
+              "path": "root.body[].unMember",
+              "dataType": "boolean",
+              "description": ""
+            },
+            {
+              "id": "b9763f3d-94e1-4457-adee-213ba0cce607",
+              "name": "idd",
+              "path": "root.body[].idd",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "acc707e9-bd9c-4ca0-84d1-699b5f364801",
+              "name": "root",
+              "path": "root.body[].idd.root",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "4709c6fb-ce2f-402e-8cdf-73c276cd71a6",
+              "name": "suffixes",
+              "path": "root.body[].idd.suffixes",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "cebfe82d-b483-4336-b659-7947eaf85430",
+              "name": "capital",
+              "path": "root.body[].capital",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "76933dbc-763b-4046-aada-c2504180a84d",
+              "name": "altSpellings",
+              "path": "root.body[].altSpellings",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "a7bf9220-7446-4057-b96e-fed00c801b64",
+              "name": "region",
+              "path": "root.body[].region",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "9c4885ec-26fe-4b47-8f6e-06cf31bf04c3",
+              "name": "subregion",
+              "path": "root.body[].subregion",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "7116e50d-7593-40b1-8525-bf2aed11e006",
+              "name": "landlocked",
+              "path": "root.body[].landlocked",
+              "dataType": "boolean",
+              "description": ""
+            },
+            {
+              "id": "27d4dd04-c4ed-4bdb-80fb-bd1fe518826d",
+              "name": "borders",
+              "path": "root.body[].borders",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "b1af7cdd-56a1-40ef-9302-ce08dbe6da64",
+              "name": "area",
+              "path": "root.body[].area",
+              "dataType": "number",
+              "description": ""
+            },
+            {
+              "id": "c7dd892a-026e-4d5c-807f-142e617d6cb3",
+              "name": "maps",
+              "path": "root.body[].maps",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "4a58569e-2411-46c6-b320-ba47c1396714",
+              "name": "googleMaps",
+              "path": "root.body[].maps.googleMaps",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "c7bfcbe5-58f4-4ad3-b40e-20ec2a8232af",
+              "name": "openStreetMaps",
+              "path": "root.body[].maps.openStreetMaps",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "5aca0edd-9e26-4f68-beed-15bd81e03f15",
+              "name": "population",
+              "path": "root.body[].population",
+              "dataType": "number",
+              "description": ""
+            },
+            {
+              "id": "d1174fc5-2134-45ee-befb-820feacc780e",
+              "name": "fifa",
+              "path": "root.body[].fifa",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "289e422c-3b1a-4584-b73d-88a85f88c92c",
+              "name": "car",
+              "path": "root.body[].car",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "366fe141-144a-42b1-a8fa-b901c3f8a8c5",
+              "name": "signs",
+              "path": "root.body[].car.signs",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "9eaf18ca-1a78-40e0-a063-a5e126171e18",
+              "name": "side",
+              "path": "root.body[].car.side",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "2377ad8f-3d8d-4c1a-a977-03306ceda7dc",
+              "name": "timezones",
+              "path": "root.body[].timezones",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "bf1ce3e7-8b92-4d73-a2b8-37027d3977f5",
+              "name": "continents",
+              "path": "root.body[].continents",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "84b4c091-7f81-4aa4-bad7-59995f34aad7",
+              "name": "flag",
+              "path": "root.body[].flag",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "7112be30-6fce-4fd9-ab31-3817d5ab8d6e",
+              "name": "name",
+              "path": "root.body[].name",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "cad71552-be73-460a-bead-dd5b68ec7de2",
+              "name": "common",
+              "path": "root.body[].name.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "6d691ea3-ca10-45ff-8821-2fad707acdfc",
+              "name": "official",
+              "path": "root.body[].name.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "b52b686c-4a8e-477e-83cf-b516b8292044",
+              "name": "nativeName",
+              "path": "root.body[].name.nativeName",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "917c46e0-71b0-4ce7-a221-cd8f54c8fe47",
+              "name": "kor",
+              "path": "root.body[].name.nativeName.kor",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "d2ca8f15-a3be-4b39-b962-5f051b6f690e",
+              "name": "official",
+              "path": "root.body[].name.nativeName.kor.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "4a78c1fa-c02a-4d7d-a2f2-45e53ce6e815",
+              "name": "common",
+              "path": "root.body[].name.nativeName.kor.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "e6211a9b-bbc1-4939-866f-0282f8666407",
+              "name": "currencies",
+              "path": "root.body[].currencies",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "2b711589-1b77-408f-9fab-3fa6423d9750",
+              "name": "KPW",
+              "path": "root.body[].currencies.KPW",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "ba5aa70d-68ae-43dc-86c7-951a1c695962",
+              "name": "symbol",
+              "path": "root.body[].currencies.KPW.symbol",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "5b762754-7dec-4074-9531-1061c26e6964",
+              "name": "name",
+              "path": "root.body[].currencies.KPW.name",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "4787ac69-68ee-43c6-bc4f-1d69314b4af2",
+              "name": "languages",
+              "path": "root.body[].languages",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "124a02b3-dc11-4c23-b360-1742a5112b23",
+              "name": "kor",
+              "path": "root.body[].languages.kor",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "c9a4b3a8-ff59-4f6f-8ccf-b812a2460ac0",
+              "name": "latlng",
+              "path": "root.body[].latlng",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "c7d3e7ff-1ebc-4765-b294-79ac6cce6e1d",
+              "name": "demonyms",
+              "path": "root.body[].demonyms",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "3de3dcc3-0a09-4e17-b709-259255b69280",
+              "name": "eng",
+              "path": "root.body[].demonyms.eng",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "f0d13a08-e5d3-41c4-9848-cc6be44a3bd0",
+              "name": "f",
+              "path": "root.body[].demonyms.eng.f",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "ee8318a2-99cc-444b-98bf-8b569407d1be",
+              "name": "m",
+              "path": "root.body[].demonyms.eng.m",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "0e386006-aadb-4d73-b64f-ef6f6115d31f",
+              "name": "fra",
+              "path": "root.body[].demonyms.fra",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "051f084f-c7d5-440e-8f07-e9ad646e337b",
+              "name": "f",
+              "path": "root.body[].demonyms.fra.f",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "4ef7f900-95c4-4d9f-a759-17bbcf3fac40",
+              "name": "m",
+              "path": "root.body[].demonyms.fra.m",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "1bc05cd6-0c92-4b8b-b4f1-8f496ef50980",
+              "name": "translations",
+              "path": "root.body[].translations",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "c1ca2dad-befb-4437-a84e-5f5082b378cb",
+              "name": "ara",
+              "path": "root.body[].translations.ara",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "6321a536-3fda-4a49-9325-cf09c1829c45",
+              "name": "official",
+              "path": "root.body[].translations.ara.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "26843912-291c-46c2-a6d6-2dea3dcdb3fc",
+              "name": "common",
+              "path": "root.body[].translations.ara.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "0d971d96-1ece-42e4-a0d0-0df13ea9406a",
+              "name": "bre",
+              "path": "root.body[].translations.bre",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "6266d2a7-094b-483c-bfea-404d9ed3bf43",
+              "name": "official",
+              "path": "root.body[].translations.bre.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "ddc64b15-f328-4394-a12c-4f8db25c0516",
+              "name": "common",
+              "path": "root.body[].translations.bre.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "73417e6e-f61a-425b-a20c-3f44acd552b7",
+              "name": "ces",
+              "path": "root.body[].translations.ces",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "a97829ee-6260-4346-8831-03a01700af18",
+              "name": "official",
+              "path": "root.body[].translations.ces.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "e4834651-a2ef-4dee-b54f-3e4fb71b5c8e",
+              "name": "common",
+              "path": "root.body[].translations.ces.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "161eca7c-a298-4610-8a3b-f25e990eb98d",
+              "name": "cym",
+              "path": "root.body[].translations.cym",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "5b8abd30-ce65-4e26-94eb-158feb103b68",
+              "name": "official",
+              "path": "root.body[].translations.cym.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "3e1ac357-4f82-454d-a37e-912284f14e5c",
+              "name": "common",
+              "path": "root.body[].translations.cym.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "8653547a-a564-4561-af52-36f914b79648",
+              "name": "deu",
+              "path": "root.body[].translations.deu",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "11f5f226-407f-4c81-8d44-860f08e9474b",
+              "name": "official",
+              "path": "root.body[].translations.deu.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "8e67a154-c128-4c22-83e3-fdcae63ba3fc",
+              "name": "common",
+              "path": "root.body[].translations.deu.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "f2147d71-b4fa-4732-80c5-767a924e51e8",
+              "name": "est",
+              "path": "root.body[].translations.est",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "da4a646e-571c-41a8-baac-7ab32ad3953b",
+              "name": "official",
+              "path": "root.body[].translations.est.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "c9d83db5-6e4e-4277-b0f5-fb9059472f70",
+              "name": "common",
+              "path": "root.body[].translations.est.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "df007900-b9eb-4edc-8b75-95c10cfa0551",
+              "name": "fin",
+              "path": "root.body[].translations.fin",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "a8d4b143-c371-49f4-80f3-e5f53329f5d7",
+              "name": "official",
+              "path": "root.body[].translations.fin.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "fc85bd51-b929-437c-8a11-cc7d5b89253a",
+              "name": "common",
+              "path": "root.body[].translations.fin.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "5fadd336-7238-4440-811e-a98422f3db3a",
+              "name": "fra",
+              "path": "root.body[].translations.fra",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "9acf795d-fb7c-4f90-97dd-1165fa173225",
+              "name": "official",
+              "path": "root.body[].translations.fra.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "45cf3b8a-6647-436b-b1fc-45c318879a6d",
+              "name": "common",
+              "path": "root.body[].translations.fra.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "acd1275c-a610-4076-994c-9f6cb61949fa",
+              "name": "hrv",
+              "path": "root.body[].translations.hrv",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "4d5e6546-403e-488e-9054-e031af0ddb23",
+              "name": "official",
+              "path": "root.body[].translations.hrv.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "da7d1283-2101-4a8f-a2eb-98ac475f5028",
+              "name": "common",
+              "path": "root.body[].translations.hrv.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "60949624-b44b-4d8e-9c55-4abe17e5a724",
+              "name": "hun",
+              "path": "root.body[].translations.hun",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "591aafda-8850-45e2-8f1b-50042ba240a0",
+              "name": "official",
+              "path": "root.body[].translations.hun.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "80ae6bec-0716-4da7-a504-1b202d9828d8",
+              "name": "common",
+              "path": "root.body[].translations.hun.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "74132286-fad6-4b11-b9b3-a16e002074e9",
+              "name": "ind",
+              "path": "root.body[].translations.ind",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "f7f51f07-8dfe-4367-8e14-5cd477d8f8ae",
+              "name": "official",
+              "path": "root.body[].translations.ind.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "45ef7bf6-e053-40cd-b41d-59ee100eb0d0",
+              "name": "common",
+              "path": "root.body[].translations.ind.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "984c645e-a314-49cb-b210-3965b5f7cf28",
+              "name": "ita",
+              "path": "root.body[].translations.ita",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "c94fc422-1760-4417-91cf-916981b3da8a",
+              "name": "official",
+              "path": "root.body[].translations.ita.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "5f4ae19c-1e20-4ffc-99d2-e4de54a1d735",
+              "name": "common",
+              "path": "root.body[].translations.ita.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "f5e592b5-ec38-455a-b595-b1685917b94f",
+              "name": "jpn",
+              "path": "root.body[].translations.jpn",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "d139ba10-33e0-490a-bb74-8f72b09143e4",
+              "name": "official",
+              "path": "root.body[].translations.jpn.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "41b06835-c3af-4867-8b71-e691f3e0daa1",
+              "name": "common",
+              "path": "root.body[].translations.jpn.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "bc356ffc-5205-44ca-8e57-5669078d0099",
+              "name": "kor",
+              "path": "root.body[].translations.kor",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "111020be-810f-417d-9131-0003ed2ae084",
+              "name": "official",
+              "path": "root.body[].translations.kor.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "04d91266-f8a9-49bc-881e-3c33e8f775e1",
+              "name": "common",
+              "path": "root.body[].translations.kor.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "f0d2ed1e-6ccf-4401-be18-198075c03ec3",
+              "name": "nld",
+              "path": "root.body[].translations.nld",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "b4a9d60c-2cf8-4427-aed4-37e428d16173",
+              "name": "official",
+              "path": "root.body[].translations.nld.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "d729a47d-76cc-43c6-b93d-8b41694caa91",
+              "name": "common",
+              "path": "root.body[].translations.nld.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "d029f3fe-c018-4805-bb97-9f44646f3675",
+              "name": "per",
+              "path": "root.body[].translations.per",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "6d362c36-bc00-44b5-b7ed-6ae56105c98e",
+              "name": "official",
+              "path": "root.body[].translations.per.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "015a9e06-90a3-4301-9e96-0ee3f0cbeb2a",
+              "name": "common",
+              "path": "root.body[].translations.per.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "483c11c1-2274-40b1-83e2-097c81d5cbcc",
+              "name": "pol",
+              "path": "root.body[].translations.pol",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "a589b356-ce97-4636-a37e-9e14b6fc2c00",
+              "name": "official",
+              "path": "root.body[].translations.pol.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "bf93a423-2f71-4f77-b54f-84adf51e3e6e",
+              "name": "common",
+              "path": "root.body[].translations.pol.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "38d7ae84-9fa1-4812-86f7-aaabfa71aafa",
+              "name": "por",
+              "path": "root.body[].translations.por",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "a5e729c1-f858-4f1a-98a5-f00a9acff1dc",
+              "name": "official",
+              "path": "root.body[].translations.por.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "db8c1151-5d33-486a-b6ad-f0114cb067d1",
+              "name": "common",
+              "path": "root.body[].translations.por.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "8b890c3b-c01f-49f2-b1c5-01b015f3ebb8",
+              "name": "rus",
+              "path": "root.body[].translations.rus",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "04ebe793-1341-4bb2-a941-dc4afb53c7d1",
+              "name": "official",
+              "path": "root.body[].translations.rus.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "aa3373a5-7be3-456a-904d-c43d53cddbb6",
+              "name": "common",
+              "path": "root.body[].translations.rus.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "89ff6217-fff5-4c4f-96d5-062bf2c3abb5",
+              "name": "slk",
+              "path": "root.body[].translations.slk",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "63c75498-9c54-4807-bc7e-c329d5b09e9c",
+              "name": "official",
+              "path": "root.body[].translations.slk.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "e3af718e-b92f-4c17-bf74-0c2bc6be4461",
+              "name": "common",
+              "path": "root.body[].translations.slk.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "188f225a-fd30-4639-9d8d-d89381bc5f35",
+              "name": "spa",
+              "path": "root.body[].translations.spa",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "af890992-1dba-42c9-8bf2-51606a874deb",
+              "name": "official",
+              "path": "root.body[].translations.spa.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "527f15c6-d6d2-4071-9cd3-0f3fdb76d05b",
+              "name": "common",
+              "path": "root.body[].translations.spa.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "8e63e995-d047-4a87-99f1-dd731fdaa70f",
+              "name": "srp",
+              "path": "root.body[].translations.srp",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "b57226c8-8af7-4cfa-ac39-6682c3bf3d34",
+              "name": "official",
+              "path": "root.body[].translations.srp.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "dea07364-334c-4087-a81d-b853510b54ad",
+              "name": "common",
+              "path": "root.body[].translations.srp.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "098eb65c-f054-44f0-93f4-f238204c9104",
+              "name": "swe",
+              "path": "root.body[].translations.swe",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "60964edc-b9c7-4f73-a90d-1fd830bdccef",
+              "name": "official",
+              "path": "root.body[].translations.swe.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "57fda278-6d53-49eb-b2cf-8b311fc87635",
+              "name": "common",
+              "path": "root.body[].translations.swe.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "baf54f63-3681-45ff-bf00-fe091a1c40eb",
+              "name": "tur",
+              "path": "root.body[].translations.tur",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "6d482611-a2b8-425a-a45e-9885ff86f977",
+              "name": "official",
+              "path": "root.body[].translations.tur.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "4dd27d86-6826-4646-8579-a56cf8e84468",
+              "name": "common",
+              "path": "root.body[].translations.tur.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "7d1a6732-c8f4-46b1-b1d0-c5af8b31cdcd",
+              "name": "urd",
+              "path": "root.body[].translations.urd",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "0d4bf1d8-8638-4245-8306-c696cdf4901e",
+              "name": "official",
+              "path": "root.body[].translations.urd.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "7ef2e5e0-3392-44ac-8ea2-511e6ebca9b3",
+              "name": "common",
+              "path": "root.body[].translations.urd.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "69fff7c8-95e0-4720-ab69-b2cf02077960",
+              "name": "zho",
+              "path": "root.body[].translations.zho",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "43f3dba7-732d-4a30-b4e9-d3ceab8b3b51",
+              "name": "official",
+              "path": "root.body[].translations.zho.official",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "c932e7ff-e299-4df7-85d3-a7f2b2e31cdb",
+              "name": "common",
+              "path": "root.body[].translations.zho.common",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "dbbb676a-e153-43f8-8d5e-b242d40f1619",
+              "name": "flags",
+              "path": "root.body[].flags",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "9eaedaca-2a7a-4db6-b278-081db1de5ddf",
+              "name": "png",
+              "path": "root.body[].flags.png",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "60403a21-796e-4c71-b5ce-76372001c0fa",
+              "name": "svg",
+              "path": "root.body[].flags.svg",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "3681239d-c752-49cb-babe-bd22cc21ae09",
+              "name": "alt",
+              "path": "root.body[].flags.alt",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "7376d454-c372-4742-afeb-ac1ed03ded1b",
+              "name": "coatOfArms",
+              "path": "root.body[].coatOfArms",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "b98a3935-eb4c-4054-b9a7-631027f358aa",
+              "name": "png",
+              "path": "root.body[].coatOfArms.png",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "18879796-79d4-4484-aaec-3fea0c2e48bc",
+              "name": "svg",
+              "path": "root.body[].coatOfArms.svg",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "525d5119-3553-48ed-8d2f-ee0ef41520ba",
+              "name": "startOfWeek",
+              "path": "root.body[].startOfWeek",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "ff6b00ad-560b-457f-a59b-adac3109dc5c",
+              "name": "capitalInfo",
+              "path": "root.body[].capitalInfo",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "317fe552-557e-4c0d-8776-35d7817774e9",
+              "name": "latlng",
+              "path": "root.body[].capitalInfo.latlng",
+              "dataType": "array",
+              "description": ""
+            },
+            {
+              "id": "af54ec0e-85a2-4330-87ae-09eb9b3465a2",
+              "name": "postalCode",
+              "path": "root.body[].postalCode",
+              "dataType": "object",
+              "description": ""
+            },
+            {
+              "id": "11becadf-818c-4962-b3d7-02f76cc7fca6",
+              "name": "format",
+              "path": "root.body[].postalCode.format",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "94900267-a057-43f6-b26c-b25115eb633e",
+              "name": "regex",
+              "path": "root.body[].postalCode.regex",
+              "dataType": "string",
+              "description": ""
+            },
+            {
+              "id": "7af5fd77-2669-47be-9433-057c0801ef68",
+              "name": "text",
+              "path": "root.text",
+              "dataType": "string",
+              "description": ""
+            }
+          ],
+          "outputSample": ""
+        }
+      ],
+      "updatedAt": "2026-05-03T08:27:22.598Z",
+      "updatedBy": "aidot_1"
+    },
+    {
+      "id": "e58c2d2d-44f0-4d9d-97cc-59b2ef3eaf81",
+      "type": "api",
+      "apiKey": "e5c66bb7-beed-4228-b181-aab415f0d13f",
+      "name": "JSONPlaceholder 사용자",
+      "baseUrl": "https://api.jsonplaceholder.dev",
+      "description": "사용자조회API",
+      "category": "API",
+      "methods": [
+        {
+          "id": "ec834409-4116-4c14-9aaf-51d34acfeec8",
+          "name": "Method 1",
+          "httpMethod": "GET",
+          "methodUrl": "/users/{userId}",
+          "description": "사용자조회API",
+          "loggingEnabled": true,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [
+            {
+              "id": "6aaec812-e7d6-499a-88c0-af56f6ce42fd",
+              "name": "userId",
+              "location": "path",
+              "dataType": "number",
+              "defaultValue": "",
+              "required": true,
+              "visible": true,
+              "description": ""
+            }
+          ],
+          "outputParameters": [],
+          "outputSample": ""
+        }
+      ],
+      "updatedAt": "2026-05-03T08:05:32.553Z",
+      "updatedBy": "aidot_1"
+    },
+    {
+      "id": "32ce6d30-4aef-4347-a2a2-a2ffa9870c55",
+      "type": "api",
+      "apiKey": "3641054f-9510-44ad-ab36-72795d0b221a",
+      "name": "JSONPlaceholder 할 일",
+      "baseUrl": "https://api.jsonplaceholder.dev",
+      "description": "할일목록API",
+      "category": "API",
+      "methods": [
+        {
+          "id": "19ce83e6-78cd-4515-9532-8d75158bc610",
+          "name": "Method 1",
+          "httpMethod": "GET",
+          "methodUrl": "/todos",
+          "description": "할일목록API",
+          "loggingEnabled": true,
+          "proxyEnabled": true,
+          "transferMode": "sync",
+          "parameters": [],
+          "outputParameters": [],
+          "outputSample": ""
+        }
+      ],
+      "updatedAt": "2026-05-03T07:59:46.522Z",
+      "updatedBy": "aidot_1"
+    }
+  ]
+}

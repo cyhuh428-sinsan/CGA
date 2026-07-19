@@ -1,5 +1,0 @@
-services:
-  studio:
-    environment:
-      CGA_AUTH_HEADER_FALLBACK: "disabled"
-      CGA_STORAGE_DRIVER: "postgres"
