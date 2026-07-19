@@ -1,0 +1,22 @@
+{
+  "name": "@aidot/web",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev --webpack --port 3320",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0 --port 3000"
+  },
+  "dependencies": {
+    "adaptivecards": "^3.0.6",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "6.0.3"
+  }
+}

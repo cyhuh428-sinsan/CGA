@@ -1,0 +1,141 @@
+.cga-dashboard-page {
+  gap: 10px;
+  overflow: auto;
+}
+
+.cga-dashboard-summary {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.cga-dashboard-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cga-dashboard-panel {
+  min-width: 0;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+}
+
+.cga-dashboard-panel > header {
+  min-height: 54px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5ebf2;
+}
+
+.cga-dashboard-panel > header strong,
+.cga-dashboard-panel > header span {
+  display: block;
+}
+
+.cga-dashboard-panel > header strong {
+  color: #0f2238;
+  font-size: 16px;
+}
+
+.cga-dashboard-panel > header span {
+  margin-top: 4px;
+  color: #52657a;
+  font-size: 12px;
+}
+
+.cga-dashboard-metric-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.cga-dashboard-metric {
+  min-height: 72px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  background: #f8fafc;
+}
+
+.cga-dashboard-metric strong {
+  color: #334155;
+  font-size: 12px;
+}
+
+.cga-dashboard-metric span {
+  color: #007d72;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.cga-dashboard-metric.is-review {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.cga-dashboard-metric.is-blocked {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.cga-dashboard-task-list {
+  min-height: 86px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 12px;
+}
+
+.cga-dashboard-task {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+}
+
+.cga-dashboard-task.is-review {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.cga-dashboard-task.is-blocked {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.cga-dashboard-task strong {
+  color: #0f2238;
+  font-size: 14px;
+}
+
+.cga-dashboard-task span {
+  color: #52657a;
+  font-size: 12px;
+}
+
+.cga-dashboard-empty,
+.cga-dashboard-message {
+  padding: 12px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.cga-dashboard-message {
+  border: 1px solid #d9e2ec;
+  background: #f8fafc;
+}
+
+.cga-dashboard-message.is-error {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #b42318;
+}
+
+@media (max-width: 1100px) {
+  .cga-dashboard-summary,
+  .cga-dashboard-two-column {
+    grid-template-columns: 1fr;
+  }
+}

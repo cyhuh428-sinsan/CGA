@@ -1,5 +1,0 @@
-.git
-node_modules
-npm-debug.log
-docs/design-assets/*.png
-*.tmp

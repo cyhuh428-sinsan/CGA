@@ -1,0 +1,1 @@
+"""Aidot vector worker."""
