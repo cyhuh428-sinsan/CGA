@@ -24,6 +24,7 @@ def test_web_server_uses_cga_internal_api_variable_only() -> None:
         source = _read(relative_path)
         assert "CGA_INTERNAL_API_BASE_URL" in source, relative_path
         assert "AIDOT_INTERNAL_API_BASE_URL" not in source, relative_path
+        assert "NEXT_PUBLIC_API_BASE_URL" not in source, relative_path
 
 
 def test_compose_exposes_cga_api_only_through_proxy_network() -> None:
@@ -56,3 +57,12 @@ def test_api_uses_cga_service_branding() -> None:
     assert '"message": "CGA API is running."' in main_source
     assert 'app_name: str = "CGA API"' in config_source
     assert "/cga" in config_source
+
+
+def test_api_container_runs_migrations_and_safe_bootstrap() -> None:
+    dockerfile = _read("apps/api/Dockerfile")
+    start_script = _read("apps/api/scripts/start-cga-api.sh")
+    assert 'CMD ["/workspace/apps/api/scripts/start-cga-api.sh"]' in dockerfile
+    assert "alembic upgrade head" in start_script
+    assert "python -m app.db.bootstrap" in start_script
+    assert "exec python -m uvicorn" in start_script
