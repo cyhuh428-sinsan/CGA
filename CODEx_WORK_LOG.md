@@ -179,3 +179,22 @@
 - 커밋:
   - `b1b83e3 test: add CGA signed license contract`
   - `690ce09 feat: add CGA signed license verification`
+
+## 13. 2026-07-20 봇 UUID 단일 식별자 전환
+
+- 봇 식별자는 `bots.id` UUID만 사용하도록 확정했다.
+- 활성 모델, 봇 조회·검색·삭제, 인증 화면 복원, 즐겨찾기, 채널·웹챗, 봇 허브, API 응답, 내보내기 패키지, Web 타입에서 과거 slug 계약을 제거했다.
+- 봇 목록 검색은 이름 부분검색 또는 정확한 UUID 검색만 지원한다.
+- 봇스테이션의 봇 식별값은 UUID로 고정하고 화면에서 읽기 전용으로 변경했다.
+- 신규 Alembic `20260720_0027`은 기존 봇스테이션 식별값, 사용자 즐겨찾기, 마지막 봇 화면을 UUID로 변환한 뒤 `bots.slug` 컬럼을 제거한다.
+- 적용된 과거 마이그레이션 `20260424_0002`는 이력 보존을 위해 수정하지 않았다.
+- 검증:
+  - UUID 직접 관련 테스트 127개 통과, 기존 LLM 픽스처 실패 2개 제외.
+  - 전체 API 테스트 497개 통과, 4개 건너뜀, 기존 범위 실패 5개.
+  - Web 운영 빌드 및 TypeScript 통과.
+  - 격리 PostgreSQL 16에서 전체 Alembic 업그레이드, `0027 -> 0026 -> 0027` 검증 통과.
+- 커밋:
+  - `2206ca1 test: require UUID-only bot identity`
+  - `ee9e472 refactor: use UUID as the only bot identity`
+- 현재 브랜치: `feature/remove-bot-slug`.
+- 아직 원격 push, Daon DB 마이그레이션, 컨테이너 재배포, 실제 브라우저 검증은 수행하지 않았다.
