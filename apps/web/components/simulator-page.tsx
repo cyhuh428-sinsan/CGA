@@ -3376,7 +3376,6 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
   const [runtime, setRuntime] = useState<RuntimeState | null>(null);
   const [analyses, setAnalyses] = useState<SimulatorAnalysis[]>([]);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
-  const [analysisOpen, setAnalysisOpen] = useState(false);
   const [loadedScript, setLoadedScript] = useState<LoadedScript | null>(null);
   const [scriptViewerOpen, setScriptViewerOpen] = useState(false);
   const [floatingButtonsVisible, setFloatingButtonsVisible] = useState(true);
@@ -6331,9 +6330,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       ) : null}
 
       <div
-        className={`simulator-workbench${embedded ? " simulator-workbench--popup" : ""}${
-          analysisOpen ? " simulator-workbench--debug-open" : ""
-        }`}
+        className={`simulator-workbench${embedded ? " simulator-workbench--popup" : ""} simulator-workbench--debug-open`}
       >
         <div className="simulator-stage simulator-stage--flat simulator-stage--messenger">
           <div className="simulator-window simulator-window--messenger">
@@ -6694,27 +6691,13 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               </button>
             </form>
 
-            <button
-              type="button"
-              className={`simulator-footer simulator-footer--button${analysisOpen ? " is-active" : ""}`}
-              onClick={() => {
-                setSelectedAnalysisId(selectedAnalysis?.id ?? analyses.at(-1)?.id ?? null);
-                setAnalysisOpen((current) => !current);
-              }}
-            >
-              분석 데이터 보기
-            </button>
           </div>
         </div>
 
-        {analysisOpen ? (
         <aside className="simulator-analysis" aria-label="분석 데이터">
           <div className="simulator-analysis__header">
             <strong>분석 데이터</strong>
             <span>Runtime / Variables / Trace</span>
-            <button type="button" className="simulator-analysis__close" onClick={() => setAnalysisOpen(false)} aria-label="분석 데이터 닫기">
-              ×
-            </button>
           </div>
           {selectedAnalysis ? (
             <>
@@ -6757,7 +6740,6 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             <div className="simulator-empty">대화를 진행하면 분석 데이터가 표시됩니다.</div>
           )}
         </aside>
-        ) : null}
       </div>
 
       {scriptViewerOpen && loadedScript ? (
