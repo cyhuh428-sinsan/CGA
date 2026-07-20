@@ -2,7 +2,6 @@
   "schema_version": "aidot-version-package-v1",
   "bot": {
     "id": "175c6113-ac68-4ca8-9e1b-70391581944e",
-    "slug": "brity-봇",
     "name": "Aidot 봇"
   },
   "version": {
