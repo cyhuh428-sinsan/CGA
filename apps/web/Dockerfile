@@ -1,6 +1,6 @@
 FROM node:22-alpine AS dependencies
 
-WORKDIR /workspace
+WORKDIR /workspace/apps/web
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -9,13 +9,14 @@ RUN npm ci
 
 FROM node:22-alpine AS application
 
-WORKDIR /workspace
+WORKDIR /workspace/apps/web
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=dependencies /workspace/node_modules ./node_modules
+COPY --from=dependencies /workspace/apps/web/node_modules ./node_modules
 COPY apps/web ./
+COPY packages/shared /workspace/packages/shared
 
 RUN npm run build
 
