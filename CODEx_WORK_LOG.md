@@ -149,3 +149,18 @@
   - `05aa356 fix: restore web production build`
   - `7b61884 feat: add independent CGA API deployment`
 - 아직 Daon DB 마이그레이션, 컨테이너 교체, NPM SSL, 실제 브라우저 Network 검증은 수행하지 않았다.
+
+## 11. 2026-07-20 Daon 배포 결과
+
+- 배포 브랜치/커밋: `feature/daon-test-deployment` / `0c8e704`
+- DB 백업: `backups/cga-before-independent-api-20260720-170742.sql.gz`
+- Alembic 최종 버전: `20260715_0026`
+- 기존 `cga_state_store` 13건이 유지됐고 public 테이블은 총 26개다.
+- `cga-api`는 내부 `8000/tcp`만 노출하고 healthy 상태다.
+- `cga-studio`는 호스트 `4173`에 게시되고 healthy 상태다.
+- `https://cga.sinsan.kr/health/ready`는 200이다.
+- `http://api-cga.sinsan.kr/`은 `CGA API is running`을 반환하고, 비인증 `/api/v1/auth/me`는 401이다.
+- 실제 브라우저 로그인 요청이 same-origin `/api/v1/auth/login`을 거쳐 Studio에서 API로 전달되는 것을 서버 로그로 확인했다.
+- `master/master` 로그인은 401이므로 로그인 이후 메뉴 검증은 운영 관리자 자격증명 확인 후 수행해야 한다.
+- `api-cga.sinsan.kr`은 HTTP로 동작하지만 HTTPS 인증서가 아직 없어 NPM에서 Let's Encrypt와 Force SSL을 적용해야 한다.
+- 진단 중 기존 DB 자격증명 일부가 도구 출력에 노출됐다. 공유 계정 영향 범위를 확인한 뒤 별도 자격증명 회전이 필요하다.

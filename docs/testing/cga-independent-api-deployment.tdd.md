@@ -15,10 +15,12 @@
 
 ## GREEN
 
-- 직접 관련 테스트: `21 passed in 2.58s`
+- 직접 관련 테스트: 최종 `23 passed in 2.53s`
 - Web 운영 빌드: Next.js 컴파일, TypeScript, 정적 페이지 46개 생성 통과.
 - Daon 서버 Docker Compose 파서: `docker compose -f - config --quiet` 통과.
 - 전체 API 테스트: 485 통과, 4 건너뜀, 기존 범위 5 실패.
+- 격리 Web 이미지에서 공유 패키지 누락을 재현하고 Dockerfile 회귀 테스트를 추가했다.
+- URL 인코딩된 DB 비밀번호와 Alembic 보간 충돌을 재현하고 `%` 이스케이프 회귀 테스트를 추가했다.
 
 ## 기존 실패 분리
 
@@ -26,9 +28,12 @@
 - 기존 라우트 경로 회귀 테스트 3건
 - 이번 배포 변경 파일과 직접 겹치지 않으며 별도 수정 대상으로 남긴다.
 
-## 미완료 검증
+## Daon 배포 검증
 
-- Daon 서버 DB 백업 및 Alembic 적용
-- 운영 유사 Docker 기동과 컨테이너 헬스체크
-- NPM `api-cga.sinsan.kr -> cga-api:8000` SSL 적용
-- 실제 브라우저 Network에서 same-origin 요청 확인
+- 배포 전 `cga` DB 압축 백업과 gzip 무결성 확인 완료.
+- Alembic `20260715_0026` 적용, 기존 `cga_state_store` 13건 보존 확인.
+- `cga-api`와 `cga-studio` 컨테이너 healthy 확인.
+- 외부 HTTP `api-cga.sinsan.kr`에서 CGA API 응답과 비인증 요청 401 확인.
+- 실제 브라우저 로그인 요청이 same-origin `/api/v1/auth/login`을 거쳐 API에 전달되는 것 확인.
+- 기존 `master/master`는 401이므로 로그인 이후 화면 검증은 운영 관리자 자격증명 확인 후 남아 있다.
+- `api-cga.sinsan.kr`의 Let's Encrypt/Force SSL 적용은 남아 있다.
