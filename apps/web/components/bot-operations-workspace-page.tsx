@@ -19,8 +19,25 @@ import {
   fetchStudioBots,
   fetchStudioWorkspaceContext,
   type StudioBotApiItem,
+  type StudioBotVersionApiItem,
   type StudioWorkspaceContextApiResponse,
 } from "@/lib/studio-bots-api";
+import { SimulatorFloatingLauncher } from "@/components/simulator-page";
+
+type WorkspaceEvaluationRow = {
+  id: string;
+  utterance: string;
+  expectedName: string;
+  predictedName: string;
+  score: number;
+  correct: boolean;
+};
+
+type WorkspaceCollision = {
+  expectedName: string;
+  predictedName: string;
+  count: number;
+};
 
 function asRecord(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -33,6 +50,53 @@ function readText(record: Record<string, unknown>, keys: string[]) {
     if (typeof value === "number") return String(value);
   }
   return "-";
+}
+
+function readWorkspaceEvaluationRows(version: StudioBotVersionApiItem | null): WorkspaceEvaluationRow[] {
+  const versionJson = asRecord(version?.version_json);
+  const systemConfig = asRecord(versionJson.system_config);
+  const evaluation = asRecord(systemConfig.nlu_evaluation);
+  const snapshot = asRecord(evaluation.snapshot);
+  const rows = Array.isArray(snapshot.training_rows) ? snapshot.training_rows : [];
+
+  return rows.flatMap((value, index) => {
+    const row = asRecord(value);
+    if (
+      typeof row.utterance !== "string"
+      || typeof row.score !== "number"
+      || typeof row.correct !== "boolean"
+    ) {
+      return [];
+    }
+    return [{
+      id: typeof row.id === "string" ? row.id : String(index + 1),
+      utterance: row.utterance,
+      expectedName: readText(row, ["expectedName", "expected_name"]),
+      predictedName: readText(row, ["predictedName", "predicted_name"]),
+      score: row.score,
+      correct: row.correct,
+    }];
+  });
+}
+
+function buildWorkspaceCollisions(rows: WorkspaceEvaluationRow[]): WorkspaceCollision[] {
+  const pairs = new Map<string, WorkspaceCollision>();
+  rows.forEach((row) => {
+    if (row.correct || row.predictedName === "-" || row.expectedName === row.predictedName) return;
+    const key = `${row.expectedName}::${row.predictedName}`;
+    const current = pairs.get(key) ?? {
+      expectedName: row.expectedName,
+      predictedName: row.predictedName,
+      count: 0,
+    };
+    pairs.set(key, { ...current, count: current.count + 1 });
+  });
+  return Array.from(pairs.values()).sort((left, right) => right.count - left.count).slice(0, 6);
+}
+
+function formatWorkspaceScore(value: number) {
+  const normalized = value <= 1 ? value * 100 : value;
+  return `${Math.max(0, Math.min(100, normalized)).toFixed(2)}%`;
 }
 
 export function BotOperationsWorkspacePage() {
@@ -111,6 +175,19 @@ export function BotOperationsWorkspacePage() {
       };
     });
   }, [selectedVersion]);
+  const evaluationRows = useMemo(
+    () => readWorkspaceEvaluationRows(selectedVersion),
+    [selectedVersion],
+  );
+  const misclassifiedRows = useMemo(
+    () => evaluationRows.filter((row) => !row.correct).slice(0, 10),
+    [evaluationRows],
+  );
+  const lowScoreRows = useMemo(
+    () => evaluationRows.filter((row) => row.score < 70).slice(0, 10),
+    [evaluationRows],
+  );
+  const collisions = useMemo(() => buildWorkspaceCollisions(evaluationRows), [evaluationRows]);
 
   function selectBot(botId: string) {
     if (!bots.some((bot) => bot.id === botId)) return;
@@ -206,22 +283,50 @@ export function BotOperationsWorkspacePage() {
           </div>
         </article>
 
-        <aside className="cga-operation-panel cga-workspace-simulator-panel">
-          <header><div><strong>시뮬레이터 미리보기</strong><span>선택 봇의 대화 흐름을 확인합니다.</span></div></header>
-          <div className="cga-workspace-simulator-card">
-            <div className="cga-workspace-simulator-top">
-              <span className="cga-workspace-simulator-avatar" />
-              <div><strong>{selectedBot?.name || "CGA Bot"}</strong><span>{versionName} / Simulator</span></div>
-            </div>
-            <div className="cga-workspace-simulator-body">
-              <div className="cga-workspace-simulator-bubble">
-                <button type="button">테스트종료</button><button type="button">FORM TITLE</button><button type="button">INPUT</button><button type="button">TEXTAREA</button><button type="button">IMAGE</button>
+        <aside className="cga-workspace-diagnostics" aria-label="평가 진단">
+          <article className="cga-operation-panel cga-workspace-diagnostic-panel">
+            <header><div><strong>오분류 문장</strong></div></header>
+            <div className="cga-workspace-diagnostic-table cga-workspace-diagnostic-table--errors">
+              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>문장</span><span>정답 의도</span><span>예측 의도 / Score</span></div>
+              <div className="cga-workspace-diagnostic-body">
+                {misclassifiedRows.map((row) => (
+                  <div key={row.id} className="cga-workspace-diagnostic-row"><span>{row.utterance}</span><span>{row.expectedName}</span><span className="is-failure">{row.predictedName} / {formatWorkspaceScore(row.score)}</span></div>
+                ))}
+                {misclassifiedRows.length === 0 ? <div className="cga-workspace-diagnostic-empty">오분류 문장이 없습니다.</div> : null}
               </div>
             </div>
-            <div className="cga-workspace-simulator-input"><input placeholder="챗봇과 대화를 진행하세요." /><button type="button">전송</button></div>
-          </div>
+          </article>
+
+          <article className="cga-operation-panel cga-workspace-diagnostic-panel">
+            <header><div><strong>낮은 Score 문장</strong></div></header>
+            <div className="cga-workspace-diagnostic-table cga-workspace-diagnostic-table--low-score">
+              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>문장</span><span>의도</span><span>Score</span></div>
+              <div className="cga-workspace-diagnostic-body">
+                {lowScoreRows.map((row) => (
+                  <div key={row.id} className="cga-workspace-diagnostic-row"><span>{row.utterance}</span><span>{row.expectedName}</span><span>{formatWorkspaceScore(row.score)}</span></div>
+                ))}
+                {lowScoreRows.length === 0 ? <div className="cga-workspace-diagnostic-empty">낮은 Score 문장이 없습니다.</div> : null}
+              </div>
+            </div>
+          </article>
+
+          <article className="cga-operation-panel cga-workspace-diagnostic-panel">
+            <header><div><strong>유사 의도 충돌</strong></div></header>
+            <div className="cga-workspace-diagnostic-table cga-workspace-diagnostic-table--collisions">
+              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>정답 의도</span><span>예측 의도</span><span>건수</span></div>
+              <div className="cga-workspace-diagnostic-body">
+                {collisions.map((item) => (
+                  <div key={`${item.expectedName}-${item.predictedName}`} className="cga-workspace-diagnostic-row"><span>{item.expectedName}</span><span>{item.predictedName}</span><span>{item.count}건</span></div>
+                ))}
+                {collisions.length === 0 ? <div className="cga-workspace-diagnostic-empty">충돌 없음</div> : null}
+              </div>
+            </div>
+          </article>
         </aside>
       </div>
+      {selectedBot && selectedVersion ? (
+        <SimulatorFloatingLauncher botIdOverride={selectedBot.id} versionIdOverride={versionName} />
+      ) : null}
       {message ? <div className="cga-operation-floating-message">{message}</div> : null}
     </section>
   );
