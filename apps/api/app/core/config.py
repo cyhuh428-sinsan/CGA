@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     nlu_training_worker_enabled: bool = True
     nlu_training_worker_interval_seconds: float = 1.0
     nlu_training_worker_error_backoff_seconds: float = 30.0
-    license_public_key: str = ""
+    cga_license_public_key: str = ""
 
     openai_api_key: str = ""
     groq_api_key: str = ""

@@ -962,7 +962,7 @@ def _ensure_assignable_role(current_role_codes: set[str], requested_role_code: s
         )
 
 
-LICENSE_FORMAT = "aidot-license"
+LICENSE_FORMAT = "cga-license"
 LICENSE_SIGNATURE_ALGORITHM = "RS256"
 LICENSE_USAGE_DEFINITIONS = [
     ("users", "사용자"),
@@ -976,7 +976,7 @@ def _canonical_license_payload(payload: dict[str, object]) -> bytes:
 
 
 def _license_public_key_pem() -> str:
-    raw_key = settings.license_public_key.strip()
+    raw_key = settings.cga_license_public_key.strip()
     if not raw_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1057,8 +1057,8 @@ def _verify_license_text(license_text: str) -> dict[str, object]:
     limits = payload.get("limits")
     if not isinstance(license_id, str) or not license_id.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="라이선스 ID가 없습니다.")
-    if product != "Aidot":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Aidot 제품 라이선스가 아닙니다.")
+    if product != "CGA":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CGA 제품 라이선스가 아닙니다.")
     if not isinstance(customer, dict) or not isinstance(customer.get("name"), str) or not customer.get("name"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="라이선스 고객 정보가 없습니다.")
     if not isinstance(limits, dict):
@@ -6610,7 +6610,7 @@ def apply_admin_license(
         existing = AdminLicense(
             organization_id=organization.id,
             license_id=license_id,
-            product=str(license_payload.get("product") or "Aidot"),
+            product=str(license_payload.get("product") or "CGA"),
             customer_name=str(customer.get("name") or ""),
             issued_at_text=license_payload.get("issued_at") if isinstance(license_payload.get("issued_at"), str) else None,
             expires_at_text=license_payload.get("expires_at") if isinstance(license_payload.get("expires_at"), str) else None,
@@ -6622,7 +6622,7 @@ def apply_admin_license(
         )
         db.add(existing)
     else:
-        existing.product = str(license_payload.get("product") or "Aidot")
+        existing.product = str(license_payload.get("product") or "CGA")
         existing.customer_name = str(customer.get("name") or "")
         existing.issued_at_text = license_payload.get("issued_at") if isinstance(license_payload.get("issued_at"), str) else None
         existing.expires_at_text = license_payload.get("expires_at") if isinstance(license_payload.get("expires_at"), str) else None
