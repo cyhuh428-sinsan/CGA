@@ -202,3 +202,16 @@
 - Daon 최종 상태: Alembic `20260720_0027`, 봇 7개 보존, `bots.slug` 컬럼 0개, API·Studio healthy.
 - 실제 로그인 브라우저에서 UUID 봇 목록/경로, 축약된 구성 화면, 비활성 `LLM Engine` 고정을 확인했다.
 - 봇스테이션 검증 중 연결 버튼의 즉시 저장 동작으로 상태가 1회 변경됐으나 감사로그 직전 데이터로 조건부 원상복구했고, 미연결 상태와 기존 수정시각 복원을 확인했다.
+
+## 14. 2026-07-20 봇 테스트 분석 패널 고정 및 봇 평가 요약 제거
+
+- 봇 테스트의 `analysisOpen` 상태와 분석 패널 열기·닫기 버튼을 제거했다.
+- 분석 데이터 패널과 디버그 레이아웃은 항상 렌더링한다.
+- 봇 평가에서는 공용 작업 헤더를 유지하고 상단 요약 통계만 렌더링하지 않는다.
+- UI 계약 테스트 5개와 Web 운영 빌드가 통과했다.
+- 운영 브라우저에서 분석 패널 1개, 열기·닫기 버튼 0개, 평가 요약 통계 0개를 확인했다.
+- Daon Studio는 `4646be7`로 배포됐고 Studio·API가 healthy다.
+- 커밋:
+  - `21ae9a6 test: require fixed simulator analysis and compact evaluation`
+  - `4646be7 feat: keep simulator analysis open and compact evaluation`
+- 현재 브랜치: `feature/fixed-simulator-analysis`.
