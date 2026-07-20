@@ -16,6 +16,7 @@ type BotWorkspaceHeaderProps = {
   version: StudioBotVersionApiItem;
   versions: StudioBotVersionApiItem[];
   summaryCards: SummaryStatItem[];
+  compact?: boolean;
   className?: string;
   disabledReason?: string;
   onError: (message: string) => void;
@@ -91,6 +92,7 @@ export function BotWorkspaceHeader({
   version,
   versions,
   summaryCards,
+  compact = false,
   className = "",
   disabledReason,
   onError,
@@ -120,28 +122,34 @@ export function BotWorkspaceHeader({
               versions={versions}
             />
             <span className="manual-main__status">{botTypeLabel(bot)}</span>
-            <ManualMainHeaderActions
-              botId={botId}
-              currentVersionId={currentVersionId}
-              onError={onError}
-            />
+            {compact ? null : (
+              <ManualMainHeaderActions
+                botId={botId}
+                currentVersionId={currentVersionId}
+                onError={onError}
+              />
+            )}
           </div>
 
           <p className="manual-main__subtext manual-main__engine-meta">{getEngineSummary(version, bot)}</p>
-          <div className="manual-main__meta-row">
-            <NluTrainingButton
-              aiConfig={aiConfig}
-              botId={bot.id}
-              versionId={version.id}
-              statusText={trainingStatusText}
-              disabledReason={disabledReason}
-              onTrained={onTrained}
-            />
-          </div>
+          {compact ? null : (
+            <div className="manual-main__meta-row">
+              <NluTrainingButton
+                aiConfig={aiConfig}
+                botId={bot.id}
+                versionId={version.id}
+                statusText={trainingStatusText}
+                disabledReason={disabledReason}
+                onTrained={onTrained}
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      <SummaryStatGrid items={summaryCards} />
+      {compact ? null : (
+        <SummaryStatGrid items={summaryCards} />
+      )}
     </header>
   );
 }

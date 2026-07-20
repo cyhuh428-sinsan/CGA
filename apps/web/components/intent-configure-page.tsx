@@ -11,9 +11,7 @@ import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { getBotVersionSettings, normalizeConfigurationScoring, type ConfigurationScoringConfig } from "@/lib/bot-settings";
 import { applyUpdatedVersionToBot, getNextDialogNo, getVersionDialogs, withEnsuredDialogFlowGraph, withUpdatedDialogs } from "@/lib/dialog-assets";
 import {
-  DEFAULT_NLU_TYPE,
   NLU_MODEL_OPTIONS_BY_TYPE,
-  NLU_TYPE_OPTIONS,
   defaultNluModelForType,
   getNluModelDescription,
   getNluModelEmbedding,
@@ -21,7 +19,6 @@ import {
   getNluTypeLabel,
   isSemanticNluType,
   normalizeNluModel,
-  normalizeNluType,
   type NluModelKey,
   type NluType,
 } from "@/lib/nlu-options";
@@ -2336,8 +2333,8 @@ export function IntentConfigurePage() {
   const [clusters, setClusters] = useState<IntentCluster[]>([]);
   const [selectedClusterIds, setSelectedClusterIds] = useState<string[]>([]);
   const [mlSeedIntentText, setMlSeedIntentText] = useState("");
-  const [configureNluType, setConfigureNluType] = useState<NluType>(DEFAULT_NLU_TYPE);
-  const [configureNluModel, setConfigureNluModel] = useState<NluModelKey>(defaultNluModelForType(DEFAULT_NLU_TYPE));
+  const configureNluType: NluType = "llm";
+  const [configureNluModel, setConfigureNluModel] = useState<NluModelKey>(defaultNluModelForType("llm"));
   const [configureLlmProvider, setConfigureLlmProvider] = useState<LlmProvider>(DEFAULT_LLM_PROVIDER);
   const [configureLlmModel, setConfigureLlmModel] = useState<LlmModelKey>(normalizeLlmModel(DEFAULT_LLM_PROVIDER, undefined));
   const [dictionarySuggestions, setDictionarySuggestions] = useState<DictionaryRegistrationSuggestion[]>([]);
@@ -2500,10 +2497,8 @@ export function IntentConfigurePage() {
   }, [effectiveVersion?.id]);
 
   useEffect(() => {
-    const nextType = normalizeNluType(typeof aiConfig.nlu_type === "string" ? aiConfig.nlu_type : undefined);
-    setConfigureNluType(nextType);
-    setConfigureNluModel(normalizeNluModel(nextType, typeof aiConfig.nlu_model === "string" ? aiConfig.nlu_model : undefined));
-  }, [effectiveVersion?.id, aiConfig.nlu_model, aiConfig.nlu_type]);
+    setConfigureNluModel(normalizeNluModel("llm", typeof aiConfig.nlu_model === "string" ? aiConfig.nlu_model : undefined));
+  }, [effectiveVersion?.id, aiConfig.nlu_model]);
 
   useEffect(() => {
     const nextProvider = normalizeLlmProvider(typeof aiConfig.llm_provider === "string" ? aiConfig.llm_provider : undefined);
@@ -2536,16 +2531,6 @@ export function IntentConfigurePage() {
     }, 900);
     return () => window.clearInterval(intervalId);
   }, [ragConfiguring, ragConfigureStep]);
-
-  function handleConfigureNluTypeChange(value: string) {
-    const nextType = normalizeNluType(value);
-    setConfigureNluType(nextType);
-    setConfigureNluModel(defaultNluModelForType(nextType));
-    setDictionarySuggestions([]);
-    setSelectedDictionarySuggestionIds([]);
-    setSelectedClusterIds([]);
-    setMlTestResult(null);
-  }
 
   function handleConfigureNluModelChange(value: string) {
     setConfigureNluModel(normalizeNluModel(configureNluType, value));
@@ -3221,16 +3206,8 @@ export function IntentConfigurePage() {
           <div className="intent-configure__engine-row">
             <label>
               <span>구성 엔진</span>
-              <select
-                value={configureNluType}
-                disabled={operatingVersion}
-                onChange={(event) => handleConfigureNluTypeChange(event.target.value)}
-              >
-                {NLU_TYPE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+              <select value="llm" disabled>
+                <option value="llm">LLM Engine</option>
               </select>
             </label>
             <label>
