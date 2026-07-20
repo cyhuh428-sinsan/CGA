@@ -1,6 +1,11 @@
 import { redirectToLogin } from "@/lib/auth";
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8320";
+const DEFAULT_SERVER_API_BASE_URL = "http://localhost:8320";
+
+export const API_BASE_URL =
+  typeof window === "undefined"
+    ? process.env.CGA_INTERNAL_API_BASE_URL ?? DEFAULT_SERVER_API_BASE_URL
+    : "";
 const API_SLOW_REQUEST_THRESHOLD_MS = Number(process.env.NEXT_PUBLIC_API_SLOW_REQUEST_THRESHOLD_MS ?? "1000");
 
 type ApiEnvelope<T> = {
@@ -91,6 +96,9 @@ export function resolveApiAssetPublicUrl(path: string) {
     return path;
   }
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (typeof window !== "undefined") {
+    return normalizedPath;
+  }
   return `${API_BASE_URL.replace(/\/+$/, "")}${normalizedPath}`;
 }
 
@@ -118,7 +126,7 @@ export async function apiRequest<T>(
   const elapsedMs = Math.round((performance.now() - startedAt) * 100) / 100;
   const serverElapsedMs = response.headers.get("X-Response-Time-Ms");
   if (API_SLOW_REQUEST_THRESHOLD_MS > 0 && elapsedMs >= API_SLOW_REQUEST_THRESHOLD_MS) {
-    console.warn("[Aidot API slow]", {
+    console.warn("[CGA API slow]", {
       path,
       method: init.method ?? "GET",
       status: response.status,
@@ -173,7 +181,7 @@ export async function apiSameOriginRequest<T>(
   const elapsedMs = Math.round((performance.now() - startedAt) * 100) / 100;
   const serverElapsedMs = response.headers.get("X-Response-Time-Ms");
   if (API_SLOW_REQUEST_THRESHOLD_MS > 0 && elapsedMs >= API_SLOW_REQUEST_THRESHOLD_MS) {
-    console.warn("[Aidot API slow]", {
+    console.warn("[CGA API slow]", {
       path,
       method: init.method ?? "GET",
       status: response.status,

@@ -1,22 +1,24 @@
-FROM node:22-alpine
+FROM node:22-alpine AS dependencies
 
 WORKDIR /workspace
 
-ARG NEXT_PUBLIC_API_BASE_URL
-ARG NEXT_PUBLIC_APP_NAME
+ENV NEXT_TELEMETRY_DISABLED=1
 
-ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
-ENV NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME}
-
-COPY package.json package-lock.json ./
-COPY apps/web/package.json apps/web/package.json
-
+COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci
 
-COPY . .
+FROM node:22-alpine AS application
 
-RUN npm run build:web
+WORKDIR /workspace
 
-EXPOSE 3000
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-CMD ["npm", "run", "start", "--workspace", "@aidot/web"]
+COPY --from=dependencies /workspace/node_modules ./node_modules
+COPY apps/web ./
+
+RUN npm run build
+
+EXPOSE 4173
+
+CMD ["node", "node_modules/next/dist/bin/next", "start", "--hostname", "0.0.0.0", "--port", "4173"]

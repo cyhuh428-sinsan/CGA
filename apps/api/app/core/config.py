@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,7 +12,7 @@ ROOT_DIR = Path(__file__).resolve().parents[4]
 
 class Settings(BaseSettings):
     app_env: str = "development"
-    app_name: str = "Aidot API"
+    app_name: str = "CGA API"
     log_level: str = "INFO"
     api_slow_request_threshold_ms: float = 1000.0
     db_slow_query_threshold_ms: float = 700.0
@@ -62,7 +63,7 @@ class Settings(BaseSettings):
     aidot_cerebras_base_url: str = ""
     aidot_openrouter_base_url: str = ""
 
-    database_url: str = "postgresql+psycopg://postgres:postgres@127.0.0.1:5432/aidot"
+    database_url: str = "postgresql+psycopg://postgres:postgres@127.0.0.1:5432/cga"
     db_connect_timeout_seconds: int = 1
     nlu_model_storage_path: str = "data/nlu_models"
     aidot_vector_worker_base_url: str = "http://localhost:8350"
@@ -81,6 +82,24 @@ class Settings(BaseSettings):
         extra="ignore",
         case_sensitive=False,
     )
+
+    @model_validator(mode="after")
+    def validate_production_credentials(self) -> "Settings":
+        if self.app_env.strip().lower() != "production":
+            return self
+
+        insecure_fields: list[str] = []
+        if self.jwt_secret == "change-me" or len(self.jwt_secret) < 32:
+            insecure_fields.append("JWT_SECRET")
+        if self.initial_admin_password == "master" or len(self.initial_admin_password) < 12:
+            insecure_fields.append("INITIAL_ADMIN_PASSWORD")
+        if "postgres:postgres@" in self.sqlalchemy_database_url:
+            insecure_fields.append("DATABASE_URL")
+
+        if insecure_fields:
+            joined_fields = ", ".join(insecure_fields)
+            raise ValueError(f"Production credentials must be configured securely: {joined_fields}")
+        return self
 
     @property
     def sqlalchemy_database_url(self) -> str:
