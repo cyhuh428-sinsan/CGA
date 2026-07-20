@@ -51,6 +51,12 @@ def test_docker_context_excludes_secrets_and_host_dependencies() -> None:
         assert required_pattern in dockerignore
 
 
+def test_web_container_preserves_shared_package_layout() -> None:
+    dockerfile = _read("apps/web/Dockerfile")
+    assert "WORKDIR /workspace/apps/web" in dockerfile
+    assert "COPY packages/shared /workspace/packages/shared" in dockerfile
+
+
 def test_api_uses_cga_service_branding() -> None:
     main_source = _read("apps/api/app/main.py")
     config_source = _read("apps/api/app/core/config.py")
