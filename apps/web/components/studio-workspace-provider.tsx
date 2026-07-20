@@ -1036,6 +1036,11 @@ function StudioWorkspaceShell({
         versions={versions}
         summaryCards={summaryCards}
         compact={activeSection === "configure"}
+        hideSummary={
+          activeSection === "intents"
+          || activeSection === "entities"
+          || activeSection === "dictionary"
+        }
         onError={onHeaderError}
         onTrained={() => void onRefresh()}
       />
