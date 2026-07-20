@@ -38,7 +38,6 @@ const adminGroups = [
   {
     title: "현황 조회",
     items: [
-      { href: "/admin/operations-dashboard", label: "운영 대시보드" },
       { href: "/admin/audit-logs", label: "운영/시스템 로그 조회" },
       { href: "/admin/bot-status", label: "봇 현황 조회" },
       { href: "/admin/training-history", label: "학습 이력 조회" },
@@ -88,7 +87,7 @@ export function AdminConsoleLayout({ children }: AdminConsoleLayoutProps) {
       return;
     }
     const isFullAdmin = hasAdminRole(session.user.roles);
-    const operationsHrefs = adminGroups.find((group) => group.title === "현황 조회")?.items.map((item) => item.href) ?? [];
+    const operationsHrefs = ["/admin/operations-dashboard", ...(adminGroups.find((group) => group.title === "현황 조회")?.items.map((item) => item.href) ?? [])];
     if (!isFullAdmin && !operationsHrefs.includes(pathname)) {
       router.replace("/admin/operations-dashboard");
       return;

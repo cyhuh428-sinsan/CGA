@@ -50,7 +50,6 @@ const adminNavigationGroups = [
   {
     title: "현황 조회",
     items: [
-      { href: "/admin/operations-dashboard", label: "운영 대시보드" },
       { href: "/admin/audit-logs", label: "운영/시스템 로그 조회" },
       { href: "/admin/bot-status", label: "봇 현황 조회" },
       { href: "/admin/training-history", label: "학습 이력 조회" },
@@ -212,8 +211,10 @@ export function StudioRail() {
     ...(canUseAdmin ? [{ id: "admin" as const, label: "Admin", icon: "admin" }] : []),
   ];
   const isApiPath = pathname.startsWith("/studio/apis") || pathname.includes("/apis");
-  const isAdminPath = pathname.startsWith("/admin");
+  const isDbOperationsDashboardPath = pathname === "/admin/operations-dashboard";
+  const isAdminPath = pathname.startsWith("/admin") && !isDbOperationsDashboardPath;
   const isOperationPath =
+    isDbOperationsDashboardPath ||
     pathname === "/studio/bots" ||
     pathname === "/studio/workspace" ||
     pathname === "/studio/operations-dashboard" ||
@@ -230,7 +231,7 @@ export function StudioRail() {
   const operationLinks = [
     { code: "BM", label: "봇 관리", href: "/studio/bots" },
     { code: "BOT", label: "봇 작업공간", href: "/studio/workspace" },
-    { code: "DB", label: "운영 대시보드", href: "/studio/operations-dashboard" },
+    { code: "DB", label: "DB 운영 대시보드", href: "/admin/operations-dashboard" },
     { code: "RT", label: "재학습", href: hasBotContext ? `${currentBotBasePath}/retraining` : botContextFallback },
     { code: "AN", label: "분석", href: hasBotContext ? `${currentBotBasePath}/analysis` : botContextFallback },
   ];
