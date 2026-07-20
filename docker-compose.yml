@@ -14,6 +14,7 @@ services:
       DATABASE_URL: ${CGA_DATABASE_URL:?CGA_DATABASE_URL is required}
       JWT_SECRET: ${CGA_JWT_SECRET:?CGA_JWT_SECRET is required}
       INITIAL_ADMIN_PASSWORD: ${CGA_INITIAL_ADMIN_PASSWORD:?CGA_INITIAL_ADMIN_PASSWORD is required}
+      CGA_LICENSE_PUBLIC_KEY: ${CGA_LICENSE_PUBLIC_KEY:?CGA_LICENSE_PUBLIC_KEY is required}
       CORS_ORIGINS: https://cga.sinsan.kr,https://api-cga.sinsan.kr
       CACHE_ENABLED: "false"
     expose:
