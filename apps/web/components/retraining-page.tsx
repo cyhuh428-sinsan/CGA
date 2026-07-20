@@ -4,7 +4,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
-import { SimulatorFloatingLauncher } from "@/components/simulator-page";
 import { SortHeaderLabel } from "@/components/sort-header-label";
 import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
@@ -1159,8 +1158,6 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
           </div>
         </div>
       ) : null}
-
-      <SimulatorFloatingLauncher />
     </section>
   );
 }

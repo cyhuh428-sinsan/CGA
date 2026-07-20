@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
-import { SimulatorFloatingLauncher } from "@/components/simulator-page";
 import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
@@ -1259,8 +1258,6 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
           </div>
         </>
       )}
-
-      <SimulatorFloatingLauncher />
       {showSelectedDateHistory ? (
         <div className="analysis-conversation-backdrop" role="presentation" onMouseDown={() => setShowSelectedDateHistory(false)}>
           <section

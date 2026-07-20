@@ -1041,6 +1041,8 @@ function StudioWorkspaceShell({
           || activeSection === "entities"
           || activeSection === "dictionary"
           || activeSection === "evaluation"
+          || activeSection === "retraining"
+          || activeSection === "analysis"
         }
         onError={onHeaderError}
         onTrained={() => void onRefresh()}
