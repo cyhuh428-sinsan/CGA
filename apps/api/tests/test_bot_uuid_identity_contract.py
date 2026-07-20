@@ -35,6 +35,7 @@ def test_bot_identity_contract_has_no_active_slug_usage() -> None:
         "apps/web/lib/studio-bots-api.ts",
         "apps/web/components/botstation-settings-page.tsx",
         "packages/shared/src/channel.ts",
+        "compat-samples/Aidot 봇_v1.json",
     )
 
     for relative_path in active_sources:
