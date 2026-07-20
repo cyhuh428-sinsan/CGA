@@ -197,4 +197,8 @@
   - `2206ca1 test: require UUID-only bot identity`
   - `ee9e472 refactor: use UUID as the only bot identity`
 - 현재 브랜치: `feature/remove-bot-slug`.
-- 아직 원격 push, Daon DB 마이그레이션, 컨테이너 재배포, 실제 브라우저 검증은 수행하지 않았다.
+- 원격 `feature/remove-bot-slug` push와 Daon 배포를 완료했다.
+- 배포 전 백업: `backups/cga-before-bot-uuid-20260720-224117.sql.gz`.
+- Daon 최종 상태: Alembic `20260720_0027`, 봇 7개 보존, `bots.slug` 컬럼 0개, API·Studio healthy.
+- 실제 로그인 브라우저에서 UUID 봇 목록/경로, 축약된 구성 화면, 비활성 `LLM Engine` 고정을 확인했다.
+- 봇스테이션 검증 중 연결 버튼의 즉시 저장 동작으로 상태가 1회 변경됐으나 감사로그 직전 데이터로 조건부 원상복구했고, 미연결 상태와 기존 수정시각 복원을 확인했다.
