@@ -73,3 +73,8 @@ def test_api_container_runs_migrations_and_safe_bootstrap() -> None:
     assert "alembic upgrade head" in start_script
     assert "python -m app.db.bootstrap" in start_script
     assert "exec python -m uvicorn" in start_script
+
+
+def test_alembic_escapes_percent_encoded_database_urls() -> None:
+    env_source = _read("apps/api/alembic/env.py")
+    assert 'settings.sqlalchemy_database_url.replace("%", "%%")' in env_source
