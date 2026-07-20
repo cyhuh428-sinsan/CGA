@@ -6778,7 +6778,17 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
   return <section className="workspace-stack">{content}</section>;
 }
 
-export function SimulatorFloatingLauncher({ startDialogId = "" }: { startDialogId?: string }) {
+type SimulatorFloatingLauncherProps = {
+  startDialogId?: string;
+  botIdOverride?: string;
+  versionIdOverride?: string;
+};
+
+export function SimulatorFloatingLauncher({
+  startDialogId = "",
+  botIdOverride = "",
+  versionIdOverride = "",
+}: SimulatorFloatingLauncherProps) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -6800,7 +6810,13 @@ export function SimulatorFloatingLauncher({ startDialogId = "" }: { startDialogI
       {open ? (
         <div className="simulator-popup-backdrop" role="presentation">
           <div className="simulator-popup-shell" role="dialog" aria-modal="true" aria-label="대화 시뮬레이터">
-            <SimulatorPage embedded startDialogId={startDialogId} onClose={() => setOpen(false)} />
+            <SimulatorPage
+              embedded
+              startDialogId={startDialogId}
+              botIdOverride={botIdOverride}
+              versionIdOverride={versionIdOverride}
+              onClose={() => setOpen(false)}
+            />
           </div>
         </div>
       ) : null}

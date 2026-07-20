@@ -23398,104 +23398,87 @@ textarea {
 }
 
 .cga-workspace-items-panel,
-.cga-workspace-simulator-panel {
+.cga-workspace-diagnostics {
   min-height: 0;
 }
 
-.cga-workspace-simulator-card {
+.cga-workspace-diagnostics {
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cga-workspace-diagnostic-panel {
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  background: #f8fbff;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
 
-.cga-workspace-simulator-top {
-  min-height: 58px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  border-bottom: 1px solid #d9e2ec;
-  background: #466d98;
-  color: #fff;
+.cga-workspace-diagnostic-panel > header {
+  min-height: 38px;
+  padding: 7px 10px;
 }
 
-.cga-workspace-simulator-top strong,
-.cga-workspace-simulator-top span {
-  display: block;
-}
-
-.cga-workspace-simulator-top span {
-  color: #dce8f6;
-  font-size: 10px;
-}
-
-.cga-workspace-simulator-avatar {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #d8e8ff, #6a8db8 58%, #466d98);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.45);
-}
-
-.cga-workspace-simulator-body {
+.cga-workspace-diagnostic-table {
   min-height: 0;
-  padding: 18px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.cga-workspace-diagnostic-body {
+  min-height: 0;
   overflow: auto;
-  background: #fff;
 }
 
-.cga-workspace-simulator-bubble {
-  width: 180px;
+.cga-workspace-diagnostic-row {
+  min-height: 30px;
   display: grid;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid #d7e0ec;
+  grid-template-columns: var(--diagnostic-cols);
+  align-items: center;
+  border-bottom: 1px solid #e5ebf2;
   background: #fff;
-}
-
-.cga-workspace-simulator-bubble button {
-  min-height: 34px;
-  border: 1px solid #cbd8e7;
-  border-radius: 8px;
-  background: #fff;
-  color: #1f6df2;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.cga-workspace-simulator-bubble button:first-child {
-  background: #256adf;
-  color: #fff;
-}
-
-.cga-workspace-simulator-input {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 64px;
-  gap: 8px;
-  padding: 10px;
-  border-top: 1px solid #d9e2ec;
-  background: #f3f7fb;
-}
-
-.cga-workspace-simulator-input input,
-.cga-workspace-simulator-input button {
-  min-width: 0;
-  min-height: 36px;
-  border: 1px solid #cbd8e7;
-  background: #fff;
+  color: #24364f;
   font-size: 10px;
 }
 
-.cga-workspace-simulator-input input {
-  padding: 0 9px;
+.cga-workspace-diagnostic-row > span {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cga-workspace-simulator-input button {
-  background: #253452;
-  color: #fff;
+.cga-workspace-diagnostic-row--head {
+  min-height: 30px;
+  background: #f4f7fb;
+  color: #0f2238;
   font-weight: 700;
+}
+
+.cga-workspace-diagnostic-table--errors,
+.cga-workspace-diagnostic-table--low-score {
+  --diagnostic-cols: minmax(0, 1.3fr) minmax(0, .8fr) minmax(0, 1fr);
+}
+
+.cga-workspace-diagnostic-table--collisions {
+  --diagnostic-cols: minmax(0, 1fr) minmax(0, 1fr) 54px;
+}
+
+.cga-workspace-diagnostic-row .is-failure {
+  color: #c43a45;
+}
+
+.cga-workspace-diagnostic-empty {
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  color: #9aa9bb;
+  font-size: 10px;
+  text-align: center;
 }
 
 .cga-operation-floating-message {
