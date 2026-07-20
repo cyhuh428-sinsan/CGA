@@ -32,13 +32,15 @@ class UserPreferenceUpdateRequest(BaseModel):
 
         normalized: list[str] = []
         for item in value:
-            slug = item.strip()
-            if not slug:
+            bot_id = item.strip()
+            if not bot_id:
                 continue
-            if not LOGIN_ID_PATTERN.match(slug.replace("-", "a")) and not re.match(r"^[a-z0-9가-힣-]{1,150}$", slug):
-                raise ValueError("즐겨찾기 봇 식별자가 올바르지 않습니다.")
-            if slug not in normalized:
-                normalized.append(slug)
+            try:
+                normalized_bot_id = str(UUID(bot_id))
+            except ValueError as error:
+                raise ValueError("즐겨찾기 봇 식별자는 UUID 형식이어야 합니다.") from error
+            if normalized_bot_id not in normalized:
+                normalized.append(normalized_bot_id)
 
         return normalized[:20]
 

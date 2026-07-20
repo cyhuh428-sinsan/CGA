@@ -11,7 +11,6 @@ export type AidotInitialChannelMessage = {
 export type AidotChannelBot = {
   id: string;
   name: string;
-  slug: string;
   groupId?: string;
   groupName: string | null;
   activeVersionId: string;
@@ -122,6 +121,5 @@ export async function callAidotChannelApi<T>(serverUrl: string, path: string, in
   }
   return payload.data;
 }
-
 
 

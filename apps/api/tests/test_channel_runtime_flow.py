@@ -44,6 +44,9 @@ from app.api.routes.channels import KakaoWebhookRequest, _apply_active_version_t
 from app.services.scenario_validation import scenario_validation_from_version
 from app.services.vector_search import VectorIntentMatch
 
+
+TEST_BOT_ID = "11111111-1111-1111-1111-111111111111"
+
 if original_session_module is None:
     sys.modules.pop("app.db.session", None)
 else:
@@ -57,9 +60,8 @@ else:
 class _FakeBot:
     def __init__(self, data_json: dict[str, object] | None = None) -> None:
         self.data_json = data_json or {"nlu_type": "ml", "nlu_model": "deep_learning_lite", "answer_mode": "fixed"}
-        self.id = "bot-1"
+        self.id = TEST_BOT_ID
         self.name = "테스트봇"
-        self.slug = "demo-bot"
 
 
 class _FakeVersion:
@@ -396,7 +398,7 @@ def test_kakao_webhook_returns_runtime_ready_payload(monkeypatch) -> None:
         return {
             "data": {
                 "queued": False,
-                "bot": {"slug": "aidot-bot"},
+                "bot": {"id": TEST_BOT_ID},
                 "activeVersion": {"name": "v1"},
                 "queueEvent": {"id": "queue-1"},
                 "userMessage": {"id": "user-1", "text": "테스트"},
@@ -1213,8 +1215,8 @@ def test_botstation_connection_requires_enabled_matching_channel() -> None:
                         "connected": True,
                         "enabled": True,
                         "channels": [
-                            {"channelCode": "WEBCHAT", "enabled": True, "botIdentifier": "demo-bot"},
-                            {"channelCode": "KAKAO", "enabled": False, "botIdentifier": "demo-bot"},
+                            {"channelCode": "WEBCHAT", "enabled": True, "botIdentifier": TEST_BOT_ID},
+                            {"channelCode": "KAKAO", "enabled": False, "botIdentifier": TEST_BOT_ID},
                         ],
                     }
                 }
@@ -1240,7 +1242,7 @@ def test_botstation_connection_rejects_mismatched_identifier() -> None:
                         "connected": True,
                         "enabled": True,
                         "channels": [
-                            {"channelCode": "WEBCHAT", "enabled": True, "botIdentifier": "other-bot"},
+                            {"channelCode": "WEBCHAT", "enabled": True, "botIdentifier": "22222222-2222-2222-2222-222222222222"},
                         ],
                     }
                 }
@@ -1262,9 +1264,9 @@ def test_initial_runtime_state_uses_snake_case_system_variables() -> None:
     state = _initial_runtime_state_for_version(bot, version, "webchat")
     variables = _as_variables(state)
 
-    assert variables["$_bot_id"] == "bot-1"
+    assert variables["$_bot_id"] == TEST_BOT_ID
     assert variables["$_bot_name"] == "테스트봇"
-    assert variables["$_bot_hub_id"] == "bot-1"
+    assert variables["$_bot_hub_id"] == TEST_BOT_ID
     assert variables["$_bot_hub_name"] == "테스트봇"
     assert variables["$_channel_id"] == "WEBCHAT"
     assert variables["$_dialog_id"] == "dialog-1"

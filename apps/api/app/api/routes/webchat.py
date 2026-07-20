@@ -119,7 +119,7 @@ def _webchat_botstation_connection(bot: Bot, version: BotVersion) -> dict[str, A
         if item.get("enabled") is not True:
             return None
         identifier = str(item.get("botIdentifier") or "").strip()
-        if identifier and identifier not in {str(bot.id), bot.slug}:
+        if identifier and identifier != str(bot.id):
             return None
         return item
     return None
@@ -501,7 +501,6 @@ def _serialize_bootstrap(bot: Bot, version: BotVersion, group: Group | None) -> 
         "bot": {
             "id": str(bot.id),
             "name": bot.name,
-            "slug": bot.slug,
             "groupId": str(bot.group_id),
             "groupName": group.name if group else None,
             "activeVersionId": str(version.id),
@@ -561,7 +560,7 @@ def create_webchat_room_message(
         request,
         {
             "roomId": room_id,
-            "bot": {"id": str(bot.id), "name": bot.name, "slug": bot.slug},
+            "bot": {"id": str(bot.id), "name": bot.name},
             "activeVersion": {"id": str(version.id), "name": version.name, "versionNo": version.version_no},
             "userMessage": {
                 "participantId": payload.participant_id or "visitor",

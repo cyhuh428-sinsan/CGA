@@ -19,7 +19,6 @@ class Bot(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     organization_id: Mapped[UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
     group_id: Mapped[UUID] = mapped_column(ForeignKey("groups.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
-    slug: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
     data_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
