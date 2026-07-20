@@ -202,3 +202,18 @@
 - Daon 최종 상태: Alembic `20260720_0027`, 봇 7개 보존, `bots.slug` 컬럼 0개, API·Studio healthy.
 - 실제 로그인 브라우저에서 UUID 봇 목록/경로, 축약된 구성 화면, 비활성 `LLM Engine` 고정을 확인했다.
 - 봇스테이션 검증 중 연결 버튼의 즉시 저장 동작으로 상태가 1회 변경됐으나 감사로그 직전 데이터로 조건부 원상복구했고, 미연결 상태와 기존 수정시각 복원을 확인했다.
+
+## 14. 2026-07-21 DB 운영 대시보드 메뉴 이동
+
+- Admin 현황 조회의 운영 대시보드 메뉴 항목을 제거했다.
+- 운영 메뉴의 항목을 `DB 운영 대시보드`로 변경하고 `/admin/operations-dashboard`에 연결했다.
+- 대상 경로에서는 운영 메뉴가 활성화되고 Admin 메뉴는 비활성화된다.
+- 메뉴에서 빠진 뒤에도 운영 권한 사용자가 기존 대시보드에 접근할 수 있도록 허용 경로를 유지했다.
+- 기존 `/studio/operations-dashboard` 직접 경로와 대시보드/API 코드는 변경하지 않았다.
+- 관련 UI 계약 테스트 9개와 Web 운영 빌드가 통과했다.
+- 운영 브라우저에서 Admin 메뉴 부재, 운영 링크 클릭 이동, 운영 메뉴 활성 상태를 확인했다.
+- Daon Studio는 `9fdb29d`로 배포됐고 Studio·API가 healthy다.
+- 커밋:
+  - `b6eed1e test: require DB operations dashboard navigation`
+  - `9fdb29d feat: move operations dashboard entry to operations menu`
+- 현재 브랜치: `feature/route-db-operations-dashboard`.
