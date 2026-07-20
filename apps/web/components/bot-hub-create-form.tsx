@@ -19,6 +19,29 @@ const PROFILE_OPTIONS: Array<{ key: ProfileKey; label: string; color: string }> 
   { key: "outline", label: "테두리 프로필", color: "#ffffff" },
 ];
 
+const BOT_HUB_CREATE_STYLES = [
+  ".hub-create { width: min(620px, 100%); padding: 28px; border: 1px solid #d7e0eb; background: #fff; }",
+  "section, label { display: block; margin: 0 0 24px; }",
+  "h1 { margin: 0 0 22px; color: #34465f; font-size: 22px; }",
+  "strong { display: block; margin-bottom: 9px; color: #43536a; font-size: 14px; }",
+  "em { color: #d84949; font-style: normal; }",
+  "input:not([type=radio]), select, textarea { box-sizing: border-box; width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #cbd7e5; border-radius: 0; background: #fff; color: #26364d; font: inherit; }",
+  "textarea { min-height: 82px; resize: vertical; }",
+  ".type { display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; color: #40516a; font-size: 14px; }",
+  ".disabled-mode { display: inline-block; padding: 8px 12px; color: #99a5b5; background: #f3f5f8; font-size: 13px; }",
+  ".profiles { display: flex; align-items: center; gap: 14px; margin-top: 10px; }",
+  ".profile, .upload { width: 58px; height: 58px; overflow: hidden; border: 1px solid #d7e0eb; border-radius: 50%; cursor: pointer; }",
+  ".profile.selected { outline: 3px solid #2d82cb; outline-offset: 3px; }",
+  ".upload { display: grid; place-items: center; color: #fff; background: #8a95a3; font-size: 11px; }",
+  ".upload img { width: 100%; height: 100%; object-fit: cover; }",
+  "small { display: block; margin-top: 6px; color: #8592a4; font-size: 12px; }",
+  "i { display: block; margin-top: 4px; color: #8592a4; text-align: right; font-size: 12px; font-style: normal; }",
+  ".error { color: #b72f38; font-size: 14px; }",
+  "footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }",
+  "footer button { min-width: 96px; min-height: 42px; border: 1px solid #bcc9d9; background: #fff; color: #40516a; font: inherit; cursor: pointer; }",
+  "footer button[type=submit] { border-color: #2f4f78; background: #2f4f78; color: #fff; }",
+].join("\n");
+
 function readImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -156,29 +179,7 @@ export function BotHubCreateForm() {
         <button type="submit" disabled={isSubmitting}>{isSubmitting ? "생성 중" : "확인"}</button>
       </footer>
 
-      <style jsx>{[
-        ".hub-create { width: min(620px, 100%); padding: 28px; border: 1px solid #d7e0eb; background: #fff; }",
-        "section, label { display: block; margin: 0 0 24px; }",
-        "h1 { margin: 0 0 22px; color: #34465f; font-size: 22px; }",
-        "strong { display: block; margin-bottom: 9px; color: #43536a; font-size: 14px; }",
-        "em { color: #d84949; font-style: normal; }",
-        "input:not([type=radio]), select, textarea { box-sizing: border-box; width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #cbd7e5; border-radius: 0; background: #fff; color: #26364d; font: inherit; }",
-        "textarea { min-height: 82px; resize: vertical; }",
-        ".type { display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; color: #40516a; font-size: 14px; }",
-        ".disabled-mode { display: inline-block; padding: 8px 12px; color: #99a5b5; background: #f3f5f8; font-size: 13px; }",
-        ".profiles { display: flex; align-items: center; gap: 14px; margin-top: 10px; }",
-        ".profile, .upload { width: 58px; height: 58px; overflow: hidden; border: 1px solid #d7e0eb; border-radius: 50%; cursor: pointer; }",
-        ".profile.selected { outline: 3px solid #2d82cb; outline-offset: 3px; }",
-        ".upload { display: grid; place-items: center; color: #fff; background: #8a95a3; font-size: 11px; }",
-        ".upload img { width: 100%; height: 100%; object-fit: cover; }",
-        "small { display: block; margin-top: 6px; color: #8592a4; font-size: 12px; }",
-        "i { display: block; margin-top: 4px; color: #8592a4; text-align: right; font-size: 12px; font-style: normal; }",
-        ".error { color: #b72f38; font-size: 14px; }",
-        "footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }",
-        "footer button { min-width: 96px; min-height: 42px; border: 1px solid #bcc9d9; background: #fff; color: #40516a; font: inherit; cursor: pointer; }",
-        "footer button[type=submit] { border-color: #2f4f78; background: #2f4f78; color: #fff; }",
-      ].join("\\n")}</style>
+      <style jsx>{BOT_HUB_CREATE_STYLES}</style>
     </form>
   );
 }
-
