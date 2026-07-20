@@ -41,7 +41,7 @@ def _fake_request() -> SimpleNamespace:
 
 def test_resolve_bot_id_supports_bot_id(monkeypatch: pytest.MonkeyPatch) -> None:
     bot_id = uuid4()
-    bot = SimpleNamespace(id=bot_id, slug="test-bot", name="테스트봇")
+    bot = SimpleNamespace(id=bot_id, name="테스트봇")
     monkeypatch.setattr(am, "SessionLocal", lambda: _FakeSession())
     monkeypatch.setattr(
         am,

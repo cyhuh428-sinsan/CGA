@@ -62,7 +62,6 @@ export type StudioBotApiItem = {
   group_code: string | null;
   group_name: string | null;
   name: string;
-  slug: string;
   description: string | null;
   status: string;
   data_json?: StudioBotDataJson;
@@ -1760,7 +1759,6 @@ export type StudioBotVersionPackage = {
   schema_version?: string;
   bot?: {
     id?: string;
-    slug?: string;
     name?: string;
   };
   version?: {

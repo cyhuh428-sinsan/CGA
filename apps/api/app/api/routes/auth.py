@@ -80,12 +80,16 @@ def _resolve_valid_last_bot_screen(db: Session, user: User, value: object) -> st
     if match is None:
         return None
 
-    bot_id = unquote(match.group("bot_id"))
+    raw_bot_id = unquote(match.group("bot_id"))
     version_name = unquote(match.group("version"))
+    try:
+        bot_id = UUID(raw_bot_id)
+    except ValueError:
+        return None
 
     bot = db.scalar(
         select(Bot).where(
-            Bot.slug == bot_id,
+            Bot.id == bot_id,
             Bot.organization_id == user.organization_id,
             Bot.group_id == user.group_id,
             Bot.deleted_at.is_(None),
@@ -115,8 +119,12 @@ def _normalize_favorite_bot_ids(value: object) -> list[str]:
     for item in value:
         if not isinstance(item, str):
             continue
-        bot_id = item.strip()
-        if not bot_id:
+        raw_bot_id = item.strip()
+        if not raw_bot_id:
+            continue
+        try:
+            bot_id = str(UUID(raw_bot_id))
+        except ValueError:
             continue
         if bot_id in normalized:
             continue

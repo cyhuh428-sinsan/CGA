@@ -440,7 +440,6 @@ def delete_hub(
     deleted_at = datetime.now(timezone.utc)
     bot.deleted_at = deleted_at
     bot.active_version_id = None
-    bot.slug = f"deleted-{bot.id}"
     versions = db.scalars(
         select(BotVersion).where(
             BotVersion.bot_id == bot.id,

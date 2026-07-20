@@ -1643,7 +1643,7 @@ def _botstation_channel_connection(bot: Bot, version: BotVersion, channel_type: 
         if item.get("enabled") is not True:
             return None
         identifier = str(item.get("botIdentifier") or "").strip()
-        if identifier and identifier not in {str(bot.id), bot.slug}:
+        if identifier and identifier != str(bot.id):
             return None
         return item
     return None
@@ -1767,7 +1767,6 @@ def _serialize_bot(db: Session, bot: Bot, version: BotVersion, group: Group | No
     return {
         "id": str(bot.id),
         "name": bot.name,
-        "slug": bot.slug,
         "groupId": str(bot.group_id),
         "groupName": group.name if group else None,
         "activeVersionId": str(version.id),
@@ -5773,7 +5772,7 @@ def _process_channel_queue_event(
     return {
         "roomId": str(room.id),
         "channelType": channel,
-        "bot": {"id": str(bot.id), "name": bot.name, "slug": bot.slug},
+        "bot": {"id": str(bot.id), "name": bot.name},
         "activeVersion": {"id": str(version.id), "name": version.name, "versionNo": version.version_no},
         "queueEvent": {"id": str(queue_event.id), "status": queue_event.status, "receiveStatus": queue_event.receive_status},
         "botMessage": _serialize_message(bot_messages[-1]) if bot_messages else None,
@@ -6272,7 +6271,7 @@ def create_channel_room_message(
                     "roomId": str(room.id),
                     "channelType": channel,
                     "queued": True,
-                    "bot": {"id": str(bot.id), "name": bot.name, "slug": bot.slug},
+                    "bot": {"id": str(bot.id), "name": bot.name},
                     "activeVersion": {"id": str(version.id), "name": version.name, "versionNo": version.version_no},
                     "queueEvent": {"id": str(queue_event.id), "status": queue_event.status, "receiveStatus": queue_event.receive_status},
                     "userMessage": _serialize_message(user_message),
@@ -6646,7 +6645,7 @@ def create_channel_room_message(
             {
                 "roomId": str(room.id),
                 "channelType": channel,
-                "bot": {"id": str(bot.id), "name": bot.name, "slug": bot.slug},
+                "bot": {"id": str(bot.id), "name": bot.name},
                 "activeVersion": {"id": str(version.id), "name": version.name, "versionNo": version.version_no},
                 "queueEvent": {"id": str(queue_event.id), "status": queue_event.status, "receiveStatus": queue_event.receive_status},
                 "userMessage": _serialize_message(user_message),

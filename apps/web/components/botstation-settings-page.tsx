@@ -78,7 +78,7 @@ function normalizeChannel(channel: Partial<BotStationChannelConfig>): BotStation
 function buildChannelConfig(
   adminChannel: AdminChannelItem,
   current?: Partial<BotStationChannelConfig>,
-  bot?: { id: string; slug: string; name: string },
+  bot?: { id: string; name: string },
 ): BotStationChannelConfig {
   const channelMeta = readAdminChannelMeta(adminChannel);
   return normalizeChannel({
@@ -411,15 +411,11 @@ export function BotStationSettingsPage() {
                       <input className="bot-settings-card__input" value={editingChannel.channelName} readOnly />
                     </label>
                     <label className="botstation-dialog__field">
-                      <span>봇 식별값</span>
+                      <span>봇 UUID</span>
                       <input
                         className="bot-settings-card__input"
                         value={editingChannel.botIdentifier}
-                        onChange={(event) =>
-                          setEditingChannel((current) =>
-                            current ? { ...current, botIdentifier: event.target.value } : current,
-                          )
-                        }
+                        readOnly
                       />
                     </label>
                     <label className="botstation-dialog__field">

@@ -192,13 +192,6 @@ def _serialize_talk_template(template: AdminTemplate, channel_name: str) -> dict
     }
 
 
-def _build_deleted_slug(slug: str, bot_id: UUID) -> str:
-    suffix = f"-deleted-{str(bot_id)[:8]}"
-    max_base_length = max(1, 150 - len(suffix))
-    base = slug[:max_base_length].rstrip("-") or "bot"
-    return f"{base}{suffix}"
-
-
 def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
 
@@ -3165,39 +3158,6 @@ def _get_bot_or_404(db: Session, bot_id: UUID, user: User) -> Bot:
     return bot
 
 
-def _get_bot_by_route_key_or_404(db: Session, route_key: str, user: User) -> Bot:
-    if user.group_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="그룹이 지정된 사용자만 봇에 접근할 수 있습니다.",
-        )
-    normalized_key = route_key.strip()
-    bot_id: UUID | None = None
-    try:
-        bot_id = UUID(normalized_key)
-    except ValueError:
-        bot_id = None
-
-    lookup_conditions = [Bot.slug == normalized_key, Bot.name == normalized_key]
-    if bot_id is not None:
-        lookup_conditions.append(Bot.id == bot_id)
-
-    bot = db.scalar(
-        select(Bot).where(
-            or_(*lookup_conditions),
-            Bot.organization_id == user.organization_id,
-            Bot.group_id == user.group_id,
-            Bot.deleted_at.is_(None),
-        )
-    )
-    if bot is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="봇을 찾을 수 없습니다.",
-        )
-    return bot
-
-
 def _get_version_or_404(db: Session, bot_id: UUID, version_id: UUID) -> BotVersion:
     version = db.scalar(
         select(BotVersion).where(
@@ -3457,7 +3417,6 @@ def _serialize_bot_settings_summary(
         "group_code": group.code if group is not None else None,
         "group_name": group.name if group is not None else None,
         "name": bot.name,
-        "slug": bot.slug,
         "description": bot.description,
         "status": bot.status,
         "data_json": bot.data_json or {},
@@ -3984,7 +3943,6 @@ def _serialize_bot(
         "group_code": group.code if group is not None else None,
         "group_name": group.name if group is not None else None,
         "name": bot.name,
-        "slug": bot.slug,
         "description": bot.description,
         "status": bot.status,
         "data_json": bot.data_json or {},
@@ -4035,7 +3993,6 @@ def _serialize_bot_summary(
         "group_code": group.code if group is not None else None,
         "group_name": group.name if group is not None else None,
         "name": bot.name,
-        "slug": bot.slug,
         "description": bot.description,
         "status": bot.status,
         "data_json": bot.data_json or {},
@@ -4272,13 +4229,13 @@ def list_bots(
         Bot.deleted_at.is_(None),
     ]
     if q:
-        like_term = f"%{q.strip()}%"
-        filters.append(
-            or_(
-                Bot.name.ilike(like_term),
-                Bot.slug.ilike(like_term),
-            )
-        )
+        normalized_query = q.strip()
+        lookup_conditions = [Bot.name.ilike(f"%{normalized_query}%")]
+        try:
+            lookup_conditions.append(Bot.id == UUID(normalized_query))
+        except ValueError:
+            pass
+        filters.append(or_(*lookup_conditions))
     if status_filter:
         filters.append(Bot.status == status_filter)
 
@@ -4363,7 +4320,6 @@ def create_bot(
         organization_id=current_user.organization_id,
         group_id=current_user.group_id,
         name=payload.name.strip(),
-        slug=str(bot_id),
         description=payload.description.strip() if payload.description else None,
         status="active",
         data_json=_build_bot_json(payload),
@@ -4475,7 +4431,6 @@ def list_api_catalog_bots(
         ":".join(
             [
                 str(bot.id),
-                bot.slug,
                 _iso(bot.updated_at) or "unknown",
                 str(bot.active_version_id or ""),
                 _iso(active_version_by_id[bot.active_version_id].updated_at) if bot.active_version_id in active_version_by_id else "none",
@@ -4603,7 +4558,7 @@ def update_group_apis(
 
 @router.get("/{bot_id}/versions/{version_scope}/context")
 def get_bot_workspace_context(
-    bot_id: str,
+    bot_id: UUID,
     version_scope: str,
     request: Request,
     include_document: bool = Query(default=False),
@@ -4611,7 +4566,7 @@ def get_bot_workspace_context(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
-    bot = _get_bot_by_route_key_or_404(db, bot_id, current_user)
+    bot = _get_bot_or_404(db, bot_id, current_user)
     versions = _list_bot_versions(db, bot.id, include_document=include_document)
     selected_version = next((version for version in versions if _matches_version_scope(version, version_scope)), None)
     if selected_version is None and bot.active_version_id is not None:
@@ -4688,13 +4643,13 @@ def get_bot_workspace_context(
 
 @router.get("/{bot_id}/versions/{version_scope}/settings-context")
 def get_bot_settings_context(
-    bot_id: str,
+    bot_id: UUID,
     version_scope: str,
     request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
-    bot = _get_bot_by_route_key_or_404(db, bot_id, current_user)
+    bot = _get_bot_or_404(db, bot_id, current_user)
     versions = _list_bot_versions(db, bot.id, include_document=False)
     selected_version = next((version for version in versions if _matches_version_scope(version, version_scope)), None)
     if selected_version is None and bot.active_version_id is not None:
@@ -4984,7 +4939,6 @@ def delete_bot(
     deleted_at = datetime.now(timezone.utc)
 
     bot.deleted_at = deleted_at
-    bot.slug = _build_deleted_slug(bot.slug, bot.id)
     bot.active_version_id = None
     db.add(bot)
     versions = db.scalars(
@@ -7397,7 +7351,6 @@ def export_version_package(
             "schema_version": "aidot-version-package-v1",
             "bot": {
                 "id": str(bot.id),
-                "slug": bot.slug,
                 "name": bot.name,
             },
             "version": {
