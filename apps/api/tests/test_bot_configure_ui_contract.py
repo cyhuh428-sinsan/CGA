@@ -42,3 +42,20 @@ def test_asset_management_sections_do_not_render_summary_stats() -> None:
     assert "hideSummary={" in provider
     assert "hideSummary?: boolean;" in header
     assert "compact || hideSummary ? null" in header
+
+
+def test_evaluation_section_does_not_render_summary_stats() -> None:
+    provider = _read("apps/web/components/studio-workspace-provider.tsx")
+
+    assert '|| activeSection === "evaluation"' in provider
+
+
+def test_simulator_analysis_panel_is_always_open() -> None:
+    simulator = _read("apps/web/components/simulator-page.tsx")
+
+    assert "analysisOpen" not in simulator
+    assert "setAnalysisOpen" not in simulator
+    assert "simulator-workbench--debug-open" in simulator
+    assert '<aside className="simulator-analysis" aria-label="분석 데이터">' in simulator
+    assert "분석 데이터 보기" not in simulator
+    assert "분석 데이터 닫기" not in simulator
