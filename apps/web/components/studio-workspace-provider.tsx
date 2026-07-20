@@ -1040,6 +1040,7 @@ function StudioWorkspaceShell({
           activeSection === "intents"
           || activeSection === "entities"
           || activeSection === "dictionary"
+          || activeSection === "evaluation"
         }
         onError={onHeaderError}
         onTrained={() => void onRefresh()}
