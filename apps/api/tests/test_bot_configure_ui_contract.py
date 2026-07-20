@@ -59,3 +59,14 @@ def test_simulator_analysis_panel_is_always_open() -> None:
     assert '<aside className="simulator-analysis" aria-label="분석 데이터">' in simulator
     assert "분석 데이터 보기" not in simulator
     assert "분석 데이터 닫기" not in simulator
+
+
+def test_operations_retraining_and_analysis_hide_summary_and_simulator() -> None:
+    provider = _read("apps/web/components/studio-workspace-provider.tsx")
+    retraining = _read("apps/web/components/retraining-page.tsx")
+    analysis = _read("apps/web/components/analysis-page.tsx")
+
+    assert '|| activeSection === "retraining"' in provider
+    assert '|| activeSection === "analysis"' in provider
+    assert "SimulatorFloatingLauncher" not in retraining
+    assert "SimulatorFloatingLauncher" not in analysis
