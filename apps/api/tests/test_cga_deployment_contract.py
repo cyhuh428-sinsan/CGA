@@ -34,7 +34,8 @@ def test_compose_exposes_cga_api_only_through_proxy_network() -> None:
     assert "CGA_INTERNAL_API_BASE_URL: http://cga-api:8000" in compose
     assert '"4173:4173"' in compose
     assert '"8000:8000"' not in compose
-    assert ":/workspace" not in compose
+    assert "- .:/workspace" not in compose
+    assert "/home/ubuntu/deploy/cga:/workspace" not in compose
     assert "name: proxy-network" in compose
 
 

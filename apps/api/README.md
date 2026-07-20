@@ -1,6 +1,6 @@
-# Aidot API
+# CGA API
 
-현재 이 폴더는 FastAPI 기반 Aidot 백엔드입니다.
+현재 이 폴더는 FastAPI 기반 CGA 백엔드이며 Aidot 자산 호환 기능을 제공합니다.
 
 ## 실행 예시
 

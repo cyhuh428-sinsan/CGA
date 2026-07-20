@@ -18,8 +18,7 @@ const HOP_BY_HOP_HEADERS = new Set([
 
 function resolveInternalApiBaseUrl() {
   return (
-    process.env.AIDOT_INTERNAL_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.CGA_INTERNAL_API_BASE_URL ||
     DEFAULT_INTERNAL_API_BASE_URL
   ).replace(/\/+$/, "");
 }

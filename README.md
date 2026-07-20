@@ -5,7 +5,7 @@
 ## 구성
 
 - apps/web: Next.js 기반 CGA Studio 화면
-- apps/api: FastAPI 기반 Aidot 호환 API
+- apps/api: FastAPI 기반 CGA API와 Aidot 자산 호환 계층
 - apps/vector-worker: 벡터 검색 워커
 - packages/shared: 공용 타입과 유틸리티
 - compat-samples: Aidot 업로드·다운로드 왕복 검증 샘플
@@ -15,7 +15,7 @@
 
 기본 실행 구조는 다음과 같습니다.
 
-- 기존 Aidot API: http://127.0.0.1:8320
+- CGA API: http://127.0.0.1:8320
 - CGA Studio 웹: http://127.0.0.1:5173
 - 기존 CGA 4173 프로세스는 사용하지 않습니다.
 
@@ -33,6 +33,6 @@
 
 ## 운영 원칙
 
-- 기존 CGA 데이터베이스와 8320 API는 별도 운영 상태를 유지합니다.
+- 기존 CGA 데이터베이스를 유지하고 CGA API를 독립 운영합니다.
 - 화면별 세부 수정 전 메뉴 연결과 Aidot 호환 경로를 우선 유지합니다.
 - 봇, 버전, 의도, 개체, 사전 등 Aidot 패키지의 업로드·다운로드 호환성은 기능 검증 단계에서 항목별로 확인합니다.

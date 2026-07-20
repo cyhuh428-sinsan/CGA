@@ -120,8 +120,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Aidot API",
-    description="Aidot 제작/운영 콘솔 API",
+    title="CGA API",
+    description="CGA Studio 제작/운영 콘솔 API",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -269,7 +269,7 @@ def readiness_check() -> JSONResponse:
 
 @app.get("/")
 def root() -> dict[str, str]:
-    return {"message": "Aidot API is running."}
+    return {"message": "CGA API is running."}
 
 
 @app.get("/favicon.ico", include_in_schema=False)

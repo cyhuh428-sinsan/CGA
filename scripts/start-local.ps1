@@ -41,7 +41,7 @@ function Wait-HttpReady {
 }
 
 if (-not (Test-ListeningPort -Port $ApiPort)) {
-    throw "기존 Aidot API가 실행 중이 아닙니다: http://127.0.0.1:$ApiPort"
+    throw "CGA API가 실행 중이 아닙니다: http://127.0.0.1:$ApiPort"
 }
 
 $node = (Get-Command node.exe -ErrorAction Stop).Source
@@ -53,7 +53,7 @@ if (-not (Test-ListeningPort -Port $WebPort)) {
         WorkingDirectory = $webRoot
         WindowStyle = "Hidden"
         Environment = @{
-            NEXT_PUBLIC_API_BASE_URL = "http://127.0.0.1:$ApiPort"
+            CGA_INTERNAL_API_BASE_URL = "http://127.0.0.1:$ApiPort"
         }
         RedirectStandardOutput = (Join-Path $logRoot "web-$WebPort.out.log")
         RedirectStandardError = (Join-Path $logRoot "web-$WebPort.err.log")

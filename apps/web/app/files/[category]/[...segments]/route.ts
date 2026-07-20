@@ -3,13 +3,12 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 const DEFAULT_INTERNAL_API_BASE_URL = "http://localhost:8320";
-const STORAGE_ROOT = process.env.AIDOT_FILE_STORAGE_ROOT?.trim() || "/workspace/storage";
+const STORAGE_ROOT = process.env.CGA_FILE_STORAGE_ROOT?.trim() || "/workspace/storage";
 const ALLOWED_CATEGORIES = new Set(["temp", "bot-images"]);
 
 function resolveInternalApiBaseUrl() {
   return (
-    process.env.AIDOT_INTERNAL_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.CGA_INTERNAL_API_BASE_URL ||
     DEFAULT_INTERNAL_API_BASE_URL
   ).replace(/\/+$/, "");
 }

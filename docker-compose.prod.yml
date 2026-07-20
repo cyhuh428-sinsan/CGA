@@ -1,0 +1,7 @@
+services:
+  api:
+    environment:
+      APP_ENV: production
+  studio:
+    environment:
+      NODE_ENV: production

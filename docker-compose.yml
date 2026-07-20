@@ -1,0 +1,75 @@
+name: cga
+
+services:
+  api:
+    container_name: cga-api
+    image: cga-api:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      APP_ENV: production
+      APP_NAME: CGA API
+      DATABASE_URL: ${CGA_DATABASE_URL:?CGA_DATABASE_URL is required}
+      JWT_SECRET: ${CGA_JWT_SECRET:?CGA_JWT_SECRET is required}
+      INITIAL_ADMIN_PASSWORD: ${CGA_INITIAL_ADMIN_PASSWORD:?CGA_INITIAL_ADMIN_PASSWORD is required}
+      CORS_ORIGINS: https://cga.sinsan.kr,https://api-cga.sinsan.kr
+      CACHE_ENABLED: "false"
+    expose:
+      - "8000"
+    networks:
+      - proxy_net
+      - db_net
+    volumes:
+      - cga_api_storage:/workspace/storage
+      - cga_nlu_models:/workspace/data/nlu_models
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=5)
+      interval: 15s
+      timeout: 7s
+      retries: 10
+      start_period: 45s
+
+  studio:
+    container_name: cga-studio
+    image: cga-studio:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      CGA_INTERNAL_API_BASE_URL: http://cga-api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "4173:4173"
+    networks:
+      - proxy_net
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4173/health/ready').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 7s
+      retries: 10
+      start_period: 30s
+
+networks:
+  proxy_net:
+    external: true
+    name: proxy-network
+  db_net:
+    external: true
+    name: common_default
+
+volumes:
+  cga_api_storage:
+  cga_nlu_models:
