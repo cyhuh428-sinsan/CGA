@@ -1035,6 +1035,7 @@ function StudioWorkspaceShell({
         version={bot.active_version}
         versions={versions}
         summaryCards={summaryCards}
+        compact={activeSection === "configure"}
         onError={onHeaderError}
         onTrained={() => void onRefresh()}
       />
