@@ -17,6 +17,7 @@ type BotWorkspaceHeaderProps = {
   versions: StudioBotVersionApiItem[];
   summaryCards: SummaryStatItem[];
   compact?: boolean;
+  hideSummary?: boolean;
   className?: string;
   disabledReason?: string;
   onError: (message: string) => void;
@@ -93,6 +94,7 @@ export function BotWorkspaceHeader({
   versions,
   summaryCards,
   compact = false,
+  hideSummary = false,
   className = "",
   disabledReason,
   onError,
@@ -147,7 +149,7 @@ export function BotWorkspaceHeader({
         </div>
       </div>
 
-      {compact ? null : (
+      {compact || hideSummary ? null : (
         <SummaryStatGrid items={summaryCards} />
       )}
     </header>
