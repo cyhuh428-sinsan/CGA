@@ -30,3 +30,15 @@ def test_configure_engine_is_fixed_to_llm() -> None:
     assert '<option value="llm">LLM Engine</option>' in configure_page
     assert "NLU_TYPE_OPTIONS.map" not in configure_page
     assert "handleConfigureNluTypeChange" not in configure_page
+
+
+def test_asset_management_sections_do_not_render_summary_stats() -> None:
+    provider = _read("apps/web/components/studio-workspace-provider.tsx")
+    header = _read("apps/web/components/bot-workspace-header.tsx")
+
+    assert 'activeSection === "intents"' in provider
+    assert 'activeSection === "entities"' in provider
+    assert 'activeSection === "dictionary"' in provider
+    assert "hideSummary={" in provider
+    assert "hideSummary?: boolean;" in header
+    assert "compact || hideSummary ? null" in header
