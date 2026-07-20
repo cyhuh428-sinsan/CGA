@@ -164,3 +164,18 @@
 - `master/master` 로그인은 401이므로 로그인 이후 메뉴 검증은 운영 관리자 자격증명 확인 후 수행해야 한다.
 - `api-cga.sinsan.kr`은 HTTP로 동작하지만 HTTPS 인증서가 아직 없어 NPM에서 Let's Encrypt와 Force SSL을 적용해야 한다.
 - 진단 중 기존 DB 자격증명 일부가 도구 출력에 노출됐다. 공유 계정 영향 범위를 확인한 뒤 별도 자격증명 회전이 필요하다.
+
+## 12. 2026-07-20 CGA 라이선스 적용
+
+- 기존 상태: `admin_licenses` 0건, 공개키 미설정, 검증 형식과 제품명이 Aidot으로 고정돼 있었다.
+- CGA 전용 형식 `cga-license`, 제품 `CGA`, 환경변수 `CGA_LICENSE_PUBLIC_KEY`로 분리했다.
+- RSA 3072비트 키를 생성했고 개인키는 Git 제외 로컬 `.local/cga-license`에만 보관한다.
+- 라이선스 `CGA-LIC-2026-0001`을 정식 관리자 API로 적용했다.
+- 한도: 사용자 120, 봇 30, API 50.
+- 만료일: 2026-12-31.
+- 적용 직후 실제 사용/잔여: 사용자 2/118, 봇 0/30, API 0/50.
+- DB 라이선스 1건, API 및 Studio 컨테이너 healthy를 확인했다.
+- 관련 테스트: 17개 통과.
+- 커밋:
+  - `b1b83e3 test: add CGA signed license contract`
+  - `690ce09 feat: add CGA signed license verification`

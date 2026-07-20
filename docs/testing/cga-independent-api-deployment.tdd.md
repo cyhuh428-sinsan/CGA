@@ -37,3 +37,11 @@
 - 실제 브라우저 로그인 요청이 same-origin `/api/v1/auth/login`을 거쳐 API에 전달되는 것 확인.
 - 기존 `master/master`는 401이므로 로그인 이후 화면 검증은 운영 관리자 자격증명 확인 후 남아 있다.
 - `api-cga.sinsan.kr`의 Let's Encrypt/Force SSL 적용은 남아 있다.
+
+## CGA 라이선스 추가 검증
+
+- RED: CGA 공개키 설정, `cga-license` 형식, `CGA` 제품 검증이 없어 신규 테스트 3건 실패.
+- GREEN: CGA 서명 검증과 기존 라이선스 정책 테스트 `17 passed`.
+- 생성 라이선스를 실제 공개키로 로컬 재검증했다.
+- Daon API의 정식 관리자 적용 경로로 업로드하고 활성 상태를 확인했다.
+- 적용값: 사용자 120, 봇 30, API 50, 만료일 2026-12-31.
