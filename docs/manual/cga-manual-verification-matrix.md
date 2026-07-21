@@ -22,6 +22,7 @@
 | Getting Started | NLU 방식 선택 | ML·Semantic Vector Worker·Semantic External Embedding·LLM Engine | 브라우저 확인 | 설명 수록 | 선택 상태와 지원 조합 표시 확인; 실제 실행은 미확인 |
 | Getting Started | 답변 방식 선택 | 정해진 답변·Semantic RAG·LLM RAG·LLM 답변 | 브라우저 확인 | 설명 수록 | 선택 상태와 지원 조합 표시 확인; 실제 실행은 미확인 |
 | Getting Started | 테스트 | `apps/web/app/studio/bots/[botId]/versions/[versionId]/simulator/page.tsx` | 소스 확인 | 경로만 | 실제 테스트 결과 확인 필요 |
+| 사용자 설명서 | 봇 생성 화면의 구조 요약·지원 상태 | 언어·NLU 방식·모델·답변 방식·LLM·버전 및 `실행/학습 가능`·`설정 저장만 가능` 표시 | 브라우저 확인 | 수록 | `확인` 제출 이후 결과는 미확인 |
 | 사용자 설명서 | 봇 목록·버전 | `apps/web/app/studio/bots/page.tsx`, `apps/web/app/studio/bots/[botId]/versions/page.tsx` | 소스 확인 | 수록 | 실제 화면 확인 필요 |
 | 사용자 설명서 | 의도·개체·사전 | 해당 `intents`, `entities`, `dictionary` routes | 소스 확인 | 수록 | 저장 결과 확인 필요 |
 | 사용자 설명서 | QA | `apps/web/app/studio/bots/[botId]/versions/[versionId]/qa/page.tsx` | 소스 확인 | 수록 | 업로드·검색 결과 확인 필요 |
