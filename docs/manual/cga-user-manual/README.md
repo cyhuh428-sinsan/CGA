@@ -1,11 +1,11 @@
 # CGA Studio 사용자 설명서
 
-상태: 초안
+상태: 브라우저 화면 확인 반영 초안
 대상: 일반 사용자, 봇 운영자, 시스템 관리자
 
 이 문서는 CGA Studio의 메뉴와 업무 흐름을 설명합니다. 처음 사용하는 경우에는 [CGA Getting Started](../cga-getting-started/README.md)를 먼저 읽고, 엔진 선택·학습·품질 개선은 [CGA NLU 활용 가이드](../cga-nlu-guide/README.md)를 참고하십시오.
 
-> 현재 초안은 CGA 소스와 기존 참고자료를 기준으로 작성되었습니다. 실제 브라우저 클릭·저장·실행 결과가 확인되지 않은 기능은 검증표에서 별도로 표시합니다.
+> 봇 생성 화면의 기본 정보·NLU 방식·모델·답변 방식 필드는 브라우저에서 확인했습니다. 실제 저장·생성·학습·실행 결과가 확인되지 않은 기능은 [기능 검증표](../cga-manual-verification-matrix.md)에서 별도로 표시합니다.
 
 ## 1. CGA Studio 시작하기
 
@@ -61,9 +61,9 @@ NLU 방식에 따라 모델 목록이 달라집니다.
 
 - ML: DeepLearning Lite, TF-IDF Linear, Keyword Baseline
 - Semantic: 기본 Vector Worker 모델 또는 외부 임베딩 모델
-- LLM: LLM Engine 기본 모델, LLM Intent Fast, LLM Intent Reasoning
+- LLM: Provider 선택과 Provider별 세부 모델 선택
 
-실제 사용 가능한 모델과 학습 연결 상태는 버전과 운영 설정에 따라 달라질 수 있으므로, 생성 화면의 선택 가능 상태를 기준으로 확인합니다.
+LLM 화면에서는 Gemini, ChatGPT, Claude, Groq, Cerebras, Mistral, Ollama, OpenRouter 등의 Provider가 표시될 수 있으며, 선택한 Provider에 따라 세부 모델 목록이 달라집니다. 실제 사용 가능한 모델과 연결 상태는 생성 화면의 선택 가능 상태를 기준으로 확인합니다.
 
 ### 2.4 답변 방식
 

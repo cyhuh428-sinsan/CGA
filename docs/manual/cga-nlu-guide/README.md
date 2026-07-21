@@ -1,11 +1,11 @@
 # CGA NLU 활용 가이드
 
-상태: 초안
+상태: 브라우저 화면 확인 반영 초안
 대상: 봇·대화 설계 운영자, AI/NLU 전문 담당자
 
 이 문서는 CGA의 `ML`, `Semantic`, `LLM` 엔진을 선택하고, 각 엔진에 맞는 데이터·설정·테스트·품질 개선 방법을 정리합니다.
 
-> 엔진 설명은 현재 CGA 소스와 참고자료를 기준으로 작성했습니다. 실제 학습·인덱싱·모델 호출 결과가 확인되지 않은 항목은 운영 확정 사항으로 보지 말고 [기능 검증표](../cga-manual-verification-matrix.md)를 함께 확인하십시오.
+> 봇 생성 화면의 엔진·모델·답변 방식 선택지는 브라우저에서 확인했습니다. 실제 학습·인덱싱·모델 호출 결과가 확인되지 않은 항목은 운영 확정 사항으로 보지 말고 [기능 검증표](../cga-manual-verification-matrix.md)를 함께 확인하십시오.
 
 ## 1. NLU 기본 개념
 
@@ -109,7 +109,7 @@ Semantic NLU를 선택하면 Intent Vector DB 연결 설정이 표시됩니다. 
 
 ### 8.1 설정
 
-LLM Engine을 선택하면 LLM Provider와 LLM 세부 모델을 설정할 수 있습니다. Provider에 따라 세부 모델 목록이 달라질 수 있으며, Ollama를 사용하는 경우 별도 주소 입력 항목이 표시될 수 있습니다.
+LLM Engine을 선택하면 LLM Provider와 Provider별 세부 모델을 설정할 수 있습니다. 화면에서 확인된 Provider 선택지는 Gemini, ChatGPT, Claude, Groq, Cerebras, Mistral, Ollama, OpenRouter입니다. 예를 들어 ChatGPT를 선택하면 `GPT-4o mini (기본)`과 `GPT-4o (고품질)`이 표시됩니다. Provider와 모델 목록은 운영 설정에 따라 달라질 수 있으며, Ollama를 사용하는 경우 별도 주소 입력 항목이 표시될 수 있습니다.
 
 ### 8.2 지시문과 답변 방식
 

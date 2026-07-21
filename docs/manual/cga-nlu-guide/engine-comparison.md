@@ -1,6 +1,6 @@
 # CGA NLU 엔진 비교표
 
-상태: 초안
+상태: 브라우저 화면 확인 반영 초안
 
 이 문서는 봇 생성 전에 세 NLU 엔진의 차이를 빠르게 비교하기 위한 보조 문서입니다. 실제 지원 범위는 CGA 화면의 선택 가능 상태와 기능 검증표를 함께 확인하십시오.
 
@@ -42,8 +42,8 @@
 ### LLM
 
 - NLU 방식: LLM Engine
-- Provider: CGA 화면에서 선택 가능한 Provider
-- 세부 모델: Provider에 따라 표시되는 모델
+- Provider: Gemini, ChatGPT, Claude, Groq, Cerebras, Mistral, Ollama, OpenRouter 등 화면에서 선택 가능한 Provider
+- 세부 모델: Provider에 따라 표시되는 모델. ChatGPT 선택 시 GPT-4o mini와 GPT-4o가 확인됨
 - 추가 항목: Provider에 따라 Ollama 주소 또는 관련 연결 설정
 
 ## 주의
