@@ -7,8 +7,10 @@ import { DataGrid, dataGridCellText, type DataGridRow, type DataGridSortState } 
 import {
   createTemplate,
   deleteTemplate,
+  fetchChannels,
   fetchTemplates,
   updateTemplate,
+  type AdminChannelItem,
   type AdminTemplateItem,
   type AdminTemplatePayload,
 } from "@/lib/admin-api";
@@ -171,6 +173,7 @@ function parseCsv(text: string) {
 export default function AdminTemplatesPage() {
   const [token, setToken] = useState("");
   const [templates, setTemplates] = useState<AdminTemplateItem[]>([]);
+  const [activeChannels, setActiveChannels] = useState<AdminChannelItem[]>([]);
   const [query, setQuery] = useState("");
   const [channelCode, setChannelCode] = useState("");
   const [status, setStatus] = useState("");
@@ -180,7 +183,7 @@ export default function AdminTemplatesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminTemplateItem | null>(null);
   const [draft, setDraft] = useState({
-    channel_code: "SM_CHAT",
+    channel_code: "",
     name: "",
     renderer_type: "text",
     item_types: "text",
@@ -244,6 +247,37 @@ export default function AdminTemplatesPage() {
     };
   }, [appliedChannelCode, appliedQuery, appliedStatus, token]);
 
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    let ignore = false;
+    fetchChannels(token, { status: "active" })
+      .then((response) => {
+        if (ignore) {
+          return;
+        }
+        const channels = response.items.filter((channel) => channel.status === "active");
+        setActiveChannels(channels);
+        setDraft((current) => {
+          if (current.channel_code || !channels[0]) {
+            return current;
+          }
+          return normalizeTemplateDraftByChannel({ ...current, channel_code: channels[0].code });
+        });
+      })
+      .catch((error) => {
+        if (!ignore) {
+          setNoticeMessage(error instanceof Error ? error.message : "활성 채널 목록을 불러오지 못했습니다.");
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [token]);
+
   async function reload() {
     if (!token) {
       return;
@@ -275,14 +309,14 @@ export default function AdminTemplatesPage() {
 
   function openCreate() {
     setEditing(null);
-    setDraft({
-      channel_code: "SM_CHAT",
+    setDraft(normalizeTemplateDraftByChannel({
+      channel_code: activeChannels[0]?.code ?? "",
       name: "",
       renderer_type: "text",
       item_types: "text",
       description: "",
       status: "active",
-    });
+    }));
     setDialogOpen(true);
   }
 
@@ -662,16 +696,26 @@ export default function AdminTemplatesPage() {
             <div className="admin-variable-dialog__body">
               <label>
                 <span>채널</span>
-                <input
-                  type="text"
-                  value={draft.channel_code}
-                  disabled={Boolean(editing)}
-                  onChange={(event) =>
-                    setDraft((current) =>
-                      normalizeTemplateDraftByChannel({ ...current, channel_code: event.target.value }),
-                    )
-                  }
-                />
+                {editing ? (
+                  <input type="text" value={draft.channel_code} disabled />
+                ) : (
+                  <select
+                    className="login-select"
+                    value={draft.channel_code}
+                    onChange={(event) =>
+                      setDraft((current) =>
+                        normalizeTemplateDraftByChannel({ ...current, channel_code: event.target.value }),
+                      )
+                    }
+                  >
+                    {activeChannels.length === 0 ? <option value="">사용 가능한 채널 없음</option> : null}
+                    {activeChannels.map((channel) => (
+                      <option key={channel.id} value={channel.code}>
+                        {channel.name} ({channel.code})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </label>
               {isKakaoTemplateChannel(draft.channel_code) ? (
                 <div className="admin-form-guide admin-form-guide--wide">
