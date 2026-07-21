@@ -223,6 +223,7 @@ API 메뉴는 봇 또는 버전의 대화 처리와 연결되는 API 정보를 �
 
 ## 관련 문서
 
+- [CGA 메뉴얼 전체 보기](../README.md)
 - [CGA Getting Started](../cga-getting-started/README.md)
 - [CGA NLU 활용 가이드](../cga-nlu-guide/README.md)
 - [기능 검증표](../cga-manual-verification-matrix.md)

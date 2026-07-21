@@ -215,6 +215,7 @@ DB나 CLI를 직접 수정해 상태를 맞추지 않습니다. 화면의 봇·�
 
 ## 관련 문서
 
+- [CGA 메뉴얼 전체 보기](../README.md)
 - [CGA Getting Started](../cga-getting-started/README.md)
 - [CGA 사용자 설명서](../cga-user-manual/README.md)
 - [엔진 비교표](engine-comparison.md)

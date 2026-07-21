@@ -213,6 +213,7 @@ LLM Provider와 세부 모델을 선택하고, 필요한 경우 모델 호출 �
 
 ## 다음 문서
 
+- [CGA 메뉴얼 전체 보기](../README.md)
 - [CGA 사용자 설명서](../cga-user-manual/README.md)
 - [CGA NLU 활용 가이드](../cga-nlu-guide/README.md)
 - [기능 검증표](../cga-manual-verification-matrix.md)
