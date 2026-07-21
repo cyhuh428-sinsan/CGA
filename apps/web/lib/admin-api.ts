@@ -1163,6 +1163,29 @@ export function fetchConversationHistory(token: string, filters: string | AdminC
   );
 }
 
+export async function fetchAllConversationHistory(
+  token: string,
+  filters: Omit<AdminConversationHistoryFilter, "page" | "pageSize"> = {},
+) {
+  const pageSize = 100;
+  const items: AdminConversationHistoryItem[] = [];
+  let page = 1;
+  let response: AdminHistoryResponse<AdminConversationHistoryItem>;
+
+  do {
+    response = await fetchConversationHistory(token, { ...filters, page, pageSize });
+    items.push(...response.items);
+    page += 1;
+  } while (items.length < response.total && response.items.length === pageSize);
+
+  return {
+    ...response,
+    items,
+    page: 1,
+    page_size: pageSize,
+  };
+}
+
 export function fetchApiCallHistory(token: string, query = "") {
   return apiRequest<AdminHistoryResponse<AdminApiCallHistoryItem>>(
     `/api/v1/admin/api-call-history${historySearch(query)}`,

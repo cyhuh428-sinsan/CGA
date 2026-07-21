@@ -9,7 +9,7 @@ import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { LIST_PAGE_SIZE_OPTIONS, type ListPageSize, usePersistedPageSize } from "@/lib/use-persisted-page-size";
-import { type AdminConversationHistoryItem, fetchConversationHistory } from "@/lib/admin-api";
+import { type AdminConversationHistoryItem, fetchAllConversationHistory } from "@/lib/admin-api";
 import { getBotDialogs, getNextDialogNo } from "@/lib/dialog-assets";
 import {
   fetchStudioBotVersionRetraining,
@@ -558,7 +558,7 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
     let ignore = false;
     setLoading(conversationRows.length === 0);
     setErrorMessage("");
-    fetchConversationHistory(workspace.session.access_token, { fromDate, toDate, pageSize: 500 })
+    fetchAllConversationHistory(workspace.session.access_token, { fromDate, toDate })
       .then((conversations) => {
         if (ignore) return;
         setConversationRows(conversations.items);
@@ -819,7 +819,7 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
     setErrorMessage("");
     setMessage("");
     try {
-      const conversations = await fetchConversationHistory(authSession.access_token, { fromDate, toDate, pageSize: 500 });
+      const conversations = await fetchAllConversationHistory(authSession.access_token, { fromDate, toDate });
       setConversationRows(conversations.items);
       setMessage("대화이력을 동기화했습니다.");
     } catch (error) {

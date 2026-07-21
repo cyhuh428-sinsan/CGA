@@ -11,6 +11,7 @@ import {
   operationBotGroupName,
   operationBotLocale,
   operationVersionName,
+  readOperationAiDetails,
   readOperationEvaluation,
   readOperationNluEngine,
   rememberOperationVersion,
@@ -203,6 +204,9 @@ export function BotManagementPage() {
   }
 
   const counts = selectedVersion?.asset_counts;
+  const aiDetails = selectedBot && selectedVersion
+    ? readOperationAiDetails(selectedBot, selectedVersion)
+    : { nluType: "-", nluModel: "-", answerMode: "-", llmModel: "-" };
   const columns = {
     "--operation-cols": ".55fr .65fr .75fr 1.35fr .45fr .45fr .45fr .45fr .55fr .95fr .85fr 1fr",
   } as CSSProperties;
@@ -286,6 +290,10 @@ export function BotManagementPage() {
             <div><dt>운영버전</dt><dd>{activeVersion ? operationVersionName(activeVersion) : "-"}</dd></div>
             <div><dt>상태</dt><dd>{selectedBot?.status || "-"}</dd></div>
             <div><dt>언어</dt><dd>{operationBotLocale(selectedBot)}</dd></div>
+            <div><dt>NLU 방식</dt><dd>{aiDetails.nluType}</dd></div>
+            <div><dt>NLU 모델</dt><dd>{aiDetails.nluModel}</dd></div>
+            <div><dt>답변 방식</dt><dd>{aiDetails.answerMode}</dd></div>
+            <div><dt>LLM</dt><dd>{aiDetails.llmModel}</dd></div>
             <div><dt>버전 목록</dt><dd>{versions.length}개</dd></div>
             <div><dt>업데이트</dt><dd>{formatOperationDate(selectedBot?.updated_at)}</dd></div>
           </dl>

@@ -91,6 +91,29 @@ export function readOperationNluEngine(bot: StudioBotApiItem, version: StudioBot
   return typeof value === "string" && value ? value : "-";
 }
 
+export function readOperationAiDetails(bot: StudioBotApiItem, version: StudioBotVersionApiItem) {
+  const versionConfig = version.system_config as Record<string, unknown> | undefined;
+  const versionAiConfig = versionConfig?.ai_config as Record<string, unknown> | undefined;
+  const botConfig = bot.data_json as Record<string, unknown> | undefined;
+
+  function readValue(...keys: string[]) {
+    for (const source of [versionAiConfig, versionConfig, botConfig]) {
+      for (const key of keys) {
+        const value = source?.[key];
+        if (typeof value === "string" && value.trim()) return value.trim();
+      }
+    }
+    return "-";
+  }
+
+  return {
+    nluType: readValue("nlu_type"),
+    nluModel: readValue("nlu_model", "nlu_engine"),
+    answerMode: readValue("answer_mode"),
+    llmModel: readValue("llm_model"),
+  };
+}
+
 export function readOperationEvaluation(version: StudioBotVersionApiItem) {
   const document = version.version_json as Record<string, unknown> | undefined;
   const evaluation = document?.evaluation as Record<string, unknown> | undefined;
