@@ -34,3 +34,17 @@ def test_workspace_simulator_launcher_receives_selected_bot_context() -> None:
     assert "<SimulatorPage" in simulator
     assert "botIdOverride={botIdOverride}" in simulator
     assert "versionIdOverride={versionIdOverride}" in simulator
+
+
+def test_bot_management_shows_selected_version_ai_details() -> None:
+    shared = _read("apps/web/components/bot-operation-shared.ts")
+    management = _read("apps/web/components/bot-management-page.tsx")
+
+    assert "readOperationAiDetails" in shared
+    assert "version.system_config" in shared
+    assert "bot.data_json" in shared
+    assert "NLU 방식" in management
+    assert "NLU 모델" in management
+    assert "답변 방식" in management
+    assert "LLM" in management
+    assert "readOperationAiDetails(selectedBot, selectedVersion)" in management
