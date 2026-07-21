@@ -362,11 +362,13 @@ export default function AdminTemplatesPage() {
     try {
       const text = await file.text();
       const rows = parseCsv(text).filter((row) => row.length >= 4);
-      const dataRows = rows[0]?.[0]?.includes("채널") ? rows.slice(1) : rows;
+      const hasHeader = rows[0]?.[0]?.includes("채널") ?? false;
+      const dataRows = hasHeader ? rows.slice(1) : rows;
       let savedCount = 0;
       let skippedCount = 0;
+      const failedRows: string[] = [];
 
-      for (const row of dataRows) {
+      for (const [rowIndex, row] of dataRows.entries()) {
         const [channel, name, rendererType, itemTypes, statusLabel, , , description] = row;
         if (!(channel ?? "").trim() || !(name ?? "").trim() || !(rendererType ?? "").trim()) {
           skippedCount += 1;
@@ -382,26 +384,34 @@ export default function AdminTemplatesPage() {
           status: statusLabel === "미사용" || statusLabel === "inactive" ? "inactive" : "active",
         };
 
-        const existing = templates.find(
-          (item) => item.channel_code === payload.channel_code && item.name === payload.name,
-        );
-        if (existing) {
-          await updateTemplate(token, existing.id, {
-            name: payload.name,
-            renderer_type: payload.renderer_type,
-            item_types: payload.item_types,
-            description: payload.description,
-            status: payload.status,
-          });
-        } else {
-          await createTemplate(token, payload);
+        try {
+          const existing = templates.find(
+            (item) => item.channel_code === payload.channel_code && item.name === payload.name,
+          );
+          if (existing) {
+            await updateTemplate(token, existing.id, {
+              name: payload.name,
+              renderer_type: payload.renderer_type,
+              item_types: payload.item_types,
+              description: payload.description,
+              status: payload.status,
+            });
+          } else {
+            await createTemplate(token, payload);
+          }
+          savedCount += 1;
+        } catch (error) {
+          const csvRowNumber = rowIndex + (hasHeader ? 2 : 1);
+          const reason = error instanceof Error ? error.message : "알 수 없는 오류";
+          failedRows.push(`${csvRowNumber}행 ${payload.channel_code}/${payload.name}: ${reason}`);
         }
-        savedCount += 1;
       }
 
       setMenuOpen(false);
-      setNoticeMessage(`${savedCount}건 반영, ${skippedCount}건 제외되었습니다.`);
       await reload();
+      const summary = `${savedCount}건 반영, ${skippedCount}건 제외, ${failedRows.length}건 실패되었습니다.`
+        + (failedRows[0] ? ` 첫 실패: ${failedRows[0]}` : "");
+      setNoticeMessage(summary);
     } catch (error) {
       setNoticeMessage(error instanceof Error ? error.message : "템플릿 업로드에 실패했습니다.");
     }

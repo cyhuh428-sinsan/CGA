@@ -364,13 +364,15 @@ def test_template_renderer_issues_accepts_only_kakao_supported_renderers_for_kak
     ]
 
 
-def test_template_renderer_issues_blocks_kakao_renderers_on_other_channels() -> None:
+def test_template_renderer_issues_blocks_only_kakao_specific_renderers_on_other_channels() -> None:
     assert admin._template_renderer_issues(channel_code="SM_CHAT", renderer_type="simple-text") == [
         "카카오 전용 템플릿은 KAKAO 채널에서만 사용할 수 있습니다."
     ]
     assert admin._template_renderer_issues(channel_code="SIMULATOR", renderer_type="basic-card") == [
         "카카오 전용 템플릿은 KAKAO 채널에서만 사용할 수 있습니다."
     ]
+    assert admin._template_renderer_issues(channel_code="SM_CHAT", renderer_type="carousel") == []
+    assert admin._template_renderer_issues(channel_code="WEBCHAT", renderer_type="carousel") == []
     assert admin._template_renderer_issues(channel_code="SM_CHAT", renderer_type="text") == []
 
 
