@@ -25,6 +25,7 @@
 | 사용자 설명서 | 봇 생성 화면의 구조 요약·지원 상태 | 언어·NLU 방식·모델·답변 방식·LLM·버전 및 `실행/학습 가능`·`설정 저장만 가능` 표시 | 브라우저 확인 | 수록 | `확인` 제출 이후 결과는 미확인 |
 | 사용자 설명서 | 봇 목록·버전 | `apps/web/app/studio/bots/page.tsx`, `apps/web/app/studio/bots/[botId]/versions/page.tsx` | 소스 확인 | 수록 | 실제 화면 확인 필요 |
 | 사용자 설명서 | 의도·개체·사전 | 해당 `intents`, `entities`, `dictionary` routes | 소스 확인 | 수록 | 저장 결과 확인 필요 |
+| 사용자 설명서 | 대화 흐름·API | 해당 `flows`, `apis` routes | 소스 확인 | 수록 | 저장·외부 연동 결과 확인 필요 |
 | 사용자 설명서 | QA | `apps/web/app/studio/bots/[botId]/versions/[versionId]/qa/page.tsx` | 소스 확인 | 수록 | 업로드·검색 결과 확인 필요 |
 | 사용자 설명서 | 분석·평가 | `analysis`, `evaluation` routes 및 `analysis-page.tsx` | 소스 확인 | 수록 | 실제 결과와 지표 확인 필요 |
 | 사용자 설명서 | 관리자 메뉴 | `apps/web/components/admin-console-layout.tsx` | 소스 확인 | 수록 | 역할별 접근 확인 필요 |
