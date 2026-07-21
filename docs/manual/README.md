@@ -25,3 +25,13 @@ CGA 메뉴얼은 사용 목적에 따라 다음 세 문서로 나누어 작성�
 - 사용자는 DB나 CLI를 직접 조작하지 않고 화면의 상태·오류·대상 정보를 기준으로 운영 담당자에게 전달합니다.
 
 문서의 현재 확인 수준과 남은 검증 영역은 [기능 검증표](cga-manual-verification-matrix.md)에서 관리합니다.
+
+## Word 문서
+
+현재 Markdown 본문을 기준으로 생성한 Word 문서입니다.
+
+- [CGA 사용자 설명서.docx](dist/CGA%20사용자%20설명서.docx)
+- [CGA Getting Started.docx](dist/CGA%20Getting%20Started.docx)
+- [CGA NLU 활용 가이드.docx](dist/CGA%20NLU%20활용%20가이드.docx)
+
+Word 문서는 `build_manual_docx.py`로 다시 생성할 수 있습니다. 이 환경에서는 LibreOffice PDF 변환이 완료되지 않아 페이지 이미지 시각 검증은 보류 상태입니다.
