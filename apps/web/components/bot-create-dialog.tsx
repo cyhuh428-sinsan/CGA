@@ -271,7 +271,8 @@ export function BotCreateDialog() {
                 type="radio"
                 name="bot-kind"
                 checked={botKind === "hub"}
-                onChange={() => setBotKind("hub")}
+                disabled
+                title="봇 허브 생성은 현재 사용할 수 없습니다."
               />
               <span>봇 허브</span>
             </label>
