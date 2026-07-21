@@ -1,0 +1,51 @@
+# CGA NLU 엔진 비교표
+
+상태: 초안
+
+이 문서는 봇 생성 전에 세 NLU 엔진의 차이를 빠르게 비교하기 위한 보조 문서입니다. 실제 지원 범위는 CGA 화면의 선택 가능 상태와 기능 검증표를 함께 확인하십시오.
+
+| 구분 | ML | Semantic | LLM |
+|---|---|---|---|
+| 화면 유형 | ML | Semantic - Vector Worker / Semantic - External Embedding | LLM Engine |
+| 핵심 방식 | 의도와 학습문장 중심 분류 | 임베딩과 벡터 검색 중심 분류 | LLM 모델과 지시문 기반 처리 |
+| 주요 준비 | 의도, 학습문장, 개체, 사전 | 의도 또는 검색 지식, 임베딩, Vector DB | Provider, 세부 모델, 지시문, 필요 시 검색 지식 |
+| 대표 점검 | 정확도, 오분류, 데이터 균형 | 검색 유사도, 임계값, Index 상태 | 응답 일관성, 지시문 준수, 지연·비용 |
+| 운영 주의 | 의도 중복과 불균형 | 임베딩 호환성과 인덱스 재생성 | 모델 변경과 응답 편차 |
+
+## 선택 순서
+
+1. 해결하려는 업무가 의도 분류인지 지식 검색인지 확인합니다.
+2. 관리할 수 있는 데이터가 학습문장인지 문서·지식인지 확인합니다.
+3. Vector DB 또는 LLM Provider를 운영할 수 있는지 확인합니다.
+4. 필요한 품질 기준이 정확도, 검색 품질, 생성 응답 중 무엇인지 정합니다.
+5. CGA 봇 생성 화면에서 지원되는 조합인지 확인합니다.
+
+## 빠른 선택 가이드
+
+- 명확한 업무 의도와 관리 가능한 학습문장이 있다면 ML을 우선 검토합니다.
+- 표현이 달라도 의미가 같은 질문을 검색해야 하고 Vector DB를 운영할 수 있다면 Semantic을 검토합니다.
+- Provider·모델·지시문을 운영하면서 유연한 해석이나 생성을 사용해야 한다면 LLM을 검토합니다.
+
+## 설정 항목
+
+### ML
+
+- NLU 방식: ML
+- NLU 모델: DeepLearning Lite, TF-IDF Linear, Keyword Baseline
+
+### Semantic
+
+- NLU 방식: Semantic - Vector Worker 또는 Semantic - External Embedding
+- 모델: 기본 Vector Worker 모델 또는 외부 임베딩 모델
+- 연결: Intent Vector DB, 필요 시 외부 검색 API, Index 이름, API Key
+
+### LLM
+
+- NLU 방식: LLM Engine
+- Provider: CGA 화면에서 선택 가능한 Provider
+- 세부 모델: Provider에 따라 표시되는 모델
+- 추가 항목: Provider에 따라 Ollama 주소 또는 관련 연결 설정
+
+## 주의
+
+이 표는 선택을 돕기 위한 설명이며, 특정 조합이 실제로 학습·검색·응답까지 동작한다는 의미는 아닙니다. 실행 가능 여부와 완료 상태는 기능 검증표의 브라우저·실행 검증 결과가 갱신된 뒤 확정합니다.
