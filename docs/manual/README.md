@@ -35,3 +35,12 @@ CGA 메뉴얼은 사용 목적에 따라 다음 세 문서로 나누어 작성�
 - [CGA NLU 활용 가이드.docx](dist/CGA%20NLU%20활용%20가이드.docx)
 
 Word 문서는 `build_manual_docx.py`로 다시 생성할 수 있습니다. 이 환경에서는 LibreOffice PDF 변환이 완료되지 않아 페이지 이미지 시각 검증은 보류 상태입니다.
+
+## PDF 문서
+
+화면 도움말에서 제공하는 최종 PDF 원본입니다.
+
+- [CGA 사용자 설명서.pdf](CGA%20사용자%20설명서.pdf) - 카카오톡 채널 연결 절차 포함
+- [CGA NLU 활용 가이드.pdf](CGA%20NLU%20활용%20가이드.pdf)
+
+운영 Web은 위 원본과 동일한 파일을 `apps/web/public/manuals/`에 배치하여 `/manuals/cga-user-manual.pdf`, `/manuals/cga-nlu-guide.pdf` 경로로 제공합니다.
