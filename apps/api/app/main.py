@@ -22,11 +22,13 @@ from app.core.config import ROOT_DIR, settings
 from app.core.db_metrics import finish_db_metrics, start_db_metrics
 from app.core.logging import configure_logging, get_logger
 from app.db.session import SessionLocal
+from app.services.edit_lock_cleanup import delete_expired_edit_locks
 
 
 configure_logging()
 logger = get_logger("aidot.api")
 queue_worker_task: asyncio.Task | None = None
+edit_lock_cleanup_task: asyncio.Task | None = None
 
 
 def _queue_worker_sleep_seconds(interval: float, consecutive_failures: int) -> float:
@@ -110,12 +112,71 @@ async def stop_channel_queue_worker() -> None:
     queue_worker_task = None
 
 
+def _process_edit_lock_cleanup_batch() -> int:
+    with SessionLocal() as db:
+        deleted_count = delete_expired_edit_locks(db)
+        db.commit()
+    return deleted_count
+
+
+async def _edit_lock_cleanup_loop() -> None:
+    interval = max(1.0, float(settings.edit_lock_cleanup_interval_seconds))
+    logger.info(
+        "Edit lock cleanup worker started.",
+        extra={"event": "edit_lock.cleanup.worker_started", "extra_data": {"interval_seconds": interval}},
+    )
+    while True:
+        try:
+            deleted_count = await asyncio.to_thread(_process_edit_lock_cleanup_batch)
+            if deleted_count:
+                logger.info(
+                    "Expired edit locks deleted.",
+                    extra={
+                        "event": "edit_lock.cleanup.completed",
+                        "extra_data": {"deleted_count": deleted_count},
+                    },
+                )
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            logger.exception(
+                "Edit lock cleanup worker failed.",
+                extra={
+                    "event": "edit_lock.cleanup.failed",
+                    "extra_data": {"error_type": type(error).__name__, "error_message": str(error)},
+                },
+            )
+        await asyncio.sleep(interval)
+
+
+async def start_edit_lock_cleanup_worker() -> None:
+    global edit_lock_cleanup_task
+    if not settings.edit_lock_cleanup_enabled:
+        return
+    if edit_lock_cleanup_task is None or edit_lock_cleanup_task.done():
+        edit_lock_cleanup_task = asyncio.create_task(_edit_lock_cleanup_loop())
+
+
+async def stop_edit_lock_cleanup_worker() -> None:
+    global edit_lock_cleanup_task
+    if edit_lock_cleanup_task is None:
+        return
+    edit_lock_cleanup_task.cancel()
+    try:
+        await edit_lock_cleanup_task
+    except asyncio.CancelledError:
+        logger.info("Edit lock cleanup worker stopped.", extra={"event": "edit_lock.cleanup.worker_stopped"})
+    edit_lock_cleanup_task = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await start_channel_queue_worker()
+    await start_edit_lock_cleanup_worker()
     try:
         yield
     finally:
+        await stop_edit_lock_cleanup_worker()
         await stop_channel_queue_worker()
 
 
