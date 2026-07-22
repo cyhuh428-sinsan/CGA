@@ -17,6 +17,8 @@ services:
       CGA_LICENSE_PUBLIC_KEY: ${CGA_LICENSE_PUBLIC_KEY:?CGA_LICENSE_PUBLIC_KEY is required}
       CORS_ORIGINS: https://cga.sinsan.kr,https://api-cga.sinsan.kr
       CACHE_ENABLED: "false"
+      EDIT_LOCK_CLEANUP_ENABLED: "true"
+      EDIT_LOCK_CLEANUP_INTERVAL_SECONDS: "60"
       AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350
     depends_on:
       vector-worker:
