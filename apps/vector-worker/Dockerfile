@@ -9,11 +9,13 @@ ARG AIDOT_GPU=false
 ARG AIDOT_TORCH_INDEX_URL=
 
 COPY apps/vector-worker/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt \
-    && if [ "$AIDOT_GPU" = "true" ]; then \
+RUN if [ "$AIDOT_GPU" = "true" ]; then \
         test -n "$AIDOT_TORCH_INDEX_URL"; \
         pip install --no-cache-dir --index-url "$AIDOT_TORCH_INDEX_URL" torch; \
-    fi
+    else \
+        pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch; \
+    fi \
+    && pip install --no-cache-dir -r requirements.txt
 
 COPY apps/vector-worker ./
 RUN find /workspace/apps/vector-worker -type d -name '__pycache__' -prune -exec rm -rf {} + \
