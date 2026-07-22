@@ -39,6 +39,23 @@ def test_compose_exposes_cga_api_only_through_proxy_network() -> None:
     assert "name: proxy-network" in compose
 
 
+def test_compose_runs_an_isolated_cga_vector_worker() -> None:
+    compose = _read("docker-compose.yml")
+    env_example = _read(".env.example")
+
+    assert "container_name: cga-vector-worker" in compose
+    assert "image: cga-vector-worker:latest" in compose
+    assert "AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350" in compose
+    assert "AIDOT_VECTOR_STORAGE_DIR: /workspace/apps/vector-worker/data" in compose
+    assert "cga_vector_data:/workspace/apps/vector-worker/data" in compose
+    assert "cga_internal:" in compose
+    assert "internal: true" in compose
+    assert '"8350:8350"' not in compose
+    assert "CGA_VECTOR_EMBEDDING_PROVIDER" in env_example
+    assert "CGA_VECTOR_EMBEDDING_MODEL" in env_example
+    assert "CGA_OLLAMA_BASE_URL" in env_example
+
+
 def test_deployment_document_declares_external_api_proxy() -> None:
     deployment = _read("docs/cga-daon-deployment.md")
     assert "api-cga.sinsan.kr" in deployment
