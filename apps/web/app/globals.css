@@ -5715,7 +5715,9 @@ textarea {
   margin-bottom: 8px;
 }
 
-.studio-rail__help-section--links button {
+.studio-rail__help-section--links a {
+  display: flex;
+  align-items: center;
   min-height: 32px;
   padding: 0;
   border: 0;
@@ -5723,6 +5725,7 @@ textarea {
   color: #303846;
   font-size: 12px;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 
