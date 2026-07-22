@@ -48,6 +48,39 @@ services:
       retries: 10
       start_period: 45s
 
+  nlu-training-worker:
+    container_name: cga-nlu-training-worker
+    image: cga-api:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ["python", "-m", "app.workers.nlu_training_worker"]
+    environment:
+      APP_ENV: production
+      APP_NAME: CGA NLU Training Worker
+      DATABASE_URL: ${CGA_DATABASE_URL:?CGA_DATABASE_URL is required}
+      JWT_SECRET: ${CGA_JWT_SECRET:?CGA_JWT_SECRET is required}
+      INITIAL_ADMIN_PASSWORD: ${CGA_INITIAL_ADMIN_PASSWORD:?CGA_INITIAL_ADMIN_PASSWORD is required}
+      CGA_LICENSE_PUBLIC_KEY: ${CGA_LICENSE_PUBLIC_KEY:?CGA_LICENSE_PUBLIC_KEY is required}
+      CORS_ORIGINS: https://cga.sinsan.kr,https://api-cga.sinsan.kr
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      REDIS_URL: ${REDIS_URL:-redis://cga-redis:6379/0}
+      CACHE_DEFAULT_TTL_SECONDS: ${CACHE_DEFAULT_TTL_SECONDS:-60}
+      CACHE_VERSION_SECTION_TTL_SECONDS: ${CACHE_VERSION_SECTION_TTL_SECONDS:-60}
+      AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350
+    depends_on:
+      vector-worker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - db_net
+      - cga_internal
+    volumes:
+      - cga_api_storage:/workspace/storage
+      - cga_nlu_models:/workspace/data/nlu_models
+
   vector-worker:
     container_name: cga-vector-worker
     image: cga-vector-worker:latest
