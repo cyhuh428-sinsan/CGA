@@ -45,7 +45,7 @@ def _request() -> Request:
 @pytest.fixture(scope="session")
 def migrated_test_database(test_engine):
     """전용 테스트 DB에 현재 마이그레이션을 적용한다."""
-    test_url = str(test_engine.url)
+    test_url = test_engine.url.render_as_string(hide_password=False)
     production_url = str(settings.sqlalchemy_database_url)
     if test_url == production_url:
         raise RuntimeError("AIDOT_TEST_DATABASE_URL은 운영 DB URL과 달라야 합니다.")
@@ -55,6 +55,8 @@ def migrated_test_database(test_engine):
     try:
         alembic_ini = Path(__file__).parents[2] / "alembic.ini"
         config = Config(str(alembic_ini))
+        config.set_main_option("script_location", str(alembic_ini.parent / "alembic"))
+        config.config_file_name = None
         command.upgrade(config, "head")
     finally:
         settings.database_url = previous_url

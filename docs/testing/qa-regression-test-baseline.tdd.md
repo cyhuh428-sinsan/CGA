@@ -79,6 +79,19 @@ DB fixture 4건을 고친 뒤 전용 DB로 전체 추적 테스트를 실행했�
 - 인프로세스 Alembic 실행의 `fileConfig()`가 기존 로거를 비활성화해, 이후 캐시 로그 테스트 4건의 `caplog` 캡처가 실패했다.
 - Alembic 설정 파일은 이미 파싱된 상태이므로 통합 fixture에서는 `config_file_name`을 비워 로깅 재설정만 차단해야 한다.
 
+## DB 통합 테스트 GREEN 결과
+
+- DB 통합 fixture 4건: `4 passed`
+- DB 통합 후 캐시 로그 격리 회귀: `12 passed`
+- 전용 DB를 포함한 전체 추적 테스트: `524 passed, 0 skipped, 2 warnings`
+- 테스트 종료 후 WSL PostgreSQL의 `cga_qa_%` 임시 DB 개수: `0`
+
+수정 내용:
+
+- SQLAlchemy URL을 Alembic에 전달할 때 `render_as_string(hide_password=False)`를 사용한다.
+- Alembic `script_location`을 절대 경로로 지정해 실행 작업 디렉터리 의존성을 제거한다.
+- 인프로세스 통합 테스트에서는 Alembic의 로깅 재설정을 차단해 이후 테스트와 격리한다.
+
 ## 알려진 범위
 
 - 이 작업은 자동화 테스트 기준선 복구만 다룬다.
