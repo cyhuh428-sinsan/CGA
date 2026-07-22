@@ -69,6 +69,26 @@ def test_vector_worker_uses_cpu_only_torch_by_default() -> None:
     )
 
 
+def test_gpu_compose_overlay_enables_cuda_build_and_runtime_for_cga_engines() -> None:
+    gpu_compose = _read("docker-compose.gpu.yml")
+
+    assert 'CGA_GPU: "true"' in gpu_compose
+    assert "CGA_TORCH_INDEX_URL: ${CGA_TORCH_INDEX_URL:?" in gpu_compose
+    assert "AIDOT_ML_ACCELERATOR: auto" in gpu_compose
+    assert 'AIDOT_GPU: "true"' in gpu_compose
+    assert "AIDOT_TORCH_INDEX_URL: ${CGA_TORCH_INDEX_URL:?" in gpu_compose
+    assert "AIDOT_EMBEDDING_DEVICE: auto" in gpu_compose
+    assert gpu_compose.count("gpus: all") == 2
+
+
+def test_default_compose_remains_cpu_compatible_without_gpu_device_requests() -> None:
+    compose = _read("docker-compose.yml")
+
+    assert "gpus: all" not in compose
+    assert 'CGA_GPU: "true"' not in compose
+    assert 'AIDOT_GPU: "true"' not in compose
+
+
 def test_deployment_document_declares_external_api_proxy() -> None:
     deployment = _read("docs/cga-daon-deployment.md")
     assert "api-cga.sinsan.kr" in deployment

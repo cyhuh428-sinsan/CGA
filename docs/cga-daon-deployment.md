@@ -53,6 +53,30 @@ Vector Worker에서 외부 Ollama 임베딩을 사용하는 경우 다음 비밀
 
 ## 5. 배포 및 확인 순서
 
+### CPU 배포
+
+```bash
+docker-compose -f docker-compose.yml build api vector-worker
+docker-compose -f docker-compose.yml up -d --no-deps api vector-worker
+```
+
+### WSL GPU 배포
+
+서버의 추적되지 않는 `.env`에 GPU와 호환되는 PyTorch wheel index를 지정한다.
+
+```dotenv
+CGA_TORCH_INDEX_URL=https://download.pytorch.org/whl/cu128
+```
+
+GPU 이미지 빌드와 컨테이너 기동 모두 기본 Compose와 GPU 오버레이를 함께 사용한다.
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.gpu.yml build api vector-worker
+docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --no-deps api vector-worker
+```
+
+`docker-compose.yml`만 사용해 다시 기동하면 GPU 장치 할당이 제거되므로 GPU 호스트에서는 항상 두 파일을 함께 지정한다.
+
 1. 로컬 브랜치의 빌드·테스트·diff를 확인한다.
 2. commit 후 GitHub에 push한다.
 3. Daon 서버에서 해당 브랜치를 Git 기준으로 반영한다.
