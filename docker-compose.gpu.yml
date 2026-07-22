@@ -8,6 +8,15 @@ services:
       AIDOT_ML_ACCELERATOR: auto
     gpus: all
 
+  nlu-training-worker:
+    build:
+      args:
+        CGA_GPU: "true"
+        CGA_TORCH_INDEX_URL: ${CGA_TORCH_INDEX_URL:?GPU PyTorch wheel index URL is required}
+    environment:
+      AIDOT_ML_ACCELERATOR: auto
+    gpus: all
+
   vector-worker:
     build:
       args:
