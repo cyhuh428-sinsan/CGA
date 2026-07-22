@@ -18,3 +18,8 @@ storage/
 .env.*
 !.env.example
 backups/
+
+# Local manual reference archives and reproducible QA/render outputs
+/docs/manual/Getting Started/
+/docs/manual/NLU 활용 가이드/
+/docs/manual/aidot-user-manual/
