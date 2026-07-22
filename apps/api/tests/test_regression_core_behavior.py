@@ -26,19 +26,25 @@ def _route_paths(router) -> set[str]:
 def test_regression_auth_routes_keep_manual_entry_points() -> None:
     paths = _route_paths(auth_router)
 
-    assert {"/login", "/logout", "/me", "/signup", "/change-password"} <= paths
+    assert {"/auth/login", "/auth/logout", "/auth/me", "/auth/signup", "/auth/change-password"} <= paths
 
 
 def test_regression_bot_routes_keep_core_management_entry_points() -> None:
     paths = _route_paths(bots_router)
 
-    assert {"", "/{bot_id}", "/{bot_id}/versions", "/{bot_id}/versions/{version_id}"} <= paths
+    assert {"/bots", "/bots/{bot_id}", "/bots/{bot_id}/versions", "/bots/{bot_id}/versions/{version_id}"} <= paths
 
 
 def test_regression_edit_lock_routes_keep_save_conflict_contract() -> None:
     paths = _route_paths(edit_locks_router)
 
-    assert {"/acquire", "/heartbeat", "/release", "/force-release", "/status"} <= paths
+    assert {
+        "/edit-locks/acquire",
+        "/edit-locks/heartbeat",
+        "/edit-locks/release",
+        "/edit-locks/force-release",
+        "/edit-locks/status",
+    } <= paths
 
 
 def test_regression_login_requires_both_credentials() -> None:

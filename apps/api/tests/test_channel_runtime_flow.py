@@ -275,7 +275,15 @@ def test_answer_rag_uses_precomputed_answer_before_vector_search() -> None:
 
 
 def test_llm_answer_uses_llm_generated_answer_text() -> None:
-    bot = _FakeBot({"nlu_type": "llm", "nlu_model": "llm_engine_default", "answer_mode": "llm"})
+    bot = _FakeBot(
+        {
+            "nlu_type": "llm",
+            "nlu_model": "llm_engine_default",
+            "answer_mode": "llm",
+            "llm_provider": "ollama",
+            "llm_model": "llm_engine_default",
+        }
+    )
     version = _FakeVersion({})
     runtime_state = {"variables": {}}
 
@@ -301,7 +309,15 @@ def test_llm_answer_uses_llm_generated_answer_text() -> None:
 
 
 def test_llm_answer_keeps_llm_answer_even_when_same_as_query() -> None:
-    bot = _FakeBot({"nlu_type": "llm", "nlu_model": "llm_engine_default", "answer_mode": "llm"})
+    bot = _FakeBot(
+        {
+            "nlu_type": "llm",
+            "nlu_model": "llm_engine_default",
+            "answer_mode": "llm",
+            "llm_provider": "ollama",
+            "llm_model": "llm_engine_default",
+        }
+    )
     version = _FakeVersion({})
     runtime_state = {"variables": {}}
 
