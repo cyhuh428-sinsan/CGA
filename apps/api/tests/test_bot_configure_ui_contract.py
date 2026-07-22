@@ -50,15 +50,17 @@ def test_evaluation_section_does_not_render_summary_stats() -> None:
     assert '|| activeSection === "evaluation"' in provider
 
 
-def test_simulator_analysis_panel_is_always_open() -> None:
+def test_bot_test_keeps_analysis_open_but_popup_simulator_can_toggle_it() -> None:
     simulator = _read("apps/web/components/simulator-page.tsx")
 
-    assert "analysisOpen" not in simulator
-    assert "setAnalysisOpen" not in simulator
-    assert "simulator-workbench--debug-open" in simulator
+    assert "const [analysisOpen, setAnalysisOpen] = useState(false);" in simulator
+    assert "const analysisVisible = !embedded || analysisOpen;" in simulator
+    assert 'analysisVisible ? " simulator-workbench--debug-open" : ""' in simulator
     assert '<aside className="simulator-analysis" aria-label="분석 데이터">' in simulator
-    assert "분석 데이터 보기" not in simulator
-    assert "분석 데이터 닫기" not in simulator
+    assert "분석 데이터 보기" in simulator
+    assert "분석 데이터 닫기" in simulator
+    assert "<h1>봇 테스트</h1>" in simulator
+    assert "봇 테스트 사용하기 &gt; 봇과 대화하기" in simulator
 
 
 def test_operations_retraining_and_analysis_hide_summary_and_simulator() -> None:
