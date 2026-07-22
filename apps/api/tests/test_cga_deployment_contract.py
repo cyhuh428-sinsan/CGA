@@ -58,6 +58,21 @@ def test_compose_runs_an_isolated_cga_vector_worker() -> None:
     assert "CGA_OLLAMA_BASE_URL" in env_example
 
 
+def test_compose_runs_cga_nlu_training_worker_with_shared_model_storage() -> None:
+    compose = _read("docker-compose.yml")
+
+    assert "nlu-training-worker:" in compose
+    assert "container_name: cga-nlu-training-worker" in compose
+    assert 'command: ["python", "-m", "app.workers.nlu_training_worker"]' in compose
+    assert "image: cga-api:latest" in compose
+    assert compose.count("cga_nlu_models:/workspace/data/nlu_models") == 2
+    assert compose.count("cga_api_storage:/workspace/storage") == 2
+    assert "AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350" in compose
+    assert "REDIS_URL: ${REDIS_URL:-redis://cga-redis:6379/0}" in compose
+    assert "db_net" in compose
+    assert "cga_internal" in compose
+
+
 def test_vector_worker_uses_cpu_only_torch_by_default() -> None:
     dockerfile = _read("apps/vector-worker/Dockerfile")
 
@@ -72,13 +87,14 @@ def test_vector_worker_uses_cpu_only_torch_by_default() -> None:
 def test_gpu_compose_overlay_enables_cuda_build_and_runtime_for_cga_engines() -> None:
     gpu_compose = _read("docker-compose.gpu.yml")
 
+    assert "nlu-training-worker:" in gpu_compose
     assert 'CGA_GPU: "true"' in gpu_compose
     assert "CGA_TORCH_INDEX_URL: ${CGA_TORCH_INDEX_URL:?" in gpu_compose
     assert "AIDOT_ML_ACCELERATOR: auto" in gpu_compose
     assert 'AIDOT_GPU: "true"' in gpu_compose
     assert "AIDOT_TORCH_INDEX_URL: ${CGA_TORCH_INDEX_URL:?" in gpu_compose
     assert "AIDOT_EMBEDDING_DEVICE: auto" in gpu_compose
-    assert gpu_compose.count("gpus: all") == 2
+    assert gpu_compose.count("gpus: all") == 3
 
 
 def test_default_compose_remains_cpu_compatible_without_gpu_device_requests() -> None:
