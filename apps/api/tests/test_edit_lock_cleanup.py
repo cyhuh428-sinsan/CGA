@@ -61,3 +61,25 @@ def test_delete_expired_edit_locks_includes_exact_expiration_boundary() -> None:
 
     assert deleted_count == 1
     assert db.scalar(text("SELECT COUNT(*) FROM edit_locks WHERE id = 'expired'")) == 0
+
+
+def test_cleanup_batch_commits_deleted_rows(monkeypatch) -> None:
+    from app import main
+
+    calls: list[str] = []
+
+    class FakeSession:
+        def __enter__(self) -> "FakeSession":
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        def commit(self) -> None:
+            calls.append("commit")
+
+    monkeypatch.setattr(main, "SessionLocal", lambda: FakeSession())
+    monkeypatch.setattr(main, "delete_expired_edit_locks", lambda _db: 2)
+
+    assert main._process_edit_lock_cleanup_batch() == 2
+    assert calls == ["commit"]

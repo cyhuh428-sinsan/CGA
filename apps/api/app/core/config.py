@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     channel_queue_worker_interval_seconds: float = 2.0
     channel_queue_worker_batch_size: int = 10
     channel_queue_worker_error_backoff_seconds: float = 30.0
+    edit_lock_cleanup_enabled: bool = True
+    edit_lock_cleanup_interval_seconds: float = 60.0
     nlu_training_worker_enabled: bool = True
     nlu_training_worker_interval_seconds: float = 1.0
     nlu_training_worker_error_backoff_seconds: float = 30.0
