@@ -203,7 +203,20 @@
 - 실제 로그인 브라우저에서 UUID 봇 목록/경로, 축약된 구성 화면, 비활성 `LLM Engine` 고정을 확인했다.
 - 봇스테이션 검증 중 연결 버튼의 즉시 저장 동작으로 상태가 1회 변경됐으나 감사로그 직전 데이터로 조건부 원상복구했고, 미연결 상태와 기존 수정시각 복원을 확인했다.
 
-## 14. 2026-07-21 DB 운영 대시보드 메뉴 이동
+## 14. 2026-07-20 운영 재학습·분석 화면 정리
+
+- 운영 재학습과 분석에서 상단 요약 통계를 렌더링하지 않도록 변경했다.
+- 두 화면의 시뮬레이터 실행기 import와 렌더를 제거했다.
+- 다른 화면의 요약 통계와 시뮬레이터는 유지했다.
+- UI 계약 테스트 6개와 Web 운영 빌드가 통과했다.
+- 운영 브라우저에서 두 화면 각각 작업 헤더 1개, 요약 통계 0개, 시뮬레이터 실행기 0개를 확인했다.
+- Daon Studio는 `b03d78a`로 배포됐고 Studio·API가 healthy다.
+- 커밋:
+  - `5ea62b9 test: require compact operations views without simulator`
+  - `b03d78a feat: simplify operations retraining and analysis views`
+- 현재 브랜치: `feature/compact-retraining`.
+
+## 15. 2026-07-21 DB 운영 대시보드 메뉴 이동
 
 - Admin 현황 조회의 운영 대시보드 메뉴 항목을 제거했다.
 - 운영 메뉴의 항목을 `DB 운영 대시보드`로 변경하고 `/admin/operations-dashboard`에 연결했다.
