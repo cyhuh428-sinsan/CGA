@@ -24,6 +24,26 @@ const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
 
 type PrimaryPanelId = "operations" | "build" | "api" | "admin";
 
+type GettingStartedMode = "explore" | "create" | "sample";
+
+const gettingStartedSlides = [
+  {
+    title: "쉽고 빠르게 AI 챗봇을 만들 수 있습니다.",
+    description: "캔버스에 대화 흐름을 설계하는 직관적이고 쉬운 대화 설계툴을 제공하여 누구나 쉽고 빠르게 챗봇을 만들 수 있습니다. 또한 설계한 대화 시나리오는 바로 테스트하며 수정할 수 있습니다.",
+    variant: "design",
+  },
+  {
+    title: "Enterprise 전용 챗봇 구축에 최적화되어 있습니다.",
+    description: "Bot Station과 API Store를 통해 사내 시스템과 RPA 솔루션을 연계할 수 있으며, 다양한 메신저와 보이스 채널 연계를 통해 업무의 E2E 자동화를 구현할 수 있습니다.",
+    variant: "enterprise",
+  },
+  {
+    title: "운영 데이터를 바탕으로 챗봇을 지속 개선할 수 있습니다.",
+    description: "분석·평가·대화 이력을 확인하고 실패 발화를 다시 학습 데이터로 반영하여 챗봇 품질을 반복적으로 개선할 수 있습니다.",
+    variant: "improve",
+  },
+] as const;
+
 type BuildNavigationItem = {
   label: string;
   href: string;
@@ -90,11 +110,17 @@ export function StudioRail() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PrimaryPanelId | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [gettingStartedOpen, setGettingStartedOpen] = useState(false);
+  const [gettingStartedSlide, setGettingStartedSlide] = useState(0);
+  const [gettingStartedMode, setGettingStartedMode] = useState<GettingStartedMode>("explore");
+  const [hideGettingStarted, setHideGettingStarted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [language, setLanguage] = useState("ko");
   const [licenseStatus, setLicenseStatus] = useState<AdminLicenseStatusResponse | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const helpMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const currentGettingStartedSlide = gettingStartedSlides[gettingStartedSlide];
 
   useEffect(() => {
     const currentSession = loadAuthSession();
@@ -144,6 +170,21 @@ export function StudioRail() {
   }, [helpOpen]);
 
   useEffect(() => {
+    if (!gettingStartedOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setGettingStartedOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [gettingStartedOpen]);
+
+  useEffect(() => {
     setActivePanel(null);
   }, [pathname]);
 
@@ -175,6 +216,30 @@ export function StudioRail() {
       setIsLoggingOut(false);
       router.push("/login");
       router.refresh();
+    }
+  }
+
+  function openGettingStarted(slide = 0) {
+    setHelpOpen(false);
+    setGettingStartedSlide(slide);
+    setGettingStartedMode("explore");
+    setHideGettingStarted(window.localStorage.getItem("cga.getting-started.hidden") === "true");
+    setGettingStartedOpen(true);
+  }
+
+  function closeGettingStarted(savePreference = false) {
+    if (savePreference) {
+      window.localStorage.setItem("cga.getting-started.hidden", "true");
+    }
+    setGettingStartedOpen(false);
+  }
+
+  function startGettingStarted() {
+    closeGettingStarted(hideGettingStarted);
+    if (gettingStartedMode === "create") {
+      router.push("/studio/bots/new");
+    } else if (gettingStartedMode === "sample") {
+      router.push("/studio/bots");
     }
   }
 
@@ -447,7 +512,14 @@ export function StudioRail() {
               </dl>
             </section>
             <section className="studio-rail__help-section studio-rail__help-section--links">
-              <strong>Getting Started</strong>
+              <button
+                type="button"
+                className="studio-rail__help-title"
+                aria-haspopup="dialog"
+                onClick={() => openGettingStarted()}
+              >
+                Getting Started
+              </button>
               <a href="/manuals/cga-user-manual.pdf" target="_blank" rel="noreferrer">
                 사용자 매뉴얼
               </a>
@@ -458,6 +530,100 @@ export function StudioRail() {
           </div>
         ) : null}
       </div>
+
+      {gettingStartedOpen ? (
+        <div
+          className="studio-getting-started__backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeGettingStarted(hideGettingStarted);
+            }
+          }}
+        >
+          <section
+            className="studio-getting-started"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cga-getting-started-title"
+          >
+            <header className="studio-getting-started__header">
+              <strong id="cga-getting-started-title">Getting Started</strong>
+              <button type="button" aria-label="Getting Started 닫기" onClick={() => closeGettingStarted(hideGettingStarted)}>
+                ×
+              </button>
+            </header>
+
+            <div className={`studio-getting-started__hero is-${currentGettingStartedSlide.variant}`}>
+              <div className="studio-getting-started__illustration" aria-hidden="true">
+                <div className="studio-getting-started__bot">
+                  <span className="studio-getting-started__bot-eye" />
+                  <span className="studio-getting-started__bot-eye" />
+                </div>
+                <div className="studio-getting-started__cards">
+                  <span>Intent</span>
+                  <span>Bot Station</span>
+                  <span>Analytics</span>
+                </div>
+              </div>
+              <div className="studio-getting-started__copy">
+                <h2>{currentGettingStartedSlide.title}</h2>
+                <p>{currentGettingStartedSlide.description}</p>
+              </div>
+              <button
+                type="button"
+                className="studio-getting-started__next"
+                aria-label="다음 소개 보기"
+                onClick={() => setGettingStartedSlide((current) => (current + 1) % gettingStartedSlides.length)}
+              >
+                ›
+              </button>
+              <div className="studio-getting-started__dots" aria-label="소개 슬라이드 선택">
+                {gettingStartedSlides.map((slide, index) => (
+                  <button
+                    key={slide.variant}
+                    type="button"
+                    className={index === gettingStartedSlide ? "is-active" : ""}
+                    aria-label={`${index + 1}번째 소개 보기`}
+                    aria-current={index === gettingStartedSlide ? "step" : undefined}
+                    onClick={() => setGettingStartedSlide(index)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="studio-getting-started__body">
+              <h3>CGA Studio 체험 방법을 선택하세요.</h3>
+              <div className="studio-getting-started__modes" role="radiogroup" aria-label="Getting Started 체험 방법">
+                <label className={gettingStartedMode === "explore" ? "is-selected" : ""}>
+                  <input type="radio" name="getting-started-mode" value="explore" checked={gettingStartedMode === "explore"} onChange={() => setGettingStartedMode("explore")} />
+                  <span>주요메뉴 탐색하기</span>
+                </label>
+                <label className={gettingStartedMode === "create" ? "is-selected" : ""}>
+                  <input type="radio" name="getting-started-mode" value="create" checked={gettingStartedMode === "create"} onChange={() => setGettingStartedMode("create")} />
+                  <span>봇 만들기</span>
+                </label>
+                <label className={gettingStartedMode === "sample" ? "is-selected" : ""}>
+                  <input type="radio" name="getting-started-mode" value="sample" checked={gettingStartedMode === "sample"} onChange={() => setGettingStartedMode("sample")} />
+                  <span>Sample Bot</span>
+                </label>
+              </div>
+              <div className="studio-getting-started__actions">
+                <button type="button" className="studio-getting-started__secondary" onClick={() => closeGettingStarted(hideGettingStarted)}>
+                  팝업을 닫고, 자유로운 시작
+                </button>
+                <button type="button" className="studio-getting-started__primary" onClick={startGettingStarted}>
+                  체험시작
+                </button>
+              </div>
+              <label className="studio-getting-started__remember">
+                <input type="checkbox" checked={hideGettingStarted} onChange={(event) => setHideGettingStarted(event.target.checked)} />
+                <span>시작할 때 이 팝업 다시 보지 않기</span>
+              </label>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       <div className="studio-rail__account" ref={accountMenuRef}>
         <button
