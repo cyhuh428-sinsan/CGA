@@ -3376,6 +3376,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
   const [runtime, setRuntime] = useState<RuntimeState | null>(null);
   const [analyses, setAnalyses] = useState<SimulatorAnalysis[]>([]);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const analysisVisible = !embedded || analysisOpen;
   const [loadedScript, setLoadedScript] = useState<LoadedScript | null>(null);
   const [scriptViewerOpen, setScriptViewerOpen] = useState(false);
   const [floatingButtonsVisible, setFloatingButtonsVisible] = useState(true);
@@ -6323,14 +6325,16 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       {!embedded ? (
         <div className="studio-topbar studio-topbar--flat">
           <div>
-            <p className="crumb">대화 시뮬레이터 사용하기 &gt; 대화 시뮬레이터로 대화하기</p>
-            <h1>시뮬레이터</h1>
+            <p className="crumb">봇 테스트 사용하기 &gt; 봇과 대화하기</p>
+            <h1>봇 테스트</h1>
           </div>
         </div>
       ) : null}
 
       <div
-        className={`simulator-workbench${embedded ? " simulator-workbench--popup" : ""} simulator-workbench--debug-open`}
+        className={`simulator-workbench${embedded ? " simulator-workbench--popup" : ""}${
+          analysisVisible ? " simulator-workbench--debug-open" : ""
+        }`}
       >
         <div className="simulator-stage simulator-stage--flat simulator-stage--messenger">
           <div className="simulator-window simulator-window--messenger">
@@ -6691,13 +6695,36 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               </button>
             </form>
 
+            {embedded ? (
+              <button
+                type="button"
+                className={`simulator-footer simulator-footer--button${analysisOpen ? " is-active" : ""}`}
+                onClick={() => {
+                  setSelectedAnalysisId(selectedAnalysis?.id ?? analyses.at(-1)?.id ?? null);
+                  setAnalysisOpen((current) => !current);
+                }}
+              >
+                분석 데이터 보기
+              </button>
+            ) : null}
           </div>
         </div>
 
+        {analysisVisible ? (
         <aside className="simulator-analysis" aria-label="분석 데이터">
           <div className="simulator-analysis__header">
             <strong>분석 데이터</strong>
             <span>Runtime / Variables / Trace</span>
+            {embedded ? (
+              <button
+                type="button"
+                className="simulator-analysis__close"
+                onClick={() => setAnalysisOpen(false)}
+                aria-label="분석 데이터 닫기"
+              >
+                ×
+              </button>
+            ) : null}
           </div>
           {selectedAnalysis ? (
             <>
@@ -6740,6 +6767,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             <div className="simulator-empty">대화를 진행하면 분석 데이터가 표시됩니다.</div>
           )}
         </aside>
+        ) : null}
       </div>
 
       {scriptViewerOpen && loadedScript ? (
