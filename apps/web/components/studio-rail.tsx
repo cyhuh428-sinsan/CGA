@@ -448,8 +448,12 @@ export function StudioRail() {
             </section>
             <section className="studio-rail__help-section studio-rail__help-section--links">
               <strong>Getting Started</strong>
-              <button type="button">사용자 매뉴얼</button>
-              <button type="button">NLU 학습 가이드</button>
+              <a href="/manuals/cga-user-manual.pdf" target="_blank" rel="noreferrer">
+                사용자 매뉴얼
+              </a>
+              <a href="/manuals/cga-nlu-guide.pdf" target="_blank" rel="noreferrer">
+                NLU 학습 가이드
+              </a>
             </section>
           </div>
         ) : null}
