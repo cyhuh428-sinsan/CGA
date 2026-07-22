@@ -31,6 +31,14 @@
 
 브라우저에서 http://localhost:5173/login 으로 접속합니다.
 
+## 회귀 테스트
+
+필요한 검사 범위에 따라 회귀 테스트를 실행하는 방법은 [CGA Studio 회귀 테스트 실행 가이드](docs/testing/REGRESSION_TEST_GUIDE.md)를 참고합니다.
+
+빠른 회귀 테스트는 저장소 루트에서 다음 명령으로 실행합니다.
+
+    .\scripts\run-regression-tests.ps1 -Scope Quick
+
 ## 운영 원칙
 
 - 기존 CGA 데이터베이스를 유지하고 CGA API를 독립 운영합니다.
