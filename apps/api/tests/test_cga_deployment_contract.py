@@ -48,8 +48,10 @@ def test_compose_runs_an_isolated_cga_vector_worker() -> None:
     assert "AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350" in compose
     assert "AIDOT_VECTOR_STORAGE_DIR: /workspace/apps/vector-worker/data" in compose
     assert "cga_vector_data:/workspace/apps/vector-worker/data" in compose
+    assert "vector-worker:\n        condition: service_healthy" in compose
+    assert "http://127.0.0.1:8350/health" in compose
     assert "cga_internal:" in compose
-    assert "internal: true" in compose
+    assert "driver: bridge" in compose
     assert '"8350:8350"' not in compose
     assert "CGA_VECTOR_EMBEDDING_PROVIDER" in env_example
     assert "CGA_VECTOR_EMBEDDING_MODEL" in env_example

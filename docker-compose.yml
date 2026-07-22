@@ -17,11 +17,16 @@ services:
       CGA_LICENSE_PUBLIC_KEY: ${CGA_LICENSE_PUBLIC_KEY:?CGA_LICENSE_PUBLIC_KEY is required}
       CORS_ORIGINS: https://cga.sinsan.kr,https://api-cga.sinsan.kr
       CACHE_ENABLED: "false"
+      AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350
+    depends_on:
+      vector-worker:
+        condition: service_healthy
     expose:
       - "8000"
     networks:
       - proxy_net
       - db_net
+      - cga_internal
     volumes:
       - cga_api_storage:/workspace/storage
       - cga_nlu_models:/workspace/data/nlu_models
@@ -35,6 +40,37 @@ services:
       timeout: 7s
       retries: 10
       start_period: 45s
+
+  vector-worker:
+    container_name: cga-vector-worker
+    image: cga-vector-worker:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/vector-worker/Dockerfile
+    environment:
+      AIDOT_VECTOR_STORAGE_DIR: /workspace/apps/vector-worker/data
+      AIDOT_VECTOR_EMBEDDING_PROVIDER: ${CGA_VECTOR_EMBEDDING_PROVIDER:-aidot_vector_worker}
+      AIDOT_VECTOR_EMBEDDING_MODEL: ${CGA_VECTOR_EMBEDDING_MODEL:-semantic_engine_default}
+      AIDOT_OLLAMA_BASE_URL: ${CGA_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    expose:
+      - "8350"
+    networks:
+      - cga_internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - cga_vector_data:/workspace/apps/vector-worker/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8350/health', timeout=5)
+      interval: 15s
+      timeout: 7s
+      retries: 10
+      start_period: 30s
 
   studio:
     container_name: cga-studio
@@ -70,7 +106,10 @@ networks:
   db_net:
     external: true
     name: common_default
+  cga_internal:
+    driver: bridge
 
 volumes:
   cga_api_storage:
   cga_nlu_models:
+  cga_vector_data:
