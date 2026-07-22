@@ -58,6 +58,17 @@ def test_compose_runs_an_isolated_cga_vector_worker() -> None:
     assert "CGA_OLLAMA_BASE_URL" in env_example
 
 
+def test_vector_worker_uses_cpu_only_torch_by_default() -> None:
+    dockerfile = _read("apps/vector-worker/Dockerfile")
+
+    assert "https://download.pytorch.org/whl/cpu" in dockerfile
+    assert 'if [ "$AIDOT_GPU" = "true" ]' in dockerfile
+    assert 'test -n "$AIDOT_TORCH_INDEX_URL"' in dockerfile
+    assert dockerfile.index("pip install --no-cache-dir --index-url") < dockerfile.index(
+        "pip install --no-cache-dir -r requirements.txt"
+    )
+
+
 def test_deployment_document_declares_external_api_proxy() -> None:
     deployment = _read("docs/cga-daon-deployment.md")
     assert "api-cga.sinsan.kr" in deployment
