@@ -4,6 +4,7 @@ import { ManualMainHeaderActions, ManualMainVersionSelect } from "@/components/m
 import { NluTrainingButton } from "@/components/nlu-training-button";
 import { SummaryStatGrid, type SummaryStatItem } from "@/components/summary-stat-grid";
 import { ANSWER_MODE_OPTIONS, normalizeAnswerMode } from "@/lib/answer-options";
+import { formatKoreanDateTime } from "@/lib/date-time";
 import { getNluModelLabel, getNluTypeLabel } from "@/lib/nlu-options";
 import type { StudioBotApiItem, StudioBotVersionApiItem } from "@/lib/studio-bots-api";
 import { normalizeVersionDocument } from "@/lib/version-document";
@@ -64,13 +65,9 @@ function getEngineSummary(version: StudioBotVersionApiItem, bot: StudioBotApiIte
   return `${getNluTypeLabel(nluType)} · ${getNluModelLabel(nluType, nluModel)} / 답변: ${getAnswerModeLabel(answerMode)}`;
 }
 
-function formatTrainingDate(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.replace("T", " ").slice(0, 16) : "";
-}
-
 function getTrainingStatusText(version: StudioBotVersionApiItem) {
   const training = version.nlu_training ?? {};
-  const trainedAt = formatTrainingDate(training.trained_at);
+  const trainedAt = formatKoreanDateTime(training.trained_at);
   const trainedBy =
     typeof training.trained_by_login_id === "string" && training.trained_by_login_id.trim()
       ? training.trained_by_login_id.trim()
