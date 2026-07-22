@@ -203,7 +203,34 @@
 - 실제 로그인 브라우저에서 UUID 봇 목록/경로, 축약된 구성 화면, 비활성 `LLM Engine` 고정을 확인했다.
 - 봇스테이션 검증 중 연결 버튼의 즉시 저장 동작으로 상태가 1회 변경됐으나 감사로그 직전 데이터로 조건부 원상복구했고, 미연결 상태와 기존 수정시각 복원을 확인했다.
 
-## 14. 2026-07-21 DB 운영 대시보드 메뉴 이동
+## 14. 2026-07-20 운영 재학습·분석 화면 정리
+
+- 운영 재학습과 분석에서 상단 요약 통계를 렌더링하지 않도록 변경했다.
+- 두 화면의 시뮬레이터 실행기 import와 렌더를 제거했다.
+- 다른 화면의 요약 통계와 시뮬레이터는 유지했다.
+- UI 계약 테스트 6개와 Web 운영 빌드가 통과했다.
+- 운영 브라우저에서 두 화면 각각 작업 헤더 1개, 요약 통계 0개, 시뮬레이터 실행기 0개를 확인했다.
+- Daon Studio는 `b03d78a`로 배포됐고 Studio·API가 healthy다.
+- 커밋:
+  - `5ea62b9 test: require compact operations views without simulator`
+  - `b03d78a feat: simplify operations retraining and analysis views`
+- 현재 브랜치: `feature/compact-retraining`.
+
+## 15. 2026-07-20 봇 테스트 분석 패널 고정 및 봇 평가 요약 제거
+
+- 봇 테스트의 `analysisOpen` 상태와 분석 패널 열기·닫기 버튼을 제거했다.
+- 분석 데이터 패널과 디버그 레이아웃은 항상 렌더링한다.
+- 봇 평가에서는 공용 작업 헤더를 유지하고 상단 요약 통계만 렌더링하지 않는다.
+- UI 계약 테스트 5개와 Web 운영 빌드가 통과했다.
+- 운영 브라우저에서 분석 패널 1개, 열기·닫기 버튼 0개, 평가 요약 통계 0개를 확인했다.
+- Daon Studio는 `4646be7`로 배포됐고 Studio·API가 healthy다.
+- 커밋:
+  - `21ae9a6 test: require fixed simulator analysis and compact evaluation`
+  - `4646be7 feat: keep simulator analysis open and compact evaluation`
+- 현재 브랜치: `feature/fixed-simulator-analysis`.
+- 이후 팝업 시뮬레이터는 채팅 우선·분석 패널 토글 방식으로 변경했고, 전용 봇 테스트 화면만 분석 패널을 상시 표시한다.
+
+## 16. 2026-07-21 DB 운영 대시보드 메뉴 이동
 
 - Admin 현황 조회의 운영 대시보드 메뉴 항목을 제거했다.
 - 운영 메뉴의 항목을 `DB 운영 대시보드`로 변경하고 `/admin/operations-dashboard`에 연결했다.
