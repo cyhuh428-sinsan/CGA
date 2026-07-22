@@ -57,6 +57,18 @@ uv run pytest apps/api/tests -q -rs --ignore=apps/api/tests/test_workspace_conte
 - 스킵 4건은 `AIDOT_TEST_DATABASE_URL`이 없는 전용 DB 통합 테스트다.
 - 경고 1건은 Starlette의 `python_multipart` 전환 예정 안내다.
 
+## DB 통합 테스트 RED 기준선
+
+WSL PostgreSQL에 일회성 전용 DB를 생성하고 스킵 4건을 실행했다. 임시 DB는 테스트 종료 후 삭제했다.
+
+결과: `2 passed, 2 errors`
+
+- 단순 연결과 트랜잭션 롤백 fixture는 통과했다.
+- `str(test_engine.url)`이 비밀번호를 `***`로 마스킹해 Alembic 재연결이 실패했다.
+- `alembic.ini`의 상대 `script_location`이 실행 작업 디렉터리에 의존했다.
+
+제품 기능 결함이 아니라, DB 통합 테스트를 실제 활성화할 때 드러나는 fixture 결함이다.
+
 ## 알려진 범위
 
 - 이 작업은 자동화 테스트 기준선 복구만 다룬다.
