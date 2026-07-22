@@ -512,7 +512,12 @@ export function StudioRail() {
               </dl>
             </section>
             <section className="studio-rail__help-section studio-rail__help-section--links">
-              <button type="button" className="studio-rail__help-title" onClick={() => openGettingStarted()}>
+              <button
+                type="button"
+                className="studio-rail__help-title"
+                aria-haspopup="dialog"
+                onClick={() => openGettingStarted()}
+              >
                 Getting Started
               </button>
               <button type="button" onClick={() => openGettingStarted()}>사용자 매뉴얼</button>

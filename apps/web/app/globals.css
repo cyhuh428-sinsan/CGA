@@ -5716,11 +5716,26 @@ textarea {
 }
 
 .studio-rail__help-title {
+  display: block;
+  width: 100%;
   min-height: auto !important;
   margin-bottom: 8px;
+  padding: 0 !important;
+  border: 0;
+  appearance: none;
+  background: transparent;
   color: #3e4652 !important;
   font-size: 13px !important;
   font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-rail__help-title:hover,
+.studio-rail__help-title:focus-visible {
+  color: #16bfd0 !important;
+  outline: none;
 }
 
 .studio-rail__help-section--links button {
