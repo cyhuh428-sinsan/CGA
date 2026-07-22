@@ -186,6 +186,23 @@ def convert_markdown(source, output):
             set_font(run, size=9.5, color=GRAY, italic=True)
             index += 1
             continue
+        image_match = re.match(r"^!\[([^]]*)\]\(([^)]+)\)$", line)
+        if image_match:
+            image_path = (source.parent / image_match.group(2)).resolve()
+            if image_path.exists():
+                paragraph = doc.add_paragraph()
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                run = paragraph.add_run()
+                run.add_picture(str(image_path), width=Inches(6.25))
+                if image_match.group(1).strip():
+                    caption = doc.add_paragraph()
+                    caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    caption.paragraph_format.space_after = Pt(8)
+                    set_font(caption.add_run(image_match.group(1).strip()), size=9, color=GRAY, italic=True)
+            else:
+                add_text(doc, f"[이미지 파일 없음: {image_match.group(2)}]", color=GRAY, italic=True)
+            index += 1
+            continue
         if line.startswith("|"):
             rows = []
             while index < len(lines) and lines[index].strip().startswith("|"):
