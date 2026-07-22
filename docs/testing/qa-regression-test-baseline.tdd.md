@@ -30,9 +30,35 @@ uv run pytest apps/api/tests/test_api_contract_regression.py apps/api/tests/test
 
 ## GREEN 결과
 
-수정 후 실제 실행 결과를 기록한다.
+### 대상 테스트
+
+동일한 5개 테스트를 재실행한 결과: `5 passed, 1 warning`
+
+### 관련 계약·런타임 테스트
+
+```powershell
+$env:PYTHONPATH='apps/api'
+uv run pytest apps/api/tests/test_channel_runtime_flow.py apps/api/tests/test_regression_core_behavior.py apps/api/tests/test_api_contract_regression.py apps/api/tests/test_api_method_contract_regression.py -q
+```
+
+결과: `129 passed, 1 warning`
+
+### 전체 추적 소스 기준 백엔드 테스트
+
+사용자 소유 미추적 파일 `apps/api/tests/test_workspace_context_shared_callers_regression.py`는 이번 변경 범위에서 제외했다.
+
+```powershell
+$env:PYTHONPATH='apps/api'
+uv run pytest apps/api/tests -q -rs --ignore=apps/api/tests/test_workspace_context_shared_callers_regression.py
+```
+
+결과: `520 passed, 4 skipped, 1 warning`
+
+- 스킵 4건은 `AIDOT_TEST_DATABASE_URL`이 없는 전용 DB 통합 테스트다.
+- 경고 1건은 Starlette의 `python_multipart` 전환 예정 안내다.
 
 ## 알려진 범위
 
 - 이 작업은 자동화 테스트 기준선 복구만 다룬다.
 - DB 통합 테스트와 브라우저 E2E 결과는 별도 검증 결과로 구분한다.
+- 제품 코드 변경은 없다.
