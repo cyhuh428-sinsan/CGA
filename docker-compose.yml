@@ -16,12 +16,17 @@ services:
       INITIAL_ADMIN_PASSWORD: ${CGA_INITIAL_ADMIN_PASSWORD:?CGA_INITIAL_ADMIN_PASSWORD is required}
       CGA_LICENSE_PUBLIC_KEY: ${CGA_LICENSE_PUBLIC_KEY:?CGA_LICENSE_PUBLIC_KEY is required}
       CORS_ORIGINS: https://cga.sinsan.kr,https://api-cga.sinsan.kr
-      CACHE_ENABLED: "false"
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      REDIS_URL: ${REDIS_URL:-redis://cga-redis:6379/0}
+      CACHE_DEFAULT_TTL_SECONDS: ${CACHE_DEFAULT_TTL_SECONDS:-60}
+      CACHE_VERSION_SECTION_TTL_SECONDS: ${CACHE_VERSION_SECTION_TTL_SECONDS:-60}
       EDIT_LOCK_CLEANUP_ENABLED: "true"
       EDIT_LOCK_CLEANUP_INTERVAL_SECONDS: "60"
       AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350
     depends_on:
       vector-worker:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     expose:
       - "8000"
@@ -73,6 +78,34 @@ services:
       timeout: 7s
       retries: 10
       start_period: 30s
+
+  redis:
+    container_name: cga-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    expose:
+      - "6379"
+    networks:
+      - cga_internal
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   studio:
     container_name: cga-studio
