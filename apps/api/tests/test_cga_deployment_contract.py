@@ -89,6 +89,29 @@ def test_default_compose_remains_cpu_compatible_without_gpu_device_requests() ->
     assert 'AIDOT_GPU: "true"' not in compose
 
 
+def test_compose_runs_an_isolated_redis_cache_for_cga_api() -> None:
+    compose = _read("docker-compose.yml")
+    env_example = _read(".env.example")
+
+    assert "container_name: cga-redis" in compose
+    assert "image: redis:7-alpine" in compose
+    assert "CACHE_ENABLED: ${CACHE_ENABLED:-true}" in compose
+    assert "REDIS_URL: ${REDIS_URL:-redis://cga-redis:6379/0}" in compose
+    assert "CACHE_DEFAULT_TTL_SECONDS: ${CACHE_DEFAULT_TTL_SECONDS:-60}" in compose
+    assert "CACHE_VERSION_SECTION_TTL_SECONDS: ${CACHE_VERSION_SECTION_TTL_SECONDS:-60}" in compose
+    assert "redis:\n        condition: service_healthy" in compose
+    assert "redis-cli" in compose
+    assert '"6379:6379"' not in compose
+
+    for expected in (
+        "CACHE_ENABLED=true",
+        "REDIS_URL=redis://cga-redis:6379/0",
+        "CACHE_DEFAULT_TTL_SECONDS=60",
+        "CACHE_VERSION_SECTION_TTL_SECONDS=60",
+    ):
+        assert expected in env_example
+
+
 def test_deployment_document_declares_external_api_proxy() -> None:
     deployment = _read("docs/cga-daon-deployment.md")
     assert "api-cga.sinsan.kr" in deployment
