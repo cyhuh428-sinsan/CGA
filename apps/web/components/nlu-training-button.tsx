@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { loadAuthSession } from "@/lib/auth";
+import { formatKoreanDateTime } from "@/lib/date-time";
 import {
   trainStudioBotVersionNlu,
   type NluModelManifest,
@@ -17,17 +18,9 @@ type NluTrainingButtonProps = {
   onTrained?: (manifest: NluModelManifest) => void;
 };
 
-function formatTrainingDate(value?: string | null) {
-  if (!value) {
-    return "";
-  }
-
-  return value.replace("T", " ").slice(0, 19);
-}
-
 function formatTrainingResult(manifest: NluModelManifest) {
   const counts = manifest.model?.counts;
-  const trainedAt = formatTrainingDate(manifest.model?.trained_at);
+  const trainedAt = formatKoreanDateTime(manifest.model?.trained_at);
   const prefix = trainedAt ? `학습완료 ${trainedAt}` : "학습이 완료되었습니다.";
   const answerDocumentCount = manifest.answer_training?.document_count;
   const answerPart =
