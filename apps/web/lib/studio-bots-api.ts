@@ -1305,9 +1305,7 @@ export async function fetchStudioWorkspaceContext(
   }
 
   const search = new URLSearchParams();
-  if (!includeDocument) {
-    search.set("include_document", "false");
-  }
+  search.set("include_document", includeDocument ? "true" : "false");
   if (prefetchSection) {
     search.set("prefetch_section", prefetchSection);
   }
