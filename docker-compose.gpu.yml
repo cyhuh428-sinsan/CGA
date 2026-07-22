@@ -1,0 +1,18 @@
+services:
+  api:
+    build:
+      args:
+        CGA_GPU: "true"
+        CGA_TORCH_INDEX_URL: ${CGA_TORCH_INDEX_URL:?GPU PyTorch wheel index URL is required}
+    environment:
+      AIDOT_ML_ACCELERATOR: auto
+    gpus: all
+
+  vector-worker:
+    build:
+      args:
+        AIDOT_GPU: "true"
+        AIDOT_TORCH_INDEX_URL: ${CGA_TORCH_INDEX_URL:?GPU PyTorch wheel index URL is required}
+    environment:
+      AIDOT_EMBEDDING_DEVICE: auto
+    gpus: all
