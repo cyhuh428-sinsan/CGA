@@ -5,8 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { ApiEditorDialog } from "@/components/api-store-list-page";
+import { useI18n } from "@/components/language-provider";
 import { normalizeApiAssets, type VersionApiAsset } from "@/lib/api-assets";
 import { hasApiWriteRole, loadAuthSession, type AuthSession } from "@/lib/auth";
+import { API_MANAGEMENT_CATALOGS } from "@/lib/i18n/api-management";
 import { fetchStudioGroupApis, updateStudioGroupApis } from "@/lib/studio-bots-api";
 
 type OutputRow = {
@@ -62,6 +64,8 @@ function getOutputRows(method: VersionApiAsset["methods"][number]): OutputRow[] 
 }
 
 export function GroupApiDetailPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = API_MANAGEMENT_CATALOGS[uiLanguage];
   const params = useParams<{ apiId: string }>();
   const router = useRouter();
   const apiId = decodeURIComponent(params.apiId);
@@ -171,7 +175,7 @@ export function GroupApiDetailPage() {
       setErrorMessage("API 삭제 권한이 없습니다.");
       return;
     }
-    if (!window.confirm("API를 삭제하시겠습니까?")) {
+    if (!window.confirm(copy.confirmDelete)) {
       return;
     }
 
@@ -252,23 +256,23 @@ export function GroupApiDetailPage() {
           <h1>
             <Link href="/studio/apis">API</Link>
             <span>&gt;</span>
-            <span>API 조회</span>
+            <span>{copy.view}</span>
           </h1>
-          <p>{api?.baseUrl ?? "등록된 API 정보를 확인합니다."}</p>
+          <p>{api?.baseUrl ?? copy.summary}</p>
         </div>
         <div className="api-detail-page__actions">
           {api && canWriteApi ? (
             <>
               <button type="button" className="studio-table-page__ghost" disabled={saving} onClick={handleDeleteApi}>
-                삭제
+                {copy.delete}
               </button>
               <button type="button" className="studio-table-page__primary" disabled={saving} onClick={() => setEditing(true)}>
-                수정
+                {copy.edit}
               </button>
             </>
           ) : null}
           <Link className="studio-table-page__ghost" href="/studio/apis">
-            목록
+            {copy.list}
           </Link>
         </div>
       </header>
@@ -283,33 +287,33 @@ export function GroupApiDetailPage() {
           ) : null}
           <div className="api-detail-page__content">
             <section className="api-detail-page__section">
-              <strong>API 등록기본</strong>
+              <strong>{copy.basic}</strong>
               <div className="api-detail-page__info-grid">
                 <dl>
-                  <dt>API 이름</dt>
+                  <dt>{copy.apiName}</dt>
                   <dd>{api.name}</dd>
-                  <dt>상세설명</dt>
+                  <dt>{copy.description}</dt>
                   <dd>{api.description || "-"}</dd>
-                  <dt>생성일시</dt>
+                  <dt>{copy.createdAt}</dt>
                   <dd>{formatDateTime(api.updatedAt)}</dd>
-                  <dt>최종수정일시</dt>
+                  <dt>{copy.updatedAt}</dt>
                   <dd>{formatDateTime(api.updatedAt)}</dd>
                 </dl>
                 <dl>
                   <dt>API Key</dt>
                   <dd>{api.apiKey}</dd>
-                  <dt>목적지 Base URL</dt>
+                  <dt>{copy.baseUrl}</dt>
                   <dd>{api.baseUrl}</dd>
-                  <dt>생성자</dt>
+                  <dt>{copy.creator}</dt>
                   <dd>{api.updatedBy || "-"}</dd>
-                  <dt>최종수정자</dt>
+                  <dt>{copy.updatedBy}</dt>
                   <dd>{api.updatedBy || "-"}</dd>
                 </dl>
               </div>
             </section>
 
             <section className="api-detail-page__section">
-              <strong>API 메서드</strong>
+              <strong>{copy.methods}</strong>
               <div className="api-detail-page__method-list">
                 {api.methods.map((method) => (
                   <details key={method.id} className="api-detail-page__method">
@@ -322,53 +326,53 @@ export function GroupApiDetailPage() {
                         <span>
                           <span className="api-detail-page__method-badge api-detail-page__method-badge--sync">Sync</span>
                           <span className="api-detail-page__method-description">
-                            {method.description || "메서드에 대한 상세 설명을 입력하세요."}
+                            {method.description || copy.methodDescription}
                           </span>
                         </span>
                       </span>
                       <span className="api-detail-page__method-chevron">⌄</span>
                     </summary>
                     <div className="api-detail-page__method-body">
-                      <strong className="api-detail-page__method-subhead">기본 정보</strong>
+                      <strong className="api-detail-page__method-subhead">{copy.basicInfo}</strong>
                       <div className="api-detail-page__method-config">
                         <dl>
-                          <dt>메서드 URL</dt>
+                          <dt>{copy.methodUrl}</dt>
                           <dd>{method.methodUrl || "-"}</dd>
-                          <dt>유형</dt>
+                          <dt>{copy.type}</dt>
                           <dd>
                             <label>
-                              <input type="checkbox" checked={method.loggingEnabled} readOnly /> 로깅
+                              <input type="checkbox" checked={method.loggingEnabled} readOnly /> {copy.logging}
                             </label>
                             <label>
-                              <input type="checkbox" checked={method.proxyEnabled} readOnly /> 프록시
+                              <input type="checkbox" checked={method.proxyEnabled} readOnly /> {copy.proxy}
                             </label>
                           </dd>
                         </dl>
                         <dl>
-                          <dt>상세설명</dt>
+                          <dt>{copy.description}</dt>
                           <dd>{method.description || "-"}</dd>
-                          <dt>전송방식</dt>
+                          <dt>{copy.transfer}</dt>
                           <dd>
                             <label>
-                              <input type="radio" checked readOnly /> 동기
+                              <input type="radio" checked readOnly /> {copy.sync}
                             </label>
                             <label className="is-disabled">
-                              <input type="radio" disabled readOnly /> 비동기
+                              <input type="radio" disabled readOnly /> {copy.async}
                             </label>
                           </dd>
                         </dl>
                       </div>
                       <div className="api-detail-page__method-main">
                         <section>
-                          <strong>파라미터</strong>
+                          <strong>{copy.parameters}</strong>
                           <table>
                             <thead>
                               <tr>
                                 <th>Name</th>
-                                <th>설명</th>
-                                <th>유형</th>
+                                <th>{copy.parameterDescription}</th>
+                                <th>{copy.parameterType}</th>
                                 <th>Data type</th>
-                                <th>테스트 입력값</th>
+                                <th>{copy.testInput}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -404,7 +408,7 @@ export function GroupApiDetailPage() {
                           </table>
                         </section>
                         <section>
-                          <strong>파라미터 응답</strong>
+                          <strong>{copy.response}</strong>
                           <div className="api-detail-page__output-scroll">
                             <table>
                               <thead>
@@ -446,9 +450,9 @@ export function GroupApiDetailPage() {
           </div>
         </div>
       ) : loading ? (
-        <p className="manual-main__status">API 정보를 불러오는 중입니다.</p>
+        <p className="manual-main__status">{copy.loading}</p>
       ) : (
-        <p className="manual-main__status manual-main__status--error">{errorMessage || "API 정보를 찾을 수 없습니다."}</p>
+        <p className="manual-main__status manual-main__status--error">{errorMessage || copy.notFound}</p>
       )}
     </section>
   );
