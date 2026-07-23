@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import {
   ANSWER_MODE_OPTIONS,
   DEFAULT_ANSWER_MODE,
@@ -32,6 +33,8 @@ import {
 import { createStudioBot } from "@/lib/studio-bots-api";
 import { type VectorConnectionConfig, type VectorConnectionsConfig } from "@/lib/bot-settings";
 import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/language";
+import { translateAiOptionText } from "@/lib/i18n/ai-options";
+import { BOT_CREATE_CATALOGS, formatBotCreateText } from "@/lib/i18n/bot-create";
 
 const PROFILE_OPTIONS = [
   { key: "gray" as const, className: "bot-create-dialog__profile--muted" },
@@ -42,7 +45,7 @@ const PROFILE_OPTIONS = [
 const BOT_NAME_MAX_LENGTH = 40;
 const PROFILE_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 const PROFILE_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
-const BOT_NAME_PATTERN = /^[가-힣a-zA-Z0-9\s\-()_.]+$/;
+const BOT_NAME_PATTERN = /^[\p{L}\p{N}\s\-()_.]+$/u;
 const INTERNAL_INTENT_INDEX_NAME = "aidot-intent";
 const INTERNAL_ANSWER_INDEX_NAME = "aidot-answer";
 
@@ -83,6 +86,8 @@ function internalVectorConnection(kind: "intent" | "answer", enabled = true): Ve
 
 export function BotCreateDialog() {
   const router = useRouter();
+  const { language: uiLanguage } = useI18n();
+  const copy = BOT_CREATE_CATALOGS[uiLanguage];
   const [botKind, setBotKind] = useState<"bot" | "hub">("bot");
   const [botMode, setBotMode] = useState<"text" | "voice">("text");
   const [hubCallMethod, setHubCallMethod] = useState<"button" | "natural">("button");
@@ -129,11 +134,11 @@ export function BotCreateDialog() {
     if (!file) return;
 
     if (!PROFILE_IMAGE_TYPES.has(file.type)) {
-      setErrorMessage("프로필 이미지는 PNG, JPEG 또는 WEBP 파일만 사용할 수 있습니다.");
+      setErrorMessage(copy.invalidProfileType);
       return;
     }
     if (file.size > PROFILE_IMAGE_MAX_BYTES) {
-      setErrorMessage("프로필 이미지는 2MB 이하만 사용할 수 있습니다.");
+      setErrorMessage(copy.profileTooLarge);
       return;
     }
 
@@ -144,24 +149,24 @@ export function BotCreateDialog() {
         setErrorMessage("");
       }
     };
-    reader.onerror = () => setErrorMessage("프로필 이미지를 읽지 못했습니다.");
+    reader.onerror = () => setErrorMessage(copy.profileReadError);
     reader.readAsDataURL(file);
   }
 
   async function handleSubmit() {
     const session = loadAuthSession();
     if (!session) {
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
 
     if (!name.trim()) {
-      setErrorMessage("봇 이름을 입력해주세요.");
+      setErrorMessage(copy.nameRequired);
       return;
     }
 
     if (!BOT_NAME_PATTERN.test(name.trim())) {
-      setErrorMessage("봇 이름은 한글/영문/숫자/공백/특수문자(-, (), _, .)만 입력할 수 있습니다.");
+      setErrorMessage(translateAiOptionText(uiLanguage, "Bot names may contain Unicode letters, numbers, spaces, and supported symbols."));
       return;
     }
 
@@ -204,7 +209,7 @@ export function BotCreateDialog() {
 
       router.push(`/studio/bots/${createdBot.id}/versions/${createdBot.active_version?.name ?? "v1"}/intents`);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "봇 생성 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.createError);
     } finally {
       setIsSubmitting(false);
     }
@@ -215,30 +220,30 @@ export function BotCreateDialog() {
       <div className="bot-create-dialog__header">
         <div className="cga-bot-create-page__heading">
           <span>01</span>
-          <strong>봇 생성</strong>
-          <button type="button" title="봇 생성 정보를 확인합니다." aria-label="봇 생성 정보">i</button>
+          <strong>{copy.createBot}</strong>
+          <button type="button" title={copy.createInfoTitle} aria-label={copy.createInfoAria}>i</button>
         </div>
-        <Link href="/studio/bots" className="cga-bot-create-page__version-link">버전 관리</Link>
-        <span className="cga-bot-create-page__current">+ 봇 생성</span>
+        <Link href="/studio/bots" className="cga-bot-create-page__version-link">{copy.versionManagement}</Link>
+        <span className="cga-bot-create-page__current">+ {copy.createBot}</span>
       </div>
 
       <div className="bot-create-dialog__body">
-        <div className="cga-bot-create-page__section-title cga-bot-create-page__section-title--basic">기본 정보 <span>i</span></div>
-        <div className="cga-bot-create-page__section-title cga-bot-create-page__section-title--ai">AI 생성 항목 <span>i</span></div>
+        <div className="cga-bot-create-page__section-title cga-bot-create-page__section-title--basic">{copy.basicInfo} <span>i</span></div>
+        <div className="cga-bot-create-page__section-title cga-bot-create-page__section-title--ai">{copy.aiItems} <span>i</span></div>
         <aside className="cga-bot-create-page__summary">
-          <header><strong>구조 요약</strong><span>선택 상태</span></header>
+          <header><strong>{copy.structureSummary}</strong><span>{copy.selectedState}</span></header>
           <dl>
-            <div><dt>언어</dt><dd>{language}</dd></div>
-            <div><dt>NLU 방식</dt><dd>{nluType}</dd></div>
-            <div><dt>NLU 모델</dt><dd>{nluModel}</dd></div>
-            <div><dt>답변 방식</dt><dd>{answerMode}</dd></div>
+            <div><dt>{copy.language}</dt><dd>{language}</dd></div>
+            <div><dt>{copy.nluType}</dt><dd>{nluType}</dd></div>
+            <div><dt>{copy.nluModel}</dt><dd>{nluModel}</dd></div>
+            <div><dt>{copy.answerMode}</dt><dd>{answerMode}</dd></div>
             <div><dt>LLM</dt><dd>{usesLlmEngine ? llmModel : "-"}</dd></div>
-            <div><dt>버전</dt><dd>v1</dd></div>
+            <div><dt>{copy.version}</dt><dd>v1</dd></div>
           </dl>
-          <p>Next: configure using the selected input structure.</p>
+          <p>{translateAiOptionText(uiLanguage, "Next: configure using the selected input structure.")}</p>
         </aside>
         <div className="bot-create-dialog__field cga-bot-create-page__field--type">
-          <span className="bot-create-dialog__label">봇 유형 <em>*</em></span>
+          <span className="bot-create-dialog__label">{copy.botType} <em>*</em></span>
           <div className="bot-create-dialog__type-row">
             <label className="bot-create-dialog__radio">
               <input
@@ -247,7 +252,7 @@ export function BotCreateDialog() {
                 checked={botKind === "bot"}
                 onChange={() => setBotKind("bot")}
               />
-              <span>봇</span>
+              <span>{copy.bot}</span>
             </label>
             <div className="bot-create-dialog__switch">
               <button
@@ -256,7 +261,7 @@ export function BotCreateDialog() {
                 onClick={() => setBotMode("text")}
                 disabled={botKind === "hub"}
               >
-                텍스트형
+                {copy.textType}
               </button>
               <button
                 type="button"
@@ -264,7 +269,7 @@ export function BotCreateDialog() {
                 onClick={() => setBotMode("voice")}
                 disabled={botKind === "hub"}
               >
-                보이스형
+                {copy.voiceType}
               </button>
             </div>
             <label className="bot-create-dialog__radio">
@@ -273,35 +278,35 @@ export function BotCreateDialog() {
                 name="bot-kind"
                 checked={botKind === "hub"}
                 disabled
-                title="봇 허브 생성은 현재 사용할 수 없습니다."
+                title={copy.hubUnavailable}
               />
-              <span>봇 허브</span>
+              <span>{copy.botHub}</span>
             </label>
           </div>
         </div>
 
         <div className="bot-create-dialog__field cga-bot-create-page__field--profile">
-          <span className="bot-create-dialog__label">봇 프로필 <em>*</em></span>
+          <span className="bot-create-dialog__label">{copy.botProfile} <em>*</em></span>
           <div className="bot-create-dialog__profile-row">
             {profileImageData ? (
               <img
                 className="bot-create-dialog__profile bot-create-dialog__profile-image is-selected"
                 src={profileImageData}
-                alt="선택한 봇 프로필"
+                alt={copy.selectedProfileAlt}
               />
             ) : (
               PROFILE_OPTIONS.map((option) => (
                 <button
                   key={option.key}
                   type="button"
-                  aria-label={"기본 프로필 " + option.key}
+                  aria-label={`${copy.defaultProfile} ${option.key}`}
                   className={option.className + (profileKey === option.key ? " is-selected" : "") + " bot-create-dialog__profile"}
                   onClick={() => setProfileKey(option.key)}
                 />
               ))
             )}
             <label className="bot-create-dialog__profile-upload">
-              PC 이미지 선택
+              {copy.choosePcImage}
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
@@ -314,31 +319,31 @@ export function BotCreateDialog() {
                 className="bot-create-dialog__profile-reset"
                 onClick={() => setProfileImageData(null)}
               >
-                기본 프로필 사용
+                {copy.useDefaultProfile}
               </button>
             ) : null}
           </div>
-          <small>PNG, JPEG, WEBP · 2MB 이하</small>
+          <small>{copy.imageRequirements}</small>
         </div>
 
         <div className="bot-create-dialog__field cga-bot-create-page__field--name">
-          <span className="bot-create-dialog__label">봇 이름 <em>*</em></span>
+          <span className="bot-create-dialog__label">{copy.botName} <em>*</em></span>
           <input
             type="text"
             className="bot-create-dialog__input"
-            placeholder="봇의 이름을 입력하세요."
+            placeholder={copy.botNamePlaceholder}
             value={name}
             maxLength={BOT_NAME_MAX_LENGTH}
             onChange={(event) => setName(event.target.value)}
           />
           <small>
-            한글/영문/숫자/공백/특수문자(-, (){};:) 으로만 입력
+            {translateAiOptionText(uiLanguage, "Bot names may contain Unicode letters, numbers, spaces, and supported symbols.")}
             <span>{name.length}/{BOT_NAME_MAX_LENGTH}</span>
           </small>
         </div>
 
         <div className="bot-create-dialog__field cga-bot-create-page__field--language">
-          <span className="bot-create-dialog__label">언어 <em>*</em></span>
+          <span className="bot-create-dialog__label">{copy.language} <em>*</em></span>
           <select
             className="bot-create-dialog__select"
             value={language}
@@ -352,14 +357,14 @@ export function BotCreateDialog() {
 
         {botKind === "hub" ? (
           <div className="bot-create-dialog__field cga-bot-create-page__field--hub-call">
-            <span className="bot-create-dialog__label">호출 방식 <em>*</em></span>
+            <span className="bot-create-dialog__label">{copy.callMethod} <em>*</em></span>
             <select
               className="bot-create-dialog__select"
               value={hubCallMethod}
               onChange={(event) => setHubCallMethod(event.target.value as "button" | "natural")}
             >
-              <option value="button">버튼 선택형</option>
-              <option value="natural">자연어 입력형</option>
+              <option value="button">{copy.buttonSelection}</option>
+              <option value="natural">{copy.naturalLanguageInput}</option>
             </select>
           </div>
         ) : null}
@@ -367,7 +372,7 @@ export function BotCreateDialog() {
         {botKind === "bot" ? (
           <>
         <div className="bot-create-dialog__field cga-bot-create-page__field--nlu-type">
-          <span className="bot-create-dialog__label">NLU 방식 <em>*</em></span>
+          <span className="bot-create-dialog__label">{copy.nluType} <em>*</em></span>
           <select
             className="bot-create-dialog__select"
             value={nluType}
@@ -385,7 +390,7 @@ export function BotCreateDialog() {
           >
             {NLU_TYPE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value} disabled={option.disabled}>
-                {option.label} ({option.note})
+                {translateAiOptionText(uiLanguage, option.label)} ({translateAiOptionText(uiLanguage, option.note)})
               </option>
             ))}
           </select>
@@ -393,7 +398,7 @@ export function BotCreateDialog() {
 
         {nluType !== "llm" ? (
           <div className="bot-create-dialog__field cga-bot-create-page__field--nlu-model">
-            <span className="bot-create-dialog__label">NLU 모델 <em>*</em></span>
+            <span className="bot-create-dialog__label">{copy.nluModel} <em>*</em></span>
             <select
               className="bot-create-dialog__select"
               value={nluModel}
@@ -401,18 +406,18 @@ export function BotCreateDialog() {
             >
               {nluModelOptions.map((option) => (
                 <option key={option.value} value={option.value} disabled={option.disabled}>
-                  {option.label} ({option.note})
+                  {translateAiOptionText(uiLanguage, option.label)} ({translateAiOptionText(uiLanguage, option.note)})
                 </option>
               ))}
             </select>
             {nluModelDescription ? (
-              <small>{nluModelDescription}</small>
+              <small>{translateAiOptionText(uiLanguage, nluModelDescription)}</small>
             ) : null}
           </div>
         ) : null}
 
         <div className="bot-create-dialog__field cga-bot-create-page__field--answer-mode">
-          <span className="bot-create-dialog__label">답변 방식 <em>*</em></span>
+          <span className="bot-create-dialog__label">{copy.answerMode} <em>*</em></span>
           <select
             className="bot-create-dialog__select"
             value={answerMode}
@@ -429,7 +434,7 @@ export function BotCreateDialog() {
           >
             {ANSWER_MODE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value} disabled={option.disabled}>
-                {option.label} ({option.note})
+                {translateAiOptionText(uiLanguage, option.label)} ({translateAiOptionText(uiLanguage, option.note)})
               </option>
             ))}
           </select>
@@ -450,14 +455,14 @@ export function BotCreateDialog() {
               >
                 {LLM_PROVIDER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label} ({option.note})
+                    {translateAiOptionText(uiLanguage, option.label)} ({translateAiOptionText(uiLanguage, option.note)})
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="bot-create-dialog__field cga-bot-create-page__field--llm-model">
-              <span className="bot-create-dialog__label">LLM 세부 모델 <em>*</em></span>
+              <span className="bot-create-dialog__label">{copy.llmModel} <em>*</em></span>
               <select
                 className="bot-create-dialog__select"
                 value={llmModel}
@@ -465,7 +470,7 @@ export function BotCreateDialog() {
               >
                 {llmModelOptions.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label} ({option.note})
+                    {translateAiOptionText(uiLanguage, option.label)} ({translateAiOptionText(uiLanguage, option.note)})
                   </option>
                 ))}
               </select>
@@ -473,7 +478,7 @@ export function BotCreateDialog() {
 
             {llmProvider === "ollama" ? (
               <div className="bot-create-dialog__field cga-bot-create-page__field--llm-base">
-                <span className="bot-create-dialog__label">Ollama 주소</span>
+                <span className="bot-create-dialog__label">{copy.ollamaAddress}</span>
                 <input
                   type="url"
                   className="bot-create-dialog__input"
@@ -488,11 +493,11 @@ export function BotCreateDialog() {
 
         {usesSemanticNlu ? (
           <div className="bot-create-dialog__field bot-create-dialog__field--vector cga-bot-create-page__field--intent-vector">
-            <span className="bot-create-dialog__label">Intent Vector DB 연결</span>
+            <span className="bot-create-dialog__label">{copy.intentVectorConnection}</span>
             <small>
               {nluType === "semantic_external"
-                ? "외부에서 만든 Vector DB의 검색 API를 연결합니다. 응답 규격과 임베딩 모델 호환이 필요합니다."
-                : "Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다."}
+                ? copy.externalIntentVectorDescription
+                : copy.internalIntentVectorDescription}
             </small>
             <select
               className="bot-create-dialog__select"
@@ -507,14 +512,14 @@ export function BotCreateDialog() {
                 }))
               }
             >
-              <option value="false">미사용</option>
-              <option value="true">사용</option>
+              <option value="false">{copy.disabled}</option>
+              <option value="true">{copy.enabled}</option>
             </select>
             {nluType === "semantic_external" ? (
               <input
                 type="url"
                 className="bot-create-dialog__input"
-                placeholder="검색 API URL 예: https://vector.example.com/intent/search"
+                placeholder={copy.searchApiPlaceholder}
                 value={vectorConnections.intent?.endpoint_url ?? ""}
                 onChange={(event) =>
                   setVectorConnections((current) => ({
@@ -530,7 +535,7 @@ export function BotCreateDialog() {
             <input
               type="text"
               className="bot-create-dialog__input"
-              placeholder="Index 이름 예: aidot-intent"
+              placeholder={copy.indexNamePlaceholder}
               value={vectorConnections.intent?.index_name ?? ""}
               onChange={(event) =>
                 setVectorConnections((current) => ({
@@ -546,7 +551,7 @@ export function BotCreateDialog() {
               <input
                 type="password"
                 className="bot-create-dialog__input"
-                placeholder="API Key 선택 입력"
+                placeholder={copy.apiKeyPlaceholder}
                 value={vectorConnections.intent?.api_key ?? ""}
                 onChange={(event) =>
                   setVectorConnections((current) => ({
@@ -564,8 +569,8 @@ export function BotCreateDialog() {
 
         {usesSemanticAnswer ? (
           <div className="bot-create-dialog__field bot-create-dialog__field--vector cga-bot-create-page__field--answer-vector">
-            <span className="bot-create-dialog__label">Answer Vector DB 연결</span>
-            <small>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 의도 분류와 별도 Answer Vector DB에 저장합니다.</small>
+            <span className="bot-create-dialog__label">{copy.answerVectorConnection}</span>
+            <small>{copy.answerVectorDescription}</small>
             <select
               className="bot-create-dialog__select"
               value={vectorConnections.answer?.enabled ? "true" : "false"}
@@ -579,13 +584,13 @@ export function BotCreateDialog() {
                 }))
               }
             >
-              <option value="false">미사용</option>
-              <option value="true">사용</option>
+              <option value="false">{copy.disabled}</option>
+              <option value="true">{copy.enabled}</option>
             </select>
             <input
               type="text"
               className="bot-create-dialog__input"
-              placeholder="Index 이름 예: aidot-answer"
+              placeholder={copy.indexNamePlaceholder.replace("aidot-intent", "aidot-answer")}
               value={vectorConnections.answer?.index_name ?? ""}
               onChange={(event) =>
                 setVectorConnections((current) => ({
@@ -604,48 +609,52 @@ export function BotCreateDialog() {
         ) : null}
 
         <div className="bot-create-dialog__field cga-bot-create-page__field--introduction">
-          <span className="bot-create-dialog__label">소개</span>
+          <span className="bot-create-dialog__label">{copy.introduction}</span>
           <input
             type="text"
             className="bot-create-dialog__input"
-            placeholder="봇을 설명할 수 있는 소개 문장을 입력하세요."
+            placeholder={copy.introductionPlaceholder}
             value={introduction}
             onChange={(event) => setIntroduction(event.target.value)}
           />
         </div>
 
         {botKind === "bot" ? (
-          <section className="bot-ai-combinations bot-ai-combinations--compact" aria-label="NLU와 답변 조합 지원 상태">
+          <section className="bot-ai-combinations bot-ai-combinations--compact" aria-label={copy.combinationAria}>
           <div className="bot-ai-combinations__summary">
-            <strong>선택 조합</strong>
+            <strong>{copy.selectedCombination}</strong>
             <span>
               {selectedCombination
-                ? `의도인식: ${selectedCombination.nluLabel} · ${selectedCombination.nluModelLabel} / 답변: ${selectedCombination.answerLabel}`
-                : "선택된 조합을 확인할 수 없습니다."}
+                ? formatBotCreateText(copy.selectedCombinationSummary, {
+                  nlu: translateAiOptionText(uiLanguage, selectedCombination.nluLabel),
+                  model: translateAiOptionText(uiLanguage, selectedCombination.nluModelLabel),
+                  answer: translateAiOptionText(uiLanguage, selectedCombination.answerLabel),
+                })
+                : copy.noCombination}
             </span>
             {selectedCombination ? (
               <em className={`bot-ai-combinations__badge bot-ai-combinations__badge--${selectedCombination.status}`}>
-                {selectedCombination.statusLabel}
+                {translateAiOptionText(uiLanguage, selectedCombination.statusLabel)}
               </em>
             ) : null}
           </div>
           <div className="bot-ai-combinations__matrix">
             <div className="bot-ai-combinations__axis bot-ai-combinations__axis--corner">
-              <span>의도인식 엔진</span>
-              <strong>답변 엔진</strong>
+              <span>{copy.intentEngine}</span>
+              <strong>{copy.answerEngine}</strong>
             </div>
             {ANSWER_MODE_OPTIONS.map((option) => (
               <div key={option.value} className="bot-ai-combinations__axis bot-ai-combinations__axis--answer">
-                <span>답변 엔진</span>
-                <strong>{option.label}</strong>
+                <span>{copy.answerEngine}</span>
+                <strong>{translateAiOptionText(uiLanguage, option.label)}</strong>
               </div>
             ))}
             {aiCombinationRows.map((row) => (
               <div key={row.nluType} className="bot-ai-combinations__row">
                 <div className="bot-ai-combinations__axis bot-ai-combinations__axis--nlu">
-                  <span>의도인식 엔진</span>
-                  <strong>{row.nluLabel}</strong>
-                  <small>{row.nluModelLabel}</small>
+                  <span>{copy.intentEngine}</span>
+                  <strong>{translateAiOptionText(uiLanguage, row.nluLabel)}</strong>
+                  <small>{translateAiOptionText(uiLanguage, row.nluModelLabel)}</small>
                 </div>
                 {row.combinations.map((item) => {
                   const selected = item.nluType === nluType && item.answerMode === answerMode;
@@ -663,16 +672,16 @@ export function BotCreateDialog() {
                       }}
                       aria-pressed={selected}
                     >
-                      <span>조합 상태</span>
-                      <strong>{item.statusLabel}</strong>
-                      <small>{unsupported ? "사용 불가" : selected ? "현재 선택" : "선택 가능"}</small>
+                      <span>{copy.combinationStatus}</span>
+                      <strong>{translateAiOptionText(uiLanguage, item.statusLabel)}</strong>
+                      <small>{unsupported ? copy.unavailable : selected ? copy.currentSelection : copy.available}</small>
                     </button>
                   );
                 })}
               </div>
             ))}
           </div>
-          <p>{selectedCombination?.note ?? "현재 선택한 조합의 지원 상태를 확인해주세요."}</p>
+          <p>{selectedCombination ? translateAiOptionText(uiLanguage, selectedCombination.note) : copy.combinationHelp}</p>
         </section>
         ) : null}
 
@@ -681,7 +690,7 @@ export function BotCreateDialog() {
 
       <div className="bot-create-dialog__footer">
         <Link href="/studio/bots" className="bot-create-dialog__ghost">
-          취소
+          {copy.cancel}
         </Link>
         <button
           type="button"
@@ -689,7 +698,7 @@ export function BotCreateDialog() {
           disabled={isSubmitting}
           onClick={handleSubmit}
         >
-          {isSubmitting ? "생성 중..." : "확인"}
+          {isSubmitting ? copy.creating : copy.confirm}
         </button>
       </div>
     </div>
