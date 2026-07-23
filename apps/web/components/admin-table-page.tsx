@@ -1,6 +1,10 @@
+"use client";
+
 import { ReactNode } from "react";
 
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_COMMON_CATALOGS, formatAdminText } from "@/lib/i18n/admin-common";
 
 type AdminTablePageProps = {
   title: string;
@@ -19,7 +23,7 @@ export function AdminTablePage({
   title,
   searchPlaceholder,
   totalText,
-  pageSizeText = "10개씩 보기",
+  pageSizeText,
   columns,
   rows,
   template,
@@ -27,6 +31,9 @@ export function AdminTablePage({
   toolbarLeftExtra,
   toolbarRight,
 }: AdminTablePageProps) {
+  const { language } = useI18n();
+  const copy = ADMIN_COMMON_CATALOGS[language];
+  const resolvedPageSizeText = pageSizeText ?? formatAdminText(copy.pageSize, { count: 10 });
   return (
     <section className="admin-page">
       <h2>{title}</h2>
@@ -37,7 +44,7 @@ export function AdminTablePage({
           <input type="text" defaultValue="" placeholder={searchPlaceholder} />
         </label>
 
-        <button type="button" className="admin-page__filter" aria-label="필터">
+        <button type="button" className="admin-page__filter" aria-label={copy.filter}>
           ▾
         </button>
 
@@ -48,8 +55,8 @@ export function AdminTablePage({
         <div className="admin-page__toolbar-left">
           <strong>{totalText}</strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
-            <select defaultValue={pageSizeText}>
-              <option value={pageSizeText}>{pageSizeText}</option>
+            <select defaultValue={resolvedPageSizeText}>
+              <option value={resolvedPageSizeText}>{resolvedPageSizeText}</option>
             </select>
           </label>
           {toolbarLeftExtra}

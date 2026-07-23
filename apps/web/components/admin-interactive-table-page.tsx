@@ -13,6 +13,8 @@ import {
   type ListPageSize,
   usePersistedPageSize,
 } from "@/lib/use-persisted-page-size";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_COMMON_CATALOGS, formatAdminText } from "@/lib/i18n/admin-common";
 
 type AdminInteractiveTablePageProps = {
   title: string;
@@ -64,6 +66,8 @@ export function AdminInteractiveTablePage({
   loading = false,
   serverPagination,
 }: AdminInteractiveTablePageProps) {
+  const { language } = useI18n();
+  const copy = ADMIN_COMMON_CATALOGS[language];
   const serverTotal = serverPagination?.total;
   const onServerRequestChange = serverPagination?.onRequestChange;
   const [query, setQuery] = useState("");
@@ -154,7 +158,7 @@ export function AdminInteractiveTablePage({
         </label>
 
         <button type="button" className="admin-page__filter admin-page__filter--text" onClick={() => setQuery("")}>
-          초기화
+          {copy.reset}
         </button>
 
         {topRight ? <div className="admin-page__search-actions">{topRight}</div> : null}
@@ -162,12 +166,12 @@ export function AdminInteractiveTablePage({
 
       <div className="admin-page__toolbar">
         <div className="admin-page__toolbar-left">
-          <strong>{serverPagination ? totalText : query.trim() ? `전체 ${filteredRows.length}` : totalText}</strong>
+          <strong>{serverPagination ? totalText : query.trim() ? formatAdminText(copy.totalCount, { count: filteredRows.length }) : totalText}</strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={pageSize} onChange={(event) => updatePageSize(Number(event.target.value) as ListPageSize)}>
               {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}개씩 보기
+                  {formatAdminText(copy.pageSize, { count: option })}
                 </option>
               ))}
             </select>
@@ -185,7 +189,7 @@ export function AdminInteractiveTablePage({
                 downloadCsv(title, columns, sortedRows);
               }}
             >
-              다운로드
+              {copy.download}
             </button>
           ) : null}
         </div>
@@ -203,19 +207,19 @@ export function AdminInteractiveTablePage({
           onSort={setSortState}
         />
       </div>
-      {!loading && filteredRows.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+      {!loading && filteredRows.length === 0 ? <p className="admin-page__empty">{copy.noData}</p> : null}
 
       <div className="admin-page__pagination">
         <button type="button" disabled={page === 1} onClick={() => setPage(1)}>
           «
         </button>
-        <button type="button" disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>
+        <button type="button" aria-label={copy.previousPage} disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>
           ‹
         </button>
         <button type="button" className="is-active">
           {page}
         </button>
-        <button type="button" disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>
+        <button type="button" aria-label={copy.nextPage} disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>
           ›
         </button>
         <button type="button" disabled={page === totalPages} onClick={() => setPage(totalPages)}>
