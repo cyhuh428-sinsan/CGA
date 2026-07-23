@@ -18,7 +18,13 @@ import {
   resolveInitialOperationBotId,
   safeOperationFilePart,
 } from "@/components/bot-operation-shared";
+import { useI18n } from "@/components/language-provider";
 import { loadAuthSession, type AuthSession } from "@/lib/auth";
+import {
+  BOT_MANAGEMENT_CATALOGS,
+  botManagementStatusLabel,
+  formatBotManagementText,
+} from "@/lib/i18n/bot-management";
 import {
   activateStudioBotVersion,
   copyStudioBotVersion,
@@ -39,6 +45,8 @@ import { normalizeVersionDocument, type VersionDocument } from "@/lib/version-do
 
 export function BotManagementPage() {
   const router = useRouter();
+  const { language } = useI18n();
+  const copy = BOT_MANAGEMENT_CATALOGS[language];
   const uploadRef = useRef<HTMLInputElement>(null);
   const [session, setSession] = useState<AuthSession | null>(null);
   const [bots, setBots] = useState<StudioBotApiItem[]>([]);
@@ -73,7 +81,7 @@ export function BotManagementPage() {
         setBots(operationBots);
         setSelectedBotId(resolveInitialOperationBotId(currentSession, operationBots, requestedBotId));
       })
-      .catch((error) => setMessage(error instanceof Error ? error.message : "봇 목록을 불러오지 못했습니다."))
+      .catch((error) => setMessage(error instanceof Error ? error.message : copy.loadBotsError))
       .finally(() => setLoading(false));
   }, [router]);
 
@@ -91,7 +99,7 @@ export function BotManagementPage() {
           ? current
           : (sorted.find((item) => item.is_active) || sorted[0])?.id || "");
       })
-      .catch((error) => setMessage(error instanceof Error ? error.message : "버전 목록을 불러오지 못했습니다."))
+      .catch((error) => setMessage(error instanceof Error ? error.message : copy.loadVersionsError))
       .finally(() => setBusy(false));
   }, [selectedBotId, session]);
 
@@ -116,7 +124,7 @@ export function BotManagementPage() {
 
   async function runVersionAction(action: "add" | "copy" | "delete" | "activate") {
     if (!session || !selectedBot || (action !== "add" && !selectedVersion)) return;
-    if (action === "delete" && !window.confirm(`${selectedVersion?.name} 버전을 삭제하시겠습니까?`)) return;
+    if (action === "delete" && !window.confirm(formatBotManagementText(copy.deleteConfirm, { name: selectedVersion?.name || "" }))) return;
     setBusy(true);
     setMessage("");
     try {
@@ -125,27 +133,27 @@ export function BotManagementPage() {
         const created = await createStudioBotVersion(session.access_token, selectedBot.id, {
           name: `v${nextNo}`,
           description: "",
-          comment: "빈 새 버전",
+          comment: copy.emptyVersionComment,
         });
         await refreshVersions(created.id);
-        setMessage(`${created.name} 버전을 추가했습니다.`);
+        setMessage(formatBotManagementText(copy.versionAdded, { name: created.name }));
       } else if (action === "copy" && selectedVersion) {
         const copied = await copyStudioBotVersion(session.access_token, selectedBot.id, selectedVersion.id);
         await refreshVersions(copied.id);
-        setMessage(`${selectedVersion.name} 버전을 복사했습니다.`);
+        setMessage(formatBotManagementText(copy.versionCopied, { name: selectedVersion.name }));
       } else if (action === "delete" && selectedVersion) {
         await deleteStudioBotVersion(session.access_token, selectedBot.id, selectedVersion.id);
         await refreshVersions();
-        setMessage(`${selectedVersion.name} 버전을 삭제했습니다.`);
+        setMessage(formatBotManagementText(copy.versionDeleted, { name: selectedVersion.name }));
       } else if (action === "activate" && selectedVersion) {
         const changed = selectedVersion.is_active
           ? await deactivateStudioBotVersion(session.access_token, selectedBot.id, selectedVersion.id)
           : await activateStudioBotVersion(session.access_token, selectedBot.id, selectedVersion.id);
         await refreshVersions(changed.id);
-        setMessage(selectedVersion.is_active ? "운영 버전을 해제했습니다." : "운영 버전을 적용했습니다.");
+        setMessage(selectedVersion.is_active ? copy.activeVersionUnset : copy.activeVersionSet);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "버전 작업에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : copy.versionActionError);
     } finally {
       setBusy(false);
     }
@@ -164,9 +172,9 @@ export function BotManagementPage() {
         `${prefix}_${safeOperationFilePart(selectedBot.name)}_${safeOperationFilePart(selectedVersion.name)}.json`,
         data,
       );
-      setMessage(aidot ? "Aidot 봇 패키지를 다운로드했습니다." : "버전 파일을 다운로드했습니다.");
+      setMessage(aidot ? copy.aidotDownloaded : copy.versionDownloaded);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "파일 다운로드에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : copy.downloadError);
     } finally {
       setBusy(false);
     }
@@ -181,22 +189,22 @@ export function BotManagementPage() {
       if (isStudioAidotBotPackage(parsed)) {
         const result = await importStudioBotAidotPackage(session.access_token, selectedBot.id, selectedVersion.id, parsed);
         await refreshVersions(result.version.id);
-        setMessage(`Aidot 봇 패키지 ${file.name}을 업로드했습니다.`);
+        setMessage(formatBotManagementText(copy.aidotUploaded, { name: file.name }));
       } else {
         const source = parsed && typeof parsed === "object" && !Array.isArray(parsed) && "version_json" in parsed
           ? (parsed as { version_json?: Partial<VersionDocument> }).version_json
           : parsed;
         if (!source || typeof source !== "object" || Array.isArray(source)) {
-          throw new Error("버전 파일 형식이 맞지 않습니다.");
+          throw new Error(copy.invalidVersionFile);
         }
         const changed = await updateStudioBotVersion(session.access_token, selectedBot.id, selectedVersion.id, {
           version_json: normalizeVersionDocument(source as Partial<VersionDocument>),
         });
         await refreshVersions(changed.id);
-        setMessage(`버전 파일 ${file.name}을 업로드했습니다.`);
+        setMessage(formatBotManagementText(copy.versionUploaded, { name: file.name }));
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "JSON 파일 업로드에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : copy.uploadError);
     } finally {
       if (uploadRef.current) uploadRef.current.value = "";
       setBusy(false);
@@ -216,56 +224,56 @@ export function BotManagementPage() {
       <header className="cga-operation-header">
         <div className="cga-operation-heading">
           <span className="cga-operation-code">BM</span>
-          <div><strong>봇 관리</strong><span>봇 단위 자산/버전/운영 상태를 Aidot 호환 기준으로 관리합니다.</span></div>
+          <div><strong>{copy.title}</strong><span>{copy.description}</span></div>
         </div>
-        <Link href="/studio/bots/new" className="cga-operation-primary-action">+ 봇 생성</Link>
+        <Link href="/studio/bots/new" className="cga-operation-primary-action">{copy.createBot}</Link>
       </header>
 
       <div className="cga-operation-summary cga-operation-summary--management">
-        <article><strong>그룹</strong><span>{operationBotGroupName(session, selectedBot)}</span></article>
-        <article><strong>봇 수</strong><span>{bots.length}개</span></article>
-        <article><strong>선택 봇</strong><span>{selectedBot?.name || "-"}</span></article>
-        <article><strong>버전 항목</strong><span>{versions.length}개</span></article>
-        <article><strong>작업 버전</strong><span>{selectedVersion ? operationVersionName(selectedVersion) : "-"}</span></article>
-        <article><strong>운영 버전</strong><span>{activeVersion ? operationVersionName(activeVersion) : "-"}</span></article>
+        <article><strong>{copy.group}</strong><span>{operationBotGroupName(session, selectedBot)}</span></article>
+        <article><strong>{copy.botCount}</strong><span>{bots.length}{copy.countUnit}</span></article>
+        <article><strong>{copy.selectedBot}</strong><span>{selectedBot?.name || "-"}</span></article>
+        <article><strong>{copy.versionItems}</strong><span>{versions.length}{copy.countUnit}</span></article>
+        <article><strong>{copy.workVersion}</strong><span>{selectedVersion ? operationVersionName(selectedVersion) : "-"}</span></article>
+        <article><strong>{copy.activeVersion}</strong><span>{activeVersion ? operationVersionName(activeVersion) : "-"}</span></article>
       </div>
 
       <div className="cga-bot-management-grid">
         <article className="cga-operation-panel cga-operation-panel--bot-list">
-          <header><div><strong>봇 목록 조회</strong><span>그룹 내 봇 목록과 기본 상태입니다.</span></div></header>
+          <header><div><strong>{copy.botList}</strong><span>{copy.botListDescription}</span></div></header>
           <div className="cga-bot-card-list">
             {bots.map((bot) => (
               <button key={bot.id} type="button" className={`cga-bot-select-card${bot.id === selectedBotId ? " is-selected" : ""}`} onClick={() => chooseBot(bot)}>
                 <strong>{bot.name}</strong>
-                <span>{bot.id} · {bot.active_version?.name || "-"} · {bot.status}</span>
-                <span>locale: {operationBotLocale(bot)}</span>
+                <span>{bot.id} · {bot.active_version?.name || "-"} · {botManagementStatusLabel(bot.status, copy)}</span>
+                <span>{copy.locale}: {operationBotLocale(bot)}</span>
               </button>
             ))}
-            {!loading && bots.length === 0 ? <div className="cga-operation-empty">관리할 봇이 없습니다.</div> : null}
+            {!loading && bots.length === 0 ? <div className="cga-operation-empty">{copy.noBots}</div> : null}
           </div>
         </article>
 
         <article className="cga-operation-panel cga-operation-panel--versions">
           <header>
-            <div><strong>봇 자산 / 버전</strong><span>작업 버전과 운영 버전을 구분해 관리합니다.</span></div>
+            <div><strong>{copy.assetsAndVersions}</strong><span>{copy.assetsAndVersionsDescription}</span></div>
             <div className="cga-operation-inline-actions">
-              <button type="button" onClick={() => runVersionAction("add")} disabled={busy || !selectedBot}>버전 추가</button>
-              <button type="button" onClick={() => runVersionAction("copy")} disabled={busy || !selectedVersion}>복사</button>
-              <button type="button" onClick={() => runVersionAction("delete")} disabled={busy || !selectedVersion || selectedVersion.is_active}>삭제</button>
-              <button type="button" onClick={() => uploadRef.current?.click()} disabled={busy || !selectedVersion}>버전 파일 업로드</button>
-              <button type="button" onClick={() => handleDownload(false)} disabled={busy || !selectedVersion}>버전 파일 다운로드</button>
-              <button type="button" onClick={() => runVersionAction("activate")} disabled={busy || !selectedVersion}>운영/해제</button>
+              <button type="button" onClick={() => runVersionAction("add")} disabled={busy || !selectedBot}>{copy.addVersion}</button>
+              <button type="button" onClick={() => runVersionAction("copy")} disabled={busy || !selectedVersion}>{copy.copy}</button>
+              <button type="button" onClick={() => runVersionAction("delete")} disabled={busy || !selectedVersion || selectedVersion.is_active}>{copy.delete}</button>
+              <button type="button" onClick={() => uploadRef.current?.click()} disabled={busy || !selectedVersion}>{copy.uploadVersion}</button>
+              <button type="button" onClick={() => handleDownload(false)} disabled={busy || !selectedVersion}>{copy.downloadVersion}</button>
+              <button type="button" onClick={() => runVersionAction("activate")} disabled={busy || !selectedVersion}>{copy.toggleActive}</button>
             </div>
           </header>
           <div className="cga-operation-table cga-operation-table--versions" style={columns}>
             <div className="cga-operation-row cga-operation-row--head">
-              <span>선택</span><span>버전</span><span>상태</span><span>최종 학습 엔진</span><span>의도</span><span>개체</span><span>사전</span><span>API</span><span>평가</span><span>최종수정일시</span><span>최종수정자</span><span>비고</span>
+              <span>{copy.select}</span><span>{copy.version}</span><span>{copy.status}</span><span>{copy.lastTrainingEngine}</span><span>{copy.intents}</span><span>{copy.entities}</span><span>{copy.dictionary}</span><span>{copy.api}</span><span>{copy.evaluation}</span><span>{copy.modifiedAt}</span><span>{copy.modifiedBy}</span><span>{copy.note}</span>
             </div>
             {versions.map((version) => (
               <button key={version.id} type="button" className={`cga-operation-row cga-operation-row--button${version.id === selectedVersion?.id ? " is-selected" : ""}`} onClick={() => chooseVersion(version)}>
-                <span><input type="radio" readOnly checked={version.id === selectedVersion?.id} aria-label={`${version.name} 선택`} /></span>
+                <span><input type="radio" readOnly checked={version.id === selectedVersion?.id} aria-label={`${version.name} ${copy.select}`} /></span>
                 <strong>{operationVersionName(version)}</strong>
-                <span>{version.status}</span>
+                <span>{botManagementStatusLabel(version.status, copy)}</span>
                 <span>{selectedBot ? readOperationNluEngine(selectedBot, version) : "-"}</span>
                 <span>{version.asset_counts?.intents ?? 0}</span>
                 <span>{version.asset_counts?.entities ?? 0}</span>
@@ -274,37 +282,42 @@ export function BotManagementPage() {
                 <span>{readOperationEvaluation(version)}</span>
                 <span>{formatOperationDate(version.updated_at)}</span>
                 <span>{version.updated_by_login_id || "-"}</span>
-                <span>{version.comment || (version.is_active ? "운영 버전" : version.id === selectedVersion?.id ? "작업 버전" : "-")}</span>
+                <span>{version.comment || (version.is_active ? copy.activeVersionNote : version.id === selectedVersion?.id ? copy.workVersionNote : "-")}</span>
               </button>
             ))}
-            {!busy && versions.length === 0 ? <div className="cga-operation-empty">버전 이력이 없습니다.</div> : null}
+            {!busy && versions.length === 0 ? <div className="cga-operation-empty">{copy.noVersionHistory}</div> : null}
           </div>
         </article>
 
         <article className="cga-operation-panel cga-operation-panel--bot-detail">
-          <header><div><strong>봇 상세 정보 및 호환 운영</strong><span>선택한 작업 버전 패키지와 운영 상태를 관리합니다.</span></div></header>
+          <header><div><strong>{copy.detailTitle}</strong><span>{copy.detailDescription}</span></div></header>
           <dl className="cga-operation-definition">
-            <div><dt>봇 ID</dt><dd>{selectedBot?.id || "-"}</dd></div>
-            <div><dt>봇 이름</dt><dd>{selectedBot?.name || "-"}</dd></div>
-            <div><dt>작업버전</dt><dd>{selectedVersion ? operationVersionName(selectedVersion) : "-"}</dd></div>
-            <div><dt>운영버전</dt><dd>{activeVersion ? operationVersionName(activeVersion) : "-"}</dd></div>
-            <div><dt>상태</dt><dd>{selectedBot?.status || "-"}</dd></div>
-            <div><dt>언어</dt><dd>{operationBotLocale(selectedBot)}</dd></div>
-            <div><dt>NLU 방식</dt><dd>{aiDetails.nluType}</dd></div>
-            <div><dt>NLU 모델</dt><dd>{aiDetails.nluModel}</dd></div>
-            <div><dt>답변 방식</dt><dd>{aiDetails.answerMode}</dd></div>
+            <div><dt>{copy.botId}</dt><dd>{selectedBot?.id || "-"}</dd></div>
+            <div><dt>{copy.botName}</dt><dd>{selectedBot?.name || "-"}</dd></div>
+            <div><dt>{copy.workVersion}</dt><dd>{selectedVersion ? operationVersionName(selectedVersion) : "-"}</dd></div>
+            <div><dt>{copy.activeVersion}</dt><dd>{activeVersion ? operationVersionName(activeVersion) : "-"}</dd></div>
+            <div><dt>{copy.status}</dt><dd>{selectedBot ? botManagementStatusLabel(selectedBot.status, copy) : "-"}</dd></div>
+            <div><dt>{copy.language}</dt><dd>{operationBotLocale(selectedBot)}</dd></div>
+            <div><dt>{copy.nluType}</dt><dd>{aiDetails.nluType}</dd></div>
+            <div><dt>{copy.nluModel}</dt><dd>{aiDetails.nluModel}</dd></div>
+            <div><dt>{copy.answerMode}</dt><dd>{aiDetails.answerMode}</dd></div>
             <div><dt>LLM</dt><dd>{aiDetails.llmModel}</dd></div>
-            <div><dt>버전 목록</dt><dd>{versions.length}개</dd></div>
-            <div><dt>업데이트</dt><dd>{formatOperationDate(selectedBot?.updated_at)}</dd></div>
+            <div><dt>{copy.versionList}</dt><dd>{versions.length}{copy.countUnit}</dd></div>
+            <div><dt>{copy.updated}</dt><dd>{formatOperationDate(selectedBot?.updated_at)}</dd></div>
           </dl>
           <div className="cga-operation-action-stack">
-            <button type="button" onClick={() => handleDownload(true)} disabled={busy || !selectedVersion}><strong>Aidot 봇 패키지 다운로드</strong><span>현재 작업 버전 1개</span></button>
-            <button type="button" onClick={() => uploadRef.current?.click()} disabled={busy || !selectedVersion}><strong>Aidot 봇 패키지 업로드</strong><span>현재 작업 버전에 반영</span></button>
+            <button type="button" onClick={() => handleDownload(true)} disabled={busy || !selectedVersion}><strong>{copy.aidotPackageDownload}</strong><span>{copy.currentWorkVersionOne}</span></button>
+            <button type="button" onClick={() => uploadRef.current?.click()} disabled={busy || !selectedVersion}><strong>{copy.aidotPackageUpload}</strong><span>{copy.applyToCurrentWorkVersion}</span></button>
           </div>
           <div className={`cga-operation-note${message ? " is-active" : ""}`}>
             {message || (loading || busy
-              ? "봇 정보를 불러오는 중입니다."
-              : `의도 ${counts?.intents ?? 0} · 개체 ${counts?.entities ?? 0} · 사전 ${counts?.dictionary ?? 0} · API ${counts?.apis ?? 0}`)}
+              ? copy.loading
+              : formatBotManagementText(copy.assetSummary, {
+                intents: counts?.intents ?? 0,
+                entities: counts?.entities ?? 0,
+                dictionary: counts?.dictionary ?? 0,
+                apis: counts?.apis ?? 0,
+              }))}
           </div>
           <input ref={uploadRef} type="file" accept="application/json,.json" hidden onChange={(event) => handleUpload(event.target.files?.[0] || null)} />
         </article>

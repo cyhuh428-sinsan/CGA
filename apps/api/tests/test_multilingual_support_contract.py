@@ -103,3 +103,14 @@ def test_signup_and_language_settings_use_shared_language_contract() -> None:
     assert "SUPPORTED_LANGUAGES" in signup_source
     assert "useI18n" in settings_source
     assert "SUPPORTED_LANGUAGES" in settings_source
+
+
+def test_bot_management_uses_complete_seven_language_catalog() -> None:
+    management_source = (ROOT_DIR / "apps/web/components/bot-management-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/bot-management.ts").read_text(encoding="utf-8")
+
+    assert "useI18n" in management_source
+    assert "BOT_MANAGEMENT_CATALOGS[language]" in management_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, BotManagementCatalog>" in catalog_source
