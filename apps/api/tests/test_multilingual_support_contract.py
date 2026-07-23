@@ -327,3 +327,14 @@ def test_api_editor_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, ApiEditorCatalog>" in catalog_source
+
+
+def test_common_variable_admin_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/common-variables/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-common-variables.ts").read_text(encoding="utf-8")
+    assert "COMMON_VARIABLE_CATALOGS[uiLanguage]" in page_source
+    assert "copy.searchPlaceholder" in page_source
+    assert "copy.readOnly" in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, CommonVariableCatalog>" in catalog_source
