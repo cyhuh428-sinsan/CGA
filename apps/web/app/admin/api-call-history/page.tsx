@@ -5,6 +5,8 @@ import Link from "next/link";
 
 import { AdminHistoryTablePage } from "@/components/admin-history-table-page";
 import { fetchApiCallHistory, type AdminApiCallHistoryItem } from "@/lib/admin-api";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_PAGE_CATALOGS } from "@/lib/i18n/admin-pages";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -123,13 +125,15 @@ function traceHref(path: string, value: string) {
 }
 
 export default function AdminApiCallHistoryPage() {
+  const { language } = useI18n();
+  const copy = ADMIN_PAGE_CATALOGS[language].apiCallHistory;
   const [selectedItem, setSelectedItem] = useState<AdminApiCallHistoryItem | null>(null);
   const fetchItems = useCallback((token: string) => fetchApiCallHistory(token), []);
   const buildRow = useCallback((item: AdminApiCallHistoryItem) => ({
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__link-button" onClick={() => setSelectedItem(item)}>
-        상세
+        {copy.detail}
       </button>,
       item.method,
       item.filters,
@@ -148,16 +152,16 @@ export default function AdminApiCallHistoryPage() {
       formatDate(item.called_at),
       apiCallDetail(item.data_json),
     ],
-  }), []);
+  }), [copy.detail]);
   const selectedRuntimeEvent = selectedItem ? apiRuntimeEvent(selectedItem.data_json) : null;
   const selectedQueueId = selectedItem ? traceValue(selectedItem.data_json, "queue_event_id") : "-";
 
   return (
     <>
       <AdminHistoryTablePage
-        title="API 호출 이력 조회"
-        searchPlaceholder="API 이름 또는 의도명을 검색하세요."
-        columns={["", "Method", "Filters", "API 이름", "API 유형", "URL", "전송방식", "채널", "그룹", "봇", "버전", "의도명", "응답코드", "소요(ms)", "사용자", "시간", "상세"]}
+        title={copy.title}
+        searchPlaceholder={copy.searchPlaceholder}
+        columns={copy.columns}
         template="64px 70px 90px 150px 80px 220px 70px 100px 100px 130px 60px 140px 110px 80px 180px 160px minmax(220px, 1fr)"
         fetchItems={fetchItems}
         buildRow={buildRow}
@@ -172,7 +176,7 @@ export default function AdminApiCallHistoryPage() {
                 <strong>API 호출 상세 이력</strong>
                 <p>{selectedItem.api_name} / {selectedItem.bot_name} / {selectedItem.called_at}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedItem(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedItem(null)} aria-label={copy.close}>
                 ×
               </button>
             </header>

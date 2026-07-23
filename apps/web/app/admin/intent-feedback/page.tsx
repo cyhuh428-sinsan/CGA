@@ -4,6 +4,9 @@ import { useCallback, useState } from "react";
 
 import { AdminHistoryTablePage } from "@/components/admin-history-table-page";
 import { fetchIntentFeedback, type AdminIntentFeedbackItem } from "@/lib/admin-api";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_PAGE_CATALOGS } from "@/lib/i18n/admin-pages";
+import { ADMIN_COMMON_CATALOGS, formatAdminText } from "@/lib/i18n/admin-common";
 
 function asRecordArray(value: unknown): Array<Record<string, unknown>> {
   return Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item)) : [];
@@ -39,13 +42,16 @@ function buildFeedbackSearchText(item: AdminIntentFeedbackItem) {
 }
 
 export default function AdminIntentFeedbackPage() {
+  const { language } = useI18n();
+  const copy = ADMIN_PAGE_CATALOGS[language].intentFeedback;
+  const commonCopy = ADMIN_COMMON_CATALOGS[language];
   const [selectedItem, setSelectedItem] = useState<AdminIntentFeedbackItem | null>(null);
   const fetchItems = useCallback((token: string) => fetchIntentFeedback(token), []);
   const buildRow = useCallback((item: AdminIntentFeedbackItem) => ({
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__link-button" onClick={() => setSelectedItem(item)}>
-        상세
+        {copy.detail}
       </button>,
       item.group_name,
       item.bot_name,
@@ -57,7 +63,7 @@ export default function AdminIntentFeedbackPage() {
       feedbackLabel(item),
     ],
     searchText: buildFeedbackSearchText(item),
-  }), []);
+  }), [copy.detail]);
   const selectedSamples = selectedItem ? asRecordArray(selectedItem.data_json.samples) : [];
   const suggestedSentences = selectedItem ? asStringArray(selectedItem.data_json.suggested_training_sentences) : [];
   const diagnosisReasons = selectedItem ? asStringArray(selectedItem.data_json.diagnosis_reasons) : [];
@@ -69,15 +75,15 @@ export default function AdminIntentFeedbackPage() {
   return (
     <>
       <AdminHistoryTablePage
-        title="의도별 피드백 조회"
-        searchPlaceholder="의도명, 봇명, 발화를 검색하세요."
-        pageSizeText="20개씩 보기"
-        columns={["", "그룹", "봇", "버전", "채널", "의도명", "평균 점수", "후보 건수", "진단"]}
+        title={copy.title}
+        searchPlaceholder={copy.searchPlaceholder}
+        pageSizeText={formatAdminText(commonCopy.pageSize, { count: 20 })}
+        columns={copy.columns}
         template="64px 150px 180px 80px 120px 180px 120px 110px minmax(180px, 1fr)"
         fetchItems={fetchItems}
         buildRow={buildRow}
         filterColumns={{ group: 1, bot: 2, channel: 4 }}
-        emptyText="미분류 또는 낮은 점수로 수집된 의도 피드백 후보가 없습니다."
+        emptyText={copy.empty}
       />
       {selectedItem ? (
         <>
@@ -88,7 +94,7 @@ export default function AdminIntentFeedbackPage() {
                 <strong>의도 피드백 상세</strong>
                 <p>{selectedItem.bot_name} / {selectedItem.intent_name}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedItem(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedItem(null)} aria-label={copy.close}>
                 ×
               </button>
             </header>

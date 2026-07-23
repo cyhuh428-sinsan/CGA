@@ -6,6 +6,9 @@ import { AdminInteractiveTablePage } from "@/components/admin-interactive-table-
 import { type DataGridRow } from "@/components/data-grid";
 import { loadAuthSession } from "@/lib/auth";
 import { fetchStudioBots, type StudioBotApiItem } from "@/lib/studio-bots-api";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_PAGE_CATALOGS } from "@/lib/i18n/admin-pages";
+import { ADMIN_COMMON_CATALOGS, formatAdminText } from "@/lib/i18n/admin-common";
 
 function formatDate(value?: string | null) {
   return value ? value.replace("T", " ").slice(0, 19) : "-";
@@ -27,6 +30,9 @@ function getBotNluLabel(bot: StudioBotApiItem) {
 }
 
 export default function AdminBotStatusPage() {
+  const { language } = useI18n();
+  const copy = ADMIN_PAGE_CATALOGS[language].botStatus;
+  const commonCopy = ADMIN_COMMON_CATALOGS[language];
   const [bots, setBots] = useState<StudioBotApiItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -35,7 +41,7 @@ export default function AdminBotStatusPage() {
     const session = loadAuthSession();
 
     if (!session) {
-      setMessage("로그인이 필요합니다.");
+      setMessage(commonCopy.loginRequired);
       setLoading(false);
       return;
     }
@@ -46,10 +52,10 @@ export default function AdminBotStatusPage() {
         setMessage("");
       })
       .catch((error: unknown) => {
-        setMessage(error instanceof Error ? error.message : "봇 현황을 불러오지 못했습니다.");
+        setMessage(error instanceof Error ? error.message : commonCopy.loadFailed);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [commonCopy.loadFailed, commonCopy.loginRequired]);
 
   const rows = useMemo<DataGridRow[]>(
     () =>
@@ -72,10 +78,10 @@ export default function AdminBotStatusPage() {
 
   return (
     <AdminInteractiveTablePage
-      title="봇 현황 조회"
-      searchPlaceholder="봇 이름을 검색하세요."
-      totalText={`전체 ${bots.length}건`}
-      columns={["", "그룹", "봇", "언어", "NLU", "버전 수", "생성자", "생성일시"]}
+      title={copy.title}
+      searchPlaceholder={copy.searchPlaceholder}
+      totalText={formatAdminText(commonCopy.totalCount, { count: bots.length })}
+      columns={copy.columns}
       rows={rows}
       template="48px 1fr 1.4fr 0.7fr 1.3fr 0.8fr 1fr 1.3fr"
       toolbarRight={message ? <span className="form-message form-message--error">{message}</span> : null}

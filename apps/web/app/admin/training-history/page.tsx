@@ -9,6 +9,8 @@ import {
   type AdminTrainingHistoryItem,
 } from "@/lib/admin-api";
 import { getNluModelLabel, getNluTypeLabel, normalizeNluType } from "@/lib/nlu-options";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_PAGE_CATALOGS } from "@/lib/i18n/admin-pages";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -137,6 +139,8 @@ function TrainingQualityDetail({ item }: { item: AdminTrainingHistoryItem }) {
 }
 
 export default function AdminTrainingHistoryPage() {
+  const { language } = useI18n();
+  const copy = ADMIN_PAGE_CATALOGS[language].trainingHistory;
   const [selectedItem, setSelectedItem] = useState<AdminTrainingHistoryItem | null>(null);
   const fetchItems = useCallback((token: string) => fetchTrainingHistory(token), []);
   const buildRow = useCallback((item: AdminTrainingHistoryItem, index: number) => ({
@@ -152,28 +156,17 @@ export default function AdminTrainingHistoryPage() {
       formatDate(item.started_at),
       formatDate(item.completed_at),
       <button key={`detail-${item.id}`} type="button" className="admin-page__ghost admin-page__table-button" onClick={() => setSelectedItem(item)}>
-        상세
+        {copy.detail}
       </button>,
     ],
-  }), []);
+  }), [copy.detail]);
 
   return (
     <>
       <AdminHistoryTablePage
-        title="학습 이력 조회"
-        searchPlaceholder="봇 이름을 검색하세요."
-        columns={[
-          <input key="all" type="checkbox" aria-label="전체 선택" />,
-          "그룹",
-          "봇",
-          "버전",
-          "학습 엔진",
-          "학습상태",
-          "사용자",
-          "학습 시작 시간",
-          "학습 완료 시간",
-          "상세",
-        ]}
+        title={copy.title}
+        searchPlaceholder={copy.searchPlaceholder}
+        columns={[<input key="all" type="checkbox" aria-label={copy.columns[0]} />, ...copy.columns.slice(1)]}
         template="36px 96px 140px 52px minmax(170px, 0.9fr) 88px 92px 138px 138px 72px"
         fetchItems={fetchItems}
         buildRow={buildRow}
