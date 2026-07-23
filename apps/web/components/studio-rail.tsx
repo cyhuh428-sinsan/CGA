@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { apiRequest } from "@/lib/api";
 import { fetchAdminLicense, type AdminLicenseStatusResponse } from "@/lib/admin-api";
@@ -21,6 +21,7 @@ import { prefetchStudioBots } from "@/lib/studio-bots-api";
 import { useI18n } from "@/components/language-provider";
 import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
 import { SHELL_NAVIGATION } from "@/lib/i18n/shell-navigation";
+import { ADMIN_NAVIGATION_CATALOGS, buildAdminNavigationGroups } from "@/lib/i18n/admin-navigation";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
@@ -61,56 +62,16 @@ type BuildNavigationGroup = {
   items?: BuildNavigationItem[];
 };
 
-const adminNavigationGroups = [
-  {
-    title: "사용자 관리",
-    items: [
-      { href: "/admin/users", label: "사용자 관리" },
-      { href: "/admin/login-history", label: "로그인 이력" },
-      { href: "/admin/groups", label: "그룹 관리" },
-    ],
-  },
-  {
-    title: "현황 조회",
-    items: [
-      { href: "/admin/audit-logs", label: "운영/시스템 로그 조회" },
-      { href: "/admin/bot-status", label: "봇 현황 조회" },
-      { href: "/admin/training-history", label: "학습 이력 조회" },
-      { href: "/admin/conversations", label: "대화 이력 조회" },
-      { href: "/admin/api-call-history", label: "API 호출 이력 조회" },
-      { href: "/admin/queue-history", label: "Queue 이력 조회" },
-      { href: "/admin/intent-feedback", label: "의도별 피드백 조회" },
-    ],
-  },
-  {
-    title: "대화 관리",
-    items: [
-      { href: "/admin/common-variables", label: "공통 변수 관리하기" },
-      { href: "/admin/default-messages", label: "기본 메시지 관리" },
-    ],
-  },
-  {
-    title: "시스템 연계",
-    items: [
-      { href: "/admin/channels", label: "채널 관리" },
-      { href: "/admin/botstation-status", label: "봇스테이션 연계 현황" },
-    ],
-  },
-  {
-    title: "기타 관리",
-    items: [
-      { href: "/admin/templates", label: "템플릿 목록" },
-      { href: "/admin/license", label: "라이선스 조회" },
-    ],
-  },
-];
-
 export function StudioRail() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { language, setLanguage, t } = useI18n();
   const navigation = SHELL_NAVIGATION[language];
+  const adminGroups = useMemo(
+    () => buildAdminNavigationGroups(ADMIN_NAVIGATION_CATALOGS[language]),
+    [language],
+  );
   const [session, setSession] = useState<AuthSession | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PrimaryPanelId | null>(null);
@@ -270,8 +231,8 @@ export function StudioRail() {
   const botContextFallback = "/studio/bots";
   const botWorkspaceHref = hasBotContext ? `${currentBotBasePath}/intents` : botContextFallback;
   const visibleAdminGroups = hasAdminRole(roles)
-    ? adminNavigationGroups
-    : adminNavigationGroups.filter((group) => group.title === "현황 조회");
+    ? adminGroups
+    : adminGroups.filter((group) => group.key === "status");
   const primaryItems: Array<{ id: PrimaryPanelId; label: string; icon: string }> = [
     { id: "operations", label: t("nav.operations"), icon: "operations" },
     { id: "build", label: t("nav.build"), icon: "build" },

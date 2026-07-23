@@ -238,3 +238,16 @@ def test_intent_scenario_errors_localize_guidance_without_changing_training_bloc
     assert "scenarioErrorCount" in page_source
     assert "trainingDisabledReason" in page_source
     assert "scenarioIssueFallback: string" in catalog_source
+
+
+def test_admin_navigation_and_shell_use_complete_seven_language_catalog() -> None:
+    layout_source = (ROOT_DIR / "apps/web/components/admin-console-layout.tsx").read_text(encoding="utf-8")
+    rail_source = (ROOT_DIR / "apps/web/components/studio-rail.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-navigation.ts").read_text(encoding="utf-8")
+
+    for source in (layout_source, rail_source):
+        assert "ADMIN_NAVIGATION_CATALOGS[language]" in source
+        assert "buildAdminNavigationGroups(" in source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, AdminNavigationCatalog>" in catalog_source
