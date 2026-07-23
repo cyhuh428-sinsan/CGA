@@ -125,3 +125,25 @@ def test_bot_operations_workspace_uses_complete_seven_language_catalog() -> None
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, BotWorkspaceCatalog>" in catalog_source
+
+
+def test_bot_create_uses_localized_ai_options_and_seven_language_catalog() -> None:
+    create_source = (ROOT_DIR / "apps/web/components/bot-create-dialog.tsx").read_text(encoding="utf-8")
+    create_catalog_source = (ROOT_DIR / "apps/web/lib/i18n/bot-create.ts").read_text(encoding="utf-8")
+    ai_catalog_source = (ROOT_DIR / "apps/web/lib/i18n/ai-options.ts").read_text(encoding="utf-8")
+
+    assert "useI18n" in create_source
+    assert "BOT_CREATE_CATALOGS[uiLanguage]" in create_source
+    assert "translateAiOptionText(uiLanguage" in create_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in create_catalog_source or f"  {language}:" in create_catalog_source
+        assert f'  "{language}":' in ai_catalog_source or f"  {language}:" in ai_catalog_source
+    assert "satisfies Record<SupportedLanguage, BotCreateCatalog>" in create_catalog_source
+    assert "satisfies Record<SupportedLanguage, AiOptionTranslationCatalog>" in ai_catalog_source
+
+
+def test_bot_name_validation_accepts_unicode_letters_and_numbers() -> None:
+    create_source = (ROOT_DIR / "apps/web/components/bot-create-dialog.tsx").read_text(encoding="utf-8")
+
+    assert r"\p{L}\p{N}" in create_source
+    assert "[가-힣a-zA-Z0-9" not in create_source
