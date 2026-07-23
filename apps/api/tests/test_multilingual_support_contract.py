@@ -215,3 +215,15 @@ def test_intent_list_localizes_delete_copy_and_preserves_reference_checks() -> N
     assert "persistVersionDocument" in page_source
     assert "deleteDialogTitle: string" in catalog_source
     assert "deleteReferenced: string" in catalog_source
+
+
+def test_intent_csv_ui_is_localized_without_translating_csv_headers() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-list-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-list.ts").read_text(encoding="utf-8")
+
+    assert "copy.uploadTitle" in page_source
+    assert "copy.uploadResultTitle" in page_source
+    assert "copy.addedIntents" in page_source
+    assert 'const rows = [["의도명", "표시명", "의도 Key", "학습문장", "태그"]];' in page_source
+    assert '["의도명", "Intent Name", "intentName", "name"]' in page_source
+    assert "uploadTitle: string" in catalog_source
