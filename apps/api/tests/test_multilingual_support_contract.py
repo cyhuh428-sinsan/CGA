@@ -316,3 +316,14 @@ def test_group_api_management_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, ApiManagementCatalog>" in catalog_source
+
+
+def test_api_editor_uses_seven_language_catalog() -> None:
+    editor_source = (ROOT_DIR / "apps/web/components/api-store-list-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/api-editor.ts").read_text(encoding="utf-8")
+    assert "API_EDITOR_CATALOGS[uiLanguage]" in editor_source
+    assert "copy.samplePlaceholder" in editor_source
+    assert "copy.invalidJson" in editor_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, ApiEditorCatalog>" in catalog_source
