@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ApiEditorDialog } from "@/components/api-store-list-page";
+import { useI18n } from "@/components/language-provider";
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
 import { SortHeaderLabel } from "@/components/sort-header-label";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/lib/api-assets";
 import { hasApiWriteRole, loadAuthSession, type AuthSession } from "@/lib/auth";
 import { fetchStudioGroupApis, updateStudioGroupApis } from "@/lib/studio-bots-api";
+import { API_MANAGEMENT_CATALOGS } from "@/lib/i18n/api-management";
 import {
   LIST_PAGE_SIZE_OPTIONS,
   type ListPageSize,
@@ -73,6 +75,8 @@ function mergeApisByApiKey(currentApis: VersionApiAsset[], incomingApis: Version
 }
 
 export function GroupApiListPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = API_MANAGEMENT_CATALOGS[uiLanguage];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authSession, setAuthSession] = useState<AuthSession | null>(null);
   const [apis, setApis] = useState<VersionApiAsset[]>([]);
@@ -211,7 +215,7 @@ export function GroupApiListPage() {
         <input
           key="check"
           type="checkbox"
-          aria-label={`${api.name} 선택`}
+          aria-label={`${api.name} ${copy.selectItem}`}
           checked={selectedIds.includes(rowId)}
           onChange={() =>
             setSelectedIds((current) => (current.includes(rowId) ? current.filter((id) => id !== rowId) : [...current, rowId]))
@@ -370,23 +374,23 @@ export function GroupApiListPage() {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="API 이름, 상세설명, 목적지 Base URL을 검색하세요."
+            placeholder={copy.search}
           />
         </label>
-        <button type="button" className="studio-table-page__filter" aria-label="필터">
+        <button type="button" className="studio-table-page__filter" aria-label={copy.filter}>
           ▾
         </button>
         <div className="studio-table-page__search-actions">
           {canWriteApi ? (
             <button type="button" className="studio-table-page__primary" onClick={openApiCreate} disabled={saving}>
-              + API 등록
+              + {copy.create}
             </button>
           ) : null}
           <button
             type="button"
             className="studio-table-page__ghost studio-table-page__more"
             onClick={() => setActionMenuOpen((current) => !current)}
-            aria-label="더보기"
+            aria-label={copy.more}
           >
             ⋮
           </button>
@@ -402,7 +406,7 @@ export function GroupApiListPage() {
                     fileInputRef.current?.click();
                   }}
                 >
-                  업로드
+                  {copy.upload}
                 </button>
               ) : null}
               <button
@@ -414,7 +418,7 @@ export function GroupApiListPage() {
                   handleDownloadApis(false);
                 }}
               >
-                전체 다운로드
+                {copy.downloadAll}
               </button>
               <button
                 type="button"
@@ -425,7 +429,7 @@ export function GroupApiListPage() {
                   handleDownloadApis(true);
                 }}
               >
-                선택 다운로드
+                {copy.downloadSelected}
               </button>
             </div>
           ) : null}
@@ -446,12 +450,12 @@ export function GroupApiListPage() {
 
       <div className="studio-table-page__toolbar">
         <div className="studio-table-page__toolbar-left">
-          <strong>전체 {filteredApis.length}건</strong>
+          <strong>{copy.total} {filteredApis.length}</strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
               {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}개씩 보기
+                  {option} {copy.perPage}
                 </option>
               ))}
             </select>
@@ -463,7 +467,7 @@ export function GroupApiListPage() {
               disabled={selectedIds.length === 0 || saving}
               onClick={() => saveApis(apis.filter((api) => !selectedIds.includes(apiIdentity(api))), "선택한 API를 삭제했습니다.")}
             >
-              삭제
+              {copy.delete}
             </button>
           ) : null}
         </div>
@@ -475,7 +479,7 @@ export function GroupApiListPage() {
           <input
             key="check"
             type="checkbox"
-            aria-label="전체 선택"
+            aria-label={copy.selectAll}
             checked={allPagedSelected}
             onChange={(event) =>
               setSelectedIds((current) => {
@@ -488,25 +492,25 @@ export function GroupApiListPage() {
             }
           />,
           <button key="category" type="button" className="settings-sort-button" onClick={() => toggleSort("category")}>
-            <SortHeaderLabel label="구분" direction={sortKey === "category" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.category} direction={sortKey === "category" ? sortDirection : "none"} />
           </button>,
           <button key="api" type="button" className="settings-sort-button" onClick={() => toggleSort("name")}>
-            <SortHeaderLabel label="API 이름" direction={sortKey === "name" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.apiName} direction={sortKey === "name" ? sortDirection : "none"} />
           </button>,
           <button key="base" type="button" className="settings-sort-button" onClick={() => toggleSort("baseUrl")}>
-            <SortHeaderLabel label="목적지 Base URL" direction={sortKey === "baseUrl" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.baseUrl} direction={sortKey === "baseUrl" ? sortDirection : "none"} />
           </button>,
           <button key="methods" type="button" className="settings-sort-button" onClick={() => toggleSort("methods")}>
-            <SortHeaderLabel label="메서드 수" direction={sortKey === "methods" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.methodCount} direction={sortKey === "methods" ? sortDirection : "none"} />
           </button>,
           <button key="usage" type="button" className="settings-sort-button" onClick={() => toggleSort("usage")}>
-            <SortHeaderLabel label="사용중인 의도" direction={sortKey === "usage" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.usedIntents} direction={sortKey === "usage" ? sortDirection : "none"} />
           </button>,
           <button key="updated" type="button" className="settings-sort-button" onClick={() => toggleSort("updatedAt")}>
-            <SortHeaderLabel label="최종수정일시" direction={sortKey === "updatedAt" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.updatedAt} direction={sortKey === "updatedAt" ? sortDirection : "none"} />
           </button>,
           <button key="updatedBy" type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-            <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.updatedBy} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
           </button>,
         ]}
         rows={rows}
@@ -531,8 +535,8 @@ export function GroupApiListPage() {
         </button>
       </div>
 
-      {loading ? <p className="api-store-page__empty">API 목록을 불러오는 중입니다...</p> : null}
-      {!loading && authSession && rows.length === 0 ? <p className="api-store-page__empty">등록된 API가 없습니다.</p> : null}
+      {loading ? <p className="api-store-page__empty">{copy.loading}</p> : null}
+      {!loading && authSession && rows.length === 0 ? <p className="api-store-page__empty">{copy.empty}</p> : null}
       {message ? <p className="form-message form-message--success">{message}</p> : null}
       {errorMessage ? <p className="form-message form-message--error">{errorMessage}</p> : null}
     </section>

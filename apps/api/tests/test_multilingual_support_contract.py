@@ -303,3 +303,16 @@ def test_bot_test_uses_seven_language_catalog_and_preserves_trace_data() -> None
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, SimulatorCatalog>" in catalog_source
+
+
+def test_group_api_management_uses_seven_language_catalog() -> None:
+    list_source = (ROOT_DIR / "apps/web/components/group-api-list-page.tsx").read_text(encoding="utf-8")
+    detail_source = (ROOT_DIR / "apps/web/components/group-api-detail-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/api-management.ts").read_text(encoding="utf-8")
+    assert "API_MANAGEMENT_CATALOGS[uiLanguage]" in list_source
+    assert "API_MANAGEMENT_CATALOGS[uiLanguage]" in detail_source
+    assert "copy.search" in list_source
+    assert "copy.methodDescription" in detail_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, ApiManagementCatalog>" in catalog_source
