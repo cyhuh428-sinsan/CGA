@@ -1,6 +1,6 @@
 import type { SupportedLanguage } from "@/lib/language";
 
-type ShellNavigationCatalog = {
+export type ShellNavigationCatalog = {
   operationsPanel: string;
   buildPanel: string;
   systemPanel: string;
