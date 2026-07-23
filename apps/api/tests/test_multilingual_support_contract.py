@@ -173,3 +173,18 @@ def test_bot_settings_shell_uses_shared_navigation_and_localized_messages() -> N
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, BotSettingsShellCatalog>" in catalog_source
+
+
+def test_shared_training_header_uses_seven_language_catalog() -> None:
+    button_source = (ROOT_DIR / "apps/web/components/nlu-training-button.tsx").read_text(encoding="utf-8")
+    header_source = (ROOT_DIR / "apps/web/components/bot-workspace-header.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/training.ts").read_text(encoding="utf-8")
+
+    assert "useI18n" in button_source
+    assert "TRAINING_CATALOGS[uiLanguage]" in button_source
+    assert "useI18n" in header_source
+    assert "TRAINING_CATALOGS[uiLanguage]" in header_source
+    assert "translateAiOptionText(uiLanguage" in header_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, TrainingCatalog>" in catalog_source

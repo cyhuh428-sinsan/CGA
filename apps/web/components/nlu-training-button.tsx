@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { loadAuthSession } from "@/lib/auth";
 import { formatKoreanDateTime } from "@/lib/date-time";
+import { TRAINING_CATALOGS, type TrainingCatalog } from "@/lib/i18n/training";
 import {
   trainStudioBotVersionNlu,
   type NluModelManifest,
@@ -18,18 +20,18 @@ type NluTrainingButtonProps = {
   onTrained?: (manifest: NluModelManifest) => void;
 };
 
-function formatTrainingResult(manifest: NluModelManifest) {
+function formatTrainingResult(manifest: NluModelManifest, copy: TrainingCatalog) {
   const counts = manifest.model?.counts;
   const trainedAt = formatKoreanDateTime(manifest.model?.trained_at);
-  const prefix = trainedAt ? `학습완료 ${trainedAt}` : "학습이 완료되었습니다.";
+  const prefix = trainedAt ? `${copy.completedAt} ${trainedAt}` : copy.completed;
   const answerDocumentCount = manifest.answer_training?.document_count;
   const answerPart =
-    typeof answerDocumentCount === "number" ? ` / 답변문서 ${answerDocumentCount}` : "";
+    typeof answerDocumentCount === "number" ? ` / ${copy.answerDocuments} ${answerDocumentCount}` : "";
   if (!counts) {
     return `${prefix}${answerPart}`;
   }
 
-  return `${prefix} / 의도문장 ${counts.intent_documents} / 개체 ${counts.entity_documents} / 어휘 ${counts.vocabulary}${answerPart}`;
+  return `${prefix} / ${copy.intentSentences} ${counts.intent_documents} / ${copy.entities} ${counts.entity_documents} / ${copy.vocabulary} ${counts.vocabulary}${answerPart}`;
 }
 
 function showTrainingPopup(message: string) {
@@ -51,6 +53,8 @@ export function NluTrainingButton({
   disabledReason = "",
   onTrained,
 }: NluTrainingButtonProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = TRAINING_CATALOGS[uiLanguage];
   const [training, setTraining] = useState(false);
   const [message, setMessage] = useState("");
   const disabled = !botId || !versionId || training || Boolean(disabledReason);
@@ -63,14 +67,14 @@ export function NluTrainingButton({
 
     const session = loadAuthSession();
     if (!session) {
-      const nextMessage = "로그인이 필요합니다.";
+      const nextMessage = copy.loginRequired;
       setMessage(nextMessage);
       showTrainingPopup(nextMessage);
       return;
     }
 
     setTraining(true);
-    setMessage(ragAnswerMode ? "구성에서 확정한 RAG 의도와 답변 문서 기준으로 NLU 학습 중입니다." : "NLU 학습 중입니다.");
+    setMessage(ragAnswerMode ? copy.ragTraining : copy.nluTraining);
 
     try {
       const manifest = await trainStudioBotVersionNlu(
@@ -82,18 +86,18 @@ export function NluTrainingButton({
           onStatus: (job) => {
             setMessage(
               job.status === "queued"
-                ? "NLU 학습 요청이 Queue에 등록되었습니다."
-                : "NLU 학습 작업을 처리하고 있습니다.",
+                ? copy.queued
+                : copy.processing,
             );
           },
         },
       );
-      const nextMessage = formatTrainingResult(manifest);
+      const nextMessage = formatTrainingResult(manifest, copy);
       setMessage(nextMessage);
       showTrainingPopup(nextMessage);
       onTrained?.(manifest);
     } catch (error) {
-      const nextMessage = error instanceof Error ? error.message : "학습 중 오류가 발생했습니다.";
+      const nextMessage = error instanceof Error ? error.message : copy.error;
       setMessage(nextMessage);
       showTrainingPopup(nextMessage);
     } finally {
@@ -109,7 +113,7 @@ export function NluTrainingButton({
         disabled={disabled}
         onClick={() => void runTraining()}
       >
-        {training ? "학습중" : "학습하기"}
+        {training ? copy.training : copy.train}
       </button>
       <p className="manual-main__updated">{message || disabledReason || statusText}</p>
     </>
