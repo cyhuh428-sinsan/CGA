@@ -126,6 +126,9 @@ class BotNluAnswerConfigMixin(BaseModel):
         return self
 
 
+BotLanguage = Literal["ko", "en", "zh-CN", "ja", "vi", "fr", "de"]
+
+
 class BotCreateRequest(BotNluAnswerConfigMixin):
     name: str = Field(min_length=1, max_length=150)
     description: str | None = Field(default=None, max_length=2000)
@@ -133,7 +136,7 @@ class BotCreateRequest(BotNluAnswerConfigMixin):
     bot_mode: Literal["text", "voice"] = "text"
     profile_key: Literal["gray", "accent", "outline"] = "accent"
     profile_image_data: str | None = Field(default=None, max_length=4_000_000)
-    language: Literal["ko"] = "ko"
+    language: BotLanguage = "ko"
     nlu_engine: NluModel | None = "deep_learning_lite"
     nlu_type: NluType | None = "ml"
     nlu_model: NluModel | None = "deep_learning_lite"
@@ -152,7 +155,7 @@ class BotUpdateRequest(BotNluAnswerConfigMixin):
     bot_mode: Literal["text", "voice"] | None = None
     profile_key: Literal["gray", "accent", "outline"] | None = None
     profile_image_data: str | None = Field(default=None, max_length=4_000_000)
-    language: Literal["ko"] | None = None
+    language: BotLanguage | None = None
     introduction: str | None = Field(default=None, max_length=2000)
     settings_scope: str | None = Field(default=None, min_length=1, max_length=120)
     settings_json: dict[str, Any] | None = None

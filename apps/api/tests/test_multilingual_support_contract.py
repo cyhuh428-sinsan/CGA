@@ -43,7 +43,7 @@ def test_bot_create_and_settings_use_shared_language_options() -> None:
     settings_source = (ROOT_DIR / "apps/web/components/bot-settings-page.tsx").read_text(encoding="utf-8")
 
     assert "SUPPORTED_LANGUAGES" in create_source
-    assert "SUPPORTED_LANGUAGES" in settings_source
+    assert "getLanguageLabel" in settings_source
 
 
 def test_header_and_account_menu_use_shared_language_options() -> None:
@@ -52,4 +52,3 @@ def test_header_and_account_menu_use_shared_language_options() -> None:
 
     assert "SUPPORTED_LANGUAGES" in header_source
     assert "SUPPORTED_LANGUAGES" in rail_source
-

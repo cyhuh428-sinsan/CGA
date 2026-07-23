@@ -18,6 +18,7 @@ import {
   type AuthSession,
 } from "@/lib/auth";
 import { prefetchStudioBots } from "@/lib/studio-bots-api";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES, UI_LANGUAGE_STORAGE_KEY, type SupportedLanguage } from "@/lib/language";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
@@ -115,7 +116,7 @@ export function StudioRail() {
   const [gettingStartedMode, setGettingStartedMode] = useState<GettingStartedMode>("explore");
   const [hideGettingStarted, setHideGettingStarted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [language, setLanguage] = useState("ko");
+  const [language, setLanguage] = useState<SupportedLanguage>("ko");
   const [licenseStatus, setLicenseStatus] = useState<AdminLicenseStatusResponse | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const helpMenuRef = useRef<HTMLDivElement | null>(null);
@@ -125,7 +126,7 @@ export function StudioRail() {
   useEffect(() => {
     const currentSession = loadAuthSession();
     setSession(currentSession);
-    setLanguage(window.localStorage.getItem("aidot.language") ?? "ko");
+    setLanguage(normalizeSupportedLanguage(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY)));
     refreshAuthSessionCookies();
     if (currentSession) {
       prefetchStudioBots(currentSession.access_token);
@@ -363,8 +364,9 @@ export function StudioRail() {
   const licenseExpiresAt = currentLicense?.expires_at?.trim() || "-";
 
   function handleLanguageChange(value: string) {
-    setLanguage(value);
-    window.localStorage.setItem("aidot.language", value);
+    const nextLanguage = normalizeSupportedLanguage(value);
+    setLanguage(nextLanguage);
+    window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, nextLanguage);
   }
 
   return (
@@ -675,8 +677,9 @@ export function StudioRail() {
                     onChange={(event) => handleLanguageChange(event.target.value)}
                     aria-label="사용자 언어"
                   >
-                    <option value="ko">한국어</option>
-                    <option value="en">English</option>
+                    {SUPPORTED_LANGUAGES.map((option) => (
+                      <option key={option.code} value={option.code}>{option.label}</option>
+                    ))}
                   </select>
 
                   <button

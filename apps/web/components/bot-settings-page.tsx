@@ -22,6 +22,7 @@ import {
   type VectorConnectionsConfig,
 } from "@/lib/bot-settings";
 import { buildBotAiCombinationRows, selectedBotAiCombination } from "@/lib/bot-ai-combinations";
+import { getLanguageLabel, normalizeSupportedLanguage, type SupportedLanguage } from "@/lib/language";
 import { BotSettingsShell } from "@/components/bot-settings-shell";
 import {
   getNluModelLabel,
@@ -160,7 +161,7 @@ function BotEditSection({
   setErrorMessage,
 }: BotEditSectionProps) {
   const [name, setName] = useState("");
-  const [language, setLanguage] = useState<"ko">("ko");
+  const [language, setLanguage] = useState<SupportedLanguage>("ko");
   const [nluType, setNluType] = useState<NluType>("ml");
   const [nluModel, setNluModel] = useState<NluModelKey>("deep_learning_lite");
   const [answerMode, setAnswerMode] = useState<AnswerMode>(DEFAULT_ANSWER_MODE);
@@ -177,7 +178,7 @@ function BotEditSection({
     const aiConfig = getSelectedAiConfig(bot);
     const nextType = normalizeNluType(aiConfig.nlu_type);
     setName(bot.name);
-    setLanguage((aiConfig.language as "ko") ?? "ko");
+    setLanguage(normalizeSupportedLanguage(aiConfig.language));
     setNluType(nextType);
     setNluModel(normalizeNluModel(nextType, aiConfig.nlu_model ?? aiConfig.nlu_engine));
     setAnswerMode(normalizeAnswerMode(aiConfig.answer_mode));
@@ -313,7 +314,7 @@ function BotEditSection({
             <div className="bot-settings-grid bot-settings-grid--5">
               <div className="bot-settings-card">
                 <span>언어 <em>*</em></span>
-                <strong>{language === "ko" ? "한국어" : language}</strong>
+                <strong>{getLanguageLabel(language)}</strong>
                 <small className="bot-settings-card__hint">봇 생성 시 고정</small>
               </div>
 
