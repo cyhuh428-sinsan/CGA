@@ -25,6 +25,7 @@ from app.api.routes.channels import _process_queued_channel_events
 from app.core.cache import cache_aside_json, cache_status_snapshot, purge_cache_pattern
 from app.core.config import ROOT_DIR, settings
 from app.core.responses import success_response
+from app.core.language import normalize_supported_language
 from app.core.version_documents import build_version_asset_counts, normalize_version_document
 from app.core.version_storage import (
     build_version_dialog_asset_rows,
@@ -6434,6 +6435,7 @@ def list_default_messages(
     query: str | None = Query(default=None),
     category: str | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),
+    language: str | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, object]:
@@ -6442,13 +6444,23 @@ def list_default_messages(
     _ensure_default_messages(db, organization)
     db.commit()
 
-    messages = db.execute(
+    normalized_language = None
+    if language:
+        normalized_language = normalize_supported_language(language)
+        if normalized_language is None:
+            raise HTTPException(status_code=422, detail="Unsupported language.")
+
+    statement = (
         select(AdminDefaultMessage)
         .where(
             AdminDefaultMessage.organization_id == organization.id,
             AdminDefaultMessage.deleted_at.is_(None),
         )
-        .order_by(AdminDefaultMessage.category.asc(), AdminDefaultMessage.message_key.asc())
+    )
+    if normalized_language is not None:
+        statement = statement.where(AdminDefaultMessage.language == normalized_language)
+    messages = db.execute(
+        statement.order_by(AdminDefaultMessage.category.asc(), AdminDefaultMessage.message_key.asc())
     ).scalars().all()
 
     if query:
