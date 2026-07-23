@@ -161,3 +161,15 @@ def test_bot_settings_uses_localized_catalog_and_unicode_bot_names() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, BotSettingsCatalog>" in catalog_source
+
+
+def test_bot_settings_shell_uses_shared_navigation_and_localized_messages() -> None:
+    shell_source = (ROOT_DIR / "apps/web/components/bot-settings-shell.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/bot-settings-shell.ts").read_text(encoding="utf-8")
+
+    assert "useI18n" in shell_source
+    assert "SHELL_NAVIGATION[uiLanguage]" in shell_source
+    assert "BOT_SETTINGS_SHELL_CATALOGS[uiLanguage]" in shell_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, BotSettingsShellCatalog>" in catalog_source

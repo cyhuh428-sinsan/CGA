@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { type ComponentType, useEffect, useMemo, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { getBotSettingsVersionName, getBotVersionSettings, type BotVersionSettings } from "@/lib/bot-settings";
 import { loadAuthSession, loadLastBotScreen } from "@/lib/auth";
+import { BOT_SETTINGS_SHELL_CATALOGS, type BotSettingsShellCatalog } from "@/lib/i18n/bot-settings-shell";
+import { SHELL_NAVIGATION, type ShellNavigationCatalog } from "@/lib/i18n/shell-navigation";
 import {
   fetchStudioBot,
   fetchStudioBots,
@@ -46,79 +49,90 @@ type BotSettingsShellProps = {
 };
 
 const MENU_SECTIONS: Array<{
-  title: string;
-  items: Array<{ key: ActiveMenu; label: string; href: (botId: string) => string }>;
+  titleKey: "settings" | "basicConversation" | "integrations";
+  items: Array<{
+    key: ActiveMenu;
+    labelKey: "aiModelSettings" | "defaultsSettings" | "messageSettings" | "messengerFeatures" | "blocklistSettings" | "ruleSettings" | "smalltalk" | "botstation";
+    href: (botId: string) => string;
+  }>;
 }> = [
   {
-    title: "설정",
+    titleKey: "settings",
     items: [
       {
         key: "edit",
-        label: "AI 모델 설정",
+        labelKey: "aiModelSettings",
         href: (botId) => `/studio/bots/${botId}/settings`,
       },
       {
         key: "conversation-defaults",
-        label: "기본값 설정",
+        labelKey: "defaultsSettings",
         href: (botId) => `/studio/bots/${botId}/settings/conversation-defaults`,
       },
       {
         key: "messages",
-        label: "메시지 설정",
+        labelKey: "messageSettings",
         href: (botId) => `/studio/bots/${botId}/settings/messages`,
       },
       {
         key: "messenger",
-        label: "메신저 편의 기능",
+        labelKey: "messengerFeatures",
         href: (botId) => `/studio/bots/${botId}/settings/messenger`,
       },
     ],
   },
   {
-    title: "기본 대화",
+    titleKey: "basicConversation",
     items: [
       {
         key: "blocklist",
-        label: "제외/무시 목록 설정",
+        labelKey: "blocklistSettings",
         href: (botId) => `/studio/bots/${botId}/settings/blocklist`,
       },
       {
         key: "rules",
-        label: "룰 설정",
+        labelKey: "ruleSettings",
         href: (botId) => `/studio/bots/${botId}/settings/rules`,
       },
       {
         key: "smalltalk",
-        label: "스몰토크",
+        labelKey: "smalltalk",
         href: (botId) => `/studio/bots/${botId}/settings/smalltalk`,
       },
     ],
   },
   {
-    title: "연계",
+    titleKey: "integrations",
     items: [
       {
         key: "botstation",
-        label: "봇스테이션",
+        labelKey: "botstation",
         href: (botId) => `/studio/bots/${botId}/settings/botstation`,
       },
     ],
   },
 ];
 
-const MENU_SUBHEAD_LABELS: Record<ActiveMenu, string> = {
-  edit: "AI 모델 설정",
-  delete: "봇 삭제",
-  "conversation-defaults": "기본값 설정",
-  messages: "메시지 설정",
-  messenger: "메신저 편의 기능",
-  "floating-buttons": "메신저 편의 기능",
-  "recommended-intents": "메신저 편의 기능",
-  blocklist: "제외/무시 목록 설정",
-  rules: "룰 설정",
-  smalltalk: "스몰토크",
-  botstation: "봇스테이션",
-};
+function getSubheadLabel(
+  activeMenu: ActiveMenu,
+  navigation: ShellNavigationCatalog,
+  copy: BotSettingsShellCatalog,
+) {
+  const labels: Record<ActiveMenu, string> = {
+    edit: navigation.aiModelSettings,
+    delete: copy.delete,
+    "conversation-defaults": navigation.defaultsSettings,
+    messages: navigation.messageSettings,
+    messenger: navigation.messengerFeatures,
+    "floating-buttons": navigation.messengerFeatures,
+    "recommended-intents": navigation.messengerFeatures,
+    blocklist: navigation.blocklistSettings,
+    rules: navigation.ruleSettings,
+    smalltalk: navigation.smalltalk,
+    botstation: navigation.botstation,
+  };
+  return labels[activeMenu];
+}
 
 const BOT_VERSION_PATH_PATTERN = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -148,6 +162,9 @@ function decodeRouteValue(value: string) {
 }
 
 export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps) {
+  const { language: uiLanguage } = useI18n();
+  const navigation = SHELL_NAVIGATION[uiLanguage];
+  const copy = BOT_SETTINGS_SHELL_CATALOGS[uiLanguage];
   const params = useParams<{ botId: string }>();
   const searchParams = useSearchParams();
   const rawBotId = typeof params.botId === "string" ? params.botId : "";
@@ -164,12 +181,12 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
 
     setToken(session.access_token);
-  }, []);
+  }, [copy.loginRequired]);
 
   useEffect(() => {
     if (!token || !botId) {
@@ -216,7 +233,7 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "봇 설정 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadError);
         }
       })
       .finally(() => {
@@ -228,7 +245,7 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
     return () => {
       ignore = true;
     };
-  }, [botId, routeVersionHint, token]);
+  }, [botId, copy.loadError, routeVersionHint, token]);
 
   const activeVersionName = bot?.active_version?.name?.trim() ?? "";
   const routeVersionName = isVersionName(routeVersionHint) ? routeVersionHint?.trim() ?? "" : "";
@@ -247,7 +264,7 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
   const versionSettings = bot ? getBotVersionSettings(bot, versionScope) : getBotVersionSettings({});
   const latestUpdatedAt = bot?.updated_at ? bot.updated_at.replace("T", " ").slice(0, 16) : "-";
   const Content = children;
-  const subheadLabel = MENU_SUBHEAD_LABELS[activeMenu];
+  const subheadLabel = getSubheadLabel(activeMenu, navigation, copy);
   const settingsRouteBotId = bot?.id ?? botId;
 
   function isMenuActive(key: ActiveMenu) {
@@ -264,7 +281,7 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
 
   async function saveVersionSettings(settingsJson: Partial<BotVersionSettings>, successMessage: string) {
     if (!bot || !token) {
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
 
@@ -286,15 +303,15 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
   return (
     <section className="bot-settings-page">
       <div className="bot-settings-page__crumb">
-        <Link href={mainHref}>챗봇 생성 및 관리하기</Link>
+        <Link href={mainHref}>{copy.creationManagement}</Link>
         <span>&gt;</span>
-        <Link href={mainHref}>{bot?.name ?? "봇"}</Link>
+        <Link href={mainHref}>{bot?.name ?? copy.bot}</Link>
         <span>&gt;</span>
         <span>{subheadLabel}</span>
       </div>
       <header className="bot-settings-page__header">
         <div className="bot-settings-page__header-meta">
-          <span>최종수정일시 : {latestUpdatedAt}</span>
+          <span>{copy.lastModified} : {latestUpdatedAt}</span>
         </div>
       </header>
 
@@ -307,8 +324,8 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
                 <span />
               </span>
             </div>
-            <strong>{bot?.name ?? "봇 설정"}</strong>
-            <button type="button" className="bot-settings-sidebar__star" aria-label="우선 봇">
+            <strong>{bot?.name ?? copy.botSettings}</strong>
+            <button type="button" className="bot-settings-sidebar__star" aria-label={copy.priorityBot}>
               ★
             </button>
           </div>
@@ -318,27 +335,27 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
               href={withVersionQuery(`/studio/bots/${settingsRouteBotId}/settings`, versionName)}
               className={`bot-settings-sidebar__action${activeMenu === "edit" ? " is-active" : ""}`}
             >
-              수정
+              {copy.edit}
             </Link>
             <Link
               href={withVersionQuery(`/studio/bots/${settingsRouteBotId}/settings/delete`, versionName)}
               className={`bot-settings-sidebar__action${activeMenu === "delete" ? " is-active" : ""}`}
             >
-              삭제
+              {copy.delete}
             </Link>
           </div>
 
-          <nav className="bot-settings-menu" aria-label="설정 메뉴">
+          <nav className="bot-settings-menu" aria-label={copy.settingsMenu}>
             {MENU_SECTIONS.map((section) => (
-              <div key={section.title} className="bot-settings-menu__section">
-                <strong className="bot-settings-menu__title">{section.title}</strong>
+              <div key={section.titleKey} className="bot-settings-menu__section">
+                <strong className="bot-settings-menu__title">{copy[section.titleKey]}</strong>
                 {section.items.map((item) => (
                   <Link
                     key={item.key}
                     href={withVersionQuery(item.href(settingsRouteBotId), versionName)}
                     className={`bot-settings-menu__item${isMenuActive(item.key) ? " is-active" : ""}`}
                   >
-                    {item.label}
+                    {navigation[item.labelKey]}
                   </Link>
                 ))}
               </div>
@@ -347,7 +364,7 @@ export function BotSettingsShell({ activeMenu, children }: BotSettingsShellProps
         </aside>
 
         <div className="bot-settings-content">
-          {loading ? <p className="bot-settings-page__loading">설정 화면을 불러오는 중입니다...</p> : null}
+          {loading ? <p className="bot-settings-page__loading">{copy.loading}</p> : null}
           {errorMessage ? <p className="form-message form-message--error">{errorMessage}</p> : null}
           {message ? <p className="form-message form-message--success">{message}</p> : null}
 
