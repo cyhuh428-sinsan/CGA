@@ -35,6 +35,7 @@ from app.models import AdminChannel, AdminDefaultMessage, AdminLicense, AdminTem
 from app.services.license_policy import assert_license_allows_creation, get_license_usage_counts, get_license_warnings
 from app.services.nlu.deep_learning_lite import get_ml_acceleration_status
 from app.services.scenario_validation import scenario_validation_from_version
+from app.services.default_message_catalog import DEFAULT_MESSAGE_CATALOGS
 from app.schemas.admin import (
     AdminApiCallHistoryItem,
     AdminCachePurgeRequest,
@@ -1543,12 +1544,16 @@ def _default_message_category_label(category: str) -> str:
     }.get(category, category)
 
 
-def _default_message_definition(message_key: str) -> dict[str, str] | None:
-    return DEFAULT_ADMIN_DEFAULT_MESSAGE_BY_KEY.get(message_key)
+def _default_message_definition(message_key: str, language: str = "ko") -> dict[str, str] | None:
+    localized = DEFAULT_MESSAGE_CATALOGS.get(language, DEFAULT_MESSAGE_CATALOGS["ko"]).get(message_key)
+    if localized is None:
+        return DEFAULT_ADMIN_DEFAULT_MESSAGE_BY_KEY.get(message_key)
+    category = DEFAULT_ADMIN_DEFAULT_MESSAGE_BY_KEY.get(message_key, {}).get("category", "runtime")
+    return {"message_key": message_key, "category": category, **localized}
 
 
 def _build_default_message_json(message: AdminDefaultMessage, updater_name: str | None = None) -> dict[str, object]:
-    default_item = _default_message_definition(message.message_key)
+    default_item = _default_message_definition(message.message_key, message.language)
     default_text = default_item["message_text"] if default_item is not None else None
     return {
         "id": str(message.id),
@@ -1573,48 +1578,50 @@ def _build_default_message_json(message: AdminDefaultMessage, updater_name: str 
 
 
 def _ensure_default_messages(db: Session, organization: Organization) -> None:
-    for item in DEFAULT_ADMIN_DEFAULT_MESSAGES:
-        db.execute(
-            pg_insert(AdminDefaultMessage)
-            .values(
-                id=uuid4(),
-                organization_id=organization.id,
-                message_key=item["message_key"],
-                message_name=item["message_name"],
-                category=item["category"],
-                language="ko",
-                scope="global",
-                message_text=item["message_text"],
-                description=item["description"],
-                status="active",
-                data_json={"protected": True},
-                deleted_at=None,
+    for language, catalog in DEFAULT_MESSAGE_CATALOGS.items():
+        for message_key, localized_definition in catalog.items():
+            category = DEFAULT_ADMIN_DEFAULT_MESSAGE_BY_KEY.get(message_key, {}).get("category", "runtime")
+            db.execute(
+                pg_insert(AdminDefaultMessage)
+                .values(
+                    id=uuid4(),
+                    organization_id=organization.id,
+                    message_key=message_key,
+                    message_name=localized_definition["message_name"],
+                    category=category,
+                    language=language,
+                    scope="global",
+                    message_text=localized_definition["message_text"],
+                    description=localized_definition["description"],
+                    status="active",
+                    data_json={"protected": True},
+                    deleted_at=None,
+                )
+                .on_conflict_do_update(
+                    index_elements=["organization_id", "message_key", "language"],
+                    set_={
+                        "message_name": localized_definition["message_name"],
+                        "category": category,
+                        "description": localized_definition["description"],
+                        "deleted_at": None,
+                        "updated_at": datetime.now(timezone.utc),
+                    },
+                )
             )
-            .on_conflict_do_update(
-                index_elements=["organization_id", "message_key", "language"],
-                set_={
-                    "message_name": item["message_name"],
-                    "category": item["category"],
-                    "description": item["description"],
-                    "deleted_at": None,
-                    "updated_at": datetime.now(timezone.utc),
-                },
+            existing = db.scalar(
+                select(AdminDefaultMessage).where(
+                    AdminDefaultMessage.organization_id == organization.id,
+                    AdminDefaultMessage.message_key == message_key,
+                    AdminDefaultMessage.language == language,
+                )
             )
-        )
-        existing = db.scalar(
-            select(AdminDefaultMessage).where(
-                AdminDefaultMessage.organization_id == organization.id,
-                AdminDefaultMessage.message_key == item["message_key"],
-                AdminDefaultMessage.language == "ko",
-            )
-        )
-        if existing is not None:
-            existing.data_json = _build_default_message_json(existing, "SYSTEM")
-            db.add(existing)
+            if existing is not None:
+                existing.data_json = _build_default_message_json(existing, "SYSTEM")
+                db.add(existing)
 
 
 def _serialize_default_message(message: AdminDefaultMessage, updater_name: str) -> AdminDefaultMessageItem:
-    default_item = _default_message_definition(message.message_key)
+    default_item = _default_message_definition(message.message_key, message.language)
     default_text = default_item["message_text"] if default_item is not None else None
     return AdminDefaultMessageItem(
         id=message.id,
@@ -6535,7 +6542,7 @@ def restore_default_message(
     if message is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="기본 메시지를 찾을 수 없습니다.")
 
-    default_item = _default_message_definition(message.message_key)
+    default_item = _default_message_definition(message.message_key, message.language)
     if default_item is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="복원할 기본 문구가 없습니다.")
 
