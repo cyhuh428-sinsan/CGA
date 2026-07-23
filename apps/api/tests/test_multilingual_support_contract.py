@@ -114,3 +114,14 @@ def test_bot_management_uses_complete_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, BotManagementCatalog>" in catalog_source
+
+
+def test_bot_operations_workspace_uses_complete_seven_language_catalog() -> None:
+    workspace_source = (ROOT_DIR / "apps/web/components/bot-operations-workspace-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/bot-workspace.ts").read_text(encoding="utf-8")
+
+    assert "useI18n" in workspace_source
+    assert "BOT_WORKSPACE_CATALOGS[language]" in workspace_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, BotWorkspaceCatalog>" in catalog_source
