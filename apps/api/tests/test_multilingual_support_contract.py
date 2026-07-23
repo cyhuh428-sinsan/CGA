@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from app.schemas.auth import SignupRequestPayload
 from app.schemas.bot import BotCreateRequest, BotUpdateRequest
 
 
@@ -29,6 +30,20 @@ def test_bot_update_accepts_every_supported_language(language: str) -> None:
 def test_bot_language_rejects_unsupported_code() -> None:
     with pytest.raises(ValidationError):
         BotCreateRequest(name="unsupported locale bot", language="es")
+
+
+@pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+def test_signup_accepts_every_supported_preferred_language(language: str) -> None:
+    payload = SignupRequestPayload(
+        login_id="multilingual.user",
+        password="Password!1",
+        password_confirm="Password!1",
+        name="Multilingual User",
+        preferred_language=language,
+        group_id="00000000-0000-0000-0000-000000000001",
+    )
+
+    assert payload.preferred_language == language
 
 
 def test_web_language_contract_exposes_all_supported_languages() -> None:
@@ -78,3 +93,13 @@ def test_header_rail_and_login_share_reactive_ui_language() -> None:
         assert "useI18n" in source
     assert "window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY" not in header_source
     assert "window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY" not in rail_source
+
+
+def test_signup_and_language_settings_use_shared_language_contract() -> None:
+    signup_source = (ROOT_DIR / "apps/web/app/signup/page.tsx").read_text(encoding="utf-8")
+    settings_source = (ROOT_DIR / "apps/web/app/me/language/page.tsx").read_text(encoding="utf-8")
+
+    assert "preferred_language: language" in signup_source
+    assert "SUPPORTED_LANGUAGES" in signup_source
+    assert "useI18n" in settings_source
+    assert "SUPPORTED_LANGUAGES" in settings_source

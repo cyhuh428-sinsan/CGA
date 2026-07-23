@@ -8,20 +8,20 @@ import {
   saveDialogOptionDisplayMode,
   type DialogOptionDisplayMode,
 } from "@/lib/user-display-preferences";
+import { useI18n } from "@/components/language-provider";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
 
 export default function LanguagePage() {
-  const [language, setLanguage] = useState("ko");
+  const { language, setLanguage, t } = useI18n();
   const [dialogOptionDisplayMode, setDialogOptionDisplayMode] = useState<DialogOptionDisplayMode>("text");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    setLanguage(window.localStorage.getItem("aidot.language") ?? "ko");
     setDialogOptionDisplayMode(loadDialogOptionDisplayMode());
   }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    window.localStorage.setItem("aidot.language", language);
     saveDialogOptionDisplayMode(dialogOptionDisplayMode);
     setMessage("사용자 설정이 저장되었습니다.");
   }
@@ -41,14 +41,15 @@ export default function LanguagePage() {
 
         <form className="auth-form-card__body" onSubmit={handleSubmit}>
           <label className="field-block">
-            <span>언어</span>
+            <span>{t("common.language")}</span>
             <select
               className="login-select login-select--full"
               value={language}
-              onChange={(event) => setLanguage(event.target.value)}
+              onChange={(event) => setLanguage(normalizeSupportedLanguage(event.target.value))}
             >
-              <option value="ko">한국어</option>
-              <option value="en">English</option>
+              {SUPPORTED_LANGUAGES.map((option) => (
+                <option key={option.code} value={option.code}>{option.label}</option>
+              ))}
             </select>
           </label>
 

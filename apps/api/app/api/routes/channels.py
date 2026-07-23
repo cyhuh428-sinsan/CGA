@@ -4214,11 +4214,11 @@ def _normalize_text(value: object) -> str:
 
 
 def _compact_text(value: object) -> str:
-    return re.sub(r"[^0-9a-zA-Z가-힣_]+", "", _normalize_text(value))
+    return re.sub(r"[^\w]+", "", _normalize_text(value), flags=re.UNICODE)
 
 
 def _semantic_match_key(value: object) -> str:
-    return re.sub(r"[^0-9a-zA-Z가-힣]+", "", _normalize_text(value))
+    return re.sub(r"[\W_]+", "", _normalize_text(value), flags=re.UNICODE)
 
 
 def _dictionary_canonical_map(dictionary_terms: list[dict[str, Any]]) -> dict[str, str]:
@@ -4250,7 +4250,7 @@ def _apply_dictionary_canonical_key(value: object, canonical_map: dict[str, str]
 
 
 def _tokens(value: str) -> set[str]:
-    return {token for token in re.split(r"[^0-9a-zA-Z가-힣_]+", _normalize_text(value)) if token}
+    return {token for token in re.split(r"[^\w]+", _normalize_text(value), flags=re.UNICODE) if token}
 
 
 def _safe_dialogs(document: dict[str, Any]) -> list[dict[str, Any]]:
@@ -4490,7 +4490,12 @@ def _select_dialog_for_bot(
             return None, 0.0
     nlu_model = str(data_json.get("nlu_model") or data_json.get("nluModel") or "deep_learning_lite")
     if nlu_type == "ml" and nlu_model == "deep_learning_lite":
-        candidate = classify_deep_learning_lite_model(version, message, version_settings=_version_settings(bot, version))
+        candidate = classify_deep_learning_lite_model(
+            version,
+            message,
+            version_settings=_version_settings(bot, version),
+            language=str((bot.data_json or {}).get("language") or "ko"),
+        )
         if candidate is None:
             return None, 0.0
         dialog = _dialog_by_id_or_name(
@@ -4534,6 +4539,7 @@ def _select_natural_hub_candidates(
             hub_version,
             message,
             version_settings=_version_settings(hub_bot, hub_version),
+            language=str((hub_bot.data_json or {}).get("language") or "ko"),
         )
         candidates: list[dict[str, Any]] = []
         for score in hub_scores:
