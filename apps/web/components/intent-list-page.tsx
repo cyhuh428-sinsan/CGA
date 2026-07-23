@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AssetUploadDialog } from "@/components/asset-upload-dialog";
 import { IntentEditorDialog } from "@/components/intent-editor-dialog";
+import { useI18n } from "@/components/language-provider";
 import { SimulatorFloatingLauncher } from "@/components/simulator-page";
 import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
@@ -21,6 +22,11 @@ import {
   type AuthSession,
 } from "@/lib/auth";
 import { updateAuthPreferences } from "@/lib/auth-api";
+import {
+  formatIntentListText,
+  INTENT_LIST_CATALOGS,
+  type IntentListCatalog,
+} from "@/lib/i18n/intent-list";
 import {
   applyUpdatedVersionToBot,
   buildDialogTargetHref,
@@ -103,6 +109,7 @@ function buildVersionAssetHref(
 function buildSummaryCards(
   botId: string,
   versionId: string,
+  copy: IntentListCatalog,
   bot?: StudioBotApiItem | null,
   dialogCount?: number,
   assetCounts?: { dictionary?: number; entities?: number },
@@ -114,38 +121,38 @@ function buildSummaryCards(
   const dictionaryCount = assetCounts?.dictionary ?? counts?.dictionary ?? "-";
   return [
     {
-      label: "의도",
+      label: copy.intent,
       value: String(intentCount),
       active: true,
       href: buildVersionAssetHref(botId, versionId, "intents"),
     },
     {
-      label: "구성",
+      label: copy.configure,
       value: "-",
       href: buildVersionAssetHref(botId, versionId, "configure"),
     },
     {
-      label: "개체",
+      label: copy.entity,
       value: String(entityCount),
       href: buildVersionAssetHref(botId, versionId, "entities"),
     },
     {
-      label: "사전",
+      label: copy.dictionary,
       value: String(dictionaryCount),
       href: buildVersionAssetHref(botId, versionId, "dictionary"),
     },
     {
-      label: "평가",
+      label: copy.evaluation,
       value: "-",
       href: buildVersionAssetHref(botId, versionId, "evaluation"),
     },
     {
-      label: "재학습",
+      label: copy.retraining,
       value: String(retrainingCount),
       href: buildVersionAssetHref(botId, versionId, "retraining"),
     },
     {
-      label: "분석",
+      label: copy.analysis,
       value: "-",
       href: buildVersionAssetHref(botId, versionId, "analysis"),
     },
@@ -464,6 +471,8 @@ function ScenarioIssueBadge({ count, title, displayMode }: { count: number; titl
 }
 
 export function IntentListPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = INTENT_LIST_CATALOGS[uiLanguage];
   const workspace = useStudioWorkspace();
   const params = useParams<{ botId: string; versionId: string }>();
   const pathname = usePathname();
@@ -756,12 +765,13 @@ export function IntentListPage() {
       : "";
   const summaryCards = useMemo(
     () =>
-      buildSummaryCards(effectiveBotId, effectiveVersionName, bot, dialogCountForSummary, {
+      buildSummaryCards(effectiveBotId, effectiveVersionName, copy, bot, dialogCountForSummary, {
         dictionary: userDictionaryCountForSummary,
         entities: userEntityCountForSummary,
       }),
     [
       bot,
+      copy,
       dialogCountForSummary,
       effectiveBotId,
       effectiveVersionName,
@@ -1297,28 +1307,28 @@ export function IntentListPage() {
 
   const activeFilterLabel =
     searchType === "dialogType"
-      ? "구분"
+      ? copy.category
       : searchType === "validation"
-        ? "Validation"
+        ? copy.validation
         : searchType === "tag"
-          ? "태그"
-          : "전체";
+          ? copy.tag
+          : copy.all;
 
   const emptyText = useMemo(() => {
     if (errorMessage) {
       return errorMessage;
     }
     if (query.trim()) {
-      return "검색 조건에 맞는 의도/모듈이 없습니다.";
+      return copy.noSearchResults;
     }
     if (loading) {
-      return "의도/모듈 정보를 불러오는 중입니다.";
+      return copy.loading;
     }
-    return "등록된 의도/모듈이 없습니다. 먼저 의도/모듈을 추가해주세요.";
-  }, [errorMessage, loading, query]);
+    return copy.empty;
+  }, [copy.empty, copy.loading, copy.noSearchResults, errorMessage, loading, query]);
 
   if (!bot || !effectiveVersion) {
-    return <StudioPageLoading title="의도/모듈 화면을 불러오는 중입니다." />;
+    return <StudioPageLoading title={copy.pageLoading} />;
   }
 
   return (
@@ -1336,44 +1346,44 @@ export function IntentListPage() {
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="의도/모듈명, 학습문장, 대화카드, 의도아이디, 태그를 검색해주세요."
+              placeholder={copy.searchPlaceholder}
             />
           ) : (
             <div className="manual-main__search manual-main__search--readonly">
-              {activeFilterLabel} 조건으로 조회 중입니다.
+              {formatIntentListText(copy.filteringBy, { filter: activeFilterLabel })}
             </div>
           )}
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={searchType} onChange={(event) => setSearchType(event.target.value as SearchType)}>
-              <option value="all">전체</option>
-              <option value="dialogType">구분</option>
-              <option value="validation">Validation</option>
-              <option value="tag">태그</option>
+              <option value="all">{copy.all}</option>
+              <option value="dialogType">{copy.category}</option>
+              <option value="validation">{copy.validation}</option>
+              <option value="tag">{copy.tag}</option>
             </select>
           </label>
           {searchType === "dialogType" ? (
             <label className="manual-main__mini-select manual-main__mini-select--select">
               <select value={dialogFilter} onChange={(event) => setDialogFilter(event.target.value as DialogFilter)}>
-                <option value="all">전체</option>
-                <option value="intent">의도</option>
-                <option value="module">모듈</option>
+                <option value="all">{copy.all}</option>
+                <option value="intent">{copy.intent}</option>
+                <option value="module">{copy.module}</option>
               </select>
             </label>
           ) : null}
           {searchType === "validation" ? (
             <label className="manual-main__mini-select manual-main__mini-select--select">
               <select value={validationFilter} onChange={(event) => setValidationFilter(event.target.value as ValidationFilter)}>
-                <option value="all">전체 Validation</option>
-                <option value="success">성공</option>
-                <option value="failure">실패</option>
-                <option value="none">없음</option>
+                <option value="all">{copy.allValidation}</option>
+                <option value="success">{copy.success}</option>
+                <option value="failure">{copy.failure}</option>
+                <option value="none">{copy.none}</option>
               </select>
             </label>
           ) : null}
           {searchType === "tag" ? (
             <label className="manual-main__mini-select manual-main__mini-select--select">
               <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
-                <option value="all">전체 태그</option>
+                <option value="all">{copy.allTags}</option>
                 {availableTags.map((tag) => (
                   <option key={tag} value={tag}>
                     {tag}
@@ -1390,13 +1400,13 @@ export function IntentListPage() {
             className="manual-main__action-button manual-main__action-button--dropdown"
             onClick={() => setCreatingDialog(true)}
           >
-            + 의도/모듈 추가
+            {copy.addIntentModule}
           </button>
           <div className="manual-main__menu" ref={toolbarMenuRef}>
             <button
               type="button"
               className="manual-main__menu-button manual-main__menu-button--toolbar"
-              aria-label="의도/모듈 파일 메뉴"
+              aria-label={copy.fileMenu}
               aria-expanded={toolbarMenuOpen}
               disabled={saving}
               onClick={() => setToolbarMenuOpen((current) => !current)}
@@ -1413,7 +1423,7 @@ export function IntentListPage() {
                     setUploadDialogOpen(true);
                   }}
                 >
-                  파일 업로드
+                  {copy.uploadFile}
                 </button>
                 <button
                   type="button"
@@ -1423,7 +1433,7 @@ export function IntentListPage() {
                     handleDownloadIntents();
                   }}
                 >
-                  파일 다운로드
+                  {copy.downloadFile}
                 </button>
               </div>
             ) : null}
@@ -1433,13 +1443,13 @@ export function IntentListPage() {
 
       <div className="manual-main__toolbar manual-main__toolbar--secondary manual-main__toolbar--intent-meta">
         <div className="manual-main__toolbar-left">
-          <strong>전체 {visibleDialogs.length}건</strong>
+          <strong>{formatIntentListText(copy.totalCount, { count: visibleDialogs.length })}</strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
-              <option value={10}>10개씩 보기</option>
-              <option value={25}>25개씩 보기</option>
-              <option value={50}>50개씩 보기</option>
-              <option value={100}>100개씩 보기</option>
+              <option value={10}>{formatIntentListText(copy.pageSize, { count: 10 })}</option>
+              <option value={25}>{formatIntentListText(copy.pageSize, { count: 25 })}</option>
+              <option value={50}>{formatIntentListText(copy.pageSize, { count: 50 })}</option>
+              <option value={100}>{formatIntentListText(copy.pageSize, { count: 100 })}</option>
             </select>
           </label>
           <button
@@ -1448,9 +1458,9 @@ export function IntentListPage() {
             disabled={selectedIds.length === 0 || saving}
             onClick={() => setDeleteConfirmOpen(true)}
           >
-            삭제
+            {copy.delete}
           </button>
-          {selectedIds.length > 0 ? <span className="studio-table-page__selection">{selectedIds.length}개 선택</span> : null}
+          {selectedIds.length > 0 ? <span className="studio-table-page__selection">{formatIntentListText(copy.selectedCount, { count: selectedIds.length })}</span> : null}
         </div>
       </div>
 
@@ -1459,7 +1469,7 @@ export function IntentListPage() {
           <span className="manual-main__cell manual-main__cell--check">
             <input
               type="checkbox"
-              aria-label="전체 선택"
+              aria-label={copy.selectAll}
               checked={pagedDialogs.length > 0 && pagedDialogs.every((dialog) => selectedIds.includes(dialog.id))}
               onChange={(event) =>
                 setSelectedIds(
@@ -1473,46 +1483,46 @@ export function IntentListPage() {
               <SortHeaderLabel label="ID" direction={sortKey === "dialogNo" ? sortDirection : "none"} />
             </button>
           </span>
-          <span className="manual-main__cell manual-main__cell--scenario-error">오류</span>
+          <span className="manual-main__cell manual-main__cell--scenario-error">{copy.scenarioError}</span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("dialogType")}>
-              <SortHeaderLabel label="구분" direction={sortKey === "dialogType" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.category} direction={sortKey === "dialogType" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell manual-main__cell--name">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("name")}>
-              <SortHeaderLabel label="의도/모듈명" direction={sortKey === "name" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.intentModuleName} direction={sortKey === "name" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell manual-main__cell--display">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("displayName")}>
-              <SortHeaderLabel label="표시명" direction={sortKey === "displayName" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.displayName} direction={sortKey === "displayName" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell manual-main__cell--number">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("utterances")}>
-              <SortHeaderLabel label="학습문장" direction={sortKey === "utterances" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.utterances} direction={sortKey === "utterances" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell manual-main__cell--number">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("cardCount")}>
-              <SortHeaderLabel label="대화카드" direction={sortKey === "cardCount" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.conversationCards} direction={sortKey === "cardCount" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell manual-main__cell--number">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("tags")}>
-              <SortHeaderLabel label="태그" direction={sortKey === "tags" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.tag} direction={sortKey === "tags" ? sortDirection : "none"} />
             </button>
           </span>
-          <span className="manual-main__cell">기타옵션</span>
+          <span className="manual-main__cell">{copy.otherOptions}</span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedAt")}>
-              <SortHeaderLabel label="최종수정일시" direction={sortKey === "updatedAt" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.modifiedAt} direction={sortKey === "updatedAt" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-              <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.modifiedBy} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell manual-main__cell--actions" />
@@ -1526,7 +1536,7 @@ export function IntentListPage() {
             <span className="manual-main__cell manual-main__cell--check">
               <input
                 type="checkbox"
-                aria-label={`${dialog.name} 선택`}
+                aria-label={formatIntentListText(copy.selectRow, { name: dialog.name })}
                 checked={selectedIds.includes(dialog.id)}
                 onChange={() =>
                   setSelectedIds((current) =>
@@ -1543,7 +1553,7 @@ export function IntentListPage() {
             <span className="manual-main__cell manual-main__cell--scenario-error" title={scenarioIssueTitle || undefined}>
               <ScenarioIssueBadge count={scenarioIssues.length} title={scenarioIssueTitle} displayMode={dialogOptionDisplayMode} />
             </span>
-            <span className="manual-main__cell">{getDialogTypeLabel(dialog.dialogType)}</span>
+            <span className="manual-main__cell">{dialog.dialogType === 1 ? copy.intent : copy.module}</span>
             <button
               type="button"
               className="manual-main__cell manual-main__cell--name manual-main__cell--link manual-main__cell-button"
@@ -1588,7 +1598,7 @@ export function IntentListPage() {
                 <button
                   type="button"
                   className="manual-main__menu-button manual-main__menu-button--row"
-                  aria-label={`${dialog.name} 메뉴`}
+                  aria-label={formatIntentListText(copy.rowMenu, { name: dialog.name })}
                   onClick={() => setEditingDialog(dialog)}
                 >
                   ⋮
