@@ -4,6 +4,9 @@ from uuid import uuid4
 from app.services.default_message_catalog import DEFAULT_MESSAGE_CATALOGS
 from app.services.default_messages import get_default_message_text
 from pathlib import Path
+import pytest
+
+from app.core.language import language_candidates
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -69,3 +72,39 @@ def test_admin_default_messages_accepts_language_filter() -> None:
     source = (ROOT_DIR / "apps/api/app/api/routes/admin.py").read_text(encoding="utf-8")
     assert "language: str | None = Query(default=None)" in source
     assert "AdminDefaultMessage.language == normalized_language" in source
+
+
+class _LanguageSession:
+    def __init__(self, available: dict[str, str]) -> None:
+        self.available = available
+
+    def scalar(self, statement: object) -> object:
+        params = statement.compile().params  # type: ignore[attr-defined]
+        language = next((value for value in params.values() if value in self.available), None)
+        return SimpleNamespace(message_text=self.available[language]) if language else None
+
+
+@pytest.mark.parametrize(
+    ("request_language", "accept_language", "bot_language", "available", "expected"),
+    [
+        ("fr", "en", "de", {"fr": "FR", "de": "DE", "ko": "KO"}, "FR"),
+        (None, "en-US", "de", {"en": "EN", "de": "DE", "ko": "KO"}, "EN"),
+        ("es", None, "de", {"de": "DE", "ko": "KO"}, "DE"),
+        ("fr", None, "de", {"ko": "KO"}, "KO"),
+        ("fr", None, "de", {}, DEFAULT_MESSAGE_CATALOGS["ko"]["system_error"]["message_text"]),
+    ],
+)
+def test_runtime_default_message_fallback_matrix(
+    request_language: object,
+    accept_language: object,
+    bot_language: object,
+    available: dict[str, str],
+    expected: str,
+) -> None:
+    candidates = language_candidates(request_language, accept_language, bot_language)
+    assert get_default_message_text(
+        _LanguageSession(available),  # type: ignore[arg-type]
+        uuid4(),
+        "system_error",
+        languages=candidates,
+    ) == expected

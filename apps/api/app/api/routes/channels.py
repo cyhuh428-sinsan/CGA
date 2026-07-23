@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.config import ROOT_DIR, settings
+from app.core.language import language_candidates, normalize_supported_language
 from app.core.logging import get_logger
 from app.core.responses import success_response
 from app.core.version_documents import normalize_version_document
@@ -81,6 +82,7 @@ class ChannelRoomCreateRequest(BaseModel):
     participant_name: str | None = Field(default="사용자", max_length=120)
     use_configured_initial_messages: bool = Field(default=False)
     start_immediately: bool = Field(default=True)
+    language: str | None = Field(default=None, max_length=35)
 
 
 class ChannelMessageRequest(BaseModel):
@@ -92,6 +94,7 @@ class ChannelMessageRequest(BaseModel):
     dialog_params: dict[str, Any] = Field(default_factory=dict)
     system_name: str | None = Field(default=None, max_length=150)
     direct_dialog_root: bool = False
+    language: str | None = Field(default=None, max_length=35)
 
 
 class KakaoWebhookRequest(BaseModel):
@@ -108,6 +111,24 @@ def _first_non_empty_text(*values: Any) -> str | None:
             if normalized:
                 return normalized
     return None
+
+
+def _message_language_candidates(
+    payload_language: object,
+    accept_language: object,
+    bot: Any,
+    room: ChannelRoom | None = None,
+) -> tuple[str, ...]:
+    bot_language = (getattr(bot, "data_json", None) or {}).get("language")
+    has_request_language = normalize_supported_language(payload_language) is not None
+    has_header_language = isinstance(accept_language, str) and any(
+        normalize_supported_language(item.split(";", 1)[0]) is not None
+        for item in accept_language.split(",")
+    )
+    if has_request_language or has_header_language:
+        return language_candidates(payload_language, accept_language, bot_language)
+    room_language = (_as_dict(room.metadata_json).get("language") if room is not None else None)
+    return language_candidates(room_language, None, bot_language)
 
 
 def _normalize_kakao_webhook_request(
@@ -1740,9 +1761,13 @@ def _list_active_channel_bots(
 
 
 
-def _load_default_messages(db: Session, organization_id: Any) -> dict[str, str]:
+def _load_default_messages(
+    db: Session,
+    organization_id: Any,
+    languages: tuple[str, ...] = ("ko",),
+) -> dict[str, str]:
     return {
-        key: get_default_message_text(db, organization_id, key, fallback=fallback)
+        key: get_default_message_text(db, organization_id, key, languages=languages, fallback=fallback)
         for key, fallback in DEFAULT_MESSAGE_FALLBACKS.items()
     }
 
@@ -1762,8 +1787,15 @@ def _ensure_runtime_supported(bot: Bot, version: BotVersion) -> None:
     if reason:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=reason)
 
-def _serialize_bot(db: Session, bot: Bot, version: BotVersion, group: Group | None, channel_type: str | None = "webchat") -> dict[str, Any]:
-    default_messages = _load_default_messages(db, bot.organization_id)
+def _serialize_bot(
+    db: Session,
+    bot: Bot,
+    version: BotVersion,
+    group: Group | None,
+    channel_type: str | None = "webchat",
+    languages: tuple[str, ...] = ("ko",),
+) -> dict[str, Any]:
+    default_messages = _load_default_messages(db, bot.organization_id, languages)
     return {
         "id": str(bot.id),
         "name": bot.name,
@@ -1783,12 +1815,13 @@ def _serialize_room(db: Session, room: ChannelRoom) -> dict[str, Any]:
     if bot is None or version is None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="채팅방의 봇 정보를 찾을 수 없습니다.")
     group = db.scalar(select(Group).where(Group.id == bot.group_id))
+    languages = _message_language_candidates(None, None, bot, room)
     return {
         "id": str(room.id),
         "clientRoomId": room.client_room_id,
         "channelType": room.channel_type,
         "status": room.status,
-        "bot": _serialize_bot(db, bot, version, group, room.channel_type),
+        "bot": _serialize_bot(db, bot, version, group, room.channel_type, languages),
         "participant": {"id": room.participant_id, "name": room.participant_name},
         "createdAt": _iso(room.created_at),
         "updatedAt": _iso(room.updated_at),
@@ -4122,7 +4155,8 @@ def _add_configured_initial_messages(
     version: BotVersion,
     channel: str,
 ) -> list[ChannelMessage]:
-    default_messages = _load_default_messages(db, bot.organization_id)
+    languages = _message_language_candidates(None, None, bot, room)
+    default_messages = _load_default_messages(db, bot.organization_id, languages)
     configured_messages = _initial_messages_for_version(bot, version, default_messages, channel)
     bot_messages: list[ChannelMessage] = []
     for output in configured_messages:
@@ -4181,7 +4215,8 @@ def _ensure_room_started(
         runtime_state = _initial_runtime_state_for_version(bot, version, channel)
     _set_runtime_system_variables(runtime_state, bot=bot, channel_code=_channel_template_code(channel), room=room)
     document = normalize_version_document(version.version_json)
-    default_messages = _load_default_messages(db, bot.organization_id)
+    languages = _message_language_candidates(None, None, bot, room)
+    default_messages = _load_default_messages(db, bot.organization_id, languages)
     channel_code = _channel_template_code(channel)
     runtime_outputs, runtime_state = _run_runtime(
         document,
@@ -4606,9 +4641,14 @@ def _select_natural_hub_candidates(
     return hub, candidates
 
 
-def _reply_for_dialog(db: Session, bot: Bot, dialog: dict[str, Any] | None) -> str:
+def _reply_for_dialog(
+    db: Session,
+    bot: Bot,
+    dialog: dict[str, Any] | None,
+    languages: tuple[str, ...] = ("ko",),
+) -> str:
     if dialog is None:
-        return get_default_message_text(db, bot.organization_id, "intent_fallback")
+        return get_default_message_text(db, bot.organization_id, "intent_fallback", languages=languages)
     for key in ("fallbackResponse", "response", "answer", "message"):
         value = dialog.get(key)
         if isinstance(value, str) and value.strip():
@@ -4618,6 +4658,7 @@ def _reply_for_dialog(db: Session, bot: Bot, dialog: dict[str, Any] | None) -> s
         db,
         bot.organization_id,
         "intent_receipt",
+        languages=languages,
         fallback="{{intentName}} 의도로 접수되었습니다.",
     )
     return template.replace("{{intentName}}", name)
@@ -5188,7 +5229,8 @@ def _process_channel_queue_event(
         flag_modified(queue_event, "parameter_json")
 
     document = normalize_version_document(version.version_json)
-    default_messages = _load_default_messages(db, bot.organization_id)
+    room_languages = _message_language_candidates(None, None, bot, room)
+    default_messages = _load_default_messages(db, bot.organization_id, room_languages)
     runtime_state_before = _as_dict(room.metadata_json) or _initial_runtime_state_for_version(bot, version, room.channel_type)
     _set_runtime_system_variables(
         runtime_state_before,
@@ -5398,7 +5440,8 @@ def _process_channel_queue_event(
                 }
                 flag_modified(queue_event, "parameter_json")
                 document = normalize_version_document(version.version_json)
-                default_messages = _load_default_messages(db, bot.organization_id)
+                room_languages = _message_language_candidates(None, None, bot, room)
+                default_messages = _load_default_messages(db, bot.organization_id, room_languages)
                 runtime_state = _initial_runtime_state_for_version(bot, version, room.channel_type)
                 variables = _as_dict(runtime_state.get("variables"))
                 runtime_state["variables"] = variables
@@ -5646,7 +5689,7 @@ def _process_channel_queue_event(
                         participant_id=str(bot.id),
                         participant_kind="bot",
                         participant_name=bot.name,
-                        text=_reply_for_dialog(db, bot, selected_dialog),
+                        text=_reply_for_dialog(db, bot, selected_dialog, room_languages),
                     )
                 )
 
@@ -6009,7 +6052,17 @@ def create_channel_room(
                     ChannelRoom.deleted_at.is_(None),
                 )
             )
+        request_languages = _message_language_candidates(
+            payload.language,
+            request.headers.get("accept-language"),
+            bot,
+            existing_room,
+        )
         if existing_room is not None:
+            existing_metadata = _as_dict(existing_room.metadata_json)
+            existing_metadata["language"] = request_languages[0]
+            existing_room.metadata_json = existing_metadata
+            flag_modified(existing_room, "metadata_json")
             if existing_room.status != "open" or existing_room.bot_id != bot.id:
                 _archive_room_for_new_session(db, existing_room, "replaced")
                 _write_channel_audit_log(
@@ -6064,6 +6117,7 @@ def create_channel_room(
             )
 
         runtime_state = _initial_runtime_state_for_version(bot, version, channel)
+        runtime_state["language"] = request_languages[0]
         room = ChannelRoom(
             channel_type=channel,
             client_room_id=payload.client_room_id,
@@ -6255,6 +6309,16 @@ def create_channel_room_message(
         if _requires_botstation_connection(channel):
             _ensure_botstation_connection(db, bot, version, channel)
         _ensure_runtime_supported(bot, version)
+        message_languages = _message_language_candidates(
+            payload.language,
+            request.headers.get("accept-language"),
+            bot,
+            room,
+        )
+        room_metadata = _as_dict(room.metadata_json)
+        room_metadata["language"] = message_languages[0]
+        room.metadata_json = room_metadata
+        flag_modified(room, "metadata_json")
 
         user_message = _add_message(
             db,
@@ -6288,7 +6352,7 @@ def create_channel_room_message(
         _set_queue_status(queue_event, "processing", receive_status="processing")
 
         document = normalize_version_document(version.version_json)
-        default_messages = _load_default_messages(db, bot.organization_id)
+        default_messages = _load_default_messages(db, bot.organization_id, message_languages)
         runtime_state_before = _as_dict(room.metadata_json) or _initial_runtime_state_for_version(bot, version, room.channel_type)
         _reset_stalled_waiting_talk_state(document, runtime_state_before, channel_code)
         runtime_state_snapshot = deepcopy(runtime_state_before)
@@ -6504,7 +6568,7 @@ def create_channel_room_message(
                             )
                         )
                 else:
-                    reply = _reply_for_dialog(db, bot, selected_dialog)
+                    reply = _reply_for_dialog(db, bot, selected_dialog, message_languages)
                     bot_messages.append(
                         _add_message(
                             db,

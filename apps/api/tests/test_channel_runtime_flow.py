@@ -1378,7 +1378,7 @@ def test_select_dialog_for_bot_uses_saved_deep_learning_lite_model() -> None:
     ) as classify:
         selected, score = _select_dialog_for_bot(document, bot, version, "상담사 바꿔줘")
 
-    classify.assert_called_once_with(version, "상담사 바꿔줘", version_settings={})
+    classify.assert_called_once_with(version, "상담사 바꿔줘", version_settings={}, language="ko")
     assert selected is not None
     assert selected["id"] == "intent-agent"
     assert score == 0.8442
