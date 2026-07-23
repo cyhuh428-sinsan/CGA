@@ -49,7 +49,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     try {
-      const savedLoginId = window.localStorage.getItem("aidot.login_id");
+      const savedLoginId = window.localStorage?.getItem("aidot.login_id");
       const session = loadAuthSession();
       if (savedLoginId) {
         setLoginId(savedLoginId);
@@ -58,6 +58,8 @@ export default function LoginPage() {
       if (session) {
         refreshAuthSessionCookies();
       }
+    } catch {
+      // 저장소가 차단된 환경에서도 로그인 폼 자체는 사용할 수 있어야 한다.
     } finally {
       setIsHydrated(true);
     }
