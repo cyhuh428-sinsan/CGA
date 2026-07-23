@@ -20,6 +20,7 @@ import {
 import { prefetchStudioBots } from "@/lib/studio-bots-api";
 import { useI18n } from "@/components/language-provider";
 import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
+import { SHELL_NAVIGATION } from "@/lib/i18n/shell-navigation";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
@@ -109,6 +110,7 @@ export function StudioRail() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { language, setLanguage, t } = useI18n();
+  const navigation = SHELL_NAVIGATION[language];
   const [session, setSession] = useState<AuthSession | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PrimaryPanelId | null>(null);
@@ -295,33 +297,33 @@ export function StudioRail() {
         ? "operations"
         : "build";
   const operationLinks = [
-    { code: "BM", label: "봇 관리", href: "/studio/bots" },
-    { code: "BOT", label: "봇 작업공간", href: "/studio/workspace" },
-    { code: "DB", label: "DB 운영 대시보드", href: "/admin/operations-dashboard" },
-    { code: "RT", label: "재학습", href: hasBotContext ? `${currentBotBasePath}/retraining` : botContextFallback },
-    { code: "AN", label: "분석", href: hasBotContext ? `${currentBotBasePath}/analysis` : botContextFallback },
+    { code: "BM", label: navigation.botManagement, href: "/studio/bots" },
+    { code: "BOT", label: navigation.botWorkspace, href: "/studio/workspace" },
+    { code: "DB", label: navigation.dbDashboard, href: "/admin/operations-dashboard" },
+    { code: "RT", label: navigation.retraining, href: hasBotContext ? `${currentBotBasePath}/retraining` : botContextFallback },
+    { code: "AN", label: navigation.analysis, href: hasBotContext ? `${currentBotBasePath}/analysis` : botContextFallback },
   ];
   const botSettingsBasePath = hasBotContext ? `/studio/bots/${currentBotId}/settings` : "";
   const botSettingsVersionQuery = `?version=${resolvedVersionId}`;
   const buildNavigationGroups: BuildNavigationGroup[] = [
     {
       code: "01",
-      title: "봇 생성",
+      title: navigation.botCreate,
       href: "/studio/bots/new",
       active: pathname === "/studio/bots/new",
     },
     {
       code: "02",
-      title: "봇 설정",
+      title: navigation.botSettings,
       items: [
-        { label: "AI 모델 설정", path: "", active: pathname === botSettingsBasePath },
-        { label: "기본값 설정", path: "/conversation-defaults", active: pathname.startsWith(`${botSettingsBasePath}/conversation-defaults`) },
-        { label: "메시지 설정", path: "/messages", active: pathname.startsWith(`${botSettingsBasePath}/messages`) },
-        { label: "메신저 편의 기능", path: "/messenger", active: pathname.startsWith(`${botSettingsBasePath}/messenger`) },
-        { label: "제외/무시 목록 설정", path: "/blocklist", active: pathname.startsWith(`${botSettingsBasePath}/blocklist`) },
-        { label: "룰 설정", path: "/rules", active: pathname.startsWith(`${botSettingsBasePath}/rules`) },
-        { label: "스몰토크", path: "/smalltalk", active: pathname.startsWith(`${botSettingsBasePath}/smalltalk`) },
-        { label: "봇스테이션", path: "/botstation", active: pathname.startsWith(`${botSettingsBasePath}/botstation`) },
+        { label: navigation.aiModelSettings, path: "", active: pathname === botSettingsBasePath },
+        { label: navigation.defaultsSettings, path: "/conversation-defaults", active: pathname.startsWith(`${botSettingsBasePath}/conversation-defaults`) },
+        { label: navigation.messageSettings, path: "/messages", active: pathname.startsWith(`${botSettingsBasePath}/messages`) },
+        { label: navigation.messengerFeatures, path: "/messenger", active: pathname.startsWith(`${botSettingsBasePath}/messenger`) },
+        { label: navigation.blocklistSettings, path: "/blocklist", active: pathname.startsWith(`${botSettingsBasePath}/blocklist`) },
+        { label: navigation.ruleSettings, path: "/rules", active: pathname.startsWith(`${botSettingsBasePath}/rules`) },
+        { label: navigation.smalltalk, path: "/smalltalk", active: pathname.startsWith(`${botSettingsBasePath}/smalltalk`) },
+        { label: navigation.botstation, path: "/botstation", active: pathname.startsWith(`${botSettingsBasePath}/botstation`) },
       ].map((item) => ({
         ...item,
         href: hasBotContext ? `${botSettingsBasePath}${item.path}${botSettingsVersionQuery}` : botContextFallback,
@@ -329,34 +331,34 @@ export function StudioRail() {
     },
     {
       code: "03",
-      title: "봇 구성",
+      title: navigation.botConfigure,
       href: hasBotContext ? `${currentBotBasePath}/configure` : botContextFallback,
       active: pathname.includes("/configure"),
     },
     {
       code: "04",
-      title: "봇 제작",
+      title: navigation.botBuild,
       items: [
-        { label: "의도/모듈 관리", href: botWorkspaceHref, active: pathname.includes("/intents") },
-        { label: "개체 관리", href: hasBotContext ? `${currentBotBasePath}/entities` : botContextFallback, active: pathname.includes("/entities") },
-        { label: "사전 관리", href: hasBotContext ? `${currentBotBasePath}/dictionary` : botContextFallback, active: pathname.includes("/dictionary") },
+        { label: navigation.intentManagement, href: botWorkspaceHref, active: pathname.includes("/intents") },
+        { label: navigation.entityManagement, href: hasBotContext ? `${currentBotBasePath}/entities` : botContextFallback, active: pathname.includes("/entities") },
+        { label: navigation.dictionaryManagement, href: hasBotContext ? `${currentBotBasePath}/dictionary` : botContextFallback, active: pathname.includes("/dictionary") },
       ],
     },
     {
       code: "05",
-      title: "봇 테스트",
+      title: navigation.botTest,
       href: hasBotContext ? `${currentBotBasePath}/simulator` : botContextFallback,
       active: pathname.includes("/simulator"),
     },
     {
       code: "06",
-      title: "봇 평가",
+      title: navigation.botEvaluation,
       href: hasBotContext ? `${currentBotBasePath}/evaluation` : botContextFallback,
       active: pathname.includes("/evaluation"),
     },
   ];
   const panelTitle =
-    activePanel === "operations" ? "봇 운영" : activePanel === "build" ? "봇 제작" : "시스템 관리";
+    activePanel === "operations" ? navigation.operationsPanel : activePanel === "build" ? navigation.buildPanel : navigation.systemPanel;
   const panelLinks = activePanel === "operations" ? operationLinks : [];
   const currentLicense = licenseStatus?.license ?? null;
   const licenseProduct = currentLicense?.product?.trim() || "라이선스 정보 없음";
@@ -666,14 +668,14 @@ export function StudioRail() {
                     className="studio-rail__account-link"
                     onClick={() => setMenuOpen(false)}
                   >
-                    사용자 정보 수정
+                    {navigation.editProfile}
                   </Link>
 
                   <select
                     className="studio-rail__language-select"
                     value={language}
                     onChange={(event) => handleLanguageChange(event.target.value)}
-                    aria-label="사용자 언어"
+                    aria-label={navigation.userLanguage}
                   >
                     {SUPPORTED_LANGUAGES.map((option) => (
                       <option key={option.code} value={option.code}>{option.label}</option>
