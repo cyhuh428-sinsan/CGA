@@ -147,3 +147,17 @@ def test_bot_name_validation_accepts_unicode_letters_and_numbers() -> None:
 
     assert r"\p{L}\p{N}" in create_source
     assert "[가-힣a-zA-Z0-9" not in create_source
+
+
+def test_bot_settings_uses_localized_catalog_and_unicode_bot_names() -> None:
+    settings_source = (ROOT_DIR / "apps/web/components/bot-settings-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/bot-settings.ts").read_text(encoding="utf-8")
+
+    assert "useI18n" in settings_source
+    assert "BOT_SETTINGS_CATALOGS[uiLanguage]" in settings_source
+    assert "translateAiOptionText(uiLanguage" in settings_source
+    assert r"\p{L}\p{N}" in settings_source
+    assert "[가-힣a-zA-Z0-9" not in settings_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, BotSettingsCatalog>" in catalog_source
