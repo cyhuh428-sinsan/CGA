@@ -1,5 +1,6 @@
 import { type AnswerMode } from "@/lib/answer-options";
 import { type LlmModelKey, type LlmProvider } from "@/lib/llm-options";
+import { type SupportedLanguage } from "@/lib/language";
 import { type NluModelKey, type NluType } from "@/lib/nlu-options";
 
 export type ConversationDefaultsConfig = {
@@ -223,7 +224,7 @@ export type StudioBotDataJson = {
   bot_kind?: "bot" | "hub";
   bot_mode?: "text" | "voice";
   profile_key?: "gray" | "accent" | "outline";
-  language?: "ko";
+  language?: SupportedLanguage;
   nlu_engine?: NluModelKey;
   nlu_type?: NluType;
   nlu_model?: NluModelKey;

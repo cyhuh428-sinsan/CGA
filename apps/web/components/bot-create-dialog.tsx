@@ -31,6 +31,7 @@ import {
 } from "@/lib/nlu-options";
 import { createStudioBot } from "@/lib/studio-bots-api";
 import { type VectorConnectionConfig, type VectorConnectionsConfig } from "@/lib/bot-settings";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/language";
 
 const PROFILE_OPTIONS = [
   { key: "gray" as const, className: "bot-create-dialog__profile--muted" },
@@ -88,7 +89,7 @@ export function BotCreateDialog() {
   const [profileKey, setProfileKey] = useState<"gray" | "accent" | "outline">("accent");
   const [profileImageData, setProfileImageData] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [language, setLanguage] = useState<"ko">("ko");
+  const [language, setLanguage] = useState<SupportedLanguage>("ko");
   const [nluType, setNluType] = useState<NluType>("ml");
   const [nluModel, setNluModel] = useState<NluModelKey>("deep_learning_lite");
   const [answerMode, setAnswerMode] = useState<AnswerMode>(DEFAULT_ANSWER_MODE);
@@ -341,9 +342,11 @@ export function BotCreateDialog() {
           <select
             className="bot-create-dialog__select"
             value={language}
-            onChange={(event) => setLanguage(event.target.value as "ko")}
+            onChange={(event) => setLanguage(normalizeSupportedLanguage(event.target.value))}
           >
-            <option value="ko">한국어</option>
+            {SUPPORTED_LANGUAGES.map((option) => (
+              <option key={option.code} value={option.code}>{option.label}</option>
+            ))}
           </select>
         </div>
 

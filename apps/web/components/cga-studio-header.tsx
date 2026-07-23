@@ -12,6 +12,7 @@ import {
   type AuthSession,
 } from "@/lib/auth";
 import { fetchStudioBots } from "@/lib/studio-bots-api";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES, UI_LANGUAGE_STORAGE_KEY, type SupportedLanguage } from "@/lib/language";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings/;
@@ -20,7 +21,7 @@ export function CgaStudioHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
-  const [language, setLanguage] = useState("ko");
+  const [language, setLanguage] = useState<SupportedLanguage>("ko");
   const [botName, setBotName] = useState("선택 없음");
   const [versionName, setVersionName] = useState("-");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -37,7 +38,7 @@ export function CgaStudioHeader() {
   useEffect(() => {
     const currentSession = loadAuthSession();
     setSession(currentSession);
-    setLanguage(window.localStorage.getItem("aidot.language") ?? "ko");
+    setLanguage(normalizeSupportedLanguage(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY)));
 
     if (!currentSession) {
       return;
@@ -56,8 +57,9 @@ export function CgaStudioHeader() {
   }, [routeContext]);
 
   function handleLanguageChange(value: string) {
-    setLanguage(value);
-    window.localStorage.setItem("aidot.language", value);
+    const nextLanguage = normalizeSupportedLanguage(value);
+    setLanguage(nextLanguage);
+    window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, nextLanguage);
   }
 
   async function handleLogout() {
@@ -113,8 +115,9 @@ export function CgaStudioHeader() {
         <label className="cga-studio-header__language">
           <span>언어</span>
           <select value={language} onChange={(event) => handleLanguageChange(event.target.value)}>
-            <option value="ko">한국어</option>
-            <option value="en">English</option>
+            {SUPPORTED_LANGUAGES.map((option) => (
+              <option key={option.code} value={option.code}>{option.label}</option>
+            ))}
           </select>
         </label>
         <button type="button" className="cga-studio-header__logout" onClick={handleLogout} disabled={isLoggingOut}>

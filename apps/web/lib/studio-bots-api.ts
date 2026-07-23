@@ -2,6 +2,7 @@ import { apiRequest, apiSameOriginRequest, formatApiErrorDetail } from "@/lib/ap
 import { type AnswerMode } from "@/lib/answer-options";
 import { type BotVersionSettings, type ConfigurationScoringConfig, type StudioBotDataJson, type VectorConnectionsConfig } from "@/lib/bot-settings";
 import { type LlmModelKey, type LlmProvider } from "@/lib/llm-options";
+import { type SupportedLanguage } from "@/lib/language";
 import { type NluModelKey, type NluType } from "@/lib/nlu-options";
 import { normalizeVersionDocument, type VersionAssetCounts, type VersionDocument } from "@/lib/version-document";
 
@@ -102,7 +103,7 @@ export type StudioHub = {
   active_version_name: string | null;
   profile_key: "gray" | "accent" | "outline";
   profile_image_url: string | null;
-  language: "ko";
+  language: SupportedLanguage;
   introduction: string | null;
   call_method: "button" | "natural";
   button_match_mode: "exact" | "contains";
@@ -741,7 +742,7 @@ export type CreateBotPayload = {
   bot_mode: "text" | "voice";
   profile_key: "gray" | "accent" | "outline";
   profile_image_data?: string;
-  language: "ko";
+  language: SupportedLanguage;
   nlu_engine?: NluModelKey;
   nlu_type?: NluType;
   nlu_model?: NluModelKey;
@@ -763,7 +764,7 @@ export type UpdateBotPayload = {
   bot_mode?: "text" | "voice";
   profile_key?: "gray" | "accent" | "outline";
   profile_image_data?: string | null;
-  language?: "ko";
+  language?: SupportedLanguage;
   nlu_engine?: NluModelKey;
   nlu_type?: NluType;
   nlu_model?: NluModelKey;
