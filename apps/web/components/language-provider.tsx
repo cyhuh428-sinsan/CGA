@@ -17,7 +17,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
 
   useEffect(() => {
-    setLanguageState(normalizeSupportedLanguage(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY)));
+    try {
+      setLanguageState(normalizeSupportedLanguage(window.localStorage?.getItem(UI_LANGUAGE_STORAGE_KEY)));
+    } catch {
+      setLanguageState(DEFAULT_LANGUAGE);
+    }
   }, []);
 
   useEffect(() => {
@@ -26,7 +30,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = useCallback((nextLanguage: SupportedLanguage) => {
     setLanguageState(nextLanguage);
-    window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, nextLanguage);
+    try {
+      window.localStorage?.setItem(UI_LANGUAGE_STORAGE_KEY, nextLanguage);
+    } catch {
+      // 보안 정책으로 저장소가 차단되어도 현재 화면의 언어 전환은 유지한다.
+    }
   }, []);
 
   const value = useMemo<LanguageContextValue>(() => ({
