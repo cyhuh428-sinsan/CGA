@@ -52,3 +52,29 @@ def test_header_and_account_menu_use_shared_language_options() -> None:
 
     assert "SUPPORTED_LANGUAGES" in header_source
     assert "SUPPORTED_LANGUAGES" in rail_source
+
+
+def test_root_layout_installs_shared_language_provider() -> None:
+    layout_source = (ROOT_DIR / "apps/web/app/layout.tsx").read_text(encoding="utf-8")
+
+    assert "LanguageProvider" in layout_source
+    assert "<LanguageProvider>" in layout_source
+
+
+def test_every_ui_catalog_has_the_same_translation_keys() -> None:
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/catalogs.ts").read_text(encoding="utf-8")
+
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, TranslationCatalog>" in catalog_source
+
+
+def test_header_rail_and_login_share_reactive_ui_language() -> None:
+    header_source = (ROOT_DIR / "apps/web/components/cga-studio-header.tsx").read_text(encoding="utf-8")
+    rail_source = (ROOT_DIR / "apps/web/components/studio-rail.tsx").read_text(encoding="utf-8")
+    login_source = (ROOT_DIR / "apps/web/app/login/page.tsx").read_text(encoding="utf-8")
+
+    for source in (header_source, rail_source, login_source):
+        assert "useI18n" in source
+    assert "window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY" not in header_source
+    assert "window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY" not in rail_source

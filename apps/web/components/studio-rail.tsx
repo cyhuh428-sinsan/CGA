@@ -18,7 +18,8 @@ import {
   type AuthSession,
 } from "@/lib/auth";
 import { prefetchStudioBots } from "@/lib/studio-bots-api";
-import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES, UI_LANGUAGE_STORAGE_KEY, type SupportedLanguage } from "@/lib/language";
+import { useI18n } from "@/components/language-provider";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
@@ -107,6 +108,7 @@ export function StudioRail() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { language, setLanguage, t } = useI18n();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PrimaryPanelId | null>(null);
@@ -116,7 +118,6 @@ export function StudioRail() {
   const [gettingStartedMode, setGettingStartedMode] = useState<GettingStartedMode>("explore");
   const [hideGettingStarted, setHideGettingStarted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [language, setLanguage] = useState<SupportedLanguage>("ko");
   const [licenseStatus, setLicenseStatus] = useState<AdminLicenseStatusResponse | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const helpMenuRef = useRef<HTMLDivElement | null>(null);
@@ -126,7 +127,6 @@ export function StudioRail() {
   useEffect(() => {
     const currentSession = loadAuthSession();
     setSession(currentSession);
-    setLanguage(normalizeSupportedLanguage(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY)));
     refreshAuthSessionCookies();
     if (currentSession) {
       prefetchStudioBots(currentSession.access_token);
@@ -271,8 +271,8 @@ export function StudioRail() {
     ? adminNavigationGroups
     : adminNavigationGroups.filter((group) => group.title === "현황 조회");
   const primaryItems: Array<{ id: PrimaryPanelId; label: string; icon: string }> = [
-    { id: "operations", label: "운영", icon: "operations" },
-    { id: "build", label: "제작", icon: "build" },
+    { id: "operations", label: t("nav.operations"), icon: "operations" },
+    { id: "build", label: t("nav.build"), icon: "build" },
     ...(canUseApi ? [{ id: "api" as const, label: "API", icon: "api" }] : []),
     ...(canUseAdmin ? [{ id: "admin" as const, label: "Admin", icon: "admin" }] : []),
   ];
@@ -364,9 +364,7 @@ export function StudioRail() {
   const licenseExpiresAt = currentLicense?.expires_at?.trim() || "-";
 
   function handleLanguageChange(value: string) {
-    const nextLanguage = normalizeSupportedLanguage(value);
-    setLanguage(nextLanguage);
-    window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, nextLanguage);
+    setLanguage(normalizeSupportedLanguage(value));
   }
 
   return (
@@ -489,7 +487,7 @@ export function StudioRail() {
         <button
           type="button"
           className={`studio-rail__help-button${helpOpen ? " is-active" : ""}`}
-          aria-label="도움말"
+          aria-label={t("nav.help")}
           aria-expanded={helpOpen}
           onClick={() => setHelpOpen((current) => !current)}
         >
@@ -501,14 +499,14 @@ export function StudioRail() {
               <strong>About CGA Studio</strong>
               <dl className="studio-rail__help-meta">
                 <div>
-                  <dt>License</dt>
+                  <dt>{t("help.license")}</dt>
                   <dd>
                     <b>{licenseProduct}</b>
-                    <span>{licenseId} ({licenseExpiresAt} 만료)</span>
+                    <span>{licenseId} ({licenseExpiresAt} {t("help.expires")})</span>
                   </dd>
                 </div>
                 <div>
-                  <dt>Version</dt>
+                  <dt>{t("help.version")}</dt>
                   <dd>v1.1</dd>
                 </div>
               </dl>
@@ -520,13 +518,13 @@ export function StudioRail() {
                 aria-haspopup="dialog"
                 onClick={() => openGettingStarted()}
               >
-                Getting Started
+                {t("gettingStarted.title")}
               </button>
               <a href="/manuals/cga-user-manual.pdf" target="_blank" rel="noreferrer">
-                사용자 매뉴얼
+                {t("help.userManual")}
               </a>
               <a href="/manuals/cga-nlu-guide.pdf" target="_blank" rel="noreferrer">
-                NLU 학습 가이드
+                {t("help.nluGuide")}
               </a>
             </section>
           </div>
@@ -550,8 +548,8 @@ export function StudioRail() {
             aria-labelledby="cga-getting-started-title"
           >
             <header className="studio-getting-started__header">
-              <strong id="cga-getting-started-title">Getting Started</strong>
-              <button type="button" aria-label="Getting Started 닫기" onClick={() => closeGettingStarted(hideGettingStarted)}>
+              <strong id="cga-getting-started-title">{t("gettingStarted.title")}</strong>
+              <button type="button" aria-label={`${t("gettingStarted.title")} ${t("common.close")}`} onClick={() => closeGettingStarted(hideGettingStarted)}>
                 ×
               </button>
             </header>
@@ -595,32 +593,32 @@ export function StudioRail() {
             </div>
 
             <div className="studio-getting-started__body">
-              <h3>CGA Studio 체험 방법을 선택하세요.</h3>
+              <h3>{t("gettingStarted.choose")}</h3>
               <div className="studio-getting-started__modes" role="radiogroup" aria-label="Getting Started 체험 방법">
                 <label className={gettingStartedMode === "explore" ? "is-selected" : ""}>
                   <input type="radio" name="getting-started-mode" value="explore" checked={gettingStartedMode === "explore"} onChange={() => setGettingStartedMode("explore")} />
-                  <span>주요메뉴 탐색하기</span>
+                  <span>{t("gettingStarted.explore")}</span>
                 </label>
                 <label className={gettingStartedMode === "create" ? "is-selected" : ""}>
                   <input type="radio" name="getting-started-mode" value="create" checked={gettingStartedMode === "create"} onChange={() => setGettingStartedMode("create")} />
-                  <span>봇 만들기</span>
+                  <span>{t("gettingStarted.create")}</span>
                 </label>
                 <label className={gettingStartedMode === "sample" ? "is-selected" : ""}>
                   <input type="radio" name="getting-started-mode" value="sample" checked={gettingStartedMode === "sample"} onChange={() => setGettingStartedMode("sample")} />
-                  <span>Sample Bot</span>
+                  <span>{t("gettingStarted.sample")}</span>
                 </label>
               </div>
               <div className="studio-getting-started__actions">
                 <button type="button" className="studio-getting-started__secondary" onClick={() => closeGettingStarted(hideGettingStarted)}>
-                  팝업을 닫고, 자유로운 시작
+                  {t("gettingStarted.freeStart")}
                 </button>
                 <button type="button" className="studio-getting-started__primary" onClick={startGettingStarted}>
-                  체험시작
+                  {t("gettingStarted.start")}
                 </button>
               </div>
               <label className="studio-getting-started__remember">
                 <input type="checkbox" checked={hideGettingStarted} onChange={(event) => setHideGettingStarted(event.target.checked)} />
-                <span>시작할 때 이 팝업 다시 보지 않기</span>
+                <span>{t("gettingStarted.hide")}</span>
               </label>
             </div>
           </section>
@@ -631,7 +629,7 @@ export function StudioRail() {
         <button
           type="button"
           className={`studio-rail__account-button${menuOpen ? " is-active" : ""}`}
-          aria-label="사용자 메뉴"
+          aria-label={t("nav.userMenu")}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((current) => !current)}
         >
@@ -688,13 +686,13 @@ export function StudioRail() {
                     onClick={handleLogout}
                     disabled={isLoggingOut}
                   >
-                    {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+                    {isLoggingOut ? t("common.loggingOut") : t("common.logout")}
                   </button>
                 </div>
               </>
             ) : (
               <Link href="/login" className="studio-rail__account-link" onClick={() => setMenuOpen(false)}>
-                로그인
+                {t("common.login")}
               </Link>
             )}
           </div>
