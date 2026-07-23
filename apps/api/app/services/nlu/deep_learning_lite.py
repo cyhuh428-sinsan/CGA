@@ -20,6 +20,7 @@ from app.services.nlu.morph import (
     KiwiMorphAnalyzerProvider,
     MorphAnalyzerProvider,
     char_ngrams,
+    create_morph_analyzer,
     normalize_text,
     normalize_token,
     select_learning_tokens,
@@ -351,15 +352,16 @@ def build_learning_token_context(
     analyzer = analyzer or KiwiMorphAnalyzerProvider()
     canonical_map: dict[str, str] = {}
     surface_canonical_map: dict[str, str] = {}
-    for entries, override_existing in _load_system_synonym_sources():
-        for entry in entries:
-            _merge_dictionary_entry_to_context(
-                entry,
-                analyzer,
-                canonical_map,
-                surface_canonical_map,
-                override_existing=override_existing,
-            )
+    if analyzer.provider_name == "kiwipiepy":
+        for entries, override_existing in _load_system_synonym_sources():
+            for entry in entries:
+                _merge_dictionary_entry_to_context(
+                    entry,
+                    analyzer,
+                    canonical_map,
+                    surface_canonical_map,
+                    override_existing=override_existing,
+                )
     for entry in document.get("dictionary") or []:
         if not isinstance(entry, dict) or entry.get("intentEnabled") is False:
             continue
@@ -1106,8 +1108,9 @@ def tokenize_texts_for_deep_learning_lite(
     surface_canonical_map: dict[str, str] | None = None,
     ignore_terms: list[str] | None = None,
     ignore_regexes: list[str] | None = None,
+    language: str = "ko",
 ) -> list[dict[str, Any]]:
-    analyzer = KiwiMorphAnalyzerProvider()
+    analyzer = create_morph_analyzer(language)
     return [
         {
             "text": text,
@@ -1131,8 +1134,9 @@ def configure_intents_with_deep_learning_lite(
     seed_intents: list[dict[str, Any]] | None = None,
     version_document: dict[str, Any] | None = None,
     version_settings: dict[str, Any] | None = None,
+    language: str = "ko",
 ) -> dict[str, Any]:
-    analyzer = KiwiMorphAnalyzerProvider()
+    analyzer = create_morph_analyzer(language)
     document = normalize_version_document(version_document or {})
     token_context = build_learning_token_context(document, analyzer, version_settings=version_settings)
     canonical_map = token_context["canonical_map"]
@@ -2751,8 +2755,9 @@ def calculate_nlu_evaluation(
     similar_intent_score: float = 0.85,
     max_intent_results: int = 3,
     version_settings: dict[str, Any] | None = None,
+    language: str = "ko",
 ) -> dict[str, Any]:
-    analyzer = KiwiMorphAnalyzerProvider()
+    analyzer = create_morph_analyzer(language)
     document = normalize_version_document(version.version_json)
     token_context = build_learning_token_context(document, analyzer, version_settings=version_settings)
     canonical_map = token_context["canonical_map"]
@@ -2918,8 +2923,9 @@ def build_deep_learning_lite_model(
     *,
     imbalance_oversampling: bool = False,
     version_settings: dict[str, Any] | None = None,
+    language: str = "ko",
 ) -> dict[str, Any]:
-    analyzer = KiwiMorphAnalyzerProvider()
+    analyzer = create_morph_analyzer(language)
     document = normalize_version_document(version.version_json)
     token_context = build_learning_token_context(document, analyzer, version_settings=version_settings)
     canonical_map = token_context["canonical_map"]
@@ -3008,6 +3014,7 @@ def build_deep_learning_lite_model(
         "engine_type": "ml",
         "model": "deep_learning_lite",
         "morph_analyzer": analyzer.provider_name,
+        "language": language,
         "bot_id": str(version.bot_id),
         "version_id": str(version.id),
         "trained_at": datetime.now(timezone.utc).isoformat(),
@@ -3039,11 +3046,13 @@ def train_and_save_deep_learning_lite_model(
     *,
     imbalance_oversampling: bool = False,
     version_settings: dict[str, Any] | None = None,
+    language: str = "ko",
 ) -> dict[str, Any]:
     model = build_deep_learning_lite_model(
         version,
         imbalance_oversampling=imbalance_oversampling,
         version_settings=version_settings,
+        language=language,
     )
     model_path = _model_path(version.bot_id, version.id)
     _write_model_atomic(model_path, model)
@@ -3051,7 +3060,7 @@ def train_and_save_deep_learning_lite_model(
         "model_path": str(model_path),
         "model": {
             key: model[key]
-            for key in ["schema_version", "engine_type", "model", "morph_analyzer", "bot_id", "version_id", "trained_at", "counts"]
+            for key in ["schema_version", "engine_type", "model", "morph_analyzer", "language", "bot_id", "version_id", "trained_at", "counts"]
         },
     }
 
@@ -3062,6 +3071,7 @@ def score_deep_learning_lite_model(
     text: str,
     *,
     version_settings: dict[str, Any] | None = None,
+    language: str | None = None,
 ) -> list[dict[str, Any]]:
     """Score a runtime message with the model saved by the latest successful training."""
     model_path = _model_path(version.bot_id, version.id)
@@ -3081,7 +3091,8 @@ def score_deep_learning_lite_model(
     if not isinstance(intents, list) or not isinstance(vocabulary, dict):
         return []
 
-    analyzer = KiwiMorphAnalyzerProvider()
+    resolved_language = str(language or saved_model.get("language") or "ko")
+    analyzer = create_morph_analyzer(resolved_language)
     document = normalize_version_document(version.version_json)
     token_context = build_learning_token_context(document, analyzer, version_settings=version_settings)
     canonical_map = token_context["canonical_map"]
@@ -3142,8 +3153,9 @@ def classify_deep_learning_lite_model(
     text: str,
     *,
     version_settings: dict[str, Any] | None = None,
+    language: str | None = None,
 ) -> dict[str, Any] | None:
-    scores = score_deep_learning_lite_model(version, text, version_settings=version_settings)
+    scores = score_deep_learning_lite_model(version, text, version_settings=version_settings, language=language)
     return scores[0] if scores else None
 
 def get_deep_learning_lite_model_manifest(bot_id: UUID, version_id: UUID) -> dict[str, Any]:
@@ -3157,6 +3169,6 @@ def get_deep_learning_lite_model_manifest(bot_id: UUID, version_id: UUID) -> dic
         "model_path": str(model_path),
         "model": {
             key: data.get(key)
-            for key in ["schema_version", "engine_type", "model", "morph_analyzer", "bot_id", "version_id", "trained_at", "counts"]
+            for key in ["schema_version", "engine_type", "model", "morph_analyzer", "language", "bot_id", "version_id", "trained_at", "counts"]
         },
     }

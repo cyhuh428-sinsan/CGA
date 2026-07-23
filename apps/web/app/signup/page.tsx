@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { apiRequest } from "@/lib/api";
+import { useI18n } from "@/components/language-provider";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
 
 type SignupOptions = {
   organization: {
@@ -19,6 +21,7 @@ type SignupOptions = {
 };
 
 export default function SignupPage() {
+  const { language, setLanguage, t } = useI18n();
   const [options, setOptions] = useState<SignupOptions | null>(null);
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
@@ -69,7 +72,7 @@ export default function SignupPage() {
           password_confirm: passwordConfirm,
           name,
           comment,
-          preferred_language: "ko",
+          preferred_language: language,
           group_id: groupId,
         }),
       });
@@ -173,6 +176,19 @@ export default function SignupPage() {
                 <option key={group.id} value={group.id}>
                   {group.name}
                 </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="field-block">
+            <span>{t("common.language")}</span>
+            <select
+              className="login-select"
+              value={language}
+              onChange={(event) => setLanguage(normalizeSupportedLanguage(event.target.value))}
+            >
+              {SUPPORTED_LANGUAGES.map((option) => (
+                <option key={option.code} value={option.code}>{option.label}</option>
               ))}
             </select>
           </label>
