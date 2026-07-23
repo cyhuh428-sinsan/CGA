@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import { SortHeaderLabel } from "@/components/sort-header-label";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import {
@@ -21,6 +22,8 @@ import {
 } from "@/lib/api-assets";
 import { applyUpdatedVersionToBot } from "@/lib/dialog-assets";
 import { hasApiWriteRole, loadAuthSession, saveLastBotScreen, type AuthSession } from "@/lib/auth";
+import { API_EDITOR_CATALOGS } from "@/lib/i18n/api-editor";
+import { API_MANAGEMENT_CATALOGS } from "@/lib/i18n/api-management";
 import {
   fetchStudioBotVersionApis,
   type StudioBotApiItem,
@@ -124,6 +127,9 @@ export function ApiEditorDialog({
   onClose: () => void;
   onSave: (api: VersionApiAsset) => void;
 }) {
+  const { language: uiLanguage } = useI18n();
+  const copy = API_EDITOR_CATALOGS[uiLanguage];
+  const common = API_MANAGEMENT_CATALOGS[uiLanguage];
   const [draft, setDraft] = useState(initialApi);
   const [sampleInput, setSampleInput] = useState<{ methodIndex: number; value: string; error: string } | null>(null);
   const [textEditMethods, setTextEditMethods] = useState<Record<string, boolean>>(() =>
@@ -173,36 +179,36 @@ export function ApiEditorDialog({
       setSampleInput(null);
     } catch {
       setSampleInput((current) =>
-        current ? { ...current, error: "JSON 형식에 맞지 않습니다. 정상적인 API 호출 결과를 입력하세요." } : current,
+        current ? { ...current, error: copy.invalidJson } : current,
       );
     }
   }
 
   return (
-    <section className="api-store-dialog" role="region" aria-label="API 등록">
+    <section className="api-store-dialog" role="region" aria-label={copy.region}>
       <header className="api-store-dialog__header">
         <div>
-          <strong>API 메서드 정보를 입력하세요.</strong>
+          <strong>{copy.intro}</strong>
         </div>
-        <button type="button" className="api-store-dialog__close" onClick={onClose} aria-label="닫기">
+        <button type="button" className="api-store-dialog__close" onClick={onClose} aria-label={copy.close}>
           ×
         </button>
       </header>
       <div className="api-store-dialog__body">
           <section className="api-store-dialog__api-base">
             <div className="api-store-dialog__subhead">
-              <strong>API 기본 정보</strong>
+              <strong>{copy.apiBasic}</strong>
             </div>
             <div className="api-store-dialog__api-grid">
               <label className="api-store-dialog__field">
-                <span>API 이름 <em>*</em></span>
+                <span>{common.apiName} <em>*</em></span>
                 <div className="api-store-dialog__count-field">
                   <input
                     className="api-store-dialog__input"
                     value={draft.name}
                     maxLength={30}
                     onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                    placeholder="다른 사용자가 입력하는 의미를 알 수 있게 입력해주세요."
+                    placeholder={copy.apiNamePlaceholder}
                   />
                   <small>{draft.name.length}/30</small>
                 </div>
@@ -222,27 +228,27 @@ export function ApiEditorDialog({
                 </div>
               </label>
               <label className="api-store-dialog__field">
-                <span>상세설명</span>
+                <span>{common.description}</span>
                 <div className="api-store-dialog__count-field">
                   <input
                     className="api-store-dialog__input"
                     value={draft.description}
                     maxLength={50}
                     onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-                    placeholder="API를 설명하여 알 수 있는 문장을 입력하세요."
+                    placeholder={copy.descriptionPlaceholder}
                   />
                   <small>{draft.description.length}/50</small>
                 </div>
               </label>
               <label className="api-store-dialog__field">
-                <span>목적지 Base URL <em>*</em></span>
+                <span>{common.baseUrl} <em>*</em></span>
                 <div className="api-store-dialog__count-field">
                   <input
                     className="api-store-dialog__input"
                     value={draft.baseUrl}
                     maxLength={500}
                     onChange={(event) => setDraft((current) => ({ ...current, baseUrl: event.target.value }))}
-                    placeholder="URL을 입력하세요. ex) http://{domain}:{port}"
+                    placeholder={copy.urlPlaceholder}
                   />
                   <small>{draft.baseUrl.length}/500</small>
                 </div>
@@ -253,7 +259,7 @@ export function ApiEditorDialog({
           {draft.methods.map((method, index) => (
             <section key={method.id} className="api-store-dialog__method-panel">
               <div className="api-store-dialog__method-top">
-                <strong>API 메서드</strong>
+                <strong>{common.methods}</strong>
                 <div className="api-store-dialog__method-actions">
                   <button
                     type="button"
@@ -270,52 +276,52 @@ export function ApiEditorDialog({
                     POST
                   </button>
                 </div>
-                <button type="button" className="api-store-dialog__collapse" aria-label="접기">
+                <button type="button" className="api-store-dialog__collapse" aria-label={copy.collapse}>
                   ^
                 </button>
               </div>
 
               <div className="api-store-dialog__subhead">
-                <strong>기본 정보</strong>
+                <strong>{common.basicInfo}</strong>
               </div>
 
               <div className="api-store-dialog__basic-grid">
                 <label className="api-store-dialog__field api-store-dialog__field--method-url">
-                  <span>메서드 URL <em>*</em></span>
+                  <span>{common.methodUrl} <em>*</em></span>
                   <div className="api-store-dialog__count-field">
                     <input
                       className="api-store-dialog__input"
                       value={method.methodUrl}
                       maxLength={50}
                       onChange={(event) => updateMethod(index, (item) => ({ ...item, methodUrl: event.target.value }))}
-                      placeholder="메서드 URL을 입력하세요."
+                      placeholder={common.methodUrl}
                     />
                     <small>{method.methodUrl.length}/50</small>
                   </div>
                 </label>
                 <label className="api-store-dialog__field api-store-dialog__field--description">
-                  <span>상세설명</span>
+                  <span>{common.description}</span>
                   <div className="api-store-dialog__count-field">
                     <input
                       className="api-store-dialog__input"
                       value={method.description}
                       maxLength={500}
                       onChange={(event) => updateMethod(index, (item) => ({ ...item, description: event.target.value }))}
-                      placeholder="메서드에 대한 상세 설명을 입력하세요."
+                      placeholder={common.methodDescription}
                     />
                     <small>{method.description.length}/500</small>
                   </div>
                 </label>
 
                 <div className="api-store-dialog__type-row">
-                  <span>유형</span>
+                  <span>{common.type}</span>
                   <label className="api-store-dialog__check">
                     <input
                       type="checkbox"
                       checked={method.loggingEnabled}
                       onChange={(event) => updateMethod(index, (item) => ({ ...item, loggingEnabled: event.target.checked }))}
                     />
-                    <span>로깅</span>
+                    <span>{common.logging}</span>
                   </label>
                   <label className="api-store-dialog__check">
                     <input
@@ -323,18 +329,18 @@ export function ApiEditorDialog({
                       checked={method.proxyEnabled}
                       onChange={(event) => updateMethod(index, (item) => ({ ...item, proxyEnabled: event.target.checked }))}
                     />
-                    <span>프록시</span>
+                    <span>{common.proxy}</span>
                   </label>
                 </div>
                 <div className="api-store-dialog__radio-group api-store-dialog__radio-group--transfer">
-                  <span>전송방식</span>
+                  <span>{common.transfer}</span>
                   <label>
                     <input type="radio" checked readOnly />
-                    동기
+                    {common.sync}
                   </label>
                   <label className="is-disabled">
                     <input type="radio" disabled />
-                    비동기
+                    {common.async}
                   </label>
                 </div>
               </div>
@@ -342,20 +348,20 @@ export function ApiEditorDialog({
               <div className="api-store-dialog__method-body">
                 <section className="api-store-dialog__parameters">
                   <div className="api-store-dialog__table-toolbar">
-                    <strong>파라미터</strong>
+                    <strong>{common.parameters}</strong>
                     <button type="button" onClick={() => addParameter(index)}>
-                      + 파라미터 추가
+                      + {copy.addParameter}
                     </button>
                   </div>
                   <div className="api-store-dialog__param-table">
                     <div className="api-store-dialog__param-head">
                       <span>Name</span>
-                      <span>설명</span>
-                      <span>유형</span>
-                      <span>데이터 유형</span>
-                      <span>Default 값</span>
-                      <span>필수</span>
-                      <span>보이기</span>
+                      <span>{common.parameterDescription}</span>
+                      <span>{common.parameterType}</span>
+                      <span>{copy.dataType}</span>
+                      <span>{copy.defaultValue}</span>
+                      <span>{copy.required}</span>
+                      <span>{copy.visible}</span>
                       <span />
                     </div>
                     {method.parameters.length > 0 ? (
@@ -372,7 +378,7 @@ export function ApiEditorDialog({
                                 ),
                               }))
                             }
-                            placeholder="최대 30자 입력"
+                            placeholder={copy.max30}
                           />
                           <input
                             value={parameter.description}
@@ -385,7 +391,7 @@ export function ApiEditorDialog({
                                 ),
                               }))
                             }
-                            placeholder="최대 30자 입력"
+                            placeholder={copy.max30}
                           />
                           <select
                             value={parameter.location}
@@ -470,21 +476,21 @@ export function ApiEditorDialog({
                             type="button"
                             className="api-store-dialog__param-icon-button"
                             onClick={() => removeParameter(index, parameter.id)}
-                            aria-label="파라미터 삭제"
+                            aria-label={copy.removeParameter}
                           >
                             <span className="api-store-dialog__trash-icon" aria-hidden="true" />
                           </button>
                         </div>
                       ))
                     ) : (
-                      <div className="api-store-dialog__param-empty">파라미터를 추가하세요.</div>
+                      <div className="api-store-dialog__param-empty">{copy.parameterEmpty}</div>
                     )}
                   </div>
                 </section>
 
                 <section className="api-store-dialog__output">
                   <div className="api-store-dialog__output-head">
-                    <strong>파라미터 응답 설정</strong>
+                    <strong>{copy.responseSettings}</strong>
                     <div>
                       <label>
                         <input
@@ -492,7 +498,7 @@ export function ApiEditorDialog({
                           checked={textEditMethods[method.id] ?? Boolean(method.outputSample.trim())}
                           onChange={(event) => setTextEditMethods((current) => ({ ...current, [method.id]: event.target.checked }))}
                         />
-                        TEXT 편집
+                        {copy.textEdit}
                       </label>
                       <button
                         type="button"
@@ -504,7 +510,7 @@ export function ApiEditorDialog({
                           })
                         }
                       >
-                        Sample 입력
+                        {copy.sampleInput}
                       </button>
                     </div>
                   </div>
@@ -560,7 +566,7 @@ export function ApiEditorDialog({
                     }))
                   }
                 >
-                  삭제
+                  {copy.removeMethod}
                 </button>
               </div>
             </section>
@@ -571,12 +577,12 @@ export function ApiEditorDialog({
           className="api-store-dialog__add-method"
           onClick={() => setDraft((current) => ({ ...current, methods: [...current.methods, createEmptyApiMethod()] }))}
         >
-          + 메서드 추가
+          + {copy.addMethod}
         </button>
       </div>
       <footer className="api-store-dialog__footer">
         <button type="button" className="api-store-dialog__button" onClick={onClose}>
-          취소
+          {copy.cancel}
         </button>
         <button
           type="button"
@@ -611,30 +617,30 @@ export function ApiEditorDialog({
             })
           }
         >
-          저장
+          {copy.save}
         </button>
       </footer>
       {sampleInput ? (
         <div className="api-store-dialog__sample-backdrop" role="presentation">
-          <section className="api-store-dialog__sample-dialog" role="dialog" aria-modal="true" aria-label="출력 sample로 입력하기">
+          <section className="api-store-dialog__sample-dialog" role="dialog" aria-modal="true" aria-label={copy.sampleTitle}>
             <header>
-              <strong>출력 sample로 입력하기</strong>
-              <button type="button" onClick={() => setSampleInput(null)} aria-label="닫기">
+              <strong>{copy.sampleTitle}</strong>
+              <button type="button" onClick={() => setSampleInput(null)} aria-label={copy.close}>
                 ×
               </button>
             </header>
             <textarea
               value={sampleInput.value}
               onChange={(event) => setSampleInput((current) => (current ? { ...current, value: event.target.value, error: "" } : current))}
-              placeholder="정상적인 API 호출 결과를 JSON 형식으로 입력하세요."
+              placeholder={copy.samplePlaceholder}
             />
             {sampleInput.error ? <p>{sampleInput.error}</p> : null}
             <footer>
               <button type="button" onClick={() => setSampleInput(null)}>
-                취소
+                {copy.cancel}
               </button>
               <button type="button" className="api-store-dialog__sample-primary" onClick={applyOutputSample}>
-                확인
+                {copy.confirm}
               </button>
             </footer>
           </section>
