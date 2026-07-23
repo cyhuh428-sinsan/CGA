@@ -1162,7 +1162,7 @@ export function IntentListPage() {
     const rows = parseIntentImportRows(text);
     if (rows.length === 0) {
       setMessage("");
-      setErrorMessage("업로드 가능한 의도가 없습니다.");
+      setErrorMessage(copy.uploadNoIntents);
       return;
     }
 
@@ -1271,7 +1271,7 @@ export function IntentListPage() {
     try {
       referenceResponse = await fetchStudioBotVersionReferences(authSession.access_token, bot.id, effectiveVersion.id);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "의도 파일 업로드 전 버전 정보를 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.uploadLoadError);
       return;
     }
     let nextDocument = withUpdatedDialogs(
@@ -1289,20 +1289,20 @@ export function IntentListPage() {
         nextDocument = withEnsuredDialogFlowGraph(nextDocument, dialog);
       });
 
-    await persistVersionDocument(nextDocument, "의도 파일 업로드가 완료되었습니다.");
+    await persistVersionDocument(nextDocument, copy.uploadComplete);
     setUploadDialogOpen(false);
     setUploadResult({
-      message: "업로드가 완료되었습니다.",
-      note: "중복되거나 다른 의도에서 이미 사용 중인 학습문장은 등록되지 않습니다.",
+      message: copy.uploadComplete,
+      note: copy.uploadResultNote,
       sections: [
         {
           rows: [
-            { label: "추가된 의도", value: addedIntentCount },
-            { label: "수정된 의도", value: updatedIntentIds.size },
-            { label: "추가된 학습문장", value: addedUtteranceCount },
-            { label: "중복된 학습문장", value: duplicateUtteranceCount },
-            { label: "중복된 의도 Key", value: duplicateKeyCount },
-            { label: "제외된 행", value: invalidRowCount },
+            { label: copy.addedIntents, value: addedIntentCount },
+            { label: copy.updatedIntents, value: updatedIntentIds.size },
+            { label: copy.addedUtterances, value: addedUtteranceCount },
+            { label: copy.duplicateUtterances, value: duplicateUtteranceCount },
+            { label: copy.duplicateIntentKeys, value: duplicateKeyCount },
+            { label: copy.excludedRows, value: invalidRowCount },
           ],
         },
       ],
@@ -1724,14 +1724,14 @@ export function IntentListPage() {
 
       {uploadDialogOpen ? (
         <AssetUploadDialog
-          title="파일 업로드"
-          description={<p>아래의 버튼으로 양식(.csv)을 다운받으신 후, 파일을 업로드 하세요.</p>}
+          title={copy.uploadTitle}
+          description={<p>{copy.uploadDescription}</p>}
           notice={
             <>
-              <p>UTF-8 형식으로 인코딩된 .csv 파일을 통해 의도를 한꺼번에 업로드할 수 있습니다.</p>
+              <p>{copy.uploadEncodingHelp}</p>
               <ul className="asset-upload-dialog__list">
-                <li>헤더는 `의도명,표시명,의도 Key,학습문장,태그` 형식을 사용하세요.</li>
-                <li>같은 의도명이 여러 줄이면 학습문장을 같은 의도에 추가합니다.</li>
+                <li>{copy.uploadHeaderHelp}</li>
+                <li>{copy.uploadRepeatedNameHelp}</li>
               </ul>
             </>
           }
@@ -1745,7 +1745,7 @@ export function IntentListPage() {
 
       {uploadResult ? (
         <UploadResultDialog
-          title="업로드 결과"
+          title={copy.uploadResultTitle}
           message={uploadResult.message}
           note={uploadResult.note}
           sections={uploadResult.sections}
