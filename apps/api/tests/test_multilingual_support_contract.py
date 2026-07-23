@@ -265,3 +265,19 @@ def test_shared_admin_components_use_complete_localized_controls() -> None:
         source = (ROOT_DIR / path).read_text(encoding="utf-8")
         assert "ADMIN_COMMON_CATALOGS[language]" in source
     assert "satisfies Record<SupportedLanguage, AdminCommonCatalog>" in catalog_source
+
+
+def test_primary_admin_history_routes_use_seven_language_page_catalog() -> None:
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-pages.ts").read_text(encoding="utf-8")
+    for path in (
+        "apps/web/app/admin/api-call-history/page.tsx",
+        "apps/web/app/admin/bot-status/page.tsx",
+        "apps/web/app/admin/login-history/page.tsx",
+        "apps/web/app/admin/training-history/page.tsx",
+        "apps/web/app/admin/intent-feedback/page.tsx",
+    ):
+        source = (ROOT_DIR / path).read_text(encoding="utf-8")
+        assert "ADMIN_PAGE_CATALOGS[language]" in source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, AdminPageCatalog>" in catalog_source
