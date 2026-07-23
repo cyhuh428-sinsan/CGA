@@ -1090,7 +1090,7 @@ export function IntentListPage() {
     try {
       referenceResponse = await fetchStudioBotVersionReferences(authSession.access_token, bot.id, effectiveVersion.id);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "의도/모듈 삭제 전 버전 정보를 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.deleteLoadError);
       return;
     }
     const fullDocument = {
@@ -1110,7 +1110,11 @@ export function IntentListPage() {
         blocked
           .map(
             ({ dialog, usages }) =>
-              `'${dialog.name}' ${getDialogTypeLabel(dialog.dialogType)}은(는) ${usages.join(", ")}에서 참조하고 있어 삭제할 수 없습니다.`,
+              formatIntentListText(copy.deleteReferenced, {
+                name: dialog.name,
+                type: dialog.dialogType === 1 ? copy.intent : copy.module,
+                usages: usages.join(", "),
+              }),
           )
           .join(" "),
       );
@@ -1130,7 +1134,7 @@ export function IntentListPage() {
       }),
     };
 
-    await persistVersionDocument(nextDocument, "선택한 의도/모듈과 연결된 대화설계가 삭제되었습니다.");
+    await persistVersionDocument(nextDocument, copy.deleteSuccess);
   }
 
   function handleDownloadTemplate() {
@@ -1681,13 +1685,13 @@ export function IntentListPage() {
 
       {deleteConfirmOpen ? (
         <div className="entity-editor-backdrop" role="presentation">
-          <div className="entity-sub-dialog entity-sub-dialog--delete-confirm" role="dialog" aria-modal="true" aria-label="의도 삭제 확인">
+          <div className="entity-sub-dialog entity-sub-dialog--delete-confirm" role="dialog" aria-modal="true" aria-label={copy.deleteDialogAria}>
             <div className="entity-editor-dialog__header">
-              <strong>의도 삭제</strong>
+              <strong>{copy.deleteDialogTitle}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={copy.close}
                 onClick={() => setDeleteConfirmOpen(false)}
               >
                 ×
@@ -1695,12 +1699,12 @@ export function IntentListPage() {
             </div>
             <div className="entity-editor-dialog__body">
               <p className="entity-sub-dialog__description entity-sub-dialog__description--delete-confirm">
-                선택한 의도/모듈과 연결된 대화설계를 삭제하시겠습니까?
+                {copy.deleteDialogQuestion}
               </p>
             </div>
             <div className="entity-editor-dialog__footer">
               <button type="button" className="secondary-action" onClick={() => setDeleteConfirmOpen(false)}>
-                취소
+                {copy.cancel}
               </button>
               <button
                 type="button"
@@ -1711,7 +1715,7 @@ export function IntentListPage() {
                   void handleDeleteSelected();
                 }}
               >
-                확인
+                {copy.confirm}
               </button>
             </div>
           </div>

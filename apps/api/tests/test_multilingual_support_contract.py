@@ -202,3 +202,16 @@ def test_intent_list_uses_seven_language_catalog_without_changing_csv_contract()
     assert "satisfies Record<SupportedLanguage, IntentListCatalog>" in catalog_source
     assert '["의도명", "표시명", "의도 Key", "학습문장", "태그"]' in page_source
     assert '["의도명", "Intent Name", "intentName", "name"]' in page_source
+
+
+def test_intent_list_localizes_delete_copy_and_preserves_reference_checks() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-list-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-list.ts").read_text(encoding="utf-8")
+
+    assert "copy.deleteDialogTitle" in page_source
+    assert "copy.deleteDialogQuestion" in page_source
+    assert "copy.deleteReferenced" in page_source
+    assert "findDialogUsageReferences" in page_source
+    assert "persistVersionDocument" in page_source
+    assert "deleteDialogTitle: string" in catalog_source
+    assert "deleteReferenced: string" in catalog_source
