@@ -31,6 +31,8 @@ import {
   type ListPageSize,
   usePersistedPageSize,
 } from "@/lib/use-persisted-page-size";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_COMMON_CATALOGS } from "@/lib/i18n/admin-common";
 
 type BotStationStatus = "전체" | "Active" | "Inactive";
 
@@ -377,6 +379,8 @@ function sortRows(rows: BotStationRow[], sortState: DataGridSortState | null) {
 }
 
 export function AdminBotstationStatusPage() {
+  const { language } = useI18n();
+  const copy = ADMIN_COMMON_CATALOGS[language];
   const [session, setSession] = useState<AuthSession | null>(null);
   const [bots, setBots] = useState<StudioBotApiItem[]>([]);
   const [adminChannels, setAdminChannels] = useState<AdminChannelItem[]>([]);
@@ -657,7 +661,7 @@ export function AdminBotstationStatusPage() {
           />
         </label>
         <label>
-          <span>그룹</span>
+          <span>{copy.group}</span>
           <select
             value={draftFilters.groupId}
             onChange={(event) => setDraftFilters((current) => ({ ...current, groupId: event.target.value }))}
@@ -671,7 +675,7 @@ export function AdminBotstationStatusPage() {
           </select>
         </label>
         <label>
-          <span>채널</span>
+          <span>{copy.channel}</span>
           <select
             value={draftFilters.channelCode}
             onChange={(event) => setDraftFilters((current) => ({ ...current, channelCode: event.target.value }))}
@@ -698,7 +702,7 @@ export function AdminBotstationStatusPage() {
           </select>
         </label>
         <label>
-          <span>시작일</span>
+          <span>{copy.fromDate}</span>
           <input
             type="date"
             value={draftFilters.startDate}
@@ -706,7 +710,7 @@ export function AdminBotstationStatusPage() {
           />
         </label>
         <label>
-          <span>종료일</span>
+          <span>{copy.toDate}</span>
           <input
             type="date"
             value={draftFilters.endDate}
@@ -715,10 +719,10 @@ export function AdminBotstationStatusPage() {
         </label>
         <div className="admin-botstation__filter-actions">
           <button type="button" className="admin-page__ghost" onClick={handleReset}>
-            초기화
+            {copy.reset}
           </button>
           <button type="button" className="admin-page__primary" onClick={() => setAppliedFilters(draftFilters)}>
-            확인
+            {copy.confirm}
           </button>
           <div className="admin-common-variables__more">
             <button
@@ -738,7 +742,7 @@ export function AdminBotstationStatusPage() {
                     downloadCsv(sortedRows);
                   }}
                 >
-                  파일 다운로드
+                  {copy.download}
                 </button>
               </div>
             ) : null}
@@ -775,7 +779,7 @@ export function AdminBotstationStatusPage() {
           onSort={setSortState}
         />
       </div>
-      {!loading && filteredRows.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+      {!loading && filteredRows.length === 0 ? <p className="admin-page__empty">{copy.noData}</p> : null}
 
       <div className="admin-page__pagination">
         <button type="button" disabled={page === 1} onClick={() => setPage(1)}>

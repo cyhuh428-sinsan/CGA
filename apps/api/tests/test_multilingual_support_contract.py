@@ -251,3 +251,17 @@ def test_admin_navigation_and_shell_use_complete_seven_language_catalog() -> Non
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AdminNavigationCatalog>" in catalog_source
+
+
+def test_shared_admin_components_use_complete_localized_controls() -> None:
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-common.ts").read_text(encoding="utf-8")
+    component_paths = (
+        "apps/web/components/admin-table-page.tsx",
+        "apps/web/components/admin-interactive-table-page.tsx",
+        "apps/web/components/admin-history-table-page.tsx",
+        "apps/web/components/admin-botstation-status-page.tsx",
+    )
+    for path in component_paths:
+        source = (ROOT_DIR / path).read_text(encoding="utf-8")
+        assert "ADMIN_COMMON_CATALOGS[language]" in source
+    assert "satisfies Record<SupportedLanguage, AdminCommonCatalog>" in catalog_source
