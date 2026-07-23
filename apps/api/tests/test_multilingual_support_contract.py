@@ -227,3 +227,14 @@ def test_intent_csv_ui_is_localized_without_translating_csv_headers() -> None:
     assert 'const rows = [["의도명", "표시명", "의도 Key", "학습문장", "태그"]];' in page_source
     assert '["의도명", "Intent Name", "intentName", "name"]' in page_source
     assert "uploadTitle: string" in catalog_source
+
+
+def test_intent_scenario_errors_localize_guidance_without_changing_training_blocking() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-list-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-list.ts").read_text(encoding="utf-8")
+
+    assert "copy.scenarioIssueFallback" in page_source
+    assert "copy.trainingBlockedByScenarioErrors" in page_source
+    assert "scenarioErrorCount" in page_source
+    assert "trainingDisabledReason" in page_source
+    assert "scenarioIssueFallback: string" in catalog_source

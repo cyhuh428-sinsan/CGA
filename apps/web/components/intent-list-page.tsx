@@ -173,8 +173,10 @@ function getScenarioIssueMessage(item: Record<string, unknown>) {
     : "대화 설계 오류가 있습니다.";
 }
 
-function getScenarioIssueDisplayMessage(item: Record<string, unknown>) {
-  const message = getScenarioIssueMessage(item);
+function getScenarioIssueDisplayMessage(item: Record<string, unknown>, copy: IntentListCatalog) {
+  const message = typeof item.message === "string" && item.message.trim()
+    ? item.message.trim()
+    : copy.scenarioIssueFallback;
   const dialogName = getScenarioIssueDialogName(item);
   const nodeTitle = typeof item.node_title === "string" ? item.node_title.trim() : "";
   const location = [dialogName, nodeTitle].filter(Boolean).join(" / ");
@@ -427,21 +429,29 @@ function DialogOptionIcon({ kind }: { kind: "transition" | "return" | "feedback"
   );
 }
 
-function DialogOptionBadges({ dialog, displayMode }: { dialog: VersionDialogAsset; displayMode: DialogOptionDisplayMode }) {
+function DialogOptionBadges({
+  dialog,
+  displayMode,
+  copy,
+}: {
+  dialog: VersionDialogAsset;
+  displayMode: DialogOptionDisplayMode;
+  copy: IntentListCatalog;
+}) {
   const options = [
-    { key: "transition" as const, label: "T", active: Boolean(dialog.transitionLocked), title: "의도전환잠금" },
-    { key: "return" as const, label: "R", active: Boolean(dialog.returnBlocked), title: "의도복귀차단" },
-    { key: "feedback" as const, label: "F", active: Boolean(dialog.feedbackEnabled), title: "의도별 피드백" },
+    { key: "transition" as const, label: "T", active: Boolean(dialog.transitionLocked), title: copy.optionTransitionLock },
+    { key: "return" as const, label: "R", active: Boolean(dialog.returnBlocked), title: copy.optionReturnBlock },
+    { key: "feedback" as const, label: "F", active: Boolean(dialog.feedbackEnabled), title: copy.optionFeedback },
   ];
 
   return (
-    <span className="intent-list-options" aria-label="기타옵션">
+    <span className="intent-list-options" aria-label={copy.otherOptionsAria}>
       {options.map((option) => (
         <span
           key={option.key}
           className={`intent-list-options__badge${option.active ? " is-active" : ""}`}
           title={option.title}
-          aria-label={`${option.title} ${option.active ? "설정됨" : "설정 안 됨"}`}
+          aria-label={`${option.title} ${option.active ? copy.optionEnabled : copy.optionDisabled}`}
           tabIndex={0}
         >
           {displayMode === "icon" ? <DialogOptionIcon kind={option.key} /> : option.label}
@@ -454,7 +464,17 @@ function DialogOptionBadges({ dialog, displayMode }: { dialog: VersionDialogAsse
   );
 }
 
-function ScenarioIssueBadge({ count, title, displayMode }: { count: number; title: string; displayMode: DialogOptionDisplayMode }) {
+function ScenarioIssueBadge({
+  count,
+  title,
+  displayMode,
+  copy,
+}: {
+  count: number;
+  title: string;
+  displayMode: DialogOptionDisplayMode;
+  copy: IntentListCatalog;
+}) {
   if (count <= 0) {
     return null;
   }
@@ -463,9 +483,9 @@ function ScenarioIssueBadge({ count, title, displayMode }: { count: number; titl
     <span
       className={`intent-list-options__badge intent-list-options__badge--error intent-list-options__badge--scenario${displayMode === "icon" ? " is-icon" : " is-text"}`}
       title={title}
-      aria-label={`대화 설계 오류 ${count}건`}
+      aria-label={formatIntentListText(copy.scenarioErrorAria, { count })}
     >
-      {displayMode === "icon" ? "!" : "오류"}
+      {displayMode === "icon" ? "!" : copy.scenarioErrorLabel}
     </span>
   );
 }
@@ -618,7 +638,7 @@ export function IntentListPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "의도/모듈 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadIntentError);
         }
       })
       .finally(() => {
@@ -630,7 +650,7 @@ export function IntentListPage() {
     return () => {
       ignore = true;
     };
-  }, [authSession, bot, bot?.active_version]);
+  }, [authSession, bot, bot?.active_version, copy.loadIntentError]);
 
   useEffect(() => {
     if (pathname && bot && !errorMessage) {
@@ -709,13 +729,13 @@ export function IntentListPage() {
       .filter((item) => String(item.severity ?? "error") === "error")
       .map((item) => {
         const saveBlocking = saveBlockingKeys.has(getScenarioIssueKey(item));
-        const scopeLabel = saveBlocking ? "저장 차단" : "학습/실행 차단";
+        const scopeLabel = saveBlocking ? copy.saveBlocked : copy.trainingRunBlocked;
         return {
           dialogId: resolveScenarioIssueDialogId(item, dialogs),
-          message: `[${scopeLabel}] ${getScenarioIssueDisplayMessage(item)}`,
+          message: `[${scopeLabel}] ${getScenarioIssueDisplayMessage(item, copy)}`,
         };
       });
-  }, [dialogs, effectiveVersion?.scenario_validation]);
+  }, [copy, dialogs, effectiveVersion?.scenario_validation]);
   const scenarioIssueMap = useMemo(() => {
     const issueMap = new Map<string, string[]>();
     const validation = effectiveVersion?.scenario_validation;
@@ -732,10 +752,10 @@ export function IntentListPage() {
       if (!normalizedDialogId || issueMap.has(normalizedDialogId)) {
         continue;
       }
-      issueMap.set(normalizedDialogId, ["대화 설계 오류가 있습니다."]);
+      issueMap.set(normalizedDialogId, [copy.scenarioIssueFallback]);
     }
     return issueMap;
-  }, [effectiveVersion?.scenario_validation, scenarioIssueDetails]);
+  }, [copy.scenarioIssueFallback, effectiveVersion?.scenario_validation, scenarioIssueDetails]);
   const scenarioErrorCount = Number(effectiveVersion?.scenario_validation?.error_count ?? 0);
   const displayableScenarioErrorCount = [...scenarioIssueMap.keys()].filter((dialogId) =>
     dialogs.some((dialog) => dialog.id === dialogId),
@@ -746,12 +766,14 @@ export function IntentListPage() {
   const scenarioErrorSummary =
     scenarioErrorCount > 0
       ? [
-          `설계 오류 ${scenarioErrorCount}건이 있어 학습할 수 없습니다.`,
+          formatIntentListText(copy.trainingBlockedByScenarioErrors, { count: scenarioErrorCount }),
           displayableScenarioErrorCount > 0
-            ? "오류 칸의 표시가 있는 의도/모듈을 수정해주세요."
-            : "목록 행과 연결되지 않은 오류가 있습니다. 대화 설계를 다시 저장한 뒤 확인해주세요.",
+            ? copy.fixMarkedRows
+            : copy.fixUnplacedErrors,
           unplacedScenarioIssues.length > 0
-            ? `미표시 오류: ${unplacedScenarioIssues.slice(0, 3).map((item) => item.message).join(" / ")}`
+            ? formatIntentListText(copy.unplacedErrors, {
+              messages: unplacedScenarioIssues.slice(0, 3).map((item) => item.message).join(" / "),
+            })
             : "",
         ]
           .filter(Boolean)
@@ -760,8 +782,8 @@ export function IntentListPage() {
   const trainingDisabledReason =
     scenarioErrorCount > 0
       ? displayableScenarioErrorCount > 0
-        ? `설계 오류 ${scenarioErrorCount}건이 있어 학습할 수 없습니다. 오류 칸의 표시가 있는 의도/모듈을 수정해주세요.`
-        : `설계 오류 ${scenarioErrorCount}건이 있어 학습할 수 없습니다. 대화 설계를 다시 저장한 뒤 오류 위치를 확인해주세요.`
+        ? `${formatIntentListText(copy.trainingBlockedByScenarioErrors, { count: scenarioErrorCount })} ${copy.fixMarkedRows}`
+        : `${formatIntentListText(copy.trainingBlockedByScenarioErrors, { count: scenarioErrorCount })} ${copy.fixUnplacedErrors}`
       : "";
   const summaryCards = useMemo(
     () =>
@@ -794,7 +816,7 @@ export function IntentListPage() {
   function handleOpenDialogDesign(dialog: VersionDialogAsset) {
     if (dialog.dialogType === 1 && dialog.utterances.length === 0) {
       setMessage("");
-      setErrorMessage("의도는 학습문장을 등록한 후 대화 설계로 이동할 수 있습니다.");
+      setErrorMessage(copy.utteranceRequiredForDesign);
       return;
     }
 
@@ -953,7 +975,7 @@ export function IntentListPage() {
       setVersions(refreshed.versions);
       setBot(refreshed.bot);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "학습 결과를 다시 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.reloadTrainingError);
     }
   }
   const isFavorite = favoriteBotIds.includes(effectiveBotId);
@@ -979,7 +1001,7 @@ export function IntentListPage() {
         setFavoriteBotIds(nextSession.user.favorite_bot_ids ?? []);
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "우선 봇 설정을 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.savePriorityBotError);
     } finally {
       setFavoritePending(false);
     }
@@ -1027,7 +1049,7 @@ export function IntentListPage() {
       setSelectedIds([]);
       setMessage(successMessage);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "의도/모듈 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.saveIntentError);
     } finally {
       setSaving(false);
     }
@@ -1070,7 +1092,7 @@ export function IntentListPage() {
       setSelectedIds([]);
       setMessage(successMessage);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "의도/모듈 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.saveIntentError);
     } finally {
       setSaving(false);
     }
@@ -1555,7 +1577,7 @@ export function IntentListPage() {
               {dialog.dialogNo}
             </span>
             <span className="manual-main__cell manual-main__cell--scenario-error" title={scenarioIssueTitle || undefined}>
-              <ScenarioIssueBadge count={scenarioIssues.length} title={scenarioIssueTitle} displayMode={dialogOptionDisplayMode} />
+              <ScenarioIssueBadge count={scenarioIssues.length} title={scenarioIssueTitle} displayMode={dialogOptionDisplayMode} copy={copy} />
             </span>
             <span className="manual-main__cell">{dialog.dialogType === 1 ? copy.intent : copy.module}</span>
             <button
@@ -1593,7 +1615,7 @@ export function IntentListPage() {
               <span className="manual-main__number">{dialog.tags.length}</span>
             </span>
             <span className="manual-main__cell">
-              <DialogOptionBadges dialog={dialog} displayMode={dialogOptionDisplayMode} />
+              <DialogOptionBadges dialog={dialog} displayMode={dialogOptionDisplayMode} copy={copy} />
             </span>
             <span className="manual-main__cell">{formatDialogUpdatedAt(dialog.updatedAt)}</span>
             <span className="manual-main__cell">{dialog.updatedBy || "-"}</span>
