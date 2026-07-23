@@ -4,6 +4,7 @@ import * as AdaptiveCards from "adaptivecards";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { normalizeAnswerMode } from "@/lib/answer-options";
 import { getBotVersionSettings, type MessageItemConfig } from "@/lib/bot-settings";
 import { isSimulatorRichFormLocalFilePath, normalizeSimulatorRichFormAssetUrl } from "./simulator-rich-form-assets";
@@ -55,6 +56,8 @@ import {
   type VersionDocument,
 } from "@/lib/version-document";
 import { isSemanticNluType, type NluType } from "@/lib/nlu-options";
+import { normalizeSupportedLanguage } from "@/lib/language";
+import { formatSimulatorText, SIMULATOR_CATALOGS } from "@/lib/i18n/simulator";
 
 const ADAPTIVE_CARD_SCHEMA_VERSION = "1.6";
 const SIMULATOR_RUNTIME_MESSAGES = {
@@ -3356,6 +3359,8 @@ type SimulatorPageProps = {
 };
 
 export function SimulatorPage({ embedded = false, startDialogId: startDialogIdProp = "", botIdOverride = "", versionIdOverride = "", onClose }: SimulatorPageProps = {}) {
+  const { language: uiLanguage } = useI18n();
+  const copy = SIMULATOR_CATALOGS[uiLanguage];
   const params = useParams<{ botId: string; versionId: string }>();
   const pathname = usePathname();
   const router = useRouter();
@@ -3419,7 +3424,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         if (ignore) {
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "봇 정보를 불러오지 못했습니다.");
+        setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
       } finally {
         if (!ignore) {
           setLoading(false);
@@ -3432,7 +3437,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     return () => {
       ignore = true;
     };
-  }, [authSession, botId, pathname, versionId]);
+  }, [authSession, botId, copy.loadFailed, pathname, versionId]);
 
   useEffect(() => {
     const sessionId = simulatorSessionIdRef.current;
@@ -3463,6 +3468,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
   );
   const apiAssets = useMemo(() => normalizeApiAssets(versionDocument.apis), [versionDocument.apis]);
   const versionSettings = useMemo(() => getBotVersionSettings(bot ?? {}), [bot]);
+  const runtimeLanguage = normalizeSupportedLanguage(bot?.data_json?.language);
+  const runtimeCopy = SIMULATOR_CATALOGS[runtimeLanguage];
   const nluModel = useMemo(
     () =>
       trainIntentClassifier(versionDocument, bot?.data_json, {
@@ -3770,7 +3777,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       : [
           makeMessage(
             "bot",
-            greetingMessage || `${bot?.name ?? "챗봇"} 대화 시뮬레이터입니다. 저장된 대화 기준으로 테스트할 문장을 입력하세요.`,
+            greetingMessage ||
+              formatSimulatorText(runtimeCopy.defaultGreeting, { bot: bot?.name ?? "챗봇" }),
           ),
         ];
 
@@ -5057,7 +5065,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         }, variables);
         setMessages((current) => [
           ...current,
-          makeMessage("bot", getConfiguredTextMessage(versionSettings.messages.fallback) || "질문을 이해하지 못했습니다. 다시 말씀해주세요."),
+          makeMessage("bot", getConfiguredTextMessage(versionSettings.messages.fallback) || runtimeCopy.intentFallback),
         ]);
         setRuntime(null);
         return true;
@@ -5079,7 +5087,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         }, variables);
         setMessages((current) => [
           ...current,
-          makeMessage("bot", getConfiguredTextMessage(versionSettings.messages.fallback) || "질문을 이해하지 못했습니다. 다시 말씀해주세요."),
+          makeMessage("bot", getConfiguredTextMessage(versionSettings.messages.fallback) || runtimeCopy.intentFallback),
         ]);
         setRuntime(null);
         return true;
@@ -5101,7 +5109,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         }, variables);
         setMessages((current) => [
           ...current,
-          makeMessage("bot", getConfiguredTextMessage(versionSettings.messages.fallback) || "질문을 이해하지 못했습니다. 다시 말씀해주세요."),
+          makeMessage("bot", getConfiguredTextMessage(versionSettings.messages.fallback) || runtimeCopy.intentFallback),
         ]);
         setRuntime(null);
         return true;
@@ -5170,7 +5178,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       });
       setMessages((current) => [
         ...current,
-        makeMessage("bot", guide.enabled ? guide.message : "아래 후보 중 원하는 의도를 선택해주세요.", {
+        makeMessage("bot", guide.enabled ? guide.message : runtimeCopy.multiIntentGuide, {
           analysisId: analysis.id,
           quickReplies: [
             ...candidates.map((item) => item.dialog.displayName || item.dialog.name),
@@ -5203,7 +5211,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         ...current,
         makeMessage(
           "bot",
-          fallbackMessage || "질문을 이해하지 못했습니다. 다른 표현으로 다시 입력해주세요.",
+          fallbackMessage || runtimeCopy.intentFallback,
           { analysisId: analysis.id },
         ),
       ]);
@@ -5227,7 +5235,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       ...current,
       makeMessage(
         "bot",
-        fallbackMessage || "질문을 이해하지 못했습니다. 다른 표현으로 다시 입력해주세요.",
+        fallbackMessage || runtimeCopy.intentFallback,
         { analysisId: analysis.id },
       ),
     ]);
@@ -6325,8 +6333,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       {!embedded ? (
         <div className="studio-topbar studio-topbar--flat">
           <div>
-            <p className="crumb">봇 테스트 사용하기 &gt; 봇과 대화하기</p>
-            <h1>봇 테스트</h1>
+            <p className="crumb">{copy.botTestBreadcrumb}</p>
+            <h1>{copy.botTestTitle}</h1>
           </div>
         </div>
       ) : null}
@@ -6349,7 +6357,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               <button
                 type="button"
                 className="icon-button"
-                aria-label="닫기"
+                aria-label={copy.closeSimulator}
                 onClick={() =>
                   embedded
                     ? onClose?.()
@@ -6364,7 +6372,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
 
             <div ref={scrollRef} className="simulator-window__body simulator-window__body--scroll">
               {loading ? (
-                <div className="simulator-empty">시뮬레이터 정보를 불러오는 중입니다.</div>
+                <div className="simulator-empty">{copy.loading}</div>
               ) : (
                 <div className="chat-stack">
                   {messages.filter(isVisibleSimulatorMessage).map((message) => (
@@ -6681,7 +6689,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 ref={inputRef}
                 className="textarea-control textarea-control--flat"
                 value={inputValue}
-                placeholder="챗봇과 대화를 진행해보세요."
+                placeholder={copy.inputPlaceholder}
                 onChange={(event) => handleInputChange(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
@@ -6691,7 +6699,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 }}
               />
               <button type="submit" className="primary-action" disabled={!inputValue.trim() || loading}>
-                전송
+                {copy.send}
               </button>
             </form>
 
@@ -6704,23 +6712,23 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                   setAnalysisOpen((current) => !current);
                 }}
               >
-                분석 데이터 보기
+                {copy.analysisData}
               </button>
             ) : null}
           </div>
         </div>
 
         {analysisVisible ? (
-        <aside className="simulator-analysis" aria-label="분석 데이터">
+        <aside className="simulator-analysis" aria-label={copy.analysisData}>
           <div className="simulator-analysis__header">
-            <strong>분석 데이터</strong>
-            <span>Runtime / Variables / Trace</span>
+            <strong>{copy.analysisData}</strong>
+            <span>{copy.runtimeTab}</span>
             {embedded ? (
               <button
                 type="button"
                 className="simulator-analysis__close"
                 onClick={() => setAnalysisOpen(false)}
-                aria-label="분석 데이터 닫기"
+                aria-label={copy.closeAnalysis}
               >
                 ×
               </button>
@@ -6764,7 +6772,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               </div>
             </>
           ) : (
-            <div className="simulator-empty">대화를 진행하면 분석 데이터가 표시됩니다.</div>
+            <div className="simulator-empty">{copy.emptyAnalysis}</div>
           )}
         </aside>
         ) : null}
@@ -6817,6 +6825,8 @@ export function SimulatorFloatingLauncher({
   botIdOverride = "",
   versionIdOverride = "",
 }: SimulatorFloatingLauncherProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = SIMULATOR_CATALOGS[uiLanguage];
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -6825,7 +6835,7 @@ export function SimulatorFloatingLauncher({
       <button
         type="button"
         className={`floating-simulator${open ? " is-open" : ""}`}
-        aria-label={open ? "시뮬레이터 닫기" : "시뮬레이터 열기"}
+        aria-label={open ? copy.closeSimulator : copy.openSimulator}
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
@@ -6837,7 +6847,7 @@ export function SimulatorFloatingLauncher({
 
       {open ? (
         <div className="simulator-popup-backdrop" role="presentation">
-          <div className="simulator-popup-shell" role="dialog" aria-modal="true" aria-label="대화 시뮬레이터">
+          <div className="simulator-popup-shell" role="dialog" aria-modal="true" aria-label={copy.dialogLabel}>
             <SimulatorPage
               embedded
               startDialogId={startDialogId}
