@@ -12,14 +12,9 @@ import {
   type AdminDefaultMessagePayload,
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
-
-const CATEGORY_OPTIONS = [
-  { value: "", label: "전체 구분" },
-  { value: "intent", label: "의도" },
-  { value: "input", label: "입력" },
-  { value: "error", label: "오류" },
-  { value: "session", label: "세션" },
-];
+import { useI18n } from "@/components/language-provider";
+import { getLanguageLabel, SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/language";
+import { DEFAULT_MESSAGES_CATALOGS, formatDefaultMessageText } from "@/lib/i18n/default-messages";
 
 function parseCsv(text: string) {
   const rows: string[][] = [];
@@ -78,7 +73,7 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function downloadDefaultMessages(items: AdminDefaultMessageItem[]) {
+function downloadDefaultMessages(items: AdminDefaultMessageItem[], fileName: string) {
   const rows = [
     ["메시지명", "구분", "언어", "적용범위", "사용여부", "메시지", "설명"],
     ...items.map((item) => [
@@ -96,18 +91,29 @@ function downloadDefaultMessages(items: AdminDefaultMessageItem[]) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "기본 메시지 관리.csv";
+  anchor.download = fileName;
   anchor.click();
   URL.revokeObjectURL(url);
 }
 
 export default function AdminDefaultMessagesPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = DEFAULT_MESSAGES_CATALOGS[uiLanguage];
+  const categoryOptions = [
+    { value: "", label: copy.allCategory },
+    ...(["intent", "input", "error", "session", "runtime"] as const).map((value) => ({
+      value,
+      label: copy.categories[value],
+    })),
+  ];
   const [token, setToken] = useState("");
   const [items, setItems] = useState<AdminDefaultMessageItem[]>([]);
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>(uiLanguage);
   const [appliedCategory, setAppliedCategory] = useState("");
   const [appliedStatus, setAppliedStatus] = useState("");
+  const [appliedLanguage, setAppliedLanguage] = useState<SupportedLanguage>(uiLanguage);
   const [editing, setEditing] = useState<AdminDefaultMessageItem | null>(null);
   const [draft, setDraft] = useState<AdminDefaultMessagePayload>({
     message_name: "",
@@ -128,11 +134,11 @@ export default function AdminDefaultMessagesPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setToken(session.access_token);
-  }, []);
+  }, [copy.loginRequired]);
 
   useEffect(() => {
     if (!token) return;
@@ -142,12 +148,13 @@ export default function AdminDefaultMessagesPage() {
     fetchDefaultMessages(token, {
       category: appliedCategory || undefined,
       status: appliedStatus || undefined,
+      language: appliedLanguage,
     })
       .then((response) => {
         if (!ignore) setItems(response.items);
       })
       .catch((error) => {
-        if (!ignore) setErrorMessage(error instanceof Error ? error.message : "기본 메시지를 불러오지 못했습니다.");
+        if (!ignore) setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
       })
       .finally(() => {
         if (!ignore) setLoading(false);
@@ -155,13 +162,14 @@ export default function AdminDefaultMessagesPage() {
     return () => {
       ignore = true;
     };
-  }, [appliedCategory, appliedStatus, token]);
+  }, [appliedCategory, appliedLanguage, appliedStatus, copy.loadFailed, token]);
 
   async function reload() {
     if (!token) return;
     const response = await fetchDefaultMessages(token, {
       category: appliedCategory || undefined,
       status: appliedStatus || undefined,
+      language: appliedLanguage,
     });
     setItems(response.items);
   }
@@ -169,13 +177,16 @@ export default function AdminDefaultMessagesPage() {
   function applySearch() {
     setAppliedCategory(category);
     setAppliedStatus(status);
+    setAppliedLanguage(selectedLanguage);
   }
 
   function resetSearch() {
     setCategory("");
     setStatus("");
+    setSelectedLanguage(uiLanguage);
     setAppliedCategory("");
     setAppliedStatus("");
+    setAppliedLanguage(uiLanguage);
   }
 
   function openEdit(item: AdminDefaultMessageItem) {
@@ -215,11 +226,11 @@ export default function AdminDefaultMessagesPage() {
         message_text: draft.message_text.trim(),
         description: draft.description?.trim() || null,
       });
-      setNoticeMessage("기본 메시지가 저장되었습니다.");
+      setNoticeMessage(copy.saved);
       closeEdit();
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "기본 메시지 저장에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.saveFailed);
     }
   }
 
@@ -227,11 +238,11 @@ export default function AdminDefaultMessagesPage() {
     if (!token || !editing || !editing.default_message_text) return;
     try {
       await restoreDefaultMessage(token, editing.id);
-      setNoticeMessage("기본 메시지가 기본값으로 복원되었습니다.");
+      setNoticeMessage(copy.restored);
       closeEdit();
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "기본 메시지 복원에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.restoreFailed);
     }
   }
 
@@ -275,10 +286,10 @@ export default function AdminDefaultMessagesPage() {
       }
 
       setMenuOpen(false);
-      setNoticeMessage(`${savedCount}건 반영, ${skippedCount}건 제외되었습니다.`);
+      setNoticeMessage(formatDefaultMessageText(copy.uploadResult, { saved: savedCount, skipped: skippedCount }));
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "기본 메시지 업로드에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.uploadFailed);
     }
   }
 
@@ -303,41 +314,49 @@ export default function AdminDefaultMessagesPage() {
       {noticeMessage ? <p className="admin-page__empty">{noticeMessage}</p> : null}
       {errorMessage ? <p className="admin-page__empty">{errorMessage}</p> : null}
       <AdminInteractiveTablePage
-        title="기본 메시지 관리"
-        searchPlaceholder="메시지명 또는 메시지 내용을 검색하세요."
-        totalText={loading ? "불러오는 중" : `전체 ${items.length}건`}
-        columns={["구분", "메시지명", "언어", "적용 범위", "사용여부", "메시지", "최종수정일시", "최종수정자"]}
+        title={copy.title}
+        searchPlaceholder={copy.searchPlaceholder}
+        totalText={loading ? copy.loading : formatDefaultMessageText(copy.totalCount, { count: items.length })}
+        columns={copy.columns}
         rows={loading || errorMessage ? [] : rows}
         template="0.8fr 1.1fr 0.5fr 0.7fr 0.7fr 2.2fr 1.2fr 0.8fr"
         hideDownloadButton
-        onDownload={() => downloadDefaultMessages(items)}
+        onDownload={() => downloadDefaultMessages(items, copy.fileName)}
         loading={loading}
         topRight={
           <div className="admin-history-filters">
             <label className="admin-history-filters__field">
-              <span>구분</span>
+              <span>{copy.category}</span>
               <select value={category} onChange={(event) => setCategory(event.target.value)}>
-                {CATEGORY_OPTIONS.map((option) => (
+                {categoryOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
             </label>
             <label className="admin-history-filters__field">
-              <span>사용여부</span>
+              <span>{copy.status}</span>
               <select value={status} onChange={(event) => setStatus(event.target.value)}>
-                <option value="">전체 사용여부</option>
-                <option value="active">사용</option>
-                <option value="inactive">미사용</option>
+                <option value="">{copy.allStatus}</option>
+                <option value="active">{copy.active}</option>
+                <option value="inactive">{copy.inactive}</option>
               </select>
             </label>
-            <button type="button" className="admin-page__filter admin-page__filter--text" onClick={resetSearch}>초기화</button>
-            <button type="button" className="admin-page__primary" onClick={applySearch}>조회</button>
+            <label className="admin-history-filters__field">
+              <span>{copy.language}</span>
+              <select value={selectedLanguage} onChange={(event) => setSelectedLanguage(event.target.value as SupportedLanguage)}>
+                {SUPPORTED_LANGUAGES.map((option) => (
+                  <option key={option.code} value={option.code}>{getLanguageLabel(option.code)}</option>
+                ))}
+              </select>
+            </label>
+            <button type="button" className="admin-page__filter admin-page__filter--text" onClick={resetSearch}>{copy.reset}</button>
+            <button type="button" className="admin-page__primary" onClick={applySearch}>{copy.search}</button>
             <div className="admin-common-variables__more">
               <button
                 type="button"
                 className="admin-common-variables__more-button"
                 onClick={() => setMenuOpen((current) => !current)}
-                aria-label="기본 메시지 더보기"
+                aria-label={copy.more}
               >
                 <span className="admin-common-variables__more-dots" aria-hidden="true">
                   <span />
@@ -354,16 +373,16 @@ export default function AdminDefaultMessagesPage() {
                       fileInputRef.current?.click();
                     }}
                   >
-                    파일 업로드
+                    {copy.upload}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       setMenuOpen(false);
-                      downloadDefaultMessages(items);
+                      downloadDefaultMessages(items, copy.fileName);
                     }}
                   >
-                    파일 다운로드
+                    {copy.download}
                   </button>
                 </div>
               ) : null}
@@ -384,51 +403,51 @@ export default function AdminDefaultMessagesPage() {
 
       {editing ? (
         <div className="admin-modal-backdrop" role="presentation">
-          <div className="admin-modal" role="dialog" aria-modal="true" aria-label="기본 메시지 수정">
+          <div className="admin-modal" role="dialog" aria-modal="true" aria-label={copy.editTitle}>
             <div className="admin-modal__header">
-              <h3>기본 메시지 수정</h3>
+              <h3>{copy.editTitle}</h3>
               <button type="button" className="icon-button" onClick={closeEdit}>×</button>
             </div>
             <label>
-              메시지명
+              {copy.messageName}
               <input value={draft.message_name} disabled readOnly />
             </label>
             <label>
-              구분
+              {copy.category}
               <select value={draft.category} disabled>
-                {CATEGORY_OPTIONS.filter((option) => option.value).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                {categoryOptions.filter((option) => option.value).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </label>
             <label>
-              언어
+              {copy.language}
               <input value={draft.language} disabled readOnly />
             </label>
             <label>
-              적용 범위
+              {copy.scope}
               <select value={draft.scope} disabled>
-                <option value="global">전체</option>
-                <option value="group">그룹</option>
+                <option value="global">{copy.global}</option>
+                <option value="group">{copy.group}</option>
               </select>
             </label>
             <label>
-              사용 여부
+              {copy.status}
               <select value={draft.status} disabled>
-                <option value="active">사용</option>
-                <option value="inactive">미사용</option>
+                <option value="active">{copy.active}</option>
+                <option value="inactive">{copy.inactive}</option>
               </select>
             </label>
             <label className="admin-modal__wide">
-              메시지
+              {copy.message}
               <textarea value={draft.message_text} onChange={(event) => setDraft((current) => ({ ...current, message_text: event.target.value }))} rows={5} />
             </label>
             <label className="admin-modal__wide">
-              설명
+              {copy.description}
               <textarea value={draft.description ?? ""} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} rows={3} />
             </label>
             <div className="admin-modal__actions">
-              <button type="button" className="ghost-pill" onClick={restoreDraft} disabled={!editing.is_modified}>기본값 복원</button>
-              <button type="button" className="ghost-pill" onClick={closeEdit}>취소</button>
-              <button type="button" className="primary-pill" onClick={saveDraft}>저장</button>
+              <button type="button" className="ghost-pill" onClick={restoreDraft} disabled={!editing.is_modified}>{copy.restore}</button>
+              <button type="button" className="ghost-pill" onClick={closeEdit}>{copy.cancel}</button>
+              <button type="button" className="primary-pill" onClick={saveDraft}>{copy.save}</button>
             </div>
           </div>
         </div>

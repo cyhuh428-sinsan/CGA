@@ -63,3 +63,9 @@ def test_default_message_ensure_is_seven_language_and_does_not_overwrite_user_va
     assert '"message_text"' not in conflict_update
     assert '"status"' not in conflict_update
     assert '"scope"' not in conflict_update
+
+
+def test_admin_default_messages_accepts_language_filter() -> None:
+    source = (ROOT_DIR / "apps/api/app/api/routes/admin.py").read_text(encoding="utf-8")
+    assert "language: str | None = Query(default=None)" in source
+    assert "AdminDefaultMessage.language == normalized_language" in source

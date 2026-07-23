@@ -281,3 +281,12 @@ def test_primary_admin_history_routes_use_seven_language_page_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AdminPageCatalog>" in catalog_source
+
+
+def test_default_message_admin_screen_uses_language_filter_and_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/default-messages/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/default-messages.ts").read_text(encoding="utf-8")
+    assert "SUPPORTED_LANGUAGES" in page_source
+    assert "language: appliedLanguage" in page_source
+    assert "DEFAULT_MESSAGES_CATALOGS[uiLanguage]" in page_source
+    assert "satisfies Record<SupportedLanguage, DefaultMessagesCatalog>" in catalog_source
