@@ -14,7 +14,9 @@ import {
   saveRecentOperationBot,
   type RecentOperationBot,
 } from "@/components/bot-operation-shared";
+import { useI18n } from "@/components/language-provider";
 import { loadAuthSession, saveLastBotScreen, type AuthSession } from "@/lib/auth";
+import { BOT_WORKSPACE_CATALOGS } from "@/lib/i18n/bot-workspace";
 import {
   fetchStudioBots,
   fetchStudioWorkspaceContext,
@@ -101,6 +103,8 @@ function formatWorkspaceScore(value: number) {
 
 export function BotOperationsWorkspacePage() {
   const router = useRouter();
+  const { language } = useI18n();
+  const copy = BOT_WORKSPACE_CATALOGS[language];
   const [session, setSession] = useState<AuthSession | null>(null);
   const [bots, setBots] = useState<StudioBotApiItem[]>([]);
   const [selectedBotId, setSelectedBotId] = useState("");
@@ -130,7 +134,7 @@ export function BotOperationsWorkspacePage() {
         setBots(operationBots);
         setSelectedBotId(resolveInitialOperationBotId(currentSession, operationBots));
       })
-      .catch((error) => setMessage(error instanceof Error ? error.message : "봇 목록을 불러오지 못했습니다."))
+      .catch((error) => setMessage(error instanceof Error ? error.message : copy.loadBotsError))
       .finally(() => setLoading(false));
   }, [router]);
 
@@ -159,7 +163,7 @@ export function BotOperationsWorkspacePage() {
           session.user.login_id,
         );
       })
-      .catch((error) => setMessage(error instanceof Error ? error.message : "작업공간 정보를 불러오지 못했습니다."))
+      .catch((error) => setMessage(error instanceof Error ? error.message : copy.loadWorkspaceError))
       .finally(() => setLoading(false));
   }, [selectedBot, session]);
 
@@ -170,11 +174,11 @@ export function BotOperationsWorkspacePage() {
       const dialogType = readText(record, ["dialog_type", "type"]);
       return {
         id: readText(record, ["id", "dialog_id", "intent_id"]) || String(index + 1),
-        type: dialogType === "2" || dialogType.toLowerCase() === "module" ? "모듈" : "의도",
+        type: dialogType === "2" || dialogType.toLowerCase() === "module" ? copy.module : copy.intent,
         name: readText(record, ["display_name", "displayName", "name", "intent_name", "id"]),
       };
     });
-  }, [selectedVersion]);
+  }, [copy.intent, copy.module, selectedVersion]);
   const evaluationRows = useMemo(
     () => readWorkspaceEvaluationRows(selectedVersion),
     [selectedVersion],
@@ -207,7 +211,7 @@ export function BotOperationsWorkspacePage() {
   function saveWorkspace() {
     if (!selectedBot) return;
     setRecentBots(saveRecentOperationBot(selectedBot, versionName));
-    setMessage("현재 작업 봇을 저장했습니다.");
+    setMessage(copy.workspaceSaved);
   }
 
   const itemColumns = { "--operation-cols": ".8fr .8fr 1.6fr" } as CSSProperties;
@@ -218,107 +222,107 @@ export function BotOperationsWorkspacePage() {
       <header className="cga-operation-header">
         <div className="cga-operation-heading">
           <span className="cga-operation-code">BOT</span>
-          <div><strong>봇 작업공간</strong><span>이미 생성된 봇과 버전을 선택해 작업을 이어가는 공간입니다.</span></div>
+          <div><strong>{copy.title}</strong><span>{copy.description}</span></div>
         </div>
-        <button type="button" className="cga-operation-primary-action" onClick={saveWorkspace} disabled={!selectedBot}>저장</button>
+        <button type="button" className="cga-operation-primary-action" onClick={saveWorkspace} disabled={!selectedBot}>{copy.save}</button>
       </header>
 
       <div className="cga-operation-summary cga-operation-summary--workspace">
         <article>
-          <strong>그룹 선택</strong>
+          <strong>{copy.groupSelection}</strong>
           <select value={session?.user.group_id || ""} disabled>
-            <option value={session?.user.group_id || ""}>{session?.user.group_name || session?.user.group_code || "기본 그룹"}</option>
+            <option value={session?.user.group_id || ""}>{session?.user.group_name || session?.user.group_code || copy.defaultGroup}</option>
           </select>
         </article>
-        <article><strong>그룹 내 접근 봇</strong><span>{bots.length}개</span></article>
-        <article><strong>현재 작업 봇</strong><span>{selectedBot ? `${selectedBot.name} (${selectedBot.id})` : "없음"}</span></article>
-        <article><strong>최근 작업</strong><span>{recentBots.length}개</span></article>
+        <article><strong>{copy.accessibleBots}</strong><span>{bots.length}{copy.countUnit}</span></article>
+        <article><strong>{copy.currentWorkBot}</strong><span>{selectedBot ? `${selectedBot.name} (${selectedBot.id})` : copy.none}</span></article>
+        <article><strong>{copy.recentWork}</strong><span>{recentBots.length}{copy.countUnit}</span></article>
       </div>
 
       <div className="cga-workspace-grid">
         <aside className="cga-operation-panel cga-workspace-current-panel">
-          <header><div><strong>현재 작업 대상</strong><span>선택된 봇 기준으로 작업합니다.</span></div></header>
+          <header><div><strong>{copy.currentTarget}</strong><span>{copy.currentTargetDescription}</span></div></header>
           <label className="cga-workspace-bot-select">
-            <span>봇 선택</span>
+            <span>{copy.selectBot}</span>
             <select value={selectedBotId} onChange={(event) => selectBot(event.target.value)}>
               {bots.map((bot) => <option key={bot.id} value={bot.id}>{bot.name}</option>)}
             </select>
           </label>
           <dl className="cga-operation-definition">
-            <div><dt>그룹</dt><dd>{operationBotGroupName(session, selectedBot)}</dd></div>
-            <div><dt>봇</dt><dd>{selectedBot?.name || "-"}</dd></div>
-            <div><dt>버전</dt><dd>{selectedVersion ? versionName : "-"}</dd></div>
-            <div><dt>상태</dt><dd>{selectedBot?.status || "-"}</dd></div>
-            <div><dt>언어</dt><dd>{operationBotLocale(selectedBot)}</dd></div>
-            <div><dt>마지막 작업</dt><dd>{formatOperationDate(selectedBot?.updated_at)}</dd></div>
+            <div><dt>{copy.group}</dt><dd>{operationBotGroupName(session, selectedBot)}</dd></div>
+            <div><dt>{copy.bot}</dt><dd>{selectedBot?.name || "-"}</dd></div>
+            <div><dt>{copy.version}</dt><dd>{selectedVersion ? versionName : "-"}</dd></div>
+            <div><dt>{copy.status}</dt><dd>{selectedBot?.status || "-"}</dd></div>
+            <div><dt>{copy.language}</dt><dd>{operationBotLocale(selectedBot)}</dd></div>
+            <div><dt>{copy.lastWork}</dt><dd>{formatOperationDate(selectedBot?.updated_at)}</dd></div>
           </dl>
           <div className="cga-operation-action-stack cga-operation-action-stack--plain">
-            <button type="button" onClick={() => openCurrent("settings")} disabled={!selectedVersion}>봇 설정 열기</button>
-            <button type="button" onClick={() => openCurrent("configure")} disabled={!selectedVersion}>봇 구성 열기</button>
-            <button type="button" onClick={() => openCurrent("management")} disabled={!selectedVersion}>봇 관리 열기</button>
-            <button type="button" onClick={() => openCurrent("build")} disabled={!selectedVersion}>봇 제작 열기</button>
+            <button type="button" onClick={() => openCurrent("settings")} disabled={!selectedVersion}>{copy.openSettings}</button>
+            <button type="button" onClick={() => openCurrent("configure")} disabled={!selectedVersion}>{copy.openConfiguration}</button>
+            <button type="button" onClick={() => openCurrent("management")} disabled={!selectedVersion}>{copy.openManagement}</button>
+            <button type="button" onClick={() => openCurrent("build")} disabled={!selectedVersion}>{copy.openBuild}</button>
           </div>
           <div className="cga-workspace-recent">
-            <strong>최근 작업 봇</strong>
+            <strong>{copy.recentBots}</strong>
             <div className="cga-operation-table" style={recentColumns}>
-              <div className="cga-operation-row cga-operation-row--head"><span>봇</span><span>ID</span><span>버전</span><span>상태</span><span>작업시각</span></div>
+              <div className="cga-operation-row cga-operation-row--head"><span>{copy.bot}</span><span>ID</span><span>{copy.version}</span><span>{copy.status}</span><span>{copy.workTime}</span></div>
               {recentBots.map((item) => (
                 <button key={item.botId} type="button" className="cga-operation-row cga-operation-row--button" onClick={() => selectBot(item.botId)}>
-                  <span>{item.name}</span><span>{item.botId}</span><span>{item.version}</span><span>{item.botId === selectedBotId ? "현재봇" : item.status}</span><span>{new Date(item.touchedAt).toLocaleString()}</span>
+                  <span>{item.name}</span><span>{item.botId}</span><span>{item.version}</span><span>{item.botId === selectedBotId ? copy.currentBot : item.status}</span><span>{new Date(item.touchedAt).toLocaleString(language)}</span>
                 </button>
               ))}
-              {recentBots.length === 0 ? <div className="cga-operation-empty">최근 작업 목록 없음</div> : null}
+              {recentBots.length === 0 ? <div className="cga-operation-empty">{copy.noRecentBots}</div> : null}
             </div>
           </div>
         </aside>
 
         <article className="cga-operation-panel cga-workspace-items-panel">
-          <header><div><strong>작업 항목</strong><span>현재 봇의 의도와 모듈을 확인합니다.</span></div></header>
+          <header><div><strong>{copy.workItems}</strong><span>{copy.workItemsDescription}</span></div></header>
           <div className="cga-operation-table" style={itemColumns}>
-            <div className="cga-operation-row cga-operation-row--head"><span>ID</span><span>구분</span><span>의도/모듈명</span></div>
+            <div className="cga-operation-row cga-operation-row--head"><span>ID</span><span>{copy.category}</span><span>{copy.intentModuleName}</span></div>
             {workRows.map((item, index) => (
               <div key={`${item.id}-${index}`} className="cga-operation-row"><span>{item.id}</span><span>{item.type}</span><strong>{item.name}</strong></div>
             ))}
-            {!loading && workRows.length === 0 ? <div className="cga-operation-empty">등록된 작업 항목이 없습니다.</div> : null}
+            {!loading && workRows.length === 0 ? <div className="cga-operation-empty">{copy.noWorkItems}</div> : null}
           </div>
         </article>
 
-        <aside className="cga-workspace-diagnostics" aria-label="평가 진단">
+        <aside className="cga-workspace-diagnostics" aria-label={copy.evaluationDiagnostics}>
           <article className="cga-operation-panel cga-workspace-diagnostic-panel">
-            <header><div><strong>오분류 문장</strong></div></header>
+            <header><div><strong>{copy.misclassified}</strong></div></header>
             <div className="cga-workspace-diagnostic-table cga-workspace-diagnostic-table--errors">
-              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>문장</span><span>정답 의도</span><span>예측 의도 / Score</span></div>
+              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>{copy.utterance}</span><span>{copy.expectedIntent}</span><span>{copy.predictedIntentScore}</span></div>
               <div className="cga-workspace-diagnostic-body">
                 {misclassifiedRows.map((row) => (
                   <div key={row.id} className="cga-workspace-diagnostic-row"><span>{row.utterance}</span><span>{row.expectedName}</span><span className="is-failure">{row.predictedName} / {formatWorkspaceScore(row.score)}</span></div>
                 ))}
-                {misclassifiedRows.length === 0 ? <div className="cga-workspace-diagnostic-empty">오분류 문장이 없습니다.</div> : null}
+                {misclassifiedRows.length === 0 ? <div className="cga-workspace-diagnostic-empty">{copy.noMisclassified}</div> : null}
               </div>
             </div>
           </article>
 
           <article className="cga-operation-panel cga-workspace-diagnostic-panel">
-            <header><div><strong>낮은 Score 문장</strong></div></header>
+            <header><div><strong>{copy.lowScore}</strong></div></header>
             <div className="cga-workspace-diagnostic-table cga-workspace-diagnostic-table--low-score">
-              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>문장</span><span>의도</span><span>Score</span></div>
+              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>{copy.utterance}</span><span>{copy.intent}</span><span>{copy.score}</span></div>
               <div className="cga-workspace-diagnostic-body">
                 {lowScoreRows.map((row) => (
                   <div key={row.id} className="cga-workspace-diagnostic-row"><span>{row.utterance}</span><span>{row.expectedName}</span><span>{formatWorkspaceScore(row.score)}</span></div>
                 ))}
-                {lowScoreRows.length === 0 ? <div className="cga-workspace-diagnostic-empty">낮은 Score 문장이 없습니다.</div> : null}
+                {lowScoreRows.length === 0 ? <div className="cga-workspace-diagnostic-empty">{copy.noLowScore}</div> : null}
               </div>
             </div>
           </article>
 
           <article className="cga-operation-panel cga-workspace-diagnostic-panel">
-            <header><div><strong>유사 의도 충돌</strong></div></header>
+            <header><div><strong>{copy.similarIntentCollisions}</strong></div></header>
             <div className="cga-workspace-diagnostic-table cga-workspace-diagnostic-table--collisions">
-              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>정답 의도</span><span>예측 의도</span><span>건수</span></div>
+              <div className="cga-workspace-diagnostic-row cga-workspace-diagnostic-row--head"><span>{copy.expectedIntent}</span><span>{copy.predictedIntent}</span><span>{copy.cases}</span></div>
               <div className="cga-workspace-diagnostic-body">
                 {collisions.map((item) => (
-                  <div key={`${item.expectedName}-${item.predictedName}`} className="cga-workspace-diagnostic-row"><span>{item.expectedName}</span><span>{item.predictedName}</span><span>{item.count}건</span></div>
+                  <div key={`${item.expectedName}-${item.predictedName}`} className="cga-workspace-diagnostic-row"><span>{item.expectedName}</span><span>{item.predictedName}</span><span>{item.count}{copy.countUnit}</span></div>
                 ))}
-                {collisions.length === 0 ? <div className="cga-workspace-diagnostic-empty">충돌 없음</div> : null}
+                {collisions.length === 0 ? <div className="cga-workspace-diagnostic-empty">{copy.noCollisions}</div> : null}
               </div>
             </div>
           </article>
