@@ -200,6 +200,9 @@ export function SmalltalkSettingsPage() {
 
         const editorUserMessages = compactTextList(editor.userMessages, editor.utterance);
         const editorBotMessages = compactTextList(editor.botMessages, editor.response);
+        const editorDialogTitle = form.items.some((item) => item.id === editor.id)
+          ? "스몰토크 수정"
+          : "스몰토크 추가";
 
         useEffect(() => {
           setPage(1);
@@ -609,7 +612,7 @@ export function SmalltalkSettingsPage() {
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="settings-dialog__header">
-                      <strong>{getStudioPageLabel(copy, form.items.some((item) => item.id === editor.id) ? "스몰토크 수정" : "스몰토크 추가")}</strong>
+                      <strong>{getStudioPageLabel(copy, editorDialogTitle)}</strong>
                       <button type="button" className="settings-dialog__close" onClick={() => setEditorOpen(false)} aria-label={getStudioPageLabel(copy,"닫기")}>
                         ×
                       </button>

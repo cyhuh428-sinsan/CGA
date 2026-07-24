@@ -1,5 +1,6 @@
 import type { SupportedLanguage } from "@/lib/language";
 import { STUDIO_PAGE_EN_ADDITIONAL } from "@/lib/i18n/studio-pages-extra";
+import { STUDIO_PAGE_NATIVE_ADDITIONAL } from "@/lib/i18n/studio-pages-native-extra";
 
 export type StudioPageCatalog = { labels: Record<string, string> };
 
@@ -51,11 +52,11 @@ const locale = (labels: Record<string, string>): StudioPageCatalog => ({ labels:
 export const STUDIO_PAGE_CATALOGS = {
   ko: ko,
   en: en,
-  "zh-CN": locale({ "기본 설정":"基本设置","설정":"设置","저장":"保存","삭제":"删除","취소":"取消","확인":"确认","봇 허브":"机器人中心","봇 허브 구성":"机器人中心配置","봇 허브 설정":"机器人中心设置","봇 허브 재학습":"机器人中心再训练","룰 설정":"规则设置","스몰토크":"闲聊","플로팅 버튼":"浮动按钮","추천 의도":"推荐意图","채널":"渠道" }),
-  ja: locale({ "기본 설정":"基本設定","설정":"設定","저장":"保存","삭제":"削除","취소":"キャンセル","확인":"確認","봇 허브":"ボットハブ","봇 허브 구성":"ボットハブ構成","봇 허브 설정":"ボットハブ設定","봇 허브 재학습":"ボットハブ再学習","룰 설정":"ルール設定","스몰토크":"スモールトーク","플로팅 버튼":"フローティングボタン","추천 의도":"おすすめインテント","채널":"チャネル" }),
-  vi: locale({ "기본 설정":"Cài đặt cơ bản","설정":"Cài đặt","저장":"Lưu","삭제":"Xóa","취소":"Hủy","확인":"Xác nhận","봇 허브":"Trung tâm bot","봇 허브 구성":"Cấu hình trung tâm bot","봇 허브 설정":"Cài đặt trung tâm bot","봇 허브 재학습":"Huấn luyện lại trung tâm bot","룰 설정":"Cài đặt quy tắc","스몰토크":"Trò chuyện nhỏ","플로팅 버튼":"Nút nổi","추천 의도":"Ý định đề xuất","채널":"Kênh" }),
-  fr: locale({ "기본 설정":"Paramètres de base","설정":"Paramètres","저장":"Enregistrer","삭제":"Supprimer","취소":"Annuler","확인":"Confirmer","봇 허브":"Hub de bots","봇 허브 구성":"Composition du hub","봇 허브 설정":"Paramètres du hub","봇 허브 재학습":"Réentraînement du hub","룰 설정":"Paramètres des règles","스몰토크":"Petite conversation","플로팅 버튼":"Boutons flottants","추천 의도":"Intentions recommandées","채널":"Canal" }),
-  de: locale({ "기본 설정":"Grundeinstellungen","설정":"Einstellungen","저장":"Speichern","삭제":"Löschen","취소":"Abbrechen","확인":"Bestätigen","봇 허브":"Bot-Hub","봇 허브 구성":"Bot-Hub-Zusammenstellung","봇 허브 설정":"Bot-Hub-Einstellungen","봇 허브 재학습":"Bot-Hub-Nachtraining","룰 설정":"Regeleinstellungen","스몰토크":"Smalltalk","플로팅 버튼":"Schwebende Schaltflächen","추천 의도":"Empfohlene Intents","채널":"Kanal" }),
+  "zh-CN": locale({ ...STUDIO_PAGE_NATIVE_ADDITIONAL["zh-CN"], "기본 설정":"基本设置","설정":"设置","저장":"保存","삭제":"删除","취소":"取消","확인":"确认","봇 허브":"机器人中心","봇 허브 구성":"机器人中心配置","봇 허브 설정":"机器人中心设置","봇 허브 재학습":"机器人中心再训练","룰 설정":"规则设置","스몰토크":"闲聊","플로팅 버튼":"浮动按钮","추천 의도":"推荐意图","채널":"渠道" }),
+  ja: locale({ ...STUDIO_PAGE_NATIVE_ADDITIONAL["ja"], "기본 설정":"基本設定","설정":"設定","저장":"保存","삭제":"削除","취소":"キャンセル","확인":"確認","봇 허브":"ボットハブ","봇 허브 구성":"ボットハブ構成","봇 허브 설정":"ボットハブ設定","봇 허브 재학습":"ボットハブ再学習","룰 설정":"ルール設定","스몰토크":"スモールトーク","플로팅 버튼":"フローティングボタン","추천 의도":"おすすめインテント","채널":"チャネル" }),
+  vi: locale({ ...STUDIO_PAGE_NATIVE_ADDITIONAL["vi"], "기본 설정":"Cài đặt cơ bản","설정":"Cài đặt","저장":"Lưu","삭제":"Xóa","취소":"Hủy","확인":"Xác nhận","봇 허브":"Trung tâm bot","봇 허브 구성":"Cấu hình trung tâm bot","봇 허브 설정":"Cài đặt trung tâm bot","봇 허브 재학습":"Huấn luyện lại trung tâm bot","룰 설정":"Cài đặt quy tắc","스몰토크":"Trò chuyện nhỏ","플로팅 버튼":"Nút nổi","추천 의도":"Ý định đề xuất","채널":"Kênh" }),
+  fr: locale({ ...STUDIO_PAGE_NATIVE_ADDITIONAL["fr"], "기본 설정":"Paramètres de base","설정":"Paramètres","저장":"Enregistrer","삭제":"Supprimer","취소":"Annuler","확인":"Confirmer","봇 허브":"Hub de bots","봇 허브 구성":"Composition du hub","봇 허브 설정":"Paramètres du hub","봇 허브 재학습":"Réentraînement du hub","룰 설정":"Paramètres des règles","스몰토크":"Petite conversation","플로팅 버튼":"Boutons flottants","추천 의도":"Intentions recommandées","채널":"Canal" }),
+  de: locale({ ...STUDIO_PAGE_NATIVE_ADDITIONAL["de"], "기본 설정":"Grundeinstellungen","설정":"Einstellungen","저장":"Speichern","삭제":"Löschen","취소":"Abbrechen","확인":"Bestätigen","봇 허브":"Bot-Hub","봇 허브 구성":"Bot-Hub-Zusammenstellung","봇 허브 설정":"Bot-Hub-Einstellungen","봇 허브 재학습":"Bot-Hub-Nachtraining","룰 설정":"Regeleinstellungen","스몰토크":"Smalltalk","플로팅 버튼":"Schwebende Schaltflächen","추천 의도":"Empfohlene Intents","채널":"Kanal" }),
 } satisfies Record<SupportedLanguage, StudioPageCatalog>;
 
 export function getStudioPageLabel(copy: StudioPageCatalog, value: string): string {
