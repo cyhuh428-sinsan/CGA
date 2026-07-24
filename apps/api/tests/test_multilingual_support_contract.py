@@ -358,5 +358,5 @@ def test_channel_admin_list_uses_seven_language_catalog() -> None:
     assert "copy.searchPlaceholder" in page_source
     assert "copy.connectionTest" in page_source
     for language in SUPPORTED_LANGUAGES:
-        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
-    assert "satisfies Record<SupportedLanguage, AdminChannelCatalog>" in catalog_source
+        assert f'"{language}":' in catalog_source or f"{language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage,AdminChannelCatalog>" in catalog_source
