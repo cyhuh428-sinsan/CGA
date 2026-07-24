@@ -652,6 +652,8 @@ export function ApiEditorDialog({
 
 export function ApiStoreListPage() {
   const workspace = useStudioWorkspace();
+  const { language: uiLanguage } = useI18n();
+  const common = API_MANAGEMENT_CATALOGS[uiLanguage];
   const params = useParams<{ botId: string; versionId: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -839,7 +841,7 @@ export function ApiStoreListPage() {
       <input
         key="check"
         type="checkbox"
-        aria-label={`${api.name} 선택`}
+        aria-label={`${api.name} ${common.selectItem}`}
         checked={selectedIds.includes(api.id)}
         onChange={() =>
           setSelectedIds((current) => (current.includes(api.id) ? current.filter((id) => id !== api.id) : [...current, api.id]))
@@ -874,22 +876,22 @@ export function ApiStoreListPage() {
       <div className="studio-table-page__search-row">
         <label className="studio-table-page__search">
           <span aria-hidden="true">⌕</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="API 이름 또는 목적지 Base URL을 검색하세요." />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={common.search} />
         </label>
-        <button type="button" className="studio-table-page__filter" aria-label="필터">
+        <button type="button" className="studio-table-page__filter" aria-label={common.filter}>
           ▾
         </button>
         <div className="studio-table-page__search-actions">
           {canWriteApi ? (
             <button type="button" className="studio-table-page__primary" onClick={() => setEditingApi(createEmptyApiAsset())}>
-              + API 등록
+              + {common.create}
             </button>
           ) : null}
           <button
             type="button"
             className="studio-table-page__ghost studio-table-page__more"
             onClick={() => setActionMenuOpen((current) => !current)}
-            aria-label="더보기"
+            aria-label={common.more}
           >
             ⋮
           </button>
@@ -904,7 +906,7 @@ export function ApiStoreListPage() {
                     fileInputRef.current?.click();
                   }}
                 >
-                  업로드
+                  {common.upload}
                 </button>
               ) : null}
               <button
@@ -916,7 +918,7 @@ export function ApiStoreListPage() {
                   handleDownloadApis(false);
                 }}
               >
-                전체 다운로드
+                {common.downloadAll}
               </button>
               <button
                 type="button"
@@ -927,7 +929,7 @@ export function ApiStoreListPage() {
                   handleDownloadApis(true);
                 }}
               >
-                선택 다운로드
+                {common.downloadSelected}
               </button>
             </div>
           ) : null}
@@ -936,11 +938,11 @@ export function ApiStoreListPage() {
 
       <div className="studio-table-page__toolbar">
         <div className="studio-table-page__toolbar-left">
-          <strong>전체 {filteredApis.length}</strong>
+          <strong>{common.total} {filteredApis.length}</strong>
           <button type="button" className="studio-table-page__page-size">
-            10개씩 보기
+            10 {common.perPage}
           </button>
-          {selectedIds.length > 0 ? <span className="studio-table-page__selection">{selectedIds.length}개 선택</span> : null}
+          {selectedIds.length > 0 ? <span className="studio-table-page__selection">{selectedIds.length} {common.selectItem}</span> : null}
         </div>
         {canWriteApi ? (
           <div className="studio-table-page__toolbar-right">
@@ -950,7 +952,7 @@ export function ApiStoreListPage() {
               disabled={selectedIds.length === 0 || saving}
               onClick={() => persistApis(apis.filter((api) => !selectedIds.includes(api.id)), "선택한 API가 삭제되었습니다.")}
             >
-              삭제
+              {common.delete}
             </button>
           </div>
         ) : null}
@@ -967,17 +969,17 @@ export function ApiStoreListPage() {
             <input
               key="check"
               type="checkbox"
-              aria-label="전체 선택"
+              aria-label={common.selectAll}
               checked={allFilteredSelected}
               onChange={(event) => setSelectedIds(event.target.checked ? filteredApis.map((api) => api.id) : [])}
             />,
-            "구분",
-            <SortHeaderLabel key="api" label="API 이름" />,
-            "목적지 Base URL",
-            "메서드 수",
-            "사용중인 의도",
-            <SortHeaderLabel key="updated" label="최종수정일시" />,
-            "최종수정자",
+            common.category,
+            <SortHeaderLabel key="api" label={common.apiName} />,
+            common.baseUrl,
+            common.methodCount,
+            common.usedIntents,
+            <SortHeaderLabel key="updated" label={common.updatedAt} />,
+            common.updatedBy,
           ]}
           rows={rows}
         />

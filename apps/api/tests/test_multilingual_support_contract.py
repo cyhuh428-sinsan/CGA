@@ -815,7 +815,7 @@ def test_api_store_list_body_uses_seven_language_catalog() -> None:
     assert "aria-label={common.filter}" in page_source
     assert "{common.create}" in page_source
     assert "{common.downloadAll}" in page_source
-    assert "{common.category}" in page_source
-    assert "{common.updatedBy}" in page_source
+    assert "common.category" in page_source
+    assert "common.updatedBy" in page_source
     assert 'placeholder="API 이름 또는 목적지 Base URL을 검색하세요."' not in page_source
     assert 'label="API 이름"' not in page_source
