@@ -1,10 +1,14 @@
 "use client";
 
+import { useI18n } from "@/components/language-provider";
 import { ManualMainHeaderActions, ManualMainVersionSelect } from "@/components/manual-main-version-select";
 import { NluTrainingButton } from "@/components/nlu-training-button";
 import { SummaryStatGrid, type SummaryStatItem } from "@/components/summary-stat-grid";
 import { ANSWER_MODE_OPTIONS, normalizeAnswerMode } from "@/lib/answer-options";
 import { formatKoreanDateTime } from "@/lib/date-time";
+import { translateAiOptionText } from "@/lib/i18n/ai-options";
+import { TRAINING_CATALOGS, type TrainingCatalog } from "@/lib/i18n/training";
+import type { SupportedLanguage } from "@/lib/language";
 import { getNluModelLabel, getNluTypeLabel } from "@/lib/nlu-options";
 import type { StudioBotApiItem, StudioBotVersionApiItem } from "@/lib/studio-bots-api";
 import { normalizeVersionDocument } from "@/lib/version-document";
@@ -25,14 +29,14 @@ type BotWorkspaceHeaderProps = {
   onTrained: () => void;
 };
 
-function botTypeLabel(bot?: StudioBotApiItem | null) {
+function botTypeLabel(copy: TrainingCatalog, bot?: StudioBotApiItem | null) {
   if (bot?.data_json?.bot_kind === "hub") {
-    return "봇 허브";
+    return copy.botHub;
   }
   if (bot?.data_json?.bot_mode === "voice") {
-    return "보이스형";
+    return copy.voiceType;
   }
-  return "텍스트형";
+  return copy.textType;
 }
 
 function getVersionAiConfig(version?: StudioBotVersionApiItem | null, bot?: StudioBotApiItem | null) {
@@ -57,15 +61,20 @@ function getAnswerModeLabel(value: string | null | undefined) {
   return ANSWER_MODE_OPTIONS.find((option) => option.value === normalized)?.label ?? "정해진 답변";
 }
 
-function getEngineSummary(version: StudioBotVersionApiItem, bot: StudioBotApiItem) {
+function getEngineSummary(
+  version: StudioBotVersionApiItem,
+  bot: StudioBotApiItem,
+  uiLanguage: SupportedLanguage,
+  copy: TrainingCatalog,
+) {
   const aiConfig = getVersionAiConfig(version, bot);
   const nluType = typeof aiConfig.nlu_type === "string" ? aiConfig.nlu_type : undefined;
   const nluModel = typeof aiConfig.nlu_model === "string" ? aiConfig.nlu_model : undefined;
   const answerMode = typeof aiConfig.answer_mode === "string" ? aiConfig.answer_mode : undefined;
-  return `${getNluTypeLabel(nluType)} · ${getNluModelLabel(nluType, nluModel)} / 답변: ${getAnswerModeLabel(answerMode)}`;
+  return `${translateAiOptionText(uiLanguage, getNluTypeLabel(nluType))} · ${translateAiOptionText(uiLanguage, getNluModelLabel(nluType, nluModel))} / ${copy.answer}: ${translateAiOptionText(uiLanguage, getAnswerModeLabel(answerMode))}`;
 }
 
-function getTrainingStatusText(version: StudioBotVersionApiItem) {
+function getTrainingStatusText(version: StudioBotVersionApiItem, copy: TrainingCatalog) {
   const training = version.nlu_training ?? {};
   const trainedAt = formatKoreanDateTime(training.trained_at);
   const trainedBy =
@@ -76,10 +85,10 @@ function getTrainingStatusText(version: StudioBotVersionApiItem) {
         : "";
 
   if (version.is_trained || training.status === "success" || trainedAt) {
-    return ["학습성공", trainedAt, trainedBy].filter(Boolean).join(" ");
+    return [copy.trained, trainedAt, trainedBy].filter(Boolean).join(" ");
   }
 
-  return "미학습";
+  return copy.untrained;
 }
 
 export function BotWorkspaceHeader({
@@ -97,8 +106,10 @@ export function BotWorkspaceHeader({
   onError,
   onTrained,
 }: BotWorkspaceHeaderProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = TRAINING_CATALOGS[uiLanguage];
   const headerClassName = ["manual-main__top", className].filter(Boolean).join(" ");
-  const trainingStatusText = getTrainingStatusText(version);
+  const trainingStatusText = getTrainingStatusText(version, copy);
   const aiConfig = getVersionAiConfig(version, bot);
 
   return (
@@ -120,7 +131,7 @@ export function BotWorkspaceHeader({
               fallbackVersionNo={fallbackVersionNo}
               versions={versions}
             />
-            <span className="manual-main__status">{botTypeLabel(bot)}</span>
+            <span className="manual-main__status">{botTypeLabel(copy, bot)}</span>
             {compact ? null : (
               <ManualMainHeaderActions
                 botId={botId}
@@ -130,7 +141,7 @@ export function BotWorkspaceHeader({
             )}
           </div>
 
-          <p className="manual-main__subtext manual-main__engine-meta">{getEngineSummary(version, bot)}</p>
+          <p className="manual-main__subtext manual-main__engine-meta">{getEngineSummary(version, bot, uiLanguage, copy)}</p>
           {compact ? null : (
             <div className="manual-main__meta-row">
               <NluTrainingButton

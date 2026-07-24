@@ -135,6 +135,7 @@ def build_llm_nlu_training_snapshot(
         "llm_provider": provider,
         "llm_model": model,
         "llm_base_url": _safe_text(config.get("llm_base_url")),
+        "language": _safe_text(config.get("language") or "ko"),
         "prompt_version": LLM_NLU_PROMPT_VERSION,
         "classification_policy": {
             "score_cutoff": score_cutoff,
@@ -191,4 +192,5 @@ def classify_intent_with_llm_snapshot(
         top_k=top_k,
         dictionary_terms=dictionary_terms,
         entity_terms=entity_terms,
+        language=_safe_text(snapshot.get("language") or config.get("language") or "ko"),
     )

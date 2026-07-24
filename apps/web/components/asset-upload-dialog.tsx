@@ -1,6 +1,8 @@
 "use client";
 
 import { type ReactNode, useRef, useState } from "react";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 type AssetUploadDialogProps = {
   title?: string;
@@ -27,6 +29,8 @@ export function AssetUploadDialog({
   onClose,
   onConfirm,
 }: AssetUploadDialogProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -47,10 +51,10 @@ export function AssetUploadDialog({
 
   return (
     <div className="entity-editor-backdrop" role="presentation">
-      <div className="asset-upload-dialog" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="asset-upload-dialog" role="dialog" aria-modal="true" aria-label={getStudioPageLabel(copy, title)}>
         <div className="entity-editor-dialog__header">
-          <strong>{title}</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <strong>{getStudioPageLabel(copy, title)}</strong>
+          <button type="button" className="entity-editor-dialog__close" aria-label={getStudioPageLabel(copy,"닫기")} onClick={onClose}>
             ×
           </button>
         </div>
@@ -60,20 +64,18 @@ export function AssetUploadDialog({
 
           {onDownloadTemplate ? (
             <div className="asset-upload-dialog__template">
-              <button type="button" className="secondary-action asset-upload-dialog__template-button" onClick={onDownloadTemplate}>
-                양식 다운로드
-              </button>
+              <button type="button" className="secondary-action asset-upload-dialog__template-button" onClick={onDownloadTemplate}>{getStudioPageLabel(copy,"양식 다운로드")}</button>
               {templateFileName ? <small>{templateFileName}</small> : null}
             </div>
           ) : null}
 
           <div className="asset-upload-dialog__notice">
-            <strong>유의사항</strong>
+            <strong>{getStudioPageLabel(copy,"유의사항")}</strong>
             <div className="asset-upload-dialog__notice-content">
               {notice}
               {exampleLines?.length ? (
                 <>
-                  <p className="asset-upload-dialog__example-title">{exampleTitle ?? "예시"}</p>
+                  <p className="asset-upload-dialog__example-title">{exampleTitle ? getStudioPageLabel(copy, exampleTitle) : getStudioPageLabel(copy, "예시")}</p>
                   <div className="asset-upload-dialog__example" role="presentation">
                     {exampleLines.map((line, index) => (
                       <span key={`${line}-${index}`} className="asset-upload-dialog__example-line">
@@ -87,20 +89,17 @@ export function AssetUploadDialog({
           </div>
 
           <div className="asset-upload-dialog__field">
-            <span>
-              파일 업로드<em>*</em>
+            <span>{getStudioPageLabel(copy,"파일 업로드")}<em>*</em>
             </span>
             <div className="asset-upload-dialog__file-row">
               <input
                 className="asset-upload-dialog__file-name"
                 type="text"
                 value={selectedFile?.name ?? ""}
-                placeholder="파일을 선택하세요"
+                placeholder={getStudioPageLabel(copy,"파일을 선택하세요")}
                 readOnly
               />
-              <button type="button" className="secondary-action" onClick={() => fileInputRef.current?.click()}>
-                파일 선택
-              </button>
+              <button type="button" className="secondary-action" onClick={() => fileInputRef.current?.click()}>{getStudioPageLabel(copy,"파일 선택")}</button>
             </div>
             <input
               ref={fileInputRef}
@@ -117,17 +116,13 @@ export function AssetUploadDialog({
         </div>
 
         <div className="entity-editor-dialog__footer">
-          <button type="button" className="secondary-action" onClick={onClose} disabled={submitting}>
-            취소
-          </button>
+          <button type="button" className="secondary-action" onClick={onClose} disabled={submitting}>{getStudioPageLabel(copy,"취소")}</button>
           <button
             type="button"
             className="primary-action"
             onClick={() => void handleConfirm()}
             disabled={!selectedFile || submitting}
-          >
-            확인
-          </button>
+          >{getStudioPageLabel(copy,"확인")}</button>
         </div>
       </div>
     </div>

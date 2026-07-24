@@ -11,11 +11,18 @@ import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { SortHeaderLabel } from "@/components/sort-header-label";
+import { useI18n } from "@/components/language-provider";
 import {
   UploadResultDialog,
   type UploadResultSection,
 } from "@/components/upload-result-dialog";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
+import {
+  ENTITY_LIST_CATALOGS,
+  ENTITY_TYPE_LABELS,
+  formatEntityListText,
+  type EntityListCatalog,
+} from "@/lib/i18n/entity-list";
 import {
   buildAssetExportFilename,
   buildEntityText,
@@ -28,7 +35,6 @@ import {
   getBotUserEntities,
   getBotVersionDocument,
   getEntityPreviewValue,
-  getEntityTypeLabel,
   getVersionDocument,
   getVersionEntities,
   getVersionUserEntities,
@@ -86,6 +92,7 @@ function buildSummaryCards(
   versionName: string,
   bot?: StudioBotApiItem | null,
   entityCount?: number,
+  copy?: EntityListCatalog,
 ): SummaryStatItem[] {
   const counts = bot?.active_version?.asset_counts;
   const dialogCount = getBotVersionDocument(bot).dialogs.length;
@@ -98,38 +105,38 @@ function buildSummaryCards(
   const activeEntityCount = entityCount === undefined ? (counts?.entities ?? "-") : entityCount;
   return [
     {
-      label: "의도",
+      label: copy?.summary.intent ?? "-",
       value: String(intentCount),
       href: buildVersionAssetHref(botId, versionName, "intents"),
     },
     {
-      label: "구성",
+      label: copy?.summary.configure ?? "-",
       value: "-",
       href: buildVersionAssetHref(botId, versionName, "configure"),
     },
     {
-      label: "개체",
+      label: copy?.summary.entity ?? "-",
       value: String(activeEntityCount),
       active: true,
       href: buildVersionAssetHref(botId, versionName, "entities"),
     },
     {
-      label: "사전",
+      label: copy?.summary.dictionary ?? "-",
       value: String(counts?.dictionary ?? "-"),
       href: buildVersionAssetHref(botId, versionName, "dictionary"),
     },
     {
-      label: "평가",
+      label: copy?.summary.evaluation ?? "-",
       value: "-",
       href: buildVersionAssetHref(botId, versionName, "evaluation"),
     },
     {
-      label: "재학습",
+      label: copy?.summary.retraining ?? "-",
       value: String(retrainingCount),
       href: buildVersionAssetHref(botId, versionName, "retraining"),
     },
     {
-      label: "분석",
+      label: copy?.summary.analysis ?? "-",
       value: "-",
       href: buildVersionAssetHref(botId, versionName, "analysis"),
     },
@@ -162,25 +169,25 @@ function createEmptyEntityUploadCounts(): EntityUploadCounts {
   };
 }
 
-function buildEntityUploadResultDialog(counts: EntityUploadCounts): UploadDialogState {
+function buildEntityUploadResultDialog(counts: EntityUploadCounts, copy: EntityListCatalog): UploadDialogState {
   return {
-    title: "업로드 결과",
-    message: "업로드가 완료되었습니다.",
+    title: copy.uploadResultTitle,
+    message: copy.uploadComplete,
     sections: [
       {
         rows: [
-          { label: "추가된 개체명", value: counts.addedEntityNames },
-          { label: "추가된 개체값", value: counts.addedEntityValues },
-          { label: "추가된 동의어/패턴", value: counts.addedDetails },
+          { label: copy.addedNames, value: counts.addedEntityNames },
+          { label: copy.addedValues, value: counts.addedEntityValues },
+          { label: copy.addedDetails, value: counts.addedDetails },
         ],
       },
       {
         rows: [
-          { label: "중복된 개체명", value: counts.duplicateEntityNames },
-          { label: "중복된 개체값", value: counts.duplicateEntityValues },
-          { label: "중복된 동의어/패턴", value: counts.duplicateDetails },
-          { label: "유형이 잘못되어 등록되지 않은 동의어/패턴", value: counts.invalidDetailTypes },
-          { label: "Max 값을 초과한 패턴", value: counts.maxPatternCountExceeded },
+          { label: copy.duplicateNames, value: counts.duplicateEntityNames },
+          { label: copy.duplicateValues, value: counts.duplicateEntityValues },
+          { label: copy.duplicateDetails, value: counts.duplicateDetails },
+          { label: copy.invalidDetails, value: counts.invalidDetailTypes },
+          { label: copy.maxPatterns, value: counts.maxPatternCountExceeded },
         ],
       },
     ],
@@ -188,6 +195,9 @@ function buildEntityUploadResultDialog(counts: EntityUploadCounts): UploadDialog
 }
 
 export function EntityListPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = ENTITY_LIST_CATALOGS[uiLanguage];
+  const entityTypeLabels = ENTITY_TYPE_LABELS[uiLanguage];
   const workspace = useStudioWorkspace();
   const params = useParams<{ botId: string; versionId: string }>();
   const pathname = usePathname();
@@ -262,7 +272,7 @@ export function EntityListPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "개체 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -274,7 +284,7 @@ export function EntityListPage() {
     return () => {
       ignore = true;
     };
-  }, [authSession, bot, bot?.active_version]);
+  }, [authSession, bot, bot?.active_version, copy.loadFailed]);
 
   useEffect(() => {
     if (pathname && bot && !errorMessage) {
@@ -327,12 +337,12 @@ export function EntityListPage() {
       setVersions(refreshed.versions);
       setBot(refreshed.bot);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "학습 결과를 다시 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.reloadFailed);
     }
   }
   const summaryCards = useMemo(
-    () => buildSummaryCards(effectiveBotId, effectiveVersionName, bot, entityCountForSummary),
-    [bot, entityCountForSummary, effectiveBotId, effectiveVersionName],
+    () => buildSummaryCards(effectiveBotId, effectiveVersionName, bot, entityCountForSummary, copy),
+    [bot, copy, entityCountForSummary, effectiveBotId, effectiveVersionName],
   );
   const visibleEntities = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -340,7 +350,7 @@ export function EntityListPage() {
       ? entities.filter((entity) => {
           const haystack = [
             entity.name,
-            getEntityTypeLabel(entity),
+            entity.system ? entityTypeLabels.system : entityTypeLabels.user,
             ...entity.rows.map((row) => row.value),
             ...entity.rows.flatMap((row) => row.details),
             ...(entity.examples ?? []),
@@ -360,7 +370,7 @@ export function EntityListPage() {
       const leftValue = (() => {
         switch (sortKey) {
           case "category":
-            return getEntityTypeLabel(left);
+            return left.system ? entityTypeLabels.system : entityTypeLabels.user;
           case "value":
             return getEntityPreviewValue(left);
           case "updated":
@@ -376,7 +386,7 @@ export function EntityListPage() {
       const rightValue = (() => {
         switch (sortKey) {
           case "category":
-            return getEntityTypeLabel(right);
+            return right.system ? entityTypeLabels.system : entityTypeLabels.user;
           case "value":
             return getEntityPreviewValue(right);
           case "updated":
@@ -396,7 +406,7 @@ export function EntityListPage() {
       const compare = leftValue > rightValue ? 1 : -1;
       return sortDirection === "asc" ? compare : compare * -1;
     });
-  }, [entities, query, sortDirection, sortKey]);
+  }, [entities, entityTypeLabels, query, sortDirection, sortKey]);
 
   const totalPages = Math.max(1, Math.ceil(visibleEntities.length / pageSize));
   const pagedEntities = useMemo(() => {
@@ -454,7 +464,7 @@ export function EntityListPage() {
       setPage(1);
       setMessage(successMessage);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "개체 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -480,7 +490,7 @@ export function EntityListPage() {
         rules: references.rules,
       };
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "개체 삭제 전 버전 정보를 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.deleteLoadFailed);
       return;
     }
 
@@ -498,7 +508,7 @@ export function EntityListPage() {
         blockedEntities
           .map(
             ({ entity, usages }) =>
-              `'${entity.name}' 사용자 개체는 ${usages.join(", ")}에서 사용하고 있어 삭제할 수 없습니다.`,
+              formatEntityListText(copy.deleteReferenced, { name: entity.name, usages: usages.join(", ") }),
           )
           .join(" "),
       );
@@ -507,7 +517,7 @@ export function EntityListPage() {
 
     await persistEntities(
       entities.filter((entity) => !selectedIds.includes(entity.id)),
-      "선택한 개체가 삭제되었습니다.",
+      copy.deleteSuccess,
     );
   }
 
@@ -521,7 +531,7 @@ export function EntityListPage() {
       const text = await file.text();
       const parsedRows = parseEntityImportRows(text);
       if (parsedRows.length === 0) {
-        setErrorMessage("업로드 가능한 개체가 없습니다.");
+        setErrorMessage(copy.noUploadable);
         return;
       }
 
@@ -656,10 +666,10 @@ export function EntityListPage() {
           : entity,
       );
 
-      await persistEntities(nextEntities, "개체 업로드가 완료되었습니다.");
-      setUploadResult(buildEntityUploadResultDialog(counts));
+      await persistEntities(nextEntities, copy.uploadSuccess);
+      setUploadResult(buildEntityUploadResultDialog(counts, copy));
     } catch {
-      setErrorMessage("개체 업로드 파일을 읽지 못했습니다.");
+      setErrorMessage(copy.uploadReadFailed);
     }
   }
 
@@ -684,7 +694,7 @@ export function EntityListPage() {
   }
 
   if (!bot || !effectiveVersion) {
-    return <StudioPageLoading title="개체 화면을 불러오는 중입니다." />;
+    return <StudioPageLoading title={copy.pageLoading} />;
   }
 
   return (
@@ -701,24 +711,24 @@ export function EntityListPage() {
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="개체명, 개체값, 정규식 또는 패턴을 검색하세요."
+              placeholder={copy.searchPlaceholder}
             />
           </label>
-          <button type="button" className="manual-main__icon-button" aria-label="필터">
+          <button type="button" className="manual-main__icon-button" aria-label={copy.filter}>
             ▾
           </button>
         </div>
 
         <div className="manual-main__toolbar-right">
           <button type="button" className="manual-main__action-button" onClick={() => setCreatingEntityName(true)}>
-            + 개체명 추가
+            {copy.addName}
           </button>
 
           <div className="manual-main__menu" ref={actionMenuRef}>
             <button
               type="button"
               className="manual-main__menu-button"
-              aria-label="개체 메뉴"
+              aria-label={copy.entityMenu}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((current) => !current)}
             >
@@ -735,7 +745,7 @@ export function EntityListPage() {
                     setUploadDialogOpen(true);
                   }}
                 >
-                  파일 업로드
+                  {copy.uploadFile}
                 </button>
                 <button
                   type="button"
@@ -745,7 +755,7 @@ export function EntityListPage() {
                     handleDownload();
                   }}
                 >
-                  파일 다운로드
+                  {copy.downloadFile}
                 </button>
               </div>
             ) : null}
@@ -756,17 +766,17 @@ export function EntityListPage() {
       <div className="manual-main__toolbar manual-main__toolbar--secondary">
         <div className="manual-main__toolbar-left">
           <div className="manual-main__toolbar-group manual-main__toolbar-group--meta">
-            <strong>전체 {userEntities.length}건</strong>
+            <strong>{formatEntityListText(copy.totalCount, { count: userEntities.length })}</strong>
             <label className="manual-main__mini-select manual-main__mini-select--select">
               <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
-                <option value={10}>10개씩 보기</option>
-                <option value={25}>25개씩 보기</option>
-                <option value={50}>50개씩 보기</option>
-                <option value={100}>100개씩 보기</option>
+                <option value={10}>{formatEntityListText(copy.pageSize, { count: 10 })}</option>
+                <option value={25}>{formatEntityListText(copy.pageSize, { count: 25 })}</option>
+                <option value={50}>{formatEntityListText(copy.pageSize, { count: 50 })}</option>
+                <option value={100}>{formatEntityListText(copy.pageSize, { count: 100 })}</option>
               </select>
             </label>
           </div>
-          {selectedIds.length > 0 ? <span className="studio-table-page__selection">{selectedIds.length}개 선택</span> : null}
+          {selectedIds.length > 0 ? <span className="studio-table-page__selection">{formatEntityListText(copy.selectedCount, { count: selectedIds.length })}</span> : null}
         </div>
         <div className="manual-main__toolbar-right">
           <button
@@ -775,7 +785,7 @@ export function EntityListPage() {
             disabled={selectedIds.length === 0 || saving}
             onClick={() => void handleDeleteSelected()}
           >
-            삭제
+            {copy.delete}
           </button>
         </div>
       </div>
@@ -785,7 +795,7 @@ export function EntityListPage() {
           <span className="manual-main__cell manual-main__cell--check">
             <input
               type="checkbox"
-              aria-label="전체 선택"
+              aria-label={copy.selectAll}
                     checked={
                       pagedEntities.filter((entity) => !entity.system).length > 0 &&
                       pagedEntities
@@ -803,27 +813,27 @@ export function EntityListPage() {
                 </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("category")}>
-              <SortHeaderLabel label="구분" direction={sortKey === "category" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.category} direction={sortKey === "category" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("name")}>
-              <SortHeaderLabel label="개체명" direction={sortKey === "name" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.name} direction={sortKey === "name" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("value")}>
-              <SortHeaderLabel label="개체값" direction={sortKey === "value" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.value} direction={sortKey === "value" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("updated")}>
-              <SortHeaderLabel label="최종수정일시" direction={sortKey === "updated" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.updatedAt} direction={sortKey === "updated" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-              <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.updatedBy} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
             </button>
           </span>
         </div>
@@ -833,7 +843,7 @@ export function EntityListPage() {
             <span className="manual-main__cell manual-main__cell--check">
               <input
                 type="checkbox"
-                aria-label={`${entity.name} 선택`}
+                aria-label={formatEntityListText(copy.selectRow, { name: entity.name })}
                 checked={selectedIds.includes(entity.id)}
                 disabled={entity.system}
                 onChange={() =>
@@ -843,7 +853,7 @@ export function EntityListPage() {
                 }
               />
             </span>
-            <span className="manual-main__cell">{getEntityTypeLabel(entity)}</span>
+            <span className="manual-main__cell">{entity.system ? entityTypeLabels.system : entityTypeLabels.user}</span>
             <span className="manual-main__cell">
               <button
                 type="button"
@@ -861,7 +871,7 @@ export function EntityListPage() {
                 className="manual-main__link-button"
                 onClick={() => setEditingEntityValueId(entity.id)}
               >
-                {getEntityPreviewValue(entity) || "개체값 등록"}
+                {getEntityPreviewValue(entity) || copy.registerValue}
               </button>
             </span>
             <span className="manual-main__cell">{formatEntityUpdatedAt(entity)}</span>
@@ -875,8 +885,8 @@ export function EntityListPage() {
           <span className="manual-main__cell manual-main__cell--check" />
           <span className="manual-main__cell manual-main__cell--empty-message">
             {query.trim()
-              ? "검색 조건에 맞는 개체가 없습니다."
-              : "등록된 개체가 없습니다. 먼저 개체를 추가해주세요."}
+              ? copy.noSearchResults
+              : copy.empty}
           </span>
         </div>
       ) : null}
@@ -952,19 +962,19 @@ export function EntityListPage() {
 
       {uploadDialogOpen ? (
         <AssetUploadDialog
-          title="파일 업로드"
-          description="아래의 버튼으로 양식(.txt)을 다운받으신 후, 파일을 업로드 하세요."
+          title={copy.uploadTitle}
+          description={copy.uploadDescription}
           notice={
             <>
-              <p>UTF-8 형식으로 인코딩된 .txt/.csv 파일을 통해 개체를 한번에 업로드 할 수 있습니다.</p>
+              <p>{copy.uploadEncodingHelp}</p>
               <ul className="asset-upload-dialog__list">
-                <li>헤더는 `개체명,개체값,유형(S/P),상세` 형식을 사용하세요.</li>
-                <li>`S`는 동의어형, `P`는 패턴형입니다.</li>
-                <li>패턴형은 한 줄에 1개씩 입력하고, 최대 5개까지 등록할 수 있습니다.</li>
+                <li>{copy.uploadHeaderHelp}</li>
+                <li>{copy.uploadTypeHelp}</li>
+                <li>{copy.uploadPatternHelp}</li>
               </ul>
             </>
           }
-          exampleTitle="예시"
+          exampleTitle={copy.example}
           exampleLines={[
             "개체명,개체값,유형(S/P),상세",
             "국가,미국,S,아메리카",

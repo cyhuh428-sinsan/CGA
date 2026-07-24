@@ -5,6 +5,9 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 
 import { loadAuthSession, type AuthSession } from "@/lib/auth";
 import { fetchStudioBots, getCachedStudioBots, type StudioBotApiItem } from "@/lib/studio-bots-api";
+import { useI18n } from "@/components/language-provider";
+import { BOT_WORKSPACE_CATALOGS } from "@/lib/i18n/bot-workspace";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 type BotsWorkspaceProps = {
   activeTab?: "bot" | "hub";
@@ -65,6 +68,9 @@ function mapWorkspaceItem(item: StudioBotApiItem): WorkspaceItem {
 }
 
 export function BotsWorkspace({ activeTab = "bot", overlay }: BotsWorkspaceProps) {
+  const { language: uiLanguage } = useI18n();
+  const workspaceCopy = BOT_WORKSPACE_CATALOGS[uiLanguage];
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   const [session, setSession] = useState<AuthSession | null>(null);
   const [token, setToken] = useState("");
   const [items, setItems] = useState<WorkspaceItem[]>([]);
@@ -75,7 +81,7 @@ export function BotsWorkspace({ activeTab = "bot", overlay }: BotsWorkspaceProps
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(getStudioPageLabel(copy, "로그인이 필요합니다."));
       return;
     }
 
@@ -106,7 +112,7 @@ export function BotsWorkspace({ activeTab = "bot", overlay }: BotsWorkspaceProps
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "봇 목록을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : workspaceCopy.loadBotsError);
         }
       })
       .finally(() => {
@@ -147,15 +153,15 @@ export function BotsWorkspace({ activeTab = "bot", overlay }: BotsWorkspaceProps
   return (
     <section className="bots-workspace">
       <Link href="/studio/bots/new" className="bots-workspace__top-create">
-        + 봇/봇 허브 생성
+        {getStudioPageLabel(copy, "+ 봇/봇 허브 생성")}
       </Link>
 
       <div className="bots-workspace__tabs">
         <Link href="/studio/bots" className={activeTab === "bot" ? "is-active" : ""}>
-          봇({botCount})
+          {workspaceCopy.bot}({botCount})
         </Link>
         <Link href="/studio/hubs" className={activeTab === "hub" ? "is-active" : ""}>
-          봇 허브({hubCount})
+          {getStudioPageLabel(copy, "봇 허브")}({hubCount})
         </Link>
       </div>
 
@@ -184,14 +190,14 @@ export function BotsWorkspace({ activeTab = "bot", overlay }: BotsWorkspaceProps
                   </p>
                 </div>
                 <div className="bots-workspace__meta">
-                  <small>{item.type}</small>
-                  <small>{item.status === "active" ? "사용" : item.status}</small>
+                  <small>{getStudioPageLabel(copy, item.type)}</small>
+                  <small>{item.status === "active" ? getStudioPageLabel(copy, "사용") : item.status}</small>
                 </div>
               </Link>
             ))}
           </div>
 
-          {loading ? <p className="bots-workspace__notice">봇 목록을 불러오는 중입니다...</p> : null}
+          {loading ? <p className="bots-workspace__notice">{getStudioPageLabel(copy, "봇 목록을 불러오는 중입니다...")}</p> : null}
           {errorMessage ? <p className="bots-workspace__notice bots-workspace__notice--error">{errorMessage}</p> : null}
         </aside>
 
@@ -204,12 +210,16 @@ export function BotsWorkspace({ activeTab = "bot", overlay }: BotsWorkspaceProps
               </span>
             </div>
             <p>
-              아직 생성된 {activeTab === "bot" ? "봇" : "봇 허브"}이 없네요.
+              {activeTab === "bot"
+                ? getStudioPageLabel(copy, "아직 생성된 봇이 없네요.")
+                : getStudioPageLabel(copy, "아직 생성된 봇 허브가 없네요.")}
               <br />
-              새로운 {activeTab === "bot" ? "봇" : "봇 허브"}을 만들고 메인 화면에서 이어서 작업하세요.
+              {uiLanguage === "ko"
+                ? `새로운 ${activeTab === "bot" ? "봇" : "봇 허브"}을 만들고 메인 화면에서 이어서 작업하세요.`
+                : `Create a new ${activeTab === "bot" ? "bot" : "Bot Hub"} and continue from its main screen.`}
             </p>
             <Link href="/studio/bots/new" className="bots-workspace__create-button">
-              + 봇/봇 허브 생성
+              {getStudioPageLabel(copy, "+ 봇/봇 허브 생성")}
             </Link>
           </div>
         ) : null}

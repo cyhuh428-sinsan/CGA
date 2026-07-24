@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
+
 import { type AuthSession } from "@/lib/auth";
+import { ENTITY_EDITOR_CATALOGS, formatEntityEditorText, type EntityEditorCatalog } from "@/lib/i18n/entity-editor";
 import { getBotDictionary } from "@/lib/dictionary-assets";
 import {
   applyUpdatedVersionToBot,
@@ -65,7 +68,7 @@ function normalizeWordList(values: string[]) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
-function tryCreateRegex(pattern: string) {
+function tryCreateRegex(pattern: string, fallbackMessage: string) {
   const rawPattern = pattern.trim();
   const literalMatch = rawPattern.match(/^\/(.+)\/([dgimsuvy]*)$/);
   const source = literalMatch ? literalMatch[1] : rawPattern;
@@ -74,7 +77,7 @@ function tryCreateRegex(pattern: string) {
   try {
     return new RegExp(source, flags);
   } catch (error) {
-    return error instanceof Error ? error.message : "정규식 문법이 올바르지 않습니다.";
+    return error instanceof Error ? error.message : fallbackMessage;
   }
 }
 
@@ -92,11 +95,12 @@ function paginate<T>(items: T[], page: number, pageSize: number) {
 
 type DictionaryImportDialogProps = {
   dictionary: VersionDictionaryAsset[];
+  copy: EntityEditorCatalog;
   onClose: () => void;
   onImport: (entries: VersionDictionaryAsset[]) => void;
 };
 
-function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImportDialogProps) {
+function DictionaryImportDialog({ dictionary, copy, onClose, onImport }: DictionaryImportDialogProps) {
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = usePersistedPageSize<DialogPageSize>(
     "aidot.page_size.entity.dictionary_import",
@@ -137,10 +141,10 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
 
   return (
     <div className="entity-editor-backdrop" role="presentation">
-      <div className="entity-sub-dialog" role="dialog" aria-modal="true" aria-label="사전 불러오기">
+      <div className="entity-sub-dialog" role="dialog" aria-modal="true" aria-label={copy.dictionaryImportTitle}>
         <div className="entity-editor-dialog__header">
-          <strong>사전 불러오기</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <strong>{copy.dictionaryImportTitle}</strong>
+          <button type="button" className="entity-editor-dialog__close" aria-label={copy.close} onClick={onClose}>
             ×
           </button>
         </div>
@@ -148,14 +152,14 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
         <div className="entity-editor-dialog__body">
           <div className="entity-sub-dialog__toolbar">
             <div className="entity-sub-dialog__toolbar-left">
-              <strong>전체 {visibleEntries.length}건</strong>
+              <strong>{formatEntityEditorText(copy.total, { count: visibleEntries.length })}</strong>
               <label className="manual-main__mini-select manual-main__mini-select--select">
                 <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as DialogPageSize)}>
-                  <option value={5}>5개씩 보기</option>
-                  <option value={10}>10개씩 보기</option>
-                  <option value={25}>25개씩 보기</option>
-                  <option value={50}>50개씩 보기</option>
-                  <option value={100}>100개씩 보기</option>
+                  <option value={5}>{formatEntityEditorText(copy.pageSize, { count: 5 })}</option>
+                  <option value={10}>{formatEntityEditorText(copy.pageSize, { count: 10 })}</option>
+                  <option value={25}>{formatEntityEditorText(copy.pageSize, { count: 25 })}</option>
+                  <option value={50}>{formatEntityEditorText(copy.pageSize, { count: 50 })}</option>
+                  <option value={100}>{formatEntityEditorText(copy.pageSize, { count: 100 })}</option>
                 </select>
               </label>
             </div>
@@ -165,7 +169,7 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="개체값, 동의어 또는 패턴을 검색하세요."
+                placeholder={copy.searchPlaceholder}
               />
             </label>
           </div>
@@ -175,7 +179,7 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
               <span>
                 <input
                   type="checkbox"
-                  aria-label="전체 선택"
+                  aria-label={copy.selectAll}
                   checked={pagedEntries.length > 0 && pagedEntries.every((entry) => selectedIds.includes(entry.id))}
                   onChange={(event) =>
                     setSelectedIds(
@@ -184,8 +188,8 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
                   }
                 />
               </span>
-              <span>단어</span>
-              <span>동의어</span>
+              <span>{copy.word}</span>
+              <span>{copy.synonym}</span>
             </div>
 
             {pagedEntries.map((entry) => (
@@ -193,7 +197,7 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
                 <span>
                   <input
                     type="checkbox"
-                    aria-label={`${entry.word} 선택`}
+                    aria-label={formatEntityEditorText(copy.selectRow, { name: entry.word })}
                     checked={selectedIds.includes(entry.id)}
                     onChange={() =>
                       setSelectedIds((current) =>
@@ -209,7 +213,7 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
               </div>
             ))}
 
-            {pagedEntries.length === 0 ? <div className="entity-detail__empty">불러올 수 있는 사전이 없습니다.</div> : null}
+            {pagedEntries.length === 0 ? <div className="entity-detail__empty">{copy.noDictionary}</div> : null}
           </div>
 
           <div className="manual-main__pagination">
@@ -242,7 +246,7 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
 
         <div className="entity-editor-dialog__footer">
           <button type="button" className="secondary-action" onClick={onClose}>
-            취소
+            {copy.cancel}
           </button>
           <button
             type="button"
@@ -250,7 +254,7 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
             disabled={selectedEntries.length === 0}
             onClick={() => onImport(selectedEntries)}
           >
-            불러오기
+            {copy.import}
           </button>
         </div>
       </div>
@@ -260,12 +264,13 @@ function DictionaryImportDialog({ dictionary, onClose, onImport }: DictionaryImp
 
 type EntityValueItemDialogProps = {
   existingRows: VersionEntityRow[];
+  copy: EntityEditorCatalog;
   target: EntityValueEditorTarget;
   onClose: () => void;
   onSave: (row: VersionEntityRow) => void;
 };
 
-function EntityValueItemDialog({ existingRows, target, onClose, onSave }: EntityValueItemDialogProps) {
+function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: EntityValueItemDialogProps) {
   const [value, setValue] = useState(target.row.value);
   const [rowType, setRowType] = useState<VersionEntityRow["rowType"]>(target.row.rowType);
   const [details, setDetails] = useState<string[]>(target.row.details);
@@ -303,16 +308,16 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
   function validateValueField(nextValue: string) {
     const normalizedValue = nextValue.trim();
     if (!normalizedValue) {
-      return "개체값을 입력해주세요.";
+      return copy.validation.valueRequired;
     }
     if (normalizedValue.length > 100) {
-      return "개체값은 100자 이하로 입력해주세요.";
+      return copy.validation.valueMaxLength;
     }
     const duplicated = existingRows.some(
       (item) => item.id !== target.row.id && item.value.trim() === normalizedValue,
     );
     if (duplicated) {
-      return "동일한 이름의 개체값이 등록되어 있습니다.";
+      return copy.validation.duplicateValue;
     }
     return "";
   }
@@ -320,40 +325,40 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
   function addDetail() {
     const normalizedValue = detailInput.trim();
     if (!normalizedValue) {
-      setDetailError(rowType === "P" ? "패턴을 입력해주세요." : "동의어를 입력해주세요.");
+      setDetailError(rowType === "P" ? copy.validation.patternRequired : copy.validation.synonymRequired);
       return;
     }
 
     const maxLength = rowType === "P" ? 256 : 100;
     if (normalizedValue.length > maxLength) {
-      setDetailError(rowType === "P" ? "패턴은 256자 이하로 입력해주세요." : "동의어는 100자 이하로 입력해주세요.");
+      setDetailError(rowType === "P" ? copy.validation.patternMaxLength : copy.validation.synonymMaxLength);
       return;
     }
 
     if (details.some((item) => item === normalizedValue)) {
-      setDetailError(rowType === "P" ? "동일한 패턴이 등록되어 있습니다." : "동일한 이름의 동의어가 등록되어 있습니다.");
+      setDetailError(rowType === "P" ? copy.validation.duplicatePattern : copy.validation.duplicateSynonym);
       return;
     }
 
     if (rowType === "P") {
-      const regexResult = tryCreateRegex(normalizedValue);
+      const regexResult = tryCreateRegex(normalizedValue, copy.validation.invalidRegex);
       if (typeof regexResult === "string") {
-        setDetailError(`'${normalizedValue}' 정규식이 올바르지 않습니다. ${regexResult}`);
+        setDetailError(formatEntityEditorText(copy.validation.invalidRegexWithReason, { value: normalizedValue, reason: regexResult }));
         setPatternSyntaxState({
           tone: "error",
-          message: `정규식 문법 오류: ${regexResult}`,
+          message: formatEntityEditorText(copy.validation.regexSyntaxError, { reason: regexResult }),
         });
         return;
       }
 
       if (details.length >= 5) {
-        setDetailError("패턴은 최대 5개까지 등록할 수 있습니다.");
+        setDetailError(copy.validation.maxPatterns);
         return;
       }
 
       setPatternSyntaxState({
         tone: "success",
-        message: "등록 가능한 정규식입니다.",
+        message: copy.validRegex,
       });
     }
 
@@ -373,14 +378,14 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
   function runPatternSyntaxCheck() {
     const normalizedValue = detailInput.trim();
     if (!normalizedValue) {
-      setDetailError("확인할 패턴을 입력해주세요.");
+      setDetailError(copy.validation.patternCheckRequired);
       setPatternSyntaxState(null);
       return;
     }
 
-    const regexResult = tryCreateRegex(normalizedValue);
+    const regexResult = tryCreateRegex(normalizedValue, copy.validation.invalidRegex);
     if (typeof regexResult === "string") {
-      setDetailError(`'${normalizedValue}' 정규식이 올바르지 않습니다. ${regexResult}`);
+      setDetailError(formatEntityEditorText(copy.validation.invalidRegexWithReason, { value: normalizedValue, reason: regexResult }));
       setPatternSyntaxState({
         tone: "error",
         message: regexResult,
@@ -391,7 +396,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
     setDetailError("");
     setPatternSyntaxState({
       tone: "success",
-      message: "등록 가능한 정규식입니다.",
+      message: copy.validRegex,
     });
   }
 
@@ -399,7 +404,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
     if (details.length === 0) {
       setPatternTestState({
         tone: "error",
-        message: "먼저 패턴을 1개 이상 등록해주세요.",
+        message: copy.validation.patternRequiredBeforeTest,
       });
       return;
     }
@@ -407,13 +412,13 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
     if (!patternTestText.trim()) {
       setPatternTestState({
         tone: "error",
-        message: "테스트할 문장을 입력해주세요.",
+        message: copy.validation.testTextRequired,
       });
       return;
     }
 
     const matched = details.filter((pattern) => {
-      const regexResult = tryCreateRegex(pattern);
+      const regexResult = tryCreateRegex(pattern, copy.validation.invalidRegex);
       if (typeof regexResult === "string") {
         return false;
       }
@@ -424,11 +429,11 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
       matched.length > 0
         ? {
             tone: "success",
-            message: `일치하는 패턴: ${matched.join(", ")}`,
+            message: formatEntityEditorText(copy.matchedPatterns, { patterns: matched.join(", ") }),
           }
         : {
             tone: "error",
-            message: "일치하는 패턴이 없습니다.",
+            message: copy.noMatchedPatterns,
           },
     );
   }
@@ -443,12 +448,12 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
     const normalizedDetails = normalizeWordList(details);
     if (rowType === "P") {
       if (normalizedDetails.length === 0) {
-        setDetailError("패턴을 1개 이상 등록해주세요.");
+        setDetailError(copy.validation.atLeastOnePattern);
         return;
       }
-      const invalidPattern = normalizedDetails.find((pattern) => typeof tryCreateRegex(pattern) === "string");
+      const invalidPattern = normalizedDetails.find((pattern) => typeof tryCreateRegex(pattern, copy.validation.invalidRegex) === "string");
       if (invalidPattern) {
-        setDetailError(`'${invalidPattern}' 정규식이 올바르지 않습니다.`);
+        setDetailError(formatEntityEditorText(copy.validation.invalidPattern, { value: invalidPattern }));
         return;
       }
     }
@@ -463,14 +468,14 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
     });
   }
 
-  const dialogTitle = target.mode === "new" ? "개체값 생성" : "개체값 수정";
+  const dialogTitle = target.mode === "new" ? copy.valueCreateTitle : copy.valueEditTitle;
 
   return (
     <div className="entity-editor-backdrop" role="presentation">
       <div className="entity-sub-dialog entity-sub-dialog--value" role="dialog" aria-modal="true" aria-label={dialogTitle}>
         <div className="entity-editor-dialog__header">
           <strong>{dialogTitle}</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <button type="button" className="entity-editor-dialog__close" aria-label={copy.close} onClick={onClose}>
             ×
           </button>
         </div>
@@ -498,7 +503,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
             </label>
 
             <div className="entity-value-dialog__type-row">
-              <strong>유형</strong>
+              <strong>{copy.type}</strong>
               <label>
                 <input
                   type="radio"
@@ -513,7 +518,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
                     setPatternTestState(null);
                   }}
                 />
-                동의어
+                {copy.synonym}
               </label>
               <label>
                 <input
@@ -529,7 +534,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
                     setPatternTestState(null);
                   }}
                 />
-                패턴
+                {copy.pattern}
               </label>
             </div>
           </div>
@@ -538,18 +543,18 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
             <section className="entity-value-dialog__section">
               <div className="dictionary-editor-dialog__controls">
                 <label className="dictionary-editor-dialog__field">
-                  <span>동의어 검색</span>
+                  <span>{copy.synonymSearch}</span>
                   <input
                     type="text"
                     className="dictionary-editor-dialog__input"
                     value={detailSearch}
                     onChange={(event) => setDetailSearch(event.target.value)}
-                    placeholder="동의어를 검색하세요."
+                    placeholder={copy.synonymSearchPlaceholder}
                   />
                 </label>
 
                 <label className="dictionary-editor-dialog__field dictionary-editor-dialog__add-field">
-                  <span>동의어</span>
+                  <span>{copy.synonym}</span>
                   <div className="dictionary-editor-dialog__add-row">
                     <input
                       type="text"
@@ -568,7 +573,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
                       }}
                     />
                     <button type="button" className="secondary-action" onClick={addDetail}>
-                      추가
+                      {copy.add}
                     </button>
                   </div>
                   <div className="entity-value-dialog__meta">
@@ -580,7 +585,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
 
               <div className="entity-detail__section-header">
                 <div>
-                  <strong>동의어 목록</strong>
+                  <strong>{copy.synonymList}</strong>
                 </div>
                 <button
                   type="button"
@@ -588,7 +593,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
                   disabled={selectedDetails.length === 0}
                   onClick={deleteSelectedDetails}
                 >
-                  삭제
+                  {copy.delete}
                 </button>
               </div>
 
@@ -603,7 +608,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
                       }
                     />
                   </span>
-                  <span>동의어</span>
+                  <span>{copy.synonym}</span>
                 </div>
 
                 {visibleDetails.map((detail) => (
@@ -627,7 +632,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
 
                 {visibleDetails.length === 0 ? (
                   <div className="entity-detail__empty">
-                    {detailSearch.trim() ? "검색 조건에 맞는 동의어가 없습니다." : "등록된 동의어가 없습니다."}
+                    {detailSearch.trim() ? copy.noSynonymSearchResults : copy.emptySynonyms}
                   </div>
                 ) : null}
               </div>
@@ -636,7 +641,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
             <section className="entity-value-dialog__section">
               <label className="dictionary-editor-dialog__field">
                 <span>
-                  패턴 <em>*</em>
+                  {copy.pattern} <em>*</em>
                 </span>
                 <div className="dictionary-editor-dialog__add-row">
                   <input
@@ -668,7 +673,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
 
               <div className="entity-value-dialog__button-row">
                 <button type="button" className="secondary-action" onClick={runPatternSyntaxCheck}>
-                  정규식 확인
+                  {copy.regexCheck}
                 </button>
               </div>
               {patternSyntaxState ? (
@@ -683,7 +688,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
 
               <div className="entity-detail__section-header">
                 <div>
-                  <strong>패턴 목록</strong>
+                  <strong>{copy.patternList}</strong>
                 </div>
                 <button
                   type="button"
@@ -691,7 +696,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
                   disabled={selectedDetails.length === 0}
                   onClick={deleteSelectedDetails}
                 >
-                  삭제
+                  {copy.delete}
                 </button>
               </div>
 
@@ -706,7 +711,7 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
                       }
                     />
                   </span>
-                  <span>패턴</span>
+                  <span>{copy.pattern}</span>
                 </div>
 
                 {details.map((detail) => (
@@ -728,21 +733,21 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
                   </div>
                 ))}
 
-                {details.length === 0 ? <div className="entity-detail__empty">등록된 패턴이 없습니다.</div> : null}
+                {details.length === 0 ? <div className="entity-detail__empty">{copy.emptyPatterns}</div> : null}
               </div>
 
               <div className="entity-value-dialog__pattern-test">
-                <strong>정규식 테스트</strong>
+                <strong>{copy.regexTest}</strong>
                 <div className="entity-value-dialog__pattern-test-row">
                   <input
                     type="text"
                     className="dictionary-editor-dialog__input"
                     value={patternTestText}
                     onChange={(event) => setPatternTestText(event.target.value)}
-                    placeholder="테스트할 문장을 입력하세요."
+                    placeholder={copy.regexTestPlaceholder}
                   />
                   <button type="button" className="secondary-action" onClick={runPatternTest}>
-                    테스트
+                    {copy.test}
                   </button>
                 </div>
                 {patternTestState ? (
@@ -761,10 +766,10 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
 
         <div className="entity-editor-dialog__footer">
           <button type="button" className="secondary-action" onClick={onClose}>
-            취소
+            {copy.cancel}
           </button>
           <button type="button" className="primary-action" onClick={handleSave}>
-            저장
+            {copy.save}
           </button>
         </div>
       </div>
@@ -773,6 +778,8 @@ function EntityValueItemDialog({ existingRows, target, onClose, onSave }: Entity
 }
 
 export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved }: EntityEditorDialogProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = ENTITY_EDITOR_CATALOGS[uiLanguage];
   const [form, setForm] = useState<VersionEntityAsset | null>(entity);
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = usePersistedPageSize<DialogPageSize>(
@@ -910,26 +917,26 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
         version_json: nextDocument,
       };
       const nextBot = applyUpdatedVersionToBot(bot, updatedVersion);
-      onSaved(nextBot, "개체값이 저장되었습니다.");
+      onSaved(nextBot, copy.saved);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "개체값 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.saveFailed);
     } finally {
       setSaving(false);
     }
   }
 
   const dialogTitle = isSystem
-    ? `${currentEntity.name} 시스템 개체`
+    ? formatEntityEditorText(copy.systemTitle, { name: currentEntity.name })
     : currentEntity.rows.length === 0
-      ? "개체값 조회(개체 생성)"
-      : "개체값 조회";
+      ? copy.createTitle
+      : copy.viewTitle;
 
   return (
     <div className="entity-editor-backdrop" role="presentation">
       <div className="entity-editor-dialog" role="dialog" aria-modal="true" aria-label={dialogTitle}>
         <div className="entity-editor-dialog__header">
           <strong>{dialogTitle}</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <button type="button" className="entity-editor-dialog__close" aria-label={copy.close} onClick={onClose}>
             ×
           </button>
         </div>
@@ -941,30 +948,30 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
           {isSystem ? (
             <section className="entity-editor-dialog__system-sheet">
               <p className="entity-editor-dialog__system-note">
-                시스템 개체는 AIDOT 시스템이 제공하는 기본 개체로 수정하거나 삭제할 수 없습니다.
+                {copy.systemEntityDescription}
               </p>
 
               <div className="entity-editor-dialog__system-grid">
                 <article className="entity-editor-dialog__system-card">
-                  <span>구분</span>
-                  <strong>시스템 개체</strong>
+                  <span>{copy.category}</span>
+                  <strong>{copy.systemEntity}</strong>
                 </article>
                 <article className="entity-editor-dialog__system-card">
-                  <span>사전종류</span>
+                  <span>{copy.dictionaryType}</span>
                   <strong>{currentEntity.systemKind === "regex" ? "regex" : "look-up"}</strong>
                 </article>
                 <article className="entity-editor-dialog__system-card">
-                  <span>표준 표현</span>
+                  <span>{copy.standardExpression}</span>
                   <strong>{currentEntity.standardExpression || "-"}</strong>
                 </article>
                 <article className="entity-editor-dialog__system-card">
-                  <span>개체명</span>
+                  <span>{copy.entityName}</span>
                   <strong>{currentEntity.name}</strong>
                 </article>
               </div>
 
               <div className="entity-editor-dialog__system-examples">
-                <span>예제</span>
+                <span>{copy.examples}</span>
                 <ul>
                   {(currentEntity.examples ?? []).map((example) => (
                     <li key={example}>{example}</li>
@@ -973,25 +980,25 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
               </div>
 
               <div className="entity-editor-dialog__system-test">
-                <span>문장 테스트</span>
+                <span>{copy.sentenceTest}</span>
                 <div className="entity-editor-dialog__system-test-grid">
                   <textarea
                     className="dictionary-editor-dialog__textarea"
                     value={systemTestText}
                     onChange={(event) => setSystemTestText(event.target.value)}
-                    placeholder="예: 내 전화번호는 010-4350-1234 입니다."
+                    placeholder={copy.systemPlaceholder}
                   />
                   <div className="entity-editor-dialog__system-test-result">
-                    <strong>추출 결과</strong>
+                    <strong>{copy.extractResult}</strong>
                     {!systemTestText.trim() ? (
-                      <p>테스트할 문장을 입력해주세요.</p>
+                      <p>{copy.enterTestText}</p>
                     ) : systemMatches.length === 0 ? (
-                      <p>추출된 값이 없습니다.</p>
+                      <p>{copy.noExtractedValue}</p>
                     ) : (
                       <div className="entity-editor-dialog__system-test-table">
                         <div className="entity-editor-dialog__system-test-table-head">
-                          <span>원문값</span>
-                          <span>표준값(target)</span>
+                          <span>{copy.sourceValue}</span>
+                          <span>{copy.targetValue}</span>
                         </div>
                         {systemMatches.map((match, index) => (
                           <div
@@ -1012,14 +1019,14 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
             <div className="entity-editor-dialog__list-layout">
               <div className="entity-editor-dialog__toolbar">
                 <div className="entity-editor-dialog__toolbar-left">
-                  <strong>전체 {filteredRows.length}건</strong>
+                  <strong>{formatEntityEditorText(copy.total, { count: filteredRows.length })}</strong>
                   <label className="manual-main__mini-select manual-main__mini-select--select">
                     <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as DialogPageSize)}>
-                      <option value={5}>5개씩 보기</option>
-                      <option value={10}>10개씩 보기</option>
-                      <option value={25}>25개씩 보기</option>
-                      <option value={50}>50개씩 보기</option>
-                      <option value={100}>100개씩 보기</option>
+                      <option value={5}>{formatEntityEditorText(copy.pageSize, { count: 5 })}</option>
+                      <option value={10}>{formatEntityEditorText(copy.pageSize, { count: 10 })}</option>
+                      <option value={25}>{formatEntityEditorText(copy.pageSize, { count: 25 })}</option>
+                      <option value={50}>{formatEntityEditorText(copy.pageSize, { count: 50 })}</option>
+                      <option value={100}>{formatEntityEditorText(copy.pageSize, { count: 100 })}</option>
                     </select>
                   </label>
                   <button
@@ -1028,20 +1035,20 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
                     disabled={selectedRowIds.length === 0}
                     onClick={handleDeleteSelectedRows}
                   >
-                    삭제
+                    {copy.delete}
                   </button>
                 </div>
 
                 <div className="entity-editor-dialog__toolbar-right">
                   <button type="button" className="manual-main__ghost-button" onClick={() => setDictionaryImportOpen(true)}>
-                    + 사전 불러오기
+                    {copy.importDictionary}
                   </button>
                   <button
                     type="button"
                     className="manual-main__action-button"
                     onClick={() => setRowEditorTarget({ mode: "new", row: createEmptyEntityValueRow() })}
                   >
-                    + 개체값 추가
+                    {copy.addEntityValue}
                   </button>
                 </div>
               </div>
@@ -1051,7 +1058,7 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
                   type="text"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="개체값, 동의어 또는 패턴을 검색하세요."
+                  placeholder={copy.searchPlaceholder}
                 />
               </label>
 
@@ -1067,9 +1074,9 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
                         }
                       />
                     </span>
-                    <span>개체값</span>
-                    <span>유형</span>
-                    <span>동의어/패턴</span>
+                    <span>{copy.entityValue}</span>
+                    <span>{copy.type}</span>
+                    <span>{copy.synonymPattern}</span>
                   </div>
 
                   {pagedRows.map((row) => (
@@ -1100,7 +1107,7 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
                   ))}
 
                   {pagedRows.length === 0 ? (
-                    <div className="entity-detail__empty">등록된 개체값이 없습니다. 먼저 개체값을 추가해주세요.</div>
+                    <div className="entity-detail__empty">{copy.emptyValues}</div>
                   ) : null}
                 </div>
               </div>
@@ -1137,11 +1144,11 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
 
         <div className="entity-editor-dialog__footer">
           <button type="button" className="secondary-action" onClick={onClose}>
-            취소
+            {copy.cancel}
           </button>
           {!isSystem ? (
             <button type="button" className="primary-action" disabled={saving} onClick={() => void handlePersist()}>
-              {saving ? "저장 중..." : "저장"}
+              {saving ? copy.saving : copy.save}
             </button>
           ) : null}
         </div>
@@ -1150,6 +1157,7 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
       {!isSystem && rowEditorTarget ? (
         <EntityValueItemDialog
           existingRows={currentEntity.rows}
+          copy={copy}
           target={rowEditorTarget}
           onClose={() => setRowEditorTarget(null)}
           onSave={handleSaveRow}
@@ -1159,6 +1167,7 @@ export function EntityEditorDialog({ authSession, bot, entity, onClose, onSaved 
       {!isSystem && dictionaryImportOpen ? (
         <DictionaryImportDialog
           dictionary={dictionary}
+          copy={copy}
           onClose={() => setDictionaryImportOpen(false)}
           onImport={handleImportDictionary}
         />

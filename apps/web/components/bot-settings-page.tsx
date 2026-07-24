@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import {
   ANSWER_MODE_OPTIONS,
   DEFAULT_ANSWER_MODE,
@@ -22,6 +23,7 @@ import {
   type VectorConnectionsConfig,
 } from "@/lib/bot-settings";
 import { buildBotAiCombinationRows, selectedBotAiCombination } from "@/lib/bot-ai-combinations";
+import { getLanguageLabel, normalizeSupportedLanguage, type SupportedLanguage } from "@/lib/language";
 import { BotSettingsShell } from "@/components/bot-settings-shell";
 import {
   getNluModelLabel,
@@ -45,6 +47,9 @@ import {
   type LlmModelKey,
   type LlmProvider,
 } from "@/lib/llm-options";
+import { translateAiOptionText } from "@/lib/i18n/ai-options";
+import { BOT_CREATE_CATALOGS, formatBotCreateText } from "@/lib/i18n/bot-create";
+import { BOT_SETTINGS_CATALOGS } from "@/lib/i18n/bot-settings";
 
 const PROFILE_OPTIONS = [
   { key: "gray" as const, className: "bot-create-dialog__profile--muted" },
@@ -53,7 +58,7 @@ const PROFILE_OPTIONS = [
 ];
 
 const BOT_NAME_MAX_LENGTH = 40;
-const BOT_NAME_PATTERN = /^[가-힣a-zA-Z0-9\s\-()_.]+$/;
+const BOT_NAME_PATTERN = /^[\p{L}\p{N}\s\-()_.]+$/u;
 const INTERNAL_INTENT_INDEX_NAME = "aidot-intent";
 const INTERNAL_ANSWER_INDEX_NAME = "aidot-answer";
 
@@ -102,16 +107,16 @@ function internalVectorConnection(kind: "intent" | "answer", value?: Partial<Vec
 
 function mapBotTypeLabel(bot: {
   data_json?: { bot_kind?: "bot" | "hub"; bot_mode?: "text" | "voice" };
-}) {
+}, labels: { hub: string; voice: string; text: string }) {
   if (bot.data_json?.bot_kind === "hub") {
-    return "봇 허브";
+    return labels.hub;
   }
 
   if (bot.data_json?.bot_mode === "voice") {
-    return "보이스형";
+    return labels.voice;
   }
 
-  return "텍스트형";
+  return labels.text;
 }
 
 function formatUpdatedAt(value?: string | null) {
@@ -159,8 +164,11 @@ function BotEditSection({
   setMessage,
   setErrorMessage,
 }: BotEditSectionProps) {
+  const { language: uiLanguage } = useI18n();
+  const createCopy = BOT_CREATE_CATALOGS[uiLanguage];
+  const copy = BOT_SETTINGS_CATALOGS[uiLanguage];
   const [name, setName] = useState("");
-  const [language, setLanguage] = useState<"ko">("ko");
+  const [language, setLanguage] = useState<SupportedLanguage>("ko");
   const [nluType, setNluType] = useState<NluType>("ml");
   const [nluModel, setNluModel] = useState<NluModelKey>("deep_learning_lite");
   const [answerMode, setAnswerMode] = useState<AnswerMode>(DEFAULT_ANSWER_MODE);
@@ -177,7 +185,7 @@ function BotEditSection({
     const aiConfig = getSelectedAiConfig(bot);
     const nextType = normalizeNluType(aiConfig.nlu_type);
     setName(bot.name);
-    setLanguage((aiConfig.language as "ko") ?? "ko");
+    setLanguage(normalizeSupportedLanguage(aiConfig.language));
     setNluType(nextType);
     setNluModel(normalizeNluModel(nextType, aiConfig.nlu_model ?? aiConfig.nlu_engine));
     setAnswerMode(normalizeAnswerMode(aiConfig.answer_mode));
@@ -191,7 +199,11 @@ function BotEditSection({
     setDescription(aiConfig.introduction ?? bot.description ?? "");
   }, [bot]);
 
-  const typeLabel = mapBotTypeLabel(bot);
+  const typeLabel = mapBotTypeLabel(bot, {
+    hub: createCopy.botHub,
+    voice: createCopy.voiceType,
+    text: createCopy.textType,
+  });
   const llmModelOptions = LLM_MODEL_OPTIONS_BY_PROVIDER[llmProvider];
   const nluModelOptions = NLU_MODEL_OPTIONS_BY_TYPE[nluType] ?? [];
   const nluModelDescription = getNluModelDescription(nluType, nluModel);
@@ -200,24 +212,27 @@ function BotEditSection({
   const usesLlmEngine = nluType === "llm" || answerMode === "llm_rag" || answerMode === "llm";
   const usesSemanticNlu = isSemanticNluType(nluType);
   const usesSemanticAnswer = answerMode === "semantic_rag";
-  const answerModeLabel = ANSWER_MODE_OPTIONS.find((option) => option.value === answerMode)?.label ?? "정해진 답변";
+  const answerModeLabel = translateAiOptionText(
+    uiLanguage,
+    ANSWER_MODE_OPTIONS.find((option) => option.value === answerMode)?.label ?? "정해진 답변",
+  );
   const selectedVersionTrained = isStudioBotVersionTrained(bot.active_version);
-  const modelLockHint = selectedVersionTrained ? "학습 완료 후 고정" : "학습 전 변경 가능";
-  const fixedModeMessage = "언어, NLU 방식, 답변 방식은 봇 생성 시 고정됩니다. 모델은 학습 전까지 변경할 수 있고 학습 완료 후에는 고정됩니다.";
+  const modelLockHint = selectedVersionTrained ? copy.modelLocked : copy.modelChangeable;
+  const fixedModeMessage = copy.fixedModeMessage;
 
   async function handleSave() {
     if (!token) {
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(createCopy.loginRequired);
       return;
     }
 
     if (!name.trim()) {
-      setErrorMessage("봇 이름을 입력해주세요.");
+      setErrorMessage(createCopy.nameRequired);
       return;
     }
 
     if (!BOT_NAME_PATTERN.test(name.trim())) {
-      setErrorMessage("봇 이름은 한글/영문/숫자/공백/특수문자(-, (), _, .)만 입력할 수 있습니다.");
+      setErrorMessage(translateAiOptionText(uiLanguage, "Bot names may contain Unicode letters, numbers, spaces, and supported symbols."));
       return;
     }
 
@@ -254,9 +269,9 @@ function BotEditSection({
       });
 
       setBot(updated);
-      setMessage("봇 설정이 저장되었습니다.");
+      setMessage(copy.saved);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "봇 설정 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.saveError);
     } finally {
       setSaving(false);
     }
@@ -266,18 +281,18 @@ function BotEditSection({
     <>
           <div className="bot-settings-page__top-actions">
             <Link href={mainHref} className="secondary-action">
-              취소
+              {copy.cancel}
             </Link>
             <button type="button" className="primary-action" disabled={saving} onClick={handleSave}>
-              {saving ? "저장 중..." : "저장"}
+              {saving ? copy.saving : copy.save}
             </button>
           </div>
 
           <section className="bot-settings-section">
-            <h2>기본 정보</h2>
+            <h2>{copy.basicInfo}</h2>
             <div className="bot-settings-grid bot-settings-grid--4">
               <label className="bot-settings-card">
-                <span>봇 이름 <em>*</em></span>
+                <span>{createCopy.botName} <em>*</em></span>
                 <input
                   type="text"
                   className="bot-settings-card__input"
@@ -286,46 +301,46 @@ function BotEditSection({
                   onChange={(event) => setName(event.target.value)}
                 />
                 <small className="bot-settings-card__hint">
-                  한글/영문/숫자/공백/특수문자(-, (){};:) 으로만 입력
+                  {translateAiOptionText(uiLanguage, "Bot names may contain Unicode letters, numbers, spaces, and supported symbols.")}
                   <span>{name.length}/{BOT_NAME_MAX_LENGTH}</span>
                 </small>
               </label>
 
               <div className="bot-settings-card">
-                <span>유형</span>
+                <span>{copy.type}</span>
                 <strong>{typeLabel}</strong>
               </div>
 
               <div className="bot-settings-card">
-                <span>봇 ID</span>
+                <span>{copy.botId}</span>
                 <strong>{bot.id}</strong>
               </div>
 
               <div className="bot-settings-card">
-                <span>최근 수정</span>
+                <span>{copy.recentModified}</span>
                 <strong>{formatUpdatedAt(bot.updated_at)}</strong>
               </div>
             </div>
           </section>
 
           <section className="bot-settings-section">
-            <h2>생성 정보</h2>
+            <h2>{copy.creationInfo}</h2>
             <div className="bot-settings-grid bot-settings-grid--5">
               <div className="bot-settings-card">
-                <span>언어 <em>*</em></span>
-                <strong>{language === "ko" ? "한국어" : language}</strong>
-                <small className="bot-settings-card__hint">봇 생성 시 고정</small>
+                <span>{createCopy.language} <em>*</em></span>
+                <strong>{getLanguageLabel(language)}</strong>
+                <small className="bot-settings-card__hint">{copy.fixedAtCreation}</small>
               </div>
 
               <div className="bot-settings-card">
-                <span>NLU 방식</span>
-                <strong>{getNluTypeLabel(nluType)}</strong>
-                <small className="bot-settings-card__hint">봇 생성 시 고정</small>
+                <span>{createCopy.nluType}</span>
+                <strong>{translateAiOptionText(uiLanguage, getNluTypeLabel(nluType))}</strong>
+                <small className="bot-settings-card__hint">{copy.fixedAtCreation}</small>
               </div>
 
               {nluType === "semantic_external" ? (
                 <label className="bot-settings-card">
-                  <span>NLU 모델 <em>*</em></span>
+                  <span>{createCopy.nluModel} <em>*</em></span>
                   <select
                     className="bot-settings-card__select"
                     value={nluModel}
@@ -334,28 +349,28 @@ function BotEditSection({
                   >
                     {nluModelOptions.map((option) => (
                       <option key={option.value} value={option.value} disabled={option.disabled}>
-                        {option.label} ({option.note})
+                        {translateAiOptionText(uiLanguage, option.label)} ({translateAiOptionText(uiLanguage, option.note)})
                       </option>
                     ))}
                   </select>
-                  <small className="bot-settings-card__hint">{selectedVersionTrained ? modelLockHint : (nluModelDescription || modelLockHint)}</small>
+                  <small className="bot-settings-card__hint">{selectedVersionTrained ? modelLockHint : (translateAiOptionText(uiLanguage, nluModelDescription) || modelLockHint)}</small>
                 </label>
               ) : (
                 <div className="bot-settings-card">
-                  <span>NLU 모델 <em>*</em></span>
-                  <strong>{getNluModelLabel(nluType, nluModel)}</strong>
+                  <span>{createCopy.nluModel} <em>*</em></span>
+                  <strong>{translateAiOptionText(uiLanguage, getNluModelLabel(nluType, nluModel))}</strong>
                   <small className="bot-settings-card__hint">{modelLockHint}</small>
                 </div>
               )}
 
               <div className="bot-settings-card">
-                <span>답변 방식</span>
+                <span>{createCopy.answerMode}</span>
                 <strong>{answerModeLabel}</strong>
-                <small className="bot-settings-card__hint">봇 생성 시 고정</small>
+                <small className="bot-settings-card__hint">{copy.fixedAtCreation}</small>
               </div>
 
               <div className="bot-settings-card">
-                <span>프로필</span>
+                <span>{copy.profile}</span>
                 <div className="bot-settings-card__profiles">
                   {PROFILE_OPTIONS.map((option) => (
                     <button
@@ -363,14 +378,14 @@ function BotEditSection({
                       type="button"
                       className={`${option.className}${profileKey === option.key ? " is-selected" : ""} bot-create-dialog__profile`}
                       onClick={() => setProfileKey(option.key)}
-                      aria-label={`프로필 ${option.key}`}
+                      aria-label={`${copy.profile} ${option.key}`}
                     />
                   ))}
                 </div>
               </div>
 
               <div className="bot-settings-card">
-                <span>버전 수</span>
+                <span>{copy.versionCount}</span>
                 <strong>{bot.version_count}</strong>
               </div>
 
@@ -392,14 +407,14 @@ function BotEditSection({
                   >
                     {LLM_PROVIDER_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label} ({option.note})
+                        {translateAiOptionText(uiLanguage, option.label)} ({translateAiOptionText(uiLanguage, option.note)})
                       </option>
                     ))}
                   </select>
                 </label>
 
                 <label className="bot-settings-card">
-                  <span>LLM 세부 모델 <em>*</em></span>
+                  <span>{createCopy.llmModel} <em>*</em></span>
                   <select
                     className="bot-settings-card__select"
                     value={llmModel}
@@ -408,7 +423,7 @@ function BotEditSection({
                   >
                     {llmModelOptions.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label} ({option.note})
+                        {translateAiOptionText(uiLanguage, option.label)} ({translateAiOptionText(uiLanguage, option.note)})
                       </option>
                     ))}
                   </select>
@@ -417,7 +432,7 @@ function BotEditSection({
 
                 {llmProvider === "ollama" ? (
                   <label className="bot-settings-card">
-                    <span>Ollama 주소</span>
+                    <span>{createCopy.ollamaAddress}</span>
                     <input
                       type="url"
                       className="bot-settings-card__input"
@@ -433,16 +448,16 @@ function BotEditSection({
             {usesSemanticNlu ? (
               <div className="bot-settings-vector">
                 <div className="bot-settings-vector__header">
-                  <strong>Intent Vector DB 연결</strong>
+                  <strong>{createCopy.intentVectorConnection}</strong>
                   <span>
                     {nluType === "semantic_external"
-                      ? "외부에서 만든 Vector DB의 검색 API를 연결합니다. 응답 규격과 임베딩 모델 호환이 필요합니다."
-                      : "Aidot Vector Worker 기본 연결을 사용합니다. 의도 벡터는 Local Vector DB에 저장됩니다."}
+                      ? createCopy.externalIntentVectorDescription
+                      : createCopy.internalIntentVectorDescription}
                   </span>
                 </div>
                 <div className="bot-settings-grid bot-settings-grid--4">
                   <label className="bot-settings-card">
-                    <span>사용 여부</span>
+                    <span>{copy.useStatus}</span>
                     <select
                       className="bot-settings-card__select"
                       value={vectorConnections.intent?.enabled ? "true" : "false"}
@@ -456,14 +471,14 @@ function BotEditSection({
                         }))
                       }
                     >
-                      <option value="false">미사용</option>
-                      <option value="true">사용</option>
+                      <option value="false">{createCopy.disabled}</option>
+                      <option value="true">{createCopy.enabled}</option>
                     </select>
                   </label>
 
                   {nluType === "semantic_external" ? (
                     <label className="bot-settings-card bot-settings-card--wide">
-                      <span>검색 API URL</span>
+                      <span>{copy.searchApiUrl}</span>
                       <input
                         type="url"
                         className="bot-settings-card__input"
@@ -483,7 +498,7 @@ function BotEditSection({
                   ) : null}
 
                   <label className="bot-settings-card">
-                    <span>Index 이름</span>
+                    <span>{copy.indexName}</span>
                     <input
                       type="text"
                       className="bot-settings-card__input"
@@ -507,7 +522,7 @@ function BotEditSection({
                       <input
                         type="password"
                         className="bot-settings-card__input"
-                        placeholder="선택 입력"
+                        placeholder={copy.optionalInput}
                         value={vectorConnections.intent?.api_key ?? ""}
                         onChange={(event) =>
                           setVectorConnections((current) => ({
@@ -528,12 +543,12 @@ function BotEditSection({
             {usesSemanticAnswer ? (
               <div className="bot-settings-vector">
                 <div className="bot-settings-vector__header">
-                  <strong>Answer Vector DB 연결</strong>
-                  <span>Aidot Vector Worker 기본 연결을 사용합니다. 답변 검색용 지식은 의도 분류와 별도 Answer Vector DB에 저장합니다.</span>
+                  <strong>{createCopy.answerVectorConnection}</strong>
+                  <span>{createCopy.answerVectorDescription}</span>
                 </div>
                 <div className="bot-settings-grid bot-settings-grid--4">
                   <label className="bot-settings-card">
-                    <span>사용 여부</span>
+                    <span>{copy.useStatus}</span>
                     <select
                       className="bot-settings-card__select"
                       value={vectorConnections.answer?.enabled ? "true" : "false"}
@@ -547,13 +562,13 @@ function BotEditSection({
                         }))
                       }
                     >
-                      <option value="false">미사용</option>
-                      <option value="true">사용</option>
+                      <option value="false">{createCopy.disabled}</option>
+                      <option value="true">{createCopy.enabled}</option>
                     </select>
                   </label>
 
                   <label className="bot-settings-card">
-                    <span>Index 이름</span>
+                    <span>{copy.indexName}</span>
                     <input
                       type="text"
                       className="bot-settings-card__input"
@@ -578,17 +593,17 @@ function BotEditSection({
             {nluType !== "llm" ? (
               <div className="bot-settings-vector">
                 <div className="bot-settings-vector__header">
-                  <strong>구성 자동분류 가중치</strong>
-                  <span>구성 화면의 의도 후보 분류에서 사전, 개체, 단어, 글자 조각, 조사/어미 반영 비율을 조정합니다.</span>
+                  <strong>{copy.scoringTitle}</strong>
+                  <span>{copy.scoringDescription}</span>
                 </div>
                 <div className="bot-settings-grid bot-settings-grid--6">
                   {[
-                    ["dictionaryWeight", "사전 대표어"],
-                    ["entityWeight", "개체"],
-                    ["wordWeight", "명사/동사"],
-                    ["gramWeight", "글자 조각"],
-                    ["particleEndingWeight", "조사/어미"],
-                    ["keyMatchScore", "대표어 일치 최소점수"],
+                    ["dictionaryWeight", copy.dictionaryRepresentative],
+                    ["entityWeight", copy.entity],
+                    ["wordWeight", copy.nounVerb],
+                    ["gramWeight", copy.characterFragment],
+                    ["particleEndingWeight", copy.particleEnding],
+                    ["keyMatchScore", copy.keyMatchMinimum],
                   ].map(([key, label]) => (
                     <label key={key} className="bot-settings-card">
                       <span>{label}</span>
@@ -613,47 +628,51 @@ function BotEditSection({
             ) : null}
 
             <label className="bot-settings-intro">
-              <span>소개</span>
+              <span>{copy.introduction}</span>
               <textarea
                 className="bot-settings-intro__textarea"
-                placeholder="봇을 설명할 수 있는 소개 문장을 입력하세요."
+                placeholder={createCopy.introductionPlaceholder}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
             </label>
 
-            <section className="bot-ai-combinations" aria-label="NLU와 답변 조합 지원 상태">
+            <section className="bot-ai-combinations" aria-label={createCopy.combinationAria}>
               <div className="bot-ai-combinations__summary">
-                <strong>선택 조합</strong>
+                <strong>{createCopy.selectedCombination}</strong>
                 <span>
                   {selectedCombination
-                    ? `의도인식: ${selectedCombination.nluLabel} · ${selectedCombination.nluModelLabel} / 답변: ${selectedCombination.answerLabel}`
-                    : "선택된 조합을 확인할 수 없습니다."}
+                    ? formatBotCreateText(createCopy.selectedCombinationSummary, {
+                      nlu: translateAiOptionText(uiLanguage, selectedCombination.nluLabel),
+                      model: translateAiOptionText(uiLanguage, selectedCombination.nluModelLabel),
+                      answer: translateAiOptionText(uiLanguage, selectedCombination.answerLabel),
+                    })
+                    : createCopy.noCombination}
                 </span>
                 {selectedCombination ? (
                   <em className={`bot-ai-combinations__badge bot-ai-combinations__badge--${selectedCombination.status}`}>
-                    {selectedCombination.statusLabel}
+                    {translateAiOptionText(uiLanguage, selectedCombination.statusLabel)}
                   </em>
                 ) : null}
               </div>
               <p className="bot-ai-combinations__lock">{fixedModeMessage}</p>
               <div className="bot-ai-combinations__matrix">
                 <div className="bot-ai-combinations__axis bot-ai-combinations__axis--corner">
-                  <span>의도인식 엔진</span>
-                  <strong>답변 엔진</strong>
+                  <span>{createCopy.intentEngine}</span>
+                  <strong>{createCopy.answerEngine}</strong>
                 </div>
                 {ANSWER_MODE_OPTIONS.map((option) => (
                   <div key={option.value} className="bot-ai-combinations__axis bot-ai-combinations__axis--answer">
-                    <span>답변 엔진</span>
-                    <strong>{option.label}</strong>
+                    <span>{createCopy.answerEngine}</span>
+                    <strong>{translateAiOptionText(uiLanguage, option.label)}</strong>
                   </div>
                 ))}
                 {aiCombinationRows.map((row) => (
                   <div key={row.nluType} className="bot-ai-combinations__row">
                     <div className="bot-ai-combinations__axis bot-ai-combinations__axis--nlu">
-                      <span>의도인식 엔진</span>
-                      <strong>{row.nluLabel}</strong>
-                      <small>{row.nluModelLabel}</small>
+                      <span>{createCopy.intentEngine}</span>
+                      <strong>{translateAiOptionText(uiLanguage, row.nluLabel)}</strong>
+                      <small>{translateAiOptionText(uiLanguage, row.nluModelLabel)}</small>
                     </div>
                     {row.combinations.map((item) => {
                       const selected = item.nluType === nluType && item.answerMode === answerMode;
@@ -665,16 +684,16 @@ function BotEditSection({
                           disabled={!selected}
                           aria-pressed={selected}
                         >
-                          <span>조합 상태</span>
-                          <strong>{item.statusLabel}</strong>
-                          <small>{item.status === "unsupported" ? "사용 불가" : selected ? "현재 선택" : "학습 후 고정"}</small>
+                          <span>{createCopy.combinationStatus}</span>
+                          <strong>{translateAiOptionText(uiLanguage, item.statusLabel)}</strong>
+                          <small>{item.status === "unsupported" ? createCopy.unavailable : selected ? createCopy.currentSelection : copy.lockedAfterTraining}</small>
                         </button>
                       );
                     })}
                   </div>
                 ))}
               </div>
-              <p>{selectedCombination?.note ?? "현재 선택한 조합의 지원 상태를 확인해주세요."}</p>
+              <p>{selectedCombination ? translateAiOptionText(uiLanguage, selectedCombination.note) : createCopy.combinationHelp}</p>
             </section>
           </section>
 

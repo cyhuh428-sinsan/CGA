@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { DataGrid, dataGridCellText, type DataGridRow, type DataGridSortState } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import {
   fetchAuditLogs,
   fetchSystemLogs,
@@ -13,42 +14,15 @@ import {
   type AdminSystemLogItem,
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_AUDIT_LOG_CATALOGS } from "@/lib/i18n/admin-audit-logs";
+import { SUPPORTED_LANGUAGES } from "@/lib/language";
 import {
   LIST_PAGE_SIZE_OPTIONS,
   type ListPageSize,
   usePersistedPageSize,
 } from "@/lib/use-persisted-page-size";
 
-const ACTION_OPTIONS = [
-  { value: "", label: "전체 작업" },
-  { value: "admin.user.update", label: "사용자 수정" },
-  { value: "admin.user.status", label: "계정 상태 변경" },
-  { value: "admin.user.role", label: "역할 변경" },
-  { value: "admin.group.update", label: "그룹 수정" },
-  { value: "admin.channel.update", label: "채널 수정" },
-  { value: "admin.template.update", label: "템플릿 수정" },
-  { value: "admin.default_message.update", label: "기본 메시지 수정" },
-  { value: "bot.version.nlu.train", label: "학습 실행" },
-];
-
-const TARGET_OPTIONS = [
-  { value: "", label: "전체 대상" },
-  { value: "user", label: "사용자" },
-  { value: "group", label: "그룹" },
-  { value: "channel", label: "채널" },
-  { value: "template", label: "템플릿" },
-  { value: "default_message", label: "기본 메시지" },
-  { value: "bot_version", label: "봇 버전" },
-];
-
-const SYSTEM_LEVEL_OPTIONS = [
-  { value: "", label: "전체 레벨" },
-  { value: "INFO", label: "INFO" },
-  { value: "WARNING", label: "WARNING" },
-  { value: "ERROR", label: "ERROR" },
-];
-
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale = "ko-KR") {
   if (!value) {
     return "-";
   }
@@ -56,7 +30,7 @@ function formatDate(value: string | null) {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return new Intl.DateTimeFormat("ko-KR", {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -75,8 +49,7 @@ function todayDateText() {
   return `${year}-${month}-${day}`;
 }
 
-function downloadCsv(rows: AdminAuditLogItem[]) {
-  const headers = ["작업", "대상", "대상 ID", "사용자", "IP", "발생일시", "요약"];
+function downloadCsv(rows: AdminAuditLogItem[], headers: string[], locale: string) {
   const lines = rows.map((item) =>
     [
       item.action_type,
@@ -84,7 +57,7 @@ function downloadCsv(rows: AdminAuditLogItem[]) {
       item.target_id ?? "",
       item.actor_login_id,
       item.ip_address ?? "",
-      formatDate(item.created_at),
+      formatDate(item.created_at, locale),
       item.summary,
     ]
       .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
@@ -113,14 +86,14 @@ function downloadSystemJson(rows: AdminSystemLogItem[]) {
   URL.revokeObjectURL(url);
 }
 
-function sortRows(rows: DataGridRow[], sortState: DataGridSortState | null) {
+function sortRows(rows: DataGridRow[], sortState: DataGridSortState | null, locale: string) {
   if (!sortState) {
     return rows;
   }
   return [...rows].sort((left, right) => {
     const leftText = dataGridCellText(left.cells[sortState.columnIndex]);
     const rightText = dataGridCellText(right.cells[sortState.columnIndex]);
-    const result = leftText.localeCompare(rightText, "ko-KR", { numeric: true, sensitivity: "base" });
+    const result = leftText.localeCompare(rightText, locale, { numeric: true, sensitivity: "base" });
     return sortState.direction === "asc" ? result : -result;
   });
 }
@@ -146,6 +119,10 @@ function systemElapsedMs(item: AdminSystemLogItem) {
 }
 
 export default function AdminAuditLogsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = ADMIN_AUDIT_LOG_CATALOGS[uiLanguage];
+  const locale = SUPPORTED_LANGUAGES.find((item) => item.code === uiLanguage)?.intlLocale ?? "ko-KR";
+  const systemLevelOptions = [{ value:"",label:copy.allLevels },{ value:"INFO",label:"INFO" },{ value:"WARNING",label:"WARNING" },{ value:"ERROR",label:"ERROR" }];
   const today = todayDateText();
   const [token, setToken] = useState("");
   const [activeTab, setActiveTab] = useState<"audit" | "system">("audit");
@@ -191,11 +168,11 @@ export default function AdminAuditLogsPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setToken(session.access_token);
-  }, []);
+  }, [copy.loginRequired]);
 
   useEffect(() => {
     const params = systemLogParamsFromUrl();
@@ -233,7 +210,7 @@ export default function AdminAuditLogsPage() {
         setItems(response.items);
       } catch (error) {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "운영 로그를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.auditLoadFailed);
         }
       } finally {
         if (!ignore) {
@@ -246,7 +223,7 @@ export default function AdminAuditLogsPage() {
       ignore = true;
       window.clearTimeout(timeout);
     };
-  }, [appliedFilter, token]);
+  }, [appliedFilter, copy.auditLoadFailed, token]);
 
   useEffect(() => {
     if (!token || activeTab !== "system") {
@@ -267,7 +244,7 @@ export default function AdminAuditLogsPage() {
         setSystemLogFile(response.log_file);
       } catch (error) {
         if (!ignore) {
-          setSystemErrorMessage(error instanceof Error ? error.message : "시스템 로그를 불러오지 못했습니다.");
+          setSystemErrorMessage(error instanceof Error ? error.message : copy.systemLoadFailed);
         }
       } finally {
         if (!ignore) {
@@ -280,7 +257,7 @@ export default function AdminAuditLogsPage() {
       ignore = true;
       window.clearTimeout(timeout);
     };
-  }, [activeTab, systemAppliedFilter, token]);
+  }, [activeTab, copy.systemLoadFailed, systemAppliedFilter, token]);
 
   function handleSearch() {
     setAppliedFilter({
@@ -348,16 +325,16 @@ export default function AdminAuditLogsPage() {
           item.target_type,
           item.actor_login_id,
           item.ip_address ?? "-",
-          formatDate(item.created_at),
+          formatDate(item.created_at, locale),
           item.summary,
           <button key="detail" type="button" className="admin-page__link-button" onClick={() => setSelected(item)}>
-            상세
+            {copy.detail}
           </button>,
         ],
       })),
-    [items],
+    [copy.detail, items, locale],
   );
-  const sortedRows = useMemo(() => sortRows(allRows, sortState), [allRows, sortState]);
+  const sortedRows = useMemo(() => sortRows(allRows, sortState, locale), [allRows, locale, sortState]);
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const rows = sortedRows.slice((page - 1) * pageSize, page * pageSize);
 
@@ -366,7 +343,7 @@ export default function AdminAuditLogsPage() {
       systemItems.map((item) => ({
         key: item.id,
         cells: [
-          formatDate(item.time),
+          formatDate(item.time, locale),
           item.level || "-",
           item.event || "-",
           item.path || "-",
@@ -375,13 +352,13 @@ export default function AdminAuditLogsPage() {
           item.message || "-",
           item.request_id || "-",
           <button key="detail" type="button" className="admin-page__link-button" onClick={() => setSelectedSystem(item)}>
-            상세
+            {copy.detail}
           </button>,
         ],
       })),
-    [systemItems],
+    [copy.detail, locale, systemItems],
   );
-  const sortedSystemRows = useMemo(() => sortRows(allSystemRows, systemSortState), [allSystemRows, systemSortState]);
+  const sortedSystemRows = useMemo(() => sortRows(allSystemRows, systemSortState, locale), [allSystemRows, locale, systemSortState]);
   const systemTotalPages = Math.max(1, Math.ceil(sortedSystemRows.length / pageSize));
   const systemRows = sortedSystemRows.slice((systemPage - 1) * pageSize, systemPage * pageSize);
 
@@ -404,14 +381,14 @@ export default function AdminAuditLogsPage() {
 
   return (
     <section className="admin-page">
-      <h2>운영 로그 조회</h2>
+      <h2>{copy.title}</h2>
 
-      <div className="admin-page__tabs" role="tablist" aria-label="운영 로그 유형">
+      <div className="admin-page__tabs" role="tablist" aria-label={copy.tabsLabel}>
         <button type="button" className={activeTab === "audit" ? "is-active" : ""} onClick={() => setActiveTab("audit")}>
-          감사 로그
+          {copy.auditTab}
         </button>
         <button type="button" className={activeTab === "system" ? "is-active" : ""} onClick={() => setActiveTab("system")}>
-          시스템 로그
+          {copy.systemTab}
         </button>
       </div>
 
@@ -424,12 +401,12 @@ export default function AdminAuditLogsPage() {
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="작업, 대상, 사용자, IP 또는 내용을 검색하세요."
+                placeholder={copy.auditSearch}
               />
             </label>
 
             <select className="login-select" value={actionType} onChange={(event) => setActionType(event.target.value)}>
-              {ACTION_OPTIONS.map((option) => (
+              {copy.actionOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -437,37 +414,37 @@ export default function AdminAuditLogsPage() {
             </select>
 
             <select className="login-select" value={targetType} onChange={(event) => setTargetType(event.target.value)}>
-              {TARGET_OPTIONS.map((option) => (
+              {copy.targetOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
 
-            <input type="date" className="login-select" value={fromDate} onChange={(event) => setFromDate(event.target.value)} aria-label="조회 시작일" />
-            <input type="date" className="login-select" value={toDate} onChange={(event) => setToDate(event.target.value)} aria-label="조회 종료일" />
+            <input type="date" className="login-select" value={fromDate} onChange={(event) => setFromDate(event.target.value)} aria-label={copy.fromDate} />
+            <input type="date" className="login-select" value={toDate} onChange={(event) => setToDate(event.target.value)} aria-label={copy.toDate} />
 
             <div className="admin-page__search-actions">
               <button type="button" className="admin-page__primary" onClick={handleSearch}>
-                조회
+                {copy.search}
               </button>
             </div>
           </div>
 
           <div className="admin-page__toolbar">
             <div className="admin-page__toolbar-left">
-              <strong>전체 {total}건</strong>
+              <strong>{copy.total} {total}</strong>
               <label className="manual-main__mini-select manual-main__mini-select--select">
                 <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
                   {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                     <option key={option} value={option}>
-                      {option}개씩 보기
+                      {option} {copy.perPage}
                     </option>
                   ))}
                 </select>
               </label>
-              <button type="button" className="admin-page__ghost" onClick={() => downloadCsv(items)} disabled={items.length === 0}>
-                다운로드
+              <button type="button" className="admin-page__ghost" onClick={() => downloadCsv(items, copy.auditExportColumns, locale)} disabled={items.length === 0}>
+                {copy.download}
               </button>
             </div>
           </div>
@@ -476,7 +453,7 @@ export default function AdminAuditLogsPage() {
             <div className="admin-state-box">
               <p>{errorMessage}</p>
               <Link href="/login" className="ghost-pill">
-                로그인으로 이동
+                {copy.login}
               </Link>
             </div>
           ) : null}
@@ -486,15 +463,15 @@ export default function AdminAuditLogsPage() {
               <DataGrid
                 variant="admin"
                 template="220px 140px 150px 160px 190px minmax(260px, 1fr) 90px"
-                columns={["작업", "대상", "사용자", "IP", "발생일시", "요약", "상세"]}
+                columns={copy.auditColumns}
                 rows={loading ? [] : rows}
                 sortableColumns={[true, true, true, true, true, true, false]}
                 sortState={sortState}
                 onSort={setSortState}
               />
 
-              {loading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
-              {!loading && items.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+              {loading ? <p className="admin-page__empty">{copy.loading}</p> : null}
+              {!loading && items.length === 0 ? <p className="admin-page__empty">{copy.empty}</p> : null}
 
               <div className="admin-page__pagination">
                 <button type="button" disabled={page === 1} onClick={() => setPage(1)}>
@@ -525,7 +502,7 @@ export default function AdminAuditLogsPage() {
                 type="text"
                 value={systemQuery}
                 onChange={(event) => setSystemQuery(event.target.value)}
-                placeholder="메시지, 이벤트, 요청 ID, 경로를 검색하세요."
+                placeholder={copy.systemSearch}
               />
             </label>
             <select className="login-select" value={systemFile} onChange={(event) => setSystemFile(event.target.value as "app" | "error")}>
@@ -533,38 +510,38 @@ export default function AdminAuditLogsPage() {
               <option value="error">error.log</option>
             </select>
             <select className="login-select" value={systemLevel} onChange={(event) => setSystemLevel(event.target.value)}>
-              {SYSTEM_LEVEL_OPTIONS.map((option) => (
+              {systemLevelOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
-            <input className="login-select" type="text" value={systemEvent} onChange={(event) => setSystemEvent(event.target.value)} placeholder="이벤트" />
+            <input className="login-select" type="text" value={systemEvent} onChange={(event) => setSystemEvent(event.target.value)} placeholder={copy.event} />
             <div className="admin-page__search-actions">
               <button type="button" className="admin-page__ghost" onClick={handleSlowApiSearch}>
-                느린 API
+                {copy.slowApi}
               </button>
               <button type="button" className="admin-page__primary" onClick={handleSystemSearch}>
-                조회
+                {copy.search}
               </button>
             </div>
           </div>
 
           <div className="admin-page__toolbar">
             <div className="admin-page__toolbar-left">
-              <strong>전체 {systemTotal}건</strong>
-              <span className="admin-page__muted">파일 {systemLogFile}</span>
+              <strong>{copy.total} {systemTotal}</strong>
+              <span className="admin-page__muted">{copy.file} {systemLogFile}</span>
               <label className="manual-main__mini-select manual-main__mini-select--select">
                 <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
                   {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                     <option key={option} value={option}>
-                      {option}개씩 보기
+                      {option} {copy.perPage}
                     </option>
                   ))}
                 </select>
               </label>
               <button type="button" className="admin-page__ghost" onClick={() => downloadSystemJson(systemItems)} disabled={systemItems.length === 0}>
-                다운로드
+                {copy.download}
               </button>
             </div>
           </div>
@@ -573,7 +550,7 @@ export default function AdminAuditLogsPage() {
             <div className="admin-state-box">
               <p>{systemErrorMessage}</p>
               <Link href="/login" className="ghost-pill">
-                로그인으로 이동
+                {copy.login}
               </Link>
             </div>
           ) : null}
@@ -583,14 +560,14 @@ export default function AdminAuditLogsPage() {
               <DataGrid
                 variant="admin"
                 template="190px 90px 220px minmax(220px, 1fr) 90px 90px minmax(280px, 1.4fr) 260px 90px"
-                columns={["일시", "레벨", "이벤트", "경로", "소요(ms)", "상태", "메시지", "요청 ID", "상세"]}
+                columns={copy.systemColumns}
                 rows={systemLoading ? [] : systemRows}
                 sortableColumns={[true, true, true, true, true, true, true, true, false]}
                 sortState={systemSortState}
                 onSort={setSystemSortState}
               />
-              {systemLoading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
-              {!systemLoading && systemItems.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+              {systemLoading ? <p className="admin-page__empty">{copy.loading}</p> : null}
+              {!systemLoading && systemItems.length === 0 ? <p className="admin-page__empty">{copy.empty}</p> : null}
 
               <div className="admin-page__pagination">
                 <button type="button" disabled={systemPage === 1} onClick={() => setSystemPage(1)}>
@@ -618,34 +595,34 @@ export default function AdminAuditLogsPage() {
         <div className="admin-modal-backdrop" role="presentation" onClick={() => setSelected(null)}>
           <div className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="audit-log-detail-title" onClick={(event) => event.stopPropagation()}>
             <div className="admin-modal__header">
-              <h3 id="audit-log-detail-title">감사 로그 상세</h3>
-              <button type="button" className="icon-button" onClick={() => setSelected(null)} aria-label="닫기">
+              <h3 id="audit-log-detail-title">{copy.auditDetailTitle}</h3>
+              <button type="button" className="icon-button" onClick={() => setSelected(null)} aria-label={copy.close}>
                 ×
               </button>
             </div>
             <label>
-              작업
+              {copy.action}
               <input type="text" value={selected.action_type} readOnly />
             </label>
             <label>
-              대상
+              {copy.target}
               <input type="text" value={`${selected.target_type}${selected.target_id ? ` / ${selected.target_id}` : ""}`} readOnly />
             </label>
             <label>
-              사용자
+              {copy.user}
               <input type="text" value={selected.actor_login_id} readOnly />
             </label>
             <label>
-              발생일시
-              <input type="text" value={formatDate(selected.created_at)} readOnly />
+              {copy.occurredAt}
+              <input type="text" value={formatDate(selected.created_at, locale)} readOnly />
             </label>
             <label className="admin-modal__wide">
-              상세 데이터
+              {copy.detailData}
               <textarea value={JSON.stringify(selected.data_json, null, 2)} readOnly rows={14} />
             </label>
             <div className="admin-modal__actions">
               <button type="button" className="admin-page__primary" onClick={() => setSelected(null)}>
-                확인
+                {copy.confirm}
               </button>
             </div>
           </div>
@@ -656,77 +633,77 @@ export default function AdminAuditLogsPage() {
         <div className="admin-modal-backdrop" role="presentation" onClick={() => setSelectedSystem(null)}>
           <div className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="system-log-detail-title" onClick={(event) => event.stopPropagation()}>
             <div className="admin-modal__header">
-              <h3 id="system-log-detail-title">시스템 로그 상세</h3>
-              <button type="button" className="icon-button" onClick={() => setSelectedSystem(null)} aria-label="닫기">
+              <h3 id="system-log-detail-title">{copy.systemDetailTitle}</h3>
+              <button type="button" className="icon-button" onClick={() => setSelectedSystem(null)} aria-label={copy.close}>
                 ×
               </button>
             </div>
             <label>
-              이벤트
+              {copy.event}
               <input type="text" value={selectedSystem.event ?? "-"} readOnly />
             </label>
             <label>
-              레벨
+              {copy.level}
               <input type="text" value={selectedSystem.level || "-"} readOnly />
             </label>
             <label>
-              로거
+              {copy.logger}
               <input type="text" value={selectedSystem.logger || "-"} readOnly />
             </label>
             <label>
-              Method
+              {copy.method}
               <input type="text" value={selectedSystem.method ?? "-"} readOnly />
             </label>
             <label>
-              경로
+              {copy.path}
               <input type="text" value={selectedSystem.path ?? "-"} readOnly />
             </label>
             <label>
-              상태 코드
+              {copy.statusCode}
               <input type="text" value={selectedSystem.status_code === null ? "-" : String(selectedSystem.status_code)} readOnly />
             </label>
             <label>
-              소요시간(ms)
+              {copy.elapsed}
               <input type="text" value={systemElapsedMs(selectedSystem)} readOnly />
             </label>
             <label>
-              클라이언트
+              {copy.client}
               <input type="text" value={selectedSystem.client ?? "-"} readOnly />
             </label>
             <label>
-              요청 ID
+              {copy.requestId}
               <input type="text" value={selectedSystem.request_id ?? "-"} readOnly />
             </label>
             <label className="admin-modal__wide">
-              메시지
+              {copy.message}
               <textarea value={selectedSystem.message || "-"} readOnly rows={4} />
             </label>
             {selectedSystem.exception ? (
               <label className="admin-modal__wide">
-                예외
+                {copy.exception}
                 <textarea value={selectedSystem.exception} readOnly rows={6} />
               </label>
             ) : null}
             <label className="admin-modal__wide">
-              구조화 데이터
+              {copy.structuredData}
               <textarea value={JSON.stringify(selectedSystem.data, null, 2)} readOnly rows={10} />
             </label>
             <label className="admin-modal__wide">
-              상세 데이터
+              {copy.detailData}
               <textarea value={JSON.stringify({ ...selectedSystem, raw: undefined }, null, 2)} readOnly rows={14} />
             </label>
             <label className="admin-modal__wide">
-              원문
+              {copy.raw}
               <textarea value={selectedSystem.raw} readOnly rows={6} />
             </label>
             <div className="admin-modal__actions">
               {selectedSystem.request_id ? (
                 <button type="button" className="admin-page__ghost" onClick={() => handleSystemRequestIdSearch(selectedSystem.request_id)}>
-                  요청 ID로 조회
+                  {copy.searchRequestId}
                 </button>
               ) : null}
               <button type="button" className="admin-page__primary" onClick={() => setSelectedSystem(null)}>
-                확인
+                {copy.confirm}
               </button>
             </div>
           </div>

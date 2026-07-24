@@ -4,31 +4,21 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { fetchAdminUserDetail, type AdminUserDetail } from "@/lib/admin-api";
 import { apiRequest } from "@/lib/api";
-import { loadAuthSession, roleLabel } from "@/lib/auth";
+import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_USERS_CATALOGS, formatAdminUsersText, isDefaultOrganizationName, legacyAdminAccountStatusLabel, resolveAdminAccountStatus, resolveAdminSignupStatus, type AdminUsersCatalog } from "@/lib/i18n/admin-users";
+import { getLanguageLabel } from "@/lib/language";
 
 const ROLE_OPTIONS = [
-  { value: "curator", label: "큐레이터" },
-  { value: "operation_manager", label: "운영관리자" },
-  { value: "system_manager", label: "시스템관리자" },
-  { value: "it_admin", label: "IT관리자" },
+  "curator", "operation_manager", "system_manager", "it_admin",
 ] as const;
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).format(new Date(value));
-}
 
 export default function AdminUserDetailPage() {
   const router = useRouter();
+  const { language: uiLanguage } = useI18n();
+  const copy: AdminUsersCatalog = ADMIN_USERS_CATALOGS[uiLanguage];
   const routeParams = useParams<{ entryId: string }>();
   const resolvedEntryId =
     typeof routeParams.entryId === "string" ? routeParams.entryId : undefined;
@@ -47,7 +37,7 @@ export default function AdminUserDetailPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setToken(session.access_token);
@@ -70,7 +60,7 @@ export default function AdminUserDetailPage() {
     if (!token || !entryInfo) {
       if (!entryInfo) {
         setLoading(false);
-        setErrorMessage("사용자 식별 정보가 올바르지 않습니다.");
+        setErrorMessage(copy.detailForm.invalidId);
       }
       return;
     }
@@ -87,19 +77,11 @@ export default function AdminUserDetailPage() {
         setName(data.name);
         setSelectedRole(data.role_code);
         setSelectedGroupId(data.group_id);
-        setSelectedStatus(
-          data.account_status === "활성"
-            ? "active"
-            : data.account_status === "잠김"
-              ? "locked"
-              : data.account_status === "비밀번호 초기화"
-                ? "password_reset"
-                : "inactive",
-        );
+        setSelectedStatus(resolveAdminAccountStatus(data.account_status));
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "상세 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.detailForm.loadFailed);
         }
       })
       .finally(() => {
@@ -159,19 +141,12 @@ export default function AdminUserDetailPage() {
             ...detail,
             name: name.trim(),
             role_code: selectedRole as AdminUserDetail["role_code"],
-            role_name: roleLabel(selectedRole),
+            role_name: copy.roleNames[selectedRole] ?? detail.role_name,
             group_id: selectedGroupId,
             group_name:
               detail.available_groups.find((group) => group.id === selectedGroupId)?.name ??
               detail.group_name,
-            account_status:
-              selectedStatus === "active"
-                ? "활성"
-                : selectedStatus === "locked"
-                  ? "잠김"
-                  : selectedStatus === "password_reset"
-                    ? "비밀번호 초기화"
-                    : "비활성",
+            account_status: legacyAdminAccountStatusLabel(selectedStatus),
             data_json: {
               ...detail.data_json,
               name: name.trim(),
@@ -183,14 +158,14 @@ export default function AdminUserDetailPage() {
               status: selectedStatus,
             },
           });
-          setMessage("사용자 정보가 변경되었습니다.");
+          setMessage(copy.detailForm.updated);
         } else if (action === "delete") {
           await apiRequest(
             `/api/v1/admin/users/${entryInfo.id}`,
             { method: "DELETE" },
             token,
           );
-          setMessage("사용자가 삭제되었습니다.");
+          setMessage(copy.detailForm.deleted);
           router.push("/admin/users");
           router.refresh();
           return;
@@ -198,73 +173,79 @@ export default function AdminUserDetailPage() {
       }
 
       if (entryInfo.kind === "signup_request") {
-        setMessage(action === "approve" ? "회원가입 신청이 승인되었습니다." : "회원가입 신청이 반려되었습니다.");
+        setMessage(action === "approve" ? copy.detailForm.approved : copy.detailForm.rejected);
         router.push("/admin/users");
         router.refresh();
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "작업 처리 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.detailForm.actionError);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function formatDate(value: string) {
+    return new Intl.DateTimeFormat(uiLanguage, {
+      year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false,
+    }).format(new Date(value));
   }
 
   return (
     <section className="admin-detail">
       <div className="admin-detail__header">
         <div>
-          <h2>사용자 상세</h2>
-          <p>사용자 관리 화면과 연결된 승인/상태 관리 페이지입니다.</p>
+          <h2>{copy.detailForm.title}</h2>
+          <p>{copy.detailForm.subtitle}</p>
         </div>
         <Link href="/admin/users" className="secondary-action">
-          목록으로
+          {copy.detailForm.back}
         </Link>
       </div>
 
-      {loading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
+      {loading ? <p className="admin-page__empty">{copy.detailForm.loading}</p> : null}
       {errorMessage ? <p className="form-message form-message--error">{errorMessage}</p> : null}
       {message ? <p className="form-message form-message--success">{message}</p> : null}
 
       {detail ? (
         <div className="admin-detail__grid">
           <div className="admin-detail__card">
-            <h3>기본 정보</h3>
+            <h3>{copy.detailForm.info}</h3>
             <dl className="admin-detail__list">
               <div>
-                <dt>사용자 계정</dt>
+                <dt>{copy.detailForm.account}</dt>
                 <dd>{detail.login_id}</dd>
               </div>
               <div>
-                <dt>사용자 이름</dt>
+                <dt>{copy.detailForm.name}</dt>
                 <dd>{detail.name}</dd>
               </div>
               <div>
-                <dt>서버</dt>
-                <dd>{detail.organization_name === "기본 테넌트" ? "기본 서버" : detail.organization_name}</dd>
+                <dt>{copy.detailForm.server}</dt>
+                <dd>{isDefaultOrganizationName(detail.organization_name) ? copy.detailForm.defaultServer : detail.organization_name}</dd>
               </div>
               <div>
-                <dt>그룹</dt>
+                <dt>{copy.detailForm.group}</dt>
                 <dd>{detail.group_name}</dd>
               </div>
               <div>
-                <dt>신청일시</dt>
+                <dt>{copy.detailForm.requestedAt}</dt>
                 <dd>{formatDate(detail.requested_at)}</dd>
               </div>
               <div>
-                <dt>가입상태</dt>
-                <dd>{detail.signup_status}</dd>
+                <dt>{copy.detailForm.signupStatus}</dt>
+                <dd>{copy.signupStatuses[resolveAdminSignupStatus(detail.signup_status)] ?? detail.signup_status}</dd>
               </div>
               <div>
-                <dt>계정상태</dt>
-                <dd>{detail.account_status}</dd>
+                <dt>{copy.detailForm.accountStatus}</dt>
+                <dd>{copy.accountStatuses[resolveAdminAccountStatus(detail.account_status)] ?? detail.account_status}</dd>
               </div>
               <div>
-                <dt>언어</dt>
-                <dd>{detail.preferred_language === "ko" ? "한국어" : detail.preferred_language}</dd>
+                <dt>{copy.detailForm.language}</dt>
+                <dd>{getLanguageLabel(detail.preferred_language)}</dd>
               </div>
               {detail.comment ? (
                 <div className="admin-detail__wide">
-                  <dt>코멘트</dt>
+                  <dt>{copy.detailForm.comment}</dt>
                   <dd>{detail.comment}</dd>
                 </div>
               ) : null}
@@ -272,9 +253,9 @@ export default function AdminUserDetailPage() {
           </div>
 
           <div className="admin-detail__card">
-            <h3>{detail.kind === "signup_request" ? "사용자 승인" : "사용자 정보 수정"}</h3>
+            <h3>{detail.kind === "signup_request" ? copy.detailForm.approveTitle : copy.detailForm.editTitle}</h3>
             <label className="field-block">
-              <span>사용자 이름</span>
+              <span>{copy.detailForm.name}</span>
               <input
                 className="input-control"
                 value={name}
@@ -284,7 +265,7 @@ export default function AdminUserDetailPage() {
             </label>
 
             <label className="field-block">
-              <span>역할</span>
+              <span>{copy.detailForm.role}</span>
               <select
                 className="login-select"
                 value={selectedRole}
@@ -292,15 +273,15 @@ export default function AdminUserDetailPage() {
                 disabled={submitting}
               >
                 {ROLE_OPTIONS.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
+                  <option key={role} value={role}>
+                    {copy.roleNames[role]}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="field-block">
-              <span>그룹</span>
+              <span>{copy.detailForm.group}</span>
               <select
                 className="login-select"
                 value={selectedGroupId}
@@ -317,17 +298,17 @@ export default function AdminUserDetailPage() {
 
             {detail.kind === "user" ? (
               <label className="field-block">
-                <span>계정 상태</span>
+                <span>{copy.detailForm.accountStatus}</span>
                 <select
                   className="login-select"
                   value={selectedStatus}
                   onChange={(event) => setSelectedStatus(event.target.value)}
                   disabled={submitting}
                 >
-                  <option value="active">활성</option>
-                  <option value="inactive">비활성</option>
-                  <option value="locked">잠김</option>
-                  <option value="password_reset">비밀번호 초기화</option>
+                  <option value="active">{copy.accountStatuses.active}</option>
+                  <option value="inactive">{copy.accountStatuses.inactive}</option>
+                  <option value="locked">{copy.accountStatuses.locked}</option>
+                  <option value="password_reset">{copy.accountStatuses.password_reset}</option>
                 </select>
               </label>
             ) : null}
@@ -340,7 +321,7 @@ export default function AdminUserDetailPage() {
                   onClick={() => handleAction("approve")}
                   disabled={submitting}
                 >
-                  승인
+                  {copy.detailForm.approve}
                 </button>
                 <button
                   type="button"
@@ -348,7 +329,7 @@ export default function AdminUserDetailPage() {
                   onClick={() => handleAction("reject")}
                   disabled={submitting}
                 >
-                  반려
+                  {copy.detailForm.reject}
                 </button>
               </div>
             ) : (
@@ -359,7 +340,7 @@ export default function AdminUserDetailPage() {
                   onClick={() => handleAction("save")}
                   disabled={submitting || !name.trim() || !selectedGroupId}
                 >
-                  저장
+                  {copy.detailForm.save}
                 </button>
                 <button
                   type="button"
@@ -367,16 +348,16 @@ export default function AdminUserDetailPage() {
                   onClick={() => handleAction("delete")}
                   disabled={submitting || detail.is_protected}
                 >
-                  {detail.is_protected ? "삭제 불가" : "삭제"}
+                  {detail.is_protected ? copy.detailForm.cannotDelete : copy.detailForm.delete}
                 </button>
               </div>
             )}
 
             <p className="admin-detail__hint">
-              현재 선택 역할: <strong>{roleLabel(selectedRole)}</strong>
+              {formatAdminUsersText(copy.detailForm.currentRole, { role: copy.roleNames[selectedRole] ?? selectedRole })}
             </p>
             <p className="admin-detail__hint">
-              현재 선택 그룹으로 변경되면 해당 그룹에 소속된 봇만 접근 가능합니다.
+              {copy.detailForm.groupHint}
             </p>
           </div>
         </div>

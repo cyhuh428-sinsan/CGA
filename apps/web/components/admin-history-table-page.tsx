@@ -7,6 +7,8 @@ import { AdminInteractiveTablePage } from "@/components/admin-interactive-table-
 import { dataGridCellText, type DataGridRow } from "@/components/data-grid";
 import { loadAuthSession } from "@/lib/auth";
 import { type ListPageSize } from "@/lib/use-persisted-page-size";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_COMMON_CATALOGS, formatAdminText } from "@/lib/i18n/admin-common";
 
 type AdminHistoryFilterColumns = {
   group?: number;
@@ -118,7 +120,7 @@ export function AdminHistoryTablePage<T>({
   template,
   fetchItems,
   buildRow,
-  emptyText = "실제 조회 데이터가 없습니다.",
+  emptyText,
   topRight,
   toolbarRight,
   filterColumns,
@@ -126,6 +128,9 @@ export function AdminHistoryTablePage<T>({
   serverDateFilter = false,
   serverPagination = false,
 }: AdminHistoryTablePageProps<T>) {
+  const { language } = useI18n();
+  const copy = ADMIN_COMMON_CATALOGS[language];
+  const resolvedEmptyText = emptyText ?? copy.noData;
   const today = todayDateText();
   const defaultFromDate = dateTextDaysAgo(30);
   const [rows, setRows] = useState<DataGridRow[]>([]);
@@ -147,7 +152,7 @@ export function AdminHistoryTablePage<T>({
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
 
@@ -178,7 +183,7 @@ export function AdminHistoryTablePage<T>({
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "이력을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -201,6 +206,8 @@ export function AdminHistoryTablePage<T>({
     serverDateFilter,
     serverPagination,
     serverRequest,
+    copy.loadFailed,
+    copy.loginRequired,
   ]);
 
   const groupOptions = useMemo(
@@ -283,9 +290,9 @@ export function AdminHistoryTablePage<T>({
     <div className="admin-history-filters">
       {filterColumns.group !== undefined ? (
         <label className="admin-history-filters__field">
-          <span>그룹</span>
+          <span>{copy.group}</span>
           <select value={groupFilter} onChange={(event) => setGroupFilter(event.target.value)}>
-            <option value="">전체 그룹</option>
+            <option value="">{copy.allGroups}</option>
             {groupOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -296,9 +303,9 @@ export function AdminHistoryTablePage<T>({
       ) : null}
       {filterColumns.bot !== undefined ? (
         <label className="admin-history-filters__field">
-          <span>봇</span>
+          <span>{copy.bot}</span>
           <select value={botFilter} onChange={(event) => setBotFilter(event.target.value)}>
-            <option value="">전체 봇</option>
+            <option value="">{copy.allBots}</option>
             {botOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -309,9 +316,9 @@ export function AdminHistoryTablePage<T>({
       ) : null}
       {filterColumns.channel !== undefined ? (
         <label className="admin-history-filters__field">
-          <span>채널</span>
+          <span>{copy.channel}</span>
           <select value={channelFilter} onChange={(event) => setChannelFilter(event.target.value)}>
-            <option value="">전체 채널</option>
+            <option value="">{copy.allChannels}</option>
             {channelOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -323,17 +330,17 @@ export function AdminHistoryTablePage<T>({
       {filterColumns.date !== undefined ? (
         <>
           <label className="admin-history-filters__field admin-history-filters__field--date">
-            <span>시작일</span>
+            <span>{copy.fromDate}</span>
             <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
           </label>
           <label className="admin-history-filters__field admin-history-filters__field--date">
-            <span>종료일</span>
+            <span>{copy.toDate}</span>
             <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
           </label>
         </>
       ) : null}
       <button type="button" className="admin-page__filter admin-page__filter--text" onClick={resetStructuredFilters}>
-        필터 초기화
+        {copy.reset}
       </button>
     </div>
   ) : null;
@@ -352,7 +359,7 @@ export function AdminHistoryTablePage<T>({
         <div className="admin-state-box">
           <p>{errorMessage}</p>
           <Link href="/login" className="ghost-pill">
-            로그인으로 이동
+            {copy.goToLogin}
           </Link>
         </div>
       </section>
@@ -364,7 +371,7 @@ export function AdminHistoryTablePage<T>({
       <AdminInteractiveTablePage
         title={title}
         searchPlaceholder={searchPlaceholder}
-        totalText={loading ? "불러오는 중" : `전체 ${serverPagination ? serverTotal : filteredRows.length}건`}
+        totalText={loading ? copy.loading : formatAdminText(copy.totalCount, { count: serverPagination ? serverTotal : filteredRows.length })}
         pageSizeText={pageSizeText}
         columns={columns}
         rows={filteredRows}
@@ -374,8 +381,8 @@ export function AdminHistoryTablePage<T>({
         toolbarRight={toolbarRight}
         serverPagination={serverPagination ? { total: serverTotal, onRequestChange: handleServerRequestChange } : undefined}
       />
-      {loading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
-      {!loading && rows.length === 0 ? <p className="admin-page__empty">{emptyText}</p> : null}
+      {loading ? <p className="admin-page__empty">{copy.loadingDetail}</p> : null}
+      {!loading && rows.length === 0 ? <p className="admin-page__empty">{resolvedEmptyText}</p> : null}
     </>
   );
 }

@@ -4,10 +4,17 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { AdminHistoryTablePage } from "@/components/admin-history-table-page";
+import { useI18n } from "@/components/language-provider";
 import { fetchConversationHistory, type AdminConversationHistoryItem } from "@/lib/admin-api";
+import {
+  ADMIN_CONVERSATION_CATALOGS,
+  ADMIN_CONVERSATION_RUNTIME_CATALOGS,
+  type AdminConversationRuntimeCatalog,
+} from "@/lib/i18n/admin-conversations";
+import { SUPPORTED_LANGUAGES } from "@/lib/language";
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string, locale = "ko-KR") {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -18,12 +25,12 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function formatKoreanDateTime(value: string) {
+function formatDateTime(value: string, locale = "ko-KR") {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value.replace("T", " ").slice(0, 19);
   }
-  const parts = new Intl.DateTimeFormat("ko-KR", {
+  const parts = new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -100,7 +107,7 @@ function firstReadableString(value: unknown, visited?: Set<object>): string {
   return "";
 }
 
-function summarizeWebchatSelection(value: unknown): string {
+function summarizeWebchatSelection(value: unknown, copy: AdminConversationRuntimeCatalog): string {
   const parsed = parseJsonLike(value);
   const root = asRecord(parsed);
   if (!String(root.webchatRichFormVersion || "").trim()) {
@@ -110,7 +117,7 @@ function summarizeWebchatSelection(value: unknown): string {
   const response = asRecord(root.response);
   const directButtonValue = firstReadableString(response.buttonValue);
   if (directButtonValue) {
-    return `버튼 선택: ${directButtonValue}`;
+    return `${copy.buttonSelection}: ${directButtonValue}`;
   }
   const responseEntry = Object.entries(response).find(([, entryValue]) => {
     if (typeof entryValue === "string") return entryValue.trim().length > 0;
@@ -118,7 +125,7 @@ function summarizeWebchatSelection(value: unknown): string {
     return Object.keys(asRecord(entryValue)).length > 0;
   });
   if (!responseEntry) {
-    return "RichForm 응답";
+    return copy.richFormResponse;
   }
 
   const [responseType, responseValue] = responseEntry;
@@ -137,25 +144,25 @@ function summarizeWebchatSelection(value: unknown): string {
   const normalizedType = responseType.toUpperCase();
 
   if (["INPUT", "TEXTAREA", "ADDRESS"].includes(normalizedType)) {
-    return `입력: ${resolved}`;
+    return `${copy.input}: ${resolved}`;
   }
   if (["CHECK", "CHECKBOX", "RADIO", "RADIOBUTTON", "COMBO", "COMBOBOX", "SELECT"].includes(normalizedType)) {
-    return `선택: ${resolved}`;
+    return `${copy.selection}: ${resolved}`;
   }
   if (["TAB", "BUTTON", "TOGGLEBUTTON"].includes(normalizedType)) {
-    return `버튼 선택: ${resolved}`;
+    return `${copy.buttonSelection}: ${resolved}`;
   }
   return `${normalizedType}: ${resolved}`;
 }
 
-function summarizeConversationText(value: unknown) {
+function summarizeConversationText(value: unknown, copy: AdminConversationRuntimeCatalog) {
   if (typeof value !== "string") {
     return firstReadableString(value) || "-";
   }
   const trimmed = value.trim();
   if (!trimmed) return "-";
   if (trimmed.includes("webchatRichFormVersion")) {
-    return summarizeWebchatSelection(trimmed);
+    return summarizeWebchatSelection(trimmed, copy);
   }
   return trimmed;
 }
@@ -270,7 +277,7 @@ function startIntentOrModuleName(item: AdminConversationHistoryItem) {
   ]));
 }
 
-function summarizeRichFormBotPayload(payload: unknown) {
+function summarizeRichFormBotPayload(payload: unknown, copy: AdminConversationRuntimeCatalog) {
   const payloadRecord = asRecord(payload);
   const richForm = asRecord(payloadRecord.richForm || payloadRecord.richform || payloadRecord.response || payloadRecord.payload);
   const title = firstReadableString(richForm.title || richForm.name || payloadRecord.title || payloadRecord.name);
@@ -279,10 +286,10 @@ function summarizeRichFormBotPayload(payload: unknown) {
     ? richForm.options.map((option) => firstReadableString(option)).filter(Boolean)
     : [];
   const details = [title, text, options.slice(0, 3).join(", ")].filter(Boolean);
-  return details.length > 0 ? details.join(" / ") : "RichForm 카드";
+  return details.length > 0 ? details.join(" / ") : copy.richFormCard;
 }
 
-function normalizeTranscriptText(message: Record<string, unknown>, fallbackBotName: string) {
+function normalizeTranscriptText(message: Record<string, unknown>, fallbackBotName: string, copy: AdminConversationRuntimeCatalog) {
   const displayText = String(message.display_text || "").trim();
   if (displayText) {
     return displayText;
@@ -292,21 +299,21 @@ function normalizeTranscriptText(message: Record<string, unknown>, fallbackBotNa
   const payloadJson = asRecord(message.payload_json);
 
   if (participantKind === "user") {
-    return summarizeConversationText(rawText || payloadJson);
+    return summarizeConversationText(rawText || payloadJson, copy);
   }
 
   if (!rawText || rawText === "RichForm") {
-    return summarizeRichFormBotPayload(payloadJson);
+    return summarizeRichFormBotPayload(payloadJson, copy);
   }
 
-  return summarizeConversationText(rawText);
+  return summarizeConversationText(rawText, copy);
 }
 
-function isVisibleConversationMessage(message: Record<string, unknown>, fallbackBotName: string) {
+function isVisibleConversationMessage(message: Record<string, unknown>, fallbackBotName: string, copy: AdminConversationRuntimeCatalog) {
   if (String(message.participant_kind || "").toLowerCase() !== "user") {
     return true;
   }
-  return !isInternalUtterance(normalizeTranscriptText(message, fallbackBotName));
+  return !isInternalUtterance(normalizeTranscriptText(message, fallbackBotName, copy));
 }
 
 function runtimeEvents(dataJson: Record<string, unknown>) {
@@ -331,15 +338,15 @@ function sessionUtterances(dataJson: Record<string, unknown>) {
     : [];
 }
 
-function conversationUtterance(item: AdminConversationHistoryItem) {
+function conversationUtterance(item: AdminConversationHistoryItem, copy: AdminConversationRuntimeCatalog) {
   const dataJson = item.data_json || {};
-  const firstUtterance = summarizeConversationText(String(dataJson.session_first_user_utterance || "").trim());
+  const firstUtterance = summarizeConversationText(String(dataJson.session_first_user_utterance || "").trim(), copy);
   if (!isInternalUtterance(firstUtterance)) {
     return firstUtterance;
   }
   const utterances = sessionUtterances(dataJson);
   if (utterances.length > 0) {
-    return summarizeConversationText(utterances[0]);
+    return summarizeConversationText(utterances[0], copy);
   }
   const message = asRecord(dataJson.message);
   const entry = asRecord(dataJson.entry);
@@ -360,7 +367,7 @@ function conversationUtterance(item: AdminConversationHistoryItem) {
     variables.message,
   ];
   const found = candidates.find((value) => typeof value === "string" && !isInternalUtterance(value));
-  return typeof found === "string" ? summarizeConversationText(found) : "-";
+  return typeof found === "string" ? summarizeConversationText(found, copy) : "-";
 }
 
 function versionLabel(value?: number | null) {
@@ -393,19 +400,19 @@ function eventLocation(event: Record<string, unknown>) {
   return location || nodeMeta || "-";
 }
 
-function runtimeSummary(dataJson: Record<string, unknown>) {
+function runtimeSummary(dataJson: Record<string, unknown>, copy: AdminConversationRuntimeCatalog) {
   const storedSummary = String(dataJson.runtime_summary || "");
   if (storedSummary) return storedSummary;
   const events = runtimeEvents(dataJson);
   const problem = [...events].reverse().find((event) => ["warning", "error"].includes(String(event.level || "").toLowerCase()));
   if (problem) {
-    return String(problem.message || problem.event || "런타임 오류");
+    return String(problem.message || problem.event || copy.runtimeError);
   }
   const entry = asRecord(dataJson.entry);
   const payload = asRecord(entry.payload);
   const detail = asRecord(payload.detail);
   const log = asRecord(detail.log);
-  return String(log.description || detail.resultType || "정상");
+  return String(log.description || detail.resultType || copy.normal);
 }
 
 function latestProblemEvent(events: Array<Record<string, unknown>>) {
@@ -467,8 +474,8 @@ function sessionStartedAt(item: AdminConversationHistoryItem) {
   return startedAt || item.uttered_at;
 }
 
-function conversationDetailTitle(item: AdminConversationHistoryItem) {
-  return ["simulator", "시뮬레이터"].includes(item.channel_name.trim().toLowerCase()) ? "세션 상세 이력" : "세션 대화 이력";
+function isSimulatorConversation(item: AdminConversationHistoryItem) {
+  return ["simulator", "시뮬레이터"].includes(item.channel_name.trim().toLowerCase());
 }
 
 function localDateBoundaryIso(value: string, endOfDay = false) {
@@ -488,6 +495,10 @@ function localDateBoundaryIso(value: string, endOfDay = false) {
 }
 
 export default function AdminConversationsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = ADMIN_CONVERSATION_CATALOGS[uiLanguage];
+  const runtimeCopy = ADMIN_CONVERSATION_RUNTIME_CATALOGS[uiLanguage];
+  const locale = SUPPORTED_LANGUAGES.find((item) => item.code === uiLanguage)?.intlLocale ?? "ko-KR";
   const [selectedItem, setSelectedItem] = useState<AdminConversationHistoryItem | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<AdminConversationHistoryItem | null>(null);
   const [selectedConversationTurn, setSelectedConversationTurn] = useState(0);
@@ -518,7 +529,7 @@ export default function AdminConversationsPage() {
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__link-button" onClick={() => setSelectedItem(item)}>
-        상세
+        {copy.detail}
       </button>,
       item.group_name,
       item.channel_name,
@@ -528,14 +539,14 @@ export default function AdminConversationsPage() {
         setSelectedConversationTurn(0);
         setSelectedConversation(item);
       }}>
-        {conversationUtterance(item)}
+        {conversationUtterance(item, runtimeCopy)}
       </button>,
       startIntentOrModuleName(item),
-      formatDate(item.uttered_at),
+      formatDate(item.uttered_at, locale),
       item.result,
-      runtimeSummary(item.data_json),
+      runtimeSummary(item.data_json, runtimeCopy),
     ],
-  }), []);
+  }), [copy.detail, locale, runtimeCopy]);
   const selectedRuntimeEvents = selectedItem ? runtimeEvents(selectedItem.data_json) : [];
   const selectedMessages = selectedItem ? conversationMessages(selectedItem.data_json) : [];
   const problemEvent = selectedItem ? storedProblemEvent(selectedItem.data_json, selectedRuntimeEvents) : null;
@@ -550,14 +561,14 @@ export default function AdminConversationsPage() {
       selectedConversationMessages
         .map((message, index) => ({ message, index }))
         .filter((entry) => String(entry.message.participant_kind || "").toLowerCase() === "user")
-        .filter((entry) => !isInternalUtterance(normalizeTranscriptText(entry.message, selectedConversation?.bot_name || "Aidot 봇")))
+        .filter((entry) => !isInternalUtterance(normalizeTranscriptText(entry.message, selectedConversation?.bot_name || runtimeCopy.defaultBot, runtimeCopy)))
         .map((entry, turnIndex) => ({
           turnIndex,
           messageIndex: entry.index,
-          summary: normalizeTranscriptText(entry.message, selectedConversation?.bot_name || "Aidot 봇"),
+          summary: normalizeTranscriptText(entry.message, selectedConversation?.bot_name || runtimeCopy.defaultBot, runtimeCopy),
           createdAt: String(entry.message.created_at || ""),
         })),
-    [selectedConversation, selectedConversationMessages],
+    [runtimeCopy, selectedConversation, selectedConversationMessages],
   );
   const selectedConversationAverageResponse = useMemo(() => {
     if (!selectedConversation) return 0;
@@ -583,10 +594,10 @@ export default function AdminConversationsPage() {
   return (
     <>
       <AdminHistoryTablePage
-        title="대화 이력 조회"
-        searchPlaceholder="사용자 또는 의도명을 검색하세요."
-        pageSizeText="20개씩 보기"
-        columns={["", "그룹", "채널", "봇", "버전", "사용자 발화", "의도/모듈명", "발화일시", "실행 결과", "오류/진행"]}
+        title={copy.title}
+        searchPlaceholder={copy.searchPlaceholder}
+        pageSizeText={copy.pageSize}
+        columns={copy.columns}
         template="64px 130px 110px 140px 72px minmax(220px, 1fr) 170px 160px 120px minmax(240px, 1fr)"
         fetchItems={fetchItems}
         buildRow={buildRow}
@@ -597,59 +608,59 @@ export default function AdminConversationsPage() {
       {selectedItem ? (
         <>
           <div className="admin-log-detail__scrim" onClick={() => setSelectedItem(null)} />
-          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label="세션 대화 이력">
+          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label={copy.sessionConversation}>
             <header className="admin-log-detail__header">
               <div>
-                <strong>{conversationDetailTitle(selectedItem)}</strong>
+                <strong>{isSimulatorConversation(selectedItem) ? copy.sessionDetail : copy.sessionConversation}</strong>
                 <p>{selectedItem.channel_name} / {selectedItem.bot_name} / {selectedItem.user_key}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedItem(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedItem(null)} aria-label={copy.close}>
                 ×
               </button>
             </header>
             <div className="admin-log-detail__body">
               <section className="admin-log-detail__section">
-                <h3>진단 요약</h3>
+                <h3>{copy.diagnosticSummary}</h3>
                 <dl className="admin-log-detail__summary">
-                  <div><dt>채널</dt><dd>{selectedItem.channel_name}</dd></div>
-                  <div><dt>봇</dt><dd>{selectedItem.bot_name}</dd></div>
-                  <div><dt>사용자</dt><dd>{selectedItem.user_key}</dd></div>
-                  <div><dt>세션 시작</dt><dd>{formatDate(selectedItem.uttered_at)}</dd></div>
-                  <div><dt>결과</dt><dd>{selectedItem.result}</dd></div>
-                  <div><dt>사용자 발화 수</dt><dd>{sessionMetaCount(selectedItem.data_json, "session_user_message_count") || sessionUtterances(selectedItem.data_json).length || "-"}</dd></div>
-                  <div><dt>전체 메시지 수</dt><dd>{sessionMetaCount(selectedItem.data_json, "session_message_count") || selectedMessages.length || "-"}</dd></div>
-                  <div><dt>완료 사유</dt><dd>{traceValue(selectedItem.data_json, "completion_reason")}</dd></div>
-                  <div><dt>대화 종료</dt><dd>{selectedItem.data_json.dialog_ended === true ? "예" : "아니오"}</dd></div>
-                  <div><dt>세션 종료</dt><dd>{selectedItem.data_json.session_ended === true ? "예" : "아니오"}</dd></div>
-                  <div><dt>오류/진행</dt><dd>{runtimeSummary(selectedItem.data_json)}</dd></div>
-                  <div><dt>최근 문제 이벤트</dt><dd>{problemEvent ? eventTitle(problemEvent, selectedRuntimeEvents.indexOf(problemEvent)) : "-"}</dd></div>
-                  <div><dt>문제 위치</dt><dd>{problemLocation(selectedItem.data_json, problemEvent)}</dd></div>
+                  <div><dt>{copy.channel}</dt><dd>{selectedItem.channel_name}</dd></div>
+                  <div><dt>{copy.bot}</dt><dd>{selectedItem.bot_name}</dd></div>
+                  <div><dt>{copy.user}</dt><dd>{selectedItem.user_key}</dd></div>
+                  <div><dt>{copy.sessionStart}</dt><dd>{formatDate(selectedItem.uttered_at, locale)}</dd></div>
+                  <div><dt>{copy.result}</dt><dd>{selectedItem.result}</dd></div>
+                  <div><dt>{copy.userCount}</dt><dd>{sessionMetaCount(selectedItem.data_json, "session_user_message_count") || sessionUtterances(selectedItem.data_json).length || "-"}</dd></div>
+                  <div><dt>{copy.messageCount}</dt><dd>{sessionMetaCount(selectedItem.data_json, "session_message_count") || selectedMessages.length || "-"}</dd></div>
+                  <div><dt>{copy.completionReason}</dt><dd>{traceValue(selectedItem.data_json, "completion_reason")}</dd></div>
+                  <div><dt>{copy.dialogEnded}</dt><dd>{selectedItem.data_json.dialog_ended === true ? copy.yes : copy.no}</dd></div>
+                  <div><dt>{copy.sessionEnded}</dt><dd>{selectedItem.data_json.session_ended === true ? copy.yes : copy.no}</dd></div>
+                  <div><dt>{copy.runtime}</dt><dd>{runtimeSummary(selectedItem.data_json, runtimeCopy)}</dd></div>
+                  <div><dt>{copy.recentProblem}</dt><dd>{problemEvent ? eventTitle(problemEvent, selectedRuntimeEvents.indexOf(problemEvent)) : "-"}</dd></div>
+                  <div><dt>{copy.problemLocation}</dt><dd>{problemLocation(selectedItem.data_json, problemEvent)}</dd></div>
                   <div><dt>Queue ID</dt><dd>{traceValue(selectedItem.data_json, "queue_event_id")}</dd></div>
-                  <div><dt>대화방 ID</dt><dd>{traceValue(selectedItem.data_json, "room_id")}</dd></div>
-                  <div><dt>외부 대화방</dt><dd>{traceValue(selectedItem.data_json, "client_room_id")}</dd></div>
+                  <div><dt>{copy.roomId}</dt><dd>{traceValue(selectedItem.data_json, "room_id")}</dd></div>
+                  <div><dt>{copy.externalRoom}</dt><dd>{traceValue(selectedItem.data_json, "client_room_id")}</dd></div>
                 </dl>
                 {selectedQueueId !== "-" ? (
                   <div className="admin-log-detail__actions">
                     <Link href={traceHref("/admin/queue-history", selectedQueueId)} className="admin-page__link-button">
-                      Queue 이력에서 보기
+                      {copy.viewQueue}
                     </Link>
                     <Link href={traceHref("/admin/api-call-history", selectedQueueId)} className="admin-page__link-button">
-                      API 이력에서 보기
+                      {copy.viewApi}
                     </Link>
                   </div>
                 ) : null}
               </section>
               <section className="admin-log-detail__section">
-                <h3>세션 대화 흐름</h3>
+                <h3>{copy.conversationFlow}</h3>
                 {selectedMessages.length > 0 ? (
                   <ol className="admin-log-detail__transcript">
-                    {selectedMessages.filter((message) => isVisibleConversationMessage(message, selectedItem.bot_name)).map((message, index) => (
+                    {selectedMessages.filter((message) => isVisibleConversationMessage(message, selectedItem.bot_name, runtimeCopy)).map((message, index) => (
                       <li key={`${selectedItem.id}-message-${index}`} className={`admin-log-detail__bubble is-${String(message.participant_kind || "info").toLowerCase()}`}>
                         <div className="admin-log-detail__bubble-meta">
                           <strong>{String(message.participant_name || message.participant_kind || "-")}</strong>
                           <span>{String(message.created_at || "-")}</span>
                         </div>
-                        <p className="admin-log-detail__bubble-text">{normalizeTranscriptText(message, selectedItem.bot_name)}</p>
+                        <p className="admin-log-detail__bubble-text">{normalizeTranscriptText(message, selectedItem.bot_name, runtimeCopy)}</p>
                         {Object.keys(asRecord(message.payload_json)).length > 0 ? (
                           <pre>{formatJson(message.payload_json)}</pre>
                         ) : null}
@@ -661,18 +672,18 @@ export default function AdminConversationsPage() {
                     {sessionUtterances(selectedItem.data_json).map((utterance, index) => (
                       <li key={`${selectedItem.id}-utterance-${index}`} className="admin-log-detail__event is-user">
                         <div>
-                          <strong>사용자 발화 {index + 1}</strong>
+                          <strong>{copy.userUtterance} {index + 1}</strong>
                         </div>
                         <p>{utterance}</p>
                       </li>
                     ))}
                   </ol>
                 ) : (
-                  <p className="admin-log-detail__empty">저장된 채널 대화 메시지가 없습니다.</p>
+                  <p className="admin-log-detail__empty">{copy.emptyMessages}</p>
                 )}
               </section>
               <section className="admin-log-detail__section">
-                <h3>변수 변경 추적</h3>
+                <h3>{copy.variableTrace}</h3>
                 {selectedVariableTrace.length > 0 ? (
                   <ol className="admin-log-detail__events">
                     {selectedVariableTrace.map((trace) => (
@@ -682,17 +693,17 @@ export default function AdminConversationsPage() {
                           <span>{String(trace.event.time || "-")}</span>
                         </div>
                         <small>{eventLocation(trace.event)}</small>
-                        <p>{trace.updatedVariables.length > 0 ? trace.updatedVariables.join(", ") : "변수 값 미리보기"}</p>
+                        <p>{trace.updatedVariables.length > 0 ? trace.updatedVariables.join(", ") : copy.variablePreview}</p>
                         <pre>{formatJson(trace.valuePreviews)}</pre>
                       </li>
                     ))}
                   </ol>
                 ) : (
-                  <p className="admin-log-detail__empty">저장된 변수 변경 이벤트가 없습니다.</p>
+                  <p className="admin-log-detail__empty">{copy.emptyVariables}</p>
                 )}
               </section>
               <section className="admin-log-detail__section">
-                <h3>진행 이벤트</h3>
+                <h3>{copy.progressEvents}</h3>
                 {selectedRuntimeEvents.length > 0 ? (
                   <ol className="admin-log-detail__events">
                     {selectedRuntimeEvents.map((event, index) => (
@@ -708,11 +719,11 @@ export default function AdminConversationsPage() {
                     ))}
                   </ol>
                 ) : (
-                  <p className="admin-log-detail__empty">저장된 런타임 이벤트가 없습니다.</p>
+                  <p className="admin-log-detail__empty">{copy.emptyEvents}</p>
                 )}
               </section>
               <section className="admin-log-detail__section">
-                <h3>저장 데이터</h3>
+                <h3>{copy.storedData}</h3>
                 <pre>{formatJson(selectedItem.data_json)}</pre>
               </section>
             </div>
@@ -725,24 +736,24 @@ export default function AdminConversationsPage() {
             className="analysis-conversation-dialog analysis-conversation-dialog--history"
             role="dialog"
             aria-modal="true"
-            aria-label="세션 대화 흐름"
+            aria-label={copy.conversationFlow}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header>
               <div>
                 <strong>{selectedConversation.bot_name}</strong>
-                <span>{formatKoreanDateTime(sessionStartedAt(selectedConversation))}</span>
+                <span>{formatDateTime(sessionStartedAt(selectedConversation), locale)}</span>
               </div>
-              <button type="button" onClick={() => setSelectedConversation(null)} aria-label="닫기">×</button>
+              <button type="button" onClick={() => setSelectedConversation(null)} aria-label={copy.close}>×</button>
             </header>
             <div className="analysis-conversation-dialog__summary">
-              <span>채널 <strong>{selectedConversation.channel_name}</strong></span>
-              <span>의도/모듈명 <strong>{startIntentOrModuleName(selectedConversation)}</strong></span>
-              <span>실행 결과 <strong>{selectedConversation.result}</strong></span>
+              <span>{copy.channel} <strong>{selectedConversation.channel_name}</strong></span>
+              <span>{copy.intentModule} <strong>{startIntentOrModuleName(selectedConversation)}</strong></span>
+              <span>{copy.result} <strong>{selectedConversation.result}</strong></span>
             </div>
             <div className="analysis-conversation-dialog__layout">
               <aside className="analysis-conversation-dialog__sidebar">
-                <strong>사용자 발화</strong>
+                <strong>{copy.userUtterance}</strong>
                 <div className="analysis-conversation-dialog__turns">
                   {selectedConversationTurns.length > 0 ? selectedConversationTurns.map((turn) => (
                     <button
@@ -753,27 +764,27 @@ export default function AdminConversationsPage() {
                     >
                       {turn.summary}
                     </button>
-                  )) : <p>저장된 사용자 발화가 없습니다.</p>}
+                  )) : <p>{copy.emptyUtterances}</p>}
                 </div>
               </aside>
               <div className="analysis-conversation-dialog__messages">
                 {selectedConversationMessages.length > 0
-                ? selectedConversationMessages.filter((message) => isVisibleConversationMessage(message, selectedConversation.bot_name)).map((message, index) => {
+                ? selectedConversationMessages.filter((message) => isVisibleConversationMessage(message, selectedConversation.bot_name, runtimeCopy)).map((message, index) => {
                     const isUser = String(message.participant_kind ?? "").toLowerCase() === "user";
                     const turnMatch = selectedConversationTurns.find((turn) => turn.messageIndex === index);
                     return (
                       <article className={`${isUser ? "is-user" : "is-bot"}${turnMatch?.turnIndex === selectedConversationTurn ? " is-focused" : ""}`} key={String(message.id ?? index)}>
-                        <small>{String(message.participant_name ?? (isUser ? "사용자" : selectedConversation.bot_name))}</small>
-                        <p>{normalizeTranscriptText(message, selectedConversation.bot_name)}</p>
-                        <time>{formatKoreanDateTime(String(message.created_at ?? ""))}</time>
+                        <small>{String(message.participant_name ?? (isUser ? copy.user : selectedConversation.bot_name))}</small>
+                        <p>{normalizeTranscriptText(message, selectedConversation.bot_name, runtimeCopy)}</p>
+                        <time>{formatDateTime(String(message.created_at ?? ""), locale)}</time>
                       </article>
                     );
                   })
                 : (
                   <article className="is-user">
-                    <small>사용자</small>
-                    <p>{conversationUtterance(selectedConversation)}</p>
-                    <time>{formatKoreanDateTime(sessionStartedAt(selectedConversation))}</time>
+                    <small>{copy.user}</small>
+                    <p>{conversationUtterance(selectedConversation, runtimeCopy)}</p>
+                    <time>{formatDateTime(sessionStartedAt(selectedConversation), locale)}</time>
                   </article>
                 )}
               </div>
@@ -783,10 +794,10 @@ export default function AdminConversationsPage() {
                   <strong>{selectedConversation.bot_name}</strong>
                 </div>
                 <div className="analysis-conversation-dialog__metric analysis-conversation-dialog__metric--datetime">
-                  <strong>{formatDate(sessionStartedAt(selectedConversation))}</strong>
+                  <strong>{formatDate(sessionStartedAt(selectedConversation), locale)}</strong>
                 </div>
                 <div className="analysis-conversation-dialog__metric">
-                  <span>평균 응답시간</span>
+                  <span>{copy.averageResponseTime}</span>
                   <strong>{selectedConversationAverageResponse}</strong>
                   <small>ms</small>
                 </div>

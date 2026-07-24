@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { type RecommendedIntentConfig } from "@/lib/bot-settings";
 import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { getBotDialogs } from "@/lib/dialog-assets";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 type IntentOption = { id: string; label: string };
 
@@ -19,6 +21,8 @@ function createRecommendedIntent(intentId: string, intentOptions: IntentOption[]
 }
 
 export function MessengerRecommendedIntentsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <BotSettingsShell activeMenu="recommended-intents">
       {({ bot, mainHref, versionSettings, saveVersionSettings, setErrorMessage, setMessage }) => {
@@ -104,23 +108,21 @@ export function MessengerRecommendedIntentsPage() {
         return (
           <>
             <section className="bot-settings-section">
-              <h2>추천 의도</h2>
+              <h2>{getStudioPageLabel(copy,"추천 의도")}</h2>
               <div className="settings-toolbar">
                 <select
                   className="bot-settings-card__select settings-toolbar__select"
                   value={newIntentId}
                   onChange={(event) => setNewIntentId(event.target.value)}
                 >
-                  {intentOptions.length === 0 ? <option value="">등록된 의도 없음</option> : null}
+                  {intentOptions.length === 0 ? <option value="">{getStudioPageLabel(copy, "등록된 의도 없음")}</option> : null}
                   {intentOptions.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.label}
                     </option>
                   ))}
                 </select>
-                <button type="button" className="secondary-action" onClick={handleAdd}>
-                  + 추천 의도 구성
-                </button>
+                <button type="button" className="secondary-action" onClick={handleAdd}>{getStudioPageLabel(copy,"+ 추천 의도 구성")}</button>
                 <div className="settings-toolbar__spacer" />
                 <button type="button" className="secondary-action" disabled={!canMoveUp} onClick={() => moveSelected(-1)}>
                   ↑
@@ -132,11 +134,11 @@ export function MessengerRecommendedIntentsPage() {
 
               <div className="settings-list-card">
                 <div className="settings-list-card__header settings-list-card__header--two">
-                  <span>추천 순서</span>
-                  <span>의도명</span>
+                  <span>{getStudioPageLabel(copy,"추천 순서")}</span>
+                  <span>{getStudioPageLabel(copy,"의도명")}</span>
                 </div>
 
-                {items.length === 0 ? <p className="bot-settings-page__loading">구성된 추천 의도가 없습니다.</p> : null}
+                {items.length === 0 ? <p className="bot-settings-page__loading">{getStudioPageLabel(copy,"구성된 추천 의도가 없습니다.")}</p> : null}
 
                 {items.map((item, index) => (
                   <button
@@ -153,9 +155,7 @@ export function MessengerRecommendedIntentsPage() {
             </section>
 
             <div className="bot-settings-page__footer">
-              <Link href={mainHref} className="secondary-action">
-                메인 화면으로
-              </Link>
+              <Link href={mainHref} className="secondary-action">{getStudioPageLabel(copy,"메인 화면으로")}</Link>
               <button type="button" className="primary-action" disabled={saving} onClick={handleSave}>
                 {saving ? "저장 중..." : "저장"}
               </button>

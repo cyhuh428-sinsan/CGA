@@ -216,6 +216,7 @@ def _build_bot_json(payload: BotCreateRequest) -> dict[str, object]:
 
 
 AI_CONFIG_KEYS = {
+    "language",
     "nlu_engine",
     "nlu_type",
     "nlu_model",
@@ -342,9 +343,13 @@ def _safe_text_value(value: object) -> str:
     return str(value or "").strip()
 
 
+def _bot_language(bot: Bot) -> str:
+    return _safe_text_value((bot.data_json or {}).get("language")) or "ko"
+
+
 def _compact_semantic_text(value: object) -> str:
-    text = _safe_text_value(value).replace("_", " ").lower()
-    return re.sub(r"[^0-9a-zA-Z가-힣]+", "", text)
+    text = _safe_text_value(value).replace("_", " ").casefold()
+    return re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
 
 
 _SEMANTIC_LABEL_MODIFIER_TOKENS = {"요청", "문의", "예정", "확인"}
@@ -6115,6 +6120,7 @@ def _run_version_nlu_training(
             version,
             imbalance_oversampling=validation_settings.get("imbalanceOversampling") is True,
             version_settings=version_settings,
+            language=_bot_language(bot),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
@@ -6130,6 +6136,7 @@ def _run_version_nlu_training(
         similar_intent_score=similar_intent_score,
         max_intent_results=max_intent_results,
         version_settings=_get_version_settings(bot, version),
+        language=_bot_language(bot),
     )
     evaluation.update(nlu_engine_snapshot)
     evaluation_snapshot = evaluation.pop("snapshot", {})
@@ -6604,6 +6611,7 @@ def configure_version_ml_intents(
             seed_intents=[seed.model_dump() for seed in payload.seed_intents],
             version_document=version.version_json,
             version_settings=_get_version_settings(bot, version),
+            language=_bot_language(bot),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
@@ -6645,6 +6653,7 @@ def configure_version_llm_intents(
             target_count_policy=payload.target_count_policy,
             dictionary_terms=payload.dictionary_terms,
             entity_terms=payload.entity_terms,
+            language=_bot_language(bot),
         )
     except LlmClientError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
@@ -6782,6 +6791,7 @@ def test_version_llm_intent(
             top_k=payload.top_k,
             dictionary_terms=_build_llm_dictionary_terms(version.version_json),
             entity_terms=_build_llm_entity_terms(version.version_json),
+            language=_bot_language(bot),
         )
     except LlmClientError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
@@ -6831,6 +6841,7 @@ def test_version_ml_intent(
         version,
         payload.utterance,
         version_settings=_get_version_settings(bot, version),
+        language=_bot_language(bot),
     )
     candidates = [
         {

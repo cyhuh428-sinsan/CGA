@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { apiRequest } from "@/lib/api";
 import { fetchAdminLicense, type AdminLicenseStatusResponse } from "@/lib/admin-api";
@@ -14,10 +14,15 @@ import {
   hasAdminOperationsRole,
   hasAdminRole,
   hasApiRole,
-  roleLabel,
   type AuthSession,
 } from "@/lib/auth";
 import { prefetchStudioBots } from "@/lib/studio-bots-api";
+import { useI18n } from "@/components/language-provider";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
+import { SHELL_NAVIGATION } from "@/lib/i18n/shell-navigation";
+import { ADMIN_NAVIGATION_CATALOGS, buildAdminNavigationGroups } from "@/lib/i18n/admin-navigation";
+import { ACCOUNT_PAGE_CATALOGS, getAccountRoleLabel } from "@/lib/i18n/account-pages";
+import { STUDIO_RAIL_CATALOGS, formatStudioRailText } from "@/lib/i18n/studio-rail";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
@@ -25,24 +30,6 @@ const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
 type PrimaryPanelId = "operations" | "build" | "api" | "admin";
 
 type GettingStartedMode = "explore" | "create" | "sample";
-
-const gettingStartedSlides = [
-  {
-    title: "쉽고 빠르게 AI 챗봇을 만들 수 있습니다.",
-    description: "캔버스에 대화 흐름을 설계하는 직관적이고 쉬운 대화 설계툴을 제공하여 누구나 쉽고 빠르게 챗봇을 만들 수 있습니다. 또한 설계한 대화 시나리오는 바로 테스트하며 수정할 수 있습니다.",
-    variant: "design",
-  },
-  {
-    title: "Enterprise 전용 챗봇 구축에 최적화되어 있습니다.",
-    description: "Bot Station과 API Store를 통해 사내 시스템과 RPA 솔루션을 연계할 수 있으며, 다양한 메신저와 보이스 채널 연계를 통해 업무의 E2E 자동화를 구현할 수 있습니다.",
-    variant: "enterprise",
-  },
-  {
-    title: "운영 데이터를 바탕으로 챗봇을 지속 개선할 수 있습니다.",
-    description: "분석·평가·대화 이력을 확인하고 실패 발화를 다시 학습 데이터로 반영하여 챗봇 품질을 반복적으로 개선할 수 있습니다.",
-    variant: "improve",
-  },
-] as const;
 
 type BuildNavigationItem = {
   label: string;
@@ -58,54 +45,18 @@ type BuildNavigationGroup = {
   items?: BuildNavigationItem[];
 };
 
-const adminNavigationGroups = [
-  {
-    title: "사용자 관리",
-    items: [
-      { href: "/admin/users", label: "사용자 관리" },
-      { href: "/admin/login-history", label: "로그인 이력" },
-      { href: "/admin/groups", label: "그룹 관리" },
-    ],
-  },
-  {
-    title: "현황 조회",
-    items: [
-      { href: "/admin/audit-logs", label: "운영/시스템 로그 조회" },
-      { href: "/admin/bot-status", label: "봇 현황 조회" },
-      { href: "/admin/training-history", label: "학습 이력 조회" },
-      { href: "/admin/conversations", label: "대화 이력 조회" },
-      { href: "/admin/api-call-history", label: "API 호출 이력 조회" },
-      { href: "/admin/queue-history", label: "Queue 이력 조회" },
-      { href: "/admin/intent-feedback", label: "의도별 피드백 조회" },
-    ],
-  },
-  {
-    title: "대화 관리",
-    items: [
-      { href: "/admin/common-variables", label: "공통 변수 관리하기" },
-      { href: "/admin/default-messages", label: "기본 메시지 관리" },
-    ],
-  },
-  {
-    title: "시스템 연계",
-    items: [
-      { href: "/admin/channels", label: "채널 관리" },
-      { href: "/admin/botstation-status", label: "봇스테이션 연계 현황" },
-    ],
-  },
-  {
-    title: "기타 관리",
-    items: [
-      { href: "/admin/templates", label: "템플릿 목록" },
-      { href: "/admin/license", label: "라이선스 조회" },
-    ],
-  },
-];
-
 export function StudioRail() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { language, setLanguage, t } = useI18n();
+  const navigation = SHELL_NAVIGATION[language];
+  const railCopy = STUDIO_RAIL_CATALOGS[language];
+  const accountCatalog = ACCOUNT_PAGE_CATALOGS[language];
+  const adminGroups = useMemo(
+    () => buildAdminNavigationGroups(ADMIN_NAVIGATION_CATALOGS[language]),
+    [language],
+  );
   const [session, setSession] = useState<AuthSession | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PrimaryPanelId | null>(null);
@@ -115,17 +66,17 @@ export function StudioRail() {
   const [gettingStartedMode, setGettingStartedMode] = useState<GettingStartedMode>("explore");
   const [hideGettingStarted, setHideGettingStarted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [language, setLanguage] = useState("ko");
   const [licenseStatus, setLicenseStatus] = useState<AdminLicenseStatusResponse | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const helpMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const currentGettingStartedSlide = gettingStartedSlides[gettingStartedSlide];
+  const currentGettingStartedSlide = railCopy.gettingStartedSlides[gettingStartedSlide];
+  const manualHref = (manual: "getting-started" | "user-manual" | "nlu-guide") =>
+    `/manuals/cga-${manual}-${language}.pdf`;
 
   useEffect(() => {
     const currentSession = loadAuthSession();
     setSession(currentSession);
-    setLanguage(window.localStorage.getItem("aidot.language") ?? "ko");
     refreshAuthSessionCookies();
     if (currentSession) {
       prefetchStudioBots(currentSession.access_token);
@@ -245,11 +196,11 @@ export function StudioRail() {
 
   const accountInitial = session?.user.name?.trim().charAt(0) || session?.user.login_id?.trim().charAt(0) || "A";
   const roles = session?.user.roles ?? [];
-  const roleSummary = session ? roles.map(roleLabel).join(", ") : "";
+  const roleSummary = session ? roles.map((role) => getAccountRoleLabel(accountCatalog, role)).join(", ") : "";
   const canUseApi = hasApiRole(roles);
   const canUseAdmin = hasAdminOperationsRole(roles);
   const groupSummary = session?.user.group_name ?? "-";
-  const organizationSummary = session?.user.organization_name ?? "기본 서버";
+  const organizationSummary = session?.user.organization_name ?? railCopy.defaultServer;
   const lastBotScreen = session ? loadLastBotScreen(session.user.login_id) : null;
   const botVersionMatch = pathname.match(botVersionPathPattern);
   const botSettingsMatch = pathname.match(botSettingsPathPattern);
@@ -267,11 +218,11 @@ export function StudioRail() {
   const botContextFallback = "/studio/bots";
   const botWorkspaceHref = hasBotContext ? `${currentBotBasePath}/intents` : botContextFallback;
   const visibleAdminGroups = hasAdminRole(roles)
-    ? adminNavigationGroups
-    : adminNavigationGroups.filter((group) => group.title === "현황 조회");
+    ? adminGroups
+    : adminGroups.filter((group) => group.key === "status");
   const primaryItems: Array<{ id: PrimaryPanelId; label: string; icon: string }> = [
-    { id: "operations", label: "운영", icon: "operations" },
-    { id: "build", label: "제작", icon: "build" },
+    { id: "operations", label: t("nav.operations"), icon: "operations" },
+    { id: "build", label: t("nav.build"), icon: "build" },
     ...(canUseApi ? [{ id: "api" as const, label: "API", icon: "api" }] : []),
     ...(canUseAdmin ? [{ id: "admin" as const, label: "Admin", icon: "admin" }] : []),
   ];
@@ -294,33 +245,33 @@ export function StudioRail() {
         ? "operations"
         : "build";
   const operationLinks = [
-    { code: "BM", label: "봇 관리", href: "/studio/bots" },
-    { code: "BOT", label: "봇 작업공간", href: "/studio/workspace" },
-    { code: "DB", label: "DB 운영 대시보드", href: "/admin/operations-dashboard" },
-    { code: "RT", label: "재학습", href: hasBotContext ? `${currentBotBasePath}/retraining` : botContextFallback },
-    { code: "AN", label: "분석", href: hasBotContext ? `${currentBotBasePath}/analysis` : botContextFallback },
+    { code: "BM", label: navigation.botManagement, href: "/studio/bots" },
+    { code: "BOT", label: navigation.botWorkspace, href: "/studio/workspace" },
+    { code: "DB", label: navigation.dbDashboard, href: "/admin/operations-dashboard" },
+    { code: "RT", label: navigation.retraining, href: hasBotContext ? `${currentBotBasePath}/retraining` : botContextFallback },
+    { code: "AN", label: navigation.analysis, href: hasBotContext ? `${currentBotBasePath}/analysis` : botContextFallback },
   ];
   const botSettingsBasePath = hasBotContext ? `/studio/bots/${currentBotId}/settings` : "";
   const botSettingsVersionQuery = `?version=${resolvedVersionId}`;
   const buildNavigationGroups: BuildNavigationGroup[] = [
     {
       code: "01",
-      title: "봇 생성",
+      title: navigation.botCreate,
       href: "/studio/bots/new",
       active: pathname === "/studio/bots/new",
     },
     {
       code: "02",
-      title: "봇 설정",
+      title: navigation.botSettings,
       items: [
-        { label: "AI 모델 설정", path: "", active: pathname === botSettingsBasePath },
-        { label: "기본값 설정", path: "/conversation-defaults", active: pathname.startsWith(`${botSettingsBasePath}/conversation-defaults`) },
-        { label: "메시지 설정", path: "/messages", active: pathname.startsWith(`${botSettingsBasePath}/messages`) },
-        { label: "메신저 편의 기능", path: "/messenger", active: pathname.startsWith(`${botSettingsBasePath}/messenger`) },
-        { label: "제외/무시 목록 설정", path: "/blocklist", active: pathname.startsWith(`${botSettingsBasePath}/blocklist`) },
-        { label: "룰 설정", path: "/rules", active: pathname.startsWith(`${botSettingsBasePath}/rules`) },
-        { label: "스몰토크", path: "/smalltalk", active: pathname.startsWith(`${botSettingsBasePath}/smalltalk`) },
-        { label: "봇스테이션", path: "/botstation", active: pathname.startsWith(`${botSettingsBasePath}/botstation`) },
+        { label: navigation.aiModelSettings, path: "", active: pathname === botSettingsBasePath },
+        { label: navigation.defaultsSettings, path: "/conversation-defaults", active: pathname.startsWith(`${botSettingsBasePath}/conversation-defaults`) },
+        { label: navigation.messageSettings, path: "/messages", active: pathname.startsWith(`${botSettingsBasePath}/messages`) },
+        { label: navigation.messengerFeatures, path: "/messenger", active: pathname.startsWith(`${botSettingsBasePath}/messenger`) },
+        { label: navigation.blocklistSettings, path: "/blocklist", active: pathname.startsWith(`${botSettingsBasePath}/blocklist`) },
+        { label: navigation.ruleSettings, path: "/rules", active: pathname.startsWith(`${botSettingsBasePath}/rules`) },
+        { label: navigation.smalltalk, path: "/smalltalk", active: pathname.startsWith(`${botSettingsBasePath}/smalltalk`) },
+        { label: navigation.botstation, path: "/botstation", active: pathname.startsWith(`${botSettingsBasePath}/botstation`) },
       ].map((item) => ({
         ...item,
         href: hasBotContext ? `${botSettingsBasePath}${item.path}${botSettingsVersionQuery}` : botContextFallback,
@@ -328,48 +279,47 @@ export function StudioRail() {
     },
     {
       code: "03",
-      title: "봇 구성",
+      title: navigation.botConfigure,
       href: hasBotContext ? `${currentBotBasePath}/configure` : botContextFallback,
       active: pathname.includes("/configure"),
     },
     {
       code: "04",
-      title: "봇 제작",
+      title: navigation.botBuild,
       items: [
-        { label: "의도/모듈 관리", href: botWorkspaceHref, active: pathname.includes("/intents") },
-        { label: "개체 관리", href: hasBotContext ? `${currentBotBasePath}/entities` : botContextFallback, active: pathname.includes("/entities") },
-        { label: "사전 관리", href: hasBotContext ? `${currentBotBasePath}/dictionary` : botContextFallback, active: pathname.includes("/dictionary") },
+        { label: navigation.intentManagement, href: botWorkspaceHref, active: pathname.includes("/intents") },
+        { label: navigation.entityManagement, href: hasBotContext ? `${currentBotBasePath}/entities` : botContextFallback, active: pathname.includes("/entities") },
+        { label: navigation.dictionaryManagement, href: hasBotContext ? `${currentBotBasePath}/dictionary` : botContextFallback, active: pathname.includes("/dictionary") },
       ],
     },
     {
       code: "05",
-      title: "봇 테스트",
+      title: navigation.botTest,
       href: hasBotContext ? `${currentBotBasePath}/simulator` : botContextFallback,
       active: pathname.includes("/simulator"),
     },
     {
       code: "06",
-      title: "봇 평가",
+      title: navigation.botEvaluation,
       href: hasBotContext ? `${currentBotBasePath}/evaluation` : botContextFallback,
       active: pathname.includes("/evaluation"),
     },
   ];
   const panelTitle =
-    activePanel === "operations" ? "봇 운영" : activePanel === "build" ? "봇 제작" : "시스템 관리";
+    activePanel === "operations" ? navigation.operationsPanel : activePanel === "build" ? navigation.buildPanel : navigation.systemPanel;
   const panelLinks = activePanel === "operations" ? operationLinks : [];
   const currentLicense = licenseStatus?.license ?? null;
-  const licenseProduct = currentLicense?.product?.trim() || "라이선스 정보 없음";
+  const licenseProduct = currentLicense?.product?.trim() || railCopy.noLicense;
   const licenseId = currentLicense?.license_id?.trim() || "-";
   const licenseExpiresAt = currentLicense?.expires_at?.trim() || "-";
 
   function handleLanguageChange(value: string) {
-    setLanguage(value);
-    window.localStorage.setItem("aidot.language", value);
+    setLanguage(normalizeSupportedLanguage(value));
   }
 
   return (
     <aside className="studio-rail">
-      <nav className="studio-rail__menu" aria-label="스튜디오 주요 메뉴">
+      <nav className="studio-rail__menu" aria-label={railCopy.mainMenu}>
         {primaryItems.map((item) => {
           const isActive = activePrimaryId === item.id;
 
@@ -409,11 +359,11 @@ export function StudioRail() {
                 ? " studio-rail__context-panel--build"
                 : ""
           }`}
-          aria-label={`${panelTitle} 메뉴`}
+          aria-label={`${panelTitle} ${railCopy.menu}`}
         >
           <header>
             <strong>{panelTitle}</strong>
-            <button type="button" onClick={() => setActivePanel(null)} aria-label="메뉴 닫기">×</button>
+            <button type="button" onClick={() => setActivePanel(null)} aria-label={railCopy.closeMenu}>×</button>
           </header>
           {activePanel === "build" ? (
             <div className="studio-rail__build-groups">
@@ -487,7 +437,7 @@ export function StudioRail() {
         <button
           type="button"
           className={`studio-rail__help-button${helpOpen ? " is-active" : ""}`}
-          aria-label="도움말"
+          aria-label={t("nav.help")}
           aria-expanded={helpOpen}
           onClick={() => setHelpOpen((current) => !current)}
         >
@@ -499,14 +449,14 @@ export function StudioRail() {
               <strong>About CGA Studio</strong>
               <dl className="studio-rail__help-meta">
                 <div>
-                  <dt>License</dt>
+                  <dt>{t("help.license")}</dt>
                   <dd>
                     <b>{licenseProduct}</b>
-                    <span>{licenseId} ({licenseExpiresAt} 만료)</span>
+                    <span>{licenseId} ({licenseExpiresAt} {t("help.expires")})</span>
                   </dd>
                 </div>
                 <div>
-                  <dt>Version</dt>
+                  <dt>{t("help.version")}</dt>
                   <dd>v1.1</dd>
                 </div>
               </dl>
@@ -518,13 +468,16 @@ export function StudioRail() {
                 aria-haspopup="dialog"
                 onClick={() => openGettingStarted()}
               >
-                Getting Started
+                {t("gettingStarted.title")}
               </button>
-              <a href="/manuals/cga-user-manual.pdf" target="_blank" rel="noreferrer">
-                사용자 매뉴얼
+              <a href={manualHref("getting-started")} target="_blank" rel="noreferrer">
+                {t("gettingStarted.title")} PDF
               </a>
-              <a href="/manuals/cga-nlu-guide.pdf" target="_blank" rel="noreferrer">
-                NLU 학습 가이드
+              <a href={manualHref("user-manual")} target="_blank" rel="noreferrer">
+                {t("help.userManual")}
+              </a>
+              <a href={manualHref("nlu-guide")} target="_blank" rel="noreferrer">
+                {t("help.nluGuide")}
               </a>
             </section>
           </div>
@@ -548,8 +501,8 @@ export function StudioRail() {
             aria-labelledby="cga-getting-started-title"
           >
             <header className="studio-getting-started__header">
-              <strong id="cga-getting-started-title">Getting Started</strong>
-              <button type="button" aria-label="Getting Started 닫기" onClick={() => closeGettingStarted(hideGettingStarted)}>
+              <strong id="cga-getting-started-title">{t("gettingStarted.title")}</strong>
+              <button type="button" aria-label={`${t("gettingStarted.title")} ${t("common.close")}`} onClick={() => closeGettingStarted(hideGettingStarted)}>
                 ×
               </button>
             </header>
@@ -573,18 +526,18 @@ export function StudioRail() {
               <button
                 type="button"
                 className="studio-getting-started__next"
-                aria-label="다음 소개 보기"
-                onClick={() => setGettingStartedSlide((current) => (current + 1) % gettingStartedSlides.length)}
+                aria-label={railCopy.nextIntroduction}
+                onClick={() => setGettingStartedSlide((current) => (current + 1) % railCopy.gettingStartedSlides.length)}
               >
                 ›
               </button>
-              <div className="studio-getting-started__dots" aria-label="소개 슬라이드 선택">
-                {gettingStartedSlides.map((slide, index) => (
+              <div className="studio-getting-started__dots" aria-label={railCopy.introductionSelection}>
+                {railCopy.gettingStartedSlides.map((slide, index) => (
                   <button
                     key={slide.variant}
                     type="button"
                     className={index === gettingStartedSlide ? "is-active" : ""}
-                    aria-label={`${index + 1}번째 소개 보기`}
+                    aria-label={formatStudioRailText(railCopy.introductionAt, { index: index + 1 })}
                     aria-current={index === gettingStartedSlide ? "step" : undefined}
                     onClick={() => setGettingStartedSlide(index)}
                   />
@@ -593,32 +546,32 @@ export function StudioRail() {
             </div>
 
             <div className="studio-getting-started__body">
-              <h3>CGA Studio 체험 방법을 선택하세요.</h3>
-              <div className="studio-getting-started__modes" role="radiogroup" aria-label="Getting Started 체험 방법">
+              <h3>{t("gettingStarted.choose")}</h3>
+              <div className="studio-getting-started__modes" role="radiogroup" aria-label={railCopy.experienceMode}>
                 <label className={gettingStartedMode === "explore" ? "is-selected" : ""}>
                   <input type="radio" name="getting-started-mode" value="explore" checked={gettingStartedMode === "explore"} onChange={() => setGettingStartedMode("explore")} />
-                  <span>주요메뉴 탐색하기</span>
+                  <span>{t("gettingStarted.explore")}</span>
                 </label>
                 <label className={gettingStartedMode === "create" ? "is-selected" : ""}>
                   <input type="radio" name="getting-started-mode" value="create" checked={gettingStartedMode === "create"} onChange={() => setGettingStartedMode("create")} />
-                  <span>봇 만들기</span>
+                  <span>{t("gettingStarted.create")}</span>
                 </label>
                 <label className={gettingStartedMode === "sample" ? "is-selected" : ""}>
                   <input type="radio" name="getting-started-mode" value="sample" checked={gettingStartedMode === "sample"} onChange={() => setGettingStartedMode("sample")} />
-                  <span>Sample Bot</span>
+                  <span>{t("gettingStarted.sample")}</span>
                 </label>
               </div>
               <div className="studio-getting-started__actions">
                 <button type="button" className="studio-getting-started__secondary" onClick={() => closeGettingStarted(hideGettingStarted)}>
-                  팝업을 닫고, 자유로운 시작
+                  {t("gettingStarted.freeStart")}
                 </button>
                 <button type="button" className="studio-getting-started__primary" onClick={startGettingStarted}>
-                  체험시작
+                  {t("gettingStarted.start")}
                 </button>
               </div>
               <label className="studio-getting-started__remember">
                 <input type="checkbox" checked={hideGettingStarted} onChange={(event) => setHideGettingStarted(event.target.checked)} />
-                <span>시작할 때 이 팝업 다시 보지 않기</span>
+                <span>{t("gettingStarted.hide")}</span>
               </label>
             </div>
           </section>
@@ -629,7 +582,7 @@ export function StudioRail() {
         <button
           type="button"
           className={`studio-rail__account-button${menuOpen ? " is-active" : ""}`}
-          aria-label="사용자 메뉴"
+          aria-label={t("nav.userMenu")}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((current) => !current)}
         >
@@ -642,7 +595,7 @@ export function StudioRail() {
               type="button"
               className="studio-rail__account-close"
               onClick={() => setMenuOpen(false)}
-              aria-label="사용자 메뉴 닫기"
+              aria-label={railCopy.closeUserMenu}
             >
               ×
             </button>
@@ -655,7 +608,7 @@ export function StudioRail() {
                       {session.user.name} / {session.user.login_id}
                     </strong>
                     <span>
-                      {roleSummary || "권한 없음"} / {groupSummary} / {organizationSummary}
+                      {roleSummary || railCopy.noPermission} / {groupSummary} / {organizationSummary}
                     </span>
                   </div>
                 </div>
@@ -666,17 +619,18 @@ export function StudioRail() {
                     className="studio-rail__account-link"
                     onClick={() => setMenuOpen(false)}
                   >
-                    사용자 정보 수정
+                    {navigation.editProfile}
                   </Link>
 
                   <select
                     className="studio-rail__language-select"
                     value={language}
                     onChange={(event) => handleLanguageChange(event.target.value)}
-                    aria-label="사용자 언어"
+                    aria-label={navigation.userLanguage}
                   >
-                    <option value="ko">한국어</option>
-                    <option value="en">English</option>
+                    {SUPPORTED_LANGUAGES.map((option) => (
+                      <option key={option.code} value={option.code}>{option.label}</option>
+                    ))}
                   </select>
 
                   <button
@@ -685,13 +639,13 @@ export function StudioRail() {
                     onClick={handleLogout}
                     disabled={isLoggingOut}
                   >
-                    {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+                    {isLoggingOut ? t("common.loggingOut") : t("common.logout")}
                   </button>
                 </div>
               </>
             ) : (
               <Link href="/login" className="studio-rail__account-link" onClick={() => setMenuOpen(false)}>
-                로그인
+                {t("common.login")}
               </Link>
             )}
           </div>

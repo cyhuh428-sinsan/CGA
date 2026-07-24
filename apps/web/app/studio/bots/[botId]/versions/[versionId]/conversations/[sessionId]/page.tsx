@@ -11,7 +11,8 @@ export default async function ConversationDetailPage({
 
   return (
     <PageShell
-      title={`대화 상세: ${sessionId}`}
+      title="대화 상세"
+      titleDetail={sessionId}
       description="대화 메시지와 실행 흐름을 검토하는 화면입니다."
       manualReferences={[
         { section: "14.6", title: "대화 이력 조회하기" },

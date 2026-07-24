@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { hasApiWriteRole, loadAuthSession } from "@/lib/auth";
+import { getVersionManagementLabel, VERSION_MANAGEMENT_CATALOGS, type VersionManagementCatalog } from "@/lib/i18n/version-management";
 import {
   activateStudioBotVersion,
   deactivateStudioBotVersion,
@@ -85,17 +87,17 @@ const actionLabels: Record<Exclude<VersionAction, "comment">, string> = {
   toggle: "운영/해제",
 };
 
-function getVersionStatusLabel(status: StudioVersionFixture["status"]) {
+function getVersionStatusLabel(status: StudioVersionFixture["status"], copy: VersionManagementCatalog) {
   if (status === "active") {
-    return "운영";
+    return getVersionManagementLabel(copy, "운영");
   }
   if (status === "testing") {
-    return "테스트";
+    return getVersionManagementLabel(copy, "테스트");
   }
   if (status === "draft") {
-    return "초안";
+    return getVersionManagementLabel(copy, "초안");
   }
-  return "미사용";
+  return getVersionManagementLabel(copy, "미사용");
 }
 
 function nowText() {
@@ -348,6 +350,8 @@ function mapApiVersionToFixture(version: StudioBotVersionApiItem): StudioVersion
 export type VersionManagementBot = ReturnType<typeof mapApiBotToVersionManagementBot>;
 
 export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: VersionManagementPageProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = VERSION_MANAGEMENT_CATALOGS[uiLanguage];
   const router = useRouter();
   const pathname = usePathname();
   const routeBotKey = decodeRouteValue(routeBotId);
@@ -362,7 +366,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
   const [commentDraft, setCommentDraft] = useState("");
   const [uploadMode, setUploadMode] = useState<UploadMode>("new");
   const [uploadTargetId, setUploadTargetId] = useState(selectedId);
-  const [uploadFileName, setUploadFileName] = useState("선택된 파일 없음");
+  const [uploadFileName, setUploadFileName] = useState(getVersionManagementLabel(copy, "선택된 파일 없음"));
   const [uploadVersion, setUploadVersion] = useState<VersionDocument | null>(null);
   const [uploadPackage, setUploadPackage] = useState<StudioBotVersionPackage | null>(null);
   const [uploadAidotPackage, setUploadAidotPackage] = useState<StudioAidotBotPackage | null>(null);
@@ -376,7 +380,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
   const selectedVersionIsTrained = Boolean(selectedVersion?.isTrained);
   const selectedVersionScenarioErrorCount = Number(selectedVersion?.scenarioErrorCount ?? 0);
   const selectedVersionScenarioErrorMessage = selectedVersionScenarioErrorCount > 0
-    ? selectedVersion?.scenarioErrorMessage || "대화 설계 오류가 있습니다."
+    ? selectedVersion?.scenarioErrorMessage || getVersionManagementLabel(copy, "대화 설계 오류가 있습니다.")
     : "";
   const nextVersionNo = Math.max(0, ...versions.map((version) => version.versionNo)) + 1;
   const backdropVersion = selectedVersion ?? activeVersion ?? versions[0] ?? null;
@@ -452,7 +456,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
               apiBot;
           }
           if (!apiBot) {
-            throw new Error(`봇을 찾을 수 없습니다: ${routeBotKey}`);
+            throw new Error(`${getVersionManagementLabel(copy, "봇을 찾을 수 없습니다")}: ${routeBotKey}`);
           }
           const apiVersions = await fetchStudioBotVersions(session.access_token, apiBot.id);
           if (!ignore) {
@@ -471,7 +475,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         } catch (fallbackError) {
           if (!ignore) {
             setMessage(
-              `버전 정보를 불러오지 못했습니다. 1차: ${getErrorMessage(contextError)} / 2차: ${getErrorMessage(fallbackError)}`,
+              `${copy.loadFailed} ${getErrorMessage(contextError)} / ${getErrorMessage(fallbackError)}`,
             );
           }
         }
@@ -510,20 +514,20 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
             <span />
           </div>
           <div>
-            <strong>{apiBotId ? botName : "봇 정보를 불러오는 중입니다"}</strong>
-            <p>{apiBotId ? "현재 선택된 봇의 버전 정보를 기준으로 표시합니다." : "버전 정보를 불러오는 중입니다."}</p>
+            <strong>{apiBotId ? botName : getVersionManagementLabel(copy, "봇 정보를 불러오는 중입니다")}</strong>
+            <p>{apiBotId ? getVersionManagementLabel(copy, "현재 선택된 봇의 버전 정보를 기준으로 표시합니다.") : getVersionManagementLabel(copy, "버전 정보를 불러오는 중입니다.")}</p>
           </div>
         </div>
         <div className="version-overlay-backdrop__tabs">
-          <div className="is-active"><span>의도</span><strong>{backdropVersion?.counts.intents ?? "-"}</strong></div>
-          <div><span>개체</span><strong>{backdropVersion?.counts.entities ?? "-"}</strong></div>
-          <div><span>API</span><strong>{backdropVersion?.counts.apis ?? "-"}</strong></div>
+          <div className="is-active"><span>{getVersionManagementLabel(copy, "의도")}</span><strong>{backdropVersion?.counts.intents ?? "-"}</strong></div>
+          <div><span>{getVersionManagementLabel(copy, "개체")}</span><strong>{backdropVersion?.counts.entities ?? "-"}</strong></div>
+          <div><span>{getVersionManagementLabel(copy, "API")}</span><strong>{backdropVersion?.counts.apis ?? "-"}</strong></div>
         </div>
       </header>
       <div className="version-overlay-backdrop__meta">
-        <span>운영 버전 <strong>{activeVersion?.name ?? "미지정"}</strong></span>
-        <span>선택 버전 <strong>{backdropVersion?.name ?? "-"}</strong></span>
-        <span>상태 <strong>{backdropVersion ? getVersionStatusLabel(backdropVersion.status) : "-"}</strong></span>
+        <span>{getVersionManagementLabel(copy, "운영 버전")} <strong>{activeVersion?.name ?? getVersionManagementLabel(copy, "미지정")}</strong></span>
+        <span>{getVersionManagementLabel(copy, "선택 버전")} <strong>{backdropVersion?.name ?? "-"}</strong></span>
+        <span>{getVersionManagementLabel(copy, "상태")} <strong>{backdropVersion ? getVersionStatusLabel(backdropVersion.status, copy) : "-"}</strong></span>
       </div>
     </div>
   );
@@ -534,8 +538,8 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         {renderBackdrop()}
         <div className="version-overlay-scrim" />
         <div className="version-dialog version-dialog--loading">
-          <strong>버전 관리</strong>
-          <p>버전 정보를 불러오는 중입니다...</p>
+          <strong>{getVersionManagementLabel(copy, "버전 관리")}</strong>
+          <p>{getVersionManagementLabel(copy, "버전 정보를 불러오는 중입니다...")}</p>
         </div>
       </section>
     );
@@ -547,8 +551,8 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         {renderBackdrop()}
         <div className="version-overlay-scrim" />
         <div className="version-dialog version-dialog--loading">
-          <strong>버전 관리</strong>
-          <p>{message || "버전 정보를 불러오지 못했습니다."}</p>
+          <strong>{getVersionManagementLabel(copy, "버전 관리")}</strong>
+          <p>{message || copy.loadFailed}</p>
         </div>
       </section>
     );
@@ -560,17 +564,17 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
     setUploadVersion(null);
     setUploadPackage(null);
     setUploadAidotPackage(null);
-    setUploadFileName("선택된 파일 없음");
+    setUploadFileName(getVersionManagementLabel(copy, "선택된 파일 없음"));
   };
 
   const openDialog = (mode: VersionAction) => {
     setMessage("");
     if (mode === "delete" && versions.length <= 1) {
-      setMessage("마지막 버전은 삭제할 수 없습니다. 봇 삭제를 사용해주세요.");
+      setMessage(getVersionManagementLabel(copy, "마지막 버전은 삭제할 수 없습니다. 봇 삭제를 사용해주세요."));
       return;
     }
     if (mode === "toggle" && !canManageOperatingVersion) {
-      setMessage("운영 버전 변경 권한이 없습니다.");
+      setMessage(getVersionManagementLabel(copy, "운영 버전 변경 권한이 없습니다."));
       return;
     }
     if (mode === "comment") {
@@ -582,7 +586,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
       setUploadVersion(null);
       setUploadPackage(null);
       setUploadAidotPackage(null);
-      setUploadFileName("선택된 파일 없음");
+      setUploadFileName(getVersionManagementLabel(copy, "선택된 파일 없음"));
     }
     setDialog(mode);
   };
@@ -596,14 +600,14 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         await refreshVersions(copied.id);
         closeDialog();
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "버전 복사에 실패했습니다.");
+        setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "버전 복사에 실패했습니다."));
       } finally {
         setBusy(false);
       }
       return;
     }
 
-    const copy: StudioVersionFixture = {
+    const copiedFixture: StudioVersionFixture = {
       ...selectedVersion,
       id: `v${nextVersionNo}`,
       name: `v${nextVersionNo}`,
@@ -614,8 +618,8 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
       updatedAt: nowText(),
       isTrained: false,
     };
-    setVersions((current) => [copy, ...current]);
-    setSelectedId(copy.id);
+    setVersions((current) => [copiedFixture, ...current]);
+    setSelectedId(copiedFixture.id);
     closeDialog();
   };
 
@@ -632,7 +636,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         await refreshVersions(created.id);
         closeDialog();
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "버전 추가에 실패했습니다.");
+        setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "버전 추가에 실패했습니다."));
       } finally {
         setBusy(false);
       }
@@ -666,11 +670,11 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
 
   const deleteSelectedVersion = async () => {
     if (versions.length <= 1) {
-      setMessage("마지막 버전은 삭제할 수 없습니다. 봇 삭제를 사용해주세요.");
+      setMessage(getVersionManagementLabel(copy, "마지막 버전은 삭제할 수 없습니다. 봇 삭제를 사용해주세요."));
       return;
     }
     if (selectedVersion.status === "active") {
-      setMessage("운영 버전은 삭제할 수 없습니다. 먼저 운영을 해제하세요.");
+      setMessage(getVersionManagementLabel(copy, "운영 버전은 삭제할 수 없습니다. 먼저 운영을 해제하세요."));
       return;
     }
     if (token && apiBotId) {
@@ -681,7 +685,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         await refreshVersions();
         closeDialog();
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "버전 삭제에 실패했습니다.");
+        setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "버전 삭제에 실패했습니다."));
       } finally {
         setBusy(false);
       }
@@ -704,7 +708,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           await refreshVersions(deactivated.id);
           closeDialog();
         } catch (error) {
-          setMessage(error instanceof Error ? error.message : "운영 버전 해제에 실패했습니다.");
+          setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "운영 버전 해제에 실패했습니다."));
         } finally {
           setBusy(false);
         }
@@ -712,12 +716,12 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
       }
 
       if (!selectedVersionIsTrained) {
-        setMessage("학습이 완료된 버전만 운영 버전으로 지정할 수 있습니다. 먼저 학습하기를 실행해주세요.");
+        setMessage(getVersionManagementLabel(copy, "학습이 완료된 버전만 운영 버전으로 지정할 수 있습니다. 먼저 학습하기를 실행해주세요."));
         return;
       }
 
       if (selectedVersionScenarioErrorMessage) {
-        setMessage(`대화 설계 오류가 있는 버전은 운영 버전으로 지정할 수 없습니다. ${selectedVersionScenarioErrorMessage} 오류를 수정하고 다시 학습해주세요.`);
+        setMessage(`${getVersionManagementLabel(copy, "대화 설계 오류가 있는 버전은 운영 버전으로 지정할 수 없습니다.")} ${selectedVersionScenarioErrorMessage} ${getVersionManagementLabel(copy, "오류를 수정하고 다시 학습해주세요.")}`);
         return;
       }
 
@@ -728,7 +732,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         await refreshVersions(activated.id);
         closeDialog();
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "운영 버전 지정에 실패했습니다.");
+        setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "운영 버전 지정에 실패했습니다."));
       } finally {
         setBusy(false);
       }
@@ -748,12 +752,12 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
     }
 
     if (!selectedVersionIsTrained) {
-      setMessage("학습이 완료된 버전만 운영 버전으로 지정할 수 있습니다. 먼저 학습하기를 실행해주세요.");
+      setMessage(getVersionManagementLabel(copy, "학습이 완료된 버전만 운영 버전으로 지정할 수 있습니다. 먼저 학습하기를 실행해주세요."));
       return;
     }
 
     if (selectedVersionScenarioErrorMessage) {
-      setMessage(`대화 설계 오류가 있는 버전은 운영 버전으로 지정할 수 없습니다. ${selectedVersionScenarioErrorMessage} 오류를 수정하고 다시 학습해주세요.`);
+      setMessage(`${getVersionManagementLabel(copy, "대화 설계 오류가 있는 버전은 운영 버전으로 지정할 수 없습니다.")} ${selectedVersionScenarioErrorMessage} ${getVersionManagementLabel(copy, "오류를 수정하고 다시 학습해주세요.")}`);
       return;
     }
 
@@ -780,7 +784,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         await refreshVersions(updated.id);
         closeDialog();
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "코멘트 저장에 실패했습니다.");
+        setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "코멘트 저장에 실패했습니다."));
       } finally {
         setBusy(false);
       }
@@ -810,7 +814,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         );
         closeDialog();
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "버전 파일 다운로드에 실패했습니다.");
+        setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "버전 파일 다운로드에 실패했습니다."));
       } finally {
         setBusy(false);
       }
@@ -827,7 +831,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
 
   const handleAidotDownload = async () => {
     if (!token || !apiBotId) {
-      setMessage("Aidot 봇 패키지는 API 연결 상태에서만 다운로드할 수 있습니다.");
+      setMessage(getVersionManagementLabel(copy, "Aidot 봇 패키지는 API 연결 상태에서만 다운로드할 수 있습니다."));
       return;
     }
     setBusy(true);
@@ -840,7 +844,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
       );
       closeDialog();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Aidot 봇 패키지 다운로드에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "Aidot 봇 패키지 다운로드에 실패했습니다."));
     } finally {
       setBusy(false);
     }
@@ -852,7 +856,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
     setUploadPackage(null);
     setUploadAidotPackage(null);
     if (!file) {
-      setUploadFileName("선택된 파일 없음");
+      setUploadFileName(getVersionManagementLabel(copy, "선택된 파일 없음"));
       return;
     }
     setUploadFileName(file.name);
@@ -861,7 +865,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
       const parsed = JSON.parse(text) as unknown;
       if (isStudioAidotBotPackage(parsed)) {
         setUploadAidotPackage(parsed);
-        setMessage("Aidot 전체 봇 패키지로 확인되었습니다.");
+        setMessage(getVersionManagementLabel(copy, "Aidot 전체 봇 패키지로 확인되었습니다."));
         return;
       }
       const parsedPackage =
@@ -873,13 +877,13 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           ? parsedPackage.version_json
           : parsed;
       if (!source || typeof source !== "object" || Array.isArray(source)) {
-        setMessage("버전 파일 형식이 맞지 않습니다.");
+        setMessage(getVersionManagementLabel(copy, "버전 파일 형식이 맞지 않습니다."));
         return;
       }
       setUploadVersion(normalizeVersionDocument(source as Partial<VersionDocument>));
       setUploadPackage(parsedPackage);
     } catch {
-      setMessage("JSON 형식의 버전 파일만 업로드할 수 있습니다.");
+      setMessage(getVersionManagementLabel(copy, "JSON 형식의 버전 파일만 업로드할 수 있습니다."));
     }
   };
 
@@ -887,7 +891,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
     const versionDocument = uploadVersion;
     const aidotPackage = uploadAidotPackage;
     if (!versionDocument && !aidotPackage) {
-      setMessage("업로드할 버전 파일을 선택하세요.");
+      setMessage(getVersionManagementLabel(copy, "업로드할 버전 파일을 선택하세요."));
       return;
     }
 
@@ -898,7 +902,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         if (uploadMode === "overwrite") {
           const target = versions.find((version) => version.id === uploadTargetId);
           if (target?.status === "active") {
-            setMessage("운영 버전에는 덮어쓸 수 없습니다. 먼저 운영을 해제하세요.");
+            setMessage(getVersionManagementLabel(copy, "운영 버전에는 덮어쓸 수 없습니다. 먼저 운영을 해제하세요."));
             return;
           }
           if (aidotPackage) {
@@ -908,7 +912,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
             return;
           }
           if (!versionDocument) {
-            throw new Error("버전 파일 형식이 맞지 않습니다.");
+            throw new Error(getVersionManagementLabel(copy, "버전 파일 형식이 맞지 않습니다."));
           }
           const updated = await updateStudioBotVersion(token, apiBotId, uploadTargetId, {
             version_json: versionDocument,
@@ -935,7 +939,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           return;
         }
         if (!versionDocument) {
-          throw new Error("버전 파일 형식이 맞지 않습니다.");
+          throw new Error(getVersionManagementLabel(copy, "버전 파일 형식이 맞지 않습니다."));
         }
         const updated = await updateStudioBotVersion(token, apiBotId, created.id, {
           version_json: versionDocument,
@@ -949,7 +953,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         await refreshVersions(updated.id);
         closeDialog();
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "버전 파일 업로드에 실패했습니다.");
+        setMessage(error instanceof Error ? error.message : getVersionManagementLabel(copy, "버전 파일 업로드에 실패했습니다."));
       } finally {
         setBusy(false);
       }
@@ -957,23 +961,23 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
     }
 
     if (aidotPackage) {
-      setMessage("Aidot 봇 패키지는 API 연결 상태에서만 업로드할 수 있습니다.");
+      setMessage(getVersionManagementLabel(copy, "Aidot 봇 패키지는 API 연결 상태에서만 업로드할 수 있습니다."));
       return;
     }
     if (!versionDocument) {
-      setMessage("버전 파일 형식이 맞지 않습니다.");
+      setMessage(getVersionManagementLabel(copy, "버전 파일 형식이 맞지 않습니다."));
       return;
     }
     const importedFixture = normalizeImportedVersion(versionDocument, selectedVersion, nextVersionNo);
     if (!importedFixture) {
-      setMessage("버전 파일 형식이 맞지 않습니다.");
+      setMessage(getVersionManagementLabel(copy, "버전 파일 형식이 맞지 않습니다."));
       return;
     }
 
     if (uploadMode === "overwrite") {
       const target = versions.find((version) => version.id === uploadTargetId);
       if (target?.status === "active") {
-        setMessage("운영 버전에는 덮어쓸 수 없습니다. 먼저 운영을 해제하세요.");
+        setMessage(getVersionManagementLabel(copy, "운영 버전에는 덮어쓸 수 없습니다. 먼저 운영을 해제하세요."));
         return;
       }
 
@@ -1011,21 +1015,21 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           <div className="version-dialog__modal-scrim" />
           <section className="version-dialog__modal">
             <div className="version-dialog__modal-header">
-              <strong>버전 추가</strong>
-              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label="닫기">×</button>
+              <strong>{getVersionManagementLabel(copy, "버전 추가")}</strong>
+              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label={getVersionManagementLabel(copy, "닫기")}>×</button>
             </div>
             <div className="version-dialog__modal-body">
-              <p className="version-dialog__message">빈 새 버전을 생성하시겠습니까?</p>
+              <p className="version-dialog__message">{getVersionManagementLabel(copy, "빈 새 버전을 생성하시겠습니까?")}</p>
               <div className="version-dialog__summary">
-                <div className="version-dialog__summary-row"><span>생성 버전</span><strong>{`v${nextVersionNo}`}</strong></div>
-                <div className="version-dialog__summary-row"><span>초기 데이터</span><strong>없음</strong></div>
+                <div className="version-dialog__summary-row"><span>{getVersionManagementLabel(copy, "생성 버전")}</span><strong>{`v${nextVersionNo}`}</strong></div>
+                <div className="version-dialog__summary-row"><span>{getVersionManagementLabel(copy, "초기 데이터")}</span><strong>{getVersionManagementLabel(copy, "없음")}</strong></div>
               </div>
-              <p className="version-dialog__note">복사본이 아니라 의도, 개체, 사전, API가 없는 빈 버전으로 생성됩니다.</p>
+              <p className="version-dialog__note">{getVersionManagementLabel(copy, "복사본이 아니라 의도, 개체, 사전, API가 없는 빈 버전으로 생성됩니다.")}</p>
               {message ? <p className="version-dialog__alert">{message}</p> : null}
             </div>
             <div className="version-dialog__modal-footer">
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>취소</button>
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={createEmptyVersion} disabled={busy}>확인</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>{getVersionManagementLabel(copy, "취소")}</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={createEmptyVersion} disabled={busy}>{getVersionManagementLabel(copy, "확인")}</button>
             </div>
           </section>
         </>
@@ -1038,19 +1042,19 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           <div className="version-dialog__modal-scrim" />
           <section className="version-dialog__modal">
             <div className="version-dialog__modal-header">
-              <strong>버전 복사</strong>
-              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label="닫기">×</button>
+              <strong>{getVersionManagementLabel(copy, "버전 복사")}</strong>
+              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label={getVersionManagementLabel(copy, "닫기")}>×</button>
             </div>
             <div className="version-dialog__modal-body">
-              <p className="version-dialog__message"><strong>{selectedVersion.name}</strong> 버전을 복사하시겠습니까?</p>
+              <p className="version-dialog__message"><strong>{selectedVersion.name}</strong> {getVersionManagementLabel(copy, "버전을 복사하시겠습니까?")}</p>
               <div className="version-dialog__summary">
-                <div className="version-dialog__summary-row"><span>복사 원본</span><strong>{selectedVersion.name}</strong></div>
-                <div className="version-dialog__summary-row"><span>생성 버전</span><strong>{`v${nextVersionNo}`}</strong></div>
+                <div className="version-dialog__summary-row"><span>{getVersionManagementLabel(copy, "복사 원본")}</span><strong>{selectedVersion.name}</strong></div>
+                <div className="version-dialog__summary-row"><span>{getVersionManagementLabel(copy, "생성 버전")}</span><strong>{`v${nextVersionNo}`}</strong></div>
               </div>
             </div>
             <div className="version-dialog__modal-footer">
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>취소</button>
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={copySelectedVersion}>확인</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>{getVersionManagementLabel(copy, "취소")}</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={copySelectedVersion}>{getVersionManagementLabel(copy, "확인")}</button>
             </div>
           </section>
         </>
@@ -1063,18 +1067,18 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           <div className="version-dialog__modal-scrim" />
           <section className="version-dialog__modal">
             <div className="version-dialog__modal-header">
-              <strong>버전 삭제</strong>
-              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label="닫기">×</button>
+              <strong>{getVersionManagementLabel(copy, "버전 삭제")}</strong>
+              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label={getVersionManagementLabel(copy, "닫기")}>×</button>
             </div>
             <div className="version-dialog__modal-body">
               <p className="version-dialog__message">
-                {selectedVersion.status === "active" ? "운영 버전은 삭제할 수 없습니다." : <><strong>{selectedVersion.name}</strong> 버전을 삭제하시겠습니까?</>}
+                {selectedVersion.status === "active" ? getVersionManagementLabel(copy, "운영 버전은 삭제할 수 없습니다.") : <><strong>{selectedVersion.name}</strong> {getVersionManagementLabel(copy, "버전을 삭제하시겠습니까?")}</>}
               </p>
               {message ? <p className="version-dialog__alert">{message}</p> : null}
             </div>
             <div className="version-dialog__modal-footer">
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>취소</button>
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={deleteSelectedVersion}>확인</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>{getVersionManagementLabel(copy, "취소")}</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={deleteSelectedVersion}>{getVersionManagementLabel(copy, "확인")}</button>
             </div>
           </section>
         </>
@@ -1087,16 +1091,16 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           <div className="version-dialog__modal-scrim" />
           <section className="version-dialog__modal">
             <div className="version-dialog__modal-header">
-              <strong>버전 파일 다운로드</strong>
-              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label="닫기">×</button>
+              <strong>{getVersionManagementLabel(copy, "버전 파일 다운로드")}</strong>
+              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label={getVersionManagementLabel(copy, "닫기")}>×</button>
             </div>
             <div className="version-dialog__modal-body">
-              <p className="version-dialog__message"><strong>{selectedVersion.name}</strong> 버전 정보를 다운로드하시겠습니까?</p>
+              <p className="version-dialog__message"><strong>{selectedVersion.name}</strong> {getVersionManagementLabel(copy, "버전 정보를 다운로드하시겠습니까?")}</p>
             </div>
             <div className="version-dialog__modal-footer">
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>취소</button>
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={handleDownload} disabled={busy}>CGA 버전 백업</button>
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={handleAidotDownload} disabled={busy}>Aidot 봇 패키지</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>{getVersionManagementLabel(copy, "취소")}</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={handleDownload} disabled={busy}>{getVersionManagementLabel(copy, "CGA 버전 백업")}</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={handleAidotDownload} disabled={busy}>{getVersionManagementLabel(copy, "Aidot 봇 패키지")}</button>
             </div>
           </section>
         </>
@@ -1113,32 +1117,32 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           <div className="version-dialog__modal-scrim" />
           <section className="version-dialog__modal">
             <div className="version-dialog__modal-header">
-              <strong>{isUnassign ? "운영 버전 해제" : "운영 버전 지정"}</strong>
-              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label="닫기">×</button>
+              <strong>{isUnassign ? getVersionManagementLabel(copy, "운영 버전 해제") : getVersionManagementLabel(copy, "운영 버전 지정")}</strong>
+              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label={getVersionManagementLabel(copy, "닫기")}>×</button>
             </div>
             <div className="version-dialog__modal-body">
               <p className="version-dialog__message">
-                {isUnassign ? <><strong>{selectedVersion.name}</strong> 버전의 운영을 해제하시겠습니까?</> : <><strong>{selectedVersion.name}</strong> 버전을 운영 버전으로 지정하시겠습니까?</>}
+                {isUnassign ? <><strong>{selectedVersion.name}</strong> {getVersionManagementLabel(copy, "버전의 운영을 해제하시겠습니까?")}</> : <><strong>{selectedVersion.name}</strong> {getVersionManagementLabel(copy, "버전을 운영 버전으로 지정하시겠습니까?")}</>}
               </p>
               <div className="version-dialog__summary">
-                <div className="version-dialog__summary-row"><span>현재 운영</span><strong>{activeVersion?.name ?? "없음"}</strong></div>
-                <div className="version-dialog__summary-row"><span>선택 버전</span><strong>{selectedVersion.name}</strong></div>
+                <div className="version-dialog__summary-row"><span>{getVersionManagementLabel(copy, "현재 운영")}</span><strong>{activeVersion?.name ?? getVersionManagementLabel(copy, "없음")}</strong></div>
+                <div className="version-dialog__summary-row"><span>{getVersionManagementLabel(copy, "선택 버전")}</span><strong>{selectedVersion.name}</strong></div>
               </div>
-              <p className="version-dialog__note">운영 버전은 외부 메신저 연결에서 실제 실행되는 버전입니다. 학습 완료 버전만 지정할 수 있습니다.</p>
-              {!isUnassign && !selectedVersionIsTrained ? <p className="version-dialog__alert">이 버전은 아직 학습되지 않았습니다. 먼저 학습하기를 실행해주세요.</p> : null}
+              <p className="version-dialog__note">{getVersionManagementLabel(copy, "운영 버전은 외부 메신저 연결에서 실제 실행되는 버전입니다. 학습 완료 버전만 지정할 수 있습니다.")}</p>
+              {!isUnassign && !selectedVersionIsTrained ? <p className="version-dialog__alert">{getVersionManagementLabel(copy, "이 버전은 아직 학습되지 않았습니다. 먼저 학습하기를 실행해주세요.")}</p> : null}
               {!isUnassign && selectedVersionScenarioErrorMessage ? (
-                <p className="version-dialog__alert">대화 설계 오류 {selectedVersionScenarioErrorCount}건이 있습니다. {selectedVersionScenarioErrorMessage}</p>
+                <p className="version-dialog__alert">{getVersionManagementLabel(copy, "대화 설계 오류")} {selectedVersionScenarioErrorCount}{getVersionManagementLabel(copy, "건이 있습니다.")} {selectedVersionScenarioErrorMessage}</p>
               ) : null}
             </div>
             <div className="version-dialog__modal-footer">
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>취소</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>{getVersionManagementLabel(copy, "취소")}</button>
               <button
                 type="button"
                 className="version-dialog__modal-button version-dialog__modal-button--primary"
                 onClick={toggleOperatingVersion}
                 disabled={busy || (!isUnassign && (!selectedVersionIsTrained || Boolean(selectedVersionScenarioErrorMessage)))}
               >
-                확인
+                {getVersionManagementLabel(copy, "확인")}
               </button>
             </div>
           </section>
@@ -1152,22 +1156,22 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           <div className="version-dialog__modal-scrim" />
           <section className="version-dialog__modal version-dialog__modal--wide">
             <div className="version-dialog__modal-header">
-              <strong>버전 별 코멘트 등록</strong>
-              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label="닫기">×</button>
+              <strong>{getVersionManagementLabel(copy, "버전 별 코멘트 등록")}</strong>
+              <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label={getVersionManagementLabel(copy, "닫기")}>×</button>
             </div>
             <div className="version-dialog__modal-body">
               <div className="version-dialog__summary">
-                <div className="version-dialog__summary-row"><span>대상 버전</span><strong>{selectedVersion.name}</strong></div>
-                <div className="version-dialog__summary-row"><span>현재 상태</span><strong>{getVersionStatusLabel(selectedVersion.status)}</strong></div>
+                <div className="version-dialog__summary-row"><span>{getVersionManagementLabel(copy, "대상 버전")}</span><strong>{selectedVersion.name}</strong></div>
+                <div className="version-dialog__summary-row"><span>{getVersionManagementLabel(copy, "현재 상태")}</span><strong>{getVersionStatusLabel(selectedVersion.status, copy)}</strong></div>
               </div>
               <div className="version-dialog__field-group">
-                <label className="version-dialog__field-label" htmlFor="version-comment">비고</label>
+                <label className="version-dialog__field-label" htmlFor="version-comment">{getVersionManagementLabel(copy, "비고")}</label>
                 <textarea id="version-comment" className="version-dialog__comment-textarea" value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} />
               </div>
             </div>
             <div className="version-dialog__modal-footer">
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>취소</button>
-              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={saveComment}>저장</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>{getVersionManagementLabel(copy, "취소")}</button>
+              <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={saveComment}>{getVersionManagementLabel(copy, "저장")}</button>
             </div>
           </section>
         </>
@@ -1179,46 +1183,46 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
         <div className="version-dialog__modal-scrim" />
         <section className="version-dialog__modal version-dialog__modal--wide">
           <div className="version-dialog__modal-header">
-            <strong>버전 파일 업로드</strong>
-            <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label="닫기">×</button>
+            <strong>{getVersionManagementLabel(copy, "버전 파일 업로드")}</strong>
+            <button type="button" className="version-dialog__modal-close" onClick={closeDialog} aria-label={getVersionManagementLabel(copy, "닫기")}>×</button>
           </div>
           <div className="version-dialog__modal-body">
             <div className="version-dialog__field-group">
-              <span className="version-dialog__field-label">업로드 방법</span>
+              <span className="version-dialog__field-label">{getVersionManagementLabel(copy, "업로드 방법")}</span>
               <div className="version-dialog__upload-options">
                 <label className={`version-dialog__upload-option${uploadMode === "new" ? " is-active" : ""}`}>
                   <input type="radio" name="upload-mode" checked={uploadMode === "new"} onChange={() => setUploadMode("new")} />
-                  <div><strong>새로운 버전으로 추가</strong><p>업로드 파일 기준으로 새 버전을 생성합니다.</p></div>
+                  <div><strong>{getVersionManagementLabel(copy, "새로운 버전으로 추가")}</strong><p>{getVersionManagementLabel(copy, "업로드 파일 기준으로 새 버전을 생성합니다.")}</p></div>
                 </label>
                 <label className={`version-dialog__upload-option${uploadMode === "overwrite" ? " is-active" : ""}`}>
                   <input type="radio" name="upload-mode" checked={uploadMode === "overwrite"} onChange={() => setUploadMode("overwrite")} />
-                  <div><strong>기존 버전 덮어쓰기</strong><p>선택한 버전에 업로드 파일 내용을 반영합니다.</p></div>
+                  <div><strong>{getVersionManagementLabel(copy, "기존 버전 덮어쓰기")}</strong><p>{getVersionManagementLabel(copy, "선택한 버전에 업로드 파일 내용을 반영합니다.")}</p></div>
                 </label>
               </div>
             </div>
             {uploadMode === "overwrite" ? (
               <div className="version-dialog__field-group">
-                <label className="version-dialog__field-label" htmlFor="upload-target">대상 버전</label>
+                <label className="version-dialog__field-label" htmlFor="upload-target">{getVersionManagementLabel(copy, "대상 버전")}</label>
                 <select id="upload-target" className="version-dialog__upload-select" value={uploadTargetId} onChange={(event) => setUploadTargetId(event.target.value)}>
                   {versions.map((version) => (
-                    <option key={version.id} value={version.id}>{version.name} ({getVersionStatusLabel(version.status)})</option>
+                    <option key={version.id} value={version.id}>{version.name} ({getVersionStatusLabel(version.status, copy)})</option>
                   ))}
                 </select>
               </div>
             ) : null}
             <div className="version-dialog__field-group">
-              <span className="version-dialog__field-label">업로드 파일</span>
+              <span className="version-dialog__field-label">{getVersionManagementLabel(copy, "업로드 파일")}</span>
               <div className="version-dialog__upload-file">
                 <input ref={fileInputRef} className="version-dialog__file-input" type="file" accept=".json,.txt,application/json,text/plain" onChange={(event) => void handleFileChange(event.target.files?.[0] ?? null)} />
-                <button type="button" className="version-dialog__file-button" onClick={() => fileInputRef.current?.click()}>파일 선택</button>
+                <button type="button" className="version-dialog__file-button" onClick={() => fileInputRef.current?.click()}>{getVersionManagementLabel(copy, "파일 선택")}</button>
                 <span className="version-dialog__file-name">{uploadFileName}</span>
               </div>
             </div>
             {message ? <p className="version-dialog__alert">{message}</p> : null}
           </div>
           <div className="version-dialog__modal-footer">
-            <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>취소</button>
-            <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={applyUpload}>확인</button>
+            <button type="button" className="version-dialog__modal-button version-dialog__modal-button--ghost" onClick={closeDialog}>{getVersionManagementLabel(copy, "취소")}</button>
+            <button type="button" className="version-dialog__modal-button version-dialog__modal-button--primary" onClick={applyUpload}>{getVersionManagementLabel(copy, "확인")}</button>
           </div>
         </section>
       </>
@@ -1232,34 +1236,34 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
 
       <div className="version-dialog">
         <div className="version-dialog__header">
-          <strong>버전 관리</strong>
-          <Link href={`/studio/bots/${botId}/versions/${selectedVersion.name}/intents`} className="version-dialog__close" aria-label="닫기">×</Link>
+          <strong>{getVersionManagementLabel(copy, "버전 관리")}</strong>
+          <Link href={`/studio/bots/${botId}/versions/${selectedVersion.name}/intents`} className="version-dialog__close" aria-label={getVersionManagementLabel(copy, "닫기")}>×</Link>
         </div>
         <div className="version-dialog__actions">
           {(Object.keys(actionLabels) as Array<Exclude<VersionAction, "comment">>)
             .filter((mode) => canManageOperatingVersion || mode !== "toggle")
             .map((mode) => (
-            <button key={mode} type="button" className={`version-dialog__action${dialog === mode ? " is-active" : ""}`} onClick={() => openDialog(mode)}>{actionLabels[mode]}</button>
+            <button key={mode} type="button" className={`version-dialog__action${dialog === mode ? " is-active" : ""}`} onClick={() => openDialog(mode)}>{getVersionManagementLabel(copy, actionLabels[mode])}</button>
           ))}
         </div>
         <div className="version-dialog__guide">
-          <p>버전을 선택한 후 원하는 기능을 실행하세요.</p>
-          <span>운영 버전: <strong>{activeVersion?.name ?? "미지정"}</strong> / 선택 버전: <strong>{selectedVersion.name}</strong></span>
+          <p>{getVersionManagementLabel(copy, "버전을 선택한 후 원하는 기능을 실행하세요.")}</p>
+          <span>{getVersionManagementLabel(copy, "운영 버전")}: <strong>{activeVersion?.name ?? getVersionManagementLabel(copy, "미지정")}</strong> / {getVersionManagementLabel(copy, "선택 버전")}: <strong>{selectedVersion.name}</strong></span>
           {message ? <p className="version-dialog__alert">{message}</p> : null}
         </div>
         <div className="version-dialog__table">
           <div className="version-dialog__row version-dialog__row--header">
-            <span>선택</span><span>버전</span><span>상태</span><span>최종 학습 엔진</span><span>의도</span><span>개체</span><span>사전</span><span>API</span><span>평가</span><span>최종수정일시</span><span>최종수정자</span><span>비고</span>
+            <span>{getVersionManagementLabel(copy, "선택")}</span><span>{getVersionManagementLabel(copy, "버전")}</span><span>{getVersionManagementLabel(copy, "상태")}</span><span>{getVersionManagementLabel(copy, "최종 학습 엔진")}</span><span>{getVersionManagementLabel(copy, "의도")}</span><span>{getVersionManagementLabel(copy, "개체")}</span><span>{getVersionManagementLabel(copy, "사전")}</span><span>{getVersionManagementLabel(copy, "API")}</span><span>{getVersionManagementLabel(copy, "평가")}</span><span>{getVersionManagementLabel(copy, "최종수정일시")}</span><span>{getVersionManagementLabel(copy, "최종수정자")}</span><span>{getVersionManagementLabel(copy, "비고")}</span>
           </div>
           {versions.map((row) => (
             <div key={row.id} className={`version-dialog__row${row.id === selectedVersion.id ? " is-selected" : ""}`}>
               <span className="version-dialog__cell version-dialog__cell--select">
-                <button type="button" className="version-dialog__row-link version-dialog__row-link--select" onClick={() => setSelectedId(row.id)} aria-label={`${row.name} 선택`}>
+                <button type="button" className="version-dialog__row-link version-dialog__row-link--select" onClick={() => setSelectedId(row.id)} aria-label={`${row.name} ${getVersionManagementLabel(copy, "선택")}`}>
                   <span className="version-dialog__selection-dot" />
                 </button>
               </span>
               <span><button type="button" className="version-dialog__row-link" onClick={() => setSelectedId(row.id)}>{row.name}</button></span>
-              <span><span className={getVersionStatusClass(row.status)}>{getVersionStatusLabel(row.status)}</span>{row.status !== "active" && !row.isTrained ? <em className="version-dialog__training-state">미학습</em> : null}{Number(row.scenarioErrorCount ?? 0) > 0 ? <em className="version-dialog__training-state" title={row.scenarioErrorMessage || "대화 설계 오류가 있습니다."}>설계오류</em> : null}</span>
+              <span><span className={getVersionStatusClass(row.status)}>{getVersionStatusLabel(row.status, copy)}</span>{row.status !== "active" && !row.isTrained ? <em className="version-dialog__training-state">{getVersionManagementLabel(copy, "미학습")}</em> : null}{Number(row.scenarioErrorCount ?? 0) > 0 ? <em className="version-dialog__training-state" title={row.scenarioErrorMessage || getVersionManagementLabel(copy, "대화 설계 오류가 있습니다.")}>{getVersionManagementLabel(copy, "설계오류")}</em> : null}</span>
               <span className="version-dialog__engine" title={row.trainingEngine ?? "-"}>{row.trainingEngine ?? "-"}</span>
               <span>{row.counts.intents}</span><span>{row.counts.entities}</span><span>{row.counts.dictionary}</span><span>{row.counts.apis}</span><span>{row.evaluationLabel ?? "-"}</span><span>{row.updatedAt}</span><span>{row.updatedBy ?? "-"}</span>
               <span className="version-dialog__comment"><button type="button" className="version-dialog__comment-link" onClick={() => { setSelectedId(row.id); setCommentDraft(row.comment); setDialog("comment"); }}>{row.comment || "-"}</button></span>
@@ -1267,8 +1271,8 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
           ))}
         </div>
         <div className="version-dialog__footer">
-          <p className="version-dialog__footer-note">운영 버전은 외부 메신저 연결에서 실행되는 버전이며, 시뮬레이터 테스트 대상과 구분됩니다.</p>
-          <Link href={`/studio/bots/${botId}/versions/${selectedVersion.name}/intents`} className="version-dialog__ghost">닫기</Link>
+          <p className="version-dialog__footer-note">{getVersionManagementLabel(copy, "운영 버전은 외부 메신저 연결에서 실행되는 버전이며, 시뮬레이터 테스트 대상과 구분됩니다.")}</p>
+          <Link href={`/studio/bots/${botId}/versions/${selectedVersion.name}/intents`} className="version-dialog__ghost">{getVersionManagementLabel(copy, "닫기")}</Link>
         </div>
         {renderDialog()}
       </div>

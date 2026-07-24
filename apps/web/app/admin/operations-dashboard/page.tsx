@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { DataGrid, dataGridCellText, type DataGridRow, type DataGridSortState } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import {
   backfillVersionReadSnapshots,
   backfillVersionStorage,
@@ -26,16 +27,20 @@ import {
   type AdminOperationsDashboardSystemErrorItem,
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_OPERATIONS_ACTION_CATALOGS, formatOperationsText } from "@/lib/i18n/admin-operations-actions";
+import { ADMIN_OPERATIONS_DASHBOARD_CATALOGS } from "@/lib/i18n/admin-operations-dashboard";
+import { ADMIN_OPERATIONS_DETAILS_CATALOGS } from "@/lib/i18n/admin-operations-details";
+import { ADMIN_OPERATIONS_STATUS_CATALOGS, type AdminOperationsStatusCatalog } from "@/lib/i18n/admin-operations-status";
 import { fetchStudioBots, forceReleaseEditLock, type StudioBotApiItem } from "@/lib/studio-bots-api";
 
 const PERIOD_OPTIONS = [
-  { value: "1h", label: "최근 1시간", hours: 1 },
-  { value: "6h", label: "최근 6시간", hours: 6 },
-  { value: "24h", label: "최근 24시간", hours: 24 },
-  { value: "7d", label: "최근 7일", days: 7 },
-  { value: "14d", label: "최근 14일", days: 14 },
-  { value: "30d", label: "최근 30일", days: 30 },
-  { value: "90d", label: "최근 90일", days: 90 },
+  { value: "1h", label: "1h", hours: 1 },
+  { value: "6h", label: "6h", hours: 6 },
+  { value: "24h", label: "24h", hours: 24 },
+  { value: "7d", label: "7d", days: 7 },
+  { value: "14d", label: "14d", days: 14 },
+  { value: "30d", label: "30d", days: 30 },
+  { value: "90d", label: "90d", days: 90 },
 ] as const;
 
 type PeriodValue = (typeof PERIOD_OPTIONS)[number]["value"];
@@ -45,35 +50,18 @@ function dashboardPeriodFilters(period: PeriodValue) {
   return "hours" in option ? { hours: option.hours } : { days: option.days };
 }
 
-const SUMMARY_LABELS: Array<{ key: keyof AdminOperationsDashboardResponse["summary"]; label: string; tone?: "warning" | "normal" }> = [
-  { key: "total_bots", label: "전체 봇" },
-  { key: "operating_bots", label: "운영 버전 봇" },
-  { key: "botstation_connected_bots", label: "봇스테이션 연결" },
-  { key: "active_channels", label: "활성 채널" },
-  { key: "channel_rooms", label: "대화방" },
-  { key: "user_messages", label: "사용자 발화" },
-  { key: "queue_events", label: "Queue 전체" },
-  { key: "queue_queued", label: "Queue 대기", tone: "warning" },
-  { key: "queue_processing", label: "Queue 처리중" },
-  { key: "queue_completed", label: "Queue 완료" },
-  { key: "queue_failed", label: "Queue 실패", tone: "warning" },
-  { key: "runtime_events", label: "실행 이벤트" },
-  { key: "runtime_problem_events", label: "실행 경고/오류", tone: "warning" },
-  { key: "system_errors", label: "시스템 오류", tone: "warning" },
-  { key: "slow_api_requests", label: "느린 API", tone: "warning" },
-  { key: "slow_db_requests", label: "DB 지연", tone: "warning" },
-  { key: "active_edit_locks", label: "편집 잠금", tone: "warning" },
-  { key: "expired_edit_locks", label: "만료 잠금", tone: "warning" },
-  { key: "edit_lock_conflicts", label: "편집 충돌", tone: "warning" },
-  { key: "api_calls", label: "API 호출" },
-  { key: "api_errors", label: "API 오류", tone: "warning" },
-  { key: "intent_fallbacks", label: "의도 미분류", tone: "warning" },
-  { key: "training_success", label: "학습 성공" },
-  { key: "training_failed", label: "학습 확인 필요", tone: "warning" },
+const SUMMARY_LABELS: Array<{ key: keyof AdminOperationsDashboardResponse["summary"]; tone?: "warning" | "normal" }> = [
+  { key: "total_bots" }, { key: "operating_bots" }, { key: "botstation_connected_bots" }, { key: "active_channels" },
+  { key: "channel_rooms" }, { key: "user_messages" }, { key: "queue_events" }, { key: "queue_queued", tone: "warning" },
+  { key: "queue_processing" }, { key: "queue_completed" }, { key: "queue_failed", tone: "warning" }, { key: "runtime_events" },
+  { key: "runtime_problem_events", tone: "warning" }, { key: "system_errors", tone: "warning" }, { key: "slow_api_requests", tone: "warning" },
+  { key: "slow_db_requests", tone: "warning" }, { key: "active_edit_locks", tone: "warning" }, { key: "expired_edit_locks", tone: "warning" },
+  { key: "edit_lock_conflicts", tone: "warning" }, { key: "api_calls" }, { key: "api_errors", tone: "warning" },
+  { key: "intent_fallbacks", tone: "warning" }, { key: "training_success" }, { key: "training_failed", tone: "warning" },
 ];
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -92,9 +80,9 @@ function formatJson(value: unknown) {
   }
 }
 
-function formatBytes(value: number | null) {
+function formatBytes(value: number | null, locale: string) {
   if (value === null) return "-";
-  if (value < 1024) return `${value.toLocaleString("ko-KR")} B`;
+  if (value < 1024) return `${value.toLocaleString(locale)} B`;
   const units = ["KB", "MB", "GB", "TB"];
   let nextValue = value / 1024;
   let unitIndex = 0;
@@ -102,20 +90,20 @@ function formatBytes(value: number | null) {
     nextValue /= 1024;
     unitIndex += 1;
   }
-  return `${nextValue.toLocaleString("ko-KR", { maximumFractionDigits: 1 })} ${units[unitIndex]}`;
+  return `${nextValue.toLocaleString(locale, { maximumFractionDigits: 1 })} ${units[unitIndex]}`;
 }
 
-function formatMs(value: number | null | undefined) {
+function formatMs(value: number | null | undefined, locale: string) {
   if (value === null || value === undefined) return "-";
-  return `${value.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}ms`;
+  return `${value.toLocaleString(locale, { maximumFractionDigits: 1 })}ms`;
 }
 
-function slowRequestKindLabel(item: AdminOperationsDashboardSlowRequestItem) {
-  return item.kind === "db" ? "DB 지연" : "느린 API";
+function slowRequestKindLabel(item: AdminOperationsDashboardSlowRequestItem, statusCopy: AdminOperationsStatusCatalog) {
+  return item.kind === "db" ? statusCopy.slowDb : statusCopy.slowApi;
 }
 
-function slowRequestSummaryKindLabel(item: AdminOperationsDashboardSlowRequestSummaryItem) {
-  return item.kind === "db" ? "DB 지연" : "느린 API";
+function slowRequestSummaryKindLabel(item: AdminOperationsDashboardSlowRequestSummaryItem, statusCopy: AdminOperationsStatusCatalog) {
+  return item.kind === "db" ? statusCopy.slowDb : statusCopy.slowApi;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -178,11 +166,8 @@ function runtimeItemLocation(item: AdminOperationsDashboardRuntimeItem) {
   return eventLocation({ dialog_name: item.dialog_name, node_title: item.node_title });
 }
 
-function editLockAreaLabel(area: string) {
-  if (area === "dialog") return "대화";
-  if (area === "start") return "대화 시작";
-  if (area === "flow") return "대화 설계";
-  if (area === "settings") return "설정";
+function editLockAreaLabel(area: string, statusCopy: AdminOperationsStatusCatalog) {
+  if (area in statusCopy.editAreas) return statusCopy.editAreas[area];
   return area || "-";
 }
 
@@ -190,10 +175,10 @@ function editLockOwner(item: AdminOperationsDashboardEditLockItem) {
   return item.owner_name?.trim() || item.owner_login_id || "-";
 }
 
-function cacheAvailabilityLabel(enabled: boolean, available: boolean | null) {
-  if (!enabled) return "미사용";
-  if (available === null) return "확인 대기";
-  return available ? "사용 가능" : "Fallback";
+function cacheAvailabilityLabel(enabled: boolean, available: boolean | null, statusCopy: AdminOperationsStatusCatalog) {
+  if (!enabled) return statusCopy.cacheAvailability.disabled;
+  if (available === null) return statusCopy.cacheAvailability.pending;
+  return available ? statusCopy.cacheAvailability.available : statusCopy.cacheAvailability.fallback;
 }
 function runtimeVariableTrace(dataJson: Record<string, unknown>) {
   const runtimeEvent = runtimeEventFromData(dataJson);
@@ -220,6 +205,11 @@ function traceHref(path: string, value: string) {
 }
 
 export default function AdminOperationsDashboardPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = ADMIN_OPERATIONS_DASHBOARD_CATALOGS[uiLanguage];
+  const actionCopy = ADMIN_OPERATIONS_ACTION_CATALOGS[uiLanguage];
+  const statusCopy = ADMIN_OPERATIONS_STATUS_CATALOGS[uiLanguage];
+  const detailsCopy = ADMIN_OPERATIONS_DETAILS_CATALOGS[uiLanguage];
   const [token, setToken] = useState("");
   const [period, setPeriod] = useState<PeriodValue>("1h");
   const [groupId, setGroupId] = useState("");
@@ -251,7 +241,7 @@ export default function AdminOperationsDashboardPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(statusCopy.loginRequired);
       return;
     }
     setToken(session.access_token);
@@ -278,7 +268,7 @@ export default function AdminOperationsDashboardPage() {
         setChannels(channelResponse.items);
       })
       .catch((error) => {
-        if (!ignore) setErrorMessage(error instanceof Error ? error.message : "운영 필터 정보를 불러오지 못했습니다.");
+        if (!ignore) setErrorMessage(error instanceof Error ? error.message : statusCopy.filterLoadFailed);
       });
     return () => {
       ignore = true;
@@ -310,7 +300,7 @@ export default function AdminOperationsDashboardPage() {
           return;
         }
         setDashboard(null);
-        setErrorMessage(dashboardResult.reason instanceof Error ? dashboardResult.reason.message : "운영 현황을 불러오지 못했습니다.");
+        setErrorMessage(dashboardResult.reason instanceof Error ? dashboardResult.reason.message : statusCopy.dashboardLoadFailed);
       })
       .finally(() => {
         if (!ignore) setLoading(false);
@@ -331,14 +321,14 @@ export default function AdminOperationsDashboardPage() {
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__ghost" onClick={() => setSelectedError(item)}>
-        상세
+        {statusCopy.detail}
       </button>,
       item.source,
       item.bot_name,
       locationFromData(item.data_json),
       item.event || "-",
       item.message,
-      formatDate(item.occurred_at),
+      formatDate(item.occurred_at, uiLanguage),
     ],
   }));
   const sortedRows = useMemo(() => {
@@ -348,15 +338,15 @@ export default function AdminOperationsDashboardPage() {
     return [...rows].sort((left, right) => {
       const leftText = dataGridCellText(left.cells[sortState.columnIndex]);
       const rightText = dataGridCellText(right.cells[sortState.columnIndex]);
-      const result = leftText.localeCompare(rightText, "ko-KR", { numeric: true, sensitivity: "base" });
+      const result = leftText.localeCompare(rightText, uiLanguage, { numeric: true, sensitivity: "base" });
       return sortState.direction === "asc" ? result : -result;
     });
-  }, [rows, sortState]);
+  }, [rows, sortState, uiLanguage]);
   const runtimeRows: DataGridRow[] = (dashboard?.recent_runtime_events ?? []).map((item) => ({
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__ghost" onClick={() => setSelectedRuntimeEvent(item)}>
-        상세
+        {statusCopy.detail}
       </button>,
       item.source,
       item.level,
@@ -365,14 +355,14 @@ export default function AdminOperationsDashboardPage() {
       item.node_title,
       item.event || "-",
       item.message,
-      formatDate(item.occurred_at),
+      formatDate(item.occurred_at, uiLanguage),
     ],
   }));
   const systemErrorRows: DataGridRow[] = (dashboard?.recent_system_errors ?? []).map((item) => ({
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__ghost" onClick={() => setSelectedSystemError(item)}>
-        상세
+        {statusCopy.detail}
       </button>,
       item.level || "-",
       item.logger || "-",
@@ -380,40 +370,40 @@ export default function AdminOperationsDashboardPage() {
       item.path || "-",
       item.status_code ? String(item.status_code) : "-",
       item.message,
-      formatDate(item.occurred_at),
+      formatDate(item.occurred_at, uiLanguage),
     ],
   }));
   const slowRequestRows: DataGridRow[] = (dashboard?.recent_slow_requests ?? []).map((item) => ({
     key: item.id,
     cells: [
-      slowRequestKindLabel(item),
+      slowRequestKindLabel(item, statusCopy),
       item.method,
       item.path,
       item.status_code ? String(item.status_code) : "-",
-      formatMs(item.elapsed_ms),
-      formatMs(item.db_duration_ms),
-      item.db_query_count.toLocaleString("ko-KR"),
-      formatMs(item.threshold_ms),
+      formatMs(item.elapsed_ms, uiLanguage),
+      formatMs(item.db_duration_ms, uiLanguage),
+      item.db_query_count.toLocaleString(uiLanguage),
+      formatMs(item.threshold_ms, uiLanguage),
       item.request_id ? (
         <Link key="request" href={`/admin/audit-logs?tab=system&file=app&request_id=${encodeURIComponent(item.request_id)}`} className="table-link">
           {item.request_id}
         </Link>
       ) : "-",
-      formatDate(item.occurred_at),
+      formatDate(item.occurred_at, uiLanguage),
     ],
   }));
   const slowRequestSummaryRows: DataGridRow[] = (dashboard?.recent_slow_request_summary ?? []).map((item) => ({
     key: item.id,
     cells: [
-      slowRequestSummaryKindLabel(item),
+      slowRequestSummaryKindLabel(item, statusCopy),
       item.method,
       item.path,
-      item.count.toLocaleString("ko-KR"),
-      formatMs(item.max_elapsed_ms),
-      formatMs(item.avg_elapsed_ms),
-      formatMs(item.max_db_duration_ms),
-      formatMs(item.avg_db_duration_ms),
-      formatDate(item.latest_occurred_at),
+      item.count.toLocaleString(uiLanguage),
+      formatMs(item.max_elapsed_ms, uiLanguage),
+      formatMs(item.avg_elapsed_ms, uiLanguage),
+      formatMs(item.max_db_duration_ms, uiLanguage),
+      formatMs(item.avg_db_duration_ms, uiLanguage),
+      formatDate(item.latest_occurred_at, uiLanguage),
     ],
   }));
   const editLockRows: DataGridRow[] = (dashboard?.active_edit_locks ?? []).map((item) => ({
@@ -426,15 +416,15 @@ export default function AdminOperationsDashboardPage() {
         disabled={releasingLockId === item.id}
         onClick={() => void handleForceReleaseEditLock(item)}
       >
-        {releasingLockId === item.id ? "해제 중" : "강제 해제"}
+        {releasingLockId === item.id ? actionCopy.releasing : actionCopy.forceRelease}
       </button>,
       item.bot_name,
       item.version_name,
-      editLockAreaLabel(item.area),
+      editLockAreaLabel(item.area, statusCopy),
       item.dialog_id,
       editLockOwner(item),
-      formatDate(item.last_seen_at),
-      formatDate(item.expires_at),
+      formatDate(item.last_seen_at, uiLanguage),
+      formatDate(item.expires_at, uiLanguage),
     ],
   }));
   const cacheRows: DataGridRow[] = dashboard?.cache
@@ -442,44 +432,44 @@ export default function AdminOperationsDashboardPage() {
         {
           key: "status",
           cells: [
-            "상태",
-            cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available),
-            `Backend ${dashboard.cache.backend} / 상태 ${dashboard.cache.connection_state}`,
+            detailsCopy.cache.status,
+            cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available, statusCopy),
+            formatOperationsText(detailsCopy.cache.backendState, { backend: dashboard.cache.backend, state: dashboard.cache.connection_state }),
             dashboard.cache.last_error || "-",
           ],
         },
         {
           key: "readiness",
           cells: [
-            "준비",
-            dashboard.cache.redis_url_configured ? "Redis URL 설정" : "Redis URL 없음",
-            dashboard.cache.package_installed ? "redis 패키지 설치됨" : "redis 패키지 없음",
-            dashboard.cache.enabled ? "활성화됨" : "비활성화됨",
+            detailsCopy.cache.readiness,
+            dashboard.cache.redis_url_configured ? detailsCopy.cache.redisConfigured : detailsCopy.cache.redisMissing,
+            dashboard.cache.package_installed ? detailsCopy.cache.packageInstalled : detailsCopy.cache.packageMissing,
+            dashboard.cache.enabled ? detailsCopy.cache.enabled : detailsCopy.cache.disabled,
           ],
         },
         {
           key: "reads",
           cells: [
-            "조회",
-            `${dashboard.cache.hit_rate.toLocaleString("ko-KR")}%`,
-            `Hit ${dashboard.cache.hits.toLocaleString("ko-KR")} / Miss ${dashboard.cache.misses.toLocaleString("ko-KR")}`,
-            `Fallback ${dashboard.cache.fallbacks.toLocaleString("ko-KR")}`,
+            detailsCopy.cache.reads,
+            `${dashboard.cache.hit_rate.toLocaleString(uiLanguage)}%`,
+            `Hit ${dashboard.cache.hits.toLocaleString(uiLanguage)} / Miss ${dashboard.cache.misses.toLocaleString(uiLanguage)}`,
+            `Fallback ${dashboard.cache.fallbacks.toLocaleString(uiLanguage)}`,
           ],
         },
         {
           key: "errors",
           cells: [
-            "오류",
-            `Read ${dashboard.cache.read_errors.toLocaleString("ko-KR")}`,
-            `Write ${dashboard.cache.write_errors.toLocaleString("ko-KR")}`,
-            `Purge ${dashboard.cache.purge_errors.toLocaleString("ko-KR")}`,
+            detailsCopy.cache.errors,
+            `Read ${dashboard.cache.read_errors.toLocaleString(uiLanguage)}`,
+            `Write ${dashboard.cache.write_errors.toLocaleString(uiLanguage)}`,
+            `Purge ${dashboard.cache.purge_errors.toLocaleString(uiLanguage)}`,
           ],
         },
         {
           key: "purges",
           cells: [
-            "초기화",
-            `${dashboard.cache.purges.toLocaleString("ko-KR")}회`,
+            detailsCopy.cache.purges,
+            formatOperationsText(detailsCopy.cache.times, { count: dashboard.cache.purges.toLocaleString(uiLanguage) }),
             "studio read-model cache",
             "-",
           ],
@@ -487,10 +477,10 @@ export default function AdminOperationsDashboardPage() {
         {
           key: "memory",
           cells: [
-            "메모리",
-            dashboard.cache.memory_usage_percent === null ? "-" : `${dashboard.cache.memory_usage_percent.toLocaleString("ko-KR")}%`,
-            `${formatBytes(dashboard.cache.memory_used_bytes)} / ${formatBytes(dashboard.cache.memory_max_bytes)}`,
-            dashboard.cache.memory_max_bytes === null ? "maxmemory 미설정" : "-",
+            detailsCopy.cache.memory,
+            dashboard.cache.memory_usage_percent === null ? "-" : `${dashboard.cache.memory_usage_percent.toLocaleString(uiLanguage)}%`,
+            `${formatBytes(dashboard.cache.memory_used_bytes, uiLanguage)} / ${formatBytes(dashboard.cache.memory_max_bytes, uiLanguage)}`,
+            dashboard.cache.memory_max_bytes === null ? detailsCopy.cache.maxmemoryUnset : "-",
           ],
         },
       ]
@@ -501,59 +491,59 @@ export default function AdminOperationsDashboardPage() {
         {
           key: "versions",
           cells: [
-            "버전",
-            `${integritySummary.version_storage_split_versions.toLocaleString("ko-KR")} / ${integritySummary.version_storage_total_versions.toLocaleString("ko-KR")}`,
-            `미적용 ${integritySummary.version_storage_missing_versions.toLocaleString("ko-KR")}`,
-            `불일치 ${integritySummary.version_storage_mismatch_versions.toLocaleString("ko-KR")}`,
+            detailsCopy.integrity.version,
+            `${integritySummary.version_storage_split_versions.toLocaleString(uiLanguage)} / ${integritySummary.version_storage_total_versions.toLocaleString(uiLanguage)}`,
+            formatOperationsText(detailsCopy.integrity.notApplied, { count: integritySummary.version_storage_missing_versions.toLocaleString(uiLanguage) }),
+            formatOperationsText(detailsCopy.integrity.mismatch, { count: integritySummary.version_storage_mismatch_versions.toLocaleString(uiLanguage) }),
           ],
         },
         {
           key: "dialogs",
           cells: [
-            "대화/모듈",
-            integritySummary.version_storage_actual_dialog_rows.toLocaleString("ko-KR"),
-            `기준 ${integritySummary.version_storage_expected_dialog_rows.toLocaleString("ko-KR")}`,
-            integritySummary.version_storage_actual_dialog_rows === integritySummary.version_storage_expected_dialog_rows ? "일치" : "확인 필요",
+            detailsCopy.integrity.dialogs,
+            integritySummary.version_storage_actual_dialog_rows.toLocaleString(uiLanguage),
+            formatOperationsText(detailsCopy.integrity.baseline, { count: integritySummary.version_storage_expected_dialog_rows.toLocaleString(uiLanguage) }),
+            integritySummary.version_storage_actual_dialog_rows === integritySummary.version_storage_expected_dialog_rows ? detailsCopy.integrity.match : detailsCopy.integrity.checkRequired,
           ],
         },
         {
           key: "graphs",
           cells: [
-            "대화설계 그래프",
-            integritySummary.version_storage_actual_graph_rows.toLocaleString("ko-KR"),
-            `기준 ${integritySummary.version_storage_expected_graph_rows.toLocaleString("ko-KR")}`,
-            integritySummary.version_storage_actual_graph_rows === integritySummary.version_storage_expected_graph_rows ? "일치" : "확인 필요",
+            detailsCopy.integrity.graphs,
+            integritySummary.version_storage_actual_graph_rows.toLocaleString(uiLanguage),
+            formatOperationsText(detailsCopy.integrity.baseline, { count: integritySummary.version_storage_expected_graph_rows.toLocaleString(uiLanguage) }),
+            integritySummary.version_storage_actual_graph_rows === integritySummary.version_storage_expected_graph_rows ? detailsCopy.integrity.match : detailsCopy.integrity.checkRequired,
           ],
         },
         {
           key: "read-snapshot",
           cells: [
-            "요약 스냅샷",
-            `${integritySummary.version_read_snapshot_complete_versions.toLocaleString("ko-KR")} / ${integritySummary.version_read_snapshot_total_versions.toLocaleString("ko-KR")}`,
-            `누락 ${integritySummary.version_read_snapshot_missing_versions.toLocaleString("ko-KR")}`,
+            detailsCopy.integrity.snapshot,
+            `${integritySummary.version_read_snapshot_complete_versions.toLocaleString(uiLanguage)} / ${integritySummary.version_read_snapshot_total_versions.toLocaleString(uiLanguage)}`,
+            formatOperationsText(detailsCopy.integrity.missing, { count: integritySummary.version_read_snapshot_missing_versions.toLocaleString(uiLanguage) }),
             [
               integritySummary.version_read_snapshot_missing_asset_counts > 0
-                ? `count ${integritySummary.version_read_snapshot_missing_asset_counts.toLocaleString("ko-KR")}`
+                ? `count ${integritySummary.version_read_snapshot_missing_asset_counts.toLocaleString(uiLanguage)}`
                 : "",
               integritySummary.version_read_snapshot_missing_scenario_validation > 0
-                ? `검증 ${integritySummary.version_read_snapshot_missing_scenario_validation.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.validation, { count: integritySummary.version_read_snapshot_missing_scenario_validation.toLocaleString(uiLanguage) })
                 : "",
               integritySummary.version_read_snapshot_missing_nlu_training > 0
-                ? `학습 ${integritySummary.version_read_snapshot_missing_nlu_training.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.training, { count: integritySummary.version_read_snapshot_missing_nlu_training.toLocaleString(uiLanguage) })
                 : "",
               integritySummary.version_read_snapshot_missing_entities > 0
-                ? `개체 ${integritySummary.version_read_snapshot_missing_entities.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.entities, { count: integritySummary.version_read_snapshot_missing_entities.toLocaleString(uiLanguage) })
                 : "",
               integritySummary.version_read_snapshot_missing_dictionary > 0
-                ? `사전 ${integritySummary.version_read_snapshot_missing_dictionary.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.dictionary, { count: integritySummary.version_read_snapshot_missing_dictionary.toLocaleString(uiLanguage) })
                 : "",
               integritySummary.version_read_snapshot_missing_apis > 0
-                ? `API ${integritySummary.version_read_snapshot_missing_apis.toLocaleString("ko-KR")}`
+                ? `API ${integritySummary.version_read_snapshot_missing_apis.toLocaleString(uiLanguage)}`
                 : "",
               integritySummary.version_read_snapshot_missing_system_config > 0
-                ? `설정 ${integritySummary.version_read_snapshot_missing_system_config.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.settings, { count: integritySummary.version_read_snapshot_missing_system_config.toLocaleString(uiLanguage) })
                 : "",
-            ].filter(Boolean).join(" / ") || "정상",
+            ].filter(Boolean).join(" / ") || detailsCopy.integrity.healthy,
           ],
         },
       ]
@@ -561,43 +551,43 @@ export default function AdminOperationsDashboardPage() {
   const versionStorageIssueRows: DataGridRow[] = (versionIntegrity?.version_storage_issues ?? []).map((item) => ({
     key: item.version_id,
     cells: [
-      item.status === "missing" ? "미적용" : "불일치",
+      item.status === "missing" ? detailsCopy.integrity.missingStatus : detailsCopy.integrity.mismatchStatus,
       item.bot_name,
       `v${item.version_no} · ${item.version_name}`,
-      `${item.actual_dialog_rows.toLocaleString("ko-KR")} / ${item.expected_dialog_rows.toLocaleString("ko-KR")}`,
-      `${item.actual_graph_rows.toLocaleString("ko-KR")} / ${item.expected_graph_rows.toLocaleString("ko-KR")}`,
+      `${item.actual_dialog_rows.toLocaleString(uiLanguage)} / ${item.expected_dialog_rows.toLocaleString(uiLanguage)}`,
+      `${item.actual_graph_rows.toLocaleString(uiLanguage)} / ${item.expected_graph_rows.toLocaleString(uiLanguage)}`,
       [
-        item.missing_dialog_ids.length ? `대화 누락 ${item.missing_dialog_ids.join(", ")}` : "",
-        item.extra_dialog_ids.length ? `대화 초과 ${item.extra_dialog_ids.join(", ")}` : "",
-        item.missing_graph_ids.length ? `그래프 누락 ${item.missing_graph_ids.join(", ")}` : "",
-        item.extra_graph_ids.length ? `그래프 초과 ${item.extra_graph_ids.join(", ")}` : "",
+        item.missing_dialog_ids.length ? formatOperationsText(detailsCopy.integrity.missingDialog, { ids: item.missing_dialog_ids.join(", ") }) : "",
+        item.extra_dialog_ids.length ? formatOperationsText(detailsCopy.integrity.extraDialog, { ids: item.extra_dialog_ids.join(", ") }) : "",
+        item.missing_graph_ids.length ? formatOperationsText(detailsCopy.integrity.missingGraph, { ids: item.missing_graph_ids.join(", ") }) : "",
+        item.extra_graph_ids.length ? formatOperationsText(detailsCopy.integrity.extraGraph, { ids: item.extra_graph_ids.join(", ") }) : "",
       ].filter(Boolean).join(" / ") || "-",
-      item.updated_at ? formatDate(item.updated_at) : "-",
+      item.updated_at ? formatDate(item.updated_at, uiLanguage) : "-",
     ],
   }));
   const healthItems = dashboard
     ? [
         {
           key: "api-readiness",
-          label: "API/DB 준비",
-          value: apiReadiness?.ok ? "정상" : "확인 필요",
+          label: statusCopy.health.apiReadiness,
+          value: apiReadiness?.ok ? statusCopy.health.healthy : statusCopy.health.checkRequired,
           detail: apiReadiness
-            ? `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString("ko-KR")}ms`}`
-            : "확인 중",
+            ? `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString(uiLanguage)}ms`}`
+            : statusCopy.health.checking,
           tone: apiReadiness?.ok ? "normal" : "critical",
         },
         {
           key: "cache",
-          label: "캐시",
-          value: cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available),
+          label: statusCopy.health.cache,
+          value: cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available, statusCopy),
           detail:
             dashboard.cache.read_errors + dashboard.cache.write_errors + dashboard.cache.purge_errors > 0
-              ? `오류 ${(
+              ? formatOperationsText(statusCopy.health.errorCount, { count: (
                   dashboard.cache.read_errors
                   + dashboard.cache.write_errors
                   + dashboard.cache.purge_errors
-                ).toLocaleString("ko-KR")}건`
-              : `Hit Rate ${dashboard.cache.hit_rate.toLocaleString("ko-KR")}%`,
+                ).toLocaleString(uiLanguage) })
+              : `Hit Rate ${dashboard.cache.hit_rate.toLocaleString(uiLanguage)}%`,
           tone:
             dashboard.cache.enabled && (!dashboard.cache.available || (dashboard.cache.memory_usage_percent ?? 0) >= 80)
               ? "warning"
@@ -605,24 +595,27 @@ export default function AdminOperationsDashboardPage() {
         },
         {
           key: "slow-api",
-          label: "응답 지연",
+          label: statusCopy.health.responseDelay,
           value: (
             dashboard.summary.slow_api_requests
             + dashboard.summary.slow_db_requests
-          ).toLocaleString("ko-KR"),
-          detail: `API ${dashboard.summary.slow_api_requests.toLocaleString("ko-KR")} / ${formatMs(dashboard.summary.slow_api_threshold_ms)} · DB ${dashboard.summary.slow_db_requests.toLocaleString("ko-KR")} / ${formatMs(dashboard.summary.slow_db_threshold_ms)}`,
+          ).toLocaleString(uiLanguage),
+          detail: `API ${dashboard.summary.slow_api_requests.toLocaleString(uiLanguage)} / ${formatMs(dashboard.summary.slow_api_threshold_ms, uiLanguage)} · DB ${dashboard.summary.slow_db_requests.toLocaleString(uiLanguage)} / ${formatMs(dashboard.summary.slow_db_threshold_ms, uiLanguage)}`,
           tone: dashboard.summary.slow_api_requests + dashboard.summary.slow_db_requests > 0 ? "warning" : "normal",
         },
         {
           key: "errors",
-          label: "오류",
+          label: statusCopy.health.errors,
           value: (
             dashboard.summary.system_errors
             + dashboard.summary.queue_failed
             + dashboard.summary.runtime_problem_events
             + dashboard.summary.api_errors
-          ).toLocaleString("ko-KR"),
-          detail: `시스템 ${dashboard.summary.system_errors.toLocaleString("ko-KR")} · Queue ${dashboard.summary.queue_failed.toLocaleString("ko-KR")}`,
+          ).toLocaleString(uiLanguage),
+          detail: formatOperationsText(statusCopy.health.systemQueue, {
+            system: dashboard.summary.system_errors.toLocaleString(uiLanguage),
+            queue: dashboard.summary.queue_failed.toLocaleString(uiLanguage),
+          }),
           tone:
             dashboard.summary.system_errors > 0 || dashboard.summary.queue_failed > 0
               ? "critical"
@@ -632,13 +625,17 @@ export default function AdminOperationsDashboardPage() {
         },
         {
           key: "locks",
-          label: "편집 잠금",
+          label: statusCopy.health.editLocks,
           value: (
             dashboard.summary.active_edit_locks
             + dashboard.summary.expired_edit_locks
             + dashboard.summary.edit_lock_conflicts
-          ).toLocaleString("ko-KR"),
-          detail: `활성 ${dashboard.summary.active_edit_locks.toLocaleString("ko-KR")} · 만료 ${dashboard.summary.expired_edit_locks.toLocaleString("ko-KR")} · 충돌 ${dashboard.summary.edit_lock_conflicts.toLocaleString("ko-KR")}`,
+          ).toLocaleString(uiLanguage),
+          detail: formatOperationsText(statusCopy.health.lockDetail, {
+            active: dashboard.summary.active_edit_locks.toLocaleString(uiLanguage),
+            expired: dashboard.summary.expired_edit_locks.toLocaleString(uiLanguage),
+            conflicts: dashboard.summary.edit_lock_conflicts.toLocaleString(uiLanguage),
+          }),
           tone:
             dashboard.summary.expired_edit_locks > 0 || dashboard.summary.edit_lock_conflicts > 0 || dashboard.summary.active_edit_locks > 0
               ? "warning"
@@ -646,13 +643,18 @@ export default function AdminOperationsDashboardPage() {
         },
         {
           key: "version-storage",
-          label: "DB 분리",
+          label: statusCopy.health.dbSplit,
           value: integritySummary
-            ? (integritySummary.version_storage_mismatch_versions + integritySummary.version_read_snapshot_missing_versions).toLocaleString("ko-KR")
-            : "점검 대기",
+            ? (integritySummary.version_storage_mismatch_versions + integritySummary.version_read_snapshot_missing_versions).toLocaleString(uiLanguage)
+            : statusCopy.health.checkPending,
           detail: integritySummary
-            ? `분리 미적용 ${integritySummary.version_storage_missing_versions.toLocaleString("ko-KR")} · 스냅샷 누락 ${integritySummary.version_read_snapshot_missing_versions.toLocaleString("ko-KR")} · 적용 ${integritySummary.version_storage_split_versions.toLocaleString("ko-KR")}/${integritySummary.version_storage_total_versions.toLocaleString("ko-KR")}`
-            : "DB 분리 상태에서 무결성 점검을 실행하세요.",
+            ? formatOperationsText(statusCopy.health.splitDetail, {
+                missing: integritySummary.version_storage_missing_versions.toLocaleString(uiLanguage),
+                snapshots: integritySummary.version_read_snapshot_missing_versions.toLocaleString(uiLanguage),
+                split: integritySummary.version_storage_split_versions.toLocaleString(uiLanguage),
+                total: integritySummary.version_storage_total_versions.toLocaleString(uiLanguage),
+              })
+            : statusCopy.health.integrityPrompt,
           tone: !integritySummary
             ? "warning"
             : integritySummary.version_storage_mismatch_versions > 0
@@ -665,15 +667,15 @@ export default function AdminOperationsDashboardPage() {
           const acceleration = dashboard.nlu_acceleration[engine];
           const executionCount = acceleration.execution_count ?? 0;
           const value = acceleration.available === true
-            ? executionCount > 0 ? "실행 확인" : "사용 가능"
-            : acceleration.available === false ? "미사용" : "확인 대기";
+            ? executionCount > 0 ? statusCopy.health.executionConfirmed : statusCopy.health.available
+            : acceleration.available === false ? statusCopy.health.disabled : statusCopy.health.gpuPending;
           const detail = acceleration.available === true
-            ? `${acceleration.device ?? "CUDA"} · 컨테이너 시작 후 ${executionCount.toLocaleString("ko-KR")}회${acceleration.last_execution_at ? ` · 최근 ${formatDate(acceleration.last_execution_at)}` : ""}`
+            ? `${acceleration.device ?? "CUDA"} · ${formatOperationsText(statusCopy.health.gpuExecution, { count: executionCount.toLocaleString(uiLanguage) })}${acceleration.last_execution_at ? ` · ${formatOperationsText(statusCopy.health.recent, { date: formatDate(acceleration.last_execution_at, uiLanguage) })}` : ""}`
             : acceleration.available === false
-              ? acceleration.error ?? "CUDA 또는 엔진 상태를 확인하세요."
-              : "GPU 연산이 아직 실행되지 않았습니다.";          return {
+              ? acceleration.error ?? statusCopy.health.gpuCheck
+              : statusCopy.health.gpuNotRun;          return {
             key: `${engine}-gpu`,
-            label: engine === "ml" ? "ML GPU" : "시멘틱 GPU",
+            label: engine === "ml" ? statusCopy.health.mlGpu : statusCopy.health.semanticGpu,
             value,
             detail,
             tone: acceleration.available ? "normal" : "warning",
@@ -688,9 +690,9 @@ export default function AdminOperationsDashboardPage() {
     ? [
         {
           key: "api-readiness",
-          label: "API/DB 준비",
-          value: apiReadiness.ok ? "정상" : "확인 필요",
-          detail: `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString("ko-KR")}ms`}`,
+          label: statusCopy.health.apiReadiness,
+          value: apiReadiness.ok ? statusCopy.health.healthy : statusCopy.health.checkRequired,
+          detail: `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString(uiLanguage)}ms`}`,
           tone: apiReadiness.ok ? "normal" : "critical",
         },
       ]
@@ -716,7 +718,7 @@ export default function AdminOperationsDashboardPage() {
       });
       setVersionIntegrity(result);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "버전 무결성 상태를 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : statusCopy.integrityLoadFailed);
     } finally {
       setCheckingVersionIntegrity(false);
     }
@@ -726,7 +728,7 @@ export default function AdminOperationsDashboardPage() {
     if (!token || purgingCache) {
       return;
     }
-    const confirmed = window.confirm("Studio 화면 조회 캐시를 초기화하시겠습니까? 저장 데이터는 삭제되지 않습니다.");
+    const confirmed = window.confirm(actionCopy.cachePurgeConfirm);
     if (!confirmed) {
       return;
     }
@@ -737,8 +739,8 @@ export default function AdminOperationsDashboardPage() {
       const result = await purgeAdminCache(token, "studio_read_models");
       setStatusMessage(
         result.status === "purged"
-          ? `캐시 초기화 완료: ${result.purged.toLocaleString("ko-KR")}건`
-          : `캐시 초기화 건너뜀: ${result.reason || "캐시를 사용할 수 없습니다."}`,
+          ? formatOperationsText(actionCopy.cachePurged, { count: result.purged.toLocaleString(uiLanguage) })
+          : formatOperationsText(actionCopy.cacheSkipped, { reason: result.reason || "-" }),
       );
       const nextDashboard = await fetchOperationsDashboard(token, {
         ...dashboardPeriodFilters(period),
@@ -749,7 +751,7 @@ export default function AdminOperationsDashboardPage() {
       });
       setDashboard(nextDashboard);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "캐시 초기화에 실패했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : actionCopy.cachePurgeFailed);
     } finally {
       setPurgingCache(false);
     }
@@ -759,9 +761,7 @@ export default function AdminOperationsDashboardPage() {
     if (!token || releasingLockId) {
       return;
     }
-    const confirmed = window.confirm(
-      `${editLockOwner(item)}님의 편집 잠금을 강제 해제하시겠습니까? 저장 중인 사용자의 편집 권한이 해제될 수 있습니다.`,
-    );
+    const confirmed = window.confirm(formatOperationsText(actionCopy.forceReleaseConfirm, { owner: editLockOwner(item) }));
     if (!confirmed) {
       return;
     }
@@ -770,7 +770,7 @@ export default function AdminOperationsDashboardPage() {
     setStatusMessage("");
     try {
       const result = await forceReleaseEditLock(token, item.id);
-      setStatusMessage(result.released ? "편집 잠금을 해제했습니다." : "해제할 편집 잠금을 찾지 못했습니다.");
+      setStatusMessage(result.released ? actionCopy.lockReleased : actionCopy.lockNotFound);
       const nextDashboard = await fetchOperationsDashboard(token, {
         ...dashboardPeriodFilters(period),
         group_id: groupId || undefined,
@@ -780,7 +780,7 @@ export default function AdminOperationsDashboardPage() {
       });
       setDashboard(nextDashboard);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "편집 잠금을 해제하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : actionCopy.lockReleaseFailed);
     } finally {
       setReleasingLockId("");
     }
@@ -791,7 +791,7 @@ export default function AdminOperationsDashboardPage() {
       return;
     }
     if (!dryRun) {
-      const confirmed = window.confirm("현재 검색 조건의 DB 분리 backfill을 실행하시겠습니까? version_json은 유지되고 분리 테이블만 동기화됩니다.");
+      const confirmed = window.confirm(actionCopy.dbBackfillConfirm);
       if (!confirmed) {
         return;
       }
@@ -809,8 +809,11 @@ export default function AdminOperationsDashboardPage() {
       const failedCount = result.failed_versions.length;
       setStatusMessage(
         dryRun
-          ? `DB 분리 점검 완료: 대상 ${result.selected_versions.toLocaleString("ko-KR")}개 버전`
-          : `DB 분리 backfill 완료: 처리 ${result.processed_versions.toLocaleString("ko-KR")}개, 실패 ${failedCount.toLocaleString("ko-KR")}개`,
+          ? formatOperationsText(actionCopy.dbCheckComplete, { selected: result.selected_versions.toLocaleString(uiLanguage) })
+          : formatOperationsText(actionCopy.dbBackfillComplete, {
+              processed: result.processed_versions.toLocaleString(uiLanguage),
+              failed: failedCount.toLocaleString(uiLanguage),
+            }),
       );
       const nextDashboard = await fetchOperationsDashboard(token, {
         ...dashboardPeriodFilters(period),
@@ -822,7 +825,7 @@ export default function AdminOperationsDashboardPage() {
       setDashboard(nextDashboard);
       await handleVersionIntegrityCheck();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "DB 분리 backfill에 실패했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : actionCopy.dbBackfillFailed);
     } finally {
       setBackfillingVersionStorage("");
     }
@@ -833,7 +836,7 @@ export default function AdminOperationsDashboardPage() {
       return;
     }
     if (!dryRun) {
-      const confirmed = window.confirm("현재 검색 조건의 버전 요약 스냅샷 backfill을 실행하시겠습니까? version_json은 유지되고 요약 컬럼만 갱신됩니다.");
+      const confirmed = window.confirm(actionCopy.snapshotBackfillConfirm);
       if (!confirmed) {
         return;
       }
@@ -851,8 +854,11 @@ export default function AdminOperationsDashboardPage() {
       const failedCount = result.failed_versions.length;
       setStatusMessage(
         dryRun
-          ? `요약 스냅샷 점검 완료: 대상 ${result.selected_versions.toLocaleString("ko-KR")}개 버전`
-          : `요약 스냅샷 backfill 완료: 처리 ${result.processed_versions.toLocaleString("ko-KR")}개, 실패 ${failedCount.toLocaleString("ko-KR")}개`,
+          ? formatOperationsText(actionCopy.snapshotCheckComplete, { selected: result.selected_versions.toLocaleString(uiLanguage) })
+          : formatOperationsText(actionCopy.snapshotBackfillComplete, {
+              processed: result.processed_versions.toLocaleString(uiLanguage),
+              failed: failedCount.toLocaleString(uiLanguage),
+            }),
       );
       const nextDashboard = await fetchOperationsDashboard(token, {
         ...dashboardPeriodFilters(period),
@@ -864,7 +870,7 @@ export default function AdminOperationsDashboardPage() {
       setDashboard(nextDashboard);
       await handleVersionIntegrityCheck();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "요약 스냅샷 backfill에 실패했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : actionCopy.snapshotBackfillFailed);
     } finally {
       setBackfillingReadSnapshots("");
     }
@@ -874,21 +880,21 @@ export default function AdminOperationsDashboardPage() {
     <section className="admin-page operations-dashboard">
       <div className="admin-page__title-row">
         <div>
-          <h2>운영 대시보드</h2>
-          <p className="operations-dashboard__subtitle">외부 채널 운영, API 호출, 의도 미분류, 학습 상태를 요약합니다.</p>
+          <h2>{copy.title}</h2>
+          <p className="operations-dashboard__subtitle">{copy.subtitle}</p>
         </div>
         <div className="admin-page__actions">
           <Link href="/admin/api-call-history" className="admin-page__link-button">
-            API 호출 이력
+            {copy.apiHistory}
           </Link>
           <Link href="/admin/queue-history" className="admin-page__link-button">
-            Queue 이력
+            {copy.queueHistory}
           </Link>
         </div>
       </div>
 
-      <div className="admin-page__filters" aria-label="운영 대시보드 검색 조건">
-        <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodValue)} aria-label="조회 기간">
+      <div className="admin-page__filters" aria-label={copy.filters}>
+        <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodValue)} aria-label={copy.period}>
           {PERIOD_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
@@ -899,33 +905,33 @@ export default function AdminOperationsDashboardPage() {
             setGroupId(event.target.value);
             setBotId("");
           }}
-          aria-label="그룹 필터"
+          aria-label={copy.groupFilter}
         >
-          <option value="">전체 그룹</option>
+          <option value="">{copy.allGroups}</option>
           {groups.map((group) => (
             <option key={group.id} value={group.id}>{group.name}</option>
           ))}
         </select>
-        <select value={botId} onChange={(event) => setBotId(event.target.value)} aria-label="봇 필터">
-          <option value="">전체 봇</option>
+        <select value={botId} onChange={(event) => setBotId(event.target.value)} aria-label={copy.botFilter}>
+          <option value="">{copy.allBots}</option>
           {filteredBots.map((bot) => (
             <option key={bot.id} value={bot.id}>{bot.name}</option>
           ))}
         </select>
-        <select value={channelCode} onChange={(event) => setChannelCode(event.target.value)} aria-label="채널 필터">
-          <option value="">전체 채널</option>
+        <select value={channelCode} onChange={(event) => setChannelCode(event.target.value)} aria-label={copy.channelFilter}>
+          <option value="">{copy.allChannels}</option>
           {channels.map((channel) => (
             <option key={channel.id} value={channel.code}>{channel.name}</option>
           ))}
         </select>
-        <button type="button" className="admin-page__ghost" onClick={resetFilters}>초기화</button>
+        <button type="button" className="admin-page__ghost" onClick={resetFilters}>{copy.reset}</button>
       </div>
 
       {errorMessage ? <p className="admin-error-message">{errorMessage}</p> : null}
       {statusMessage ? <p className="admin-loading-message">{statusMessage}</p> : null}
-      {loading ? <p className="admin-loading-message">불러오는 중입니다...</p> : null}
+      {loading ? <p className="admin-loading-message">{copy.loading}</p> : null}
       {readinessOnlyItems.length > 0 ? (
-        <div className="operations-dashboard__health" aria-label="기본 준비 상태">
+        <div className="operations-dashboard__health" aria-label={copy.readiness}>
           {readinessOnlyItems.map((item) => (
             <article key={item.key} className={`operations-dashboard__health-item is-${item.tone}`}>
               <span>{item.label}</span>
@@ -938,7 +944,7 @@ export default function AdminOperationsDashboardPage() {
 
       {dashboard ? (
         <>
-          <div className="operations-dashboard__health" aria-label="운영 상태 요약">
+          <div className="operations-dashboard__health" aria-label={copy.healthSummary}>
             {healthItems.map((item) => (
               <article key={item.key} className={`operations-dashboard__health-item is-${item.tone}`}>
                 <span>{item.label}</span>
@@ -950,10 +956,10 @@ export default function AdminOperationsDashboardPage() {
 
           <section className="operations-dashboard__panel operations-dashboard__alerts">
             <div className="operations-dashboard__panel-header">
-              <h3>운영 알림</h3>
-              <span>현재 수집 가능한 임계치 기준</span>
+              <h3>{copy.alerts}</h3>
+              <span>{copy.alertThreshold}</span>
               <Link href="/admin/audit-logs?tab=system" className="admin-page__link-button">
-                시스템 로그
+                {copy.systemLogs}
               </Link>
             </div>
             {operationsAlerts.length > 0 ? (
@@ -966,30 +972,30 @@ export default function AdminOperationsDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="operations-dashboard__empty">현재 운영 알림이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noAlerts}</p>
             )}
           </section>
 
           <div className="operations-dashboard__grid">
             {SUMMARY_LABELS.map((item) => (
               <article key={item.key} className={`operations-dashboard__metric${item.tone === "warning" ? " is-warning" : ""}`}>
-                <span>{item.label}</span>
-                <strong>{dashboard.summary[item.key].toLocaleString("ko-KR")}</strong>
+                <span>{statusCopy.summaryLabels[item.key]}</span>
+                <strong>{dashboard.summary[item.key].toLocaleString(uiLanguage)}</strong>
               </article>
             ))}
           </div>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>캐시 상태</h3>
-              <span>화면 단위 API Redis Cache-Aside 상태</span>
+              <h3>{copy.cacheStatus}</h3>
+              <span>{copy.cacheDescription}</span>
               <button type="button" className="admin-page__ghost" disabled={purgingCache} onClick={handlePurgeVersionCache}>
-                {purgingCache ? "초기화 중" : "버전 캐시 초기화"}
+                {purgingCache ? copy.purging : copy.purgeCache}
               </button>
             </div>
             <DataGrid
               variant="admin"
-              columns={["구분", "현재값", "상세", "최근 오류/Fallback"]}
+              columns={copy.cacheColumns}
               rows={cacheRows}
               sortableColumns={[false, false, false, false]}
               template="120px 180px 260px minmax(260px, 1fr)"
@@ -998,43 +1004,43 @@ export default function AdminOperationsDashboardPage() {
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>DB 분리 상태</h3>
+              <h3>{copy.dbIntegrity}</h3>
               <span>
                 {versionIntegrity
-                  ? `대화/대화설계 분리 테이블 적용 현황 · 점검 ${formatDate(versionIntegrity.generated_at)}`
-                  : "일반 운영 요약과 분리된 전체 버전 무결성 점검"}
+                  ? `${copy.integrityDescription} · ${copy.checkIntegrity} ${formatDate(versionIntegrity.generated_at, uiLanguage)}`
+                  : copy.integrityPending}
               </span>
               <button type="button" className="admin-page__ghost" disabled={checkingVersionIntegrity} onClick={handleVersionIntegrityCheck}>
-                {checkingVersionIntegrity ? "무결성 점검 중" : "무결성 점검"}
+                {checkingVersionIntegrity ? copy.checkingIntegrity : copy.checkIntegrity}
               </button>
               <button type="button" className="admin-page__ghost" disabled={Boolean(backfillingVersionStorage)} onClick={() => handleVersionStorageBackfill(true)}>
-                {backfillingVersionStorage === "dry_run" ? "점검 중" : "Backfill 점검"}
+                {backfillingVersionStorage === "dry_run" ? copy.checkingIntegrity : copy.backfillCheck}
               </button>
               <button type="button" className="admin-page__ghost" disabled={Boolean(backfillingVersionStorage)} onClick={() => handleVersionStorageBackfill(false)}>
-                {backfillingVersionStorage === "run" ? "실행 중" : "Backfill 실행"}
+                {backfillingVersionStorage === "run" ? copy.checkingIntegrity : copy.backfillRun}
               </button>
               <button type="button" className="admin-page__ghost" disabled={Boolean(backfillingReadSnapshots)} onClick={() => handleVersionReadSnapshotBackfill(true)}>
-                {backfillingReadSnapshots === "dry_run" ? "스냅샷 점검 중" : "스냅샷 점검"}
+                {backfillingReadSnapshots === "dry_run" ? copy.checkingIntegrity : copy.snapshotCheck}
               </button>
               <button type="button" className="admin-page__ghost" disabled={Boolean(backfillingReadSnapshots)} onClick={() => handleVersionReadSnapshotBackfill(false)}>
-                {backfillingReadSnapshots === "run" ? "스냅샷 실행 중" : "스냅샷 생성"}
+                {backfillingReadSnapshots === "run" ? copy.checkingIntegrity : copy.snapshotCreate}
               </button>
             </div>
             {versionIntegrity ? (
               <DataGrid
                 variant="admin"
-                columns={["구분", "현재값", "기준/미적용", "상태"]}
+                columns={copy.integrityColumns}
                 rows={versionStorageRows}
                 sortableColumns={[false, false, false, false]}
                 template="160px 180px 220px minmax(220px, 1fr)"
               />
             ) : (
-              <p className="operations-dashboard__empty">무결성 점검을 실행하면 전체 버전의 DB 분리 및 스냅샷 상태를 표시합니다.</p>
+              <p className="operations-dashboard__empty">{copy.integrityEmpty}</p>
             )}
             {versionStorageIssueRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["상태", "봇", "버전", "대화", "그래프", "차이", "최종수정"]}
+                columns={copy.versionColumns}
                 rows={versionStorageIssueRows}
                 sortableColumns={[false, false, false, false, false, false, false]}
                 template="90px 170px 140px 100px 100px minmax(320px, 1fr) 180px"
@@ -1044,16 +1050,16 @@ export default function AdminOperationsDashboardPage() {
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>최근 오류</h3>
-              <span>생성 시각 {formatDate(dashboard.generated_at)}</span>
+              <h3>{copy.recentErrors}</h3>
+              <span>{copy.generatedAt} {formatDate(dashboard.generated_at, uiLanguage)}</span>
               <Link href="/admin/queue-history" className="admin-page__link-button">
-                Queue 이력
+                {copy.queueHistory}
               </Link>
             </div>
             {sortedRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["", "구분", "봇", "위치", "이벤트", "메시지", "발생일시"]}
+                columns={copy.errorColumns}
                 rows={sortedRows}
                 sortState={sortState}
                 onSort={setSortState}
@@ -1061,109 +1067,109 @@ export default function AdminOperationsDashboardPage() {
                 template="76px 120px 170px 220px 220px minmax(320px, 1fr) 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 오류가 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noErrors}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>느린 요청 요약</h3>
-              <span>반복 지연 경로와 최대/평균 응답 시간</span>
+              <h3>{copy.slowSummary}</h3>
+              <span>{copy.slowSummaryDescription}</span>
               <Link href="/admin/audit-logs?tab=system&file=app" className="admin-page__link-button">
-                시스템 로그
+                {copy.systemLogs}
               </Link>
             </div>
             {slowRequestSummaryRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["구분", "Method", "경로", "건수", "최대 응답", "평균 응답", "최대 DB", "평균 DB", "최근 발생"]}
+                columns={copy.slowSummaryColumns}
                 rows={slowRequestSummaryRows}
                 sortableColumns={[false, false, false, false, false, false, false, false, false]}
                 template="100px 86px minmax(280px, 1fr) 70px 100px 100px 100px 100px 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 느린 요청이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noSlow}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>느린 요청 상세</h3>
-              <span>API 응답 시간과 DB 누적 시간 기준</span>
+              <h3>{copy.slowDetail}</h3>
+              <span>{copy.slowDetailDescription}</span>
             </div>
             {slowRequestRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["구분", "Method", "경로", "상태", "응답", "DB", "쿼리", "기준", "Request ID", "발생일시"]}
+                columns={copy.slowDetailColumns}
                 rows={slowRequestRows}
                 sortableColumns={[false, false, false, false, false, false, false, false, false, false]}
                 template="100px 86px minmax(260px, 1fr) 70px 90px 90px 70px 90px 240px 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 느린 요청이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noSlow}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>최근 실행 흐름</h3>
-              <span>Queue 결과에 저장된 런타임 이벤트</span>
+              <h3>{copy.runtimeFlow}</h3>
+              <span>{copy.runtimeDescription}</span>
               <Link href="/admin/conversations" className="admin-page__link-button">
-                대화 이력
+                {copy.conversationHistory}
               </Link>
             </div>
             {runtimeRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["", "채널", "레벨", "봇", "의도/모듈", "카드", "이벤트", "메시지", "발생일시"]}
+                columns={copy.runtimeColumns}
                 rows={runtimeRows}
                 sortableColumns={[false, false, false, false, false, false, false, false, false]}
                 template="76px 90px 90px 160px 160px 140px 220px minmax(260px, 1fr) 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 실행 흐름이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noRuntime}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>현재 편집 잠금</h3>
-              <span>만료되지 않은 대화 편집 잠금</span>
+              <h3>{copy.editLocks}</h3>
+              <span>{copy.editLocksDescription}</span>
               <Link href="/admin/audit-logs?tab=audit&q=edit_lock" className="admin-page__link-button">
-                감사 로그
+                {copy.auditLogs}
               </Link>
             </div>
             {editLockRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["조치", "봇", "버전", "영역", "대화 ID", "편집자", "마지막 확인", "만료 예정"]}
+                columns={copy.lockColumns}
                 rows={editLockRows}
                 sortableColumns={[false, false, false, false, false, false, false, false]}
                 template="100px 160px 120px 110px minmax(180px, 1fr) 140px 180px 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">현재 편집 잠금이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noLocks}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>최근 시스템 오류</h3>
-              <span>API 파일 로그의 요약, 상세에는 원문 포함</span>
+              <h3>{copy.systemErrorsTitle}</h3>
+              <span>{copy.systemErrorsDescription}</span>
               <Link href="/admin/audit-logs?tab=system&file=error" className="admin-page__link-button">
-                시스템 로그
+                {copy.systemLogs}
               </Link>
             </div>
             {systemErrorRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["", "레벨", "로거", "이벤트", "경로", "상태", "메시지", "발생일시"]}
+                columns={copy.systemErrorColumns}
                 rows={systemErrorRows}
                 sortableColumns={[false, false, false, false, false, false, false, false]}
                 template="76px 80px 140px 220px 220px 80px minmax(300px, 1fr) 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 시스템 오류가 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noSystemErrors}</p>
             )}
           </section>
         </>
@@ -1171,19 +1177,19 @@ export default function AdminOperationsDashboardPage() {
       {selectedError ? (
         <>
           <div className="admin-log-detail__scrim" onClick={() => setSelectedError(null)} />
-          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label="운영 오류 상세">
+          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label={detailsCopy.dialogs.operationsErrorTitle}>
             <header className="admin-log-detail__header">
               <div>
-                <strong>운영 오류 상세</strong>
+                <strong>{detailsCopy.dialogs.operationsErrorTitle}</strong>
                 <p>{selectedError.bot_name} · {selectedError.event || "-"}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedError(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedError(null)} aria-label={detailsCopy.dialogs.close}>
                 x
               </button>
             </header>
             <div className="admin-log-detail__body">
               <section className="admin-log-detail__section">
-                <h3>오류 요약</h3>
+                <h3>{detailsCopy.dialogs.errorSummary}</h3>
                 <pre>
                   {formatJson({
                     source: selectedError.source,
@@ -1197,7 +1203,7 @@ export default function AdminOperationsDashboardPage() {
               </section>
               {selectedErrorVariableTrace?.hasTrace ? (
                 <section className="admin-log-detail__section">
-                  <h3>변수 변경</h3>
+                  <h3>{detailsCopy.dialogs.variableChanges}</h3>
                   <pre>
                     {formatJson({
                       updatedVariables: selectedErrorVariableTrace?.updatedVariables ?? [],
@@ -1208,22 +1214,22 @@ export default function AdminOperationsDashboardPage() {
               ) : null}
               {selectedErrorQueueId ? (
                 <section className="admin-log-detail__section">
-                  <h3>연결 이력</h3>
+                  <h3>{detailsCopy.dialogs.linkedHistory}</h3>
                   <div className="admin-log-detail__actions">
                     <Link href={traceHref("/admin/queue-history", selectedErrorQueueId)} className="admin-page__link-button">
-                      Queue 이력
+                      {detailsCopy.dialogs.queueHistory}
                     </Link>
                     <Link href={traceHref("/admin/conversations", selectedErrorQueueId)} className="admin-page__link-button">
-                      대화 이력
+                      {detailsCopy.dialogs.conversationHistory}
                     </Link>
                     <Link href={traceHref("/admin/api-call-history", selectedErrorQueueId)} className="admin-page__link-button">
-                      API 이력
+                      {detailsCopy.dialogs.apiHistory}
                     </Link>
                   </div>
                 </section>
               ) : null}
               <section className="admin-log-detail__section">
-                <h3>상세 데이터</h3>
+                <h3>{detailsCopy.dialogs.detailData}</h3>
                 <pre>{formatJson(selectedError.data_json ?? {})}</pre>
               </section>
             </div>
@@ -1233,19 +1239,19 @@ export default function AdminOperationsDashboardPage() {
       {selectedRuntimeEvent ? (
         <>
           <div className="admin-log-detail__scrim" onClick={() => setSelectedRuntimeEvent(null)} />
-          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label="실행 흐름 상세">
+          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label={detailsCopy.dialogs.runtimeTitle}>
             <header className="admin-log-detail__header">
               <div>
-                <strong>실행 흐름 상세</strong>
+                <strong>{detailsCopy.dialogs.runtimeTitle}</strong>
                 <p>{selectedRuntimeEvent.bot_name} · {selectedRuntimeEvent.event || "-"}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedRuntimeEvent(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedRuntimeEvent(null)} aria-label={detailsCopy.dialogs.close}>
                 x
               </button>
             </header>
             <div className="admin-log-detail__body">
               <section className="admin-log-detail__section">
-                <h3>실행 요약</h3>
+                <h3>{detailsCopy.dialogs.runtimeSummary}</h3>
                 <pre>
                   {formatJson({
                     source: selectedRuntimeEvent.source,
@@ -1262,7 +1268,7 @@ export default function AdminOperationsDashboardPage() {
               </section>
               {selectedRuntimeEventVariableTrace?.hasTrace ? (
                 <section className="admin-log-detail__section">
-                  <h3>변수 변경</h3>
+                  <h3>{detailsCopy.dialogs.variableChanges}</h3>
                   <pre>
                     {formatJson({
                       updatedVariables: selectedRuntimeEventVariableTrace?.updatedVariables ?? [],
@@ -1273,22 +1279,22 @@ export default function AdminOperationsDashboardPage() {
               ) : null}
               {selectedRuntimeQueueId ? (
                 <section className="admin-log-detail__section">
-                  <h3>연결 이력</h3>
+                  <h3>{detailsCopy.dialogs.linkedHistory}</h3>
                   <div className="admin-log-detail__actions">
                     <Link href={traceHref("/admin/queue-history", selectedRuntimeQueueId)} className="admin-page__link-button">
-                      Queue 이력
+                      {detailsCopy.dialogs.queueHistory}
                     </Link>
                     <Link href={traceHref("/admin/conversations", selectedRuntimeQueueId)} className="admin-page__link-button">
-                      대화 이력
+                      {detailsCopy.dialogs.conversationHistory}
                     </Link>
                     <Link href={traceHref("/admin/api-call-history", selectedRuntimeQueueId)} className="admin-page__link-button">
-                      API 이력
+                      {detailsCopy.dialogs.apiHistory}
                     </Link>
                   </div>
                 </section>
               ) : null}
               <section className="admin-log-detail__section">
-                <h3>상세 데이터</h3>
+                <h3>{detailsCopy.dialogs.detailData}</h3>
                 <pre>{formatJson(selectedRuntimeEvent.data_json ?? {})}</pre>
               </section>
             </div>
@@ -1298,19 +1304,19 @@ export default function AdminOperationsDashboardPage() {
       {selectedSystemError ? (
         <>
           <div className="admin-log-detail__scrim" onClick={() => setSelectedSystemError(null)} />
-          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label="시스템 오류 상세">
+          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label={detailsCopy.dialogs.systemErrorTitle}>
             <header className="admin-log-detail__header">
               <div>
-                <strong>시스템 오류 상세</strong>
+                <strong>{detailsCopy.dialogs.systemErrorTitle}</strong>
                 <p>{selectedSystemError.logger || "-"} · {selectedSystemError.event || "-"}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedSystemError(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedSystemError(null)} aria-label={detailsCopy.dialogs.close}>
                 x
               </button>
             </header>
             <div className="admin-log-detail__body">
               <section className="admin-log-detail__section">
-                <h3>오류 요약</h3>
+                <h3>{detailsCopy.dialogs.errorSummary}</h3>
                 <pre>
                   {formatJson({
                     source: selectedSystemError.source,
@@ -1327,18 +1333,18 @@ export default function AdminOperationsDashboardPage() {
               </section>
               {selectedSystemError.request_id ? (
                 <section className="admin-log-detail__section">
-                  <h3>로그 추적</h3>
+                  <h3>{detailsCopy.dialogs.logTrace}</h3>
                   <Link
                     href={`/admin/audit-logs?tab=system&file=error&request_id=${encodeURIComponent(selectedSystemError.request_id)}`}
                     className="admin-page__ghost"
                   >
-                    요청 ID로 시스템 로그 조회
+                    {detailsCopy.dialogs.systemLogsByRequest}
                   </Link>
                 </section>
               ) : null}
               {selectedSystemErrorVariableTrace?.hasTrace ? (
                 <section className="admin-log-detail__section">
-                  <h3>변수 변경</h3>
+                  <h3>{detailsCopy.dialogs.variableChanges}</h3>
                   <pre>
                     {formatJson({
                       updatedVariables: selectedSystemErrorVariableTrace?.updatedVariables ?? [],
@@ -1348,7 +1354,7 @@ export default function AdminOperationsDashboardPage() {
                 </section>
               ) : null}
               <section className="admin-log-detail__section">
-                <h3>상세 데이터</h3>
+                <h3>{detailsCopy.dialogs.detailData}</h3>
                 <pre>{formatJson(selectedSystemError.data_json ?? {})}</pre>
               </section>
             </div>

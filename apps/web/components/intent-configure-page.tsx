@@ -4,11 +4,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { flushSync } from "react-dom";
 
+import { useI18n } from "@/components/language-provider";
 import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { getBotVersionSettings, normalizeConfigurationScoring, type ConfigurationScoringConfig } from "@/lib/bot-settings";
+import { INTENT_CONFIGURE_INPUT_CATALOGS, formatIntentConfigureInputText, getIntentConfigureCriteriaLabel, type IntentConfigureInputCatalog } from "@/lib/i18n/intent-configure-input";
 import { applyUpdatedVersionToBot, getNextDialogNo, getVersionDialogs, withEnsuredDialogFlowGraph, withUpdatedDialogs } from "@/lib/dialog-assets";
 import {
   NLU_MODEL_OPTIONS_BY_TYPE,
@@ -197,34 +199,46 @@ function buildClassifyProgressText(message: string, elapsedSeconds: number, prog
   return `${message} · ${elapsedText} · 남은 시간은 처리량에 따라 달라집니다.`;
 }
 
-function ragConfigureStepFloorPercent(step: string) {
-  if (step.includes("PDF")) return 12;
-  if (step.includes("전송")) return 24;
-  if (step.includes("임베딩")) return 42;
-  if (step.includes("의도")) return 72;
-  if (step.includes("완료")) return 100;
-  return 16;
+type RagConfigureStage = "idle" | "uploadPdf" | "uploadText" | "embedding" | "intent" | "complete";
+
+function ragConfigureStepFloorPercent(stage: RagConfigureStage) {
+  if (stage === "uploadPdf") return 12;
+  if (stage === "uploadText") return 24;
+  if (stage === "embedding") return 42;
+  if (stage === "intent") return 72;
+  if (stage === "complete") return 100;
+  return 0;
 }
 
-function ragConfigureStepCapPercent(step: string) {
-  if (step.includes("완료")) return 100;
-  if (step.includes("의도")) return 94;
-  if (step.includes("임베딩")) return 86;
-  if (step.includes("전송")) return 42;
-  if (step.includes("PDF")) return 34;
-  return 70;
+function ragConfigureStepCapPercent(stage: RagConfigureStage) {
+  if (stage === "uploadPdf") return 34;
+  if (stage === "uploadText") return 42;
+  if (stage === "embedding") return 86;
+  if (stage === "intent") return 94;
+  if (stage === "complete") return 100;
+  return 0;
 }
 
-function formatRagConfigureResult(result?: RagAnswerEmbeddingResult | null) {
-  if (!result) {
-    return "";
-  }
+function getRagConfigureStepText(catalog: IntentConfigureInputCatalog, stage: RagConfigureStage) {
+  if (stage === "uploadPdf") return catalog.ragUploadPdf;
+  if (stage === "uploadText") return catalog.ragUploadText;
+  if (stage === "embedding") return catalog.ragEmbedding;
+  if (stage === "intent") return catalog.ragCreatingCandidates;
+  if (stage === "complete") return catalog.ragConfigureComplete;
+  return "";
+}
+
+function formatRagConfigureResult(catalog: IntentConfigureInputCatalog, result?: RagAnswerEmbeddingResult | null) {
+  if (!result) return "";
   const count = typeof result.document_count === "number" ? result.document_count : 0;
-  const model = result.embedding_model ? ` / 엔진 ${result.embedding_model}` : "";
-  const title = result.document_title ? ` / 문서 ${result.document_title}` : "";
-  return `답변 문서 임베딩 완료 / 조각 ${count}${model}${title}`;
+  const model = result.embedding_model
+    ? formatIntentConfigureInputText(catalog.ragResultEngine, { model: result.embedding_model })
+    : "";
+  const title = result.document_title
+    ? formatIntentConfigureInputText(catalog.ragResultDocument, { title: result.document_title })
+    : "";
+  return formatIntentConfigureInputText(catalog.ragResultCompleted, { count }) + model + title;
 }
-
 function isRagAnswerMode(aiConfig: Record<string, unknown>) {
   const answerMode = typeof aiConfig.answer_mode === "string" ? aiConfig.answer_mode : "";
   return answerMode === "semantic_rag" || answerMode === "llm_rag";
@@ -2309,6 +2323,8 @@ function buildFlowGraph(dialog: VersionDialogAsset, answer: string, now: string,
 
 export function IntentConfigurePage() {
   const workspace = useStudioWorkspace();
+  const { language: uiLanguage } = useI18n();
+  const inputCopy = INTENT_CONFIGURE_INPUT_CATALOGS[uiLanguage];
   const router = useRouter();
   const params = useParams<{ botId: string; versionId: string }>();
   const botId = decodeURIComponent(params.botId);
@@ -2347,7 +2363,8 @@ export function IntentConfigurePage() {
   const [ragDocumentTitle, setRagDocumentTitle] = useState("");
   const [ragFile, setRagFile] = useState<File | null>(null);
   const [ragConfiguring, setRagConfiguring] = useState(false);
-  const [ragConfigureStep, setRagConfigureStep] = useState("");
+  const [ragConfigureStage, setRagConfigureStage] = useState<RagConfigureStage>("idle");
+  const ragConfigureStep = getRagConfigureStepText(inputCopy, ragConfigureStage);
   const [ragConfigureProgress, setRagConfigureProgress] = useState(0);
   const [ragEmbeddingResult, setRagEmbeddingResult] = useState<RagAnswerEmbeddingResult | null>(null);
 
@@ -2388,7 +2405,7 @@ export function IntentConfigurePage() {
     ? { provider: `llm:${configureLlmProvider}`, model: configureLlmModel }
     : nluModelEmbedding;
   const ragEmbeddingDescription = aiConfig.answer_mode === "llm_rag"
-    ? "LLM RAG 답변 방식이므로 선택한 LLM provider/model을 답변 문서 임베딩에도 사용합니다."
+    ? inputCopy.llmRagEmbeddingDescription
     : getNluModelDescription(configureNluType, configureNluModel);
   const ragEmbeddingLabel = aiConfig.answer_mode === "llm_rag"
     ? `${LLM_PROVIDER_OPTIONS.find((option) => option.value === configureLlmProvider)?.label ?? configureLlmProvider} ${getLlmModelLabel(configureLlmProvider, configureLlmModel)}`
@@ -2475,7 +2492,7 @@ export function IntentConfigurePage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "구성 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : inputCopy.loadFailed);
         }
       })
       .finally(() => {
@@ -2513,15 +2530,15 @@ export function IntentConfigurePage() {
   }, [canUseConfigureSettings]);
 
   useEffect(() => {
-    if (!ragConfiguring || !ragConfigureStep) {
+    if (!ragConfiguring || ragConfigureStage === "idle") {
       setRagConfigureProgress(0);
       return;
     }
 
-    setRagConfigureProgress((current) => Math.max(current, ragConfigureStepFloorPercent(ragConfigureStep)));
+    setRagConfigureProgress((current) => Math.max(current, ragConfigureStepFloorPercent(ragConfigureStage)));
     const intervalId = window.setInterval(() => {
       setRagConfigureProgress((current) => {
-        const cap = ragConfigureStepCapPercent(ragConfigureStep);
+        const cap = ragConfigureStepCapPercent(ragConfigureStage);
         if (current >= cap) {
           return current;
         }
@@ -2530,7 +2547,7 @@ export function IntentConfigurePage() {
       });
     }, 900);
     return () => window.clearInterval(intervalId);
-  }, [ragConfiguring, ragConfigureStep]);
+  }, [ragConfiguring, ragConfigureStage]);
 
   function handleConfigureNluModelChange(value: string) {
     setConfigureNluModel(normalizeNluModel(configureNluType, value));
@@ -2549,7 +2566,7 @@ export function IntentConfigurePage() {
   async function handleMlConfigureTest() {
     const utterance = mlTestUtterance.trim();
     if (!utterance) {
-      setErrorMessage("테스트할 사용자 발화를 입력해주세요.");
+      setErrorMessage(inputCopy.mlTestUtteranceRequired);
       return;
     }
     if (!authSession || !bot || !effectiveVersion) {
@@ -2557,11 +2574,11 @@ export function IntentConfigurePage() {
       return;
     }
     if (!isMlConfigureNluType(nluType)) {
-      setErrorMessage("ML 구성 엔진에서만 구성 테스트를 사용할 수 있습니다.");
+      setErrorMessage(inputCopy.mlTestEngineOnly);
       return;
     }
     if (clusters.length === 0) {
-      setErrorMessage("먼저 자동 구성을 실행한 뒤 테스트해주세요.");
+      setErrorMessage(inputCopy.autoConfigureFirst);
       return;
     }
 
@@ -2606,7 +2623,7 @@ export function IntentConfigurePage() {
         .slice(0, 5);
       setMlTestResult({ utterance, tokens: inputTokens, candidates });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "ML 구성 테스트를 실행하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.mlTestFailed);
     } finally {
       setMlTesting(false);
     }
@@ -2615,27 +2632,27 @@ export function IntentConfigurePage() {
   function loadMlSeedIntentsFromCurrentVersion() {
     const seedIntentText = formatMlSeedIntentTextFromDialogs(dialogs);
     if (!seedIntentText.trim()) {
-      setErrorMessage("현재 버전에 불러올 의도 학습문장이 없습니다.");
+      setErrorMessage(inputCopy.noCurrentIntentUtterances);
       return;
     }
     const parsed = parseMlSeedIntentText(seedIntentText);
     setMlSeedIntentText(seedIntentText);
     setErrorMessage("");
-    setMessage(`현재 버전 의도 ${parsed.seedIntents.length}개를 ML 기준 의도로 불러왔습니다.`);
+    setMessage(formatIntentConfigureInputText(inputCopy.seedLoaded, { count: parsed.seedIntents.length }));
   }
 
   function applyMlSeedIntentText() {
     const parsed = parseMlSeedIntentText(mlSeedIntentText);
     if (parsed.invalidLines.length > 0) {
-      setErrorMessage(`ML 기준 의도 형식을 확인해주세요: ${parsed.invalidLines.slice(0, 3).join(" / ")}`);
+      setErrorMessage(formatIntentConfigureInputText(inputCopy.invalidSeedFormat, { lines: parsed.invalidLines.slice(0, 3).join(" / ") }));
       return;
     }
     setMlSeedIntentOpen(false);
     setErrorMessage("");
     setMessage(
       parsed.seedIntents.length > 0
-        ? `ML 기준 의도 ${parsed.seedIntents.length}개를 적용했습니다.`
-        : "ML 기준 의도를 비웠습니다. 자동 구성은 세밀한 후보 중심으로 실행됩니다.",
+        ? formatIntentConfigureInputText(inputCopy.seedApplied, { count: parsed.seedIntents.length })
+        : inputCopy.seedCleared,
     );
   }
 
@@ -2655,35 +2672,35 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에서는 구성 작업을 실행할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.operatingVersionWarning);
       return;
     }
     if (!ragAnswerMode) {
-      setErrorMessage("RAG 답변 방식에서만 답변 문서 구성을 실행할 수 있습니다.");
+      setErrorMessage(inputCopy.ragAnswerModeOnly);
       return;
     }
     const text = ragAnswerText.trim();
     const title = ragDocumentTitle.trim();
     if (ragSourceType === "text" && !text) {
-      setErrorMessage("임베딩할 답변 텍스트를 입력해주세요.");
+      setErrorMessage(inputCopy.ragAnswerTextRequired);
       return;
     }
     if (ragSourceType === "pdf" && !ragFile) {
-      setErrorMessage("임베딩할 PDF 파일을 선택해주세요.");
+      setErrorMessage(inputCopy.ragPdfRequired);
       return;
     }
 
     flushSync(() => {
       setRagConfiguring(true);
-      setRagConfigureStep(ragSourceType === "pdf" ? "PDF 답변 문서를 서버로 전송하는 중입니다." : "답변 텍스트를 서버로 전송하는 중입니다.");
+      setRagConfigureStage(ragSourceType === "pdf" ? "uploadPdf" : "uploadText");
       setRagConfigureProgress(0);
       setErrorMessage("");
-      setMessage("답변 문서 임베딩과 의도 후보 생성을 실행 중입니다.");
+      setMessage(inputCopy.ragConfigureRunning);
     });
     await waitForBrowserPaint(3);
 
     try {
-      setRagConfigureStep("Answer Vector DB에 답변 문서를 임베딩하는 중입니다.");
+      setRagConfigureStage("embedding");
       const response = ragSourceType === "pdf"
         ? await configureStudioBotVersionRagAnswerPdf(authSession.access_token, bot.id, effectiveVersion.id, {
             file: ragFile as File,
@@ -2704,7 +2721,7 @@ export function IntentConfigurePage() {
             target_count: targetCount,
             target_count_policy: targetCountPolicy,
           });
-      setRagConfigureStep("임베딩 결과로 의도 후보를 생성하는 중입니다.");
+      setRagConfigureStage("intent");
       const nextClusters = response.groups.map((cluster, index) => ({
         id: cluster.id || crypto.randomUUID(),
         name: cluster.name || `RAG 의도 ${index + 1}`,
@@ -2722,22 +2739,25 @@ export function IntentConfigurePage() {
       setDictionarySuggestions([]);
       setSelectedDictionarySuggestionIds([]);
       setRagConfigureProgress(100);
-      setRagConfigureStep("답변 문서 구성 생성이 완료되었습니다.");
+      setRagConfigureStage("complete");
       setMessage(
-        `${nextClusters.length}개 RAG 의도 후보를 생성했습니다. ${formatRagConfigureResult(result)} 저장 전 의도명과 학습문장을 확인해주세요.`,
+        formatIntentConfigureInputText(inputCopy.ragCandidatesCreated, {
+          count: nextClusters.length,
+          result: formatRagConfigureResult(inputCopy, result),
+        }),
       );
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "답변 문서 구성을 실행하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.ragConfigureFailed);
     } finally {
       setRagConfiguring(false);
-      setRagConfigureStep("");
+      setRagConfigureStage("idle");
     }
   }
 
   async function handleClassify() {
     const utterances = parseUtterances(utteranceInput);
     if (utterances.length === 0) {
-      setErrorMessage("분류할 학습문장을 입력해주세요.");
+      setErrorMessage(inputCopy.classificationUtterancesRequired);
       return;
     }
     if (!authSession || !bot || !effectiveVersion) {
@@ -2745,21 +2765,21 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에서는 구성 작업을 실행할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.operatingVersionWarning);
       return;
     }
     const parsedMlSeedIntents = isMlConfigureNluType(nluType) ? parseMlSeedIntentText(mlSeedIntentText) : { seedIntents: [], invalidLines: [] };
     const mlSeedIntentPayload = parsedMlSeedIntents.seedIntents;
     if (isMlConfigureNluType(nluType) && parsedMlSeedIntents.invalidLines.length > 0) {
-      setErrorMessage(`ML 기준 의도 형식을 확인해주세요: ${parsedMlSeedIntents.invalidLines.slice(0, 3).join(" / ")}`);
+      setErrorMessage(formatIntentConfigureInputText(inputCopy.invalidSeedFormat, { lines: parsedMlSeedIntents.invalidLines.slice(0, 3).join(" / ") }));
       return;
     }
 
     flushSync(() => {
       setClassifying(true);
-      setClassifyProgressMessage("자동 구성을 준비 중입니다. 완료될 때까지 화면을 닫지 말고 기다려주세요.");
+      setClassifyProgressMessage(inputCopy.classificationPreparing);
       setErrorMessage("");
-      setMessage("자동 구성을 실행 중입니다. 문장 수에 따라 시간이 걸릴 수 있습니다.");
+      setMessage(inputCopy.classificationRunning);
     });
     await waitForBrowserPaint(3);
     try {
@@ -2835,8 +2855,8 @@ export function IntentConfigurePage() {
         }));
       } else {
         flushSync(() => {
-          setClassifyProgressMessage("ML 학습 엔진 기준으로 자동 구성 중입니다. 완료될 때까지 화면을 닫지 말고 기다려주세요.");
-          setMessage("ML 학습 엔진 기준으로 자동 구성 중입니다. 완료될 때까지 화면을 닫지 말고 기다려주세요.");
+          setClassifyProgressMessage(inputCopy.mlClassificationRunning);
+          setMessage(inputCopy.mlClassificationRunning);
         });
         await waitForBrowserPaint(3);
         const response = await configureStudioBotVersionMlIntents(authSession.access_token, bot.id, effectiveVersion.id, {
@@ -2856,16 +2876,22 @@ export function IntentConfigurePage() {
       }
       setBot(selectedBot);
       setClusters(nextClusters);
-      const mlSeedIntentMessage = isMlConfigureNluType(nluType) && mlSeedIntentPayload.length > 0
-        ? ` 기준 의도 ${mlSeedIntentPayload.length}개로 확신 배정하고, 애매한 문장은 검토 후보로 남겼습니다.`
-        : "";
-      setMessage(
-        `${nextClusters.length}개 그룹으로 분류했습니다.${mlSeedIntentMessage} ${engineLabel} 기준으로 사전 ${countUserDictionaryEntries(latestLexicon.dictionary)}건을 반영했습니다.${
-          nextDictionarySuggestions.length > 0 ? ` 사전 등록 제안 ${nextDictionarySuggestions.length}건을 확인해주세요.` : ""
-        }`,
-      );
+      const classificationMessages = [
+        formatIntentConfigureInputText(inputCopy.classificationSummary, {
+          groups: nextClusters.length,
+          engine: engineLabel,
+          dictionaryCount: countUserDictionaryEntries(latestLexicon.dictionary),
+        }),
+        isMlConfigureNluType(nluType) && mlSeedIntentPayload.length > 0
+          ? formatIntentConfigureInputText(inputCopy.seedAssignmentSummary, { count: mlSeedIntentPayload.length })
+          : "",
+        nextDictionarySuggestions.length > 0
+          ? formatIntentConfigureInputText(inputCopy.dictionarySuggestionSummary, { count: nextDictionarySuggestions.length })
+          : "",
+      ].filter(Boolean);
+      setMessage(classificationMessages.join(" "));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "최신 사전/개체 기준으로 자동 구성을 실행하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.classificationFailed);
     } finally {
       setClassifying(false);
       setClassifyProgressMessage("");
@@ -2885,7 +2911,7 @@ export function IntentConfigurePage() {
 
   function mergeSelectedClusters() {
     if (selectedClusterIds.length < 2) {
-      setErrorMessage("병합할 의도 후보를 2개 이상 선택해주세요.");
+      setErrorMessage(inputCopy.mergeAtLeastTwo);
       return;
     }
     setClusters((current) => {
@@ -2904,7 +2930,7 @@ export function IntentConfigurePage() {
     });
     setSelectedClusterIds([]);
     setMlTestResult(null);
-    setMessage("선택한 의도 후보를 병합했습니다.");
+    setMessage(inputCopy.mergeComplete);
     setErrorMessage("");
   }
 
@@ -2923,7 +2949,7 @@ export function IntentConfigurePage() {
 
   function applyRecommendedConfigureScoring() {
     setConfigurationScoring(recommendedConfigureScoring);
-    setMessage(`${getNluTypeLabel(nluType)} 자동분류 추천 가중치를 적용했습니다. 저장하려면 봇 설정에 저장을 눌러주세요.`);
+    setMessage(formatIntentConfigureInputText(inputCopy.scoringRecommendationApplied, { type: getNluTypeLabel(nluType) }));
   }
 
   async function registerSelectedConfigureSuggestions() {
@@ -2932,7 +2958,7 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에는 사전 제안을 등록할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.dictionaryOperatingBlocked);
       return;
     }
 
@@ -2940,7 +2966,7 @@ export function IntentConfigurePage() {
       selectedDictionarySuggestionIds.includes(suggestion.id),
     );
     if (selectedDictionarySuggestions.length === 0) {
-      setErrorMessage("사전에 등록할 제안을 선택해주세요.");
+      setErrorMessage(inputCopy.dictionarySelectionRequired);
       return;
     }
 
@@ -2980,13 +3006,13 @@ export function IntentConfigurePage() {
       setDictionarySuggestions((current) => current.filter((suggestion) => !selectedDictionarySuggestionIds.includes(suggestion.id)));
       setSelectedDictionarySuggestionIds([]);
       setMessage(
-        `사전 등록 제안 ${
-          dictionarySuggestionAddedCount + dictionarySuggestionUpdatedCount
-        }건을 반영했습니다.`,
+        formatIntentConfigureInputText(inputCopy.dictionarySuggestionsApplied, {
+          count: dictionarySuggestionAddedCount + dictionarySuggestionUpdatedCount,
+        }),
       );
       void workspace.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "사전 제안을 등록하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.dictionarySuggestionsFailed);
     } finally {
       setSaving(false);
     }
@@ -3011,9 +3037,9 @@ export function IntentConfigurePage() {
         { responseMode: "summary" },
       );
       setBot((current) => (current ? { ...current, data_json: updated.data_json, updated_at: updated.updated_at } : updated));
-      setMessage("구성 자동분류 가중치를 봇 설정에 저장했습니다.");
+      setMessage(inputCopy.scoringSaved);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "구성 자동분류 가중치를 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.scoringSaveFailed);
     } finally {
       setSaving(false);
     }
@@ -3025,7 +3051,7 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에는 추천 기준값을 적용할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.criteriaOperatingBlocked);
       return;
     }
 
@@ -3053,10 +3079,14 @@ export function IntentConfigurePage() {
       );
       setBot((current) => (current ? { ...current, data_json: updated.data_json, updated_at: updated.updated_at } : updated));
       setMessage(
-        `${recommendedCriteria.intentCount}개 의도 기준 추천값을 현재 버전에 적용했습니다. Cut-off ${formatCriteriaScore(recommendedCriteria.cutOffScore)} / 유사의도 ${formatCriteriaScore(recommendedCriteria.similarIntentScore)}`,
+        formatIntentConfigureInputText(inputCopy.criteriaApplied, {
+          intentCount: recommendedCriteria.intentCount,
+          cutoff: formatCriteriaScore(recommendedCriteria.cutOffScore),
+          similar: formatCriteriaScore(recommendedCriteria.similarIntentScore),
+        }),
       );
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "추천 NLU 판정 기준을 적용하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.criteriaFailed);
     } finally {
       setCriteriaSaving(false);
     }
@@ -3068,23 +3098,23 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에는 구성 결과를 저장할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.saveOperatingBlocked);
       return;
     }
     if (clusters.length === 0) {
-      setErrorMessage("먼저 학습문장을 분류해주세요.");
+      setErrorMessage(inputCopy.classifyFirst);
       return;
     }
     const invalid = clusters.find((cluster) => !cluster.name.trim() || !cluster.answer.trim() || cluster.utterances.length === 0);
     if (invalid) {
-      setErrorMessage("모든 그룹에 의도명, 답변, 학습문장이 필요합니다.");
+      setErrorMessage(inputCopy.clusterFieldsRequired);
       return;
     }
 
     const clusterNames = clusters.map((cluster) => normalizeTokenText(cluster.name));
     const duplicatedName = clusterNames.find((name, index) => name && clusterNames.indexOf(name) !== index);
     if (duplicatedName) {
-      setErrorMessage("의도 후보 안에 중복된 의도명이 있습니다.");
+      setErrorMessage(inputCopy.duplicateIntentNames);
       return;
     }
 
@@ -3166,7 +3196,10 @@ export function IntentConfigurePage() {
       };
       setBot((current) => (current ? applyUpdatedVersionToBot(current, updatedVersion) : current));
       setMessage(
-        `${newDialogs.length}개 의도와 ${newDialogs.reduce((sum, dialog) => sum + dialog.utterances.length, 0)}개 학습문장으로 현재 버전을 덮어썼습니다.`,
+        formatIntentConfigureInputText(inputCopy.versionOverwritten, {
+          intentCount: newDialogs.length,
+          utteranceCount: newDialogs.reduce((sum, dialog) => sum + dialog.utterances.length, 0),
+        }),
       );
       setClusters([]);
       setDictionarySuggestions([]);
@@ -3174,7 +3207,7 @@ export function IntentConfigurePage() {
       setUtteranceInput("");
       void workspace.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "의도 구성을 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.configureSaveFailed);
     } finally {
       setSaving(false);
     }
@@ -3183,7 +3216,7 @@ export function IntentConfigurePage() {
   if (!loading && !authSession) return null;
 
   if (!bot || !effectiveVersion) {
-    return <StudioPageLoading title="구성 화면을 불러오는 중입니다." />;
+    return <StudioPageLoading title={inputCopy.loadingTitle} />;
   }
 
   return (
@@ -3193,25 +3226,25 @@ export function IntentConfigurePage() {
       {errorMessage ? <p className="manual-main__status manual-main__status--error">{errorMessage}</p> : null}
       {operatingVersion ? (
         <p className="manual-main__status manual-main__status--error">
-          운영버전은 구성 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.
+          {inputCopy.operatingVersionWarning}
         </p>
       ) : null}
 
       <div className="intent-configure">
         <section className="intent-configure__panel intent-configure__panel--input">
           <div className="intent-configure__panel-header">
-            <strong>{ragAnswerMode ? "RAG 답변 문서 구성" : "학습문장 입력"}</strong>
-            <span>구성용 엔진 · {getNluTypeLabel(nluType)} · {getNluModelLabel(nluType, nluModel)}</span>
+            <strong>{ragAnswerMode ? inputCopy.ragPanelTitle : inputCopy.utterancePanelTitle}</strong>
+            <span>{formatIntentConfigureInputText(inputCopy.engineSummary, { type: getNluTypeLabel(nluType), model: getNluModelLabel(nluType, nluModel) })}</span>
           </div>
           <div className="intent-configure__engine-row">
             <label>
-              <span>구성 엔진</span>
+              <span>{inputCopy.configureEngine}</span>
               <select value="llm" disabled>
                 <option value="llm">LLM Engine</option>
               </select>
             </label>
             <label>
-              <span>구성 모델</span>
+              <span>{inputCopy.configureModel}</span>
               <select
                 value={configureNluModel}
                 disabled={operatingVersion}
@@ -3260,11 +3293,13 @@ export function IntentConfigurePage() {
           <div className="intent-configure__lexicon-status">
             {canUseConfigureSettings && visibleDictionarySuggestions.length > 0 ? (
               <button type="button" className="secondary-action" onClick={() => setSettingsOpen(true)}>
-                구성 사전 반영 제안
-                {visibleDictionarySuggestions.length > 0 ? ` · 사전 등록 제안 ${visibleDictionarySuggestions.length}건` : ""}
+                {inputCopy.dictionaryProposal}
+                {visibleDictionarySuggestions.length > 0
+                  ? formatIntentConfigureInputText(inputCopy.dictionaryProposalCount, { count: visibleDictionarySuggestions.length })
+                  : ""}
               </button>
             ) : (
-              <span>자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.</span>
+              <span>{inputCopy.latestDictionaryNote}</span>
             )}
           </div>
           {ragAnswerMode ? (
@@ -3278,7 +3313,7 @@ export function IntentConfigurePage() {
                     disabled={operatingVersion || ragConfiguring}
                     onChange={() => handleRagSourceTypeChange("text")}
                   />
-                  텍스트
+                  {inputCopy.text}
                 </label>
                 <label>
                   <input
@@ -3293,7 +3328,7 @@ export function IntentConfigurePage() {
               </div>
               {ragSourceType === "text" ? (
                 <label className="intent-configure__rag-field">
-                  <span>답변 텍스트</span>
+                  <span>{inputCopy.answerText}</span>
                   <textarea
                     value={ragAnswerText}
                     onChange={(event) => {
@@ -3301,32 +3336,32 @@ export function IntentConfigurePage() {
                       setRagEmbeddingResult(null);
                     }}
                     disabled={operatingVersion || ragConfiguring}
-                    placeholder={"의도 : 계약 해지 요청\n답변 : 고객님, 해지 요청 확인했습니다."}
+                    placeholder={inputCopy.answerTextPlaceholder}
                   />
                 </label>
               ) : (
                 <label className="intent-configure__rag-field">
-                  <span>PDF 파일</span>
+                  <span>{inputCopy.pdfFile}</span>
                   <input type="file" accept="application/pdf,.pdf" disabled={operatingVersion || ragConfiguring} onChange={handleRagFileChange} />
                 </label>
               )}
               <label className="intent-configure__rag-field">
-                <span>문서 제목</span>
+                <span>{inputCopy.documentTitle}</span>
                 <input
                   value={ragDocumentTitle}
                   onChange={(event) => setRagDocumentTitle(event.target.value)}
                   disabled={operatingVersion || ragConfiguring}
-                  placeholder={ragSourceType === "pdf" ? "임베딩 후 문서에서 인식됩니다." : "입력하지 않으면 답변 문서로 저장됩니다."}
+                  placeholder={ragSourceType === "pdf" ? inputCopy.pdfTitlePlaceholder : inputCopy.textTitlePlaceholder}
                 />
               </label>
               <div className="intent-configure__rag-engine">
-                <span>{ragEmbeddingDescription || "선택한 구성 모델 기준으로 답변 문서를 임베딩합니다."}</span>
+                <span>{ragEmbeddingDescription || inputCopy.embeddingFallback}</span>
                 <strong>{ragEmbeddingLabel}</strong>
               </div>
               {ragConfigureStep || ragEmbeddingResult ? (
                 <div className="intent-configure__rag-progress" aria-live="polite">
                   <div className="intent-configure__rag-progress-meta">
-                    <span>{ragConfigureStep || formatRagConfigureResult(ragEmbeddingResult)}</span>
+                    <span>{ragConfigureStep || formatRagConfigureResult(inputCopy, ragEmbeddingResult)}</span>
                     <strong>{Math.round(ragConfigureProgress || (ragEmbeddingResult ? 100 : 0))}%</strong>
                   </div>
                   <div className="intent-configure__rag-progress-track">
@@ -3340,12 +3375,12 @@ export function IntentConfigurePage() {
               value={utteranceInput}
               onChange={(event) => setUtteranceInput(event.target.value)}
               disabled={operatingVersion}
-              placeholder={"학습문장을 줄 단위로 입력하세요.\n예) 상담원 연결해줘\n예) 콜백 예약하고 싶어\n예) 발신자 확인해줘"}
+              placeholder={inputCopy.utterancePlaceholder}
             />
           )}
           <div className="intent-configure__controls">
             <label>
-              <span>목표 의도 수</span>
+              <span>{inputCopy.targetIntentCount}</span>
               <input
                 type="number"
                 min={1}
@@ -3361,17 +3396,19 @@ export function IntentConfigurePage() {
               onClick={ragAnswerMode ? handleRagConfigure : handleClassify}
               disabled={loading || saving || classifying || ragConfiguring || operatingVersion}
             >
-              {ragAnswerMode ? (ragConfiguring ? "구성중" : "RAG 문서 구성") : (classifying ? "구성중" : "자동 구성")}
+              {ragAnswerMode
+                ? (ragConfiguring ? inputCopy.configuring : inputCopy.ragConfigure)
+                : (classifying ? inputCopy.configuring : inputCopy.autoConfigure)}
             </button>
           </div>
           <div className="intent-configure__policy">
-            <span>분류 수 기준</span>
-            {isMlConfigureNluType(nluType) ? <small>ML은 목표 수를 강제하지 않고, 유사도가 충분한 후보만 병합합니다.</small> : null}
-            <div className="intent-configure__policy-options" role="radiogroup" aria-label="분류 수 기준">
+            <span>{inputCopy.countPolicy}</span>
+            {isMlConfigureNluType(nluType) ? <small>{inputCopy.mlPolicyHint}</small> : null}
+            <div className="intent-configure__policy-options" role="radiogroup" aria-label={inputCopy.countPolicy}>
               {[
-                ["minimize", `${targetCount}개 이하로 최대한 적게`],
-                ["near", `${targetCount}개에 가깝게`],
-                ["exact", `무조건 ${targetCount}개`],
+                ["minimize", formatIntentConfigureInputText(inputCopy.minimizePolicy, { count: targetCount })],
+                ["near", formatIntentConfigureInputText(inputCopy.nearPolicy, { count: targetCount })],
+                ["exact", formatIntentConfigureInputText(inputCopy.exactPolicy, { count: targetCount })],
               ].map(([value, label]) => (
                 <label key={value}>
                   <input
@@ -3390,28 +3427,28 @@ export function IntentConfigurePage() {
           {isMlConfigureNluType(nluType) ? (
             <div className="intent-configure__settings-entry">
               <button type="button" className="secondary-action" onClick={() => setMlSeedIntentOpen(true)} disabled={operatingVersion}>
-                ML 기준 의도 입력
+                {inputCopy.seedIntentEntry}
               </button>
               <span>
                 {mlSeedIntentCount > 0
-                  ? `기준 의도 ${mlSeedIntentCount}개`
-                  : "기준 의도 없음 · 세밀 후보 중심"}
+                  ? formatIntentConfigureInputText(inputCopy.seedIntentCount, { count: mlSeedIntentCount })
+                  : inputCopy.seedIntentNone}
               </span>
             </div>
           ) : null}
           {canUseConfigureSettings ? (
             <div className="intent-configure__settings-entry">
               <button type="button" className="secondary-action" onClick={() => setSettingsOpen(true)}>
-                NLU 기준 / 가중치 설정
+                {inputCopy.settingsTitle}
               </button>
-              <span>{recommendedCriteria.label} · {recommendedCriteria.intentCount}개 의도 기준</span>
+              <span>{formatIntentConfigureInputText(inputCopy.settingsSummary, { label: getIntentConfigureCriteriaLabel(inputCopy, recommendedCriteria.label), count: recommendedCriteria.intentCount })}</span>
             </div>
           ) : null}
           {isMlConfigureNluType(nluType) ? (
             <div className="intent-configure__ml-test">
               <div className="intent-configure__ml-test-header">
-                <strong>ML 구성 테스트</strong>
-                <span>현재 의도 후보 기준으로 사용자 발화를 비교합니다.</span>
+                <strong>{inputCopy.mlTestTitle}</strong>
+                <span>{inputCopy.mlTestDescription}</span>
               </div>
               <div className="intent-configure__ml-test-row">
                 <input
@@ -3424,7 +3461,7 @@ export function IntentConfigurePage() {
                       void handleMlConfigureTest();
                     }
                   }}
-                  placeholder="예) 계약 철회할게요"
+                  placeholder={inputCopy.mlTestPlaceholder}
                 />
                 <button
                   type="button"
@@ -3432,19 +3469,19 @@ export function IntentConfigurePage() {
                   onClick={handleMlConfigureTest}
                   disabled={operatingVersion || mlTesting || clusters.length === 0}
                 >
-                  {mlTesting ? "테스트중" : "테스트"}
+                  {mlTesting ? inputCopy.testing : inputCopy.test}
                 </button>
               </div>
               {mlTestResult ? (
                 <div className="intent-configure__ml-test-result">
                   <div className="intent-configure__ml-test-tokens">
-                    {mlTestResult.tokens.length > 0 ? mlTestResult.tokens.map((token) => <span key={token}>{token}</span>) : <span>토큰 없음</span>}
+                    {mlTestResult.tokens.length > 0 ? mlTestResult.tokens.map((token) => <span key={token}>{token}</span>) : <span>{inputCopy.noTokens}</span>}
                   </div>
                   <div className="intent-configure__ml-test-candidates">
                     {mlTestResult.candidates.map((candidate, index) => (
                       <div key={candidate.clusterId}>
                         <strong>{index + 1}. {candidate.clusterName}</strong>
-                        <span>{candidate.score.toFixed(3)} · {candidate.utteranceCount}문장</span>
+                        <span>{candidate.score.toFixed(3)} · {formatIntentConfigureInputText(inputCopy.sentenceCount, { count: candidate.utteranceCount })}</span>
                         <small>{candidate.matchedUtterance}</small>
                       </div>
                     ))}
@@ -3458,8 +3495,8 @@ export function IntentConfigurePage() {
         <section className="intent-configure__panel intent-configure__panel--result">
           <div className="intent-configure__panel-header">
             <div className="intent-configure__panel-title">
-              <strong>의도 후보</strong>
-              {selectedClusterIds.length > 0 ? <span>{selectedClusterIds.length}개 선택</span> : null}
+              <strong>{inputCopy.intentCandidates}</strong>
+              {selectedClusterIds.length > 0 ? <span>{formatIntentConfigureInputText(inputCopy.selectedCount, { count: selectedClusterIds.length })}</span> : null}
             </div>
             <div className="intent-configure__panel-actions">
               <button
@@ -3468,10 +3505,10 @@ export function IntentConfigurePage() {
                 onClick={mergeSelectedClusters}
                 disabled={operatingVersion || selectedClusterIds.length < 2}
               >
-                선택 병합
+                {inputCopy.mergeSelected}
               </button>
               <button type="button" className="manual-main__action-button" onClick={handleSave} disabled={saving || clusters.length === 0 || operatingVersion}>
-                현재 버전 덮어쓰기
+                {inputCopy.overwriteVersion}
               </button>
             </div>
           </div>
@@ -3486,16 +3523,16 @@ export function IntentConfigurePage() {
                       disabled={operatingVersion}
                       onChange={(event) => toggleSelectedCluster(cluster.id, event.target.checked)}
                     />
-                    <strong>그룹 {index + 1}</strong>
+                    <strong>{formatIntentConfigureInputText(inputCopy.group, { index: index + 1 })}</strong>
                   </label>
-                  <span>{cluster.utterances.length}문장</span>
+                  <span>{formatIntentConfigureInputText(inputCopy.sentenceCount, { count: cluster.utterances.length })}</span>
                 </div>
                 <label>
-                  <span>의도명</span>
+                  <span>{inputCopy.intentName}</span>
                   <input value={cluster.name} onChange={(event) => updateCluster(cluster.id, { name: event.target.value })} />
                 </label>
                 <label>
-                  <span>답변</span>
+                  <span>{inputCopy.answer}</span>
                   <textarea value={cluster.answer} onChange={(event) => updateCluster(cluster.id, { answer: event.target.value })} />
                 </label>
                 <div className="intent-configure__utterances">
@@ -3505,12 +3542,12 @@ export function IntentConfigurePage() {
             )) : (
               <div className="intent-configure__empty">
                 {classifying
-                  ? classifyProgressMessage || "자동 구성을 실행 중입니다. 완료될 때까지 기다려주세요."
+                  ? classifyProgressMessage || inputCopy.emptyAutoConfiguring
                   : ragConfiguring
-                    ? ragConfigureStep || "답변 문서 구성을 실행 중입니다. 완료될 때까지 기다려주세요."
+                    ? ragConfigureStep || inputCopy.emptyRagConfiguring
                     : ragAnswerMode
-                      ? "답변 텍스트 또는 PDF를 입력하고 RAG 문서 구성을 실행하세요."
-                      : "학습문장을 입력하고 자동 구성을 실행하세요."}
+                      ? inputCopy.emptyRagPrompt
+                      : inputCopy.emptyUtterancePrompt}
               </div>
             )}
           </div>
@@ -3527,8 +3564,8 @@ export function IntentConfigurePage() {
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header className="intent-configure-settings-modal__header">
-              <h2 id="intent-configure-seed-title">ML 기준 의도 입력</h2>
-              <button type="button" aria-label="닫기" onClick={() => setMlSeedIntentOpen(false)}>
+              <h2 id="intent-configure-seed-title">{inputCopy.seedIntentEntry}</h2>
+              <button type="button" aria-label={inputCopy.close} onClick={() => setMlSeedIntentOpen(false)}>
                 ×
               </button>
             </header>
@@ -3536,11 +3573,11 @@ export function IntentConfigurePage() {
               <div className="intent-configure__seed-modal-panel">
                 <div className="intent-configure__criteria-header">
                   <div className="intent-configure__criteria-title">
-                    <strong>기준 의도 일괄 입력</strong>
-                    <span>줄마다 의도명과 대표발화를 입력합니다. 확신 있는 문장만 해당 기준 의도에 배정합니다.</span>
+                    <strong>{inputCopy.seedBulkTitle}</strong>
+                    <span>{inputCopy.seedBulkDescription}</span>
                   </div>
                   <button type="button" className="secondary-action" onClick={loadMlSeedIntentsFromCurrentVersion} disabled={operatingVersion}>
-                    현재 의도 불러오기
+                    {inputCopy.loadCurrentIntents}
                   </button>
                 </div>
                 <textarea
@@ -3548,29 +3585,25 @@ export function IntentConfigurePage() {
                   value={mlSeedIntentText}
                   disabled={operatingVersion}
                   onChange={(event) => setMlSeedIntentText(event.target.value)}
-                  placeholder={
-                    "해지요청 : 해약 할겁니다, 계약 철회할게요\n" +
-                    "무동의 계약 : 가입한적이 없습니다, 딸이 가입했다고 하던데, 제가 운전자 계약이 있나요\n" +
-                    "발신자 확인(삼성생명 보험인가요, 누구시죠, 어디서 전화하신거죠)"
-                  }
+                  placeholder={inputCopy.seedPlaceholder}
                 />
                 <div className="intent-configure__seed-format">
-                  <span>입력 형식</span>
-                  <code>의도명 : 대표발화1, 대표발화2</code>
-                  <code>의도명(대표발화1, 대표발화2)</code>
+                  <span>{inputCopy.inputFormat}</span>
+                  <code>{inputCopy.seedFormatColon}</code>
+                  <code>{inputCopy.seedFormatParentheses}</code>
                 </div>
                 <div className="intent-configure__seed-modal-footer">
                   <span>
                     {mlSeedIntentText.trim()
-                      ? `인식된 기준 의도 ${mlSeedIntentCount}개`
-                      : "기준 의도를 입력하지 않으면 ML이 세밀한 후보를 생성합니다."}
+                      ? formatIntentConfigureInputText(inputCopy.recognizedSeedCount, { count: mlSeedIntentCount })
+                      : inputCopy.seedEmptyHint}
                   </span>
                   <div>
                     <button type="button" className="secondary-action" onClick={() => setMlSeedIntentOpen(false)}>
-                      취소
+                      {inputCopy.cancel}
                     </button>
                     <button type="button" className="primary-action" onClick={applyMlSeedIntentText} disabled={operatingVersion}>
-                      적용
+                      {inputCopy.apply}
                     </button>
                   </div>
                 </div>
@@ -3590,8 +3623,8 @@ export function IntentConfigurePage() {
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header className="intent-configure-settings-modal__header">
-              <h2 id="intent-configure-settings-title">NLU 기준 / 가중치 설정</h2>
-              <button type="button" aria-label="닫기" onClick={() => setSettingsOpen(false)}>
+              <h2 id="intent-configure-settings-title">{inputCopy.settingsTitle}</h2>
+              <button type="button" aria-label={inputCopy.close} onClick={() => setSettingsOpen(false)}>
                 ×
               </button>
             </header>
@@ -3600,8 +3633,8 @@ export function IntentConfigurePage() {
                 <div className="intent-configure__criteria">
                   <div className="intent-configure__criteria-header">
                     <div className="intent-configure__criteria-title">
-                      <strong>구성 사전 반영 제안</strong>
-                      <span>선택한 항목은 여기서 바로 현재 버전 사전에 등록됩니다.</span>
+                      <strong>{inputCopy.dictionaryProposal}</strong>
+                      <span>{inputCopy.dictionaryApplyDescription}</span>
                     </div>
                     <button
                       type="button"
@@ -3613,14 +3646,14 @@ export function IntentConfigurePage() {
                         selectedDictionarySuggestionIds.length === 0
                       }
                     >
-                      사전에 등록
+                      {inputCopy.registerDictionary}
                     </button>
                   </div>
                   {visibleDictionarySuggestions.length > 0 ? (
                     <div className="intent-configure__domain-candidates">
                       <div className="intent-configure__domain-candidates-header">
-                        <strong>사전 등록 제안</strong>
-                        <span>선택한 제안은 대표어와 동의어로 추가됩니다.</span>
+                        <strong>{inputCopy.dictionarySuggestionsTitle}</strong>
+                        <span>{inputCopy.dictionarySuggestionsDescription}</span>
                       </div>
                       <div className="intent-configure__domain-candidates-list">
                         {visibleDictionarySuggestions.map((suggestion) => (
@@ -3633,7 +3666,7 @@ export function IntentConfigurePage() {
                             />
                             <span>
                               {suggestion.word}
-                              <small>동의어: {suggestion.synonyms.join(", ")}</small>
+                              <small>{formatIntentConfigureInputText(inputCopy.synonyms, { items: suggestion.synonyms.join(", ") })}</small>
                             </span>
                           </label>
                         ))}
@@ -3644,17 +3677,17 @@ export function IntentConfigurePage() {
               ) : null}
               <div className="intent-configure__criteria">
                 <div className="intent-configure__criteria-header">
-                  <strong>추천 NLU 판정 기준</strong>
-                  <span>{recommendedCriteria.label} · {recommendedCriteria.intentCount}개 의도 기준</span>
+                  <strong>{inputCopy.recommendedNluCriteria}</strong>
+                  <span>{formatIntentConfigureInputText(inputCopy.settingsSummary, { label: getIntentConfigureCriteriaLabel(inputCopy, recommendedCriteria.label), count: recommendedCriteria.intentCount })}</span>
                 </div>
                 <div className="intent-configure__criteria-grid">
-                  <span>현재 Cut-off</span>
+                  <span>{inputCopy.currentCutoff}</span>
                   <strong>{formatCriteriaScore(versionSettings.conversationDefaults.ml.cutOffScore)}</strong>
-                  <span>추천 Cut-off</span>
+                  <span>{inputCopy.recommendedCutoff}</span>
                   <strong>{formatCriteriaScore(recommendedCriteria.cutOffScore)}</strong>
-                  <span>현재 유사의도</span>
+                  <span>{inputCopy.currentSimilarIntent}</span>
                   <strong>{formatCriteriaScore(versionSettings.conversationDefaults.ml.similarIntentScore)}</strong>
-                  <span>추천 유사의도</span>
+                  <span>{inputCopy.recommendedSimilarIntent}</span>
                   <strong>{formatCriteriaScore(recommendedCriteria.similarIntentScore)}</strong>
                 </div>
                 <button
@@ -3663,38 +3696,38 @@ export function IntentConfigurePage() {
                   onClick={applyRecommendedCriteria}
                   disabled={saving || criteriaSaving || operatingVersion}
                 >
-                  {criteriaSaving ? "적용중" : "추천값 적용"}
+                  {criteriaSaving ? inputCopy.applying : inputCopy.applyRecommended}
                 </button>
               </div>
               <div className="intent-configure__scoring">
                   <div className="intent-configure__scoring-header">
-                    <strong>자동분류 가중치</strong>
+                    <strong>{inputCopy.autoClassificationWeights}</strong>
                     <div>
                       <button type="button" className="secondary-action" onClick={applyRecommendedConfigureScoring} disabled={saving || operatingVersion}>
-                        엔진 추천값 적용
+                        {inputCopy.applyEngineRecommended}
                       </button>
                       <button type="button" className="secondary-action" onClick={saveScoringToBotSettings} disabled={saving}>
-                        봇 설정에 저장
+                        {inputCopy.saveBotSettings}
                       </button>
                     </div>
                   </div>
                   <div className="intent-configure__criteria-grid">
-                    <span>추천 사전</span>
+                    <span>{inputCopy.recommendedDictionary}</span>
                     <strong>{formatCriteriaScore(recommendedConfigureScoring.dictionaryWeight)}</strong>
-                    <span>추천 개체</span>
+                    <span>{inputCopy.recommendedEntity}</span>
                     <strong>{formatCriteriaScore(recommendedConfigureScoring.entityWeight)}</strong>
-                    <span>추천 글자</span>
+                    <span>{inputCopy.recommendedGram}</span>
                     <strong>{formatCriteriaScore(recommendedConfigureScoring.gramWeight)}</strong>
-                    <span>추천 대표어</span>
+                    <span>{inputCopy.recommendedKey}</span>
                     <strong>{formatCriteriaScore(recommendedConfigureScoring.keyMatchScore)}</strong>
                   </div>
                   {[
-                    ["dictionaryWeight", "사전"],
-                    ["entityWeight", "개체"],
-                    ["wordWeight", "명사/동사"],
-                    ["gramWeight", "글자"],
-                    ["particleEndingWeight", "조사/어미"],
-                    ["keyMatchScore", "대표어 최소"],
+                    ["dictionaryWeight", inputCopy.dictionaryWeight],
+                    ["entityWeight", inputCopy.entityWeight],
+                    ["wordWeight", inputCopy.wordWeight],
+                    ["gramWeight", inputCopy.gramWeight],
+                    ["particleEndingWeight", inputCopy.particleEndingWeight],
+                    ["keyMatchScore", inputCopy.keyMatchScore],
                   ].map(([key, label]) => (
                     <label key={key}>
                       <span>{label}</span>
