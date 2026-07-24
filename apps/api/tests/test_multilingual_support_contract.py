@@ -694,3 +694,16 @@ def test_intent_editor_dialog_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, IntentEditorCatalog>" in catalog_source
+
+def test_intent_configure_input_panel_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert "INTENT_CONFIGURE_INPUT_CATALOGS[uiLanguage]" in page_source
+    assert "inputCopy.operatingVersionWarning" in page_source
+    assert "inputCopy.utterancePanelTitle" in page_source
+    assert "formatIntentConfigureInputText" in page_source
+    assert '>학습문장 입력<' not in page_source
+    assert 'aria-label="분류 수 기준"' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, IntentConfigureInputCatalog>" in catalog_source
