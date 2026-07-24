@@ -1,0 +1,61 @@
+import type { SupportedLanguage } from "@/lib/language";
+
+export type IntentConfigureInputCatalog = {
+  loadingTitle: string;
+  operatingVersionWarning: string;
+  ragPanelTitle: string;
+  utterancePanelTitle: string;
+  engineSummary: string;
+  configureEngine: string;
+  configureModel: string;
+  dictionaryProposal: string;
+  dictionaryProposalCount: string;
+  latestDictionaryNote: string;
+  text: string;
+  answerText: string;
+  answerTextPlaceholder: string;
+  pdfFile: string;
+  documentTitle: string;
+  pdfTitlePlaceholder: string;
+  textTitlePlaceholder: string;
+  llmRagEmbeddingDescription: string;
+  embeddingFallback: string;
+  utterancePlaceholder: string;
+  targetIntentCount: string;
+  configuring: string;
+  ragConfigure: string;
+  autoConfigure: string;
+  countPolicy: string;
+  mlPolicyHint: string;
+  minimizePolicy: string;
+  nearPolicy: string;
+  exactPolicy: string;
+};
+
+export const INTENT_CONFIGURE_INPUT_CATALOGS = {
+  ko: {
+    loadingTitle: "구성 화면을 불러오는 중입니다.", operatingVersionWarning: "운영버전은 구성 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.", ragPanelTitle: "RAG 답변 문서 구성", utterancePanelTitle: "학습문장 입력", engineSummary: "구성용 엔진 · {type} · {model}", configureEngine: "구성 엔진", configureModel: "구성 모델", dictionaryProposal: "구성 사전 반영 제안", dictionaryProposalCount: " · 사전 등록 제안 {count}건", latestDictionaryNote: "자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.", text: "텍스트", answerText: "답변 텍스트", answerTextPlaceholder: "의도 : 계약 해지 요청\n답변 : 고객님, 해지 요청 확인했습니다.", pdfFile: "PDF 파일", documentTitle: "문서 제목", pdfTitlePlaceholder: "임베딩 후 문서에서 인식됩니다.", textTitlePlaceholder: "입력하지 않으면 답변 문서로 저장됩니다.", llmRagEmbeddingDescription: "LLM RAG 답변 방식이므로 선택한 LLM provider/model을 답변 문서 임베딩에도 사용합니다.", embeddingFallback: "선택한 구성 모델 기준으로 답변 문서를 임베딩합니다.", utterancePlaceholder: "학습문장을 줄 단위로 입력하세요.\n예) 상담원 연결해줘\n예) 콜백 예약하고 싶어\n예) 발신자 확인해줘", targetIntentCount: "목표 의도 수", configuring: "구성중", ragConfigure: "RAG 문서 구성", autoConfigure: "자동 구성", countPolicy: "분류 수 기준", mlPolicyHint: "ML은 목표 수를 강제하지 않고, 유사도가 충분한 후보만 병합합니다.", minimizePolicy: "{count}개 이하로 최대한 적게", nearPolicy: "{count}개에 가깝게", exactPolicy: "무조건 {count}개",
+  },
+  en: {
+    loadingTitle: "Loading the configuration screen.", operatingVersionWarning: "Configuration is unavailable for the operating version. Select a non-operating version or work on a copied version.", ragPanelTitle: "Configure RAG Answer Document", utterancePanelTitle: "Enter Training Sentences", engineSummary: "Configuration engine · {type} · {model}", configureEngine: "Configuration Engine", configureModel: "Configuration Model", dictionaryProposal: "Dictionary Suggestions", dictionaryProposalCount: " · {count} suggestions", latestDictionaryNote: "Automatic configuration uses the latest dictionary in the current version.", text: "Text", answerText: "Answer Text", answerTextPlaceholder: "Intent: Contract cancellation request\nAnswer: We have received your cancellation request.", pdfFile: "PDF File", documentTitle: "Document Title", pdfTitlePlaceholder: "Detected from the document after embedding.", textTitlePlaceholder: "Saved as an answer document when left blank.", llmRagEmbeddingDescription: "In LLM RAG answer mode, the selected LLM provider/model is also used to embed the answer document.", embeddingFallback: "Embeds the answer document with the selected configuration model.", utterancePlaceholder: "Enter one training sentence per line.\nExample: Connect me to an agent\nExample: I want to schedule a callback\nExample: Tell me who is calling", targetIntentCount: "Target Intent Count", configuring: "Configuring", ragConfigure: "Configure RAG Document", autoConfigure: "Auto Configure", countPolicy: "Classification Count Policy", mlPolicyHint: "ML does not force the target count and merges only sufficiently similar candidates.", minimizePolicy: "Minimize to {count} or fewer", nearPolicy: "Keep close to {count}", exactPolicy: "Exactly {count}",
+  },
+  "zh-CN": {
+    loadingTitle: "正在加载配置页面。", operatingVersionWarning: "运行版本无法执行配置。请选择非运行版本或在复制版本中操作。", ragPanelTitle: "配置 RAG 回答文档", utterancePanelTitle: "输入训练语句", engineSummary: "配置引擎 · {type} · {model}", configureEngine: "配置引擎", configureModel: "配置模型", dictionaryProposal: "配置词典建议", dictionaryProposalCount: " · {count}条词典建议", latestDictionaryNote: "自动配置使用当前版本的最新词典。", text: "文本", answerText: "回答文本", answerTextPlaceholder: "意图：合同解约请求\n回答：已收到您的解约请求。", pdfFile: "PDF 文件", documentTitle: "文档标题", pdfTitlePlaceholder: "嵌入后从文档中识别。", textTitlePlaceholder: "留空时保存为回答文档。", llmRagEmbeddingDescription: "LLM RAG 回答模式也会使用所选 LLM provider/model 嵌入回答文档。", embeddingFallback: "使用所选配置模型嵌入回答文档。", utterancePlaceholder: "请每行输入一条训练语句。\n例）转接客服\n例）我想预约回电\n例）请告诉我来电人", targetIntentCount: "目标意图数", configuring: "配置中", ragConfigure: "配置 RAG 文档", autoConfigure: "自动配置", countPolicy: "分类数量标准", mlPolicyHint: "ML 不强制目标数量，仅合并相似度充分的候选项。", minimizePolicy: "尽量减少到 {count} 个以下", nearPolicy: "接近 {count} 个", exactPolicy: "固定为 {count} 个",
+  },
+  ja: {
+    loadingTitle: "構成画面を読み込んでいます。", operatingVersionWarning: "運用バージョンでは構成作業を実行できません。非運用バージョンまたはコピーしたバージョンで作業してください。", ragPanelTitle: "RAG回答文書の構成", utterancePanelTitle: "学習文の入力", engineSummary: "構成エンジン · {type} · {model}", configureEngine: "構成エンジン", configureModel: "構成モデル", dictionaryProposal: "構成辞書の提案", dictionaryProposalCount: " · 辞書登録候補 {count}件", latestDictionaryNote: "自動構成では現在のバージョンの最新辞書を使用します。", text: "テキスト", answerText: "回答テキスト", answerTextPlaceholder: "意図：契約解約の依頼\n回答：解約のご依頼を受け付けました。", pdfFile: "PDFファイル", documentTitle: "文書タイトル", pdfTitlePlaceholder: "埋め込み後に文書から認識されます。", textTitlePlaceholder: "未入力の場合は回答文書として保存されます。", llmRagEmbeddingDescription: "LLM RAG回答方式では、選択したLLM provider/modelを回答文書の埋め込みにも使用します。", embeddingFallback: "選択した構成モデルで回答文書を埋め込みます。", utterancePlaceholder: "学習文を1行ずつ入力してください。\n例）担当者につないで\n例）折り返しを予約したい\n例）発信者を確認して", targetIntentCount: "目標意図数", configuring: "構成中", ragConfigure: "RAG文書を構成", autoConfigure: "自動構成", countPolicy: "分類数の基準", mlPolicyHint: "MLは目標数を強制せず、十分に類似した候補だけを統合します。", minimizePolicy: "{count}件以下に最小化", nearPolicy: "{count}件に近づける", exactPolicy: "必ず{count}件",
+  },
+  vi: {
+    loadingTitle: "Đang tải màn hình cấu hình.", operatingVersionWarning: "Không thể cấu hình phiên bản đang vận hành. Hãy chọn phiên bản chưa vận hành hoặc làm việc trên bản sao.", ragPanelTitle: "Cấu hình tài liệu trả lời RAG", utterancePanelTitle: "Nhập câu huấn luyện", engineSummary: "Engine cấu hình · {type} · {model}", configureEngine: "Engine cấu hình", configureModel: "Mô hình cấu hình", dictionaryProposal: "Đề xuất từ điển", dictionaryProposalCount: " · {count} đề xuất", latestDictionaryNote: "Cấu hình tự động dùng từ điển mới nhất của phiên bản hiện tại.", text: "Văn bản", answerText: "Văn bản trả lời", answerTextPlaceholder: "Ý định: Yêu cầu hủy hợp đồng\nTrả lời: Chúng tôi đã nhận yêu cầu hủy của bạn.", pdfFile: "Tệp PDF", documentTitle: "Tiêu đề tài liệu", pdfTitlePlaceholder: "Được nhận diện từ tài liệu sau khi embedding.", textTitlePlaceholder: "Để trống để lưu thành tài liệu trả lời.", llmRagEmbeddingDescription: "Ở chế độ trả lời LLM RAG, provider/model LLM đã chọn cũng được dùng để embedding tài liệu trả lời.", embeddingFallback: "Embedding tài liệu trả lời bằng mô hình cấu hình đã chọn.", utterancePlaceholder: "Nhập mỗi câu huấn luyện trên một dòng.\nVí dụ: Kết nối tôi với tư vấn viên\nVí dụ: Tôi muốn đặt lịch gọi lại\nVí dụ: Cho tôi biết người gọi", targetIntentCount: "Số ý định mục tiêu", configuring: "Đang cấu hình", ragConfigure: "Cấu hình tài liệu RAG", autoConfigure: "Tự động cấu hình", countPolicy: "Tiêu chí số lượng phân loại", mlPolicyHint: "ML không ép số lượng mục tiêu và chỉ gộp các ứng viên đủ tương đồng.", minimizePolicy: "Giảm tối đa còn {count} hoặc ít hơn", nearPolicy: "Gần {count}", exactPolicy: "Đúng {count}",
+  },
+  fr: {
+    loadingTitle: "Chargement de l’écran de configuration.", operatingVersionWarning: "La configuration est indisponible pour la version en exploitation. Sélectionnez une autre version ou travaillez sur une copie.", ragPanelTitle: "Configurer le document de réponse RAG", utterancePanelTitle: "Saisir les phrases d’entraînement", engineSummary: "Moteur de configuration · {type} · {model}", configureEngine: "Moteur de configuration", configureModel: "Modèle de configuration", dictionaryProposal: "Suggestions de dictionnaire", dictionaryProposalCount: " · {count} suggestions", latestDictionaryNote: "La configuration automatique utilise le dernier dictionnaire de la version actuelle.", text: "Texte", answerText: "Texte de réponse", answerTextPlaceholder: "Intention : demande de résiliation\nRéponse : votre demande de résiliation a été reçue.", pdfFile: "Fichier PDF", documentTitle: "Titre du document", pdfTitlePlaceholder: "Détecté dans le document après l’intégration.", textTitlePlaceholder: "Enregistré comme document de réponse si ce champ reste vide.", llmRagEmbeddingDescription: "En mode de réponse LLM RAG, le provider/model LLM sélectionné sert aussi à intégrer le document de réponse.", embeddingFallback: "Intègre le document de réponse avec le modèle de configuration sélectionné.", utterancePlaceholder: "Saisissez une phrase d’entraînement par ligne.\nExemple : Mettez-moi en relation avec un conseiller\nExemple : Je souhaite planifier un rappel\nExemple : Indiquez-moi qui appelle", targetIntentCount: "Nombre cible d’intentions", configuring: "Configuration", ragConfigure: "Configurer le document RAG", autoConfigure: "Configuration automatique", countPolicy: "Critère du nombre de classes", mlPolicyHint: "ML n’impose pas le nombre cible et ne fusionne que les candidats suffisamment similaires.", minimizePolicy: "Réduire à {count} ou moins", nearPolicy: "Rester proche de {count}", exactPolicy: "Exactement {count}",
+  },
+  de: {
+    loadingTitle: "Konfigurationsansicht wird geladen.", operatingVersionWarning: "Die Betriebsversion kann nicht konfiguriert werden. Wählen Sie eine Nicht-Betriebsversion oder arbeiten Sie mit einer Kopie.", ragPanelTitle: "RAG-Antwortdokument konfigurieren", utterancePanelTitle: "Trainingssätze eingeben", engineSummary: "Konfigurations-Engine · {type} · {model}", configureEngine: "Konfigurations-Engine", configureModel: "Konfigurationsmodell", dictionaryProposal: "Wörterbuchvorschläge", dictionaryProposalCount: " · {count} Vorschläge", latestDictionaryNote: "Die automatische Konfiguration verwendet das neueste Wörterbuch der aktuellen Version.", text: "Text", answerText: "Antworttext", answerTextPlaceholder: "Intent: Vertragskündigung\nAntwort: Ihre Kündigungsanfrage ist eingegangen.", pdfFile: "PDF-Datei", documentTitle: "Dokumenttitel", pdfTitlePlaceholder: "Wird nach dem Einbetten aus dem Dokument erkannt.", textTitlePlaceholder: "Wird leer als Antwortdokument gespeichert.", llmRagEmbeddingDescription: "Im LLM-RAG-Antwortmodus wird der gewählte LLM provider/model auch zum Einbetten des Antwortdokuments verwendet.", embeddingFallback: "Bettet das Antwortdokument mit dem gewählten Konfigurationsmodell ein.", utterancePlaceholder: "Pro Zeile einen Trainingssatz eingeben.\nBeispiel: Mit einem Berater verbinden\nBeispiel: Rückruf vereinbaren\nBeispiel: Anrufer nennen", targetIntentCount: "Zielanzahl Intents", configuring: "Konfiguration läuft", ragConfigure: "RAG-Dokument konfigurieren", autoConfigure: "Automatisch konfigurieren", countPolicy: "Kriterium für die Klassenanzahl", mlPolicyHint: "ML erzwingt die Zielanzahl nicht und führt nur ausreichend ähnliche Kandidaten zusammen.", minimizePolicy: "Auf höchstens {count} minimieren", nearPolicy: "Nahe bei {count}", exactPolicy: "Genau {count}",
+  },
+} satisfies Record<SupportedLanguage, IntentConfigureInputCatalog>;
+
+export function formatIntentConfigureInputText(template: string, values: Record<string, string | number>) {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
+}
