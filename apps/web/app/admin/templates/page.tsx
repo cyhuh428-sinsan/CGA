@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
 import { ADMIN_TEMPLATE_CATALOGS, formatAdminTemplateText } from "@/lib/i18n/admin-templates";
+import { ADMIN_TEMPLATE_DEFAULT_CATALOGS, type AdminTemplateDefaultCatalog } from "@/lib/i18n/admin-template-defaults";
 import { SUPPORTED_LANGUAGES } from "@/lib/language";
 import {
   LIST_PAGE_SIZE_OPTIONS,
@@ -48,21 +49,13 @@ function isKakaoTemplateChannel(value: string) {
   return value.trim().toUpperCase() === "KAKAO";
 }
 
-const TEMPLATE_RENDERER_DEFAULTS: Record<string, { itemTypes: string; description: string }> = {
-  text: { itemTypes: "text", description: "기본 텍스트 메시지" },
-  html: { itemTypes: "html", description: "HTML 메시지" },
-  card: { itemTypes: "title, imageUrl, description", description: "카드형 메시지" },
-  table: { itemTypes: "table", description: "테이블 메시지" },
-  button: { itemTypes: "button", description: "버튼 메시지" },
-  "link-button": { itemTypes: "label, url", description: "링크 버튼 메시지" },
-  form: { itemTypes: "formMessage", description: "Rich Form 메시지" },
-  carousel: { itemTypes: "carousel", description: "캐러셀 메시지" },
-  dtmf: { itemTypes: "shortText, stepper, stepper", description: "Voice Bot DTMF 메시지" },
-  "form-a-card": { itemTypes: "adaptiveCard", description: "Adaptive Cards 메시지" },
-  "simple-text": { itemTypes: "text", description: "카카오 기본 텍스트 메시지" },
-  "quick-reply": { itemTypes: "text, quickReplies", description: "카카오 빠른 답장 메시지" },
-  "basic-card": { itemTypes: "title, description, imageUrl, buttons", description: "카카오 기본 카드 메시지" },
-  "list-card": { itemTypes: "header, items", description: "카카오 목록형 카드 메시지" },
+const TEMPLATE_RENDERER_DEFAULTS: Record<string, { itemTypes: string }> = {
+  text: { itemTypes: "text" }, html: { itemTypes: "html" }, card: { itemTypes: "title, imageUrl, description" },
+  table: { itemTypes: "table" }, button: { itemTypes: "button" }, "link-button": { itemTypes: "label, url" },
+  form: { itemTypes: "formMessage" }, carousel: { itemTypes: "carousel" }, dtmf: { itemTypes: "shortText, stepper, stepper" },
+  "form-a-card": { itemTypes: "adaptiveCard" }, "simple-text": { itemTypes: "text" },
+  "quick-reply": { itemTypes: "text, quickReplies" }, "basic-card": { itemTypes: "title, description, imageUrl, buttons" },
+  "list-card": { itemTypes: "header, items" },
 };
 
 function normalizeTemplateDraftByChannel(
@@ -74,6 +67,7 @@ function normalizeTemplateDraftByChannel(
     description: string;
     status: TemplateStatus;
   },
+  rendererDefaults: AdminTemplateDefaultCatalog,
 ) {
   const allowedRendererTypes = isKakaoTemplateChannel(draft.channel_code)
     ? ["simple-text", "quick-reply", "basic-card", "list-card", "carousel"]
@@ -88,7 +82,7 @@ function normalizeTemplateDraftByChannel(
     ...draft,
     renderer_type: normalizedRendererType,
     item_types: defaults?.itemTypes ?? draft.item_types,
-    description: draft.description.trim() ? draft.description : defaults?.description ?? draft.description,
+    description: draft.description.trim() ? draft.description : rendererDefaults[normalizedRendererType as keyof AdminTemplateDefaultCatalog] ?? draft.description,
   };
 }
 
@@ -176,6 +170,7 @@ function parseCsv(text: string) {
 export default function AdminTemplatesPage() {
   const {language:uiLanguage}=useI18n();
   const copy=ADMIN_TEMPLATE_CATALOGS[uiLanguage];
+  const rendererDefaults=ADMIN_TEMPLATE_DEFAULT_CATALOGS[uiLanguage];
   const locale=SUPPORTED_LANGUAGES.find((item)=>item.code===uiLanguage)?.intlLocale??"ko-KR";
   const [token, setToken] = useState("");
   const [templates, setTemplates] = useState<AdminTemplateItem[]>([]);
@@ -270,7 +265,7 @@ export default function AdminTemplatesPage() {
           if (current.channel_code || !channels[0]) {
             return current;
           }
-          return normalizeTemplateDraftByChannel({ ...current, channel_code: channels[0].code });
+          return normalizeTemplateDraftByChannel({ ...current, channel_code: channels[0].code }, rendererDefaults);
         });
       })
       .catch((error) => {
@@ -282,7 +277,7 @@ export default function AdminTemplatesPage() {
     return () => {
       ignore = true;
     };
-  }, [copy.channelsFailed, token]);
+  }, [copy.channelsFailed, rendererDefaults, token]);
 
   async function reload() {
     if (!token) {
@@ -322,7 +317,7 @@ export default function AdminTemplatesPage() {
       item_types: "text",
       description: "",
       status: "active",
-    }));
+    }, rendererDefaults));
     setDialogOpen(true);
   }
 
@@ -526,7 +521,7 @@ export default function AdminTemplatesPage() {
 
   useEffect(() => {
     setDraft((current) => {
-      const normalized = normalizeTemplateDraftByChannel(current);
+      const normalized = normalizeTemplateDraftByChannel(current, rendererDefaults);
       if (
         normalized.renderer_type === current.renderer_type &&
         normalized.item_types === current.item_types &&
@@ -536,7 +531,7 @@ export default function AdminTemplatesPage() {
       }
       return normalized;
     });
-  }, [draft.channel_code]);
+  }, [draft.channel_code, rendererDefaults]);
 
   useEffect(() => {
     setPage(1);
@@ -712,7 +707,7 @@ export default function AdminTemplatesPage() {
                     value={draft.channel_code}
                     onChange={(event) =>
                       setDraft((current) =>
-                        normalizeTemplateDraftByChannel({ ...current, channel_code: event.target.value }),
+                        normalizeTemplateDraftByChannel({ ...current, channel_code: event.target.value }, rendererDefaults),
                       )
                     }
                   >
@@ -751,7 +746,9 @@ export default function AdminTemplatesPage() {
                         ...current,
                         renderer_type: nextRendererType,
                         item_types: defaults?.itemTypes ?? current.item_types,
-                        description: current.description.trim() ? current.description : defaults?.description ?? current.description,
+                        description: current.description.trim()
+                          ? current.description
+                          : rendererDefaults[nextRendererType as keyof AdminTemplateDefaultCatalog] ?? current.description,
                       };
                     })
                   }
