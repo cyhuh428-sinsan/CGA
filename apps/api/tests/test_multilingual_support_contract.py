@@ -707,3 +707,15 @@ def test_intent_configure_input_panel_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, IntentConfigureInputCatalog>" in catalog_source
+
+def test_intent_configure_candidate_panel_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert "inputCopy.mlTestTitle" in page_source
+    assert "inputCopy.intentCandidates" in page_source
+    assert "inputCopy.emptyUtterancePrompt" in page_source
+    assert "inputCopy.overwriteVersion" in page_source
+    assert '<strong>ML 구성 테스트</strong>' not in page_source
+    assert '<strong>의도 후보</strong>' not in page_source
+    assert "mlTestTitle: string" in catalog_source
+    assert "emptyUtterancePrompt: string" in catalog_source
