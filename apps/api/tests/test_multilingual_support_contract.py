@@ -483,3 +483,11 @@ def test_admin_group_create_uses_selected_ui_language() -> None:
     assert "ADMIN_GROUPS_CATALOGS[uiLanguage]" in page_source
     assert "copy.createForm.title" in page_source
     assert "copy.createForm.submitError" in page_source
+
+
+def test_admin_group_detail_uses_selected_ui_language() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/groups/[groupId]/page.tsx").read_text(encoding="utf-8")
+    assert "ADMIN_GROUPS_CATALOGS[uiLanguage]" in page_source
+    assert "copy.detailForm.title" in page_source
+    assert "copy.statuses[status]" in page_source
+    assert "new Intl.DateTimeFormat(uiLanguage" in page_source
