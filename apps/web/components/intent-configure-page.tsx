@@ -3418,8 +3418,8 @@ export function IntentConfigurePage() {
           {isMlConfigureNluType(nluType) ? (
             <div className="intent-configure__ml-test">
               <div className="intent-configure__ml-test-header">
-                <strong>ML 구성 테스트</strong>
-                <span>현재 의도 후보 기준으로 사용자 발화를 비교합니다.</span>
+                <strong>{inputCopy.mlTestTitle}</strong>
+                <span>{inputCopy.mlTestDescription}</span>
               </div>
               <div className="intent-configure__ml-test-row">
                 <input
@@ -3432,7 +3432,7 @@ export function IntentConfigurePage() {
                       void handleMlConfigureTest();
                     }
                   }}
-                  placeholder="예) 계약 철회할게요"
+                  placeholder={inputCopy.mlTestPlaceholder}
                 />
                 <button
                   type="button"
@@ -3440,19 +3440,19 @@ export function IntentConfigurePage() {
                   onClick={handleMlConfigureTest}
                   disabled={operatingVersion || mlTesting || clusters.length === 0}
                 >
-                  {mlTesting ? "테스트중" : "테스트"}
+                  {mlTesting ? inputCopy.testing : inputCopy.test}
                 </button>
               </div>
               {mlTestResult ? (
                 <div className="intent-configure__ml-test-result">
                   <div className="intent-configure__ml-test-tokens">
-                    {mlTestResult.tokens.length > 0 ? mlTestResult.tokens.map((token) => <span key={token}>{token}</span>) : <span>토큰 없음</span>}
+                    {mlTestResult.tokens.length > 0 ? mlTestResult.tokens.map((token) => <span key={token}>{token}</span>) : <span>{inputCopy.noTokens}</span>}
                   </div>
                   <div className="intent-configure__ml-test-candidates">
                     {mlTestResult.candidates.map((candidate, index) => (
                       <div key={candidate.clusterId}>
                         <strong>{index + 1}. {candidate.clusterName}</strong>
-                        <span>{candidate.score.toFixed(3)} · {candidate.utteranceCount}문장</span>
+                        <span>{candidate.score.toFixed(3)} · {formatIntentConfigureInputText(inputCopy.sentenceCount, { count: candidate.utteranceCount })}</span>
                         <small>{candidate.matchedUtterance}</small>
                       </div>
                     ))}
@@ -3466,8 +3466,8 @@ export function IntentConfigurePage() {
         <section className="intent-configure__panel intent-configure__panel--result">
           <div className="intent-configure__panel-header">
             <div className="intent-configure__panel-title">
-              <strong>의도 후보</strong>
-              {selectedClusterIds.length > 0 ? <span>{selectedClusterIds.length}개 선택</span> : null}
+              <strong>{inputCopy.intentCandidates}</strong>
+              {selectedClusterIds.length > 0 ? <span>{formatIntentConfigureInputText(inputCopy.selectedCount, { count: selectedClusterIds.length })}</span> : null}
             </div>
             <div className="intent-configure__panel-actions">
               <button
@@ -3476,10 +3476,10 @@ export function IntentConfigurePage() {
                 onClick={mergeSelectedClusters}
                 disabled={operatingVersion || selectedClusterIds.length < 2}
               >
-                선택 병합
+                {inputCopy.mergeSelected}
               </button>
               <button type="button" className="manual-main__action-button" onClick={handleSave} disabled={saving || clusters.length === 0 || operatingVersion}>
-                현재 버전 덮어쓰기
+                {inputCopy.overwriteVersion}
               </button>
             </div>
           </div>
@@ -3494,16 +3494,16 @@ export function IntentConfigurePage() {
                       disabled={operatingVersion}
                       onChange={(event) => toggleSelectedCluster(cluster.id, event.target.checked)}
                     />
-                    <strong>그룹 {index + 1}</strong>
+                    <strong>{formatIntentConfigureInputText(inputCopy.group, { index: index + 1 })}</strong>
                   </label>
-                  <span>{cluster.utterances.length}문장</span>
+                  <span>{formatIntentConfigureInputText(inputCopy.sentenceCount, { count: cluster.utterances.length })}</span>
                 </div>
                 <label>
-                  <span>의도명</span>
+                  <span>{inputCopy.intentName}</span>
                   <input value={cluster.name} onChange={(event) => updateCluster(cluster.id, { name: event.target.value })} />
                 </label>
                 <label>
-                  <span>답변</span>
+                  <span>{inputCopy.answer}</span>
                   <textarea value={cluster.answer} onChange={(event) => updateCluster(cluster.id, { answer: event.target.value })} />
                 </label>
                 <div className="intent-configure__utterances">
@@ -3513,12 +3513,12 @@ export function IntentConfigurePage() {
             )) : (
               <div className="intent-configure__empty">
                 {classifying
-                  ? classifyProgressMessage || "자동 구성을 실행 중입니다. 완료될 때까지 기다려주세요."
+                  ? classifyProgressMessage || inputCopy.emptyAutoConfiguring
                   : ragConfiguring
-                    ? ragConfigureStep || "답변 문서 구성을 실행 중입니다. 완료될 때까지 기다려주세요."
+                    ? ragConfigureStep || inputCopy.emptyRagConfiguring
                     : ragAnswerMode
-                      ? "답변 텍스트 또는 PDF를 입력하고 RAG 문서 구성을 실행하세요."
-                      : "학습문장을 입력하고 자동 구성을 실행하세요."}
+                      ? inputCopy.emptyRagPrompt
+                      : inputCopy.emptyUtterancePrompt}
               </div>
             )}
           </div>
