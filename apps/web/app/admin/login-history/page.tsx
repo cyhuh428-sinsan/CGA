@@ -10,12 +10,13 @@ import { loadAuthSession } from "@/lib/auth";
 import { useI18n } from "@/components/language-provider";
 import { ADMIN_PAGE_CATALOGS } from "@/lib/i18n/admin-pages";
 import { ADMIN_COMMON_CATALOGS, formatAdminText } from "@/lib/i18n/admin-common";
+import type { SupportedLanguage } from "@/lib/language";
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, language: SupportedLanguage) {
   if (!value) {
     return "-";
   }
-  return new Intl.DateTimeFormat("ko-KR", {
+  return new Intl.DateTimeFormat(language, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -84,8 +85,8 @@ export default function AdminLoginHistoryPage() {
               item.group_name,
               item.role_name,
               item.ip_address ?? "-",
-              formatDate(item.login_at),
-              formatDate(item.logout_at),
+              formatDate(item.login_at, language),
+              formatDate(item.logout_at, language),
             ],
           })),
         );
@@ -104,7 +105,7 @@ export default function AdminLoginHistoryPage() {
     return () => {
       ignore = true;
     };
-  }, [appliedFilter, commonCopy.loadFailed, token]);
+  }, [appliedFilter, commonCopy.loadFailed, language, token]);
 
   function handleSearch() {
     setAppliedFilter({

@@ -63,7 +63,7 @@ export default function AdminBotStatusPage() {
         key: bot.id,
         searchText: [bot.group_name, bot.name, bot.id, bot.status, getBotNluLabel(bot)].filter(Boolean).join(" "),
         cells: [
-          <input key={`${bot.id}-check`} type="checkbox" aria-label={`${bot.name} 선택`} />,
+          <input key={`${bot.id}-check`} type="checkbox" aria-label={formatAdminText(commonCopy.selectItem, { name: bot.name })} />,
           bot.group_name || bot.group_code || "-",
           bot.name,
           readString(bot.data_json?.language, "-"),
@@ -73,7 +73,7 @@ export default function AdminBotStatusPage() {
           formatDate(bot.created_at),
         ],
       })),
-    [bots],
+    [bots, commonCopy.selectItem],
   );
 
   return (
