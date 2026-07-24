@@ -669,3 +669,15 @@ def test_entity_value_item_dialog_uses_selected_language() -> None:
     assert "copy.regexTest" in page_source
     assert '"개체값 생성"' not in page_source
     assert '"등록 가능한 정규식입니다."' not in page_source
+
+def test_studio_operations_dashboard_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/operations-dashboard-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/studio-operations-dashboard.ts").read_text(encoding="utf-8")
+    assert "STUDIO_OPERATIONS_DASHBOARD_CATALOGS[language]" in page_source
+    assert "copy.statuses[status]" in page_source
+    assert "copy.roles[role]" in page_source
+    assert "copy.recentUpdates" in page_source
+    assert '"운영 대시보드"' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, StudioOperationsDashboardCatalog>" in catalog_source
