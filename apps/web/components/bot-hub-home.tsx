@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { SimulatorPage } from "@/components/simulator-page";
 import { loadAuthSession } from "@/lib/auth";
 import { resolveApiAssetPublicUrl } from "@/lib/api";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 import {
   activateStudioBotVersion,
   fetchStudioBots,
@@ -26,6 +28,8 @@ function HubProfile({ hub }: { hub: StudioHub }) {
 }
 
 export function BotHubHome({ hubId }: Props) {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   const [hub, setHub] = useState<StudioHub | null>(null);
   const [botsById, setBotsById] = useState<Record<string, StudioBotApiItem>>({});
   const [message, setMessage] = useState("");
@@ -100,7 +104,7 @@ export function BotHubHome({ hubId }: Props) {
   }
 
   if (loading) {
-    return <main className="page"><p className="bot-hub__notice">봇 허브를 불러오는 중입니다...</p></main>;
+    return <main className="page"><p className="bot-hub__notice">{getStudioPageLabel(copy,"봇 허브를 불러오는 중입니다...")}</p></main>;
   }
   if (!hub) {
     return <main className="page"><p className="bot-hub__notice bot-hub__notice--error">{message || "봇 허브를 찾을 수 없습니다."}</p></main>;
@@ -112,7 +116,7 @@ export function BotHubHome({ hubId }: Props) {
         <div className="bot-hub__identity">
           <HubProfile hub={hub} />
           <div>
-            <Link href="/studio/hubs" className="bot-hub__back">봇 허브 목록</Link>
+            <Link href="/studio/hubs" className="bot-hub__back">{getStudioPageLabel(copy,"봇 허브 목록")}</Link>
             <h1>{hub.name}</h1>
             <p>{hub.introduction || `${hub.call_method === "natural" ? "자연어 입력형" : "버튼 선택형"} 봇 허브`}</p>
           </div>
@@ -123,9 +127,9 @@ export function BotHubHome({ hubId }: Props) {
               {training ? "학습 중..." : "봇 허브 학습"}
             </button>
           ) : null}
-          <Link href={`/studio/hubs/${hubId}/retraining`} className="bot-hub__secondary">재학습</Link>
-          <Link href={`/studio/hubs/${hubId}/settings`} className="bot-hub__secondary">설정</Link>
-          <Link href={`/studio/hubs/${hubId}/composition`} className="bot-hub__primary">봇 허브 구성</Link>
+          <Link href={`/studio/hubs/${hubId}/retraining`} className="bot-hub__secondary">{getStudioPageLabel(copy,"재학습")}</Link>
+          <Link href={`/studio/hubs/${hubId}/settings`} className="bot-hub__secondary">{getStudioPageLabel(copy,"설정")}</Link>
+          <Link href={`/studio/hubs/${hubId}/composition`} className="bot-hub__primary">{getStudioPageLabel(copy,"봇 허브 구성")}</Link>
         </div>
       </header>
 
@@ -133,16 +137,16 @@ export function BotHubHome({ hubId }: Props) {
 
       <section className="bot-hub__panel bot-hub__panel--members">
         <div className="bot-hub__panel-title">
-          <h2>봇 허브에 담긴 챗봇 정보 목록</h2>
+          <h2>{getStudioPageLabel(copy, "봇 허브에 담긴 챗봇 정보 목록")}</h2>
           <span>{hub.members.length}개</span>
         </div>
         {hub.members.length === 0 ? (
-          <p className="bot-hub__empty">담긴 봇이 없습니다. 봇 허브 구성을 클릭해 일반 봇을 추가하세요.</p>
+          <p className="bot-hub__empty">{getStudioPageLabel(copy,"담긴 봇이 없습니다. 봇 허브 구성을 클릭해 일반 봇을 추가하세요.")}</p>
         ) : (
           <table className="bot-hub__table">
             <thead>
               <tr>
-                <th>순서</th><th>봇 이름</th><th>표시명</th><th>봇 설명</th><th>운영버전</th><th>학습상태</th><th>학습 완료 시간</th><th>봇 허브 스몰토크</th>
+                <th>{getStudioPageLabel(copy,"순서")}</th><th>{getStudioPageLabel(copy,"봇 이름")}</th><th>{getStudioPageLabel(copy,"표시명")}</th><th>{getStudioPageLabel(copy,"봇 설명")}</th><th>{getStudioPageLabel(copy,"운영버전")}</th><th>{getStudioPageLabel(copy,"학습상태")}</th><th>{getStudioPageLabel(copy,"학습 완료 시간")}</th><th>{getStudioPageLabel(copy, "봇 허브 스몰토크")}</th>
               </tr>
             </thead>
             <tbody>
@@ -179,7 +183,7 @@ export function BotHubHome({ hubId }: Props) {
 
       {simulatorOpen && hub.active_version_id ? (
         <div className="simulator-popup-backdrop" role="presentation">
-          <div className="simulator-popup-shell" role="dialog" aria-modal="true" aria-label="봇 허브 시뮬레이터">
+          <div className="simulator-popup-shell" role="dialog" aria-modal="true" aria-label={getStudioPageLabel(copy,"봇 허브 시뮬레이터")}>
             <SimulatorPage
               embedded
               botIdOverride={hubId}

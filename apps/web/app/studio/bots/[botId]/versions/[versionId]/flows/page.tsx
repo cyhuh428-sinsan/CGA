@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { StudioTablePage } from "@/components/studio-table-page";
+import { StudioPageText, StudioTablePage } from "@/components/studio-table-page";
 import { SortHeaderLabel } from "@/components/sort-header-label";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export default async function FlowListPage({ params }: FlowListPageProps) {
             "52",
             "2026-04-24 14:20",
             <Link key="link" href={`/studio/bots/${botId}/versions/${versionId}/flows/leave-request`}>
-              대화 설계
+              <StudioPageText>대화 설계</StudioPageText>
             </Link>,
           ],
         },
@@ -43,7 +43,7 @@ export default async function FlowListPage({ params }: FlowListPageProps) {
             "23",
             "2026-04-24 12:10",
             <Link key="link" href={`/studio/bots/${botId}/versions/${versionId}/flows/work-hours`}>
-              대화 설계
+              <StudioPageText>대화 설계</StudioPageText>
             </Link>,
           ],
         },

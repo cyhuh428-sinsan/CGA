@@ -31,6 +31,9 @@ import {
   type ListPageSize,
   usePersistedPageSize,
 } from "@/lib/use-persisted-page-size";
+import { useI18n } from "@/components/language-provider";
+import { ADMIN_COMMON_CATALOGS } from "@/lib/i18n/admin-common";
+import { ADMIN_BOTSTATION_STATUS_CATALOGS, getAdminBotstationStatusLabel } from "@/lib/i18n/admin-botstation-status";
 
 type BotStationStatus = "전체" | "Active" | "Inactive";
 
@@ -377,6 +380,10 @@ function sortRows(rows: BotStationRow[], sortState: DataGridSortState | null) {
 }
 
 export function AdminBotstationStatusPage() {
+  const { language } = useI18n();
+  const uiLanguage = language;
+  const copy = ADMIN_COMMON_CATALOGS[language];
+  const stationCopy = ADMIN_BOTSTATION_STATUS_CATALOGS[uiLanguage];
   const [session, setSession] = useState<AuthSession | null>(null);
   const [bots, setBots] = useState<StudioBotApiItem[]>([]);
   const [adminChannels, setAdminChannels] = useState<AdminChannelItem[]>([]);
@@ -405,7 +412,7 @@ export function AdminBotstationStatusPage() {
 
     if (!currentSession) {
       setLoading(false);
-      setErrorMessage("로그인 정보가 없습니다.");
+      setErrorMessage(getAdminBotstationStatusLabel(stationCopy, "로그인 정보가 없습니다."));
       return;
     }
 
@@ -430,7 +437,7 @@ export function AdminBotstationStatusPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "봇스테이션 연계 현황을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : getAdminBotstationStatusLabel(stationCopy, "봇스테이션 연계 현황을 불러오지 못했습니다."));
         }
       })
       .finally(() => {
@@ -528,7 +535,7 @@ export function AdminBotstationStatusPage() {
 
   async function saveBotStation(row: BotStationRow, settings: BotStationSettingsConfig, successMessage: string) {
     if (!session) {
-      setErrorMessage("로그인 정보가 없습니다.");
+      setErrorMessage(getAdminBotstationStatusLabel(stationCopy, "로그인 정보가 없습니다."));
       return;
     }
 
@@ -552,7 +559,7 @@ export function AdminBotstationStatusPage() {
       setDialog(null);
       setMessage(successMessage);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "봇스테이션 설정 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : getAdminBotstationStatusLabel(stationCopy, "봇스테이션 설정 저장 중 오류가 발생했습니다."));
     } finally {
       setSaving(false);
     }
@@ -564,7 +571,7 @@ export function AdminBotstationStatusPage() {
     }
 
     if (dialog.enabled && !dialog.row.bot.active_version) {
-      setErrorMessage("운영버전이 지정된 봇만 봇스테이션을 사용할 수 있습니다.");
+      setErrorMessage(getAdminBotstationStatusLabel(stationCopy, "운영버전이 지정된 봇만 봇스테이션을 사용할 수 있습니다."));
       return;
     }
 
@@ -576,7 +583,7 @@ export function AdminBotstationStatusPage() {
       connectedAt: dialog.row.settings.connectedAt || (dialog.enabled ? now : ""),
     };
 
-    void saveBotStation(dialog.row, nextSettings, "봇스테이션 상세정보가 저장되었습니다.");
+    void saveBotStation(dialog.row, nextSettings, getAdminBotstationStatusLabel(stationCopy, "봇스테이션 상세정보가 저장되었습니다."));
   }
 
   function handleChangeMessengerChannel(channelId: string, patch: Partial<BotStationChannelConfig>) {
@@ -603,7 +610,7 @@ export function AdminBotstationStatusPage() {
     }
 
     if (!dialog.row.bot.active_version) {
-      setErrorMessage("운영버전이 지정된 봇만 채널 연결을 저장할 수 있습니다.");
+      setErrorMessage(getAdminBotstationStatusLabel(stationCopy, "운영버전이 지정된 봇만 채널 연결을 저장할 수 있습니다."));
       return;
     }
 
@@ -617,7 +624,7 @@ export function AdminBotstationStatusPage() {
       ),
     };
 
-    void saveBotStation(dialog.row, nextSettings, "메신저 연결 상세정보가 저장되었습니다.");
+    void saveBotStation(dialog.row, nextSettings, getAdminBotstationStatusLabel(stationCopy, "메신저 연결 상세정보가 저장되었습니다."));
   }
 
   const selectedChannel =
@@ -639,30 +646,30 @@ export function AdminBotstationStatusPage() {
 
   return (
     <section className="admin-page admin-botstation">
-      <h2>봇스테이션 연계 현황</h2>
+      <h2>{getAdminBotstationStatusLabel(stationCopy,"봇스테이션 연계 현황")}</h2>
 
-      <div className="admin-botstation__filters" aria-label="검색 조건">
+      <div className="admin-botstation__filters" aria-label={getAdminBotstationStatusLabel(stationCopy,"검색 조건")}>
         <label>
-          <span>봇 이름</span>
+          <span>{getAdminBotstationStatusLabel(stationCopy,"봇 이름")}</span>
           <input
             value={draftFilters.botName}
             onChange={(event) => setDraftFilters((current) => ({ ...current, botName: event.target.value }))}
           />
         </label>
         <label>
-          <span>최종 수정자</span>
+          <span>{getAdminBotstationStatusLabel(stationCopy,"최종 수정자")}</span>
           <input
             value={draftFilters.updatedBy}
             onChange={(event) => setDraftFilters((current) => ({ ...current, updatedBy: event.target.value }))}
           />
         </label>
         <label>
-          <span>그룹</span>
+          <span>{copy.group}</span>
           <select
             value={draftFilters.groupId}
             onChange={(event) => setDraftFilters((current) => ({ ...current, groupId: event.target.value }))}
           >
-            <option value="">전체</option>
+            <option value="">{getAdminBotstationStatusLabel(stationCopy,"전체")}</option>
             {groups.map((group) => (
               <option key={group.id} value={group.id}>
                 {group.name}
@@ -671,12 +678,12 @@ export function AdminBotstationStatusPage() {
           </select>
         </label>
         <label>
-          <span>채널</span>
+          <span>{copy.channel}</span>
           <select
             value={draftFilters.channelCode}
             onChange={(event) => setDraftFilters((current) => ({ ...current, channelCode: event.target.value }))}
           >
-            <option value="">전체</option>
+            <option value="">{getAdminBotstationStatusLabel(stationCopy,"전체")}</option>
             {adminChannels.map((channel) => (
               <option key={channel.id} value={channel.code}>
                 {channel.name}
@@ -685,20 +692,20 @@ export function AdminBotstationStatusPage() {
           </select>
         </label>
         <label>
-          <span>상태</span>
+          <span>{getAdminBotstationStatusLabel(stationCopy,"상태")}</span>
           <select
             value={draftFilters.status}
             onChange={(event) =>
               setDraftFilters((current) => ({ ...current, status: event.target.value as BotStationStatus }))
             }
           >
-            <option value="전체">전체</option>
+            <option value="전체">{getAdminBotstationStatusLabel(stationCopy,"전체")}</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
         </label>
         <label>
-          <span>시작일</span>
+          <span>{copy.fromDate}</span>
           <input
             type="date"
             value={draftFilters.startDate}
@@ -706,7 +713,7 @@ export function AdminBotstationStatusPage() {
           />
         </label>
         <label>
-          <span>종료일</span>
+          <span>{copy.toDate}</span>
           <input
             type="date"
             value={draftFilters.endDate}
@@ -715,17 +722,17 @@ export function AdminBotstationStatusPage() {
         </label>
         <div className="admin-botstation__filter-actions">
           <button type="button" className="admin-page__ghost" onClick={handleReset}>
-            초기화
+            {copy.reset}
           </button>
           <button type="button" className="admin-page__primary" onClick={() => setAppliedFilters(draftFilters)}>
-            확인
+            {copy.confirm}
           </button>
           <div className="admin-common-variables__more">
             <button
               type="button"
               className="admin-common-variables__more-button"
               onClick={() => setMenuOpen((current) => !current)}
-              aria-label="봇스테이션 더보기"
+              aria-label={getAdminBotstationStatusLabel(stationCopy,"봇스테이션 더보기")}
             >
               ⋮
             </button>
@@ -738,7 +745,7 @@ export function AdminBotstationStatusPage() {
                     downloadCsv(sortedRows);
                   }}
                 >
-                  파일 다운로드
+                  {copy.download}
                 </button>
               </div>
             ) : null}
@@ -775,7 +782,7 @@ export function AdminBotstationStatusPage() {
           onSort={setSortState}
         />
       </div>
-      {!loading && filteredRows.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+      {!loading && filteredRows.length === 0 ? <p className="admin-page__empty">{copy.noData}</p> : null}
 
       <div className="admin-page__pagination">
         <button type="button" disabled={page === 1} onClick={() => setPage(1)}>
@@ -799,11 +806,11 @@ export function AdminBotstationStatusPage() {
         <div className="entity-editor-backdrop" role="presentation">
           <div className="admin-botstation-dialog admin-botstation-dialog--status" role="dialog" aria-modal="true">
             <div className="entity-editor-dialog__header">
-              <strong>봇스테이션 상세정보</strong>
+              <strong>{getAdminBotstationStatusLabel(stationCopy,"봇스테이션 상세정보")}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={getAdminBotstationStatusLabel(stationCopy,"닫기")}
                 onClick={() => setDialog(null)}
               >
                 ×
@@ -812,23 +819,23 @@ export function AdminBotstationStatusPage() {
             <div className="admin-botstation-dialog__body">
               <dl className="admin-botstation-dialog__summary">
                 <div>
-                  <dt>봇 이름</dt>
+                  <dt>{getAdminBotstationStatusLabel(stationCopy,"봇 이름")}</dt>
                   <dd>{dialog.row.botName}</dd>
                 </div>
                 <div>
-                  <dt>그룹</dt>
+                  <dt>{getAdminBotstationStatusLabel(stationCopy,"그룹")}</dt>
                   <dd>{dialog.row.groupName}</dd>
                 </div>
                 <div>
-                  <dt>운영버전</dt>
+                  <dt>{getAdminBotstationStatusLabel(stationCopy,"운영버전")}</dt>
                   <dd>{dialog.row.operatingVersion}</dd>
                 </div>
                 <div>
-                  <dt>메시지</dt>
+                  <dt>{getAdminBotstationStatusLabel(stationCopy,"메시지")}</dt>
                   <dd>{dialog.row.issueMessage}</dd>
                 </div>
                 <div>
-                  <dt>최종수정일시</dt>
+                  <dt>{getAdminBotstationStatusLabel(stationCopy,"최종수정일시")}</dt>
                   <dd>{formatDateTime(dialog.row.updatedAt)}</dd>
                 </div>
               </dl>
@@ -843,12 +850,8 @@ export function AdminBotstationStatusPage() {
               </label>
             </div>
             <div className="entity-editor-dialog__footer">
-              <button type="button" className="secondary-action" disabled={saving} onClick={() => setDialog(null)}>
-                취소
-              </button>
-              <button type="button" className="primary-action" disabled={saving} onClick={handleSaveStatus}>
-                확인
-              </button>
+              <button type="button" className="secondary-action" disabled={saving} onClick={() => setDialog(null)}>{getAdminBotstationStatusLabel(stationCopy,"취소")}</button>
+              <button type="button" className="primary-action" disabled={saving} onClick={handleSaveStatus}>{getAdminBotstationStatusLabel(stationCopy,"확인")}</button>
             </div>
           </div>
         </div>
@@ -858,18 +861,18 @@ export function AdminBotstationStatusPage() {
         <div className="entity-editor-backdrop" role="presentation">
           <div className="admin-botstation-dialog admin-botstation-dialog--messenger" role="dialog" aria-modal="true">
             <div className="entity-editor-dialog__header">
-              <strong>메신저 연결 상세정보</strong>
+              <strong>{getAdminBotstationStatusLabel(stationCopy,"메신저 연결 상세정보")}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={getAdminBotstationStatusLabel(stationCopy,"닫기")}
                 onClick={() => setDialog(null)}
               >
                 ×
               </button>
             </div>
             <div className="admin-botstation-dialog__body">
-              <div className="admin-botstation-dialog__tabs" role="tablist" aria-label="메신저">
+              <div className="admin-botstation-dialog__tabs" role="tablist" aria-label={getAdminBotstationStatusLabel(stationCopy,"메신저")}>
                 {dialog.settings.channels.map((channel) => (
                   <button
                     key={channel.id}
@@ -885,7 +888,7 @@ export function AdminBotstationStatusPage() {
               <div className="admin-botstation-dialog__form">
                 {selectedHealthDetail ? (
                   <div className="admin-botstation-dialog__health admin-botstation-dialog__field--wide">
-                    <strong>운영 점검 정보</strong>
+                    <strong>{getAdminBotstationStatusLabel(stationCopy,"운영 점검 정보")}</strong>
                     <dl className="admin-botstation-dialog__health-list">
                       <div>
                         <dt>Provider</dt>
@@ -900,15 +903,15 @@ export function AdminBotstationStatusPage() {
                         <dd>{selectedHealthDetail.webhook_endpoint || "-"}</dd>
                       </div>
                       <div>
-                        <dt>인증 헤더</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"인증 헤더")}</dt>
                         <dd>{selectedHealthDetail.auth_header || "-"}</dd>
                       </div>
                       <div>
-                        <dt>지원 출력</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"지원 출력")}</dt>
                         <dd>{selectedHealthDetail.supported_outputs?.join(", ") || "-"}</dd>
                       </div>
                       <div>
-                        <dt>로그 이벤트</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"로그 이벤트")}</dt>
                         <dd>{selectedHealthDetail.logging_events?.join(", ") || "-"}</dd>
                       </div>
                     </dl>
@@ -916,10 +919,10 @@ export function AdminBotstationStatusPage() {
                 ) : null}
                 {selectedKakaoLogSummary ? (
                   <div className="admin-botstation-dialog__health admin-botstation-dialog__field--wide">
-                    <strong>최근 상태 요약</strong>
+                    <strong>{getAdminBotstationStatusLabel(stationCopy,"최근 상태 요약")}</strong>
                     <dl className="admin-botstation-dialog__health-list">
                       <div>
-                        <dt>현재 상태</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"현재 상태")}</dt>
                         <dd>
                           <span className={`admin-botstation-dialog__status-pill admin-botstation-dialog__status-pill--${selectedKakaoLogSummary.statusTone}`}>
                             {selectedKakaoLogSummary.statusLabel}
@@ -927,29 +930,29 @@ export function AdminBotstationStatusPage() {
                         </dd>
                       </div>
                       <div>
-                        <dt>최근 응답/거부/실패</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"최근 응답/거부/실패")}</dt>
                         <dd>
                           {selectedKakaoLogSummary.respondedCount} / {selectedKakaoLogSummary.rejectedCount} / {selectedKakaoLogSummary.failedCount}
                         </dd>
                       </div>
                       <div>
-                        <dt>마지막 성공</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"마지막 성공")}</dt>
                         <dd>{formatDateTime(selectedKakaoLogSummary.lastSuccessAt)}</dd>
                       </div>
                       <div>
-                        <dt>마지막 실패</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"마지막 실패")}</dt>
                         <dd>{formatDateTime(selectedKakaoLogSummary.lastFailureAt)}</dd>
                       </div>
                       <div>
-                        <dt>최근 실패 사유</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"최근 실패 사유")}</dt>
                         <dd>{selectedKakaoLogSummary.lastFailureMessage || "-"}</dd>
                       </div>
                       <div>
-                        <dt>최근 거부 상태코드</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"최근 거부 상태코드")}</dt>
                         <dd>{selectedKakaoLogSummary.lastRejectedStatusCode}</dd>
                       </div>
                       <div>
-                        <dt>최근 fallback 이유</dt>
+                        <dt>{getAdminBotstationStatusLabel(stationCopy,"최근 fallback 이유")}</dt>
                         <dd>{selectedKakaoLogSummary.lastFallbackReasons.join(", ") || "-"}</dd>
                       </div>
                     </dl>
@@ -957,7 +960,7 @@ export function AdminBotstationStatusPage() {
                 ) : null}
                 {selectedChannelLogs.length ? (
                   <div className="admin-botstation-dialog__health admin-botstation-dialog__field--wide">
-                    <strong>최근 카카오 로그</strong>
+                    <strong>{getAdminBotstationStatusLabel(stationCopy,"최근 카카오 로그")}</strong>
                     <ul className="admin-botstation-dialog__log-list">
                       {selectedChannelLogs.map((item) => (
                         <li key={item.id}>
@@ -971,19 +974,19 @@ export function AdminBotstationStatusPage() {
                 ) : null}
                 {String(selectedChannel.channelCode || "").trim().toUpperCase() === "KAKAO" ? (
                   <div className="admin-botstation-dialog__health admin-botstation-dialog__field--wide">
-                    <strong>Kakao 입력/테스트 안내</strong>
+                    <strong>{getAdminBotstationStatusLabel(stationCopy,"Kakao 입력/테스트 안내")}</strong>
                     <ul className="admin-form-guide__list">
                       <li>
-                        <code>App ID</code>: 카카오 앱 또는 스킬 식별값
+                        <code>App ID</code>: {getAdminBotstationStatusLabel(stationCopy, "카카오 앱 또는 스킬 식별값")}
                       </li>
                       <li>
-                        <code>App Secret</code>: webhook 보호용 비밀값 또는 토큰 값
+                        <code>App Secret</code>: {getAdminBotstationStatusLabel(stationCopy, "webhook 보호용 비밀값 또는 토큰 값")}
                       </li>
                       <li>
-                        <code>Callback URL</code>: 카카오 관리자센터에 등록할 실제 webhook 주소
+                        <code>Callback URL</code>: {getAdminBotstationStatusLabel(stationCopy, "카카오 관리자센터에 등록할 실제 webhook 주소")}
                       </li>
                       <li>
-                        1차 연결 테스트는 <code>안녕</code> 같은 단순 발화로 webhook 응답, 대화 이력 저장, 최근 카카오 로그 적재까지 함께 확인합니다.
+                        {getAdminBotstationStatusLabel(stationCopy, "1차 연결 테스트는 안녕 같은 단순 발화로 webhook 응답, 대화 이력 저장, 최근 카카오 로그 적재까지 함께 확인합니다.")}
                       </li>
                     </ul>
                   </div>
@@ -996,10 +999,10 @@ export function AdminBotstationStatusPage() {
                       handleChangeMessengerChannel(selectedChannel.id, { enabled: event.target.checked })
                     }
                   />
-                  <span>사용</span>
+                  <span>{getAdminBotstationStatusLabel(stationCopy,"사용")}</span>
                 </label>
                 <label>
-                  <span>메신저</span>
+                  <span>{getAdminBotstationStatusLabel(stationCopy,"메신저")}</span>
                   <input
                     value={selectedChannel.name}
                     onChange={(event) => handleChangeMessengerChannel(selectedChannel.id, { name: event.target.value })}
@@ -1010,10 +1013,10 @@ export function AdminBotstationStatusPage() {
                     App ID
                     <span
                       className="admin-inline-help"
-                      data-help="카카오 앱 또는 스킬 식별값입니다. 운영자가 어떤 카카오 자원과 연결되는지 구분할 때 사용합니다."
+                      data-help={getAdminBotstationStatusLabel(stationCopy, "카카오 앱 또는 스킬 식별값입니다. 운영자가 어떤 카카오 자원과 연결되는지 구분할 때 사용합니다.")}
                       tabIndex={0}
                       role="img"
-                      aria-label="App ID 설명"
+                      aria-label={getAdminBotstationStatusLabel(stationCopy,"App ID 설명")}
                     >
                       i
                     </span>
@@ -1030,10 +1033,10 @@ export function AdminBotstationStatusPage() {
                     App Secret
                     <span
                       className="admin-inline-help"
-                      data-help="카카오 webhook 보호용 비밀값입니다. token 인증을 쓸 때는 채널 인증 정보와 같은 값으로 맞춰 관리하는 것을 권장합니다."
+                      data-help={getAdminBotstationStatusLabel(stationCopy, "카카오 webhook 보호용 비밀값입니다. token 인증을 쓸 때는 채널 인증 정보와 같은 값으로 맞춰 관리하는 것을 권장합니다.")}
                       tabIndex={0}
                       role="img"
-                      aria-label="App Secret 설명"
+                      aria-label={getAdminBotstationStatusLabel(stationCopy,"App Secret 설명")}
                     >
                       i
                     </span>
@@ -1050,10 +1053,10 @@ export function AdminBotstationStatusPage() {
                     Callback URL
                     <span
                       className="admin-inline-help"
-                      data-help="카카오 관리자센터에 등록할 실제 webhook 주소입니다. 외부에서 호출 가능한 운영 도메인 주소여야 합니다."
+                      data-help={getAdminBotstationStatusLabel(stationCopy, "카카오 관리자센터에 등록할 실제 webhook 주소입니다. 외부에서 호출 가능한 운영 도메인 주소여야 합니다.")}
                       tabIndex={0}
                       role="img"
-                      aria-label="Callback URL 설명"
+                      aria-label={getAdminBotstationStatusLabel(stationCopy,"Callback URL 설명")}
                     >
                       i
                     </span>
@@ -1066,7 +1069,7 @@ export function AdminBotstationStatusPage() {
                   />
                 </label>
                 <label className="admin-botstation-dialog__field--wide">
-                  <span>설명</span>
+                  <span>{getAdminBotstationStatusLabel(stationCopy,"설명")}</span>
                   <textarea
                     value={selectedChannel.description}
                     onChange={(event) =>
@@ -1077,12 +1080,8 @@ export function AdminBotstationStatusPage() {
               </div>
             </div>
             <div className="entity-editor-dialog__footer">
-              <button type="button" className="secondary-action" disabled={saving} onClick={() => setDialog(null)}>
-                취소
-              </button>
-              <button type="button" className="primary-action" disabled={saving} onClick={handleSaveMessenger}>
-                확인
-              </button>
+              <button type="button" className="secondary-action" disabled={saving} onClick={() => setDialog(null)}>{getAdminBotstationStatusLabel(stationCopy,"취소")}</button>
+              <button type="button" className="primary-action" disabled={saving} onClick={handleSaveMessenger}>{getAdminBotstationStatusLabel(stationCopy,"확인")}</button>
             </div>
           </div>
         </div>

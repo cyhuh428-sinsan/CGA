@@ -5,16 +5,22 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { apiRequest } from "@/lib/api";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
+import { ACCOUNT_PAGE_CATALOGS, getAccountRoleLabel } from "@/lib/i18n/account-pages";
 import {
   type AuthSession,
   clearAuthSession,
   loadLastBotScreen,
   loadAuthSession,
   refreshAuthSessionCookies,
-  roleLabel,
+
 } from "@/lib/auth";
 
 export function AuthSessionToolbar() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
+  const accountCopy = ACCOUNT_PAGE_CATALOGS[uiLanguage];
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -58,43 +64,37 @@ export function AuthSessionToolbar() {
     return (
       <div className="session-toolbar">
         <div className="session-toolbar__user">
-          <strong>로그인 정보 없음</strong>
-          <span>세션이 만료되었거나 로그인이 필요합니다.</span>
+          <strong>{getStudioPageLabel(copy,"로그인 정보 없음")}</strong>
+          <span>{getStudioPageLabel(copy,"세션이 만료되었거나 로그인이 필요합니다.")}</span>
         </div>
         <div className="session-toolbar__actions">
-          <Link href="/login" className="secondary-action">
-            로그인
-          </Link>
+          <Link href="/login" className="secondary-action">{getStudioPageLabel(copy,"로그인")}</Link>
         </div>
       </div>
     );
   }
 
-  const roleSummary = session.user.roles.map(roleLabel).join(", ");
+  const roleSummary = session.user.roles.map((role) => getAccountRoleLabel(accountCopy, role)).join(", ");
 
   return (
     <div className="session-toolbar">
       <div className="session-toolbar__user">
         <strong>{session.user.name}</strong>
         <span>
-          {session.user.login_id} | {roleSummary || "권한 없음"}
+          {session.user.login_id} | {roleSummary || getStudioPageLabel(copy, "권한 없음")}
         </span>
       </div>
 
       <div className="session-toolbar__actions">
-        <Link href="/me/profile" className="secondary-action">
-          내 정보
-        </Link>
-        <Link href="/me/password" className="secondary-action">
-          비밀번호 변경
-        </Link>
+        <Link href="/me/profile" className="secondary-action">{getStudioPageLabel(copy,"내 정보")}</Link>
+        <Link href="/me/password" className="secondary-action">{getStudioPageLabel(copy,"비밀번호 변경")}</Link>
         <button
           type="button"
           className="primary-action"
           onClick={handleLogout}
           disabled={isLoggingOut}
         >
-          {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+          {getStudioPageLabel(copy, isLoggingOut ? "로그아웃 중..." : "로그아웃")}
         </button>
       </div>
     </div>

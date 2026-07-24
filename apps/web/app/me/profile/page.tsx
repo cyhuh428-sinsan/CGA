@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { apiRequest } from "@/lib/api";
-import { loadAuthSession, roleLabel } from "@/lib/auth";
+import { loadAuthSession } from "@/lib/auth";
 import { loadDialogOptionDisplayMode, type DialogOptionDisplayMode } from "@/lib/user-display-preferences";
+import { useI18n } from "@/components/language-provider";
+import { getLanguageLabel } from "@/lib/language";
+import { ACCOUNT_PAGE_CATALOGS, getAccountRoleLabel } from "@/lib/i18n/account-pages";
 
 type MeResponse = {
   id: string;
@@ -16,8 +19,10 @@ type MeResponse = {
 };
 
 export default function ProfilePage() {
+  const { language } = useI18n();
+  const copy = ACCOUNT_PAGE_CATALOGS[language].profile;
+  const accountCatalog = ACCOUNT_PAGE_CATALOGS[language];
   const [token, setToken] = useState("");
-  const [language, setLanguage] = useState("ko");
   const [dialogOptionDisplayMode, setDialogOptionDisplayMode] = useState<DialogOptionDisplayMode>("text");
   const [profile, setProfile] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,14 +32,13 @@ export default function ProfilePage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
 
     setToken(session.access_token);
-    setLanguage(window.localStorage.getItem("aidot.language") ?? "ko");
     setDialogOptionDisplayMode(loadDialogOptionDisplayMode());
-  }, []);
+  }, [copy.loginRequired]);
 
   useEffect(() => {
     if (!token) {
@@ -51,7 +55,7 @@ export default function ProfilePage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "내 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -63,22 +67,22 @@ export default function ProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [token]);
+  }, [copy.loadFailed, token]);
 
   return (
     <main className="page">
       <section className="auth-form-card auth-form-card--wide">
         <div className="admin-detail__header">
           <div>
-            <h2>내 정보</h2>
-            <p>현재 로그인한 사용자의 기본 정보를 확인합니다.</p>
+            <h2>{copy.title}</h2>
+            <p>{copy.description}</p>
           </div>
           <div className="admin-detail__actions admin-detail__actions--compact">
             <Link href="/me/password" className="secondary-action">
-              비밀번호 변경
+              {copy.changePassword}
             </Link>
             <Link href="/me/language" className="secondary-action">
-              사용자 언어 변경
+              {copy.changeLanguage}
             </Link>
           </div>
         </div>
@@ -87,39 +91,39 @@ export default function ProfilePage() {
           <div className="admin-state-box">
             <p>{errorMessage}</p>
             <Link href="/login" className="ghost-pill">
-              로그인으로 이동
+              {copy.goToLogin}
             </Link>
           </div>
         ) : null}
 
-        {loading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
+        {loading ? <p className="admin-page__empty">{copy.loading}</p> : null}
 
         {profile ? (
           <div className="admin-detail__card">
             <dl className="admin-detail__list">
               <div>
-                <dt>사용자 계정</dt>
+                <dt>{copy.account}</dt>
                 <dd>{profile.login_id}</dd>
               </div>
               <div>
-                <dt>사용자 이름</dt>
+                <dt>{copy.userName}</dt>
                 <dd>{profile.name}</dd>
               </div>
               <div>
-                <dt>이메일</dt>
+                <dt>{copy.email}</dt>
                 <dd>{profile.email ?? "-"}</dd>
               </div>
               <div>
-                <dt>사용자 언어</dt>
-                <dd>{language === "ko" ? "한국어" : "English"}</dd>
+                <dt>{copy.language}</dt>
+                <dd>{getLanguageLabel(language)}</dd>
               </div>
               <div>
-                <dt>기타옵션 표시</dt>
-                <dd>{dialogOptionDisplayMode === "icon" ? "아이콘" : "글자"}</dd>
+                <dt>{copy.optionDisplay}</dt>
+                <dd>{dialogOptionDisplayMode === "icon" ? copy.icon : copy.text}</dd>
               </div>
               <div className="admin-detail__wide">
-                <dt>역할</dt>
-                <dd>{profile.roles.map(roleLabel).join(", ")}</dd>
+                <dt>{copy.roles}</dt>
+                <dd>{profile.roles.map((role) => getAccountRoleLabel(accountCatalog, role)).join(", ")}</dd>
               </div>
             </dl>
           </div>

@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { type FloatingButtonConfig, type RecommendedIntentConfig } from "@/lib/bot-settings";
 import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { getBotDialogs } from "@/lib/dialog-assets";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 function createEmptyFloatingButton(): FloatingButtonConfig {
   return {
@@ -30,6 +32,8 @@ function createRecommendedIntent(intentId: string, intentOptions: IntentOption[]
 }
 
 export function MessengerSettingsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "recommended-intents" ? "recommended-intents" : "floating-buttons";
 
@@ -219,23 +223,19 @@ export function MessengerSettingsPage() {
         return (
           <>
             <section className="bot-settings-section messenger-settings-section">
-              <h2>메신저 편의 기능</h2>
+              <h2>{getStudioPageLabel(copy,"메신저 편의 기능")}</h2>
 
-              <div className="messenger-settings__tabs" role="tablist" aria-label="메신저 편의 기능 탭">
+              <div className="messenger-settings__tabs" role="tablist" aria-label={getStudioPageLabel(copy, "메신저 편의 기능 탭")}>
                 <button
                   type="button"
                   className={`messenger-settings__tab${activeTab === "floating-buttons" ? " is-active" : ""}`}
                   onClick={() => setActiveTab("floating-buttons")}
-                >
-                  플로팅 버튼
-                </button>
+                >{getStudioPageLabel(copy,"플로팅 버튼")}</button>
                 <button
                   type="button"
                   className={`messenger-settings__tab${activeTab === "recommended-intents" ? " is-active" : ""}`}
                   onClick={() => setActiveTab("recommended-intents")}
-                >
-                  추천 의도
-                </button>
+                >{getStudioPageLabel(copy,"추천 의도")}</button>
               </div>
 
               {activeTab === "floating-buttons" ? (
@@ -259,22 +259,20 @@ export function MessengerSettingsPage() {
                     >
                       ↓
                     </button>
-                    <button type="button" className="primary-action" disabled={saving} onClick={handleCreateFloatingButton}>
-                      + 플로팅 버튼 추가
-                    </button>
+                    <button type="button" className="primary-action" disabled={saving} onClick={handleCreateFloatingButton}>{getStudioPageLabel(copy,"+ 플로팅 버튼 추가")}</button>
                     </div>
                   </div>
 
                   <div className="settings-list-card">
                     <div className="settings-list-card__header settings-list-card__header--four">
-                      <span>버튼명</span>
-                      <span>연결 유형</span>
-                      <span>값</span>
-                      <span>사용</span>
+                      <span>{getStudioPageLabel(copy,"버튼명")}</span>
+                      <span>{getStudioPageLabel(copy,"연결 유형")}</span>
+                      <span>{getStudioPageLabel(copy,"값")}</span>
+                      <span>{getStudioPageLabel(copy,"사용")}</span>
                     </div>
 
                     {floatingButtons.length === 0 ? (
-                      <p className="bot-settings-page__loading">등록된 플로팅 버튼이 없습니다.</p>
+                      <p className="bot-settings-page__loading">{getStudioPageLabel(copy,"등록된 플로팅 버튼이 없습니다.")}</p>
                     ) : null}
 
                     {floatingButtons.map((item) => (
@@ -336,21 +334,19 @@ export function MessengerSettingsPage() {
                     >
                       ↓
                     </button>
-                    <button type="button" className="primary-action" disabled={saving || !newIntentId} onClick={() => void handleAddRecommendedIntent()}>
-                      + 추천 의도 구성
-                    </button>
+                    <button type="button" className="primary-action" disabled={saving || !newIntentId} onClick={() => void handleAddRecommendedIntent()}>{getStudioPageLabel(copy,"+ 추천 의도 구성")}</button>
                     </div>
                   </div>
 
                   <div className="settings-search-grid settings-search-grid--single messenger-settings__recommend-picker">
                     <label className="settings-form-card">
-                      <span>구성할 추천 의도</span>
+                      <span>{getStudioPageLabel(copy,"구성할 추천 의도")}</span>
                       <select
                         className="bot-settings-card__select"
                         value={newIntentId}
                         onChange={(event) => setNewIntentId(event.target.value)}
                       >
-                        {intentOptions.length === 0 ? <option value="">등록된 의도 없음</option> : null}
+                        {intentOptions.length === 0 ? <option value="">{getStudioPageLabel(copy, "등록된 의도 없음")}</option> : null}
                         {intentOptions.map((option) => (
                           <option key={option.id} value={option.id}>
                             {option.label}
@@ -362,12 +358,12 @@ export function MessengerSettingsPage() {
 
                   <div className="settings-list-card">
                     <div className="settings-list-card__header settings-list-card__header--two">
-                      <span>추천 순서</span>
-                      <span>의도명</span>
+                      <span>{getStudioPageLabel(copy,"추천 순서")}</span>
+                      <span>{getStudioPageLabel(copy,"의도명")}</span>
                     </div>
 
                     {recommendedIntents.length === 0 ? (
-                      <p className="bot-settings-page__loading">구성된 추천 의도가 없습니다.</p>
+                      <p className="bot-settings-page__loading">{getStudioPageLabel(copy,"구성된 추천 의도가 없습니다.")}</p>
                     ) : null}
 
                     {recommendedIntents.map((item, index) => (
@@ -406,19 +402,19 @@ export function MessengerSettingsPage() {
                     className="settings-dialog settings-dialog--wide"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="플로팅 버튼"
+                    aria-label={getStudioPageLabel(copy,"플로팅 버튼")}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="settings-dialog__header">
-                      <strong>플로팅 버튼</strong>
-                      <button type="button" className="settings-dialog__close" onClick={() => setButtonEditorOpen(false)} aria-label="닫기">
+                      <strong>{getStudioPageLabel(copy,"플로팅 버튼")}</strong>
+                      <button type="button" className="settings-dialog__close" onClick={() => setButtonEditorOpen(false)} aria-label={getStudioPageLabel(copy,"닫기")}>
                         ×
                       </button>
                     </div>
                     <div className="settings-dialog__body settings-dialog__body--form">
                       <div className="messenger-settings__form-grid">
                         <label className="settings-form-card">
-                          <span>버튼명</span>
+                          <span>{getStudioPageLabel(copy,"버튼명")}</span>
                           <input
                             type="text"
                             className="bot-settings-card__input"
@@ -433,7 +429,7 @@ export function MessengerSettingsPage() {
                         </label>
 
                         <label className="settings-form-card">
-                          <span>Key/Command 옵션</span>
+                          <span>{getStudioPageLabel(copy, "Key/Command 옵션")}</span>
                           <select
                             className="bot-settings-card__select"
                             value={editingButton.actionType}
@@ -451,7 +447,7 @@ export function MessengerSettingsPage() {
                         </label>
 
                         <label className="settings-form-card">
-                          <span>Key/Command 값</span>
+                          <span>{getStudioPageLabel(copy, "Key/Command 값")}</span>
                           {editingButton.actionType === "command" ? (
                             <select
                               className="bot-settings-card__select"
@@ -463,7 +459,7 @@ export function MessengerSettingsPage() {
                                 }))
                               }
                             >
-                              <option value="처음으로">처음으로</option>
+                              <option value="처음으로">{getStudioPageLabel(copy,"처음으로")}</option>
                             </select>
                           ) : (
                             <input
@@ -491,14 +487,12 @@ export function MessengerSettingsPage() {
                               }))
                             }
                           />
-                          <span>사용 여부</span>
+                          <span>{getStudioPageLabel(copy,"사용 여부")}</span>
                         </label>
                       </div>
                     </div>
                     <div className="settings-dialog__footer">
-                      <button type="button" className="secondary-action" onClick={() => setButtonEditorOpen(false)}>
-                        취소
-                      </button>
+                      <button type="button" className="secondary-action" onClick={() => setButtonEditorOpen(false)}>{getStudioPageLabel(copy,"취소")}</button>
                       <button type="button" className="primary-action" disabled={saving} onClick={() => void handleSaveFloatingButtonToList()}>
                         {saving ? "저장 중..." : "확인"}
                       </button>

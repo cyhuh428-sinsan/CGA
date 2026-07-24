@@ -71,6 +71,37 @@ class KiwiMorphAnalyzerProvider:
         return tokens
 
 
+class UnicodeMorphAnalyzerProvider:
+    """Language-neutral tokenizer used only by non-Korean bots.
+
+    Whitespace-delimited languages keep Unicode words. Chinese and Japanese
+    runs additionally emit overlapping bi-grams so short intent phrases can
+    share features without a language-specific morphological dependency.
+    """
+
+    provider_name = "unicode_generic"
+
+    def analyze(self, text: str) -> list[MorphToken]:
+        normalized_text = normalize_text(text)
+        if not normalized_text:
+            return []
+
+        values: list[str] = []
+        for value in re.findall(r"[^\W_]+", normalized_text, flags=re.UNICODE):
+            if re.search(r"[\u3040-\u30ff\u3400-\u9fff]", value):
+                values.extend(value[index : index + 2] for index in range(max(1, len(value) - 1)))
+            else:
+                values.append(value)
+        return [MorphToken(text=value, tag="SL", normalized=value) for value in dict.fromkeys(values) if value]
+
+
+def create_morph_analyzer(language: str | None = "ko") -> MorphAnalyzerProvider:
+    normalized_language = str(language or "ko").strip()
+    if normalized_language == "ko":
+        return KiwiMorphAnalyzerProvider()
+    return UnicodeMorphAnalyzerProvider()
+
+
 def normalize_text(value: object) -> str:
     return str(value or "").strip().lower()
 

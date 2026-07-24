@@ -1,5 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { ReactNode } from "react";
+
+import { useI18n } from "@/components/language-provider";
+import { PAGE_SHELL_CATALOGS } from "@/lib/i18n/utility-pages";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 type ManualReference = {
   section: string;
@@ -14,6 +20,7 @@ type QuickLink = {
 
 type PageShellProps = {
   title: string;
+  titleDetail?: string;
   description: string;
   manualReferences: ManualReference[];
   status?: "placeholder" | "partial";
@@ -24,6 +31,7 @@ type PageShellProps = {
 
 export function PageShell({
   title,
+  titleDetail,
   description,
   manualReferences,
   status = "placeholder",
@@ -31,25 +39,28 @@ export function PageShell({
   notes,
   children,
 }: PageShellProps) {
+  const { language } = useI18n();
+  const copy = PAGE_SHELL_CATALOGS[language];
+  const studioCopy = STUDIO_PAGE_CATALOGS[language];
   return (
     <section className="content-card">
       <div className="content-header">
         <div>
           <p className="eyebrow">
-            {status === "partial" ? "부분 구현" : "화면 셸"}
+            {status === "partial" ? copy.partial : copy.shell}
           </p>
-          <h1>{title}</h1>
-          <p className="description">{description}</p>
+          <h1>{getStudioPageLabel(studioCopy, title)}{titleDetail ? ": " + titleDetail : ""}</h1>
+          <p className="description">{getStudioPageLabel(studioCopy, description)}</p>
         </div>
       </div>
 
       <div className="manual-card">
-        <h2>매뉴얼 대응 항목</h2>
+        <h2>{copy.manualItems}</h2>
         <ul className="manual-list">
           {manualReferences.map((item) => (
             <li key={`${item.section}-${item.title}`}>
-              <strong>{item.section}</strong> {item.title}
-              {item.inferred ? " (추측 포함)" : ""}
+              <strong>{item.section}</strong> {getStudioPageLabel(studioCopy, item.title)}
+              {item.inferred ? ` (${copy.inferred})` : ""}
             </li>
           ))}
         </ul>
@@ -57,10 +68,10 @@ export function PageShell({
 
       {notes && notes.length > 0 ? (
         <div className="manual-card">
-          <h2>현재 메모</h2>
+          <h2>{copy.currentNotes}</h2>
           <ul className="manual-list">
             {notes.map((note) => (
-              <li key={note}>{note}</li>
+              <li key={note}>{getStudioPageLabel(studioCopy, note)}</li>
             ))}
           </ul>
         </div>
@@ -68,11 +79,11 @@ export function PageShell({
 
       {quickLinks && quickLinks.length > 0 ? (
         <div className="manual-card">
-          <h2>다음 확인 경로</h2>
+          <h2>{copy.nextPaths}</h2>
           <div className="quick-links">
             {quickLinks.map((link) => (
               <Link key={link.href} href={link.href} className="chip-link">
-                {link.label}
+                {getStudioPageLabel(studioCopy, link.label)}
               </Link>
             ))}
           </div>

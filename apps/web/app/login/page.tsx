@@ -13,6 +13,8 @@ import {
   saveAuthSession,
 } from "@/lib/auth";
 import { fetchStudioWorkspaceContext } from "@/lib/studio-bots-api";
+import { useI18n } from "@/components/language-provider";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
 
 async function prewarmPostLoginWorkspace(session: AuthSession, targetPath: string) {
   const match = targetPath.match(/^\/studio\/bots\/([^/]+)\/versions\/([^/?#]+)(?:\/([^/?#]+))?/);
@@ -37,9 +39,9 @@ async function prewarmPostLoginWorkspace(session: AuthSession, targetPath: strin
 
 export default function LoginPage() {
   const router = useRouter();
+  const { language, setLanguage, t } = useI18n();
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
-  const [language, setLanguage] = useState("ko");
   const [rememberLoginId, setRememberLoginId] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -47,19 +49,17 @@ export default function LoginPage() {
 
   useEffect(() => {
     try {
-      const savedLoginId = window.localStorage.getItem("aidot.login_id");
-      const savedLanguage = window.localStorage.getItem("aidot.language");
+      const savedLoginId = window.localStorage?.getItem("aidot.login_id");
       const session = loadAuthSession();
       if (savedLoginId) {
         setLoginId(savedLoginId);
         setRememberLoginId(true);
       }
-      if (savedLanguage) {
-        setLanguage(savedLanguage);
-      }
       if (session) {
         refreshAuthSessionCookies();
       }
+    } catch {
+      // 저장소가 차단된 환경에서도 로그인 폼 자체는 사용할 수 있어야 한다.
     } finally {
       setIsHydrated(true);
     }
@@ -85,13 +85,12 @@ export default function LoginPage() {
       } else {
         window.localStorage.removeItem("aidot.login_id");
       }
-      window.localStorage.setItem("aidot.language", language);
       const targetPath = resolvePostLoginPath(session);
       router.prefetch(targetPath);
       await prewarmPostLoginWorkspace(session, targetPath).catch(() => undefined);
       router.push(targetPath);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "로그인 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : t("login.error"));
     } finally {
       setIsSubmitting(false);
     }
@@ -112,8 +111,8 @@ export default function LoginPage() {
               type="text"
               value={loginId}
               onChange={(event) => setLoginId(event.target.value)}
-              placeholder="아이디"
-              aria-label="아이디"
+              placeholder={t("login.id")}
+              aria-label={t("login.id")}
               autoComplete="username"
             />
 
@@ -122,8 +121,8 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="비밀번호"
-              aria-label="비밀번호"
+              placeholder={t("login.password")}
+              aria-label={t("login.password")}
               autoComplete="current-password"
             />
 
@@ -132,7 +131,7 @@ export default function LoginPage() {
               className="primary-action primary-action--full login-form-card__submit"
               disabled={isSubmitting || !isHydrated}
             >
-              {!isHydrated ? "화면 준비 중..." : isSubmitting ? "로그인 중..." : "로그인"}
+              {!isHydrated ? t("login.preparing") : isSubmitting ? t("login.signingIn") : t("common.login")}
             </button>
           </div>
 
@@ -143,25 +142,26 @@ export default function LoginPage() {
                 checked={rememberLoginId}
                 onChange={(event) => setRememberLoginId(event.target.checked)}
               />
-              <span>아이디 저장</span>
+              <span>{t("login.rememberId")}</span>
             </label>
 
             <select
               className="login-select"
               value={language}
-              onChange={(event) => setLanguage(event.target.value)}
+              onChange={(event) => setLanguage(normalizeSupportedLanguage(event.target.value))}
             >
-              <option value="ko">한국어</option>
-              <option value="en">English</option>
+              {SUPPORTED_LANGUAGES.map((option) => (
+                <option key={option.code} value={option.code}>{option.label}</option>
+              ))}
             </select>
           </div>
 
           {errorMessage ? <p className="form-message form-message--error">{errorMessage}</p> : null}
 
           <div className="login-signup-row">
-            <span>아직 계정이 없으신가요?</span>
+            <span>{t("login.noAccount")}</span>
             <Link href="/signup" className="ghost-pill">
-              회원가입
+              {t("login.signup")}
             </Link>
           </div>
         </form>

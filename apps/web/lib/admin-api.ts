@@ -308,6 +308,7 @@ export type AdminDefaultMessageFilter = {
   query?: string;
   category?: string;
   status?: string;
+  language?: string;
 };
 
 export type AdminDefaultMessagePayload = {
@@ -814,6 +815,7 @@ export function fetchDefaultMessages(token: string, filters: AdminDefaultMessage
   if (filters.query) params.set("query", filters.query);
   if (filters.category) params.set("category", filters.category);
   if (filters.status) params.set("status", filters.status);
+  if (filters.language) params.set("language", filters.language);
   const search = params.toString() ? `?${params.toString()}` : "";
   return apiRequest<AdminDefaultMessagesResponse>(`/api/v1/admin/default-messages${search}`, {}, token);
 }

@@ -1,8 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { ReactNode } from "react";
 
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
+export function StudioPageText({ children }: { children: string }) {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
+  return <>{getStudioPageLabel(copy, children)}</>;
+}
 type StudioTablePageProps = {
   header?: ReactNode;
   title?: string;
@@ -32,23 +41,25 @@ export function StudioTablePage({
   toolbarRight,
   simulatorHref,
 }: StudioTablePageProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <section className="studio-table-page">
       {header ? (
         header
       ) : title ? (
         <header className="studio-table-page__title-row">
-          <h1>{title}</h1>
+          <h1>{getStudioPageLabel(copy, title)}</h1>
         </header>
       ) : null}
 
       <div className="studio-table-page__search-row">
         <label className="studio-table-page__search">
           <span aria-hidden="true">⌕</span>
-          <input type="text" defaultValue="" placeholder={searchPlaceholder} />
+          <input type="text" defaultValue="" placeholder={getStudioPageLabel(copy, searchPlaceholder)} />
         </label>
 
-        <button type="button" className="studio-table-page__filter" aria-label="필터">
+        <button type="button" className="studio-table-page__filter" aria-label={getStudioPageLabel(copy, "필터")}>
           ▾
         </button>
 
@@ -57,9 +68,9 @@ export function StudioTablePage({
 
       <div className="studio-table-page__toolbar">
         <div className="studio-table-page__toolbar-left">
-          <strong>{totalText}</strong>
+          <strong>{getStudioPageLabel(copy, totalText)}</strong>
           <button type="button" className="studio-table-page__page-size">
-            {pageSizeText}
+            {getStudioPageLabel(copy, pageSizeText)}
           </button>
           {toolbarLeftExtra}
         </div>
@@ -67,7 +78,7 @@ export function StudioTablePage({
         {toolbarRight ? <div className="studio-table-page__toolbar-right">{toolbarRight}</div> : null}
       </div>
 
-      <DataGrid variant="studio" columns={columns} rows={rows} template={template} />
+      <DataGrid variant="studio" columns={columns.map((column) => typeof column === "string" ? getStudioPageLabel(copy, String(column)) : column)} rows={rows} template={template} />
 
       <div className="studio-table-page__pagination">
         <button type="button">◀</button>
@@ -80,7 +91,7 @@ export function StudioTablePage({
       </div>
 
       {simulatorHref ? (
-        <Link href={simulatorHref} className="floating-simulator" aria-label="시뮬레이터 열기">
+        <Link href={simulatorHref} className="floating-simulator" aria-label={getStudioPageLabel(copy, "시뮬레이터 열기")}>
           <span className="floating-simulator__face">
             <span />
             <span />

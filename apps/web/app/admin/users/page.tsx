@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import { SortHeaderLabel } from "@/components/sort-header-label";
 import {
   fetchAdminUsers,
@@ -13,6 +14,7 @@ import {
   type AdminUserListItem,
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_USERS_CATALOGS, formatAdminUsersText, type AdminUsersCatalog } from "@/lib/i18n/admin-users";
 import {
   LIST_PAGE_SIZE_OPTIONS,
   type ListPageSize,
@@ -28,23 +30,18 @@ type SortKey =
   | "signupStatus"
   | "accountStatus";
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).format(new Date(value));
-}
-
 function detailHref(item: AdminUserListItem) {
   return `/admin/users/${item.kind === "user" ? `user_${item.id}` : `signup_${item.id}`}`;
 }
 
 export default function AdminUsersPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy: AdminUsersCatalog = ADMIN_USERS_CATALOGS[uiLanguage];
+  function formatDate(value: string) {
+    return new Intl.DateTimeFormat(uiLanguage, {
+      year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    }).format(new Date(value));
+  }
   const [token, setToken] = useState("");
   const [items, setItems] = useState<AdminUserListItem[]>([]);
   const [groups, setGroups] = useState<AdminGroupListItem[]>([]);
@@ -71,7 +68,7 @@ export default function AdminUsersPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setToken(session.access_token);
@@ -90,7 +87,7 @@ export default function AdminUsersPage() {
         }
       })
       .catch(() => {
-        // 검색 조건 로딩 실패는 목록 조회를 막지 않는다.
+        // Filter loading failure does not block the user list.
       });
 
     return () => {
@@ -115,7 +112,7 @@ export default function AdminUsersPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "사용자 목록을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -178,7 +175,7 @@ export default function AdminUsersPage() {
           return right.requested_at;
       }
     })();
-    const compare = String(leftValue).localeCompare(String(rightValue), "ko-KR");
+    const compare = String(leftValue).localeCompare(String(rightValue), uiLanguage);
     return sortDirection === "asc" ? compare : compare * -1;
   });
 
@@ -217,7 +214,7 @@ export default function AdminUsersPage() {
         <input
           key="check"
           type="checkbox"
-          aria-label={`${item.login_id} 선택`}
+          aria-label={formatAdminUsersText(copy.selectUser, { loginId: item.login_id })}
           checked={selectedIds.includes(rowId)}
           onChange={() =>
             setSelectedIds((current) =>
@@ -232,17 +229,17 @@ export default function AdminUsersPage() {
           {item.name}
         </Link>,
         item.group_name,
-        item.role_name,
+        copy.roleNames[item.role_code] ?? item.role_name,
         formatDate(item.requested_at),
-        item.signup_status,
-        item.account_status,
+        copy.signupStatuses[item.signup_status] ?? item.signup_status,
+        copy.accountStatuses[item.account_status] ?? item.account_status,
       ],
     };
   });
 
   return (
     <section className="admin-page">
-      <h2>사용자 관리</h2>
+      <h2>{copy.title}</h2>
 
       <div className="admin-page__search-row admin-users-page__search-row">
         <label className="admin-page__search">
@@ -251,12 +248,12 @@ export default function AdminUsersPage() {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="사용자 계정 또는 사용자 이름을 검색하세요."
+            placeholder={copy.searchPlaceholder}
           />
         </label>
 
         <select className="login-select" value={groupId} onChange={(event) => setGroupId(event.target.value)}>
-          <option value="">전체 그룹</option>
+          <option value="">{copy.allGroups}</option>
           {groups.map((group) => (
             <option key={group.id} value={group.id}>
               {group.name}
@@ -265,11 +262,11 @@ export default function AdminUsersPage() {
         </select>
 
         <select className="login-select" value={roleCode} onChange={(event) => setRoleCode(event.target.value)}>
-          <option value="">전체 역할</option>
-          <option value="curator">큐레이터</option>
-          <option value="operation_manager">운영관리자</option>
-          <option value="system_manager">시스템관리자</option>
-          <option value="it_admin">IT관리자</option>
+          <option value="">{copy.allRoles}</option>
+          <option value="curator">{copy.roleNames.curator}</option>
+          <option value="operation_manager">{copy.roleNames.operation_manager}</option>
+          <option value="system_manager">{copy.roleNames.system_manager}</option>
+          <option value="it_admin">{copy.roleNames.it_admin}</option>
         </select>
 
         <select
@@ -277,11 +274,11 @@ export default function AdminUsersPage() {
           value={accountStatus}
           onChange={(event) => setAccountStatus(event.target.value)}
         >
-          <option value="">전체 계정상태</option>
-          <option value="active">활성</option>
-          <option value="locked">잠김</option>
-          <option value="password_reset">비밀번호 초기화</option>
-          <option value="inactive">비활성</option>
+          <option value="">{copy.allAccountStatuses}</option>
+          <option value="active">{copy.accountStatuses.active}</option>
+          <option value="locked">{copy.accountStatuses.locked}</option>
+          <option value="password_reset">{copy.accountStatuses.password_reset}</option>
+          <option value="inactive">{copy.accountStatuses.inactive}</option>
         </select>
 
         <select
@@ -289,32 +286,32 @@ export default function AdminUsersPage() {
           value={signupStatus}
           onChange={(event) => setSignupStatus(event.target.value)}
         >
-          <option value="">전체 가입상태</option>
-          <option value="approved">계정 승인</option>
-          <option value="pending">승인 요청</option>
-          <option value="rejected">승인 반려</option>
+          <option value="">{copy.allSignupStatuses}</option>
+          <option value="approved">{copy.signupStatuses.approved}</option>
+          <option value="pending">{copy.signupStatuses.pending}</option>
+          <option value="rejected">{copy.signupStatuses.rejected}</option>
         </select>
 
         <div className="admin-page__search-actions">
           <button type="button" className="admin-page__primary" onClick={handleSearch}>
-            조회
+            {copy.search}
           </button>
         </div>
       </div>
 
       <div className="admin-page__toolbar">
         <div className="admin-page__toolbar-left">
-          <strong>전체 {total}건</strong>
+          <strong>{formatAdminUsersText(copy.total, { count: total.toLocaleString(uiLanguage) })}</strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
               {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}개씩 보기
+                  {formatAdminUsersText(copy.perPage, { count: option.toLocaleString(uiLanguage) })}
                 </option>
               ))}
             </select>
           </label>
-          {selectedIds.length > 0 ? <span className="admin-page__selection">{selectedIds.length}개 선택</span> : null}
+          {selectedIds.length > 0 ? <span className="admin-page__selection">{formatAdminUsersText(copy.selected, { count: selectedIds.length.toLocaleString(uiLanguage) })}</span> : null}
         </div>
       </div>
 
@@ -322,7 +319,7 @@ export default function AdminUsersPage() {
         <div className="admin-state-box">
           <p>{errorMessage}</p>
           <Link href="/login" className="ghost-pill">
-            로그인으로 이동
+            {copy.goToLogin}
           </Link>
         </div>
       ) : null}
@@ -337,7 +334,7 @@ export default function AdminUsersPage() {
               <input
                 key="check"
                 type="checkbox"
-                aria-label="전체 선택"
+                aria-label={copy.selectAll}
                 checked={allPagedSelected}
                 onChange={(event) =>
                   setSelectedIds((current) => {
@@ -350,32 +347,32 @@ export default function AdminUsersPage() {
                 }
               />,
               <button key="login" type="button" className="settings-sort-button" onClick={() => toggleSort("loginId")}>
-                <SortHeaderLabel label="사용자 계정" direction={sortKey === "loginId" ? sortDirection : "none"} />
+                <SortHeaderLabel label={copy.columns[1]} direction={sortKey === "loginId" ? sortDirection : "none"} />
               </button>,
               <button key="name" type="button" className="settings-sort-button" onClick={() => toggleSort("name")}>
-                <SortHeaderLabel label="사용자 이름" direction={sortKey === "name" ? sortDirection : "none"} />
+                <SortHeaderLabel label={copy.columns[2]} direction={sortKey === "name" ? sortDirection : "none"} />
               </button>,
               <button key="group" type="button" className="settings-sort-button" onClick={() => toggleSort("group")}>
-                <SortHeaderLabel label="그룹" direction={sortKey === "group" ? sortDirection : "none"} />
+                <SortHeaderLabel label={copy.columns[3]} direction={sortKey === "group" ? sortDirection : "none"} />
               </button>,
               <button key="role" type="button" className="settings-sort-button" onClick={() => toggleSort("role")}>
-                <SortHeaderLabel label="역할" direction={sortKey === "role" ? sortDirection : "none"} />
+                <SortHeaderLabel label={copy.columns[4]} direction={sortKey === "role" ? sortDirection : "none"} />
               </button>,
               <button key="requested" type="button" className="settings-sort-button" onClick={() => toggleSort("requestedAt")}>
-                <SortHeaderLabel label="신청일시" direction={sortKey === "requestedAt" ? sortDirection : "none"} />
+                <SortHeaderLabel label={copy.columns[5]} direction={sortKey === "requestedAt" ? sortDirection : "none"} />
               </button>,
               <button key="signup" type="button" className="settings-sort-button" onClick={() => toggleSort("signupStatus")}>
-                <SortHeaderLabel label="가입상태" direction={sortKey === "signupStatus" ? sortDirection : "none"} />
+                <SortHeaderLabel label={copy.columns[6]} direction={sortKey === "signupStatus" ? sortDirection : "none"} />
               </button>,
               <button key="account" type="button" className="settings-sort-button" onClick={() => toggleSort("accountStatus")}>
-                <SortHeaderLabel label="계정상태" direction={sortKey === "accountStatus" ? sortDirection : "none"} />
+                <SortHeaderLabel label={copy.columns[7]} direction={sortKey === "accountStatus" ? sortDirection : "none"} />
               </button>,
             ]}
             rows={loading ? [] : rows}
           />
 
-          {loading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
-          {!loading && rows.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+          {loading ? <p className="admin-page__empty">{copy.loading}</p> : null}
+          {!loading && rows.length === 0 ? <p className="admin-page__empty">{copy.empty}</p> : null}
 
           <div className="admin-page__pagination">
             <button type="button" disabled={page === 1} onClick={() => setPage(1)}>

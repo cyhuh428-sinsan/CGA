@@ -6,6 +6,8 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 
 import { BotWorkspaceHeader } from "@/components/bot-workspace-header";
 import { StudioPageLoading } from "@/components/studio-page-loading";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 import { type AdminConversationHistoryItem, fetchConversationHistory } from "@/lib/admin-api";
 import { loadAuthSession, type AuthSession } from "@/lib/auth";
 import {
@@ -739,6 +741,8 @@ export function StudioWorkspaceProvider({ children }: StudioWorkspaceProviderPro
   const params = useParams<{ botId?: string; versionId?: string }>();
   const router = useRouter();
   const pathname = usePathname();
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   const botId = normalizeRouteParam(params.botId);
   const versionScope = normalizeRouteParam(params.versionId) || "v1";
   const activeSection = getWorkspaceSection(pathname);
@@ -885,8 +889,8 @@ export function StudioWorkspaceProvider({ children }: StudioWorkspaceProviderPro
   if (!value) {
     return (
       <StudioPageLoading
-        title={errorMessage || "봇 작업 공간을 불러오는 중입니다."}
-        description={loading ? "봇/버전 공통 정보를 확인하는 중입니다." : "작업 공간 정보를 확인할 수 없습니다."}
+        title={getStudioPageLabel(copy, errorMessage || "봇 작업 공간을 불러오는 중입니다.")}
+        description={getStudioPageLabel(copy, loading ? "봇/버전 공통 정보를 확인하는 중입니다." : "작업 공간 정보를 확인할 수 없습니다.")}
       />
     );
   }
@@ -897,17 +901,16 @@ export function StudioWorkspaceProvider({ children }: StudioWorkspaceProviderPro
       <StudioWorkspaceContext.Provider value={value}>
         <section className="studio-page-state">
           <div className="admin-state-box">
-            <strong>이 봇에는 등록된 버전이 없습니다.</strong>
+            <strong>{getStudioPageLabel(copy, "이 봇에는 등록된 버전이 없습니다.")}</strong>
             <p>
-              정상 봇은 생성 시 기본 v1 버전이 함께 생성됩니다. 이 상태에서는 의도/모듈 화면을 열 수 없으므로
-              봇 삭제 설정에서 봇을 삭제하거나 버전 관리에서 새 버전을 추가해야 합니다.
+              {getStudioPageLabel(copy, "정상 봇은 생성 시 기본 v1 버전이 함께 생성됩니다. 이 상태에서는 의도/모듈 화면을 열 수 없으므로 봇 삭제 설정에서 봇을 삭제하거나 버전 관리에서 새 버전을 추가해야 합니다.")}
             </p>
             <div className="studio-page-state__actions">
               <Link href={`/studio/bots/${effectiveBotId}/settings/delete`} className="primary-action">
-                봇 삭제 설정
+                {getStudioPageLabel(copy, "봇 삭제 설정")}
               </Link>
               <Link href={`/studio/bots/${effectiveBotId}/versions`} className="secondary-action">
-                버전 관리
+                {getStudioPageLabel(copy, "버전 관리")}
               </Link>
             </div>
           </div>

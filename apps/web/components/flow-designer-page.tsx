@@ -4,9 +4,11 @@ import Script from "next/script";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { SimulatorPage } from "@/components/simulator-page";
 import { getBotVersionSettings } from "@/lib/bot-settings";
+import { FLOW_DESIGNER_CATALOGS, getFlowDesignerLabel, type FlowDesignerCatalog } from "@/lib/i18n/flow-designer";
 import { useEditLock } from "@/lib/use-edit-lock";
 import { normalizeApiAssets, type VersionApiMethod, type VersionApiOutputParameter } from "@/lib/api-assets";
 import {
@@ -62,34 +64,31 @@ type PaletteKind = Exclude<DialogFlowNodeKind, "start" | "system-variable">;
 
 type ViewModeDialogProps = {
   ownerLabel: string;
+  copy: FlowDesignerCatalog;
   onCancel: () => void;
   onConfirm: () => void;
 };
 
-function ViewModeDialog({ ownerLabel, onCancel, onConfirm }: ViewModeDialogProps) {
+function ViewModeDialog({ ownerLabel, copy, onCancel, onConfirm }: ViewModeDialogProps) {
   return (
     <div className="entity-editor-backdrop" role="presentation">
-      <div className="intent-editor__view-mode-dialog" role="dialog" aria-modal="true" aria-label="조회모드 입장">
+      <div className="intent-editor__view-mode-dialog" role="dialog" aria-modal="true" aria-label={getFlowDesignerLabel(copy, "조회모드 입장")}>
         <div className="entity-editor-dialog__header">
-          <strong>조회모드 입장</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onCancel}>
+          <strong>{getFlowDesignerLabel(copy, "조회모드 입장")}</strong>
+          <button type="button" className="entity-editor-dialog__close" aria-label={getFlowDesignerLabel(copy, "닫기")} onClick={onCancel}>
             ×
           </button>
         </div>
 
         <div className="entity-editor-dialog__body">
           <div className="intent-editor__view-mode-message">
-            현재 {ownerLabel}님이 대화 설계를 편집 중입니다. 조회모드로 들어가시겠습니까? 조회모드에서는 대화 설계를 수정하거나 저장할 수 없습니다.
+            {getFlowDesignerLabel(copy, "현재 편집자")} {ownerLabel}{getFlowDesignerLabel(copy, "님이 대화 설계를 편집 중입니다. 조회모드로 들어가시겠습니까? 조회모드에서는 대화 설계를 수정하거나 저장할 수 없습니다.")}
           </div>
         </div>
 
         <div className="entity-editor-dialog__footer">
-          <button type="button" className="secondary-action" onClick={onCancel}>
-            취소
-          </button>
-          <button type="button" className="primary-action" onClick={onConfirm}>
-            확인
-          </button>
+          <button type="button" className="secondary-action" onClick={onCancel}>{getFlowDesignerLabel(copy, "취소")}</button>
+          <button type="button" className="primary-action" onClick={onConfirm}>{getFlowDesignerLabel(copy, "확인")}</button>
         </div>
       </div>
     </div>
@@ -1676,6 +1675,8 @@ function getLinkPath(points: DialogFlowPosition[]) {
 }
 
 export function FlowDesignerPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = FLOW_DESIGNER_CATALOGS[uiLanguage];
   const workspace = useStudioWorkspace();
   const params = useParams<{ botId: string; versionId: string; intentId: string }>();
   const pathname = usePathname();
@@ -1844,7 +1845,7 @@ export function FlowDesignerPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "대화 설계 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -3427,7 +3428,7 @@ export function FlowDesignerPage() {
 
   function blockViewOnlyEdit() {
     setMessage("");
-    setErrorMessage("조회모드에서는 대화 설계를 수정할 수 없습니다.");
+    setErrorMessage(getFlowDesignerLabel(copy, "조회모드에서는 대화 설계를 수정할 수 없습니다."));
   }
 
   function applyGraphUpdate(updater: (current: DialogFlowGraph) => DialogFlowGraph) {
@@ -3942,7 +3943,7 @@ export function FlowDesignerPage() {
     return (
       <div className="flow-designer-page__template-dialog-layout">
         <aside className="flow-designer-page__template-dialog-variables">
-          <strong>변수</strong>
+          <strong>{getFlowDesignerLabel(copy, "변수")}</strong>
           <div className="flow-designer-page__template-dialog-variable-list">
             {usedVariableNames.length > 0 ? (
               usedVariableNames.map((variableName) => (
@@ -3958,7 +3959,7 @@ export function FlowDesignerPage() {
         </aside>
 
         <section className="flow-designer-page__template-dialog-message">
-          <strong>메시지</strong>
+          <strong>{getFlowDesignerLabel(copy, "메시지")}</strong>
           <div className="flow-designer-page__template-dialog-tabs">
             <div className="flow-designer-page__channel-tabs">
               {talkTemplateChannelOptions.map((option) => (
@@ -4004,7 +4005,7 @@ export function FlowDesignerPage() {
 
           <label className="flow-designer-page__field flow-designer-page__template-dialog-select">
             <span>
-              템플릿 선택<span className="flow-designer-page__required">*</span>
+              {getFlowDesignerLabel(copy, "템플릿 선택")}<span className="flow-designer-page__required">*</span>
             </span>
             <select
               className="bot-settings-card__select flow-designer-page__plain-select"
@@ -4041,7 +4042,7 @@ export function FlowDesignerPage() {
                 })
               }
             >
-              <option value="">미선택</option>
+              <option value="">{getFlowDesignerLabel(copy, "미선택")}</option>
               {currentTalkMessageTypeOptions
                 .filter((option) =>
                   isKakaoTalkTemplateChannel(node.config.templateChannel) ? true : option.value !== "text",
@@ -4970,7 +4971,7 @@ export function FlowDesignerPage() {
   }
 
   function handleNavigateToStart() {
-    if (hasUnsavedChanges && !window.confirm("변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?")) {
+    if (hasUnsavedChanges && !window.confirm(getFlowDesignerLabel(copy, "변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?"))) {
       return;
     }
 
@@ -4978,7 +4979,7 @@ export function FlowDesignerPage() {
   }
 
   function handleNavigateToDialogList() {
-    if (hasUnsavedChanges && !window.confirm("변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?")) {
+    if (hasUnsavedChanges && !window.confirm(getFlowDesignerLabel(copy, "변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?"))) {
       return;
     }
 
@@ -4989,7 +4990,7 @@ export function FlowDesignerPage() {
     if (!dialog) {
       return;
     }
-    if (hasUnsavedChanges && !window.confirm("변경사항이 저장되지 않았습니다. 저장된 내용 기준으로 테스트 화면을 열겠습니까?")) {
+    if (hasUnsavedChanges && !window.confirm(getFlowDesignerLabel(copy, "변경사항이 저장되지 않았습니다. 저장된 내용 기준으로 테스트 화면을 열겠습니까?"))) {
       return;
     }
 
@@ -5024,7 +5025,7 @@ export function FlowDesignerPage() {
       const parsed = JSON.parse(text) as unknown;
       if (!isDialogFlowImportPayload(parsed)) {
         setMessage("");
-        setErrorMessage("대화설계 파일을 확인해주세요.");
+        setErrorMessage(getFlowDesignerLabel(copy, "대화설계 파일을 확인해주세요."));
         return;
       }
 
@@ -5049,11 +5050,11 @@ export function FlowDesignerPage() {
       setMultiSelectedNodeIds([]);
       setMultiSelectedLinkIds([]);
       setHasUnsavedChanges(true);
-      setMessage("대화설계 업로드가 반영되었습니다. 저장을 눌러 완료하세요.");
+      setMessage(getFlowDesignerLabel(copy, "대화설계 업로드가 반영되었습니다. 저장을 눌러 적용하세요."));
       setErrorMessage("");
     } catch {
       setMessage("");
-      setErrorMessage("대화설계 파일을 확인해주세요.");
+      setErrorMessage(getFlowDesignerLabel(copy, "대화설계 파일을 확인해주세요."));
     }
   }
 
@@ -5081,7 +5082,7 @@ export function FlowDesignerPage() {
   async function handleSave() {
     if (isViewOnly) {
       setMessage("");
-      setErrorMessage("조회모드에서는 대화 설계를 저장할 수 없습니다.");
+      setErrorMessage(getFlowDesignerLabel(copy, "조회모드에서는 대화 설계를 저장할 수 없습니다."));
       return;
     }
     if (!authSession || !bot?.active_version || !dialog || !graph) {
@@ -5485,15 +5486,15 @@ export function FlowDesignerPage() {
       if (designValidationIssues.length > 0) {
         const firstIssue = designValidationIssues[0];
         setSelectedNodeId(firstIssue.nodeId);
-        setMessage("대화 설계가 저장되었습니다.");
+        setMessage(getFlowDesignerLabel(copy, "대화 설계가 저장되었습니다."));
         setErrorMessage(
           `설계 오류 ${designValidationIssues.length}건이 있습니다. 학습과 실행은 제한됩니다. ${firstIssue.message}`,
         );
       } else {
-        setMessage("대화 설계가 저장되었습니다.");
+        setMessage(getFlowDesignerLabel(copy, "대화 설계가 저장되었습니다."));
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "대화 설계를 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : getFlowDesignerLabel(copy, "대화 설계를 저장하지 못했습니다."));
     } finally {
       setSaving(false);
     }
@@ -5502,7 +5503,7 @@ export function FlowDesignerPage() {
   if (loading) {
     return (
       <section className="workspace-stack">
-        <p className="manual-main__empty">대화 설계 화면을 불러오는 중입니다...</p>
+        <p className="manual-main__empty">{getFlowDesignerLabel(copy, "대화 설계 화면을 불러오는 중입니다...")}</p>
       </section>
     );
   }
@@ -5514,7 +5515,7 @@ export function FlowDesignerPage() {
   if (!dialog || !graph) {
     return (
       <section className="workspace-stack">
-        <p className="manual-main__empty">등록된 의도/모듈을 찾을 수 없습니다.</p>
+        <p className="manual-main__empty">{getFlowDesignerLabel(copy, "등록된 의도/모듈을 찾을 수 없습니다.")}</p>
       </section>
     );
   }
@@ -5556,21 +5557,19 @@ export function FlowDesignerPage() {
       <header className="flow-designer-page__header">
         <div className="flow-designer-page__title-block">
           <div className="flow-designer-page__title-line">
-            <nav className="flow-designer-page__crumb" aria-label="대화 경로">
+            <nav className="flow-designer-page__crumb" aria-label={getFlowDesignerLabel(copy, "대화 경로")}>
               <button type="button" onClick={handleNavigateToDialogList}>
-                {getDialogTypeLabel(dialog.dialogType)} ({dialog.name})
+                {getFlowDesignerLabel(copy, getDialogTypeLabel(dialog.dialogType))} ({dialog.name})
               </button>
               <span>&gt;</span>
-              <button type="button" onClick={handleNavigateToStart}>
-                대화 시작
-              </button>
+              <button type="button" onClick={handleNavigateToStart}>{getFlowDesignerLabel(copy, "대화 시작")}</button>
               <span>&gt;</span>
-              <span className="flow-designer-page__crumb-current">대화 설계</span>
+              <span className="flow-designer-page__crumb-current">{getFlowDesignerLabel(copy, "대화 설계")}</span>
               <button
                 type="button"
                 className="flow-designer-page__help"
-                aria-label="대화 설계 안내"
-                title="대화 설계 안내"
+                aria-label={getFlowDesignerLabel(copy, "대화 설계 안내")}
+                title={getFlowDesignerLabel(copy, "대화 설계 안내")}
                 onClick={() => setFlowHelpOpen(true)}
               >
                 <span className="dialog-help-icon" aria-hidden="true">?</span>
@@ -5586,19 +5585,19 @@ export function FlowDesignerPage() {
               type="text"
               value={canvasSearchKeyword}
               onChange={(event) => setCanvasSearchKeyword(event.target.value)}
-              placeholder="봇 메시지를 검색하세요."
+              placeholder={getFlowDesignerLabel(copy, "봇 메시지를 검색하세요.")}
             />
           </label>
 
           <button type="button" className="primary-action flow-designer-page__save" disabled={saving || isViewOnly} onClick={() => void handleSave()}>
-            {saving ? "저장 중..." : "저장"}
+            {saving ? getFlowDesignerLabel(copy, "저장 중...") : getFlowDesignerLabel(copy, "저장")}
           </button>
 
           <div className="flow-designer-page__header-menu" ref={flowMenuRef}>
             <button
               type="button"
               className="flow-designer-page__more-button"
-              aria-label="대화설계 메뉴"
+              aria-label={getFlowDesignerLabel(copy, "대화설계 메뉴")}
               aria-expanded={flowMenuOpen}
               disabled={saving || isViewOnly}
               onClick={() => setFlowMenuOpen((current) => !current)}
@@ -5613,12 +5612,8 @@ export function FlowDesignerPage() {
                     setFlowMenuOpen(false);
                     flowUploadInputRef.current?.click();
                   }}
-                >
-                  대화설계 업로드
-                </button>
-                <button type="button" onClick={handleDownloadFlowDesign}>
-                  대화설계 다운로드
-                </button>
+                >{getFlowDesignerLabel(copy, "대화설계 업로드")}</button>
+                <button type="button" onClick={handleDownloadFlowDesign}>{getFlowDesignerLabel(copy, "대화설계 다운로드")}</button>
               </div>
             ) : null}
             <input
@@ -5643,12 +5638,13 @@ export function FlowDesignerPage() {
       {message ? <p className="form-message form-message--success">{message}</p> : null}
       {isViewOnly ? (
         <p className="form-message form-message--error">
-          현재 대화 설계는 조회 모드입니다. 다른 사용자의 편집 잠금이 해제된 뒤 수정할 수 있습니다.
+          {getFlowDesignerLabel(copy, "현재 대화 설계는 조회 모드입니다. 다른 사용자의 편집 잠금이 해제된 뒤 수정할 수 있습니다.")}
         </p>
       ) : null}
       {editLock.conflictOwner ? (
         <ViewModeDialog
           ownerLabel={editLock.conflictOwner}
+          copy={copy}
           onCancel={editLock.cancelViewOnly}
           onConfirm={editLock.acceptViewOnly}
         />
@@ -5657,12 +5653,12 @@ export function FlowDesignerPage() {
       <div className={`flow-designer-page__layout${inspectorCollapsed ? " is-inspector-collapsed" : ""}`}>
         <div className="flow-designer-page__canvas-panel">
           <div className="flow-designer-page__summary">
-            <span>{dialog.dialogType === 1 ? "의도" : "모듈"} 카드 {nodeCount}개</span>
-            <span>링크 {linkCount}개</span>
-            <span>필수 변수 기본 반복 {versionSettings.conversationDefaults.entityPrompt.maxRepeatCount}회</span>
-            {linkDragState ? <span className="flow-designer-page__dirty">마우스로 다음 카드를 연결 중</span> : null}
-            {linkingState ? <span className="flow-designer-page__dirty">다음 카드를 캔버스에서 선택 중</span> : null}
-            {hasUnsavedChanges ? <span className="flow-designer-page__dirty">저장되지 않은 변경사항</span> : null}
+            <span>{getFlowDesignerLabel(copy, dialog.dialogType === 1 ? "의도" : "모듈")} {getFlowDesignerLabel(copy, "카드")} {nodeCount}</span>
+            <span>{getFlowDesignerLabel(copy, "링크")} {linkCount}</span>
+            <span>{getFlowDesignerLabel(copy, "필수 변수 기본 반복")} {versionSettings.conversationDefaults.entityPrompt.maxRepeatCount}</span>
+            {linkDragState ? <span className="flow-designer-page__dirty">{getFlowDesignerLabel(copy, "마우스로 다음 카드를 연결 중")}</span> : null}
+            {linkingState ? <span className="flow-designer-page__dirty">{getFlowDesignerLabel(copy, "다음 카드를 캔버스에서 선택 중")}</span> : null}
+            {hasUnsavedChanges ? <span className="flow-designer-page__dirty">{getFlowDesignerLabel(copy, "저장되지 않은 변경사항")}</span> : null}
           </div>
 
           <div
@@ -5983,7 +5979,7 @@ export function FlowDesignerPage() {
                             className="flow-designer-page__node-action flow-designer-page__node-action--link"
                             onMouseDown={(event) => handleLinkDragStart(event, node, selectedNodeSourcePort)}
                             onClick={() => handleStartLinkSelection(node, selectedNodeSourcePort)}
-                            title="캔버스에서 다음 카드 선택"
+                            title={getFlowDesignerLabel(copy, "캔버스에서 다음 카드 선택")}
                             >
                               →
                             </button>
@@ -5995,7 +5991,7 @@ export function FlowDesignerPage() {
                             className="flow-designer-page__node-action flow-designer-page__node-action--exception"
                             onMouseDown={(event) => handleLinkDragStart(event, node, "exception")}
                             onClick={() => handleStartLinkSelection(node, "exception")}
-                            title="예외 카드 연결"
+                            title={getFlowDesignerLabel(copy, "예외 카드 연결")}
                           >
                             예
                           </button>
@@ -6023,7 +6019,7 @@ export function FlowDesignerPage() {
                             type="button"
                             className="flow-designer-page__node-action flow-designer-page__node-action--delete"
                             onClick={handleDeleteSelectedNode}
-                            title="카드 삭제"
+                            title={getFlowDesignerLabel(copy, "카드 삭제")}
                           >
                             🗑
                           </button>
@@ -6172,8 +6168,8 @@ export function FlowDesignerPage() {
           type="button"
           className="flow-designer-page__collapse-button"
           onClick={() => setInspectorCollapsed((current) => !current)}
-          title="접기/펼치기"
-          aria-label="접기/펼치기"
+          title={getFlowDesignerLabel(copy, "접기/펼치기")}
+          aria-label={getFlowDesignerLabel(copy, "접기/펼치기")}
         >
           {inspectorCollapsed ? "←" : "→"}
         </button>
@@ -6202,35 +6198,27 @@ export function FlowDesignerPage() {
               type="button"
               className={inspectorTab === "test" ? "is-active" : ""}
               onClick={() => setInspectorTab("test")}
-            >
-              대화 테스트
-            </button>
+            >{getFlowDesignerLabel(copy, "대화 테스트")}</button>
             <button
               type="button"
               className={inspectorTab === "properties" ? "is-active" : ""}
               onClick={() => setInspectorTab("properties")}
-            >
-              속성
-            </button>
+            >{getFlowDesignerLabel(copy, "속성")}</button>
             <button
               type="button"
               className={inspectorTab === "variables" ? "is-active" : ""}
               onClick={() => setInspectorTab("variables")}
-            >
-              변수
-            </button>
+            >{getFlowDesignerLabel(copy, "변수")}</button>
           </div>
 
           {inspectorTab === "test" ? (
             <div className="flow-designer-page__panel-stack">
               <div className="flow-designer-page__test-head">
-                <strong>대화 테스트</strong>
-                <button type="button" className="secondary-action" onClick={() => handleNavigateToSimulator()}>
-                  전체 화면
-                </button>
+                <strong>{getFlowDesignerLabel(copy, "대화 테스트")}</strong>
+                <button type="button" className="secondary-action" onClick={() => handleNavigateToSimulator()}>{getFlowDesignerLabel(copy, "전체 화면")}</button>
               </div>
               {hasUnsavedChanges ? (
-                <p className="flow-designer-page__section-note">저장하지 않은 변경사항은 시뮬레이터에 반영되지 않을 수 있습니다.</p>
+                <p className="flow-designer-page__section-note">{getFlowDesignerLabel(copy, "저장하지 않은 변경사항은 시뮬레이터에 반영되지 않을 수 있습니다.")}</p>
               ) : null}
               <div className="flow-designer-page__embedded-simulator">
                 <SimulatorPage
@@ -6265,13 +6253,13 @@ export function FlowDesignerPage() {
                           className={`flow-designer-page__variable-help-table flow-designer-page__variable-help-table--${group.type}`}
                         >
                           <div className="flow-designer-page__variable-help-row flow-designer-page__variable-help-head">
-                            <span>변수명</span>
+                            <span>{getFlowDesignerLabel(copy, "변수명")}</span>
                             {group.type === "user" ? (
-                              <span>설정한 카드</span>
+                              <span>{getFlowDesignerLabel(copy, "설정한 카드")}</span>
                             ) : (
                               <>
-                                <span>구분</span>
-                                <span>설명</span>
+                                <span>{getFlowDesignerLabel(copy, "구분")}</span>
+                                <span>{getFlowDesignerLabel(copy, "설명")}</span>
                               </>
                             )}
                           </div>
@@ -6340,7 +6328,7 @@ export function FlowDesignerPage() {
                         </div>
                       </>
                     ) : (
-                      <p className="flow-designer-page__empty">표시할 변수가 없습니다.</p>
+                      <p className="flow-designer-page__empty">{getFlowDesignerLabel(copy, "표시할 변수가 없습니다.")}</p>
                     )}
                   </div>
                 );
@@ -6352,12 +6340,12 @@ export function FlowDesignerPage() {
                 <span className={`flow-designer-page__panel-icon flow-designer-page__panel-icon--${selectedNode.kind}`}>
                   {renderFlowIcon(selectedNode.kind, "panel")}
                 </span>
-                <strong>{FLOW_CARD_LABELS[selectedNode.kind]}</strong>
+                <strong>{getFlowDesignerLabel(copy, FLOW_CARD_LABELS[selectedNode.kind])}</strong>
               </div>
 
               <div className="flow-designer-page__section">
                 <div className="flow-designer-page__section-head">
-                  <strong>카드 이름</strong>
+                  <strong>{getFlowDesignerLabel(copy, "카드 이름")}</strong>
                 </div>
                 <div className="flow-designer-page__section-body">
                   <label className="flow-designer-page__field">
@@ -6375,7 +6363,7 @@ export function FlowDesignerPage() {
               {selectedNode.kind === "start" ? (
                 <div className="flow-designer-page__section">
                   <div className="flow-designer-page__section-head">
-                    <strong>대화 시작 카드</strong>
+                    <strong>{getFlowDesignerLabel(copy, "대화 시작 카드")}</strong>
                   </div>
                   <div className="flow-designer-page__section-body">
                     <div className="flow-designer-page__readonly-box">{selectedNode.config.previewUtterance}</div>
@@ -6387,7 +6375,7 @@ export function FlowDesignerPage() {
                 <>
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>기본 변수 카드</strong>
+                      <strong>{getFlowDesignerLabel(copy, "기본 변수 카드")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <div className="flow-designer-page__chip-list">
@@ -6398,7 +6386,7 @@ export function FlowDesignerPage() {
                             </span>
                           ))
                         ) : (
-                          <span className="flow-designer-page__chip">등록된 개체 없음</span>
+                          <span className="flow-designer-page__chip">{getFlowDesignerLabel(copy, "등록된 개체 없음")}</span>
                         )}
                       </div>
                     </div>
@@ -6407,7 +6395,7 @@ export function FlowDesignerPage() {
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
                       <strong>
-                        다음 카드 <span className="flow-designer-page__required">*</span>
+                        {getFlowDesignerLabel(copy, "다음 카드")} <span className="flow-designer-page__required">*</span>
                       </strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
@@ -6434,11 +6422,11 @@ export function FlowDesignerPage() {
                 <>
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>기본 메시지</strong>
+                      <strong>{getFlowDesignerLabel(copy, "기본 메시지")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <label className="flow-designer-page__field">
-                        <span>랜덤 메시지</span>
+                        <span>{getFlowDesignerLabel(copy, "랜덤 메시지")}</span>
                       </label>
                       <div className="flow-designer-page__message-list">
                         {selectedNode.config.basicMessages.map((messageValue, index) => (
@@ -6479,7 +6467,7 @@ export function FlowDesignerPage() {
                                   },
                                 }))
                               }
-                              placeholder="텍스트를 입력하세요."
+                              placeholder={getFlowDesignerLabel(copy, "텍스트를 입력하세요.")}
                             />
                           </div>
                         ))}
@@ -6521,16 +6509,14 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>템플릿 메시지</strong>
+                      <strong>{getFlowDesignerLabel(copy, "템플릿 메시지")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <button
                         type="button"
                         className="flow-designer-page__template-settings-button"
                         onClick={() => setTalkTemplateSettingsOpen(true)}
-                      >
-                        템플릿 메시지 설정
-                      </button>
+                      >{getFlowDesignerLabel(copy, "템플릿 메시지 설정")}</button>
                     </div>
                   </div>
 
@@ -6539,14 +6525,14 @@ export function FlowDesignerPage() {
                       className="flow-designer-page__section flow-designer-page__template-dialog"
                       role="dialog"
                       aria-modal="true"
-                      aria-label="템플릿 메시지 설정"
+                      aria-label={getFlowDesignerLabel(copy, "템플릿 메시지 설정")}
                     >
                       <div className="flow-designer-page__section-head">
-                        <strong>템플릿 메시지 설정</strong>
+                        <strong>{getFlowDesignerLabel(copy, "템플릿 메시지 설정")}</strong>
                         <button
                           type="button"
                           className="flow-designer-page__template-dialog-close"
-                          aria-label="닫기"
+                          aria-label={getFlowDesignerLabel(copy, "닫기")}
                           onClick={() => setTalkTemplateSettingsOpen(false)}
                         >
                           ×
@@ -6560,16 +6546,12 @@ export function FlowDesignerPage() {
                           type="button"
                           className="secondary-action"
                           onClick={() => setTalkTemplateSettingsOpen(false)}
-                        >
-                          취소
-                        </button>
+                        >{getFlowDesignerLabel(copy, "취소")}</button>
                         <button
                           type="button"
                           className="flow-designer-page__save"
                           onClick={() => handleConfirmTalkTemplateSettings(selectedNode)}
-                        >
-                          확인
-                        </button>
+                        >{getFlowDesignerLabel(copy, "확인")}</button>
                       </div>
                     </div>
                   ) : null}
@@ -6579,14 +6561,14 @@ export function FlowDesignerPage() {
                       className="flow-designer-page__section flow-designer-page__template-dialog"
                       role="dialog"
                       aria-modal="true"
-                      aria-label="템플릿 메시지 설정"
+                      aria-label={getFlowDesignerLabel(copy, "템플릿 메시지 설정")}
                     >
                       <div className="flow-designer-page__section-head">
-                        <strong>템플릿 메시지 설정</strong>
+                        <strong>{getFlowDesignerLabel(copy, "템플릿 메시지 설정")}</strong>
                         <button
                           type="button"
                           className="flow-designer-page__template-dialog-close"
-                          aria-label="닫기"
+                          aria-label={getFlowDesignerLabel(copy, "닫기")}
                           onClick={() => setTalkTemplateSettingsOpen(false)}
                         >
                           ×
@@ -6620,14 +6602,14 @@ export function FlowDesignerPage() {
                                     }))
                                   }
                                 />
-                                <span>테이블 변수 사용</span>
+                                <span>{getFlowDesignerLabel(copy, "테이블 변수 사용")}</span>
                               </label>
 
                               {selectedNode.config.tableUseVariable ? (
                                 <>
                                   <label className="flow-designer-page__field">
                                     <span>
-                                      리스트 변수<em className="flow-designer-page__required-mark">*</em>
+                                      {getFlowDesignerLabel(copy, "리스트 변수")}<em className="flow-designer-page__required-mark">*</em>
                                     </span>
                                     <select
                                       className="bot-settings-card__select"
@@ -6660,7 +6642,7 @@ export function FlowDesignerPage() {
                                   </label>
 
                                   <label className="flow-designer-page__field">
-                                    <span>키 값 선택</span>
+                                    <span>{getFlowDesignerLabel(copy, "키 값 선택")}</span>
                                     <select
                                       className="bot-settings-card__select"
                                       value={selectedNode.config.tableKeyColumn}
@@ -6685,12 +6667,10 @@ export function FlowDesignerPage() {
                                   </label>
 
                                   <div className="flow-designer-page__field">
-                                    <span>변수 값 선택</span>
+                                    <span>{getFlowDesignerLabel(copy, "변수 값 선택")}</span>
                                     <div className="flow-designer-page__table-mapping-list">
                                       {availableColumns.length === 0 ? (
-                                        <div className="flow-designer-page__readonly-box">
-                                          리스트 변수에 등록된 Column 키값이 없습니다.
-                                        </div>
+                                        <div className="flow-designer-page__readonly-box">{getFlowDesignerLabel(copy, "리스트 변수에 등록된 Column 키값이 없습니다.")}</div>
                                       ) : (
                                         resolvedMappings.map((mapping) => (
                                           <div key={mapping.id} className="flow-designer-page__table-mapping-row">
@@ -6717,7 +6697,7 @@ export function FlowDesignerPage() {
                                                   },
                                                 }))
                                               }
-                                              placeholder="Column 값을 입력하세요."
+                                              placeholder={getFlowDesignerLabel(copy, "Column 값을 입력하세요.")}
                                             />
                                           </div>
                                         ))
@@ -6727,7 +6707,7 @@ export function FlowDesignerPage() {
                                 </>
                               ) : (
                                 <div className="flow-designer-page__field">
-                                  <span>테이블 값 설정</span>
+                                  <span>{getFlowDesignerLabel(copy, "테이블 값 설정")}</span>
                                   <div className="flow-designer-page__manual-table-list">
                                     {selectedNode.config.tableManualRows.map((row, rowIndex) => (
                                       <div key={row.id} className="flow-designer-page__manual-table-row">
@@ -6753,7 +6733,7 @@ export function FlowDesignerPage() {
                                           type="text"
                                           value={row.values[0] ?? ""}
                                           onChange={(event) => updateTalkManualTableCell(row.id, 0, event.target.value)}
-                                          placeholder="값 1"
+                                          placeholder={getFlowDesignerLabel(copy, "값 1")}
                                         />
                                         {row.values.slice(1).map((value, valueIndex) => (
                                           <input
@@ -6784,9 +6764,7 @@ export function FlowDesignerPage() {
                                               },
                                             }))
                                           }
-                                        >
-                                          값 추가
-                                        </button>
+                                        >{getFlowDesignerLabel(copy, "값 추가")}</button>
                                         {selectedNode.config.tableManualRows.length > 1 ? (
                                           <button
                                             type="button"
@@ -6826,9 +6804,7 @@ export function FlowDesignerPage() {
                                         },
                                       }))
                                     }
-                                  >
-                                    + Table Row 추가
-                                  </button>
+                                  >{getFlowDesignerLabel(copy, "+ Table Row 추가")}</button>
                                 </div>
                               )}
                             </>
@@ -6840,16 +6816,12 @@ export function FlowDesignerPage() {
                           type="button"
                           className="secondary-action"
                           onClick={() => setTalkTemplateSettingsOpen(false)}
-                        >
-                          취소
-                        </button>
+                        >{getFlowDesignerLabel(copy, "취소")}</button>
                         <button
                           type="button"
                           className="flow-designer-page__save"
                           onClick={() => handleConfirmTalkTemplateSettings(selectedNode)}
-                        >
-                          확인
-                        </button>
+                        >{getFlowDesignerLabel(copy, "확인")}</button>
                       </div>
                     </div>
                   ) : null}
@@ -6861,14 +6833,14 @@ export function FlowDesignerPage() {
                       className="flow-designer-page__section flow-designer-page__template-dialog"
                       role="dialog"
                       aria-modal="true"
-                      aria-label="템플릿 메시지 설정"
+                      aria-label={getFlowDesignerLabel(copy, "템플릿 메시지 설정")}
                     >
                       <div className="flow-designer-page__section-head">
-                        <strong>템플릿 메시지 설정</strong>
+                        <strong>{getFlowDesignerLabel(copy, "템플릿 메시지 설정")}</strong>
                         <button
                           type="button"
                           className="flow-designer-page__template-dialog-close"
-                          aria-label="닫기"
+                          aria-label={getFlowDesignerLabel(copy, "닫기")}
                           onClick={() => setTalkTemplateSettingsOpen(false)}
                         >
                           ×
@@ -6882,14 +6854,14 @@ export function FlowDesignerPage() {
                           <div className="flow-designer-page__template-fields">
                             <label className="flow-designer-page__field">
                               <span>
-                                타이틀<em className="flow-designer-page__required-mark">*</em>
+                                {getFlowDesignerLabel(copy, "타이틀")}<em className="flow-designer-page__required-mark">*</em>
                               </span>
                               <input
                                 className="bot-settings-card__input"
                                 type="text"
                                 value={selectedNode.config.messages[0] ?? ""}
                                 onChange={(event) => updateTalkMessageValue(0, event.target.value)}
-                                placeholder="타이틀을 입력하세요."
+                                placeholder={getFlowDesignerLabel(copy, "타이틀을 입력하세요.")}
                               />
                             </label>
                             <label className="flow-designer-page__field">
@@ -6899,16 +6871,16 @@ export function FlowDesignerPage() {
                                 type="text"
                                 value={selectedNode.config.messages[1] ?? ""}
                                 onChange={(event) => updateTalkMessageValue(1, event.target.value)}
-                                placeholder="이미지 URL을 입력하세요."
+                                placeholder={getFlowDesignerLabel(copy, "이미지 URL을 입력하세요.")}
                               />
                             </label>
                             <label className="flow-designer-page__field">
-                              <span>상세 설명</span>
+                              <span>{getFlowDesignerLabel(copy, "상세 설명")}</span>
                               <textarea
                                 className="textarea-control"
                                 value={selectedNode.config.messages[2] ?? ""}
                                 onChange={(event) => updateTalkMessageValue(2, event.target.value)}
-                                placeholder="상세 설명을 입력하세요."
+                                placeholder={getFlowDesignerLabel(copy, "상세 설명을 입력하세요.")}
                               />
                             </label>
                           </div>
@@ -6945,7 +6917,7 @@ export function FlowDesignerPage() {
                                   type="text"
                                   value={messageValue}
                                   onChange={(event) => updateTalkMessageValue(index, event.target.value)}
-                                  placeholder="버튼명을 입력하세요."
+                                  placeholder={getFlowDesignerLabel(copy, "버튼명을 입력하세요.")}
                                 />
                               </div>
                             ))}
@@ -6995,7 +6967,7 @@ export function FlowDesignerPage() {
                                       },
                                     }))
                                   }
-                                  placeholder="버튼명"
+                                  placeholder={getFlowDesignerLabel(copy, "버튼명")}
                                 />
                                 <input
                                   className="bot-settings-card__input"
@@ -7069,12 +7041,12 @@ export function FlowDesignerPage() {
                                 type="text"
                                 value={selectedNode.config.messages[0] ?? ""}
                                 onChange={(event) => updateTalkMessageValue(0, event.target.value)}
-                                placeholder="제목을 입력하세요."
+                                placeholder={getFlowDesignerLabel(copy, "제목을 입력하세요.")}
                               />
                             </label>
                             <div className="flow-designer-page__carousel-settings">
                               <strong>
-                                Carousel Item 설정 <span aria-hidden="true">ⓘ</span>
+                                {getFlowDesignerLabel(copy, "Carousel Item 설정")} <span aria-hidden="true">ⓘ</span>
                               </strong>
                               <label className="flow-designer-page__field flow-designer-page__carousel-field">
                                 <span>Item Image Url</span>
@@ -7189,7 +7161,7 @@ export function FlowDesignerPage() {
                             ))}
                             <label className="flow-designer-page__field flow-designer-page__dtmf-text-field">
                               <span>
-                                입력 종료 문자<em className="flow-designer-page__required-mark">*</em>
+                                {getFlowDesignerLabel(copy, "입력 종료 문자")}<em className="flow-designer-page__required-mark">*</em>
                               </span>
                               <input
                                 className="bot-settings-card__input"
@@ -7244,7 +7216,7 @@ export function FlowDesignerPage() {
                                       B
                                     </button>
                                     <select
-                                      aria-label="문단"
+                                      aria-label={getFlowDesignerLabel(copy, "문단")}
                                       defaultValue="div"
                                       onChange={(event) => runHtmlEditorCommand("formatBlock", event.target.value)}
                                     >
@@ -7254,7 +7226,7 @@ export function FlowDesignerPage() {
                                       <option value="p">Paragraph</option>
                                     </select>
                                     <select
-                                      aria-label="크기"
+                                      aria-label={getFlowDesignerLabel(copy, "크기")}
                                       defaultValue="3"
                                       onChange={(event) => runHtmlEditorCommand("fontSize", event.target.value)}
                                     >
@@ -7263,7 +7235,7 @@ export function FlowDesignerPage() {
                                       <option value="4">T..</option>
                                     </select>
                                     <select
-                                      aria-label="글꼴"
+                                      aria-label={getFlowDesignerLabel(copy, "글꼴")}
                                       defaultValue=""
                                       onChange={(event) => runHtmlEditorCommand("fontName", event.target.value)}
                                     >
@@ -7306,7 +7278,7 @@ export function FlowDesignerPage() {
                                   className="textarea-control flow-designer-page__form-message-textarea"
                                   value={selectedNode.config.messages[0] ?? ""}
                                   onChange={(event) => updateTalkMessageValue(0, event.target.value)}
-                                  placeholder="메시지를 입력하세요."
+                                  placeholder={getFlowDesignerLabel(copy, "메시지를 입력하세요.")}
                                 />
                               )}
                             </label>
@@ -7317,7 +7289,7 @@ export function FlowDesignerPage() {
                                   className="textarea-control flow-designer-page__form-a-card-msgkey"
                                   value={selectedNode.config.messages[1] ?? ""}
                                   onChange={(event) => updateTalkMessageValue(1, event.target.value)}
-                                  placeholder="텍스트를 입력하세요."
+                                  placeholder={getFlowDesignerLabel(copy, "텍스트를 입력하세요.")}
                                 />
                               </label>
                             ) : null}
@@ -7346,23 +7318,19 @@ export function FlowDesignerPage() {
                           type="button"
                           className="secondary-action"
                           onClick={() => setTalkTemplateSettingsOpen(false)}
-                        >
-                          취소
-                        </button>
+                        >{getFlowDesignerLabel(copy, "취소")}</button>
                         <button
                           type="button"
                           className="flow-designer-page__save"
                           onClick={() => handleConfirmTalkTemplateSettings(selectedNode)}
-                        >
-                          확인
-                        </button>
+                        >{getFlowDesignerLabel(copy, "확인")}</button>
                       </div>
                     </div>
                   ) : null}
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>사용자 응답 처리</strong>
+                      <strong>{getFlowDesignerLabel(copy, "사용자 응답 처리")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <div className="flow-designer-page__response-list">
@@ -7427,7 +7395,7 @@ export function FlowDesignerPage() {
                                     },
                                   }))
                                 }
-                                placeholder="변수명"
+                                placeholder={getFlowDesignerLabel(copy, "변수명")}
                               />
                             </div>
                           </label>
@@ -7445,7 +7413,7 @@ export function FlowDesignerPage() {
                                 }))
                               }
                             />
-                            <span>로컬 변수</span>
+                            <span>{getFlowDesignerLabel(copy, "로컬 변수")}</span>
                           </label>
                         </div>
                       ) : null}
@@ -7453,7 +7421,7 @@ export function FlowDesignerPage() {
                       {selectedNode.config.responseType === "extract-entity" ? (
                         <div className="flow-designer-page__subcard">
                           <div className="flow-designer-page__message-head">
-                            <strong>응답 내 개체 추출</strong>
+                            <strong>{getFlowDesignerLabel(copy, "응답 내 개체 추출")}</strong>
                             <button
                               type="button"
                               className="flow-designer-page__text-button"
@@ -7476,7 +7444,7 @@ export function FlowDesignerPage() {
 
                     return (
                       <label className="flow-designer-page__setting-toggle">
-                        <span>의도전환잠금</span>
+                        <span>{getFlowDesignerLabel(copy, "의도전환잠금")}</span>
                         <span className="settings-switch">
                           <input
                             type="checkbox"
@@ -7500,7 +7468,7 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>최대 반복횟수</strong>
+                      <strong>{getFlowDesignerLabel(copy, "최대 반복횟수")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <div className="flow-designer-page__toggle-row">
@@ -7534,12 +7502,12 @@ export function FlowDesignerPage() {
                               }))
                             }
                           />
-                          <span>직접 설정</span>
+                          <span>{getFlowDesignerLabel(copy, "직접 설정")}</span>
                         </label>
                       </div>
                       {selectedNode.config.repeatType === "custom" ? (
                         <label className="flow-designer-page__field">
-                          <span>반복횟수</span>
+                          <span>{getFlowDesignerLabel(copy, "반복횟수")}</span>
                           <input
                             className="bot-settings-card__input"
                             type="number"
@@ -7563,7 +7531,7 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>플로팅 버튼</strong>
+                      <strong>{getFlowDesignerLabel(copy, "플로팅 버튼")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <div className="flow-designer-page__toggle-row">
@@ -7595,12 +7563,12 @@ export function FlowDesignerPage() {
                         <div className="flow-designer-page__floating-button-list">
                           <div className="flow-designer-page__floating-button-head">
                             <span>
-                              버튼명<em className="flow-designer-page__required-mark">*</em>
+                              {getFlowDesignerLabel(copy, "버튼명")}<em className="flow-designer-page__required-mark">*</em>
                             </span>
                             <span>
                               Key<em className="flow-designer-page__required-mark">*</em>
                             </span>
-                            <span>사용</span>
+                            <span>{getFlowDesignerLabel(copy, "사용")}</span>
                             <span />
                           </div>
                           {selectedNode.config.floatingButtons.map((button) => (
@@ -7620,7 +7588,7 @@ export function FlowDesignerPage() {
                                     },
                                   }))
                                 }
-                                placeholder="버튼명"
+                                placeholder={getFlowDesignerLabel(copy, "버튼명")}
                               />
                               <input
                                 className="bot-settings-card__input"
@@ -7639,7 +7607,7 @@ export function FlowDesignerPage() {
                                 }
                                 placeholder="Key"
                               />
-                              <label className="flow-designer-page__table-switch settings-switch" aria-label="사용">
+                              <label className="flow-designer-page__table-switch settings-switch" aria-label={getFlowDesignerLabel(copy, "사용")}>
                                 <input
                                   type="checkbox"
                                   checked={button.enabled}
@@ -7701,7 +7669,7 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>다음 카드</strong>
+                      <strong>{getFlowDesignerLabel(copy, "다음 카드")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <div className="flow-designer-page__link-picker">
@@ -7727,7 +7695,7 @@ export function FlowDesignerPage() {
                 <>
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>이동 설정</strong>
+                      <strong>{getFlowDesignerLabel(copy, "이동 설정")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <div className="flow-designer-page__toggle-row">
@@ -7763,7 +7731,7 @@ export function FlowDesignerPage() {
                               setJumpDialogSearchKeyword("");
                             }}
                           />
-                          <span>이 대화의 카드</span>
+                          <span>{getFlowDesignerLabel(copy, "이 대화의 카드")}</span>
                         </label>
                         <label className="flow-designer-page__radio">
                           <input
@@ -7793,7 +7761,7 @@ export function FlowDesignerPage() {
                               setJumpCardSearchKeyword("");
                             }}
                           />
-                          <span>다른 대화</span>
+                          <span>{getFlowDesignerLabel(copy, "다른 대화")}</span>
                         </label>
                       </div>
                     </div>
@@ -7801,13 +7769,12 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>이동 대상</strong>
+                      <strong>{getFlowDesignerLabel(copy, "이동 대상")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       {selectedNode.config.targetType === "card" ? (
                         <label className="flow-designer-page__field">
-                          <span>
-                            카드 <span className="flow-designer-page__required">*</span>
+                          <span>{getFlowDesignerLabel(copy, "카드")}<span className="flow-designer-page__required">*</span>
                           </span>
                           <div className="flow-designer-page__dialog-target-picker">
                             <input
@@ -7815,7 +7782,7 @@ export function FlowDesignerPage() {
                               type="text"
                               value={getNodeById(graph, selectedNode.config.targetCardId)?.title ?? ""}
                               readOnly
-                              placeholder="카드를 선택하세요."
+                              placeholder={getFlowDesignerLabel(copy, "카드를 선택하세요.")}
                               onClick={() => {
                                 setJumpCardSearchKeyword("");
                                 setJumpCardPickerOpen(true);
@@ -7837,7 +7804,7 @@ export function FlowDesignerPage() {
                         <>
                           <label className="flow-designer-page__field">
                             <span>
-                              의도/모듈 <span className="flow-designer-page__required">*</span>
+                              {getFlowDesignerLabel(copy, "의도/모듈")} <span className="flow-designer-page__required">*</span>
                             </span>
                             <div className="flow-designer-page__dialog-target-picker">
                               <input
@@ -7845,7 +7812,7 @@ export function FlowDesignerPage() {
                                 type="text"
                                 value={selectedNode.config.targetDialogName}
                                 readOnly
-                                placeholder="의도/모듈을 선택하세요."
+                                placeholder={getFlowDesignerLabel(copy, "의도/모듈을 선택하세요.")}
                                 onClick={() => {
                                   setJumpDialogSearchKeyword("");
                                   setJumpDialogPickerOpen(true);
@@ -7865,7 +7832,7 @@ export function FlowDesignerPage() {
                           </label>
                           <label className="flow-designer-page__field">
                             <span>
-                              다음 카드 <span className="flow-designer-page__required">*</span>
+                              {getFlowDesignerLabel(copy, "다음 카드")} <span className="flow-designer-page__required">*</span>
                             </span>
                             <div className="flow-designer-page__link-picker">
                               <select
@@ -7895,13 +7862,13 @@ export function FlowDesignerPage() {
                 <>
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>조건</strong>
+                      <strong>{getFlowDesignerLabel(copy, "조건")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <div className="flow-designer-page__condition-config">
                         <label className="flow-designer-page__field">
                           <span>
-                            변수명 <span className="flow-designer-page__required">*</span>
+                            {getFlowDesignerLabel(copy, "변수명")} <span className="flow-designer-page__required">*</span>
                           </span>
                           <div className="flow-designer-page__variable-prefix-field">
                             <span aria-hidden="true">$</span>
@@ -7927,7 +7894,7 @@ export function FlowDesignerPage() {
                                   },
                                 }))
                               }
-                              placeholder="변수명"
+                              placeholder={getFlowDesignerLabel(copy, "변수명")}
                             />
                           </div>
                         </label>
@@ -7946,16 +7913,16 @@ export function FlowDesignerPage() {
                               }))
                             }
                           />
-                          <span>라벨 숨기기</span>
+                          <span>{getFlowDesignerLabel(copy, "라벨 숨기기")}</span>
                         </label>
                       </div>
 
                       <div className="flow-designer-page__condition-table">
                         <div className="flow-designer-page__condition-head">
-                          <span>비교값</span>
-                          <span>조건</span>
+                          <span>{getFlowDesignerLabel(copy, "비교값")}</span>
+                          <span>{getFlowDesignerLabel(copy, "조건")}</span>
                           <span>
-                            다음 카드 <span className="flow-designer-page__required">*</span>
+                            {getFlowDesignerLabel(copy, "다음 카드")} <span className="flow-designer-page__required">*</span>
                           </span>
                         </div>
                         {visibleConditionBranches.map((branch) => {
@@ -7981,12 +7948,10 @@ export function FlowDesignerPage() {
                                       },
                                     }))
                                   }
-                                  placeholder="비교값"
+                                  placeholder={getFlowDesignerLabel(copy, "비교값")}
                                 />
                               ) : (
-                                <div className="flow-designer-page__readonly-box flow-designer-page__readonly-box--compact flow-designer-page__readonly-box--no-input">
-                                  입력 없음
-                                </div>
+                                <div className="flow-designer-page__readonly-box flow-designer-page__readonly-box--compact flow-designer-page__readonly-box--no-input">{getFlowDesignerLabel(copy, "입력 없음")}</div>
                               )}
 
                               <select
@@ -8072,17 +8037,17 @@ export function FlowDesignerPage() {
                 <>
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>변수 설정</strong>
+                      <strong>{getFlowDesignerLabel(copy, "변수 설정")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <div className="flow-designer-page__variable-table">
                         <div className="flow-designer-page__variable-table-head">
                           <span>
-                            변수명 <span className="flow-designer-page__required">*</span>
+                            {getFlowDesignerLabel(copy, "변수명")} <span className="flow-designer-page__required">*</span>
                             <button
                               type="button"
                               className={`flow-designer-page__sort-button flow-designer-page__sort-button--${variableSortOrder}`}
-                              aria-label="변수명 정렬"
+                              aria-label={getFlowDesignerLabel(copy, "변수명 정렬")}
                               onClick={() =>
                                 setVariableSortOrder((current) =>
                                   current === "default" ? "asc" : current === "asc" ? "desc" : "default",
@@ -8092,9 +8057,9 @@ export function FlowDesignerPage() {
                               ⇅
                             </button>
                           </span>
-                          <span>변수값</span>
-                          <span>테이블 사용</span>
-                          <span>로컬 변수</span>
+                          <span>{getFlowDesignerLabel(copy, "변수값")}</span>
+                          <span>{getFlowDesignerLabel(copy, "테이블 사용")}</span>
+                          <span>{getFlowDesignerLabel(copy, "로컬 변수")}</span>
                           <span className="flow-designer-page__variable-table-action-head" />
                         </div>
                         {sortedSelectedVariableItems.map((item) => (
@@ -8130,7 +8095,7 @@ export function FlowDesignerPage() {
                                       },
                                     }))
                                   }
-                                  placeholder="변수를 입력하세요."
+                                  placeholder={getFlowDesignerLabel(copy, "변수를 입력하세요.")}
                                 />
                               </div>
                               <input
@@ -8149,9 +8114,9 @@ export function FlowDesignerPage() {
                                     },
                                   }))
                                 }
-                                placeholder="변수값을 입력하세요."
+                                placeholder={getFlowDesignerLabel(copy, "변수값을 입력하세요.")}
                               />
-                              <label className="flow-designer-page__table-switch settings-switch" aria-label="테이블 사용">
+                              <label className="flow-designer-page__table-switch settings-switch" aria-label={getFlowDesignerLabel(copy, "테이블 사용")}>
                                 <input
                                   type="checkbox"
                                   checked={item.tableEnabled}
@@ -8170,7 +8135,7 @@ export function FlowDesignerPage() {
                                 />
                                 <span className="settings-switch__track" />
                               </label>
-                              <label className="flow-designer-page__table-switch settings-switch" aria-label="로컬 변수">
+                              <label className="flow-designer-page__table-switch settings-switch" aria-label={getFlowDesignerLabel(copy, "로컬 변수")}>
                                 <input
                                   type="checkbox"
                                   checked={item.local}
@@ -8245,7 +8210,7 @@ export function FlowDesignerPage() {
                                     }
                                   }}
                                   onBlur={() => commitVariableColumn(item.id)}
-                                  placeholder="키값을 입력하세요. 엔터키로 구분됩니다.(최대 100자)"
+                                  placeholder={getFlowDesignerLabel(copy, "키값을 입력하세요. 엔터키로 구분됩니다.(최대 100자)")}
                                 />
                               </div>
                             ) : null}
@@ -8282,12 +8247,12 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>흐름 설정</strong>
+                      <strong>{getFlowDesignerLabel(copy, "흐름 설정")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <label className="flow-designer-page__field">
                         <span>
-                          다음 카드 <span className="flow-designer-page__required">*</span>
+                          {getFlowDesignerLabel(copy, "다음 카드")} <span className="flow-designer-page__required">*</span>
                         </span>
                         <div className="flow-designer-page__link-picker">
                           <select
@@ -8306,14 +8271,14 @@ export function FlowDesignerPage() {
                       </label>
 
                       <label className="flow-designer-page__field">
-                        <span>예외</span>
+                        <span>{getFlowDesignerLabel(copy, "예외")}</span>
                         <div className="flow-designer-page__link-picker">
                           <select
                             className="bot-settings-card__select"
                             value={getFlowLinkTargetId(graph, selectedNode.id, "exception")}
                             onChange={(event) => handleDefaultLinkChange(selectedNode.id, "exception", event.target.value)}
                           >
-                            <option value="">연결 안 함</option>
+                            <option value="">{getFlowDesignerLabel(copy, "연결 안 함")}</option>
                             {connectableNodes.map((node) => (
                               <option key={node.id} value={node.id}>
                                 {node.title}
@@ -8331,7 +8296,7 @@ export function FlowDesignerPage() {
                 <>
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>API 속성</strong>
+                      <strong>{getFlowDesignerLabel(copy, "API 속성")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <div className="flow-designer-page__function-api-summary">
@@ -8340,15 +8305,13 @@ export function FlowDesignerPage() {
                           type="button"
                           className="flow-designer-page__function-api-select"
                           onClick={openFunctionPicker}
-                        >
-                          API 선택
-                        </button>
+                        >{getFlowDesignerLabel(copy, "API 선택")}</button>
                         <div>
-                          <span>API 이름</span>
+                          <span>{getFlowDesignerLabel(copy, "API 이름")}</span>
                           <strong>{selectedFunctionApi?.name || "선택 안 함"}</strong>
                         </div>
                         <div>
-                          <span>API 메서드</span>
+                          <span>{getFlowDesignerLabel(copy, "API 메서드")}</span>
                           <strong>
                             {selectedFunctionMethod
                               ? `${selectedFunctionMethod.name} (${selectedFunctionMethod.httpMethod})`
@@ -8359,12 +8322,12 @@ export function FlowDesignerPage() {
 
                       {selectedFunctionMethod ? (
                         <div className="flow-designer-page__function-config">
-                          <strong className="flow-designer-page__function-subtitle">입력 Parameter 변수</strong>
+                          <strong className="flow-designer-page__function-subtitle">{getFlowDesignerLabel(copy, "입력 Parameter 변수")}</strong>
                           <div className="flow-designer-page__script-table">
                             <div className="flow-designer-page__script-table-head">
-                              <span>이름</span>
-                              <span>Data 타입</span>
-                              <span>변수 정의</span>
+                              <span>{getFlowDesignerLabel(copy, "이름")}</span>
+                              <span>{getFlowDesignerLabel(copy, "Data 타입")}</span>
+                              <span>{getFlowDesignerLabel(copy, "변수 정의")}</span>
                             </div>
                             {selectedFunctionMethod.parameters.length > 0 ? (
                               selectedFunctionMethod.parameters.map((parameter) => {
@@ -8422,17 +8385,17 @@ export function FlowDesignerPage() {
                                 );
                               })
                             ) : (
-                              <p className="flow-designer-page__section-note">등록된 입력 Parameter가 없습니다.</p>
+                              <p className="flow-designer-page__section-note">{getFlowDesignerLabel(copy, "등록된 입력 Parameter가 없습니다.")}</p>
                             )}
                           </div>
 
-                          <strong className="flow-designer-page__function-subtitle">출력 Parameter 변수</strong>
+                          <strong className="flow-designer-page__function-subtitle">{getFlowDesignerLabel(copy, "출력 Parameter 변수")}</strong>
                           <div className="flow-designer-page__function-output-table">
                             <div className="flow-designer-page__function-output-head">
-                              <span>이름</span>
-                              <span>Data 타입</span>
-                              <span>변수 정의</span>
-                              <span>로컬변수</span>
+                              <span>{getFlowDesignerLabel(copy, "이름")}</span>
+                              <span>{getFlowDesignerLabel(copy, "Data 타입")}</span>
+                              <span>{getFlowDesignerLabel(copy, "변수 정의")}</span>
+                              <span>{getFlowDesignerLabel(copy, "로컬변수")}</span>
                             </div>
                             {getSelectedFunctionOutputMappings(
                               selectedFunctionMethod,
@@ -8449,7 +8412,7 @@ export function FlowDesignerPage() {
                                     className="bot-settings-card__input"
                                     type="text"
                                     value={stripVariablePrefix(mapping.variableName)}
-                                    placeholder="변수명"
+                                    placeholder={getFlowDesignerLabel(copy, "변수명")}
                                     onChange={(event) =>
                                       updateSelectedNode("function", (node) => ({
                                         ...node,
@@ -8512,14 +8475,14 @@ export function FlowDesignerPage() {
                           </div>
                         </div>
                       ) : (
-                        <p className="flow-designer-page__section-note">API와 Method를 선택하세요.</p>
+                        <p className="flow-designer-page__section-note">{getFlowDesignerLabel(copy, "API와 Method를 선택하세요.")}</p>
                       )}
                     </div>
                   </div>
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>다음 카드 <span className="flow-designer-page__required">*</span></strong>
+                      <strong>{getFlowDesignerLabel(copy, "다음 카드")} <span className="flow-designer-page__required">*</span></strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <div className="flow-designer-page__link-picker">
@@ -8541,7 +8504,7 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>예외 처리</strong>
+                      <strong>{getFlowDesignerLabel(copy, "예외 처리")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body">
                       <div className="flow-designer-page__link-picker">
@@ -8550,7 +8513,7 @@ export function FlowDesignerPage() {
                           value={getFlowLinkTargetId(graph, selectedNode.id, "exception")}
                           onChange={(event) => handleDefaultLinkChange(selectedNode.id, "exception", event.target.value)}
                         >
-                          <option value="">연결 안 함</option>
+                          <option value="">{getFlowDesignerLabel(copy, "연결 안 함")}</option>
                           {connectableNodes.map((node) => (
                             <option key={node.id} value={node.id}>
                               {node.title}
@@ -8567,13 +8530,13 @@ export function FlowDesignerPage() {
                 <>
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>파라미터</strong>
+                      <strong>{getFlowDesignerLabel(copy, "파라미터")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <div className="flow-designer-page__script-table">
                         <div className="flow-designer-page__script-table-head">
-                          <span>파라미터명</span>
-                          <span>파라미터 값</span>
+                          <span>{getFlowDesignerLabel(copy, "파라미터명")}</span>
+                          <span>{getFlowDesignerLabel(copy, "파라미터 값")}</span>
                           <span />
                         </div>
                         {selectedNode.config.parameters.map((parameter) => (
@@ -8593,7 +8556,7 @@ export function FlowDesignerPage() {
                                   },
                                 }))
                               }
-                              placeholder="파라미터명"
+                              placeholder={getFlowDesignerLabel(copy, "파라미터명")}
                             />
                             <input
                               className="bot-settings-card__input"
@@ -8610,7 +8573,7 @@ export function FlowDesignerPage() {
                                   },
                                 }))
                               }
-                              placeholder="파라미터 값"
+                              placeholder={getFlowDesignerLabel(copy, "파라미터 값")}
                             />
                             <button
                               type="button"
@@ -8645,23 +8608,21 @@ export function FlowDesignerPage() {
                             },
                           }))
                         }
-                      >
-                        파라미터 추가하기
-                      </button>
+                      >{getFlowDesignerLabel(copy, "파라미터 추가하기")}</button>
                     </div>
                   </div>
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>리턴 변수 설정</strong>
+                      <strong>{getFlowDesignerLabel(copy, "리턴 변수 설정")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <div className="flow-designer-page__script-return-table">
                         <div className="flow-designer-page__script-return-head">
-                          <span>변수유형</span>
-                          <span>변수명</span>
-                          <span>스크립트 변수명</span>
-                          <span>로컬 변수</span>
+                          <span>{getFlowDesignerLabel(copy, "변수유형")}</span>
+                          <span>{getFlowDesignerLabel(copy, "변수명")}</span>
+                          <span>{getFlowDesignerLabel(copy, "스크립트 변수명")}</span>
+                          <span>{getFlowDesignerLabel(copy, "로컬 변수")}</span>
                           <span />
                         </div>
                         {selectedNode.config.returnVariables.map((returnVariable) => (
@@ -8718,7 +8679,7 @@ export function FlowDesignerPage() {
                                     },
                                   }))
                                 }
-                                placeholder="변수명"
+                                placeholder={getFlowDesignerLabel(copy, "변수명")}
                               />
                             </div>
                             <input
@@ -8738,9 +8699,9 @@ export function FlowDesignerPage() {
                                   },
                                 }))
                               }
-                              placeholder="스크립트 변수명"
+                              placeholder={getFlowDesignerLabel(copy, "스크립트 변수명")}
                             />
-                            <label className="flow-designer-page__table-switch settings-switch" aria-label="로컬 변수">
+                            <label className="flow-designer-page__table-switch settings-switch" aria-label={getFlowDesignerLabel(copy, "로컬 변수")}>
                               <input
                                 type="checkbox"
                                 checked={returnVariable.local}
@@ -8807,16 +8768,12 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>스크립트 코드</strong>
+                      <strong>{getFlowDesignerLabel(copy, "스크립트 코드")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <div className="flow-designer-page__script-actions">
-                        <button type="button" className="secondary-action" onClick={openScriptEditor}>
-                          편집 팝업 열기
-                        </button>
-                        <button type="button" className="secondary-action" onClick={openAdaptiveCardDesigner}>
-                          Adaptive Card 디자이너
-                        </button>
+                        <button type="button" className="secondary-action" onClick={openScriptEditor}>{getFlowDesignerLabel(copy, "편집 팝업 열기")}</button>
+                        <button type="button" className="secondary-action" onClick={openAdaptiveCardDesigner}>{getFlowDesignerLabel(copy, "Adaptive Card 디자이너")}</button>
                       </div>
                       <div className="flow-designer-page__code-preview">
                         {selectedNode.config.code.trim() || "스크립트 코드가 없습니다."}
@@ -8826,12 +8783,12 @@ export function FlowDesignerPage() {
 
                   <div className="flow-designer-page__section">
                     <div className="flow-designer-page__section-head">
-                      <strong>흐름 설정</strong>
+                      <strong>{getFlowDesignerLabel(copy, "흐름 설정")}</strong>
                     </div>
                     <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                       <label className="flow-designer-page__field">
                         <span>
-                          다음 카드 <span className="flow-designer-page__required">*</span>
+                          {getFlowDesignerLabel(copy, "다음 카드")} <span className="flow-designer-page__required">*</span>
                         </span>
                         <div className="flow-designer-page__link-picker">
                           <select
@@ -8850,14 +8807,14 @@ export function FlowDesignerPage() {
                       </label>
 
                       <label className="flow-designer-page__field">
-                        <span>예외 처리</span>
+                        <span>{getFlowDesignerLabel(copy, "예외 처리")}</span>
                         <div className="flow-designer-page__link-picker">
                           <select
                             className="bot-settings-card__select"
                             value={getFlowLinkTargetId(graph, selectedNode.id, "exception")}
                             onChange={(event) => handleDefaultLinkChange(selectedNode.id, "exception", event.target.value)}
                           >
-                            <option value="">연결 안 함</option>
+                            <option value="">{getFlowDesignerLabel(copy, "연결 안 함")}</option>
                             {connectableNodes.map((node) => (
                               <option key={node.id} value={node.id}>
                                 {node.title}
@@ -8874,7 +8831,7 @@ export function FlowDesignerPage() {
               {selectedNode.kind === "end" ? (
                 <div className="flow-designer-page__section">
                   <div className="flow-designer-page__section-head">
-                    <strong>종료 설정</strong>
+                    <strong>{getFlowDesignerLabel(copy, "종료 설정")}</strong>
                   </div>
                   <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                     <label className="flow-designer-page__check">
@@ -8891,50 +8848,48 @@ export function FlowDesignerPage() {
                           }))
                         }
                       />
-                      <span>Session 바로 종료</span>
+                      <span>{getFlowDesignerLabel(copy, "Session 바로 종료")}</span>
                     </label>
                   </div>
                 </div>
               ) : null}
 
               {selectedNode.kind !== "start" ? (
-                <button type="button" className="secondary-action secondary-action--danger" onClick={handleDeleteSelectedNode}>
-                  삭제
-                </button>
+                <button type="button" className="secondary-action secondary-action--danger" onClick={handleDeleteSelectedNode}>{getFlowDesignerLabel(copy, "삭제")}</button>
               ) : null}
             </div>
           ) : selectedLink ? (
             <div className="flow-designer-page__panel-stack">
               <div className="flow-designer-page__inspector-title">
                 <span className="flow-designer-page__panel-icon">↗</span>
-                <strong>링크</strong>
+                <strong>{getFlowDesignerLabel(copy, "링크")}</strong>
               </div>
 
               <div className="flow-designer-page__section">
                 <div className="flow-designer-page__section-head">
-                  <strong>연결 정보</strong>
+                  <strong>{getFlowDesignerLabel(copy, "연결 정보")}</strong>
                 </div>
                 <div className="flow-designer-page__section-body flow-designer-page__section-body--compact flow-designer-page__link-summary-grid">
                   <label className="flow-designer-page__field">
-                    <span>유형</span>
+                    <span>{getFlowDesignerLabel(copy, "유형")}</span>
                     <div className="flow-designer-page__readonly-box">
                       {getLinkKindLabel(selectedLink)}
                     </div>
                   </label>
                   <label className="flow-designer-page__field">
-                    <span>시작 카드</span>
+                    <span>{getFlowDesignerLabel(copy, "시작 카드")}</span>
                     <div className="flow-designer-page__readonly-box">
                       {getNodeById(graph, selectedLink.sourceNodeId)?.title ?? "-"}
                     </div>
                   </label>
                   <label className="flow-designer-page__field">
-                    <span>연결 기준</span>
+                    <span>{getFlowDesignerLabel(copy, "연결 기준")}</span>
                     <div className="flow-designer-page__readonly-box">
                       {getLinkSourcePortLabel(graph, selectedLink) || "-"}
                     </div>
                   </label>
                   <label className="flow-designer-page__field">
-                    <span>도착 카드</span>
+                    <span>{getFlowDesignerLabel(copy, "도착 카드")}</span>
                     <div className="flow-designer-page__readonly-box">
                       {getNodeById(graph, selectedLink.targetNodeId)?.title ?? "-"}
                     </div>
@@ -8944,11 +8899,11 @@ export function FlowDesignerPage() {
 
               <div className="flow-designer-page__section">
                 <div className="flow-designer-page__section-head">
-                  <strong>링크 모양</strong>
+                  <strong>{getFlowDesignerLabel(copy, "링크 모양")}</strong>
                 </div>
                 <div className="flow-designer-page__section-body flow-designer-page__section-body--compact">
                   <label className="flow-designer-page__field">
-                    <span>꺾임점</span>
+                    <span>{getFlowDesignerLabel(copy, "꺾임점")}</span>
                     <div className="flow-designer-page__readonly-box">
                       {selectedLink.waypoints.length}개
                     </div>
@@ -8971,29 +8926,27 @@ export function FlowDesignerPage() {
                 </div>
               </div>
 
-              <button type="button" className="secondary-action secondary-action--danger" onClick={handleDeleteSelectedLink}>
-                삭제
-              </button>
+              <button type="button" className="secondary-action secondary-action--danger" onClick={handleDeleteSelectedLink}>{getFlowDesignerLabel(copy, "삭제")}</button>
             </div>
           ) : (
             <div className="flow-designer-page__panel-stack">
               <div className="flow-designer-page__card-property">
-                <strong>속성</strong>
+                <strong>{getFlowDesignerLabel(copy, "속성")}</strong>
                 <div className="flow-designer-page__summary-grid">
                   <div>
-                    <span>사용자 카드</span>
+                    <span>{getFlowDesignerLabel(copy, "사용자 카드")}</span>
                     <strong>{nodeCount}</strong>
                   </div>
                   <div>
-                    <span>링크</span>
+                    <span>{getFlowDesignerLabel(copy, "링크")}</span>
                     <strong>{linkCount}</strong>
                   </div>
                   <div>
-                    <span>대화 유형</span>
+                    <span>{getFlowDesignerLabel(copy, "대화 유형")}</span>
                     <strong>{getDialogTypeLabel(dialog.dialogType)}</strong>
                   </div>
                   <div>
-                    <span>필수 변수 반복</span>
+                    <span>{getFlowDesignerLabel(copy, "필수 변수 반복")}</span>
                     <strong>{versionSettings.conversationDefaults.entityPrompt.maxRepeatCount}</strong>
                   </div>
                 </div>
@@ -9009,14 +8962,14 @@ export function FlowDesignerPage() {
             className="flow-designer-page__entity-extraction-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="응답 내 개체 추출"
+            aria-label={getFlowDesignerLabel(copy, "응답 내 개체 추출")}
           >
             <div className="entity-editor-dialog__header">
-              <strong>응답 내 개체 추출</strong>
+              <strong>{getFlowDesignerLabel(copy, "응답 내 개체 추출")}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={getFlowDesignerLabel(copy, "닫기")}
                 onClick={() => setEntityExtractionDialogOpen(false)}
               >
                 ×
@@ -9066,7 +9019,7 @@ export function FlowDesignerPage() {
                       type="text"
                       value={entityExtractionSearchKeyword}
                       onChange={(event) => setEntityExtractionSearchKeyword(event.target.value)}
-                      placeholder="대화에서 사용할 개체를 검색하여 파라미터로 등록하세요."
+                      placeholder={getFlowDesignerLabel(copy, "대화에서 사용할 개체를 검색하여 파라미터로 등록하세요.")}
                     />
                     <span aria-hidden="true">⌕</span>
                   </div>
@@ -9098,9 +9051,9 @@ export function FlowDesignerPage() {
                           }}
                         />
                       </span>
-                      <span>개체명</span>
-                      <span>구분</span>
-                      <span>개체값</span>
+                      <span>{getFlowDesignerLabel(copy, "개체명")}</span>
+                      <span>{getFlowDesignerLabel(copy, "구분")}</span>
+                      <span>{getFlowDesignerLabel(copy, "개체값")}</span>
                     </div>
                     {filteredEntityExtractionOptions.length > 0 ? (
                       <div className="flow-designer-page__entity-catalog-rows">
@@ -9148,7 +9101,7 @@ export function FlowDesignerPage() {
                                     </span>
                                     <span>
                                       <strong>{option.entityName}</strong>
-                                      {checked ? <small>이미 추가됨</small> : null}
+                                      {checked ? <small>{getFlowDesignerLabel(copy, "이미 추가됨")}</small> : null}
                                     </span>
                                     <span>{option.category}</span>
                                     <span>{option.entityValue}</span>
@@ -9180,7 +9133,7 @@ export function FlowDesignerPage() {
                         setEntityExtractionSearchKeyword("");
                         setEntityExtractionPickerOpen(true);
                       }}
-                      placeholder="대화에서 사용할 개체를 검색하여 파라미터로 등록하세요."
+                      placeholder={getFlowDesignerLabel(copy, "대화에서 사용할 개체를 검색하여 파라미터로 등록하세요.")}
                     />
                     <span aria-hidden="true">⌕</span>
                   </div>
@@ -9216,12 +9169,12 @@ export function FlowDesignerPage() {
                       }
                     />
                   </span>
-                  <span>변수명</span>
-                  <span>개체명</span>
-                  <span>개체값</span>
-                  <span>필수 변수</span>
-                  <span>로컬 변수</span>
-                  <span>챗봇 메시지</span>
+                  <span>{getFlowDesignerLabel(copy, "변수명")}</span>
+                  <span>{getFlowDesignerLabel(copy, "개체명")}</span>
+                  <span>{getFlowDesignerLabel(copy, "개체값")}</span>
+                  <span>{getFlowDesignerLabel(copy, "필수 변수")}</span>
+                  <span>{getFlowDesignerLabel(copy, "로컬 변수")}</span>
+                  <span>{getFlowDesignerLabel(copy, "챗봇 메시지")}</span>
                 </div>
                 <div className="flow-designer-page__entity-selected-rows">
                   {selectedEntityExtractionRows.map((option) => (
@@ -9334,16 +9287,12 @@ export function FlowDesignerPage() {
                 type="button"
                 className="secondary-action"
                 onClick={() => setEntityExtractionDialogOpen(false)}
-              >
-                취소
-              </button>
+              >{getFlowDesignerLabel(copy, "취소")}</button>
               <button
                 type="button"
                 className="flow-designer-page__save"
                 onClick={() => setEntityExtractionDialogOpen(false)}
-              >
-                확인
-              </button>
+              >{getFlowDesignerLabel(copy, "확인")}</button>
             </div>
           </div>
         </div>
@@ -9355,23 +9304,21 @@ export function FlowDesignerPage() {
             className="flow-designer-page__script-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="스크립트 코드 편집"
+            aria-label={getFlowDesignerLabel(copy, "스크립트 코드 편집")}
           >
             <div className="entity-editor-dialog__header">
-              <strong>스크립트 코드 편집</strong>
+              <strong>{getFlowDesignerLabel(copy, "스크립트 코드 편집")}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={getFlowDesignerLabel(copy, "닫기")}
                 onClick={() => setScriptEditorOpen(false)}
               >
                 ×
               </button>
             </div>
             <div className="flow-designer-page__script-dialog-body">
-              <div className="flow-designer-page__script-dialog-note">
-                JavaScript ES2020 기준으로 작성합니다. 실행 환경 제한은 런타임 정책에서 별도로 적용됩니다.
-              </div>
+              <div className="flow-designer-page__script-dialog-note">{getFlowDesignerLabel(copy, "JavaScript ES2020 기준으로 작성합니다. 실행 환경 제한은 런타임 정책에서 별도로 적용됩니다.")}</div>
               {scriptEditorError ? (
                 <div
                   className={
@@ -9408,15 +9355,9 @@ export function FlowDesignerPage() {
               </div>
             </div>
             <div className="flow-designer-page__script-dialog-footer">
-              <button type="button" className="secondary-action" onClick={() => setScriptEditorOpen(false)}>
-                취소
-              </button>
-              <button type="button" className="secondary-action" onClick={checkScriptEditorSyntax}>
-                문법 확인
-              </button>
-              <button type="button" className="flow-designer-page__save" onClick={confirmScriptEditor}>
-                확인
-              </button>
+              <button type="button" className="secondary-action" onClick={() => setScriptEditorOpen(false)}>{getFlowDesignerLabel(copy, "취소")}</button>
+              <button type="button" className="secondary-action" onClick={checkScriptEditorSyntax}>{getFlowDesignerLabel(copy, "문법 확인")}</button>
+              <button type="button" className="flow-designer-page__save" onClick={confirmScriptEditor}>{getFlowDesignerLabel(copy, "확인")}</button>
             </div>
           </div>
         </div>
@@ -9428,14 +9369,14 @@ export function FlowDesignerPage() {
             className="flow-designer-page__adaptive-card-designer-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="Adaptive Card 디자이너"
+            aria-label={getFlowDesignerLabel(copy, "Adaptive Card 디자이너")}
           >
             <div className="entity-editor-dialog__header">
-              <strong>Adaptive Card 디자이너</strong>
+              <strong>{getFlowDesignerLabel(copy, "Adaptive Card 디자이너")}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={getFlowDesignerLabel(copy, "닫기")}
                 onClick={() => setAdaptiveCardDesignerOpen(false)}
               >
                 ×
@@ -9444,12 +9385,10 @@ export function FlowDesignerPage() {
             <div className="flow-designer-page__adaptive-card-designer-body">
               <div ref={adaptiveCardDesignerHostRef} className="flow-designer-page__adaptive-card-designer-host" />
               <aside className="flow-designer-page__adaptive-card-designer-side">
-                <strong>Script 반영</strong>
-                <p>
-                  적용하면 현재 Script 카드에 Adaptive Card JSON을 $adaptiveCard, $msgKey 변수로 저장하는 코드가 들어갑니다.
-                </p>
+                <strong>{getFlowDesignerLabel(copy, "Script 반영")}</strong>
+                <p>{getFlowDesignerLabel(copy, "적용하면 현재 Script 카드에 Adaptive Card JSON을 $adaptiveCard, $msgKey 변수로 저장하는 코드가 들어갑니다.")}</p>
                 <div className="flow-designer-page__adaptive-card-designer-preview">
-                  <span>생성 상태</span>
+                  <span>{getFlowDesignerLabel(copy, "생성 상태")}</span>
                   <b>{adaptiveCardDesignerOutput?.adaptiveCard ? "Adaptive Card JSON 생성됨" : "디자인 내용을 기다리는 중"}</b>
                 </div>
                 {adaptiveCardDesignerStatus ? (
@@ -9460,12 +9399,8 @@ export function FlowDesignerPage() {
               </aside>
             </div>
             <div className="flow-designer-page__script-dialog-footer">
-              <button type="button" className="secondary-action" onClick={() => setAdaptiveCardDesignerOpen(false)}>
-                취소
-              </button>
-              <button type="button" className="flow-designer-page__save" onClick={applyAdaptiveCardDesignerOutput}>
-                Script에 적용
-              </button>
+              <button type="button" className="secondary-action" onClick={() => setAdaptiveCardDesignerOpen(false)}>{getFlowDesignerLabel(copy, "취소")}</button>
+              <button type="button" className="flow-designer-page__save" onClick={applyAdaptiveCardDesignerOutput}>{getFlowDesignerLabel(copy, "Script에 적용")}</button>
             </div>
           </div>
         </div>
@@ -9477,14 +9412,14 @@ export function FlowDesignerPage() {
             className="flow-designer-page__function-picker-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="Function 카드 설정"
+            aria-label={getFlowDesignerLabel(copy, "Function 카드 설정")}
           >
             <div className="entity-editor-dialog__header">
-              <strong>Function 카드 설정</strong>
+              <strong>{getFlowDesignerLabel(copy, "Function 카드 설정")}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={getFlowDesignerLabel(copy, "닫기")}
                 onClick={() => setFunctionPicker(null)}
               >
                 ×
@@ -9494,7 +9429,7 @@ export function FlowDesignerPage() {
               {functionPicker.step === "method" ? (
                 <div className="flow-designer-page__function-picker-layout">
                   <section>
-                    <strong>API 목록</strong>
+                    <strong>{getFlowDesignerLabel(copy, "API 목록")}</strong>
                     <div className="flow-designer-page__function-picker-list">
                       {apiAssets.map((api) => (
                         <button
@@ -9528,7 +9463,7 @@ export function FlowDesignerPage() {
                     </div>
                   </section>
                   <section>
-                    <strong>API Method 목록</strong>
+                    <strong>{getFlowDesignerLabel(copy, "API Method 목록")}</strong>
                     <div className="flow-designer-page__function-picker-methods">
                       {functionPickerApi?.methods.map((method) => (
                         <label
@@ -9567,14 +9502,14 @@ export function FlowDesignerPage() {
                           <span>{method.name}</span>
                           <small>{method.httpMethod} {method.methodUrl}</small>
                         </label>
-                      )) ?? <p className="flow-designer-page__section-note">등록된 Method가 없습니다.</p>}
+                      )) ?? <p className="flow-designer-page__section-note">{getFlowDesignerLabel(copy, "등록된 Method가 없습니다.")}</p>}
                     </div>
                   </section>
                 </div>
               ) : (
                 <div className="flow-designer-page__function-picker-parameter">
                   <section className="flow-designer-page__function-picker-input">
-                    <strong>입력 Parameter</strong>
+                    <strong>{getFlowDesignerLabel(copy, "입력 Parameter")}</strong>
                     <div className="flow-designer-page__function-picker-input-table">
                       <div className="flow-designer-page__function-picker-input-head">
                         <span>Name</span>
@@ -9615,14 +9550,14 @@ export function FlowDesignerPage() {
                           </div>
                         ))
                       ) : (
-                        <p className="flow-designer-page__section-note">등록된 입력 Parameter가 없습니다.</p>
+                        <p className="flow-designer-page__section-note">{getFlowDesignerLabel(copy, "등록된 입력 Parameter가 없습니다.")}</p>
                       )}
                     </div>
                   </section>
 
                   <div className="flow-designer-page__function-picker-output-grid">
                     <section className="flow-designer-page__function-picker-output">
-                      <strong>출력 Parameter</strong>
+                      <strong>{getFlowDesignerLabel(copy, "출력 Parameter")}</strong>
                       <div className="flow-designer-page__function-picker-output-table">
                         <div className="flow-designer-page__function-picker-output-head">
                           <span />
@@ -9712,7 +9647,7 @@ export function FlowDesignerPage() {
                             );
                           })
                         ) : (
-                          <p className="flow-designer-page__section-note">Method를 선택하세요.</p>
+                          <p className="flow-designer-page__section-note">{getFlowDesignerLabel(copy, "Method를 선택하세요.")}</p>
                         )}
                       </div>
                     </section>
@@ -9734,9 +9669,7 @@ export function FlowDesignerPage() {
               )}
             </div>
             <div className="flow-designer-page__function-picker-footer">
-              <button type="button" className="secondary-action" onClick={() => setFunctionPicker(null)}>
-                취소
-              </button>
+              <button type="button" className="secondary-action" onClick={() => setFunctionPicker(null)}>{getFlowDesignerLabel(copy, "취소")}</button>
               {functionPicker.step === "output" ? (
                 <button
                   type="button"
@@ -9756,9 +9689,7 @@ export function FlowDesignerPage() {
                   다음
                 </button>
               ) : (
-                <button type="button" className="flow-designer-page__save" onClick={applyFunctionPicker}>
-                  저장
-                </button>
+                <button type="button" className="flow-designer-page__save" onClick={applyFunctionPicker}>{getFlowDesignerLabel(copy, "저장")}</button>
               )}
             </div>
           </div>
@@ -9771,14 +9702,14 @@ export function FlowDesignerPage() {
             className="flow-designer-page__jump-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="카드 목록"
+            aria-label={getFlowDesignerLabel(copy, "카드 목록")}
           >
             <div className="entity-editor-dialog__header">
-              <strong>카드 목록</strong>
+              <strong>{getFlowDesignerLabel(copy, "카드 목록")}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={getFlowDesignerLabel(copy, "닫기")}
                 onClick={() => setJumpCardPickerOpen(false)}
               >
                 ×
@@ -9790,7 +9721,7 @@ export function FlowDesignerPage() {
                 type="text"
                 value={jumpCardSearchKeyword}
                 onChange={(event) => setJumpCardSearchKeyword(event.target.value)}
-                placeholder="카드명을 검색하세요."
+                placeholder={getFlowDesignerLabel(copy, "카드명을 검색하세요.")}
               />
               <div className="flow-designer-page__jump-dialog-list">
                 {filteredJumpTargetCardOptions.map((item) => (
@@ -9823,14 +9754,14 @@ export function FlowDesignerPage() {
             className="flow-designer-page__jump-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="모듈대화 목록"
+            aria-label={getFlowDesignerLabel(copy, "모듈대화 목록")}
           >
             <div className="entity-editor-dialog__header">
-              <strong>모듈대화 목록</strong>
+              <strong>{getFlowDesignerLabel(copy, "모듈대화 목록")}</strong>
               <button
                 type="button"
                 className="entity-editor-dialog__close"
-                aria-label="닫기"
+                aria-label={getFlowDesignerLabel(copy, "닫기")}
                 onClick={() => setJumpDialogPickerOpen(false)}
               >
                 ×
@@ -9842,7 +9773,7 @@ export function FlowDesignerPage() {
                 type="text"
                 value={jumpDialogSearchKeyword}
                 onChange={(event) => setJumpDialogSearchKeyword(event.target.value)}
-                placeholder="의도/모듈명을 검색하세요."
+                placeholder={getFlowDesignerLabel(copy, "의도/모듈명을 검색하세요.")}
               />
               <div className="flow-designer-page__jump-dialog-list">
                 {filteredJumpTargetDialogOptions.map((item) => (
@@ -9894,55 +9825,51 @@ export function FlowDesignerPage() {
             aria-labelledby="flow-design-help-title"
           >
             <header className="dialog-help-modal__header">
-              <h2 id="flow-design-help-title">대화 설계 안내</h2>
-              <button type="button" aria-label="닫기" onClick={() => setFlowHelpOpen(false)}>
+              <h2 id="flow-design-help-title">{getFlowDesignerLabel(copy, "대화 설계 안내")}</h2>
+              <button type="button" aria-label={getFlowDesignerLabel(copy, "닫기")} onClick={() => setFlowHelpOpen(false)}>
                 ×
               </button>
             </header>
             <div className="dialog-help-modal__body">
               <section className="dialog-help-modal__section">
-                <h3>단축키</h3>
+                <h3>{getFlowDesignerLabel(copy, "단축키")}</h3>
                 <div className="dialog-help-modal__notice dialog-help-modal__notice--columns">
                   <ul>
-                    <li>저장 : Ctrl + S</li>
-                    <li>파일 다운로드 : Ctrl + D</li>
-                    <li>파일 업로드 : Ctrl + U</li>
-                    <li>대화시작으로 이동 : Ctrl + &lt;</li>
-                    <li>셀 선택 : 마우스 왼쪽 클릭, 마우스 드래그</li>
-                    <li>셀 선택 해제 : 셀 선택 Ctrl + 마우스 왼쪽 클릭, 캔버스 영역 클릭</li>
-                    <li>디버그 모드 : Alt + 셀 선택</li>
+                    <li>{getFlowDesignerLabel(copy, "저장 : Ctrl + S")}</li>
+                    <li>{getFlowDesignerLabel(copy, "파일 다운로드 : Ctrl + D")}</li>
+                    <li>{getFlowDesignerLabel(copy, "파일 업로드 : Ctrl + U")}</li>
+                    <li>{getFlowDesignerLabel(copy, "대화시작으로 이동 : Ctrl + <")}</li>
+                    <li>{getFlowDesignerLabel(copy, "셀 선택 : 마우스 왼쪽 클릭, 마우스 드래그")}</li>
+                    <li>{getFlowDesignerLabel(copy, "셀 선택 해제 : 셀 선택 Ctrl + 마우스 왼쪽 클릭, 캔버스 영역 클릭")}</li>
+                    <li>{getFlowDesignerLabel(copy, "디버그 모드 : Alt + 셀 선택")}</li>
                   </ul>
                   <ul>
-                    <li>선택된 셀 위로 이동 : ↑ (방향키)</li>
-                    <li>선택된 셀 아래 이동 : ↓ (방향키)</li>
-                    <li>선택된 셀 왼쪽 이동 : ← (방향키)</li>
-                    <li>선택된 셀 오른쪽 이동 : → (방향키)</li>
-                    <li>선택된 셀 삭제 : Del</li>
-                    <li>선택된 셀 복사하기 : Ctrl + Shift + C</li>
-                    <li>선택된 셀 붙여넣기 : Ctrl + Shift + V</li>
+                    <li>{getFlowDesignerLabel(copy, "선택된 셀 위로 이동 : ↑ (방향키)")}</li>
+                    <li>{getFlowDesignerLabel(copy, "선택된 셀 아래 이동 : ↓ (방향키)")}</li>
+                    <li>{getFlowDesignerLabel(copy, "선택된 셀 왼쪽 이동 : ← (방향키)")}</li>
+                    <li>{getFlowDesignerLabel(copy, "선택된 셀 오른쪽 이동 : → (방향키)")}</li>
+                    <li>{getFlowDesignerLabel(copy, "선택된 셀 삭제 : Del")}</li>
+                    <li>{getFlowDesignerLabel(copy, "선택된 셀 복사하기 : Ctrl + Shift + C")}</li>
+                    <li>{getFlowDesignerLabel(copy, "선택된 셀 붙여넣기 : Ctrl + Shift + V")}</li>
                   </ul>
                 </div>
               </section>
               <section className="dialog-help-modal__section">
-                <h3>대화 설계하기</h3>
+                <h3>{getFlowDesignerLabel(copy, "대화 설계하기")}</h3>
                 <div className="dialog-help-modal__notice">
-                  <p>7가지 종류의 대화카드를 Drag &amp; Drop으로 캔버스에 옮겨 사용하세요.</p>
-                  <p>
-                    봇과 사용자의 말을 쌍으로 정의하는 Talk Card,<br />
-                    다른 대화로 이동할 수 있는 Jump Card,<br />
-                    조건에 따라 대화를 분기하여 설계하는 Condition Card,<br />
-                    기간계 API 함수와 대화 변수를 매핑하는 Function Card,<br />
-                    변수를 선언하는 Variable Card,<br />
-                    자바스크립트로 코드를 작성하여 메시지나 변수를 정의하는 Script Card,<br />
+                  <p>{getFlowDesignerLabel(copy, "7가지 종류의 대화카드를 Drag & Drop으로 캔버스에 옮겨 사용하세요.")}</p>
+                  <p>{getFlowDesignerLabel(copy, "봇과 사용자의 말을 쌍으로 정의하는 Talk Card,")}<br />
+                    다른 대화로 이동할 수 있는 Jump Card,<br />{getFlowDesignerLabel(copy, "조건에 따라 대화를 분기하여 설계하는 Condition Card,")}<br />{getFlowDesignerLabel(copy, "기간계 API 함수와 대화 변수를 매핑하는 Function Card,")}<br />
+                    변수를 선언하는 Variable Card,<br />{getFlowDesignerLabel(copy, "자바스크립트로 코드를 작성하여 메시지나 변수를 정의하는 Script Card,")}<br />
                     대화 종료를 선언하는 End Card.
                   </p>
-                  <p>모든 대화는 End Card로 종료해야하며 End Card가 없을 시 최종 저장이 되지않아 봇이 대화를 학습할 수 없습니다. 꼭 End Card로 설계를 끝맺음 하세요.</p>
+                  <p>{getFlowDesignerLabel(copy, "모든 대화는 End Card로 종료해야하며 End Card가 없을 시 최종 저장이 되지않아 봇이 대화를 학습할 수 없습니다. 꼭 End Card로 설계를 끝맺음 하세요.")}</p>
                 </div>
               </section>
               <section className="dialog-help-modal__section">
-                <h3>사용 가능 변수</h3>
+                <h3>{getFlowDesignerLabel(copy, "사용 가능 변수")}</h3>
                 <div className="dialog-help-modal__table dialog-help-modal__table--variables">
-                  <div><strong>변수명</strong><strong>구분</strong><strong>설명</strong></div>
+                  <div><strong>{getFlowDesignerLabel(copy, "변수명")}</strong><strong>{getFlowDesignerLabel(copy, "구분")}</strong><strong>{getFlowDesignerLabel(copy, "설명")}</strong></div>
                   {[...COMMON_FLOW_VARIABLES, ...collectCommonFlowVariables(versionDocument).map((item) => ({
                     name: item.name,
                     category: "공통",
@@ -9957,14 +9884,14 @@ export function FlowDesignerPage() {
                 </div>
               </section>
               <section className="dialog-help-modal__section">
-                <h3>내장 함수</h3>
+                <h3>{getFlowDesignerLabel(copy, "내장 함수")}</h3>
                 <div className="dialog-help-modal__table dialog-help-modal__table--functions">
                   <div>
-                    <strong>함수</strong>
-                    <strong>유형</strong>
-                    <strong>설명</strong>
-                    <strong>예시</strong>
-                    <strong>결과</strong>
+                    <strong>{getFlowDesignerLabel(copy, "함수")}</strong>
+                    <strong>{getFlowDesignerLabel(copy, "유형")}</strong>
+                    <strong>{getFlowDesignerLabel(copy, "설명")}</strong>
+                    <strong>{getFlowDesignerLabel(copy, "예시")}</strong>
+                    <strong>{getFlowDesignerLabel(copy, "결과")}</strong>
                   </div>
                   {FLOW_DESIGN_FUNCTIONS.map((item) => (
                     <div key={item.name}>

@@ -1,0 +1,22 @@
+import type { SupportedLanguage } from "@/lib/language";
+
+export type AdminLicenseCatalog = {
+  title:string; searchPlaceholder:string; total:string; category:string; limit:string; used:string; remaining:string;
+  expiresAt:string; loading:string; applying:string; upload:string; licenseDetails:string; licenseInfo:string;
+  licenseId:string; customer:string; status:string; issuedAt:string; active:string; expired:string; replaced:string;
+  loadFailed:string; applied:string; applyFailed:string;
+};
+
+export const ADMIN_LICENSE_CATALOGS = {
+  ko:{title:"라이선스 조회",searchPlaceholder:"라이선스 이름을 검색하세요.",total:"전체 {count}건",category:"구분",limit:"전체 수",used:"사용중",remaining:"잔여",expiresAt:"만료일",loading:"불러오는 중입니다...",applying:"적용 중",upload:"라이선스 업로드",licenseDetails:"라이선스 상세 정보",licenseInfo:"라이선스 정보",licenseId:"라이선스 ID",customer:"고객",status:"상태",issuedAt:"발급일",active:"사용",expired:"만료",replaced:"교체됨",loadFailed:"라이선스 정보를 불러오지 못했습니다.",applied:"라이선스가 적용되었습니다.",applyFailed:"라이선스 적용에 실패했습니다."},
+  en:{title:"License",searchPlaceholder:"Search by license name.",total:"Total {count}",category:"Category",limit:"Limit",used:"In use",remaining:"Remaining",expiresAt:"Expiration date",loading:"Loading...",applying:"Applying",upload:"Upload license",licenseDetails:"License details",licenseInfo:"License information",licenseId:"License ID",customer:"Customer",status:"Status",issuedAt:"Issued at",active:"Active",expired:"Expired",replaced:"Replaced",loadFailed:"Failed to load license information.",applied:"The license was applied.",applyFailed:"Failed to apply the license."},
+  "zh-CN":{title:"许可证查询",searchPlaceholder:"按许可证名称搜索。",total:"全部 {count} 条",category:"分类",limit:"总数",used:"使用中",remaining:"剩余",expiresAt:"到期日",loading:"正在加载...",applying:"正在应用",upload:"上传许可证",licenseDetails:"许可证详细信息",licenseInfo:"许可证信息",licenseId:"许可证 ID",customer:"客户",status:"状态",issuedAt:"签发日期",active:"使用中",expired:"已过期",replaced:"已替换",loadFailed:"无法加载许可证信息。",applied:"许可证已应用。",applyFailed:"应用许可证失败。"},
+  ja:{title:"ライセンス照会",searchPlaceholder:"ライセンス名を検索してください。",total:"全 {count}件",category:"区分",limit:"全体数",used:"使用中",remaining:"残り",expiresAt:"有効期限",loading:"読み込み中です...",applying:"適用中",upload:"ライセンスをアップロード",licenseDetails:"ライセンス詳細情報",licenseInfo:"ライセンス情報",licenseId:"ライセンス ID",customer:"顧客",status:"状態",issuedAt:"発行日",active:"使用中",expired:"期限切れ",replaced:"交換済み",loadFailed:"ライセンス情報を読み込めませんでした。",applied:"ライセンスを適用しました。",applyFailed:"ライセンスの適用に失敗しました。"},
+  vi:{title:"Tra cứu giấy phép",searchPlaceholder:"Tìm theo tên giấy phép.",total:"Tổng {count}",category:"Phân loại",limit:"Tổng số",used:"Đang dùng",remaining:"Còn lại",expiresAt:"Ngày hết hạn",loading:"Đang tải...",applying:"Đang áp dụng",upload:"Tải giấy phép lên",licenseDetails:"Chi tiết giấy phép",licenseInfo:"Thông tin giấy phép",licenseId:"ID giấy phép",customer:"Khách hàng",status:"Trạng thái",issuedAt:"Ngày cấp",active:"Đang dùng",expired:"Hết hạn",replaced:"Đã thay thế",loadFailed:"Không thể tải thông tin giấy phép.",applied:"Đã áp dụng giấy phép.",applyFailed:"Không thể áp dụng giấy phép."},
+  fr:{title:"Licence",searchPlaceholder:"Rechercher par nom de licence.",total:"Total {count}",category:"Catégorie",limit:"Total",used:"Utilisé",remaining:"Restant",expiresAt:"Date d’expiration",loading:"Chargement...",applying:"Application",upload:"Importer une licence",licenseDetails:"Détails de la licence",licenseInfo:"Informations de licence",licenseId:"ID de licence",customer:"Client",status:"Statut",issuedAt:"Date d’émission",active:"Active",expired:"Expirée",replaced:"Remplacée",loadFailed:"Impossible de charger la licence.",applied:"La licence a été appliquée.",applyFailed:"Impossible d’appliquer la licence."},
+  de:{title:"Lizenz",searchPlaceholder:"Nach Lizenzname suchen.",total:"Gesamt {count}",category:"Kategorie",limit:"Gesamtzahl",used:"Verwendet",remaining:"Verbleibend",expiresAt:"Ablaufdatum",loading:"Wird geladen...",applying:"Wird angewendet",upload:"Lizenz hochladen",licenseDetails:"Lizenzdetails",licenseInfo:"Lizenzinformationen",licenseId:"Lizenz-ID",customer:"Kunde",status:"Status",issuedAt:"Ausgestellt am",active:"Aktiv",expired:"Abgelaufen",replaced:"Ersetzt",loadFailed:"Lizenzinformationen konnten nicht geladen werden.",applied:"Die Lizenz wurde angewendet.",applyFailed:"Die Lizenz konnte nicht angewendet werden."},
+} satisfies Record<SupportedLanguage, AdminLicenseCatalog>;
+
+export function formatAdminLicenseText(template:string, values:Record<string,string|number>):string {
+  return template.replace(/\{(\w+)\}/g,(_,key:string)=>String(values[key]??""));
+}

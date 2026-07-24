@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { type AuthSession } from "@/lib/auth";
 import { getBotVersionSettings } from "@/lib/bot-settings";
+import { INTENT_EDITOR_CATALOGS, formatIntentEditorText } from "@/lib/i18n/intent-editor";
 import {
   applyUpdatedVersionToBot,
   getBotDialogs,
@@ -41,6 +43,9 @@ function HelpTooltip({
   onClose,
   align = "center",
 }: HelpTooltipProps) {
+  const { language } = useI18n();
+  const copy = INTENT_EDITOR_CATALOGS[language];
+
   return (
     <div
       className="intent-editor-dialog__help"
@@ -50,8 +55,8 @@ function HelpTooltip({
       <button
         type="button"
         className="intent-editor-dialog__help-trigger"
-        aria-label={`${label} 설명`}
-        title={`${label} 설명`}
+        aria-label={formatIntentEditorText(copy.helpAria, { label })}
+        title={formatIntentEditorText(copy.helpAria, { label })}
         aria-expanded={active}
         onClick={() => (active ? onClose() : onOpen(id))}
       >
@@ -103,6 +108,8 @@ export function IntentEditorDialog({
   onClose,
   onSaved,
 }: IntentEditorDialogProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = INTENT_EDITOR_CATALOGS[uiLanguage];
   const NAME_MAX = 100;
   const DISPLAY_NAME_MAX = 40;
   const DIALOG_KEY_MAX = 45;
@@ -143,8 +150,8 @@ export function IntentEditorDialog({
   const [errorMessage, setErrorMessage] = useState("");
   const [activeHelpId, setActiveHelpId] = useState<string | null>(null);
   const helpContainerRef = useRef<HTMLDivElement | null>(null);
-  const dialogTypeLabel = dialogType === 0 ? "모듈" : "의도";
-  const dialogTitle = isNew ? `${dialogTypeLabel} 생성` : `${dialogTypeLabel} 수정`;
+  const dialogTypeLabel = dialogType === 0 ? copy.module : copy.intent;
+  const dialogTitle = formatIntentEditorText(isNew ? copy.createTitle : copy.editTitle, { type: dialogTypeLabel });
   const classificationType = dialog?.classificationType ?? "기본";
 
   useEffect(() => {
@@ -191,7 +198,7 @@ export function IntentEditorDialog({
     }
 
     if (tags.length >= 10) {
-      setErrorMessage("태그는 최대 10개까지 등록할 수 있습니다.");
+      setErrorMessage(copy.validation.maxTags);
       return;
     }
 
@@ -218,13 +225,13 @@ export function IntentEditorDialog({
 
   async function handleSave() {
     if (!bot.active_version) {
-      setErrorMessage("활성 버전이 없습니다.");
+      setErrorMessage(copy.validation.noActiveVersion);
       return;
     }
 
     const normalizedName = name.trim();
     if (!normalizedName) {
-      setErrorMessage("의도/모듈명을 입력해주세요.");
+      setErrorMessage(copy.validation.nameRequired);
       return;
     }
 
@@ -238,7 +245,7 @@ export function IntentEditorDialog({
       (item) => item.name === normalizedName && item.id !== dialog?.id,
     );
     if (duplicatedName) {
-      setErrorMessage("이미 사용 중인 의도/모듈명입니다.");
+      setErrorMessage(copy.validation.duplicateName);
       return;
     }
 
@@ -246,7 +253,7 @@ export function IntentEditorDialog({
       (item) => item.dialogKey === normalizedDialogKey && item.id !== dialog?.id,
     );
     if (duplicatedDialogKey) {
-      setErrorMessage("이미 사용 중인 의도 Key 입니다.");
+      setErrorMessage(copy.validation.duplicateKey);
       return;
     }
 
@@ -297,12 +304,10 @@ export function IntentEditorDialog({
       onSaved(
         nextBot,
         savedDialog,
-        isNew
-          ? `${nextDialogType === 0 ? "모듈" : "의도"}이 등록되었습니다.`
-          : `${nextDialogType === 0 ? "모듈" : "의도"} 기본 정보가 수정되었습니다.`,
+        formatIntentEditorText(isNew ? copy.created : copy.updated, { type: nextDialogType === 0 ? copy.module : copy.intent }),
       );
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "의도/모듈을 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.validation.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -318,7 +323,7 @@ export function IntentEditorDialog({
       >
         <div className="entity-editor-dialog__header">
           <strong>{dialogTitle}</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <button type="button" className="entity-editor-dialog__close" aria-label={copy.close} onClick={onClose}>
             ×
           </button>
         </div>
@@ -327,11 +332,11 @@ export function IntentEditorDialog({
           {errorMessage ? <p className="form-message form-message--error">{errorMessage}</p> : null}
 
           <p className="intent-editor-dialog__required-hint">
-            의도명, 표시명, 의도 Key는 필수값입니다.
+            {copy.requiredHint}
           </p>
 
           <div className="intent-editor-dialog__field-group">
-            <span className="intent-editor-dialog__label">구분</span>
+            <span className="intent-editor-dialog__label">{copy.category}</span>
             <div className="intent-editor-dialog__radio-row">
               <label className="intent-editor-dialog__radio">
                 <input
@@ -344,7 +349,7 @@ export function IntentEditorDialog({
                     setDialogType(nextType);
                   }}
                 />
-                <span>의도</span>
+                <span>{copy.intent}</span>
               </label>
               <label className="intent-editor-dialog__radio">
                 <input
@@ -357,7 +362,7 @@ export function IntentEditorDialog({
                     setDialogType(nextType);
                   }}
                 />
-                <span>모듈</span>
+                <span>{copy.module}</span>
               </label>
             </div>
           </div>
@@ -369,7 +374,7 @@ export function IntentEditorDialog({
               }`}
             >
               <span className="intent-editor-dialog__label-row">
-                <span>{dialogTypeLabel}명</span>
+                <span>{formatIntentEditorText(copy.nameLabel, { type: dialogTypeLabel })}</span>
                 <span className="intent-editor-dialog__required-mark">*</span>
               </span>
               <input
@@ -378,18 +383,18 @@ export function IntentEditorDialog({
                 value={name}
                 onChange={(event) => handleNameChange(event.target.value)}
                 maxLength={NAME_MAX}
-                placeholder={`${dialogTypeLabel}명을 입력하세요.`}
+                placeholder={formatIntentEditorText(copy.namePlaceholder, { type: dialogTypeLabel })}
                 autoFocus
               />
               <span className="intent-editor-dialog__field-guide">
-                <span>한글/영문/숫자/공백/특수문자/-.()로만 입력</span>
+                <span>{copy.nameGuide}</span>
                 <span>{name.length}/{NAME_MAX}</span>
               </span>
             </label>
 
             <label className="intent-editor-dialog__field">
               <span className="intent-editor-dialog__label-row">
-                <span>표시명</span>
+                <span>{copy.displayName}</span>
                 <span className="intent-editor-dialog__required-mark">*</span>
               </span>
               <input
@@ -398,22 +403,22 @@ export function IntentEditorDialog({
                 value={displayName}
                 onChange={(event) => handleDisplayNameChange(event.target.value)}
                 maxLength={DISPLAY_NAME_MAX}
-                placeholder="표시명을 입력하세요."
+                placeholder={copy.displayNamePlaceholder}
               />
               <span className="intent-editor-dialog__field-guide">
-                <span>한글/영문/숫자/공백/특수문자/-.()로만 입력</span>
+                <span>{copy.nameGuide}</span>
                 <span>{displayName.length}/{DISPLAY_NAME_MAX}</span>
               </span>
             </label>
 
             <label className="intent-editor-dialog__field">
               <span className="intent-editor-dialog__label-row">
-                <span>의도 Key</span>
+                <span>{copy.dialogKey}</span>
                 <span className="intent-editor-dialog__required-mark">*</span>
                 <HelpTooltip
                   id="dialogKey"
-                  label="의도 Key"
-                  description="의도/모듈을 내부적으로 식별하는 키입니다. 나중에 엔진이나 외부 연동에서 이름 대신 안정적으로 참조할 수 있도록 유지됩니다."
+                  label={copy.dialogKey}
+                  description={copy.dialogKeyDescription}
                   active={activeHelpId === "dialogKey"}
                   onOpen={setActiveHelpId}
                   onClose={() => setActiveHelpId(null)}
@@ -430,7 +435,7 @@ export function IntentEditorDialog({
                     maxLength={DIALOG_KEY_MAX}
                   />
                   <span className="intent-editor-dialog__field-guide">
-                    <span>영문/숫자/특수문자/_(밑줄)로만 입력</span>
+                    <span>{copy.dialogKeyGuide}</span>
                     <span>{dialogKey.length}/{DIALOG_KEY_MAX}</span>
                   </span>
                 </>
@@ -453,12 +458,12 @@ export function IntentEditorDialog({
                     checked={transitionLocked}
                     onChange={(event) => setTransitionLocked(event.target.checked)}
                   />
-                  <span>의도전환잠금</span>
+                  <span>{copy.transitionLocked}</span>
                 </span>
                 <HelpTooltip
                   id="transitionLocked"
-                  label="의도전환잠금"
-                  description="의도에 진입한 뒤에는 시나리오 진행 중 다른 의도로 전환되지 않도록 잠그는 설정입니다. 특정 의도에서 설계한 대화를 반드시 완결해야 할 때 사용합니다."
+                  label={copy.transitionLocked}
+                  description={copy.transitionLockedDescription}
                   active={activeHelpId === "transitionLocked"}
                   onOpen={setActiveHelpId}
                   onClose={() => setActiveHelpId(null)}
@@ -479,12 +484,12 @@ export function IntentEditorDialog({
                     checked={returnBlocked}
                     onChange={(event) => setReturnBlocked(event.target.checked)}
                   />
-                  <span>의도복귀차단</span>
+                  <span>{copy.returnBlocked}</span>
                 </span>
                 <HelpTooltip
                   id="returnBlocked"
-                  label="의도복귀차단"
-                  description="현재 의도 진행 중 다른 의도로 진입하게 되면, 다시 현재 의도로 복귀하지 않도록 막는 설정입니다."
+                  label={copy.returnBlocked}
+                  description={copy.returnBlockedDescription}
                   active={activeHelpId === "returnBlocked"}
                   onOpen={setActiveHelpId}
                   onClose={() => setActiveHelpId(null)}
@@ -505,12 +510,12 @@ export function IntentEditorDialog({
                     onChange={(event) => setFeedbackEnabled(event.target.checked)}
                     disabled={!feedbackEditable}
                   />
-                  <span>의도별 피드백</span>
+                  <span>{copy.feedbackEnabled}</span>
                 </span>
                 <HelpTooltip
                   id="feedbackEnabled"
-                  label="의도별 피드백"
-                  description="해당 의도 시나리오가 끝난 뒤 사용자가 점수로 평가할 수 있도록 하는 설정입니다. 실제 피드백 메시지와 척도는 봇 설정의 메시지 설정을 따릅니다."
+                  label={copy.feedbackEnabled}
+                  description={copy.feedbackEnabledDescription}
                   active={activeHelpId === "feedbackEnabled"}
                   onOpen={setActiveHelpId}
                   onClose={() => setActiveHelpId(null)}
@@ -522,8 +527,9 @@ export function IntentEditorDialog({
 
           {!feedbackEditable ? (
             <p className="intent-editor-dialog__hint">
-              봇 설정의 메시지 설정에서 피드백 사용 유형이
-              {feedbackMode === "none" ? " `사용 안함`" : " `모든 의도 사용`"}으로 설정되어 있어 여기서는 변경할 수 없습니다.
+              {formatIntentEditorText(copy.feedbackLocked, {
+                mode: feedbackMode === "none" ? copy.feedbackModeNone : copy.feedbackModeAll,
+              })}
             </p>
           ) : null}
 
@@ -534,11 +540,11 @@ export function IntentEditorDialog({
               }`}
             >
               <span className="intent-editor-dialog__label-row">
-                <span>LLM 답변 프롬프트</span>
+                <span>{copy.llmPrompt}</span>
                 <HelpTooltip
                   id="llmAnswerPrompt"
-                  label="LLM 답변 프롬프트"
-                  description="이 의도에 진입했을 때 LLM Engine 답변과 LLM Engine RAG 답변 생성에 우선 적용할 지시문입니다. 비워두면 봇 설정의 기본 프롬프트를 사용합니다."
+                  label={copy.llmPrompt}
+                  description={copy.llmPromptDescription}
                   active={activeHelpId === "llmAnswerPrompt"}
                   onOpen={setActiveHelpId}
                   onClose={() => setActiveHelpId(null)}
@@ -549,11 +555,11 @@ export function IntentEditorDialog({
                 className="bot-settings-intro__textarea"
                 value={llmAnswerPrompt}
                 rows={5}
-                placeholder="이 의도에서 LLM이 답변을 생성할 때 따를 말투, 형식, 제한사항을 입력하세요."
+                placeholder={copy.llmPromptPlaceholder}
                 onChange={(event) => setLlmAnswerPrompt(event.target.value)}
               />
               <span className="intent-editor-dialog__field-guide">
-                <span>비워두면 봇 설정의 기본 LLM 답변 프롬프트를 사용합니다.</span>
+                <span>{copy.llmPromptFallback}</span>
               </span>
             </label>
           ) : null}
@@ -564,11 +570,11 @@ export function IntentEditorDialog({
             }`}
           >
             <span className="intent-editor-dialog__label-row">
-              <span>태그</span>
+              <span>{copy.tags}</span>
               <HelpTooltip
                 id="tags"
-                label="태그"
-                description="유사한 성격의 의도들을 묶어서 조회하고 관리하기 위한 값입니다. 새로운 태그를 입력하고 Enter를 누르면 등록됩니다."
+                label={copy.tags}
+                description={copy.tagsDescription}
                 active={activeHelpId === "tags"}
                 onOpen={setActiveHelpId}
                 onClose={() => setActiveHelpId(null)}
@@ -582,10 +588,10 @@ export function IntentEditorDialog({
               onChange={(event) => setTagInput(event.target.value)}
               onKeyDown={handleTagKeyDown}
               maxLength={100}
-              placeholder="태그를 입력하고 엔터키를 눌러주세요."
+              placeholder={copy.tagsPlaceholder}
             />
             <span className="intent-editor-dialog__field-guide">
-              <span>한글/영문/숫자/공백으로만 입력, 10개까지 입력 가능</span>
+              <span>{copy.tagsGuide}</span>
               <span>{tags.length}/10</span>
             </span>
           </label>
@@ -608,7 +614,7 @@ export function IntentEditorDialog({
 
         <div className="entity-editor-dialog__footer">
           <button type="button" className="secondary-action" onClick={onClose}>
-            취소
+            {copy.cancel}
           </button>
           <button
             type="button"
@@ -616,7 +622,7 @@ export function IntentEditorDialog({
             disabled={saving}
             onClick={() => void handleSave()}
           >
-            {saving ? "저장 중..." : "확인"}
+            {saving ? copy.saving : copy.confirm}
           </button>
         </div>
       </div>

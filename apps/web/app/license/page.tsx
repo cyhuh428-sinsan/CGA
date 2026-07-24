@@ -1,20 +1,26 @@
+"use client";
+
+import { useI18n } from "@/components/language-provider";
 import { PageShell } from "@/components/page-shell";
+import { UTILITY_PAGE_CATALOGS } from "@/lib/i18n/utility-pages";
 
 export default function LicensePage() {
+  const { language } = useI18n();
+  const copy = UTILITY_PAGE_CATALOGS[language].license;
   return (
     <main className="page">
       <PageShell
-        title="라이선스 정보 조회"
-        description="도움말 아이콘을 통해 진입하는 라이선스 정보 중심 화면 셸입니다."
+        title={copy.title}
+        description={copy.description}
         manualReferences={[
-          { section: "2.3", title: "라이선스 정보 조회" },
-          { section: "2.3", title: "라이선스 팝업" },
-          { section: "2.3", title: "라이선스 알림창" },
+          { section: "2.3", title: copy.title },
+          { section: "2.3", title: copy.popup },
+          { section: "2.3", title: copy.alert },
         ]}
         quickLinks={[
-          { href: "/license/popup", label: "라이선스 팝업" },
-          { href: "/license/alert", label: "라이선스 알림창" },
-          { href: "/login", label: "로그인" },
+          { href: "/license/popup", label: copy.popup },
+          { href: "/license/alert", label: copy.alert },
+          { href: "/login", label: copy.login },
         ]}
       />
     </main>

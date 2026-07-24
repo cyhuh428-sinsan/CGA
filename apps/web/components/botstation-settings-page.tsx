@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { SortHeaderLabel } from "@/components/sort-header-label";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 import { fetchChannels, type AdminChannelItem } from "@/lib/admin-api";
 import {
   type BotStationChannelConfig,
@@ -118,6 +120,8 @@ function connectionSummary(adminChannel: AdminChannelItem, channel: BotStationCh
 }
 
 export function BotStationSettingsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <BotSettingsShell activeMenu="botstation">
       {({ bot, token, versionSettings, saveVersionSettings, setErrorMessage, setMessage }) => {
@@ -278,20 +282,18 @@ export function BotStationSettingsPage() {
             <section className="botstation-settings">
               {!form.connected ? (
                 <div className="botstation-settings__empty">
-                  <span className="botstation-settings__connected">봇이 연결되지 않았습니다.</span>
+                  <span className="botstation-settings__connected">{getStudioPageLabel(copy,"봇이 연결되지 않았습니다.")}</span>
                   <button
                     type="button"
                     className="studio-table-page__primary"
                     disabled={saving}
                     onClick={handleConnect}
-                  >
-                    연결
-                  </button>
+                  >{getStudioPageLabel(copy,"연결")}</button>
                 </div>
               ) : (
                 <>
                   <div className="botstation-settings__status">
-                    <span>봇스테이션</span>
+                    <span>{getStudioPageLabel(copy,"봇스테이션")}</span>
                     <label className="botstation-settings__switch">
                       <input type="checkbox" checked={form.enabled} onChange={handleToggleBotStation} />
                       <span>{form.enabled ? "사용" : "미사용"}</span>
@@ -304,9 +306,7 @@ export function BotStationSettingsPage() {
                       className="studio-table-page__primary"
                       disabled={saving}
                       onClick={handleConnect}
-                    >
-                      연결
-                    </button>
+                    >{getStudioPageLabel(copy,"연결")}</button>
                   </div>
 
                   <div className="botstation-settings__table-wrap">
@@ -316,10 +316,10 @@ export function BotStationSettingsPage() {
                     <div className="settings-list-card">
                       <div className="settings-list-card__header settings-list-card__header--botstation">
                         <span>
-                          <SortHeaderLabel label="채널" />
+                          <SortHeaderLabel label={getStudioPageLabel(copy, "채널")} />
                         </span>
-                        <span>설정정보</span>
-                        <span>상태</span>
+                        <span>{getStudioPageLabel(copy,"설정정보")}</span>
+                        <span>{getStudioPageLabel(copy,"상태")}</span>
                       </div>
 
                       {channelRows.map(({ adminChannel, channel }) => (
@@ -344,7 +344,7 @@ export function BotStationSettingsPage() {
                       ))}
                     </div>
                     {!loadingChannels && channelRows.length === 0 ? (
-                      <p className="botstation-settings__notice">관리자 기능에 등록된 채널이 없습니다.</p>
+                      <p className="botstation-settings__notice">{getStudioPageLabel(copy,"관리자 기능에 등록된 채널이 없습니다.")}</p>
                     ) : null}
                     <div className="bot-settings-page__pagination">
                       <button type="button" className="secondary-action" disabled>
@@ -368,13 +368,13 @@ export function BotStationSettingsPage() {
 
             {editingChannel ? (
               <div className="entity-editor-backdrop" role="presentation">
-                <div className="botstation-dialog" role="dialog" aria-modal="true" aria-label="채널 연결 정보">
+                <div className="botstation-dialog" role="dialog" aria-modal="true" aria-label={getStudioPageLabel(copy,"채널 연결 정보")}>
                   <div className="entity-editor-dialog__header">
                     <strong>{editingChannel.channelName}</strong>
                     <button
                       type="button"
                       className="entity-editor-dialog__close"
-                      aria-label="닫기"
+                      aria-label={getStudioPageLabel(copy,"닫기")}
                       onClick={() => setEditingChannel(null)}
                     >
                       ×
@@ -392,26 +392,26 @@ export function BotStationSettingsPage() {
                             <input className="bot-settings-card__input" value={meta.provider} readOnly />
                           </label>
                           <label className="botstation-dialog__field">
-                            <span>렌더러</span>
+                            <span>{getStudioPageLabel(copy, "렌더러")}</span>
                             <input className="bot-settings-card__input" value={meta.rendererType} readOnly />
                           </label>
                           <label className="botstation-dialog__field">
-                            <span>인증방식</span>
+                            <span>{getStudioPageLabel(copy,"인증방식")}</span>
                             <input className="bot-settings-card__input" value={meta.authType} readOnly />
                           </label>
                         </>
                       ) : null;
                     })()}
                     <label className="botstation-dialog__field">
-                      <span>채널 아이디</span>
+                      <span>{getStudioPageLabel(copy,"채널 아이디")}</span>
                       <input className="bot-settings-card__input" value={editingChannel.channelCode} readOnly />
                     </label>
                     <label className="botstation-dialog__field">
-                      <span>채널</span>
+                      <span>{getStudioPageLabel(copy,"채널")}</span>
                       <input className="bot-settings-card__input" value={editingChannel.channelName} readOnly />
                     </label>
                     <label className="botstation-dialog__field">
-                      <span>봇 UUID</span>
+                      <span>{getStudioPageLabel(copy,"봇 UUID")}</span>
                       <input
                         className="bot-settings-card__input"
                         value={editingChannel.botIdentifier}
@@ -419,7 +419,7 @@ export function BotStationSettingsPage() {
                       />
                     </label>
                     <label className="botstation-dialog__field">
-                      <span>봇 이름</span>
+                      <span>{getStudioPageLabel(copy,"봇 이름")}</span>
                       <input className="bot-settings-card__input" value={editingChannel.botName} readOnly />
                     </label>
                     <label className="botstation-dialog__field">
@@ -427,10 +427,10 @@ export function BotStationSettingsPage() {
                         App ID
                         <span
                           className="admin-inline-help"
-                          data-help="카카오 앱 또는 스킬 식별값입니다. 운영 식별 용도이며, token 방식 검증값과는 별개입니다."
+                          data-help={getStudioPageLabel(copy, "카카오 앱 또는 스킬 식별값입니다. 운영 식별 용도이며, token 방식 검증값과는 별개입니다.")}
                           tabIndex={0}
                           role="img"
-                          aria-label="App ID 설명"
+                          aria-label={getStudioPageLabel(copy, "App ID 설명")}
                         >
                           i
                         </span>
@@ -450,10 +450,10 @@ export function BotStationSettingsPage() {
                         App Secret
                         <span
                           className="admin-inline-help"
-                          data-help="카카오 webhook 보호용 비밀값입니다. 1차 운영에서는 보통 채널 인증 정보 JSON의 token 또는 appSecret 값과 같은 의미로 맞춰 사용합니다."
+                          data-help={getStudioPageLabel(copy, "카카오 webhook 보호용 비밀값입니다. 1차 운영에서는 보통 채널 인증 정보 JSON의 token 또는 appSecret 값과 같은 의미로 맞춰 사용합니다.")}
                           tabIndex={0}
                           role="img"
-                          aria-label="App Secret 설명"
+                          aria-label={getStudioPageLabel(copy, "App Secret 설명")}
                         >
                           i
                         </span>
@@ -473,10 +473,10 @@ export function BotStationSettingsPage() {
                         Callback URL
                         <span
                           className="admin-inline-help"
-                          data-help="카카오 관리자센터 또는 스킬 설정 화면에 등록할 실제 호출 주소입니다. 보통 기본 webhook 값을 그대로 사용합니다."
+                          data-help={getStudioPageLabel(copy, "카카오 관리자센터 또는 스킬 설정 화면에 등록할 실제 호출 주소입니다. 보통 기본 webhook 값을 그대로 사용합니다.")}
                           tabIndex={0}
                           role="img"
-                          aria-label="Callback URL 설명"
+                          aria-label={getStudioPageLabel(copy, "Callback URL 설명")}
                         >
                           i
                         </span>
@@ -508,23 +508,23 @@ export function BotStationSettingsPage() {
                           {isKakaoMeta(meta) ? (
                             <>
                               <p>
-                                <code>App ID</code>는 카카오 앱/스킬 식별값, <code>App Secret</code>은 webhook 보호용 비밀값입니다.
+                                <code>App ID</code>{getStudioPageLabel(copy, "는 카카오 앱/스킬 식별값,")}<code>App Secret</code>은 webhook 보호용 비밀값입니다.
                               </p>
                               <p>
                                 <code>Callback URL</code>에는 카카오 관리자센터에 등록할 실제 호출 주소를 넣습니다. 보통 기본 webhook 값을 그대로 사용하면 됩니다.
                               </p>
                               <p>
-                                1차 테스트는 채널 관리에서 인증 방식을 <code>없음</code>으로 두고 응답 왕복을 먼저 확인한 뒤, 운영 전환 시 <code>Token</code>으로 올리는 순서를 권장합니다.
+                                1차 테스트는 채널 관리에서 인증 방식을 <code>{getStudioPageLabel(copy,"없음")}</code>{getStudioPageLabel(copy, "으로 두고 응답 왕복을 먼저 확인한 뒤, 운영 전환 시")}<code>Token</code>으로 올리는 순서를 권장합니다.
                               </p>
                             </>
                           ) : (
-                            <p>이 화면의 입력값은 메신저 연동 상세정보 팝업과 동일한 연결 정보입니다.</p>
+                            <p>{getStudioPageLabel(copy,"이 화면의 입력값은 메신저 연동 상세정보 팝업과 동일한 연결 정보입니다.")}</p>
                           )}
                         </div>
                       );
                     })()}
                     <label className="botstation-dialog__field botstation-dialog__field--wide">
-                      <span>설명</span>
+                      <span>{getStudioPageLabel(copy,"설명")}</span>
                       <textarea
                         className="bot-settings-intro__textarea"
                         value={editingChannel.description}
@@ -538,12 +538,8 @@ export function BotStationSettingsPage() {
                   </div>
 
                   <div className="entity-editor-dialog__footer">
-                    <button type="button" className="secondary-action" onClick={() => setEditingChannel(null)}>
-                      취소
-                    </button>
-                    <button type="button" className="primary-action" onClick={handleSaveChannel}>
-                      확인
-                    </button>
+                    <button type="button" className="secondary-action" onClick={() => setEditingChannel(null)}>{getStudioPageLabel(copy,"취소")}</button>
+                    <button type="button" className="primary-action" onClick={handleSaveChannel}>{getStudioPageLabel(copy,"확인")}</button>
                   </div>
                 </div>
               </div>

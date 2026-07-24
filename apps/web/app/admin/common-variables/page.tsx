@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { DataGrid, dataGridCellText, type DataGridRow, type DataGridSortState } from "@/components/data-grid";
 import {
   createCommonVariable,
@@ -15,13 +16,19 @@ import {
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
 import {
+  COMMON_VARIABLE_CATALOGS,
+  formatCommonVariableText,
+  type CommonVariableCatalog,
+} from "@/lib/i18n/admin-common-variables";
+import { SUPPORTED_LANGUAGES } from "@/lib/language";
+import {
   LIST_PAGE_SIZE_OPTIONS,
   type ListPageSize,
   usePersistedPageSize,
 } from "@/lib/use-persisted-page-size";
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -31,9 +38,9 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function downloadVariables(items: AdminCommonVariableItem[]) {
+function downloadVariables(items: AdminCommonVariableItem[], copy: CommonVariableCatalog) {
   const rows = [
-    ["변수명", "변수값", "설명"],
+    [copy.name, copy.value, copy.description],
     ...items
       .filter((item) => item.kind === "user")
       .map((item) => [item.name, item.value, item.description ?? ""]),
@@ -43,7 +50,7 @@ function downloadVariables(items: AdminCommonVariableItem[]) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "공통 변수.csv";
+  anchor.download = `${copy.title}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -94,6 +101,9 @@ function parseCsv(text: string) {
 }
 
 export default function AdminCommonVariablesPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = COMMON_VARIABLE_CATALOGS[uiLanguage];
+  const locale = SUPPORTED_LANGUAGES.find((item) => item.code === uiLanguage)?.intlLocale ?? "ko-KR";
   const [token, setToken] = useState("");
   const [variables, setVariables] = useState<AdminCommonVariableItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -121,7 +131,7 @@ export default function AdminCommonVariablesPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setToken(session.access_token);
@@ -147,7 +157,7 @@ export default function AdminCommonVariablesPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "공통 변수를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -159,7 +169,7 @@ export default function AdminCommonVariablesPage() {
     return () => {
       ignore = true;
     };
-  }, [appliedKind, appliedQuery, token]);
+  }, [appliedKind, appliedQuery, copy.loadFailed, token]);
 
   const userVariableIds = variables.filter((item) => item.kind === "user").map((item) => item.id);
   const allUserSelected = userVariableIds.length > 0 && userVariableIds.every((id) => selectedIds.includes(id));
@@ -223,15 +233,15 @@ export default function AdminCommonVariablesPage() {
           value: payload.value,
           description: payload.description,
         });
-        setNoticeMessage("공통 변수가 수정되었습니다.");
+        setNoticeMessage(copy.saved);
       } else {
         await createCommonVariable(token, payload);
-        setNoticeMessage("공통 변수가 추가되었습니다.");
+        setNoticeMessage(copy.added);
       }
       closeDialog();
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "공통 변수 저장에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.saveFailed);
     }
   }
 
@@ -255,10 +265,10 @@ export default function AdminCommonVariablesPage() {
       for (const id of selectedIds) {
         await deleteCommonVariable(token, id);
       }
-      setNoticeMessage("선택한 공통 변수가 삭제되었습니다.");
+      setNoticeMessage(copy.deleted);
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "공통 변수 삭제에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.deleteFailed);
     }
   }
 
@@ -268,7 +278,8 @@ export default function AdminCommonVariablesPage() {
     }
     const text = await file.text();
     const rows = parseCsv(text).filter((row) => row.length >= 2);
-    const dataRows = rows[0]?.some((cell) => cell.includes("변수")) ? rows.slice(1) : rows;
+    // Keep compatibility with previously downloaded Korean CSV headers.
+    const dataRows = rows[0]?.some((cell) => cell.includes("\uBCC0\uC218") || cell === copy.name || cell === copy.value) ? rows.slice(1) : rows;
     const items = dataRows
       .map((row) => ({
         name: row[0] ?? "",
@@ -278,16 +289,16 @@ export default function AdminCommonVariablesPage() {
       .filter((item) => item.name.trim() && item.value.trim());
 
     if (items.length === 0) {
-      setNoticeMessage("업로드 가능한 공통 변수가 없습니다.");
+      setNoticeMessage(copy.noUpload);
       return;
     }
 
     try {
       const response = await importCommonVariables(token, items);
-      setNoticeMessage(`${response.saved_count}건 업로드, ${response.skipped_count}건 제외되었습니다.`);
+      setNoticeMessage(formatCommonVariableText(copy.uploadResult, { saved: response.saved_count, skipped: response.skipped_count }));
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "공통 변수 업로드에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.uploadFailed);
     }
   }
 
@@ -300,18 +311,18 @@ export default function AdminCommonVariablesPage() {
           type="checkbox"
           checked={selectedIds.includes(item.id)}
           onChange={() => toggleOne(item.id)}
-          aria-label={`${item.name} 선택`}
+          aria-label={`${item.name} ${copy.select}`}
         />
       ) : (
-        <input key={`check-${item.id}`} type="checkbox" disabled aria-label={`${item.name} 선택 불가`} />
+        <input key={`check-${item.id}`} type="checkbox" disabled aria-label={`${item.name} ${copy.unavailable}`} />
       ),
-      item.kind === "system" ? "시스템" : "사용자",
+      item.kind === "system" ? copy.system : copy.user,
       <button key={`name-${item.id}`} type="button" className="table-link" onClick={() => openEditDialog(item)}>
         {item.name}
       </button>,
       item.value,
       item.description ?? "",
-      formatDate(item.updated_at),
+      formatDate(item.updated_at, locale),
       item.updater_name,
     ],
   }));
@@ -328,10 +339,10 @@ export default function AdminCommonVariablesPage() {
         leftText.trim() !== "" && rightText.trim() !== "" && Number.isFinite(leftNumber) && Number.isFinite(rightNumber);
       const result = bothNumeric
         ? leftNumber - rightNumber
-        : leftText.localeCompare(rightText, "ko-KR", { numeric: true, sensitivity: "base" });
+        : leftText.localeCompare(rightText, locale, { numeric: true, sensitivity: "base" });
       return sortState.direction === "asc" ? result : -result;
     });
-  }, [rows, sortState]);
+  }, [locale, rows, sortState]);
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const pagedRows = sortedRows.slice((page - 1) * pageSize, page * pageSize);
 
@@ -347,7 +358,7 @@ export default function AdminCommonVariablesPage() {
 
   return (
     <section className="admin-page">
-      <h2>공통 변수 관리</h2>
+      <h2>{copy.title}</h2>
 
       <div className="admin-page__search-row admin-common-variables__search-row">
         <label className="admin-page__search">
@@ -356,30 +367,30 @@ export default function AdminCommonVariablesPage() {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="변수명 또는 변수값을 검색하세요."
+            placeholder={copy.searchPlaceholder}
           />
         </label>
         <select className="login-select" value={kindFilter} onChange={(event) => setKindFilter(event.target.value)}>
-          <option value="">전체 구분</option>
-          <option value="user">사용자</option>
-          <option value="system">시스템</option>
+          <option value="">{copy.allKinds}</option>
+          <option value="user">{copy.user}</option>
+          <option value="system">{copy.system}</option>
         </select>
         <button type="button" className="admin-page__filter" onClick={resetSearch}>
-          초기화
+          {copy.reset}
         </button>
         <div className="admin-page__search-actions">
           <button type="button" className="admin-page__primary" onClick={applySearch}>
-            조회
+            {copy.search}
           </button>
           <button type="button" className="admin-page__primary" onClick={openAddDialog}>
-            + 공통 변수 추가
+            + {copy.add}
           </button>
           <div className="admin-common-variables__more">
             <button
               type="button"
               className="admin-common-variables__more-button"
               onClick={() => setMenuOpen((current) => !current)}
-              aria-label="공통 변수 더보기"
+              aria-label={copy.more}
             >
               <span className="admin-common-variables__more-dots" aria-hidden="true">
                 <span />
@@ -396,16 +407,16 @@ export default function AdminCommonVariablesPage() {
                     fileInputRef.current?.click();
                   }}
                 >
-                  파일 업로드
+                  {copy.upload}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
-                    downloadVariables(variables);
+                    downloadVariables(variables, copy);
                   }}
                 >
-                  파일 다운로드
+                  {copy.download}
                 </button>
               </div>
             ) : null}
@@ -425,19 +436,19 @@ export default function AdminCommonVariablesPage() {
 
       <div className="admin-page__toolbar">
         <div className="admin-page__toolbar-left">
-          <strong>전체 {variables.length}건</strong>
+          <strong>{copy.total} {variables.length}</strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
               {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}개씩 보기
+                  {option} {copy.perPage}
                 </option>
               ))}
             </select>
           </label>
-          {selectedIds.length > 0 ? <span className="admin-page__selection">{selectedIds.length}개 선택</span> : null}
+          {selectedIds.length > 0 ? <span className="admin-page__selection">{selectedIds.length} {copy.selected}</span> : null}
           <button type="button" className="admin-page__ghost" disabled={selectedIds.length === 0} onClick={deleteSelected}>
-            삭제
+            {copy.delete}
           </button>
         </div>
       </div>
@@ -447,7 +458,7 @@ export default function AdminCommonVariablesPage() {
         <div className="admin-state-box">
           <p>{errorMessage}</p>
           <Link href="/login" className="ghost-pill">
-            로그인으로 이동
+            {copy.login}
           </Link>
         </div>
       ) : null}
@@ -458,21 +469,21 @@ export default function AdminCommonVariablesPage() {
             variant="admin"
             template="44px 90px 210px 180px 1fr 180px 180px"
             columns={[
-              <input key="all" type="checkbox" checked={allUserSelected} onChange={toggleAll} aria-label="전체 선택" />,
-              "구분",
-              "변수명",
-              "변수값",
-              "설명",
-              "최종수정일시",
-              "최종수정자",
+              <input key="all" type="checkbox" checked={allUserSelected} onChange={toggleAll} aria-label={copy.selectAll} />,
+              copy.category,
+              copy.name,
+              copy.value,
+              copy.description,
+              copy.updatedAt,
+              copy.updatedBy,
             ]}
             rows={loading ? [] : pagedRows}
             sortState={sortState}
             onSort={setSortState}
           />
 
-          {loading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
-          {!loading && rows.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+          {loading ? <p className="admin-page__empty">{copy.loading}</p> : null}
+          {!loading && rows.length === 0 ? <p className="admin-page__empty">{copy.empty}</p> : null}
 
           <div className="admin-page__pagination">
             <button type="button" disabled={page === 1} onClick={() => setPage(1)}>
@@ -498,15 +509,15 @@ export default function AdminCommonVariablesPage() {
         <div className="settings-dialog-backdrop">
           <div className="settings-dialog admin-variable-dialog">
             <div className="settings-dialog__header">
-              <strong>{editing ? "공통 변수 상세 정보" : "공통 변수 추가"}</strong>
-              <button type="button" className="settings-dialog__close" onClick={closeDialog} aria-label="닫기">
+              <strong>{editing ? copy.detail : copy.add}</strong>
+              <button type="button" className="settings-dialog__close" onClick={closeDialog} aria-label={copy.close}>
                 ×
               </button>
             </div>
             <div className="admin-variable-dialog__body">
-              {editing?.kind === "system" ? <p className="admin-page__empty">시스템 변수는 읽기 전용입니다.</p> : null}
+              {editing?.kind === "system" ? <p className="admin-page__empty">{copy.readOnly}</p> : null}
               <label>
-                <span>변수명</span>
+                <span>{copy.name}</span>
                 <input
                   type="text"
                   value={draft.name}
@@ -515,7 +526,7 @@ export default function AdminCommonVariablesPage() {
                 />
               </label>
               <label>
-                <span>변수값</span>
+                <span>{copy.value}</span>
                 <input
                   type="text"
                   value={draft.value}
@@ -524,7 +535,7 @@ export default function AdminCommonVariablesPage() {
                 />
               </label>
               <label>
-                <span>변수 설명</span>
+                <span>{copy.variableDescription}</span>
                 <textarea
                   value={draft.description}
                   disabled={editing?.kind === "system"}
@@ -534,11 +545,11 @@ export default function AdminCommonVariablesPage() {
             </div>
             <div className="entity-editor-dialog__footer">
               <button type="button" className="secondary-action" onClick={closeDialog}>
-                취소
+                {copy.cancel}
               </button>
               {editing?.kind !== "system" ? (
                 <button type="button" className="primary-action" onClick={saveDraft}>
-                  확인
+                  {copy.confirm}
                 </button>
               ) : null}
             </div>

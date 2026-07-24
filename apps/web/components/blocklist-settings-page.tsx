@@ -7,6 +7,8 @@ import { type BlocklistConfig } from "@/lib/bot-settings";
 import { SortHeaderLabel } from "@/components/sort-header-label";
 import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { loadAuthSession } from "@/lib/auth";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 type SortKey = "name" | "pattern" | "updatedAt" | "updatedBy";
 
@@ -48,6 +50,8 @@ function tryCreateRuntimeRegex(pattern: string) {
 }
 
 export function BlocklistSettingsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <BotSettingsShell activeMenu="blocklist">
       {({ versionSettings, saveVersionSettings, setErrorMessage, setMessage }) => {
@@ -300,7 +304,7 @@ export function BlocklistSettingsPage() {
         return (
           <>
             <section className="bot-settings-section">
-              <h2>제외/무시 목록 설정</h2>
+              <h2>{getStudioPageLabel(copy,"제외/무시 목록 설정")}</h2>
               <div className="settings-toolbar settings-toolbar--between">
                 <div className="settings-search-inline">
                   <span className="settings-search-inline__icon" aria-hidden="true">
@@ -311,17 +315,15 @@ export function BlocklistSettingsPage() {
                     className="settings-search-inline__input"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="제외/무시 목록 이름 또는 제외/무시 텍스트/정규식"
+                    placeholder={getStudioPageLabel(copy, "제외/무시 목록 이름 또는 제외/무시 텍스트/정규식")}
                   />
-                  <button type="button" className="settings-search-inline__filter" aria-label="필터">
+                  <button type="button" className="settings-search-inline__filter" aria-label={getStudioPageLabel(copy,"필터")}>
                     ▾
                   </button>
                 </div>
 
                 <div className="settings-toolbar__group">
-                  <button type="button" className="primary-action" disabled={saving} onClick={() => openEditor(createEmptyBlocklist())}>
-                    + 제외/무시 목록 추가
-                  </button>
+                  <button type="button" className="primary-action" disabled={saving} onClick={() => openEditor(createEmptyBlocklist())}>{getStudioPageLabel(copy,"+ 제외/무시 목록 추가")}</button>
                   <div className="settings-overflow" ref={moreMenuRef}>
                     <button
                       type="button"
@@ -336,28 +338,24 @@ export function BlocklistSettingsPage() {
                         <span />
                         <span />
                       </span>
-                      <span className="sr-only">더보기</span>
+                      <span className="sr-only">{getStudioPageLabel(copy,"더보기")}</span>
                     </button>
                     {moreMenuOpen ? (
-                      <div className="settings-overflow__menu" role="menu" aria-label="파일 메뉴">
+                      <div className="settings-overflow__menu" role="menu" aria-label={getStudioPageLabel(copy,"파일 메뉴")}>
                         <button
                           type="button"
                           role="menuitem"
                           className="settings-overflow__item"
                           disabled={saving}
                           onClick={() => fileInputRef.current?.click()}
-                        >
-                          파일 업로드
-                        </button>
+                        >{getStudioPageLabel(copy,"파일 업로드")}</button>
                         <button
                           type="button"
                           role="menuitem"
                           className="settings-overflow__item"
                           disabled={saving}
                           onClick={handleDownload}
-                        >
-                          파일 다운로드
-                        </button>
+                        >{getStudioPageLabel(copy,"파일 다운로드")}</button>
                       </div>
                     ) : null}
                   </div>
@@ -379,27 +377,23 @@ export function BlocklistSettingsPage() {
 
               <div className="settings-search-grid settings-search-grid--test">
                 <label className="settings-form-card">
-                  <span>발화 제외/무시 테스트</span>
+                  <span>{getStudioPageLabel(copy, "발화 제외/무시 테스트")}</span>
                   <div className="settings-inline-actions">
                     <input
                       type="text"
                       className="bot-settings-card__input"
                       value={testSentence}
                       onChange={(event) => setTestSentence(event.target.value)}
-                      placeholder="제외/무시 규칙을 시험할 발화"
+                      placeholder={getStudioPageLabel(copy, "제외/무시 규칙을 시험할 발화")}
                     />
-                    <button type="button" className="secondary-action" onClick={handleTest}>
-                      테스트
-                    </button>
+                    <button type="button" className="secondary-action" onClick={handleTest}>{getStudioPageLabel(copy,"테스트")}</button>
                   </div>
                 </label>
               </div>
 
               <div className="settings-toolbar settings-toolbar--subtle">
                 <span className="bot-settings-page__caption">전체 {visibleItems.length}</span>
-                <button type="button" className="secondary-action secondary-action--danger" disabled={saving || selectedIds.length === 0} onClick={() => void handleDeleteSelected()}>
-                  삭제
-                </button>
+                <button type="button" className="secondary-action secondary-action--danger" disabled={saving || selectedIds.length === 0} onClick={() => void handleDeleteSelected()}>{getStudioPageLabel(copy,"삭제")}</button>
                 <div className="settings-toolbar__spacer" />
                 <button type="button" className="secondary-action" disabled={saving || selectedIds.length === 0} onClick={() => void moveSelected(-1)}>
                   ↑
@@ -426,18 +420,18 @@ export function BlocklistSettingsPage() {
                     />
                   </span>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("name")}>
-                    <SortHeaderLabel label="제외/무시 목록 이름" />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "제외/무시 목록 이름")} />
                   </button>
-                  <span>유형</span>
+                  <span>{getStudioPageLabel(copy,"유형")}</span>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("pattern")}>
-                    <SortHeaderLabel label="제외/무시 텍스트/정규식" />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "제외/무시 텍스트/정규식")} />
                   </button>
-                  <span>사용</span>
+                  <span>{getStudioPageLabel(copy,"사용")}</span>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedAt")}>
-                    <SortHeaderLabel label="최종수정일시" direction={sortKey === "updatedAt" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정일시")} direction={sortKey === "updatedAt" ? sortDirection : "none"} />
                   </button>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-                    <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정자")} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
                   </button>
                 </div>
 
@@ -461,7 +455,7 @@ export function BlocklistSettingsPage() {
                   </div>
                 ))}
 
-                {pagedItems.length === 0 ? <p className="bot-settings-page__loading">등록된 제외/무시 목록이 없습니다.</p> : null}
+                {pagedItems.length === 0 ? <p className="bot-settings-page__loading">{getStudioPageLabel(copy,"등록된 제외/무시 목록이 없습니다.")}</p> : null}
               </div>
 
               <div className="bot-settings-page__pagination">
@@ -497,7 +491,7 @@ export function BlocklistSettingsPage() {
 
               {testSentence.trim() ? (
                 <div className="settings-test-result">
-                  <strong>제외/무시 규칙 테스트 결과</strong>
+                  <strong>{getStudioPageLabel(copy, "제외/무시 규칙 테스트 결과")}</strong>
                   {testResults.length > 0 ? (
                     <ul>
                       {testResults.map((item) => (
@@ -505,7 +499,7 @@ export function BlocklistSettingsPage() {
                       ))}
                     </ul>
                   ) : (
-                    <p>적용되는 제외/무시 규칙이 없습니다.</p>
+                    <p>{getStudioPageLabel(copy, "적용되는 제외/무시 규칙이 없습니다.")}</p>
                   )}
                 </div>
               ) : null}
@@ -516,19 +510,19 @@ export function BlocklistSettingsPage() {
                     className="settings-dialog settings-dialog--wide"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="제외/무시 목록 상세"
+                    aria-label={getStudioPageLabel(copy,"제외/무시 목록 상세")}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="settings-dialog__header">
-                      <strong>제외/무시 목록 상세</strong>
-                      <button type="button" className="settings-dialog__close" onClick={() => setEditorOpen(false)} aria-label="닫기">
+                      <strong>{getStudioPageLabel(copy,"제외/무시 목록 상세")}</strong>
+                      <button type="button" className="settings-dialog__close" onClick={() => setEditorOpen(false)} aria-label={getStudioPageLabel(copy,"닫기")}>
                         ×
                       </button>
                     </div>
                     <div className="settings-dialog__body settings-dialog__body--form">
                       <div className="settings-form-grid settings-form-grid--compact">
                         <label className="settings-form-card">
-                          <span>제외/무시 목록 이름</span>
+                          <span>{getStudioPageLabel(copy,"제외/무시 목록 이름")}</span>
                           <input
                             type="text"
                             className="bot-settings-card__input"
@@ -538,7 +532,7 @@ export function BlocklistSettingsPage() {
                         </label>
 
                         <label className="settings-form-card">
-                          <span>유형</span>
+                          <span>{getStudioPageLabel(copy,"유형")}</span>
                           <select
                             className="bot-settings-card__select"
                             value={editor.type}
@@ -549,13 +543,13 @@ export function BlocklistSettingsPage() {
                               }))
                             }
                           >
-                            <option value="word">텍스트 제외/무시</option>
-                            <option value="regex">정규식 제외/무시</option>
+                            <option value="word">{getStudioPageLabel(copy, "텍스트 제외/무시")}</option>
+                            <option value="regex">{getStudioPageLabel(copy, "정규식 제외/무시")}</option>
                           </select>
                         </label>
 
                         <label className="settings-form-card settings-form-card--wide">
-                          <span>제외/무시 텍스트/정규식</span>
+                          <span>{getStudioPageLabel(copy,"제외/무시 텍스트/정규식")}</span>
                           <textarea
                             className="bot-settings-intro__textarea"
                             value={editor.pattern}
@@ -564,7 +558,7 @@ export function BlocklistSettingsPage() {
                         </label>
 
                         <label className="settings-form-card settings-form-card--wide">
-                          <span>설명</span>
+                          <span>{getStudioPageLabel(copy,"설명")}</span>
                           <textarea
                             className="bot-settings-intro__textarea"
                             value={editor.description}
@@ -578,14 +572,12 @@ export function BlocklistSettingsPage() {
                             checked={editor.enabled}
                             onChange={(event) => setEditor((current) => ({ ...current, enabled: event.target.checked }))}
                           />
-                          <span>사용 여부</span>
+                          <span>{getStudioPageLabel(copy,"사용 여부")}</span>
                         </label>
                       </div>
                     </div>
                     <div className="settings-dialog__footer">
-                      <button type="button" className="secondary-action" disabled={saving} onClick={() => setEditorOpen(false)}>
-                        취소
-                      </button>
+                      <button type="button" className="secondary-action" disabled={saving} onClick={() => setEditorOpen(false)}>{getStudioPageLabel(copy,"취소")}</button>
                       <button type="button" className="primary-action" disabled={saving} onClick={() => void handleSaveEditor()}>
                         {saving ? "저장 중..." : "확인"}
                       </button>

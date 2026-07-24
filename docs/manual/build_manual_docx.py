@@ -13,6 +13,7 @@ from docx.shared import Inches, Pt, RGBColor
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "dist"
 FONT = "Malgun Gothic"
+HEADER_LABEL = "CGA Studio 메뉴얼"
 BLUE = RGBColor(46, 116, 181)
 DARK_BLUE = RGBColor(31, 77, 120)
 GRAY = RGBColor(95, 99, 104)
@@ -116,7 +117,7 @@ def style_document(doc):
         style.paragraph_format.line_spacing = 1.15
     header = section.header.paragraphs[0]
     header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    set_font(header.add_run("CGA Studio 메뉴얼"), size=8.5, color=GRAY)
+    set_font(header.add_run(HEADER_LABEL), size=8.5, color=GRAY)
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
     set_font(footer.add_run("CGA Studio"), size=8.5, color=GRAY)
@@ -234,12 +235,34 @@ def convert_markdown(source, output):
     doc.save(output)
 
 
-def main():
-    OUT.mkdir(exist_ok=True)
-    convert_markdown(ROOT / "cga-user-manual" / "README.md", OUT / "CGA 사용자 설명서.docx")
-    convert_markdown(ROOT / "cga-getting-started" / "README.md", OUT / "CGA Getting Started.docx")
-    convert_markdown(ROOT / "cga-nlu-guide" / "README.md", OUT / "CGA NLU 활용 가이드.docx")
+MANUALS = {
+    "cga-user-manual": {"ko": "CGA 사용자 설명서", "default": "CGA User Manual"},
+    "cga-getting-started": {"ko": "CGA Getting Started", "default": "CGA Getting Started"},
+    "cga-nlu-guide": {"ko": "CGA NLU 활용 가이드", "default": "CGA NLU Guide"},
+}
+LANGUAGES = ("ko", "en", "zh-CN", "ja", "vi", "fr", "de")
+FONT_BY_LANGUAGE = {
+    "ko": "Malgun Gothic", "en": "Arial", "zh-CN": "Microsoft YaHei",
+    "ja": "Yu Gothic", "vi": "Arial", "fr": "Arial", "de": "Arial",
+}
+HEADER_BY_LANGUAGE = {
+    "ko": "CGA Studio 메뉴얼", "en": "CGA Studio Manual", "zh-CN": "CGA Studio 手册",
+    "ja": "CGA Studio マニュアル", "vi": "Hướng dẫn CGA Studio",
+    "fr": "Manuel CGA Studio", "de": "CGA Studio Handbuch",
+}
 
+
+def main():
+    global FONT, HEADER_LABEL
+    OUT.mkdir(exist_ok=True)
+    for manual_dir, names in MANUALS.items():
+        for language in LANGUAGES:
+            FONT = FONT_BY_LANGUAGE[language]
+            HEADER_LABEL = HEADER_BY_LANGUAGE[language]
+            source_name = "README.md" if language == "ko" else f"README.{language}.md"
+            source = ROOT / manual_dir / source_name
+            output_stem = names["ko"] if language == "ko" else f"{names['default']} ({language})"
+            convert_markdown(source, OUT / f"{output_stem}.docx")
 
 if __name__ == "__main__":
     main()

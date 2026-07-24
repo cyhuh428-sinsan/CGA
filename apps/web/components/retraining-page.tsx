@@ -4,10 +4,12 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import { SortHeaderLabel } from "@/components/sort-header-label";
 import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
+import { formatRetrainingText, getRetrainingOptionLabel, RETRAINING_CATALOGS } from "@/lib/i18n/retraining";
 import { LIST_PAGE_SIZE_OPTIONS, type ListPageSize, usePersistedPageSize } from "@/lib/use-persisted-page-size";
 import { type AdminConversationHistoryItem, fetchAllConversationHistory } from "@/lib/admin-api";
 import { getBotDialogs, getNextDialogNo } from "@/lib/dialog-assets";
@@ -508,6 +510,8 @@ function buildCandidates(
 
 export function RetrainingPageClient({ botId: routeBotId, versionId }: RetrainingPageClientProps) {
   const workspace = useStudioWorkspace();
+  const { language: uiLanguage } = useI18n();
+  const copy = RETRAINING_CATALOGS[uiLanguage];
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const botId = useMemo(() => decodeURIComponent(routeBotId), [routeBotId]);
@@ -564,7 +568,7 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
         setConversationRows(conversations.items);
       })
       .catch((error) => {
-        if (!ignore) setErrorMessage(error instanceof Error ? error.message : "재학습 정보를 불러오지 못했습니다.");
+        if (!ignore) setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
       })
       .finally(() => {
         if (!ignore) setLoading(false);
@@ -625,7 +629,7 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "재학습 버전 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.versionLoadFailed);
         }
       })
       .finally(() => {
@@ -663,7 +667,7 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
       setVersions(refreshed.versions);
       setBot(refreshed.bot);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "학습 결과를 다시 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.refreshFailed);
     }
   }
   const versionDocument = useMemo(() => normalizeVersionDocument(effectiveVersion?.version_json), [effectiveVersion?.version_json]);
@@ -698,7 +702,7 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
     }
     hubCandidateSelectionRef.current = true;
     setSelectedIds((current) => current.includes(hubCandidate.id) ? current : [hubCandidate.id, ...current]);
-    setMessage("봇 허브에서 선택한 재학습 후보를 자동 선택했습니다.");
+    setMessage(copy.hubCandidatesSelected);
   }, [candidates, hubCandidate]);
   const channels = useMemo(() => ["전체", ...Array.from(new Set(candidates.map((item) => item.channel)))], [candidates]);
   const filteredCandidates = useMemo(() => {
@@ -715,9 +719,9 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
         item.utterance,
         item.intentName,
         item.channel,
-        item.resultType,
-        item.method,
-        item.status,
+        getRetrainingOptionLabel(copy, item.resultType),
+        getRetrainingOptionLabel(copy, item.method),
+        getRetrainingOptionLabel(copy, item.status),
       ].some((value) => value.toLowerCase().includes(lowered));
     });
     return [...filtered].sort((left, right) => {
@@ -821,9 +825,9 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
     try {
       const conversations = await fetchAllConversationHistory(authSession.access_token, { fromDate, toDate });
       setConversationRows(conversations.items);
-      setMessage("대화이력을 동기화했습니다.");
+      setMessage(copy.historySynced);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "대화이력 동기화에 실패했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.historySyncFailed);
     } finally {
       setLoading(false);
     }
@@ -840,14 +844,14 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
         updatedAt: new Date().toISOString(),
       };
     });
-    const actionLabel = nextStatus === "재학습제외" ? "재학습 제외" : nextStatus;
+    const actionLabel = getRetrainingOptionLabel(copy, nextStatus);
     void saveVersionDocument({
       ...versionDocument,
       system_config: {
         ...versionDocument.system_config,
         retraining_records: nextRecords,
       },
-    }, `선택한 ${selectedCandidates.length}건을 ${actionLabel} 처리했습니다.`);
+    }, formatRetrainingText(copy.candidatesUpdated, { count: selectedCandidates.length, action: actionLabel }));
   }
 
   async function saveVersionDocument(nextDocument: VersionDocument, successMessage: string) {
@@ -873,7 +877,7 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
       setSelectedIds([]);
       setDialogOpen(false);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "재학습 처리에 실패했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.actionFailed);
     } finally {
       setSaving(false);
     }
@@ -881,12 +885,12 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
 
   function handleOpenRetraining(nextAction: "add-utterance" | "create-intent") {
     if (selectedCandidates.length === 0) {
-      setErrorMessage("재학습할 문장을 선택하세요.");
+      setErrorMessage(copy.selectUtterances);
       return;
     }
     const blocked = selectedCandidates.find((item) => ["Rule", "Small Talk"].includes(item.method));
     if (blocked) {
-      setErrorMessage("Rule, Small Talk 방식으로 분류된 문장은 재학습할 수 없습니다.");
+      setErrorMessage(copy.unsupportedMethod);
       return;
     }
     setRetrainingAction(nextAction);
@@ -896,24 +900,24 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
 
   function handleConfirmRetraining() {
     if (retrainingAction === "add-utterance" && !targetIntentId) {
-      setErrorMessage("재학습할 의도를 선택하세요.");
+      setErrorMessage(copy.selectIntent);
       return;
     }
     const existingTargetDialog = retrainingAction === "add-utterance"
       ? dialogs.find((dialog) => dialog.id === targetIntentId)
       : null;
     if (retrainingAction === "add-utterance" && !existingTargetDialog) {
-      setErrorMessage("선택한 의도를 찾을 수 없습니다.");
+      setErrorMessage(copy.intentNotFound);
       return;
     }
     const targetIntentName = retrainingAction === "create-intent" ? newIntentName.trim() : existingTargetDialog?.name ?? "";
     if (!targetIntentName) {
-      setErrorMessage("새 의도명을 입력하세요.");
+      setErrorMessage(copy.enterIntentName);
       return;
     }
     const utteranceText = editedUtterance.trim();
     if (!utteranceText) {
-      setErrorMessage("의도 시작 표현을 입력하세요.");
+      setErrorMessage(copy.enterStartExpression);
       return;
     }
 
@@ -929,7 +933,7 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
     const ownerId = utteranceOwners.get(textKey);
     if (ownerId && ownerId !== existingTargetDialog?.id) {
       const owner = dialogs.find((dialog) => dialog.id === ownerId);
-      setErrorMessage(`이미 '${owner?.name ?? "다른 의도"}'에서 사용 중인 의도 시작 표현입니다.`);
+      setErrorMessage(formatRetrainingText(copy.duplicateExpression, { name: owner?.name ?? copy.intentKnowledge }));
       return;
     }
 
@@ -979,26 +983,26 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
         retraining_records: nextRecords,
       },
     }, retrainingAction === "create-intent"
-      ? `선택한 ${selectedCandidates.length}건으로 새 의도를 생성하고 학습문장을 등록했습니다. 대화에 반영하려면 학습하기를 실행하세요.`
-      : `선택한 ${selectedCandidates.length}건을 의도 시작 표현으로 등록했습니다. 대화에 반영하려면 학습하기를 실행하세요.`);
+      ? formatRetrainingText(copy.createdIntent, { count: selectedCandidates.length })
+      : formatRetrainingText(copy.addedUtterances, { count: selectedCandidates.length }));
   }
 
   const rows: DataGridRow[] = pagedCandidates.map((item) => ({
     key: item.id,
     cells: [
-      <input key={`${item.id}-check`} type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelected(item.id)} aria-label={`${item.utterance} 선택`} />,
+      <input key={`${item.id}-check`} type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelected(item.id)} aria-label={`${copy.userUtterance}: ${item.utterance}`} />,
       item.utterance,
       item.intentName,
       item.channel,
-      item.resultType,
-      item.method,
-      item.status,
+      getRetrainingOptionLabel(copy, item.resultType),
+      getRetrainingOptionLabel(copy, item.method),
+      getRetrainingOptionLabel(copy, item.status),
       formatKoreanDateTime(item.occurredAt),
     ],
   }));
 
   if (!bot || !effectiveVersion) {
-    return <StudioPageLoading title="재학습 화면을 불러오는 중입니다." />;
+    return <StudioPageLoading title={copy.loading} />;
   }
 
   return (
@@ -1008,43 +1012,43 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
       {message ? <p className="retraining-page__notice">{message}</p> : null}
 
       <section className="retraining-filter">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="의도명/지식명 또는 사용자 발화를 검색하세요." />
-        <select value={channel} onChange={(event) => setChannel(event.target.value)} aria-label="채널">
-          {channels.map((item) => <option key={item} value={item}>{item}</option>)}
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.searchPlaceholder} />
+        <select value={channel} onChange={(event) => setChannel(event.target.value)} aria-label={copy.channel}>
+          {channels.map((item) => <option key={item} value={item}>{getRetrainingOptionLabel(copy, item)}</option>)}
         </select>
-        <select value={resultType} onChange={(event) => setResultType(event.target.value)} aria-label="실행결과">
-          {RESULT_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
+        <select value={resultType} onChange={(event) => setResultType(event.target.value)} aria-label={copy.executionResult}>
+          {RESULT_OPTIONS.map((item) => <option key={item} value={item}>{getRetrainingOptionLabel(copy, item)}</option>)}
         </select>
-        <select value={method} onChange={(event) => setMethod(event.target.value)} aria-label="분류방식">
-          {METHOD_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
+        <select value={method} onChange={(event) => setMethod(event.target.value)} aria-label={copy.method}>
+          {METHOD_OPTIONS.map((item) => <option key={item} value={item}>{getRetrainingOptionLabel(copy, item)}</option>)}
         </select>
-        <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="학습상태">
-          {STATUS_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
+        <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label={copy.trainingStatus}>
+          {STATUS_OPTIONS.map((item) => <option key={item} value={item}>{getRetrainingOptionLabel(copy, item)}</option>)}
         </select>
-        <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} aria-label="발생기간 시작" />
-        <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} aria-label="발생기간 종료" />
-        <button type="button" onClick={resetFilters}>초기화</button>
-        <button type="button" className="retraining-filter__primary">확인</button>
+        <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} aria-label={copy.periodStart} />
+        <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} aria-label={copy.periodEnd} />
+        <button type="button" onClick={resetFilters}>{copy.reset}</button>
+        <button type="button" className="retraining-filter__primary">{copy.apply}</button>
       </section>
 
       <section className="retraining-actions">
-        <strong>전체 {filteredCandidates.length}건</strong>
+        <strong>{formatRetrainingText(copy.total, { count: filteredCandidates.length })}</strong>
             <label className="manual-main__mini-select manual-main__mini-select--select">
               <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
                 {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                   <option key={option} value={option}>
-                    {option}개씩 보기
+                    {formatRetrainingText(copy.perPage, { count: option })}
                   </option>
                 ))}
               </select>
             </label>
-        <button type="button" onClick={refreshConversationHistory} disabled={loading || saving}>대화이력 동기화</button>
-        <button type="button" className="retraining-actions__primary" onClick={() => handleOpenRetraining("add-utterance")} disabled={selectedIds.length === 0 || saving}>재학습</button>
-        <button type="button" onClick={() => handleOpenRetraining("create-intent")} disabled={selectedIds.length === 0 || saving}>의도 생성</button>
-        <button type="button" onClick={() => updateRecordStatus("보류")} disabled={selectedIds.length === 0 || saving}>보류</button>
-        <button type="button" onClick={() => updateRecordStatus("재학습제외")} disabled={selectedIds.length === 0 || saving}>재학습 제외</button>
-        <button type="button" onClick={() => updateRecordStatus("삭제")} disabled={selectedIds.length === 0 || saving}>삭제</button>
-        <span>{selectedIds.length}개 선택</span>
+        <button type="button" onClick={refreshConversationHistory} disabled={loading || saving}>{copy.syncHistory}</button>
+        <button type="button" className="retraining-actions__primary" onClick={() => handleOpenRetraining("add-utterance")} disabled={selectedIds.length === 0 || saving}>{copy.retrain}</button>
+        <button type="button" onClick={() => handleOpenRetraining("create-intent")} disabled={selectedIds.length === 0 || saving}>{copy.createIntent}</button>
+        <button type="button" onClick={() => updateRecordStatus("보류")} disabled={selectedIds.length === 0 || saving}>{copy.hold}</button>
+        <button type="button" onClick={() => updateRecordStatus("재학습제외")} disabled={selectedIds.length === 0 || saving}>{copy.exclude}</button>
+        <button type="button" onClick={() => updateRecordStatus("삭제")} disabled={selectedIds.length === 0 || saving}>{copy.delete}</button>
+        <span>{formatRetrainingText(copy.selected, { count: selectedIds.length })}</span>
       </section>
 
       <DataGrid
@@ -1055,30 +1059,30 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
           <input
             key="select-all"
             type="checkbox"
-            aria-label="현재 페이지 전체 선택"
+            aria-label={copy.selectAllPage}
             checked={isCurrentPageFullySelected}
             onChange={(event) => toggleSelectCurrentPage(event.target.checked)}
           />,
           <button key="utterance" type="button" className="settings-sort-button" onClick={() => toggleSort("utterance")}>
-            <SortHeaderLabel label="사용자 발화" direction={sortKey === "utterance" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.userUtterance} direction={sortKey === "utterance" ? sortDirection : "none"} />
           </button>,
           <button key="intentName" type="button" className="settings-sort-button" onClick={() => toggleSort("intentName")}>
-            <SortHeaderLabel label="의도명/지식명" direction={sortKey === "intentName" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.intentKnowledge} direction={sortKey === "intentName" ? sortDirection : "none"} />
           </button>,
           <button key="channel" type="button" className="settings-sort-button" onClick={() => toggleSort("channel")}>
-            <SortHeaderLabel label="채널" direction={sortKey === "channel" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.channel} direction={sortKey === "channel" ? sortDirection : "none"} />
           </button>,
           <button key="resultType" type="button" className="settings-sort-button" onClick={() => toggleSort("resultType")}>
-            <SortHeaderLabel label="실행결과" direction={sortKey === "resultType" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.executionResult} direction={sortKey === "resultType" ? sortDirection : "none"} />
           </button>,
           <button key="method" type="button" className="settings-sort-button" onClick={() => toggleSort("method")}>
-            <SortHeaderLabel label="분류방식" direction={sortKey === "method" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.method} direction={sortKey === "method" ? sortDirection : "none"} />
           </button>,
           <button key="status" type="button" className="settings-sort-button" onClick={() => toggleSort("status")}>
-            <SortHeaderLabel label="학습상태" direction={sortKey === "status" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.trainingStatus} direction={sortKey === "status" ? sortDirection : "none"} />
           </button>,
           <button key="occurredAt" type="button" className="settings-sort-button" onClick={() => toggleSort("occurredAt")}>
-            <SortHeaderLabel label="발생시간" direction={sortKey === "occurredAt" ? sortDirection : "none"} />
+            <SortHeaderLabel label={copy.occurredAt} direction={sortKey === "occurredAt" ? sortDirection : "none"} />
           </button>,
         ]}
         rows={rows}
@@ -1112,15 +1116,15 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
       </div>
 
       {dialogOpen ? (
-        <div className="retraining-modal" role="dialog" aria-modal="true" aria-label="재학습">
+        <div className="retraining-modal" role="dialog" aria-modal="true" aria-label={copy.retrain}>
           <div className="retraining-modal__box">
             <div className="retraining-modal__head">
-              <h2>{retrainingAction === "create-intent" ? "의도 생성" : "재학습"}</h2>
-              <button type="button" onClick={() => setDialogOpen(false)} aria-label="닫기">×</button>
+              <h2>{retrainingAction === "create-intent" ? copy.createIntent : copy.retrain}</h2>
+              <button type="button" onClick={() => setDialogOpen(false)} aria-label={copy.close}>×</button>
             </div>
             <div className="retraining-modal__body">
               <section>
-                <h3>재학습 할 대화 목록</h3>
+                <h3>{copy.retrainingCandidates}</h3>
                 <div className="retraining-modal__selected">
                   {selectedCandidates.map((item) => (
                     <span key={item.id}>{item.utterance}</span>
@@ -1128,15 +1132,15 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
                 </div>
               </section>
               <section>
-                <h3>사용자 발화 수정</h3>
+                <h3>{copy.editUtterances}</h3>
                 <input value={editedUtterance} onChange={(event) => setEditedUtterance(event.target.value)} />
               </section>
               {retrainingAction === "add-utterance" ? (
                 <section>
                   <div className="retraining-modal__mode">
-                    <h3>재학습 의도 목록</h3>
-                    <button type="button" className={intentMode === "recommended" ? "is-active" : ""} onClick={() => setIntentMode("recommended")}>추천의도</button>
-                    <button type="button" className={intentMode === "all" ? "is-active" : ""} onClick={() => setIntentMode("all")}>전체의도</button>
+                    <h3>{copy.retrainingIntents}</h3>
+                    <button type="button" className={intentMode === "recommended" ? "is-active" : ""} onClick={() => setIntentMode("recommended")}>{copy.recommendedIntents}</button>
+                    <button type="button" className={intentMode === "all" ? "is-active" : ""} onClick={() => setIntentMode("all")}>{copy.allIntents}</button>
                   </div>
                   <select value={targetIntentId} onChange={(event) => setTargetIntentId(event.target.value)}>
                     {intentOptions.map((dialog) => (
@@ -1146,14 +1150,14 @@ export function RetrainingPageClient({ botId: routeBotId, versionId }: Retrainin
                 </section>
               ) : (
                 <section>
-                  <h3>새 의도명</h3>
-                  <input value={newIntentName} onChange={(event) => setNewIntentName(event.target.value)} placeholder="예) 계약 해지 요청" />
+                  <h3>{copy.newIntentName}</h3>
+                  <input value={newIntentName} onChange={(event) => setNewIntentName(event.target.value)} placeholder={copy.newIntentPlaceholder} />
                 </section>
               )}
             </div>
             <div className="retraining-modal__foot">
-              <button type="button" onClick={() => setDialogOpen(false)}>취소</button>
-              <button type="button" className="retraining-modal__primary" onClick={handleConfirmRetraining} disabled={saving}>확인</button>
+              <button type="button" onClick={() => setDialogOpen(false)}>{copy.cancel}</button>
+              <button type="button" className="retraining-modal__primary" onClick={handleConfirmRetraining} disabled={saving}>{copy.confirm}</button>
             </div>
           </div>
         </div>

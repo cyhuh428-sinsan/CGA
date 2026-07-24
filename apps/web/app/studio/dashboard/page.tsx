@@ -3,11 +3,15 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { useI18n } from "@/components/language-provider";
 import { loadAuthSession, loadLastBotScreen } from "@/lib/auth";
+import { UTILITY_PAGE_CATALOGS } from "@/lib/i18n/utility-pages";
 import { fetchStudioBots } from "@/lib/studio-bots-api";
 
 export default function StudioDashboardPage() {
   const router = useRouter();
+  const { language } = useI18n();
+  const dashboardPreparing = UTILITY_PAGE_CATALOGS[language].dashboardPreparing;
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -66,5 +70,5 @@ export default function StudioDashboardPage() {
     };
   }, [router]);
 
-  return <p className="bots-workspace__notice">메인 화면을 준비하는 중입니다...</p>;
+  return <p className="bots-workspace__notice">{dashboardPreparing}</p>;
 }

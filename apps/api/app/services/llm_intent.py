@@ -55,6 +55,7 @@ def classify_intent_with_llm(
     dictionary_terms: list[dict[str, Any]] | None = None,
     entity_terms: list[dict[str, Any]] | None = None,
     client: LlmChatClient | None = None,
+    language: str = "ko",
 ) -> LlmIntentClassification:
     normalized_query = query.strip()
     if not normalized_query:
@@ -73,7 +74,7 @@ def classify_intent_with_llm(
     chat_client = client or LlmChatClient(config)
     result, parsed = _chat_json_with_retry(
         chat_client=chat_client,
-        system_prompt=_system_prompt(top_k),
+        system_prompt=_system_prompt(top_k, language),
         user_prompt=json.dumps(
             {
                 "user_utterance": normalized_query,
@@ -109,6 +110,7 @@ def configure_intents_with_llm(
     dictionary_terms: list[dict[str, Any]] | None = None,
     entity_terms: list[dict[str, Any]] | None = None,
     client: LlmChatClient | None = None,
+    language: str = "ko",
 ) -> LlmIntentConfiguration:
     normalized_utterances = _normalize_utterances(utterances)
     if not normalized_utterances:
@@ -127,7 +129,7 @@ def configure_intents_with_llm(
     chat_client = client or LlmChatClient(config)
     result, parsed = _chat_json_with_retry(
         chat_client=chat_client,
-        system_prompt=_configuration_system_prompt(normalized_target_policy),
+        system_prompt=_configuration_system_prompt(normalized_target_policy, language),
         user_prompt=json.dumps(
             {
                 "targetGroupCount": normalized_target_count,
@@ -177,7 +179,29 @@ def _compact_intents(intents: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return compacted
 
 
-def _system_prompt(top_k: int) -> str:
+LANGUAGE_PROMPT_NAMES = {
+    "en": "English",
+    "zh-CN": "Simplified Chinese",
+    "ja": "Japanese",
+    "vi": "Vietnamese",
+    "fr": "French",
+    "de": "German",
+}
+
+
+def _system_prompt(top_k: int, language: str = "ko") -> str:
+    if language != "ko":
+        language_name = LANGUAGE_PROMPT_NAMES.get(language, language)
+        return (
+            f"You are an {language_name} NLU intent classification engine for CGA. "
+            f"Interpret the user utterance and intent examples as {language_name}. "
+            "Choose only from the supplied intent list and never create a new intent. "
+            "Use dictionaryTerms and entityTerms only as interpretation references. "
+            "Distinguish different purposes such as rejection, request, inquiry, confirmation, speed, and follow-up even when words overlap. "
+            f"Return at most {max(1, top_k)} candidates in descending likelihood. "
+            "Return exactly one JSON object with no markdown or explanation outside it. "
+            'Format: {"candidates":[{"intentId":"...","confidence":0.0,"reason":"..."}]}'
+        )
     return (
         "너는 Aidot의 한국어 NLU 의도 분류 엔진이다. "
         "사용자 발화를 주어진 의도 목록 중 하나 이상으로만 분류한다. "
@@ -195,7 +219,7 @@ def _system_prompt(top_k: int) -> str:
     )
 
 
-def _configuration_system_prompt(target_count_policy: str = "near") -> str:
+def _configuration_system_prompt(target_count_policy: str = "near", language: str = "ko") -> str:
     policy_text = {
         "minimize": (
             "targetGroupCount는 최대 의도 수다. "
@@ -210,6 +234,17 @@ def _configuration_system_prompt(target_count_policy: str = "near") -> str:
             "입력 문장 수가 targetGroupCount보다 많거나 같으면 groups 배열 길이를 정확히 targetGroupCount로 반환한다. "
         ),
     }.get(target_count_policy, "")
+    if language != "ko":
+        language_name = LANGUAGE_PROMPT_NAMES.get(language, language)
+        return (
+            f"You are a {language_name} NLU intent configuration engine for CGA. "
+            f"Group the supplied training utterances by meaning in {language_name}. "
+            "Use only the supplied utterances; do not add, remove, or rewrite them. "
+            f"{policy_text}"
+            "Do not merge utterances with clearly different purposes. "
+            "Return exactly one JSON object with no markdown or surrounding explanation. "
+            'Format: {"groups":[{"name":"intent name","answer":"default answer","utteranceIndexes":[1,2],"reason":"reason"}]}'
+        )
     return (
         "너는 Aidot의 한국어 NLU 의도 구성 엔진이다. "
         "사용자가 입력한 학습문장을 의미가 같은 의도 후보끼리 묶는다. "

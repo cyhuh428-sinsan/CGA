@@ -104,10 +104,11 @@ class SignupRequestPayload(BaseModel):
     @field_validator("preferred_language")
     @classmethod
     def validate_language(cls, value: str) -> str:
-        normalized = value.strip().lower()
-        if normalized not in {"ko", "en"}:
+        normalized = value.strip()
+        canonical = {"ko": "ko", "en": "en", "zh-cn": "zh-CN", "ja": "ja", "vi": "vi", "fr": "fr", "de": "de"}.get(normalized.lower())
+        if canonical is None:
             raise ValueError("지원하지 않는 언어입니다.")
-        return normalized
+        return canonical
 
     @model_validator(mode="after")
     def validate_password_confirm(self) -> "SignupRequestPayload":

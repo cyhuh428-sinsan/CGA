@@ -9,6 +9,8 @@ import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { type VersionDialogAsset } from "@/lib/version-document";
 import { fetchStudioBotVersionDialogs } from "@/lib/studio-bots-api";
 import { loadAuthSession } from "@/lib/auth";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 type SortKey = "name" | "description" | "expression" | "target" | "enabled" | "updatedAt" | "updatedBy";
 
@@ -80,6 +82,8 @@ function buildRuleTargetOption(dialog: VersionDialogAsset): RuleTargetOption | n
 }
 
 export function RuleSettingsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <BotSettingsShell activeMenu="rules">
       {({ bot, token, versionSettings, saveVersionSettings, setErrorMessage, setMessage }) => {
@@ -443,7 +447,7 @@ export function RuleSettingsPage() {
         return (
           <>
             <section className="bot-settings-section">
-              <h2>룰 설정</h2>
+              <h2>{getStudioPageLabel(copy,"룰 설정")}</h2>
               <div className="settings-toolbar settings-toolbar--between">
                 <div className="settings-search-inline">
                   <span className="settings-search-inline__icon" aria-hidden="true">
@@ -454,17 +458,15 @@ export function RuleSettingsPage() {
                     className="settings-search-inline__input"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="룰 이름을 검색하세요."
+                    placeholder={getStudioPageLabel(copy,"룰 이름을 검색하세요.")}
                   />
-                  <button type="button" className="settings-search-inline__filter" aria-label="필터">
+                  <button type="button" className="settings-search-inline__filter" aria-label={getStudioPageLabel(copy,"필터")}>
                     ▾
                   </button>
                 </div>
 
                 <div className="settings-toolbar__group">
-                  <button type="button" className="primary-action" disabled={saving} onClick={() => selectEditor(createEmptyRule())}>
-                    + 룰 추가
-                  </button>
+                  <button type="button" className="primary-action" disabled={saving} onClick={() => selectEditor(createEmptyRule())}>{getStudioPageLabel(copy,"+ 룰 추가")}</button>
                   <div className="settings-overflow" ref={moreMenuRef}>
                     <button
                       type="button"
@@ -479,28 +481,24 @@ export function RuleSettingsPage() {
                         <span />
                         <span />
                       </span>
-                      <span className="sr-only">더보기</span>
+                      <span className="sr-only">{getStudioPageLabel(copy,"더보기")}</span>
                     </button>
                     {moreMenuOpen ? (
-                      <div className="settings-overflow__menu" role="menu" aria-label="파일 메뉴">
+                      <div className="settings-overflow__menu" role="menu" aria-label={getStudioPageLabel(copy,"파일 메뉴")}>
                         <button
                           type="button"
                           role="menuitem"
                           className="settings-overflow__item"
                           disabled={saving}
                           onClick={() => fileInputRef.current?.click()}
-                        >
-                          파일 업로드
-                        </button>
+                        >{getStudioPageLabel(copy,"파일 업로드")}</button>
                         <button
                           type="button"
                           role="menuitem"
                           className="settings-overflow__item"
                           disabled={saving}
                           onClick={handleDownload}
-                        >
-                          파일 다운로드
-                        </button>
+                        >{getStudioPageLabel(copy,"파일 다운로드")}</button>
                       </div>
                     ) : null}
                   </div>
@@ -522,22 +520,20 @@ export function RuleSettingsPage() {
 
               <div className="settings-search-grid settings-search-grid--test">
                 <label className="settings-form-card">
-                  <span>테스트</span>
+                  <span>{getStudioPageLabel(copy,"테스트")}</span>
                   <div className="settings-inline-actions settings-inline-actions--compact">
                     <input
                       type="text"
                       className="bot-settings-card__input"
                       value={testSentence}
                       onChange={(event) => setTestSentence(event.target.value)}
-                      placeholder="테스트 표현을 입력하세요."
+                      placeholder={getStudioPageLabel(copy,"테스트 표현을 입력하세요.")}
                     />
-                    <button type="button" className="secondary-action">
-                      테스트
-                    </button>
+                    <button type="button" className="secondary-action">{getStudioPageLabel(copy,"테스트")}</button>
                   </div>
                 </label>
                 <div className="settings-form-card">
-                  <span>결과</span>
+                  <span>{getStudioPageLabel(copy,"결과")}</span>
                   <p className="bot-settings-page__caption">{testResultText || "룰이 연결되는지 확인해보세요."}</p>
                 </div>
               </div>
@@ -552,18 +548,16 @@ export function RuleSettingsPage() {
                     setPage(1);
                   }}
                 >
-                  <option value={30}>30개 보기</option>
-                  <option value={50}>50개 보기</option>
-                  <option value={100}>100개 보기</option>
+                  <option value={30}>{getStudioPageLabel(copy, "30개 보기")}</option>
+                  <option value={50}>{getStudioPageLabel(copy, "50개 보기")}</option>
+                  <option value={100}>{getStudioPageLabel(copy, "100개 보기")}</option>
                 </select>
                 <button
                   type="button"
                   className="secondary-action secondary-action--danger"
                   disabled={saving || selectedIds.length === 0}
                   onClick={() => void handleDeleteSelected()}
-                >
-                  삭제
-                </button>
+                >{getStudioPageLabel(copy,"삭제")}</button>
                 <div className="settings-toolbar__spacer" />
                 <button
                   type="button"
@@ -599,28 +593,28 @@ export function RuleSettingsPage() {
                         }
                       />
                     </span>
-                    <span>우선순위</span>
+                    <span>{getStudioPageLabel(copy,"우선순위")}</span>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("name")}>
-                      <SortHeaderLabel label="룰 이름" direction={sortKey === "name" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "룰 이름")} direction={sortKey === "name" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("expression")}>
-                      <SortHeaderLabel label="룰 표현식" direction={sortKey === "expression" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "룰 표현식")} direction={sortKey === "expression" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("target")}>
-                      <SortHeaderLabel label="연결할 의도/모듈" direction={sortKey === "target" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "연결할 의도/모듈")} direction={sortKey === "target" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("enabled")}>
-                      <SortHeaderLabel label="사용" direction={sortKey === "enabled" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "사용")} direction={sortKey === "enabled" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedAt")}>
-                      <SortHeaderLabel label="최종수정일시" direction={sortKey === "updatedAt" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정일시")} direction={sortKey === "updatedAt" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-                      <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정자")} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
                     </button>
                   </div>
 
-                  {pagedItems.length === 0 ? <p className="bot-settings-page__loading">등록된 룰이 없습니다.</p> : null}
+                  {pagedItems.length === 0 ? <p className="bot-settings-page__loading">{getStudioPageLabel(copy,"등록된 룰이 없습니다.")}</p> : null}
 
                   {pagedItems.map((item, index) => (
                     <div key={item.id} className="settings-list-row settings-list-row--rule">
@@ -676,19 +670,19 @@ export function RuleSettingsPage() {
                     className="settings-dialog settings-dialog--wide"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="룰 상세 정보"
+                    aria-label={getStudioPageLabel(copy,"룰 상세 정보")}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="settings-dialog__header">
-                      <strong>룰 상세 정보</strong>
-                      <button type="button" className="settings-dialog__close" onClick={() => setEditorOpen(false)} aria-label="닫기">
+                      <strong>{getStudioPageLabel(copy,"룰 상세 정보")}</strong>
+                      <button type="button" className="settings-dialog__close" onClick={() => setEditorOpen(false)} aria-label={getStudioPageLabel(copy,"닫기")}>
                         ×
                       </button>
                     </div>
                     <div className="settings-dialog__body settings-dialog__body--form">
                       <div className="settings-form-grid settings-form-grid--compact">
                         <label className="settings-form-card">
-                          <span>룰 이름</span>
+                          <span>{getStudioPageLabel(copy,"룰 이름")}</span>
                           <input
                             type="text"
                             className="bot-settings-card__input"
@@ -698,7 +692,7 @@ export function RuleSettingsPage() {
                         </label>
 
                         <label className="settings-form-card">
-                          <span>룰 설명</span>
+                          <span>{getStudioPageLabel(copy,"룰 설명")}</span>
                           <input
                             type="text"
                             className="bot-settings-card__input"
@@ -708,7 +702,7 @@ export function RuleSettingsPage() {
                         </label>
 
                         <label className="settings-form-card settings-form-card--wide">
-                          <span>룰 표현식</span>
+                          <span>{getStudioPageLabel(copy,"룰 표현식")}</span>
                           <textarea
                             className="bot-settings-intro__textarea"
                             value={editor.expression}
@@ -718,14 +712,12 @@ export function RuleSettingsPage() {
                             }}
                           />
                           <div className="entity-value-dialog__pattern-actions">
-                            <button type="button" className="secondary-action" onClick={runRegexSyntaxCheck}>
-                              정규식 확인
-                            </button>
+                            <button type="button" className="secondary-action" onClick={runRegexSyntaxCheck}>{getStudioPageLabel(copy,"정규식 확인")}</button>
                           </div>
                         </label>
 
                         <div className="settings-form-card settings-form-card--wide">
-                          <span>정규식 테스트</span>
+                          <span>{getStudioPageLabel(copy,"정규식 테스트")}</span>
                           <div className="entity-value-dialog__pattern-test-row">
                             <input
                               type="text"
@@ -735,11 +727,9 @@ export function RuleSettingsPage() {
                                 setRegexTestText(event.target.value);
                                 setRegexTestState(null);
                               }}
-                              placeholder="테스트할 문장을 입력하세요."
+                              placeholder={getStudioPageLabel(copy,"테스트할 문장을 입력하세요.")}
                             />
-                            <button type="button" className="secondary-action" onClick={runRegexTest}>
-                              테스트
-                            </button>
+                            <button type="button" className="secondary-action" onClick={runRegexTest}>{getStudioPageLabel(copy,"테스트")}</button>
                           </div>
                           {regexTestState ? (
                             <p
@@ -753,7 +743,7 @@ export function RuleSettingsPage() {
                         </div>
 
                         <label className="settings-form-card">
-                          <span>연결할 의도/모듈</span>
+                          <span>{getStudioPageLabel(copy,"연결할 의도/모듈")}</span>
                           <select
                             className="rule-settings__target-select"
                             value={editor.target}
@@ -778,14 +768,12 @@ export function RuleSettingsPage() {
                             checked={editor.enabled}
                             onChange={(event) => setEditor((current) => ({ ...current, enabled: event.target.checked }))}
                           />
-                          <span>사용 여부</span>
+                          <span>{getStudioPageLabel(copy,"사용 여부")}</span>
                         </label>
                       </div>
                     </div>
                     <div className="settings-dialog__footer">
-                      <button type="button" className="secondary-action" disabled={saving} onClick={() => setEditorOpen(false)}>
-                        취소
-                      </button>
+                      <button type="button" className="secondary-action" disabled={saving} onClick={() => setEditorOpen(false)}>{getStudioPageLabel(copy,"취소")}</button>
                       <button type="button" className="primary-action" disabled={saving} onClick={() => void handleSaveEditor()}>
                         {saving ? "저장 중..." : "확인"}
                       </button>

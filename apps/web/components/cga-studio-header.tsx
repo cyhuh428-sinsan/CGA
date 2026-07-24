@@ -12,6 +12,8 @@ import {
   type AuthSession,
 } from "@/lib/auth";
 import { fetchStudioBots } from "@/lib/studio-bots-api";
+import { useI18n } from "@/components/language-provider";
+import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings/;
@@ -19,9 +21,9 @@ const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings/;
 export function CgaStudioHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const { language, setLanguage, t } = useI18n();
   const [session, setSession] = useState<AuthSession | null>(null);
-  const [language, setLanguage] = useState("ko");
-  const [botName, setBotName] = useState("선택 없음");
+  const [botName, setBotName] = useState("");
   const [versionName, setVersionName] = useState("-");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -37,7 +39,6 @@ export function CgaStudioHeader() {
   useEffect(() => {
     const currentSession = loadAuthSession();
     setSession(currentSession);
-    setLanguage(window.localStorage.getItem("aidot.language") ?? "ko");
 
     if (!currentSession) {
       return;
@@ -46,18 +47,17 @@ export function CgaStudioHeader() {
     fetchStudioBots(currentSession.access_token)
       .then((bots) => {
         const currentBot = bots.find((bot) => bot.id === routeContext.botId);
-        setBotName(currentBot?.name ?? (routeContext.botId ? "현재 봇" : "선택 없음"));
+        setBotName(currentBot?.name ?? "");
         setVersionName(routeContext.versionId || currentBot?.active_version?.name || "-");
       })
       .catch(() => {
-        setBotName(routeContext.botId ? "현재 봇" : "선택 없음");
+        setBotName("");
         setVersionName(routeContext.versionId || "-");
       });
   }, [routeContext]);
 
   function handleLanguageChange(value: string) {
-    setLanguage(value);
-    window.localStorage.setItem("aidot.language", value);
+    setLanguage(normalizeSupportedLanguage(value));
   }
 
   async function handleLogout() {
@@ -88,7 +88,8 @@ export function CgaStudioHeader() {
     }
   }
 
-  const roleSummary = session?.user.roles.map(roleLabel).join(", ") || "권한 없음";
+  const roleSummary = session?.user.roles.map(roleLabel).join(", ") || t("common.noPermission");
+  const resolvedBotName = botName || (routeContext.botId ? t("common.currentBot") : t("common.none"));
 
   return (
     <header className="cga-studio-header">
@@ -96,29 +97,30 @@ export function CgaStudioHeader() {
         <span className="cga-studio-header__mark">CGA</span>
         <span className="cga-studio-header__title">
           <strong>CGA Studio</strong>
-          <small>봇 제작 스튜디오</small>
+          <small>{t("brand.subtitle")}</small>
         </span>
       </div>
 
-      <div className="cga-studio-header__context" aria-label="현재 작업 컨텍스트">
+      <div className="cga-studio-header__context" aria-label={t("header.context")}>
         <span className="cga-studio-header__badge cga-studio-header__badge--auth">
-          인증: {session?.user.name ?? "-"} · {roleSummary}
+          {t("header.auth")}: {session?.user.name ?? "-"} · {roleSummary}
         </span>
-        <span className="cga-studio-header__badge">그룹: {session?.user.group_name ?? "-"}</span>
-        <span className="cga-studio-header__badge">봇: {botName}</span>
-        <span className="cga-studio-header__badge">버전: {versionName}</span>
+        <span className="cga-studio-header__badge">{t("header.group")}: {session?.user.group_name ?? "-"}</span>
+        <span className="cga-studio-header__badge">{t("header.bot")}: {resolvedBotName}</span>
+        <span className="cga-studio-header__badge">{t("header.version")}: {versionName}</span>
         <span className="cga-studio-header__badge cga-studio-header__badge--user">
           {session?.user.login_id ?? "-"}
         </span>
         <label className="cga-studio-header__language">
-          <span>언어</span>
+          <span>{t("common.language")}</span>
           <select value={language} onChange={(event) => handleLanguageChange(event.target.value)}>
-            <option value="ko">한국어</option>
-            <option value="en">English</option>
+            {SUPPORTED_LANGUAGES.map((option) => (
+              <option key={option.code} value={option.code}>{option.label}</option>
+            ))}
           </select>
         </label>
         <button type="button" className="cga-studio-header__logout" onClick={handleLogout} disabled={isLoggingOut}>
-          {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+          {isLoggingOut ? t("common.loggingOut") : t("common.logout")}
         </button>
       </div>
     </header>

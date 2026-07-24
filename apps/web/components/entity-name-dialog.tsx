@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
+
 import { type AuthSession } from "@/lib/auth";
+import { ENTITY_NAME_DIALOG_CATALOGS } from "@/lib/i18n/entity-name-dialog";
 import {
   applyUpdatedVersionToBot,
   getBotEntities,
@@ -35,6 +38,8 @@ function stampEntityName(entity: VersionEntityAsset, loginId: string): VersionEn
 }
 
 export function EntityNameDialog({ authSession, bot, entity, onClose, onSaved }: EntityNameDialogProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = ENTITY_NAME_DIALOG_CATALOGS[uiLanguage];
   const isNew = !entity;
   const [name, setName] = useState(entity?.name ?? "");
   const [saving, setSaving] = useState(false);
@@ -48,13 +53,13 @@ export function EntityNameDialog({ authSession, bot, entity, onClose, onSaved }:
 
   async function handleSave() {
     if (!bot.active_version) {
-      setErrorMessage("활성 버전이 없습니다.");
+      setErrorMessage(copy.validation.noActiveVersion);
       return;
     }
 
     const normalizedName = name.trim();
     if (!normalizedName) {
-      setErrorMessage("개체명을 입력해주세요.");
+      setErrorMessage(copy.validation.required);
       return;
     }
 
@@ -63,7 +68,7 @@ export function EntityNameDialog({ authSession, bot, entity, onClose, onSaved }:
       (item) => item.name === normalizedName && item.id !== entity?.id,
     );
     if (duplicated) {
-      setErrorMessage("이미 사용 중인 개체명입니다.");
+      setErrorMessage(copy.validation.duplicate);
       return;
     }
 
@@ -104,9 +109,9 @@ export function EntityNameDialog({ authSession, bot, entity, onClose, onSaved }:
       };
 
       const nextBot = applyUpdatedVersionToBot(bot, updatedVersion);
-      onSaved(nextBot, isNew ? "개체명이 등록되었습니다." : "개체명이 수정되었습니다.");
+      onSaved(nextBot, isNew ? copy.validation.created : copy.validation.updated);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "개체명을 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.validation.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -114,10 +119,10 @@ export function EntityNameDialog({ authSession, bot, entity, onClose, onSaved }:
 
   return (
     <div className="entity-editor-backdrop" role="presentation">
-      <div className="entity-name-dialog" role="dialog" aria-modal="true" aria-label={isNew ? "개체명 추가" : "개체명 수정"}>
+      <div className="entity-name-dialog" role="dialog" aria-modal="true" aria-label={isNew ? copy.createTitle : copy.editTitle}>
         <div className="entity-editor-dialog__header">
-          <strong>{isNew ? "개체명 추가" : "개체명 수정"}</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <strong>{isNew ? copy.createTitle : copy.editTitle}</strong>
+          <button type="button" className="entity-editor-dialog__close" aria-label={copy.close} onClick={onClose}>
             ×
           </button>
         </div>
@@ -125,7 +130,7 @@ export function EntityNameDialog({ authSession, bot, entity, onClose, onSaved }:
         <div className="entity-editor-dialog__body">
           {errorMessage ? <p className="form-message form-message--error">{errorMessage}</p> : null}
           <label className="entity-editor-dialog__name-field">
-            <span>개체명</span>
+            <span>{copy.entityName}</span>
             <input
               type="text"
               className="bot-settings-card__input"
@@ -138,10 +143,10 @@ export function EntityNameDialog({ authSession, bot, entity, onClose, onSaved }:
 
         <div className="entity-editor-dialog__footer">
           <button type="button" className="secondary-action" onClick={onClose}>
-            취소
+            {copy.cancel}
           </button>
           <button type="button" className="primary-action" disabled={saving} onClick={() => void handleSave()}>
-            {saving ? "저장 중..." : "확인"}
+            {saving ? copy.saving : copy.confirm}
           </button>
         </div>
       </div>
