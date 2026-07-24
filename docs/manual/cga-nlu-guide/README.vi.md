@@ -1,11 +1,9 @@
 # Hướng dẫn sử dụng CGA NLU
 
-Trạng thái: Quá trình tạo nội dung đã hoàn tất, đang chờ xác minh thực thi
 Đối tượng: Người vận hành thiết kế bot/hộp thoại, chuyên gia AI/NLU
 
 Tài liệu này chọn các công cụ `ML`, `Semantic` và `LLM` của CGA và sắp xếp dữ liệu, cài đặt, thử nghiệm và các phương pháp cải thiện chất lượng cho từng công cụ.
 
-> Các tùy chọn động cơ, kiểu máy và phương thức phản hồi trên màn hình tạo bot đã được kiểm tra trong trình duyệt. Đối với các mục mà kết quả học tập, lập chỉ mục và lệnh gọi mô hình thực tế chưa được xác nhận, không coi chúng là xác nhận vận hành mà còn kiểm tra [Bảng xác minh chức năng](../cga-manual-verification-matrix.md).
 
 ## 1. Các khái niệm cơ bản của NLU
 
@@ -72,7 +70,6 @@ Khi chuẩn bị kiến thức dựa trên tài liệu hoặc QA, hãy rõ ràng
 - Nếu bảng hoặc danh sách quan trọng, hãy đảm bảo rằng ý nghĩa được duy trì sau khi chuyển đổi.
 - Khi sửa đổi tài liệu, hãy kiểm tra trạng thái đơn đăng ký để đảm bảo rằng tài liệu hiện có và tài liệu mới không được tìm kiếm cùng một lúc.
 
-Các hoạt động chi tiết về tải lên, tìm kiếm và lập chỉ mục QA có thể khác nhau tùy thuộc vào màn hình CGA và cài đặt hoạt động, do đó phạm vi hỗ trợ thực tế được xác nhận dựa trên [Bảng xác minh chức năng](../cga-manual-verification-matrix.md).
 
 ### 4.1 Biên bản kiểm tra vận hành
 
@@ -148,7 +145,6 @@ Mã hiện tại xác định các tùy chọn nhúng bên ngoài như `ko-srobe
 4. Kiểm tra kết quả tìm kiếm, độ tương tự, ngưỡng và trạng thái chỉ mục.
 5. Nếu tìm kiếm không khớp, hãy kiểm tra sự kết hợp giữa dữ liệu, nhúng và lập chỉ mục.
 
-> Màn hình kết quả tìm kiếm và trạng thái hoàn thành lập chỉ mục thực tế phải được xác nhận sau khi xác minh trình duyệt/thực thi.
 
 Kiểm tra trước khi thay đổi ngữ nghĩa:
 
@@ -181,7 +177,6 @@ Hướng dẫn ghi lại giọng điệu, định dạng phản hồi và các g
 4. Xác minh việc tuân thủ chỉ thị và cơ sở cho phản hồi của bạn.
 5. Ghi lại sự chậm trễ, chi phí và phản hồi lỗi.
 
-Kết quả cuộc gọi và phản hồi thực tế của nhà cung cấp phải được xác minh riêng trong môi trường giống như hoạt động. Trong bot xác minh ML, yêu cầu học tập đã được đăng ký trong hàng đợi nhưng chưa được hoàn thành và trình mô phỏng trả về một ý định chưa được phân loại và không có câu học tập nào.
 
 Kiểm tra trước khi thay đổi LLM:
 
@@ -240,4 +235,3 @@ Không điều chỉnh trạng thái bằng cách sửa đổi trực tiếp DB 
 - [Bắt đầu CGA](../cga-getting-started/README.md)
 - [Hướng dẫn sử dụng CGA](../cga-user-manual/README.md)
 - [Bảng so sánh động cơ](engine-comparison.md)
-- [Bảng xác minh chức năng](../cga-manual-verification-matrix.md)

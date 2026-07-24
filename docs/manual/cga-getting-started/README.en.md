@@ -1,11 +1,9 @@
 # CGA Getting Started
 
-Status: Content creation complete, awaiting execution verification
 Audience: Users new to CGA
 
 This document walks you through creating your first bot in CGA and seeing the results of your first tests. Follow step by step, check the expected results of each step before moving on to the next step.
 
-> Bot creation submission and simulator execution were confirmed with a verification bot. ML learning has not been completed even though queue registration has been confirmed, so the success path after learning completion is not considered an operational confirmation procedure.
 
 ## Completed in this document
 
@@ -23,7 +21,6 @@ If you read these instructions through to the end, you will be able to:
 - A short user utterance to use for testing.
 - Default choice for which NLU method to use
 
-When learning the screen for the first time, it is recommended to check the screen based on the combination of `ML` and `Fixed response`. This combination is displayed as `Ready to run/train` in the current creation screen. The actual creation and learning success requires separate verification.
 
 If you need detailed selection criteria for the engine, please first check the [NLU Utilization Guide](../cga-nlu-guide/README.md).
 
@@ -177,7 +174,6 @@ Prepares the entered bot settings and data for use in CGA.
 
 The bot and version are created, and the readiness status is displayed for the selected engine.
 
-> The creation result of the verification bot and the screen movement to version `v1` have been confirmed. The learning request was registered in the queue, but the status `Untrained` was maintained after refreshing, and there were no results in the learning history.
 
 ### When learning completion is not confirmed
 
@@ -202,7 +198,6 @@ The response and classification results are displayed.
 
 ### If a problem occurs
 
-If there is no response or it is different than expected, first check the bot/version, training or index status, selected engine, and response method. The verification bot displayed `Unclassified intent` and `Intent classification cannot run because there are no training sentences` without training being completed.
 
 Narrow the scope in the following order:
 
@@ -228,4 +223,3 @@ If the results are insufficient, check the NLU utilization guide for data improv
 - [View all CGA manuals](../README.md)
 - [CGA User Manual](../cga-user-manual/README.md)
 - [CGA NLU Utilization Guide](../cga-nlu-guide/README.md)
-- [Function Verification Table](../cga-manual-verification-matrix.md)

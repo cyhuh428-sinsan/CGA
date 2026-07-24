@@ -1,11 +1,9 @@
 # Manuel d'utilisation de CGA Studio
 
-Statut : création de contenu terminée, en attente de vérification de l'exécution
 Public : utilisateurs généraux, opérateurs de robots, administrateurs système
 
 Ce document décrit les menus et le flux de travail de CGA Studio. Si vous l'utilisez pour la première fois, lisez d'abord [Démarrage CGA](../cga-getting-started/README.md) et reportez-vous au [Guide d'utilisation CGA NLU](../cga-nlu-guide/README.md) pour la sélection du moteur, l'apprentissage et l'amélioration de la qualité.
 
-> Les champs d'informations de base, de méthode NLU, de modèle et de méthode de réponse sur l'écran de création du bot ont été vérifiés dans le navigateur. Les fonctions pour lesquelles les résultats réels de sauvegarde, de création, d'apprentissage et d'exécution n'ont pas été confirmés sont affichées séparément dans le [Tableau de vérification des fonctions](../cga-manual-verification-matrix.md).
 
 ## 1. Démarrage de CGA Studio
 
@@ -15,7 +13,6 @@ Ce document décrit les menus et le flux de travail de CGA Studio. Si vous l'uti
 2. Saisissez les informations de votre compte.
 3. Après vous être connecté, accédez à l'écran CGA Studio.
 
-L'écran de réussite de connexion réel et le chemin de déplacement pour chaque autorité sont confirmés après vérification du navigateur.
 
 ### 1.2 Notations utilisées dans les documents
 
@@ -340,7 +337,7 @@ Si la cause et le résultat ne sont pas confirmés à l'écran, ne manipulez pas
 4. Vérifiez l'heure de début, l'heure de fin et l'état d'apprentissage du même bot/version dans la demande d'historique d'apprentissage.
 5. S'il s'affiche à nouveau sous la forme `Non entraîné` ou s'il n'y a pas d'historique d'apprentissage, ne le jugez pas comme un succès, mais transmettez le bot, la version, le moteur d'apprentissage et le temps de demande au personnel d'exploitation.
 
-Le robot de vérification a même affiché un message d'enregistrement de file d'attente, mais après l'actualisation, le statut `Non entraîné` est resté et aucun historique d'apprentissage n'a été créé.
+Une demande d'apprentissage est ajoutée à la Queue et traitée de manière asynchrone par un Worker distinct. L'apprentissage ML et Semantic peut dépasser trois minutes selon les données et l'environnement ; attendez l'état Réussi ou entraîné dans l'historique avant de tester.
 
 ## 8. Procédures courantes pour les opérations de menu
 
@@ -375,4 +372,3 @@ Le message de réussite de l'enregistrement à lui seul ne détermine pas que la
 - [Voir tous les manuels CGA](../README.md)
 - [Démarrer CGA](../cga-getting-started/README.md)
 - [Guide d'utilisation CGA NLU](../cga-nlu-guide/README.md)
-- [Tableau de vérification des fonctions](../cga-manual-verification-matrix.md)

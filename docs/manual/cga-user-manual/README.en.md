@@ -1,11 +1,9 @@
 # CGA Studio User Manual
 
-Status: Content creation complete, awaiting execution verification
 Audience: General users, bot operators, system administrators
 
 This document describes the menus and workflow of CGA Studio. If you are using it for the first time, read [CGA Getting Started](../cga-getting-started/README.md) first, and refer to [CGA NLU Utilization Guide](../cga-nlu-guide/README.md) for engine selection, learning, and quality improvement.
 
-> The basic information, NLU method, model, and answer method fields on the bot creation screen were checked in the browser. Functions for which the actual save, creation, learning, and execution results have not been confirmed are displayed separately in the [Function Verification Table](../cga-manual-verification-matrix.md).
 
 ## 1. Starting CGA Studio
 
@@ -15,7 +13,6 @@ This document describes the menus and workflow of CGA Studio. If you are using i
 2. Enter your account information.
 3. After logging in, go to the CGA Studio screen.
 
-The actual login success screen and movement path for each authority are confirmed after browser verification.
 
 ### 1.2 Notations used in documents
 
@@ -157,7 +154,6 @@ The access path is `Bot > Version > Conversation Flows`. When modifying a flow, 
 
 The API menu is an area that manages API information associated with the conversation handling of your bot or version.
 
-The access path is `Studio > API` or `Bot > Version > API`. When modifying an API, check request items, response items, associated intents, and authentication settings. Actual external interconnection testing and operational connection results require separate verification.
 
 ## 5. Testing/Analysis/Evaluation
 
@@ -340,7 +336,7 @@ If the cause and result are not confirmed on the screen, do not directly manipul
 4. Check the start time, completion time, and learning status of the same bot/version in the learning history inquiry.
 5. If it is displayed as `Untrained` again or there is no learning history, do not judge it as a success, but convey the bot, version, learning engine, and request time to the operation staff.
 
-The verification bot even displayed a Queue registration message, but after refreshing, the `Untrained` status remained and no learning history was created.
+A training request is added to the Queue and processed asynchronously by a separate Worker. ML and Semantic training may take more than three minutes depending on the data and runtime environment; test only after the training history shows Success or a trained state.
 
 ## 8. Common procedures for menu operations
 
@@ -375,4 +371,3 @@ The save success message alone does not determine that the operation reflection 
 - [View all CGA manuals](../README.md)
 - [CGA Getting Started](../cga-getting-started/README.md)
 - [CGA NLU Utilization Guide](../cga-nlu-guide/README.md)
-- [Function Verification Table](../cga-manual-verification-matrix.md)

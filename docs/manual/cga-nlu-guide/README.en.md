@@ -1,11 +1,9 @@
 # CGA NLU Utilization Guide
 
-Status: Content creation complete, awaiting execution verification
 Target: Bot/dialog design operators, AI/NLU experts
 
 This document selects CGA's `ML`, `Semantic`, and `LLM` engines and organizes data, settings, testing, and quality improvement methods for each engine.
 
-> The engine, model, and response method options on the bot creation screen were checked in the browser. For items for which the actual learning, indexing, and model call results have not been confirmed, do not consider them as operational confirmations, but also check the [Function Verification Table](../cga-manual-verification-matrix.md).
 
 ## 1. NLU basic concepts
 
@@ -72,7 +70,6 @@ When preparing QA or document-based knowledge, be clear about the scope of the q
 - If the table or list is important, ensure that the meaning is maintained after conversion.
 - When revising a document, check the application status to ensure that existing and new documents are not searched at the same time.
 
-The detailed operations of QA upload, search, and indexing may vary depending on the CGA screen and operation settings, so the actual scope of support is confirmed based on the [Function Verification Table](../cga-manual-verification-matrix.md).
 
 ### 4.1 Operational inspection records
 
@@ -181,7 +178,6 @@ Directions clearly document tone, response format, and limitations. After changi
 4. Verify compliance with the directive and the basis for your response.
 5. Logs delays, costs, and failure responses.
 
-Actual provider call and response results must be separately verified in an operational-like environment. In the ML verification bot, the learning request was registered in the queue, but was not completed, and the simulator returned an intent unclassified with no learning sentences.
 
 Check before LLM change:
 
@@ -240,4 +236,3 @@ Do not adjust the status by directly modifying the DB or CLI. The bot, version, 
 - [CGA Getting Started](../cga-getting-started/README.md)
 - [CGA User Manual](../cga-user-manual/README.md)
 - [Engine comparison table](engine-comparison.md)
-- [Function Verification Table](../cga-manual-verification-matrix.md)

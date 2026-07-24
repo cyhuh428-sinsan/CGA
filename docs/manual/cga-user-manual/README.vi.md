@@ -1,11 +1,9 @@
 # Hướng dẫn sử dụng CGA Studio
 
-Trạng thái: Quá trình tạo nội dung đã hoàn tất, đang chờ xác minh thực thi
 Đối tượng: Người dùng phổ thông, người vận hành bot, quản trị viên hệ thống
 
 Tài liệu này mô tả các menu và quy trình làm việc của CGA Studio. Nếu bạn sử dụng lần đầu tiên, hãy đọc [Bắt đầu CGA](../cga-getting-started/README.md) trước và tham khảo [Hướng dẫn sử dụng CGA NLU](../cga-nlu-guide/README.md) để lựa chọn, tìm hiểu và cải thiện chất lượng công cụ.
 
-> Các trường thông tin cơ bản, phương pháp NLU, mô hình và phương thức trả lời trên màn hình tạo bot đã được kiểm tra trong trình duyệt. Các chức năng mà kết quả lưu, tạo, học và thực thi thực tế chưa được xác nhận sẽ được hiển thị riêng trong [Bảng xác minh chức năng](../cga-manual-verification-matrix.md).
 
 ## 1. Khởi động CGA Studio
 
@@ -15,7 +13,6 @@ Tài liệu này mô tả các menu và quy trình làm việc của CGA Studio.
 2. Nhập thông tin tài khoản của bạn.
 3. Sau khi đăng nhập, hãy chuyển đến màn hình CGA Studio.
 
-Màn hình đăng nhập thành công thực tế và đường dẫn di chuyển cho từng cơ quan được xác nhận sau khi xác minh trình duyệt.
 
 ### 1.2 Các ký hiệu sử dụng trong tài liệu
 
@@ -157,7 +154,6 @@ Luồng hội thoại là khu vực tổ chức quy trình xử lý yêu cầu c
 
 Menu API là khu vực quản lý thông tin API liên quan đến việc xử lý cuộc trò chuyện của bot hoặc phiên bản của bạn.
 
-Đường dẫn truy cập là `Studio > API` hoặc `Bot > Phiên bản > API`. Khi sửa đổi API, hãy kiểm tra các mục yêu cầu, mục phản hồi, ý định liên quan và cài đặt xác thực. Kết quả kiểm tra kết nối bên ngoài thực tế và kết nối vận hành yêu cầu xác minh riêng.
 
 ## 5. Kiểm tra/Phân tích/Đánh giá
 
@@ -340,7 +336,7 @@ Nếu nguyên nhân và kết quả không được xác nhận trên màn hình
 4. Kiểm tra thời gian bắt đầu, thời gian hoàn thành và trạng thái học tập của cùng một bot/phiên bản trong yêu cầu lịch sử học tập.
 5. Nếu nó hiển thị lại là `Chưa huấn luyện` hoặc không có lịch sử học tập, đừng đánh giá đó là thành công mà hãy truyền đạt bot, phiên bản, công cụ học tập và thời gian yêu cầu cho nhân viên vận hành.
 
-Bot xác minh thậm chí còn hiển thị thông báo đăng ký Hàng đợi, nhưng sau khi làm mới, trạng thái `Chưa huấn luyện` vẫn giữ nguyên và không có lịch sử học tập nào được tạo.
+Yêu cầu huấn luyện được đưa vào Queue và do Worker riêng xử lý bất đồng bộ. Huấn luyện ML và Semantic có thể mất hơn ba phút tùy dữ liệu và môi trường; chỉ kiểm tra sau khi lịch sử huấn luyện hiển thị thành công hoặc trạng thái đã huấn luyện.
 
 ## 8. Quy trình chung cho các thao tác trên menu
 
@@ -375,4 +371,3 @@ Chỉ thông báo lưu thành công không xác định được rằng phản �
 - [Xem tất cả hướng dẫn sử dụng CGA](../README.md)
 - [Bắt đầu CGA](../cga-getting-started/README.md)
 - [Hướng dẫn sử dụng CGA NLU](../cga-nlu-guide/README.md)
-- [Bảng xác minh chức năng](../cga-manual-verification-matrix.md)

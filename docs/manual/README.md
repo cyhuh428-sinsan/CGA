@@ -1,46 +1,37 @@
 # CGA 메뉴얼
 
-CGA 메뉴얼은 사용 목적에 따라 다음 세 문서로 나누어 작성합니다.
+CGA 메뉴얼은 사용 목적에 따라 다음 세 문서로 제공합니다.
 
 ## 어떤 문서를 읽을까요?
 
 | 문서 | 대상 | 목적 |
 |---|---|---|
-| [CGA Getting Started](cga-getting-started/README.md) | 처음 사용하는 사용자 | 봇 생성 화면을 이해하고 첫 테스트를 준비합니다. |
-| [CGA 사용자 설명서](cga-user-manual/README.md) | 일반 사용자·봇 운영자·시스템 관리자 | 봇·버전·대화 설계·테스트·관리자 메뉴의 전체 흐름을 확인합니다. |
-| [CGA NLU 활용 가이드](cga-nlu-guide/README.md) | 봇·대화 설계 운영자·AI/NLU 담당자 | ML·Semantic·LLM 엔진의 선택·데이터 준비·품질 개선 방법을 확인합니다. |
+| [CGA Getting Started](cga-getting-started/README.md) | 처음 사용하는 사용자 | 첫 봇 생성, 학습 상태 확인, 봇 테스트 흐름을 익힙니다. |
+| [CGA 사용자 설명서](cga-user-manual/README.md) | 일반 사용자·봇 운영자·시스템 관리자 | 봇·버전·대화 설계·테스트·운영·관리자 메뉴의 전체 흐름을 확인합니다. |
+| [CGA NLU 활용 가이드](cga-nlu-guide/README.md) | 봇·대화 설계 운영자·AI/NLU 담당자 | ML·Semantic·LLM 엔진 선택, 데이터 준비, 학습·인덱싱, 품질 개선 방법을 확인합니다. |
 
 ## 권장 읽기 순서
 
-1. 처음 사용하는 경우 [CGA Getting Started](cga-getting-started/README.md)에서 기본 흐름을 확인합니다.
-2. 메뉴와 운영 절차가 필요하면 [CGA 사용자 설명서](cga-user-manual/README.md)를 확인합니다.
-3. 엔진 선택이나 학습·검색·생성 품질을 다룰 때는 [CGA NLU 활용 가이드](cga-nlu-guide/README.md)를 확인합니다.
-4. 기능의 확인 수준이 필요한 경우 [기능 검증표](cga-manual-verification-matrix.md)를 확인합니다.
+1. 처음 사용하는 경우 Getting Started에서 봇 생성부터 봇 테스트까지 따라 합니다.
+2. 메뉴와 운영 절차가 필요하면 사용자 설명서를 확인합니다.
+3. 엔진 선택이나 학습·검색·생성 품질을 다룰 때는 NLU 활용 가이드를 확인합니다.
 
-## 문서 작성 기준
+## 지원 언어
 
-- CGA 화면과 소스에서 확인된 명칭을 우선 사용합니다.
-- 참고자료에만 있고 CGA에서 확인되지 않은 기능은 운영 확정 기능처럼 표현하지 않습니다.
-- 실제 생성·저장·학습·인덱싱·모델 호출 결과가 확인되지 않은 항목은 검증표에서 별도로 표시합니다.
-- 사용자는 DB나 CLI를 직접 조작하지 않고 화면의 상태·오류·대상 정보를 기준으로 운영 담당자에게 전달합니다.
+각 문서는 한국어, 영어, 중국어(간체), 일본어, 베트남어, 프랑스어, 독일어로 제공합니다.
 
-문서의 현재 확인 수준과 남은 검증 영역은 [기능 검증표](cga-manual-verification-matrix.md)에서 관리합니다.
+- Markdown 원본: 각 문서 폴더의 README, README.en, README.zh-CN, README.ja, README.vi, README.fr, README.de 파일
+- Word 산출물: [dist](dist/) 폴더
+- Web PDF: apps/web/public/manuals 폴더 및 /manuals/cga-{문서}-{언어}.pdf 경로
+- 기존 한국어 링크는 호환성을 위해 언어 코드 없는 PDF 경로도 함께 제공합니다.
 
-## Word 문서
+## 문서 운영 기준
 
-현재 Markdown 본문을 기준으로 생성한 Word 문서입니다.
+- CGA 화면과 소스에서 사용하는 명칭을 우선합니다.
+- 사용자는 DB나 CLI를 직접 조작하지 않고 화면의 상태·오류·대상 정보를 기준으로 조치합니다.
+- 학습 요청은 Queue에 등록되고 Worker가 비동기로 처리하므로 학습 이력의 성공 또는 학습된 상태를 확인한 뒤 봇 테스트를 실행합니다.
+- 브라우저 호출은 same-origin 경로를 사용하며 내부 서비스 주소는 화면이나 메뉴얼에 노출하지 않습니다.
 
-- [CGA 사용자 설명서.docx](dist/CGA%20사용자%20설명서.docx)
-- [CGA Getting Started.docx](dist/CGA%20Getting%20Started.docx)
-- [CGA NLU 활용 가이드.docx](dist/CGA%20NLU%20활용%20가이드.docx)
+## 다시 생성하는 방법
 
-Word 문서는 `build_manual_docx.py`로 다시 생성할 수 있습니다. 이 환경에서는 LibreOffice PDF 변환이 완료되지 않아 페이지 이미지 시각 검증은 보류 상태입니다.
-
-## PDF 문서
-
-화면 도움말에서 제공하는 최종 PDF 원본입니다.
-
-- [CGA 사용자 설명서.pdf](CGA%20사용자%20설명서.pdf) - 카카오톡 채널 연결 절차 포함
-- [CGA NLU 활용 가이드.pdf](CGA%20NLU%20활용%20가이드.pdf)
-
-운영 Web은 위 원본과 동일한 파일을 `apps/web/public/manuals/`에 배치하여 `/manuals/cga-user-manual.pdf`, `/manuals/cga-nlu-guide.pdf` 경로로 제공합니다.
+Word 문서는 build_manual_docx.py가 7개 언어의 세 문서를 생성합니다. 생성된 Word 문서는 LibreOffice로 PDF 변환한 뒤 apps/web/public/manuals에 언어별 이름으로 배치합니다. 배포 전에 문서 링크, PDF 헤더, 페이지 수, 첫 페이지 언어, 화면 레이아웃을 확인합니다.

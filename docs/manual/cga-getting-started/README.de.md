@@ -1,11 +1,9 @@
 # CGA Erste Schritte
 
-Status: Inhaltserstellung abgeschlossen, Ausführungsüberprüfung wartet
 Zielgruppe: Benutzer, die neu bei CGA sind
 
 Dieses Dokument führt Sie durch die Erstellung Ihres ersten Bots in CGA und zeigt die Ergebnisse Ihrer ersten Tests. Befolgen Sie Schritt für Schritt und überprüfen Sie die erwarteten Ergebnisse jedes Schritts, bevor Sie mit dem nächsten Schritt fortfahren.
 
-> Die Übermittlung der Bot-Erstellung und die Ausführung des Simulators wurden mit einem Verifizierungs-Bot bestätigt. Das ML-Lernen wurde nicht abgeschlossen, obwohl die Warteschlangenregistrierung bestätigt wurde, sodass der Erfolgspfad nach Abschluss des Lernens nicht als betriebliches Bestätigungsverfahren betrachtet wird.
 
 ## In diesem Dokument abgeschlossen
 
@@ -177,7 +175,6 @@ Bereitet die eingegebenen Bot-Einstellungen und Daten für die Verwendung in CGA
 
 Der Bot und die Version werden erstellt und der Bereitschaftsstatus wird für die ausgewählte Engine angezeigt.
 
-> Das Erstellungsergebnis des Verifizierungsbots und die Bildschirmverschiebung zur Version `v1` wurden bestätigt. Die Lernanfrage wurde in der Warteschlange registriert, aber der Status `Nicht trainiert` blieb nach der Aktualisierung erhalten und es gab keine Ergebnisse im Lernverlauf.
 
 ### Wenn der Lernabschluss nicht bestätigt wird
 
@@ -202,7 +199,6 @@ Die Antwort- und Klassifizierungsergebnisse werden angezeigt.
 
 ### Wenn ein Problem auftritt
 
-Wenn keine Antwort erfolgt oder diese anders als erwartet ausfällt, überprüfen Sie zunächst den Bot/die Version, den Trainings- oder Indexstatus, die ausgewählte Engine und die Antwortmethode. Der Verifizierungsbot zeigte `Nicht klassifizierte Absicht` und `Die Absichtsklassifizierung kann ohne Trainingssätze nicht ausgeführt werden` an, ohne dass das Training abgeschlossen wurde.
 
 Grenzen Sie den Bereich in der folgenden Reihenfolge ein:
 
@@ -228,4 +224,3 @@ Wenn die Ergebnisse unzureichend sind, sehen Sie im NLU-Nutzungsleitfaden nach, 
 - [Alle CGA-Handbücher anzeigen](../README.md)
 - [CGA-Benutzerhandbuch](../cga-user-manual/README.md)
 - [CGA NLU-Nutzungsleitfaden](../cga-nlu-guide/README.md)
-- [Funktionsüberprüfungstabelle](../cga-manual-verification-matrix.md)

@@ -1,11 +1,9 @@
 # Bắt đầu với CGA
 
-Trạng thái: Quá trình tạo nội dung đã hoàn tất, đang chờ xác minh thực thi
 Đối tượng: Người dùng mới làm quen với CGA
 
 Tài liệu này hướng dẫn bạn cách tạo bot đầu tiên trong CGA và xem kết quả của các thử nghiệm đầu tiên. Thực hiện theo từng bước, kiểm tra kết quả mong đợi của từng bước trước khi chuyển sang bước tiếp theo.
 
-> Việc gửi bot và thực thi trình mô phỏng đã được xác nhận bằng bot xác minh. Quá trình học ML vẫn chưa được hoàn thành ngay cả khi đăng ký hàng đợi đã được xác nhận, do đó, lộ trình thành công sau khi hoàn thành quá trình học không được coi là quy trình xác nhận hoạt động.
 
 ## Đã hoàn thành trong tài liệu này
 
@@ -23,7 +21,6 @@ Nếu bạn đọc hết các hướng dẫn này, bạn sẽ có thể:
 - Một câu nói ngắn gọn của người dùng để thử nghiệm.
 - Lựa chọn mặc định cho phương pháp NLU nào sẽ sử dụng
 
-Khi học màn hình lần đầu tiên, nên kiểm tra màn hình dựa trên sự kết hợp của `ML` và `Câu trả lời cố định`. Sự kết hợp này được hiển thị dưới dạng `Sẵn sàng chạy/huấn luyện` trong màn hình tạo hiện tại. Việc sáng tạo và học tập thành công thực tế đòi hỏi phải có sự xác minh riêng biệt.
 
 Nếu bạn cần tiêu chí lựa chọn chi tiết cho động cơ, trước tiên vui lòng kiểm tra [Hướng dẫn sử dụng NLU](../cga-nlu-guide/README.md).
 
@@ -177,7 +174,6 @@ Chuẩn bị dữ liệu và cài đặt bot đã nhập để sử dụng trong
 
 Bot và phiên bản được tạo và trạng thái sẵn sàng được hiển thị cho công cụ đã chọn.
 
-> Kết quả tạo bot xác minh và chuyển màn hình sang phiên bản `v1` đã được xác nhận. Yêu cầu học tập đã được đăng ký trong hàng đợi nhưng trạng thái `Chưa huấn luyện` vẫn được duy trì sau khi làm mới và không có kết quả nào trong lịch sử học tập.
 
 ### Khi việc hoàn thành học tập không được xác nhận
 
@@ -202,7 +198,6 @@ Kết quả phản hồi và phân loại được hiển thị.
 
 ### Nếu xảy ra sự cố
 
-Nếu không có phản hồi hoặc khác với mong đợi, trước tiên hãy kiểm tra bot/phiên bản, trạng thái đào tạo hoặc chỉ mục, công cụ đã chọn và phương thức phản hồi. Bot xác minh hiển thị `Ý định chưa phân loại` và `Không thể phân loại ý định vì không có câu huấn luyện` mà không hoàn thành quá trình đào tạo.
 
 Thu hẹp phạm vi theo thứ tự sau:
 
@@ -228,4 +223,3 @@ Nếu kết quả không đủ, hãy kiểm tra hướng dẫn sử dụng NLU �
 - [Xem tất cả hướng dẫn sử dụng CGA](../README.md)
 - [Hướng dẫn sử dụng CGA](../cga-user-manual/README.md)
 - [Hướng dẫn sử dụng CGA NLU](../cga-nlu-guide/README.md)
-- [Bảng xác minh chức năng](../cga-manual-verification-matrix.md)

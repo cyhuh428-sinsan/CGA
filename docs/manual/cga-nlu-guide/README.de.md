@@ -1,11 +1,9 @@
 # CGA NLU-Nutzungshandbuch
 
-Status: Inhaltserstellung abgeschlossen, Ausführungsüberprüfung wartet
 Zielgruppe: Bot-/Dialogdesign-Betreiber, KI/NLU-Experten
 
 Dieses Dokument wählt die CGA-Engines `ML`, `Semantic` und `LLM` aus und organisiert Daten, Einstellungen, Tests und Methoden zur Qualitätsverbesserung für jede Engine.
 
-> Die Optionen für Engine, Modell und Antwortmethode auf dem Bot-Erstellungsbildschirm wurden im Browser überprüft. Betrachten Sie Elemente, für die die tatsächlichen Lern-, Indizierungs- und Modellaufrufergebnisse nicht bestätigt wurden, nicht als Betriebsbestätigungen, sondern überprüfen Sie auch die [Funktionsüberprüfungstabelle](../cga-manual-verification-matrix.md).
 
 ## 1. NLU-Grundkonzepte
 
@@ -72,7 +70,6 @@ Machen Sie sich bei der Vorbereitung von QA- oder dokumentenbasiertem Wissen den
 - Wenn die Tabelle oder Liste wichtig ist, stellen Sie sicher, dass die Bedeutung nach der Konvertierung erhalten bleibt.
 - Überprüfen Sie beim Überarbeiten eines Dokuments den Anwendungsstatus, um sicherzustellen, dass vorhandene und neue Dokumente nicht gleichzeitig durchsucht werden.
 
-Die detaillierten Vorgänge des QA-Uploads, der Suche und der Indizierung können je nach CGA-Bildschirm und Betriebseinstellungen variieren, daher wird der tatsächliche Umfang der Unterstützung anhand der [Funktionsüberprüfungstabelle](../cga-manual-verification-matrix.md) bestätigt.
 
 ### 4.1 Betriebsinspektionsaufzeichnungen
 
@@ -181,7 +178,6 @@ Anweisungen dokumentieren klar den Ton, das Antwortformat und die Einschränkung
 4. Überprüfen Sie die Einhaltung der Richtlinie und die Grundlage für Ihre Antwort.
 5. Protokolliert Verzögerungen, Kosten und Fehlerreaktionen.
 
-Die tatsächlichen Anruf- und Antwortergebnisse des Anbieters müssen in einer betriebsähnlichen Umgebung separat überprüft werden. Im ML-Verifizierungsbot wurde die Lernanfrage in der Warteschlange registriert, aber nicht abgeschlossen, und der Simulator gab eine nicht klassifizierte Absicht ohne Lernsätze zurück.
 
 Prüfung vor LLM-Änderung:
 
@@ -240,4 +236,3 @@ Passen Sie den Status nicht durch direktes Ändern der Datenbank oder CLI an. De
 - [CGA Erste Schritte](../cga-getting-started/README.md)
 - [CGA-Benutzerhandbuch](../cga-user-manual/README.md)
 - [Motorvergleichstabelle](engine-comparison.md)
-- [Funktionsüberprüfungstabelle](../cga-manual-verification-matrix.md)

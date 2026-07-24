@@ -1,11 +1,9 @@
 # CGA Studio-Benutzerhandbuch
 
-Status: Inhaltserstellung abgeschlossen, Ausführungsüberprüfung wartet
 Zielgruppe: Allgemeine Benutzer, Bot-Betreiber, Systemadministratoren
 
 Dieses Dokument beschreibt die Menüs und den Arbeitsablauf von CGA Studio. Wenn Sie es zum ersten Mal verwenden, lesen Sie zuerst [CGA Getting Started](../cga-getting-started/README.md) und lesen Sie dann den [CGA NLU Utilization Guide](../cga-nlu-guide/README.md) für Informationen zur Engine-Auswahl, zum Lernen und zur Qualitätsverbesserung.
 
-> Die Felder „Basisinformationen“, „NLU-Methode“, „Modell“ und „Antwortmethode“ auf dem Bot-Erstellungsbildschirm wurden im Browser überprüft. Funktionen, für die die tatsächlichen Speicher-, Erstellungs-, Lern- und Ausführungsergebnisse nicht bestätigt wurden, werden separat in der [Funktionsüberprüfungstabelle](../cga-manual-verification-matrix.md) angezeigt.
 
 ## 1. CGA Studio starten
 
@@ -15,7 +13,6 @@ Dieses Dokument beschreibt die Menüs und den Arbeitsablauf von CGA Studio. Wenn
 2. Geben Sie Ihre Kontoinformationen ein.
 3. Gehen Sie nach der Anmeldung zum CGA Studio-Bildschirm.
 
-Der tatsächliche Anmeldeerfolgsbildschirm und der Bewegungspfad für jede Behörde werden nach der Browserüberprüfung bestätigt.
 
 ### 1.2 In Dokumenten verwendete Notationen
 
@@ -340,7 +337,7 @@ Wenn Ursache und Ergebnis nicht auf dem Bildschirm bestätigt werden, manipulier
 4. Überprüfen Sie die Startzeit, Abschlusszeit und den Lernstatus des gleichen Bots/der gleichen Version in der Lernverlaufsabfrage.
 5. Wenn es erneut als `Nicht trainiert` angezeigt wird oder kein Lernverlauf vorliegt, werten Sie es nicht als Erfolg, sondern übermitteln Sie dem Betriebspersonal den Bot, die Version, die Lern-Engine und die Anforderungszeit.
 
-Der Verifizierungsbot zeigte sogar eine Meldung zur Warteschlangenregistrierung an, aber nach der Aktualisierung blieb der Status `Nicht trainiert` bestehen und es wurde kein Lernverlauf erstellt.
+Eine Trainingsanfrage wird der Queue hinzugefügt und von einem separaten Worker asynchron verarbeitet. ML- und Semantic-Training kann je nach Daten und Umgebung länger als drei Minuten dauern; testen Sie erst, wenn der Trainingsverlauf Erfolgreich oder trainiert anzeigt.
 
 ## 8. Allgemeine Verfahren für Menüoperationen
 
@@ -375,4 +372,3 @@ Die Erfolgsmeldung beim Speichern allein bestimmt nicht, dass die Vorgangsreflex
 - [Alle CGA-Handbücher anzeigen](../README.md)
 - [CGA Erste Schritte](../cga-getting-started/README.md)
 - [CGA NLU-Nutzungsleitfaden](../cga-nlu-guide/README.md)
-- [Funktionsüberprüfungstabelle](../cga-manual-verification-matrix.md)

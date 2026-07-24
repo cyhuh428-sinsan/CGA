@@ -1,11 +1,9 @@
 # Guide d'utilisation CGA NLU
 
-Statut : création de contenu terminée, en attente de vérification de l'exécution
 Cible : opérateurs de conception de robots/dialogues, experts en IA/NLU
 
 Ce document sélectionne les moteurs `ML`, `Semantic` et `LLM` de CGA et organise les données, les paramètres, les tests et les méthodes d'amélioration de la qualité pour chaque moteur.
 
-> Les options de moteur, de modèle et de méthode de réponse sur l'écran de création du bot ont été vérifiées dans le navigateur. Pour les éléments pour lesquels les résultats réels d'apprentissage, d'indexation et d'appel de modèle n'ont pas été confirmés, ne les considérez pas comme des confirmations opérationnelles, mais vérifiez également la [Table de vérification des fonctions](../cga-manual-verification-matrix.md).
 
 ## 1. Concepts de base du NLU
 
@@ -72,7 +70,6 @@ Lors de la préparation d'une assurance qualité ou de connaissances basées sur
 - Si le tableau ou la liste est important, assurez-vous que la signification est conservée après la conversion.
 - Lors de la révision d'un document, vérifiez l'état de la demande pour vous assurer que les documents existants et les nouveaux ne sont pas recherchés en même temps.
 
-Les opérations détaillées de téléchargement, de recherche et d'indexation du contrôle qualité peuvent varier en fonction de l'écran CGA et des paramètres de fonctionnement, de sorte que l'étendue réelle de la prise en charge est confirmée sur la base du [Tableau de vérification des fonctions](../cga-manual-verification-matrix.md).
 
 ### 4.1 Dossiers d'inspection opérationnelle
 
@@ -148,7 +145,6 @@ Le code actuel définit des options d'intégration externes, notamment `ko-srobe
 4. Vérifiez les résultats de la recherche, la similarité, le seuil et l'état de l'index.
 5. Si la recherche ne correspond pas, vérifiez la combinaison de données, d'intégration et d'index.
 
-> L'état d'achèvement de l'indexation et l'écran des résultats de recherche doivent être confirmés après la vérification du navigateur/de l'exécution.
 
 Vérifiez avant de modifier la sémantique :
 
@@ -181,7 +177,6 @@ Les instructions documentent clairement le ton, le format de réponse et les lim
 4. Vérifiez le respect de la directive et le fondement de votre réponse.
 5. Enregistre les retards, les coûts et les réponses aux échecs.
 
-Les résultats réels des appels et des réponses du fournisseur doivent être vérifiés séparément dans un environnement de type opérationnel. Dans le robot de vérification ML, la demande d'apprentissage a été enregistrée dans la file d'attente, mais n'a pas été complétée, et le simulateur a renvoyé une intention non classifiée sans phrases d'apprentissage.
 
 Vérifier avant changement de LLM :
 
@@ -240,4 +235,3 @@ N'ajustez pas l'état en modifiant directement la base de données ou la CLI. Le
 - [Démarrer CGA](../cga-getting-started/README.md)
 - [Manuel d'utilisation CGA](../cga-user-manual/README.md)
 - [Tableau de comparaison des moteurs](engine-comparison.md)
-- [Tableau de vérification des fonctions](../cga-manual-verification-matrix.md)
