@@ -731,3 +731,15 @@ def test_intent_configure_seed_modal_uses_seven_language_catalog() -> None:
     assert 'aria-label="닫기" onClick={() => setMlSeedIntentOpen(false)}' not in page_source
     assert "seedIntentEntry: string" in catalog_source
     assert "seedEmptyHint: string" in catalog_source
+
+def test_intent_configure_settings_modal_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert "inputCopy.settingsTitle" in page_source
+    assert "inputCopy.recommendedNluCriteria" in page_source
+    assert "inputCopy.autoClassificationWeights" in page_source
+    assert "getIntentConfigureCriteriaLabel" in page_source
+    assert '<h2 id="intent-configure-settings-title">NLU 기준 / 가중치 설정</h2>' not in page_source
+    assert '<strong>자동분류 가중치</strong>' not in page_source
+    assert "criteriaScale: {" in catalog_source
+    assert "settingsTitle: string" in catalog_source
