@@ -14,7 +14,6 @@ import {
   hasAdminOperationsRole,
   hasAdminRole,
   hasApiRole,
-  roleLabel,
   type AuthSession,
 } from "@/lib/auth";
 import { prefetchStudioBots } from "@/lib/studio-bots-api";
@@ -22,6 +21,8 @@ import { useI18n } from "@/components/language-provider";
 import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
 import { SHELL_NAVIGATION } from "@/lib/i18n/shell-navigation";
 import { ADMIN_NAVIGATION_CATALOGS, buildAdminNavigationGroups } from "@/lib/i18n/admin-navigation";
+import { ACCOUNT_PAGE_CATALOGS, getAccountRoleLabel } from "@/lib/i18n/account-pages";
+import { STUDIO_RAIL_CATALOGS, formatStudioRailText } from "@/lib/i18n/studio-rail";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
@@ -29,24 +30,6 @@ const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
 type PrimaryPanelId = "operations" | "build" | "api" | "admin";
 
 type GettingStartedMode = "explore" | "create" | "sample";
-
-const gettingStartedSlides = [
-  {
-    title: "쉽고 빠르게 AI 챗봇을 만들 수 있습니다.",
-    description: "캔버스에 대화 흐름을 설계하는 직관적이고 쉬운 대화 설계툴을 제공하여 누구나 쉽고 빠르게 챗봇을 만들 수 있습니다. 또한 설계한 대화 시나리오는 바로 테스트하며 수정할 수 있습니다.",
-    variant: "design",
-  },
-  {
-    title: "Enterprise 전용 챗봇 구축에 최적화되어 있습니다.",
-    description: "Bot Station과 API Store를 통해 사내 시스템과 RPA 솔루션을 연계할 수 있으며, 다양한 메신저와 보이스 채널 연계를 통해 업무의 E2E 자동화를 구현할 수 있습니다.",
-    variant: "enterprise",
-  },
-  {
-    title: "운영 데이터를 바탕으로 챗봇을 지속 개선할 수 있습니다.",
-    description: "분석·평가·대화 이력을 확인하고 실패 발화를 다시 학습 데이터로 반영하여 챗봇 품질을 반복적으로 개선할 수 있습니다.",
-    variant: "improve",
-  },
-] as const;
 
 type BuildNavigationItem = {
   label: string;
@@ -68,6 +51,8 @@ export function StudioRail() {
   const searchParams = useSearchParams();
   const { language, setLanguage, t } = useI18n();
   const navigation = SHELL_NAVIGATION[language];
+  const railCopy = STUDIO_RAIL_CATALOGS[language];
+  const accountCatalog = ACCOUNT_PAGE_CATALOGS[language];
   const adminGroups = useMemo(
     () => buildAdminNavigationGroups(ADMIN_NAVIGATION_CATALOGS[language]),
     [language],
@@ -85,7 +70,7 @@ export function StudioRail() {
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const helpMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const currentGettingStartedSlide = gettingStartedSlides[gettingStartedSlide];
+  const currentGettingStartedSlide = railCopy.gettingStartedSlides[gettingStartedSlide];
 
   useEffect(() => {
     const currentSession = loadAuthSession();
@@ -209,11 +194,11 @@ export function StudioRail() {
 
   const accountInitial = session?.user.name?.trim().charAt(0) || session?.user.login_id?.trim().charAt(0) || "A";
   const roles = session?.user.roles ?? [];
-  const roleSummary = session ? roles.map(roleLabel).join(", ") : "";
+  const roleSummary = session ? roles.map((role) => getAccountRoleLabel(accountCatalog, role)).join(", ") : "";
   const canUseApi = hasApiRole(roles);
   const canUseAdmin = hasAdminOperationsRole(roles);
   const groupSummary = session?.user.group_name ?? "-";
-  const organizationSummary = session?.user.organization_name ?? "기본 서버";
+  const organizationSummary = session?.user.organization_name ?? railCopy.defaultServer;
   const lastBotScreen = session ? loadLastBotScreen(session.user.login_id) : null;
   const botVersionMatch = pathname.match(botVersionPathPattern);
   const botSettingsMatch = pathname.match(botSettingsPathPattern);
@@ -322,7 +307,7 @@ export function StudioRail() {
     activePanel === "operations" ? navigation.operationsPanel : activePanel === "build" ? navigation.buildPanel : navigation.systemPanel;
   const panelLinks = activePanel === "operations" ? operationLinks : [];
   const currentLicense = licenseStatus?.license ?? null;
-  const licenseProduct = currentLicense?.product?.trim() || "라이선스 정보 없음";
+  const licenseProduct = currentLicense?.product?.trim() || railCopy.noLicense;
   const licenseId = currentLicense?.license_id?.trim() || "-";
   const licenseExpiresAt = currentLicense?.expires_at?.trim() || "-";
 
@@ -332,7 +317,7 @@ export function StudioRail() {
 
   return (
     <aside className="studio-rail">
-      <nav className="studio-rail__menu" aria-label="스튜디오 주요 메뉴">
+      <nav className="studio-rail__menu" aria-label={railCopy.mainMenu}>
         {primaryItems.map((item) => {
           const isActive = activePrimaryId === item.id;
 
@@ -372,11 +357,11 @@ export function StudioRail() {
                 ? " studio-rail__context-panel--build"
                 : ""
           }`}
-          aria-label={`${panelTitle} 메뉴`}
+          aria-label={`${panelTitle} ${railCopy.menu}`}
         >
           <header>
             <strong>{panelTitle}</strong>
-            <button type="button" onClick={() => setActivePanel(null)} aria-label="메뉴 닫기">×</button>
+            <button type="button" onClick={() => setActivePanel(null)} aria-label={railCopy.closeMenu}>×</button>
           </header>
           {activePanel === "build" ? (
             <div className="studio-rail__build-groups">
@@ -536,18 +521,18 @@ export function StudioRail() {
               <button
                 type="button"
                 className="studio-getting-started__next"
-                aria-label="다음 소개 보기"
-                onClick={() => setGettingStartedSlide((current) => (current + 1) % gettingStartedSlides.length)}
+                aria-label={railCopy.nextIntroduction}
+                onClick={() => setGettingStartedSlide((current) => (current + 1) % railCopy.gettingStartedSlides.length)}
               >
                 ›
               </button>
-              <div className="studio-getting-started__dots" aria-label="소개 슬라이드 선택">
-                {gettingStartedSlides.map((slide, index) => (
+              <div className="studio-getting-started__dots" aria-label={railCopy.introductionSelection}>
+                {railCopy.gettingStartedSlides.map((slide, index) => (
                   <button
                     key={slide.variant}
                     type="button"
                     className={index === gettingStartedSlide ? "is-active" : ""}
-                    aria-label={`${index + 1}번째 소개 보기`}
+                    aria-label={formatStudioRailText(railCopy.introductionAt, { index: index + 1 })}
                     aria-current={index === gettingStartedSlide ? "step" : undefined}
                     onClick={() => setGettingStartedSlide(index)}
                   />
@@ -557,7 +542,7 @@ export function StudioRail() {
 
             <div className="studio-getting-started__body">
               <h3>{t("gettingStarted.choose")}</h3>
-              <div className="studio-getting-started__modes" role="radiogroup" aria-label="Getting Started 체험 방법">
+              <div className="studio-getting-started__modes" role="radiogroup" aria-label={railCopy.experienceMode}>
                 <label className={gettingStartedMode === "explore" ? "is-selected" : ""}>
                   <input type="radio" name="getting-started-mode" value="explore" checked={gettingStartedMode === "explore"} onChange={() => setGettingStartedMode("explore")} />
                   <span>{t("gettingStarted.explore")}</span>
@@ -605,7 +590,7 @@ export function StudioRail() {
               type="button"
               className="studio-rail__account-close"
               onClick={() => setMenuOpen(false)}
-              aria-label="사용자 메뉴 닫기"
+              aria-label={railCopy.closeUserMenu}
             >
               ×
             </button>
@@ -618,7 +603,7 @@ export function StudioRail() {
                       {session.user.name} / {session.user.login_id}
                     </strong>
                     <span>
-                      {roleSummary || "권한 없음"} / {groupSummary} / {organizationSummary}
+                      {roleSummary || railCopy.noPermission} / {groupSummary} / {organizationSummary}
                     </span>
                   </div>
                 </div>
