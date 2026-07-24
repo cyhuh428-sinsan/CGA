@@ -10,7 +10,7 @@ import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { getBotVersionSettings, normalizeConfigurationScoring, type ConfigurationScoringConfig } from "@/lib/bot-settings";
-import { INTENT_CONFIGURE_INPUT_CATALOGS, formatIntentConfigureInputText, getIntentConfigureCriteriaLabel } from "@/lib/i18n/intent-configure-input";
+import { INTENT_CONFIGURE_INPUT_CATALOGS, formatIntentConfigureInputText, getIntentConfigureCriteriaLabel, type IntentConfigureInputCatalog } from "@/lib/i18n/intent-configure-input";
 import { applyUpdatedVersionToBot, getNextDialogNo, getVersionDialogs, withEnsuredDialogFlowGraph, withUpdatedDialogs } from "@/lib/dialog-assets";
 import {
   NLU_MODEL_OPTIONS_BY_TYPE,
@@ -199,34 +199,46 @@ function buildClassifyProgressText(message: string, elapsedSeconds: number, prog
   return `${message} · ${elapsedText} · 남은 시간은 처리량에 따라 달라집니다.`;
 }
 
-function ragConfigureStepFloorPercent(step: string) {
-  if (step.includes("PDF")) return 12;
-  if (step.includes("전송")) return 24;
-  if (step.includes("임베딩")) return 42;
-  if (step.includes("의도")) return 72;
-  if (step.includes("완료")) return 100;
-  return 16;
+type RagConfigureStage = "idle" | "uploadPdf" | "uploadText" | "embedding" | "intent" | "complete";
+
+function ragConfigureStepFloorPercent(stage: RagConfigureStage) {
+  if (stage === "uploadPdf") return 12;
+  if (stage === "uploadText") return 24;
+  if (stage === "embedding") return 42;
+  if (stage === "intent") return 72;
+  if (stage === "complete") return 100;
+  return 0;
 }
 
-function ragConfigureStepCapPercent(step: string) {
-  if (step.includes("완료")) return 100;
-  if (step.includes("의도")) return 94;
-  if (step.includes("임베딩")) return 86;
-  if (step.includes("전송")) return 42;
-  if (step.includes("PDF")) return 34;
-  return 70;
+function ragConfigureStepCapPercent(stage: RagConfigureStage) {
+  if (stage === "uploadPdf") return 34;
+  if (stage === "uploadText") return 42;
+  if (stage === "embedding") return 86;
+  if (stage === "intent") return 94;
+  if (stage === "complete") return 100;
+  return 0;
 }
 
-function formatRagConfigureResult(result?: RagAnswerEmbeddingResult | null) {
-  if (!result) {
-    return "";
-  }
+function getRagConfigureStepText(catalog: IntentConfigureInputCatalog, stage: RagConfigureStage) {
+  if (stage === "uploadPdf") return catalog.ragUploadPdf;
+  if (stage === "uploadText") return catalog.ragUploadText;
+  if (stage === "embedding") return catalog.ragEmbedding;
+  if (stage === "intent") return catalog.ragCreatingCandidates;
+  if (stage === "complete") return catalog.ragConfigureComplete;
+  return "";
+}
+
+function formatRagConfigureResult(catalog: IntentConfigureInputCatalog, result?: RagAnswerEmbeddingResult | null) {
+  if (!result) return "";
   const count = typeof result.document_count === "number" ? result.document_count : 0;
-  const model = result.embedding_model ? ` / 엔진 ${result.embedding_model}` : "";
-  const title = result.document_title ? ` / 문서 ${result.document_title}` : "";
-  return `답변 문서 임베딩 완료 / 조각 ${count}${model}${title}`;
+  const model = result.embedding_model
+    ? formatIntentConfigureInputText(catalog.ragResultEngine, { model: result.embedding_model })
+    : "";
+  const title = result.document_title
+    ? formatIntentConfigureInputText(catalog.ragResultDocument, { title: result.document_title })
+    : "";
+  return formatIntentConfigureInputText(catalog.ragResultCompleted, { count }) + model + title;
 }
-
 function isRagAnswerMode(aiConfig: Record<string, unknown>) {
   const answerMode = typeof aiConfig.answer_mode === "string" ? aiConfig.answer_mode : "";
   return answerMode === "semantic_rag" || answerMode === "llm_rag";
@@ -2351,7 +2363,8 @@ export function IntentConfigurePage() {
   const [ragDocumentTitle, setRagDocumentTitle] = useState("");
   const [ragFile, setRagFile] = useState<File | null>(null);
   const [ragConfiguring, setRagConfiguring] = useState(false);
-  const [ragConfigureStep, setRagConfigureStep] = useState("");
+  const [ragConfigureStage, setRagConfigureStage] = useState<RagConfigureStage>("idle");
+  const ragConfigureStep = getRagConfigureStepText(inputCopy, ragConfigureStage);
   const [ragConfigureProgress, setRagConfigureProgress] = useState(0);
   const [ragEmbeddingResult, setRagEmbeddingResult] = useState<RagAnswerEmbeddingResult | null>(null);
 
@@ -2517,15 +2530,15 @@ export function IntentConfigurePage() {
   }, [canUseConfigureSettings]);
 
   useEffect(() => {
-    if (!ragConfiguring || !ragConfigureStep) {
+    if (!ragConfiguring || ragConfigureStage === "idle") {
       setRagConfigureProgress(0);
       return;
     }
 
-    setRagConfigureProgress((current) => Math.max(current, ragConfigureStepFloorPercent(ragConfigureStep)));
+    setRagConfigureProgress((current) => Math.max(current, ragConfigureStepFloorPercent(ragConfigureStage)));
     const intervalId = window.setInterval(() => {
       setRagConfigureProgress((current) => {
-        const cap = ragConfigureStepCapPercent(ragConfigureStep);
+        const cap = ragConfigureStepCapPercent(ragConfigureStage);
         if (current >= cap) {
           return current;
         }
@@ -2534,7 +2547,7 @@ export function IntentConfigurePage() {
       });
     }, 900);
     return () => window.clearInterval(intervalId);
-  }, [ragConfiguring, ragConfigureStep]);
+  }, [ragConfiguring, ragConfigureStage]);
 
   function handleConfigureNluModelChange(value: string) {
     setConfigureNluModel(normalizeNluModel(configureNluType, value));
@@ -2663,31 +2676,31 @@ export function IntentConfigurePage() {
       return;
     }
     if (!ragAnswerMode) {
-      setErrorMessage("RAG 답변 방식에서만 답변 문서 구성을 실행할 수 있습니다.");
+      setErrorMessage(inputCopy.ragAnswerModeOnly);
       return;
     }
     const text = ragAnswerText.trim();
     const title = ragDocumentTitle.trim();
     if (ragSourceType === "text" && !text) {
-      setErrorMessage("임베딩할 답변 텍스트를 입력해주세요.");
+      setErrorMessage(inputCopy.ragAnswerTextRequired);
       return;
     }
     if (ragSourceType === "pdf" && !ragFile) {
-      setErrorMessage("임베딩할 PDF 파일을 선택해주세요.");
+      setErrorMessage(inputCopy.ragPdfRequired);
       return;
     }
 
     flushSync(() => {
       setRagConfiguring(true);
-      setRagConfigureStep(ragSourceType === "pdf" ? "PDF 답변 문서를 서버로 전송하는 중입니다." : "답변 텍스트를 서버로 전송하는 중입니다.");
+      setRagConfigureStage(ragSourceType === "pdf" ? "uploadPdf" : "uploadText");
       setRagConfigureProgress(0);
       setErrorMessage("");
-      setMessage("답변 문서 임베딩과 의도 후보 생성을 실행 중입니다.");
+      setMessage(inputCopy.ragConfigureRunning);
     });
     await waitForBrowserPaint(3);
 
     try {
-      setRagConfigureStep("Answer Vector DB에 답변 문서를 임베딩하는 중입니다.");
+      setRagConfigureStage("embedding");
       const response = ragSourceType === "pdf"
         ? await configureStudioBotVersionRagAnswerPdf(authSession.access_token, bot.id, effectiveVersion.id, {
             file: ragFile as File,
@@ -2708,7 +2721,7 @@ export function IntentConfigurePage() {
             target_count: targetCount,
             target_count_policy: targetCountPolicy,
           });
-      setRagConfigureStep("임베딩 결과로 의도 후보를 생성하는 중입니다.");
+      setRagConfigureStage("intent");
       const nextClusters = response.groups.map((cluster, index) => ({
         id: cluster.id || crypto.randomUUID(),
         name: cluster.name || `RAG 의도 ${index + 1}`,
@@ -2726,15 +2739,18 @@ export function IntentConfigurePage() {
       setDictionarySuggestions([]);
       setSelectedDictionarySuggestionIds([]);
       setRagConfigureProgress(100);
-      setRagConfigureStep("답변 문서 구성 생성이 완료되었습니다.");
+      setRagConfigureStage("complete");
       setMessage(
-        `${nextClusters.length}개 RAG 의도 후보를 생성했습니다. ${formatRagConfigureResult(result)} 저장 전 의도명과 학습문장을 확인해주세요.`,
+        formatIntentConfigureInputText(inputCopy.ragCandidatesCreated, {
+          count: nextClusters.length,
+          result: formatRagConfigureResult(inputCopy, result),
+        }),
       );
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "답변 문서 구성을 실행하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.ragConfigureFailed);
     } finally {
       setRagConfiguring(false);
-      setRagConfigureStep("");
+      setRagConfigureStage("idle");
     }
   }
 
@@ -3338,7 +3354,7 @@ export function IntentConfigurePage() {
               {ragConfigureStep || ragEmbeddingResult ? (
                 <div className="intent-configure__rag-progress" aria-live="polite">
                   <div className="intent-configure__rag-progress-meta">
-                    <span>{ragConfigureStep || formatRagConfigureResult(ragEmbeddingResult)}</span>
+                    <span>{ragConfigureStep || formatRagConfigureResult(inputCopy, ragEmbeddingResult)}</span>
                     <strong>{Math.round(ragConfigureProgress || (ragEmbeddingResult ? 100 : 0))}%</strong>
                   </div>
                   <div className="intent-configure__rag-progress-track">
