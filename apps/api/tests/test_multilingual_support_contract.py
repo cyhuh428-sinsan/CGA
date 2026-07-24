@@ -541,3 +541,16 @@ def test_training_history_quality_panel_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AdminTrainingHistoryCatalog>" in catalog_source
+
+
+def test_remaining_admin_list_ui_uses_selected_language() -> None:
+    login_source = (ROOT_DIR / "apps/web/app/admin/login-history/page.tsx").read_text(encoding="utf-8")
+    messages_source = (ROOT_DIR / "apps/web/app/admin/default-messages/page.tsx").read_text(encoding="utf-8")
+    bot_source = (ROOT_DIR / "apps/web/app/admin/bot-status/page.tsx").read_text(encoding="utf-8")
+    common_source = (ROOT_DIR / "apps/web/lib/i18n/admin-common.ts").read_text(encoding="utf-8")
+    assert "new Intl.DateTimeFormat(language" in login_source
+    assert "new Intl.DateTimeFormat(uiLanguage" in messages_source
+    assert "formatAdminText(commonCopy.selectItem" in bot_source
+    assert "selectItem: string" in common_source
+    assert 'Intl.DateTimeFormat("ko-KR"' not in login_source
+    assert 'Intl.DateTimeFormat("ko-KR"' not in messages_source
