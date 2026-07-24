@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
+
 import { type AuthSession } from "@/lib/auth";
+import { DICTIONARY_EDITOR_CATALOGS, formatDictionaryEditorText, type DictionaryEditorCatalog } from "@/lib/i18n/dictionary-editor";
 import {
   applyUpdatedVersionToDictionaryBot,
   getBotDictionary,
@@ -39,12 +42,12 @@ function normalizeDictionaryWord(value: string) {
   return value.trim();
 }
 
-function validateDictionaryTerm(value: string, fieldName: string) {
+function validateDictionaryTerm(value: string, fieldName: string, copy: DictionaryEditorCatalog) {
   if (!value) {
-    return `${fieldName}을(를) 입력해주세요.`;
+    return formatDictionaryEditorText(copy.validation.required, { field: fieldName });
   }
   if (value.length > 100) {
-    return `${fieldName}은(는) 100자 이하로 입력해주세요.`;
+    return formatDictionaryEditorText(copy.validation.maxLength, { field: fieldName });
   }
   return "";
 }
@@ -56,6 +59,8 @@ export function DictionaryEditorDialog({
   onClose,
   onSaved,
 }: DictionaryEditorDialogProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = DICTIONARY_EDITOR_CATALOGS[uiLanguage];
   const isNew = !entry;
   const [form, setForm] = useState<VersionDictionaryAsset>(entry ?? createEmptyVersionDictionary());
   const [synonymQuery, setSynonymQuery] = useState("");
@@ -79,7 +84,7 @@ export function DictionaryEditorDialog({
     setErrorMessage("");
   }, [entry]);
 
-  const dialogTitle = useMemo(() => (isNew ? "단어 등록" : "단어 수정"), [isNew]);
+  const dialogTitle = useMemo(() => (isNew ? copy.createTitle : copy.editTitle), [copy, isNew]);
   const showRecommendationPanel = recommendedSynonyms.length > 0 || Boolean(recommendationMessage);
   const visibleSynonyms = useMemo(() => {
     const normalizedQuery = synonymQuery.trim().toLowerCase();
@@ -90,7 +95,7 @@ export function DictionaryEditorDialog({
 
   function handleRecommendSynonyms() {
     const normalizedWord = normalizeDictionaryWord(form.word);
-    const wordValidationError = validateDictionaryTerm(normalizedWord, "단어");
+    const wordValidationError = validateDictionaryTerm(normalizedWord, copy.word, copy);
     if (wordValidationError) {
       setErrorMessage(wordValidationError);
       return;
@@ -98,22 +103,22 @@ export function DictionaryEditorDialog({
 
     setErrorMessage("");
     setRecommendedSynonyms([]);
-    setRecommendationMessage("동의어 추천 기능은 아직 준비 중입니다.");
+    setRecommendationMessage(copy.recommendationUnavailable);
   }
 
   function addSynonym() {
     const nextValue = normalizeDictionaryWord(synonymInput);
-    const validationError = validateDictionaryTerm(nextValue, "동의어");
+    const validationError = validateDictionaryTerm(nextValue, copy.synonym, copy);
     if (validationError) {
       setErrorMessage(validationError);
       return;
     }
     if (form.synonyms.map((value) => value.trim()).filter(Boolean).length >= 500) {
-      setErrorMessage("동의어는 최대 500개까지 등록할 수 있습니다.");
+      setErrorMessage(copy.validation.maxSynonyms);
       return;
     }
     if (form.synonyms.some((item) => normalizeDictionaryWord(item) === nextValue)) {
-      setErrorMessage("이미 등록된 동의어입니다.");
+      setErrorMessage(copy.validation.duplicateSynonym);
       return;
     }
 
@@ -146,12 +151,12 @@ export function DictionaryEditorDialog({
 
   async function handleSave() {
     if (!bot.active_version) {
-      setErrorMessage("활성 버전이 없습니다.");
+      setErrorMessage(copy.validation.noActiveVersion);
       return;
     }
 
     const normalizedWord = normalizeDictionaryWord(form.word);
-    const wordValidationError = validateDictionaryTerm(normalizedWord, "단어");
+    const wordValidationError = validateDictionaryTerm(normalizedWord, copy.word, copy);
     if (wordValidationError) {
       setErrorMessage(wordValidationError);
       return;
@@ -161,28 +166,28 @@ export function DictionaryEditorDialog({
       (item) => item.id !== form.id && normalizeDictionaryWord(item.word) === normalizedWord,
     );
     if (duplicateWord) {
-      setErrorMessage("이미 등록된 단어입니다.");
+      setErrorMessage(copy.validation.duplicateWord);
       return;
     }
 
     const normalizedSynonyms = form.synonyms
       .map((item) => normalizeDictionaryWord(item))
       .filter(Boolean);
-    const invalidSynonym = normalizedSynonyms.find((item) => validateDictionaryTerm(item, "동의어"));
+    const invalidSynonym = normalizedSynonyms.find((item) => validateDictionaryTerm(item, copy.synonym, copy));
     if (invalidSynonym) {
-      setErrorMessage(validateDictionaryTerm(invalidSynonym, "동의어"));
+      setErrorMessage(validateDictionaryTerm(invalidSynonym, copy.synonym, copy));
       return;
     }
     if (new Set(normalizedSynonyms).size !== normalizedSynonyms.length) {
-      setErrorMessage("중복된 동의어는 등록할 수 없습니다.");
+      setErrorMessage(copy.validation.duplicateSynonyms);
       return;
     }
     if (normalizedSynonyms.length > 500) {
-      setErrorMessage("동의어는 최대 500개까지 등록할 수 있습니다.");
+      setErrorMessage(copy.validation.maxSynonyms);
       return;
     }
     if (normalizedSynonyms.some((item) => item === normalizedWord)) {
-      setErrorMessage("단어와 동일한 값을 동의어로 등록할 수 없습니다.");
+      setErrorMessage(copy.validation.sameAsWord);
       return;
     }
     setSaving(true);
@@ -227,11 +232,11 @@ export function DictionaryEditorDialog({
       };
 
       const nextBot = applyUpdatedVersionToDictionaryBot(bot, updatedVersion);
-      setMessage("사전이 저장되었습니다.");
-      onSaved(nextBot, isNew ? "단어가 등록되었습니다." : "단어가 저장되었습니다.");
+      setMessage(copy.validation.saved);
+      onSaved(nextBot, isNew ? copy.validation.created : copy.validation.updated);
       onClose();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "사전 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.validation.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -247,7 +252,7 @@ export function DictionaryEditorDialog({
       >
         <div className="entity-editor-dialog__header">
           <strong>{dialogTitle}</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <button type="button" className="entity-editor-dialog__close" aria-label={copy.close} onClick={onClose}>
             ×
           </button>
         </div>
@@ -259,7 +264,7 @@ export function DictionaryEditorDialog({
           <div className="dictionary-editor-dialog__layout">
             <section className="dictionary-editor-dialog__section">
               <label className="dictionary-editor-dialog__field">
-                <span>단어</span>
+                <span>{copy.word}</span>
                 <div className="dictionary-editor-dialog__word-row">
                   <input
                     type="text"
@@ -268,17 +273,17 @@ export function DictionaryEditorDialog({
                     onChange={(event) => setForm((current) => ({ ...current, word: event.target.value }))}
                   />
                   <button type="button" className="secondary-action" onClick={handleRecommendSynonyms}>
-                    동의어 추천
+                    {copy.synonymRecommendation}
                   </button>
                 </div>
                 <small className="dictionary-editor-dialog__counter">{normalizeDictionaryWord(form.word).length}/100</small>
                 <small className="dictionary-editor-dialog__helper">
-                  단어는 100자 이하로 입력합니다. 복합어와 구문도 대표 단어로 등록할 수 있습니다.
+                  {copy.wordHelp}
                 </small>
               </label>
               {showRecommendationPanel ? (
                 <div className="dictionary-editor-dialog__recommend">
-                  <strong>추천 동의어</strong>
+                  <strong>{copy.recommendedSynonyms}</strong>
                   {recommendedSynonyms.length > 0 ? (
                     <div className="dictionary-editor-dialog__recommend-list">
                       {recommendedSynonyms.map((value) => (
@@ -305,7 +310,7 @@ export function DictionaryEditorDialog({
             <section className="dictionary-editor-dialog__section dictionary-editor-dialog__section--synonyms dictionary-editor-dialog__section--synonyms-layout">
               <div className="dictionary-editor-dialog__controls">
                 <label className="dictionary-editor-dialog__field">
-                  <span>동의어 검색</span>
+                  <span>{copy.synonymSearch}</span>
                   <input
                     type="text"
                     className="dictionary-editor-dialog__input"
@@ -315,7 +320,7 @@ export function DictionaryEditorDialog({
                 </label>
 
                 <label className="dictionary-editor-dialog__field dictionary-editor-dialog__add-field">
-                  <span>동의어</span>
+                  <span>{copy.synonym}</span>
                   <div className="dictionary-editor-dialog__add-row">
                     <div className="dictionary-editor-dialog__add-input-stack">
                       <input
@@ -333,22 +338,22 @@ export function DictionaryEditorDialog({
                       <small className="dictionary-editor-dialog__counter">{normalizeDictionaryWord(synonymInput).length}/100</small>
                     </div>
                     <button type="button" className="secondary-action" onClick={addSynonym}>
-                      추가
+                      {copy.add}
                     </button>
                   </div>
                   <small className="dictionary-editor-dialog__helper">
-                    동의어는 100자 이하로 입력하고 Enter로 등록합니다. 최대 500개까지 등록할 수 있습니다.
+                    {copy.synonymHelp}
                   </small>
                 </label>
               </div>
 
               <p className="dictionary-editor-dialog__helper">
-                동의어는 없어도 저장할 수 있습니다. 대표 단어만 등록하여 복합명사나 구문을 하나의 단어처럼 인식시킬 수 있습니다.
+                {copy.optionalHelp}
               </p>
 
               <div className="entity-detail__section-header">
                 <div>
-                  <strong>동의어 목록</strong>
+                  <strong>{copy.synonymList}</strong>
                 </div>
                 <div className="settings-toolbar">
                   <button
@@ -357,7 +362,7 @@ export function DictionaryEditorDialog({
                     disabled={selectedIndexes.length === 0}
                     onClick={deleteSelectedRows}
                   >
-                    삭제
+                    {copy.delete}
                   </button>
                 </div>
               </div>
@@ -379,7 +384,7 @@ export function DictionaryEditorDialog({
                         }
                       />
                     </span>
-                    <span>동의어</span>
+                    <span>{copy.synonym}</span>
                   </div>
 
                   {visibleSynonyms.map(({ value, index }) => (
@@ -407,8 +412,8 @@ export function DictionaryEditorDialog({
                   {visibleSynonyms.length === 0 ? (
                     <div className="entity-detail__empty">
                       {synonymQuery.trim()
-                        ? "검색 조건에 맞는 동의어가 없습니다."
-                        : "등록된 동의어가 없습니다. 동의어 없이 저장할 수 있습니다."}
+                        ? copy.noSearchResults
+                        : copy.emptySynonyms}
                     </div>
                   ) : null}
                 </div>
@@ -422,7 +427,7 @@ export function DictionaryEditorDialog({
                   checked={form.intentEnabled}
                   onChange={(event) => setForm((current) => ({ ...current, intentEnabled: event.target.checked }))}
                 />
-                <span>의도 사용여부</span>
+                <span>{copy.intentUsage}</span>
               </label>
             </section>
           </div>
@@ -430,10 +435,10 @@ export function DictionaryEditorDialog({
 
         <div className="entity-editor-dialog__footer">
           <button type="button" className="secondary-action" onClick={onClose}>
-            취소
+            {copy.cancel}
           </button>
           <button type="button" className="primary-action" disabled={saving} onClick={() => void handleSave()}>
-            {saving ? "저장 중..." : "저장"}
+            {saving ? copy.saving : copy.save}
           </button>
         </div>
       </div>
