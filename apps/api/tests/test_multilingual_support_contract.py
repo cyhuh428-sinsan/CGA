@@ -832,3 +832,19 @@ def test_api_store_list_runtime_messages_use_seven_language_catalog() -> None:
     assert '"선택한 API가 삭제되었습니다."' not in page_source
     assert "loadFailed: string" in catalog_source
     assert "formatApiManagementText" in catalog_source
+
+
+def test_api_store_detail_body_and_runtime_messages_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/api-store-detail-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/api-management.ts").read_text(encoding="utf-8")
+    assert "const common = API_MANAGEMENT_CATALOGS[uiLanguage]" in page_source
+    assert "common.detailTitle" in page_source
+    assert "common.apiBasic" in page_source
+    assert "common.updatedWithDesignNotice" in page_source
+    assert "common.testFailed" in page_source
+    assert '<span>API 조회</span>' not in page_source
+    assert '<strong>API 등록기본</strong>' not in page_source
+    assert 'setErrorMessage("API 삭제 권한이 없습니다.")' not in page_source
+    assert "detailTitle: string" in catalog_source
+    assert "updatedWithDesignNotice: string" in catalog_source
+    assert "testFailed: string" in catalog_source
