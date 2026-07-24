@@ -909,3 +909,15 @@ def test_analysis_page_uses_seven_language_catalog_without_changing_filter_keys(
     assert 'error.message : "분석 정보를 불러오지 못했습니다."' not in page_source
     assert 'value="제외/무시"' in page_source
     assert "satisfies Record<SupportedLanguage, AnalysisCatalog>" in catalog_source
+
+def test_retraining_page_uses_seven_language_catalog_and_preserves_status_keys() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/retraining-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/retraining.ts").read_text(encoding="utf-8")
+    assert "const copy = RETRAINING_CATALOGS[uiLanguage]" in page_source
+    assert "getRetrainingOptionLabel(copy" in page_source
+    assert "copy.searchPlaceholder" in page_source
+    assert "copy.retrainingCandidates" in page_source
+    assert 'setErrorMessage("재학습할 문장을 선택하세요.")' not in page_source
+    assert 'updateRecordStatus("재학습제외")' in page_source
+    assert 'type RetrainingStatus = "미학습" | "보류" | "재학습제외" | "재학습완료" | "삭제"' in page_source
+    assert "satisfies Record<SupportedLanguage, RetrainingCatalog>" in catalog_source
