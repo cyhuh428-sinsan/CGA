@@ -10,7 +10,7 @@ import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { getBotVersionSettings, normalizeConfigurationScoring, type ConfigurationScoringConfig } from "@/lib/bot-settings";
-import { INTENT_CONFIGURE_INPUT_CATALOGS, formatIntentConfigureInputText } from "@/lib/i18n/intent-configure-input";
+import { INTENT_CONFIGURE_INPUT_CATALOGS, formatIntentConfigureInputText, getIntentConfigureCriteriaLabel } from "@/lib/i18n/intent-configure-input";
 import { applyUpdatedVersionToBot, getNextDialogNo, getVersionDialogs, withEnsuredDialogFlowGraph, withUpdatedDialogs } from "@/lib/dialog-assets";
 import {
   NLU_MODEL_OPTIONS_BY_TYPE,
@@ -3410,9 +3410,9 @@ export function IntentConfigurePage() {
           {canUseConfigureSettings ? (
             <div className="intent-configure__settings-entry">
               <button type="button" className="secondary-action" onClick={() => setSettingsOpen(true)}>
-                NLU 기준 / 가중치 설정
+                {inputCopy.settingsTitle}
               </button>
-              <span>{recommendedCriteria.label} · {recommendedCriteria.intentCount}개 의도 기준</span>
+              <span>{formatIntentConfigureInputText(inputCopy.settingsSummary, { label: getIntentConfigureCriteriaLabel(inputCopy, recommendedCriteria.label), count: recommendedCriteria.intentCount })}</span>
             </div>
           ) : null}
           {isMlConfigureNluType(nluType) ? (
@@ -3594,8 +3594,8 @@ export function IntentConfigurePage() {
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header className="intent-configure-settings-modal__header">
-              <h2 id="intent-configure-settings-title">NLU 기준 / 가중치 설정</h2>
-              <button type="button" aria-label="닫기" onClick={() => setSettingsOpen(false)}>
+              <h2 id="intent-configure-settings-title">{inputCopy.settingsTitle}</h2>
+              <button type="button" aria-label={inputCopy.close} onClick={() => setSettingsOpen(false)}>
                 ×
               </button>
             </header>
@@ -3604,8 +3604,8 @@ export function IntentConfigurePage() {
                 <div className="intent-configure__criteria">
                   <div className="intent-configure__criteria-header">
                     <div className="intent-configure__criteria-title">
-                      <strong>구성 사전 반영 제안</strong>
-                      <span>선택한 항목은 여기서 바로 현재 버전 사전에 등록됩니다.</span>
+                      <strong>{inputCopy.dictionaryProposal}</strong>
+                      <span>{inputCopy.dictionaryApplyDescription}</span>
                     </div>
                     <button
                       type="button"
@@ -3617,14 +3617,14 @@ export function IntentConfigurePage() {
                         selectedDictionarySuggestionIds.length === 0
                       }
                     >
-                      사전에 등록
+                      {inputCopy.registerDictionary}
                     </button>
                   </div>
                   {visibleDictionarySuggestions.length > 0 ? (
                     <div className="intent-configure__domain-candidates">
                       <div className="intent-configure__domain-candidates-header">
-                        <strong>사전 등록 제안</strong>
-                        <span>선택한 제안은 대표어와 동의어로 추가됩니다.</span>
+                        <strong>{inputCopy.dictionarySuggestionsTitle}</strong>
+                        <span>{inputCopy.dictionarySuggestionsDescription}</span>
                       </div>
                       <div className="intent-configure__domain-candidates-list">
                         {visibleDictionarySuggestions.map((suggestion) => (
@@ -3637,7 +3637,7 @@ export function IntentConfigurePage() {
                             />
                             <span>
                               {suggestion.word}
-                              <small>동의어: {suggestion.synonyms.join(", ")}</small>
+                              <small>{formatIntentConfigureInputText(inputCopy.synonyms, { items: suggestion.synonyms.join(", ") })}</small>
                             </span>
                           </label>
                         ))}
@@ -3648,17 +3648,17 @@ export function IntentConfigurePage() {
               ) : null}
               <div className="intent-configure__criteria">
                 <div className="intent-configure__criteria-header">
-                  <strong>추천 NLU 판정 기준</strong>
-                  <span>{recommendedCriteria.label} · {recommendedCriteria.intentCount}개 의도 기준</span>
+                  <strong>{inputCopy.recommendedNluCriteria}</strong>
+                  <span>{formatIntentConfigureInputText(inputCopy.settingsSummary, { label: getIntentConfigureCriteriaLabel(inputCopy, recommendedCriteria.label), count: recommendedCriteria.intentCount })}</span>
                 </div>
                 <div className="intent-configure__criteria-grid">
-                  <span>현재 Cut-off</span>
+                  <span>{inputCopy.currentCutoff}</span>
                   <strong>{formatCriteriaScore(versionSettings.conversationDefaults.ml.cutOffScore)}</strong>
-                  <span>추천 Cut-off</span>
+                  <span>{inputCopy.recommendedCutoff}</span>
                   <strong>{formatCriteriaScore(recommendedCriteria.cutOffScore)}</strong>
-                  <span>현재 유사의도</span>
+                  <span>{inputCopy.currentSimilarIntent}</span>
                   <strong>{formatCriteriaScore(versionSettings.conversationDefaults.ml.similarIntentScore)}</strong>
-                  <span>추천 유사의도</span>
+                  <span>{inputCopy.recommendedSimilarIntent}</span>
                   <strong>{formatCriteriaScore(recommendedCriteria.similarIntentScore)}</strong>
                 </div>
                 <button
@@ -3667,38 +3667,38 @@ export function IntentConfigurePage() {
                   onClick={applyRecommendedCriteria}
                   disabled={saving || criteriaSaving || operatingVersion}
                 >
-                  {criteriaSaving ? "적용중" : "추천값 적용"}
+                  {criteriaSaving ? inputCopy.applying : inputCopy.applyRecommended}
                 </button>
               </div>
               <div className="intent-configure__scoring">
                   <div className="intent-configure__scoring-header">
-                    <strong>자동분류 가중치</strong>
+                    <strong>{inputCopy.autoClassificationWeights}</strong>
                     <div>
                       <button type="button" className="secondary-action" onClick={applyRecommendedConfigureScoring} disabled={saving || operatingVersion}>
-                        엔진 추천값 적용
+                        {inputCopy.applyEngineRecommended}
                       </button>
                       <button type="button" className="secondary-action" onClick={saveScoringToBotSettings} disabled={saving}>
-                        봇 설정에 저장
+                        {inputCopy.saveBotSettings}
                       </button>
                     </div>
                   </div>
                   <div className="intent-configure__criteria-grid">
-                    <span>추천 사전</span>
+                    <span>{inputCopy.recommendedDictionary}</span>
                     <strong>{formatCriteriaScore(recommendedConfigureScoring.dictionaryWeight)}</strong>
-                    <span>추천 개체</span>
+                    <span>{inputCopy.recommendedEntity}</span>
                     <strong>{formatCriteriaScore(recommendedConfigureScoring.entityWeight)}</strong>
-                    <span>추천 글자</span>
+                    <span>{inputCopy.recommendedGram}</span>
                     <strong>{formatCriteriaScore(recommendedConfigureScoring.gramWeight)}</strong>
-                    <span>추천 대표어</span>
+                    <span>{inputCopy.recommendedKey}</span>
                     <strong>{formatCriteriaScore(recommendedConfigureScoring.keyMatchScore)}</strong>
                   </div>
                   {[
-                    ["dictionaryWeight", "사전"],
-                    ["entityWeight", "개체"],
-                    ["wordWeight", "명사/동사"],
-                    ["gramWeight", "글자"],
-                    ["particleEndingWeight", "조사/어미"],
-                    ["keyMatchScore", "대표어 최소"],
+                    ["dictionaryWeight", inputCopy.dictionaryWeight],
+                    ["entityWeight", inputCopy.entityWeight],
+                    ["wordWeight", inputCopy.wordWeight],
+                    ["gramWeight", inputCopy.gramWeight],
+                    ["particleEndingWeight", inputCopy.particleEndingWeight],
+                    ["keyMatchScore", inputCopy.keyMatchScore],
                   ].map(([key, label]) => (
                     <label key={key}>
                       <span>{label}</span>
