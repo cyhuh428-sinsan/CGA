@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { StudioTablePage } from "@/components/studio-table-page";
+import { StudioPageText, StudioTablePage } from "@/components/studio-table-page";
 import { SortHeaderLabel } from "@/components/sort-header-label";
 
 export const dynamic = "force-dynamic";
@@ -35,9 +35,9 @@ export default async function ConversationListPage({ params }: ConversationListP
             "연차 신청은 어디서 하나요?",
             "휴가 신청 안내",
             "Simulator",
-            "응답완료",
+            <StudioPageText key="status">응답완료</StudioPageText>,
             <Link key="link" href={`/studio/bots/${botId}/versions/${versionId}/conversations/session-001`}>
-              보기
+              <StudioPageText>보기</StudioPageText>
             </Link>,
           ],
         },
@@ -48,9 +48,9 @@ export default async function ConversationListPage({ params }: ConversationListP
             "근무시간 알려줘",
             "근무시간 기준",
             "Webchat",
-            "응답완료",
+            <StudioPageText key="status">응답완료</StudioPageText>,
             <Link key="link" href={`/studio/bots/${botId}/versions/${versionId}/conversations/session-002`}>
-              보기
+              <StudioPageText>보기</StudioPageText>
             </Link>,
           ],
         },

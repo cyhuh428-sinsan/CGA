@@ -7,6 +7,11 @@ import { DataGrid, type DataGridRow } from "@/components/data-grid";
 import { useI18n } from "@/components/language-provider";
 import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
+export function StudioPageText({ children }: { children: string }) {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
+  return <>{getStudioPageLabel(copy, children)}</>;
+}
 type StudioTablePageProps = {
   header?: ReactNode;
   title?: string;
