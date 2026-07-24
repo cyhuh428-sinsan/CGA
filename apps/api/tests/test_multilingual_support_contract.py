@@ -626,3 +626,15 @@ def test_dictionary_list_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, DictionaryListCatalog>" in catalog_source
+
+def test_dictionary_editor_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/dictionary-editor-dialog.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/dictionary-editor.ts").read_text(encoding="utf-8")
+    assert "DICTIONARY_EDITOR_CATALOGS[uiLanguage]" in page_source
+    assert "copy.synonymRecommendation" in page_source
+    assert "copy.validation.required" in page_source
+    assert "copy.intentUsage" in page_source
+    assert '>동의어 추천<' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, DictionaryEditorCatalog>" in catalog_source
