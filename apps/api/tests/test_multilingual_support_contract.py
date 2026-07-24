@@ -447,3 +447,13 @@ def test_operations_dashboard_status_cards_use_seven_language_catalog() -> None:
     assert "statusCopy.loginRequired" in page_source
     assert "statusCopy.health.apiReadiness" in page_source
     assert "satisfies Record<SupportedLanguage, AdminOperationsStatusCatalog>" in catalog_source
+
+
+def test_operations_dashboard_tables_and_details_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/operations-dashboard/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-operations-details.ts").read_text(encoding="utf-8")
+    assert "detailsCopy.cache.status" in page_source
+    assert "detailsCopy.integrity.version" in page_source
+    assert "detailsCopy.dialogs.operationsErrorTitle" in page_source
+    assert "운영 오류 상세" not in page_source
+    assert "satisfies Record<SupportedLanguage, AdminOperationsDetailsCatalog>" in catalog_source
