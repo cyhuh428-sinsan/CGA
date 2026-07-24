@@ -11,6 +11,41 @@ from app.schemas.bot import BotCreateRequest, BotUpdateRequest
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 SUPPORTED_LANGUAGES = ("ko", "en", "zh-CN", "ja", "vi", "fr", "de")
+VISIBLE_LITERAL_COMPONENTS = (
+    "conversation-message-settings-page.tsx",
+    "conversation-default-settings-page.tsx",
+    "smalltalk-settings-page.tsx",
+    "blocklist-settings-page.tsx",
+    "rule-settings-page.tsx",
+    "botstation-settings-page.tsx",
+    "messenger-settings-page.tsx",
+    "messenger-floating-buttons-page.tsx",
+    "messenger-recommended-intents-page.tsx",
+    "bot-hub-create-form.tsx",
+    "bot-hub-settings.tsx",
+    "bot-hub-home.tsx",
+    "bot-hub-composition.tsx",
+    "bot-hub-retraining-page.tsx",
+)
+
+
+def test_remaining_settings_and_hub_pages_have_no_direct_korean_ui_literals() -> None:
+    """Visible labels must pass through the locale catalog, not remain fixed Korean."""
+
+    components_dir = ROOT_DIR / "apps" / "web" / "components"
+    violations: list[str] = []
+    attribute_pattern = __import__("re").compile(
+        r'(?:title|description|help|placeholder|aria-label|label)="[^"]*[가-힣][^"]*"'
+    )
+    child_pattern = __import__("re").compile(r">[^<>{\n]*[가-힣][^<>{\n]*<")
+
+    for filename in VISIBLE_LITERAL_COMPONENTS:
+        source = (components_dir / filename).read_text(encoding="utf-8")
+        for line_number, line in enumerate(source.splitlines(), start=1):
+            if attribute_pattern.search(line) or child_pattern.search(line):
+                violations.append(f"{filename}:{line_number}:{line.strip()}")
+
+    assert not violations, "Direct Korean UI literals remain:\n" + "\n".join(violations)
 
 
 @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
