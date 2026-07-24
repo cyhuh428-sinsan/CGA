@@ -2949,7 +2949,7 @@ export function IntentConfigurePage() {
 
   function applyRecommendedConfigureScoring() {
     setConfigurationScoring(recommendedConfigureScoring);
-    setMessage(`${getNluTypeLabel(nluType)} 자동분류 추천 가중치를 적용했습니다. 저장하려면 봇 설정에 저장을 눌러주세요.`);
+    setMessage(formatIntentConfigureInputText(inputCopy.scoringRecommendationApplied, { type: getNluTypeLabel(nluType) }));
   }
 
   async function registerSelectedConfigureSuggestions() {
@@ -2958,7 +2958,7 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에는 사전 제안을 등록할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.dictionaryOperatingBlocked);
       return;
     }
 
@@ -2966,7 +2966,7 @@ export function IntentConfigurePage() {
       selectedDictionarySuggestionIds.includes(suggestion.id),
     );
     if (selectedDictionarySuggestions.length === 0) {
-      setErrorMessage("사전에 등록할 제안을 선택해주세요.");
+      setErrorMessage(inputCopy.dictionarySelectionRequired);
       return;
     }
 
@@ -3006,13 +3006,13 @@ export function IntentConfigurePage() {
       setDictionarySuggestions((current) => current.filter((suggestion) => !selectedDictionarySuggestionIds.includes(suggestion.id)));
       setSelectedDictionarySuggestionIds([]);
       setMessage(
-        `사전 등록 제안 ${
-          dictionarySuggestionAddedCount + dictionarySuggestionUpdatedCount
-        }건을 반영했습니다.`,
+        formatIntentConfigureInputText(inputCopy.dictionarySuggestionsApplied, {
+          count: dictionarySuggestionAddedCount + dictionarySuggestionUpdatedCount,
+        }),
       );
       void workspace.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "사전 제안을 등록하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.dictionarySuggestionsFailed);
     } finally {
       setSaving(false);
     }
@@ -3037,9 +3037,9 @@ export function IntentConfigurePage() {
         { responseMode: "summary" },
       );
       setBot((current) => (current ? { ...current, data_json: updated.data_json, updated_at: updated.updated_at } : updated));
-      setMessage("구성 자동분류 가중치를 봇 설정에 저장했습니다.");
+      setMessage(inputCopy.scoringSaved);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "구성 자동분류 가중치를 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.scoringSaveFailed);
     } finally {
       setSaving(false);
     }
@@ -3051,7 +3051,7 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에는 추천 기준값을 적용할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.criteriaOperatingBlocked);
       return;
     }
 
@@ -3079,10 +3079,14 @@ export function IntentConfigurePage() {
       );
       setBot((current) => (current ? { ...current, data_json: updated.data_json, updated_at: updated.updated_at } : updated));
       setMessage(
-        `${recommendedCriteria.intentCount}개 의도 기준 추천값을 현재 버전에 적용했습니다. Cut-off ${formatCriteriaScore(recommendedCriteria.cutOffScore)} / 유사의도 ${formatCriteriaScore(recommendedCriteria.similarIntentScore)}`,
+        formatIntentConfigureInputText(inputCopy.criteriaApplied, {
+          intentCount: recommendedCriteria.intentCount,
+          cutoff: formatCriteriaScore(recommendedCriteria.cutOffScore),
+          similar: formatCriteriaScore(recommendedCriteria.similarIntentScore),
+        }),
       );
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "추천 NLU 판정 기준을 적용하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.criteriaFailed);
     } finally {
       setCriteriaSaving(false);
     }
@@ -3094,23 +3098,23 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에는 구성 결과를 저장할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.saveOperatingBlocked);
       return;
     }
     if (clusters.length === 0) {
-      setErrorMessage("먼저 학습문장을 분류해주세요.");
+      setErrorMessage(inputCopy.classifyFirst);
       return;
     }
     const invalid = clusters.find((cluster) => !cluster.name.trim() || !cluster.answer.trim() || cluster.utterances.length === 0);
     if (invalid) {
-      setErrorMessage("모든 그룹에 의도명, 답변, 학습문장이 필요합니다.");
+      setErrorMessage(inputCopy.clusterFieldsRequired);
       return;
     }
 
     const clusterNames = clusters.map((cluster) => normalizeTokenText(cluster.name));
     const duplicatedName = clusterNames.find((name, index) => name && clusterNames.indexOf(name) !== index);
     if (duplicatedName) {
-      setErrorMessage("의도 후보 안에 중복된 의도명이 있습니다.");
+      setErrorMessage(inputCopy.duplicateIntentNames);
       return;
     }
 
@@ -3192,7 +3196,10 @@ export function IntentConfigurePage() {
       };
       setBot((current) => (current ? applyUpdatedVersionToBot(current, updatedVersion) : current));
       setMessage(
-        `${newDialogs.length}개 의도와 ${newDialogs.reduce((sum, dialog) => sum + dialog.utterances.length, 0)}개 학습문장으로 현재 버전을 덮어썼습니다.`,
+        formatIntentConfigureInputText(inputCopy.versionOverwritten, {
+          intentCount: newDialogs.length,
+          utteranceCount: newDialogs.reduce((sum, dialog) => sum + dialog.utterances.length, 0),
+        }),
       );
       setClusters([]);
       setDictionarySuggestions([]);
@@ -3200,7 +3207,7 @@ export function IntentConfigurePage() {
       setUtteranceInput("");
       void workspace.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "의도 구성을 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.configureSaveFailed);
     } finally {
       setSaving(false);
     }
