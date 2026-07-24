@@ -49,8 +49,7 @@ function todayDateText() {
   return `${year}-${month}-${day}`;
 }
 
-function downloadCsv(rows: AdminAuditLogItem[]) {
-  const headers = ["작업", "대상", "대상 ID", "사용자", "IP", "발생일시", "요약"];
+function downloadCsv(rows: AdminAuditLogItem[], headers: string[], locale: string) {
   const lines = rows.map((item) =>
     [
       item.action_type,
@@ -58,7 +57,7 @@ function downloadCsv(rows: AdminAuditLogItem[]) {
       item.target_id ?? "",
       item.actor_login_id,
       item.ip_address ?? "",
-      formatDate(item.created_at),
+      formatDate(item.created_at, locale),
       item.summary,
     ]
       .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
@@ -444,7 +443,7 @@ export default function AdminAuditLogsPage() {
                   ))}
                 </select>
               </label>
-              <button type="button" className="admin-page__ghost" onClick={() => downloadCsv(items)} disabled={items.length === 0}>
+              <button type="button" className="admin-page__ghost" onClick={() => downloadCsv(items, copy.auditExportColumns, locale)} disabled={items.length === 0}>
                 {copy.download}
               </button>
             </div>
@@ -644,7 +643,7 @@ export default function AdminAuditLogsPage() {
               <input type="text" value={selectedSystem.event ?? "-"} readOnly />
             </label>
             <label>
-              Level
+              {copy.level}
               <input type="text" value={selectedSystem.level || "-"} readOnly />
             </label>
             <label>
@@ -652,7 +651,7 @@ export default function AdminAuditLogsPage() {
               <input type="text" value={selectedSystem.logger || "-"} readOnly />
             </label>
             <label>
-              Method
+              {copy.method}
               <input type="text" value={selectedSystem.method ?? "-"} readOnly />
             </label>
             <label>
