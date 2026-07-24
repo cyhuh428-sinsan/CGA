@@ -57,7 +57,7 @@ import {
 } from "@/lib/version-document";
 import { isSemanticNluType, type NluType } from "@/lib/nlu-options";
 import { normalizeSupportedLanguage } from "@/lib/language";
-import { formatSimulatorText, SIMULATOR_CATALOGS } from "@/lib/i18n/simulator";
+import { formatSimulatorText, getSimulatorLabel, SIMULATOR_CATALOGS, SIMULATOR_DTMF_CATALOGS } from "@/lib/i18n/simulator";
 
 const ADAPTIVE_CARD_SCHEMA_VERSION = "1.6";
 const SIMULATOR_RUNTIME_MESSAGES = {
@@ -1700,6 +1700,7 @@ function SimulatorRichFormDateTimeView({
   type: string;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const title = cleanRichFormText(readAidotRichFormString(component, ["title", "label", "name"]));
   const placeholder = readAidotRichFormString(component, ["placeholder", "hint"]);
   const defaultValue = readAidotRichFormString(component, ["value", "defaultValue"]);
@@ -1773,7 +1774,7 @@ function SimulatorRichFormDateTimeView({
               {Array.from({ length: 12 }, (_item, itemIndex) => String(itemIndex * 5).padStart(2, "0")).map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </div>
-          <button type="button" disabled={isDisabled} onClick={() => { chooseTime(hour, minute); setOpen(false); }}>확인</button>
+          <button type="button" disabled={isDisabled} onClick={() => { chooseTime(hour, minute); setOpen(false); }}>{getSimulatorLabel(uiLanguage, "확인")}</button>
         </div>
       ) : null}
     </div>
@@ -3455,7 +3456,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         writeSimulatorLog("debug", "simulator.transcript_message", {
           createdAt: new Date().toISOString(),
           participantKind,
-          participantName: participantKind === "bot" ? (bot?.name ?? "봇") : participantKind === "user" ? "사용자" : "시스템",
+          participantName: participantKind === "bot" ? (bot?.name ?? getSimulatorLabel(uiLanguage, "봇")) : participantKind === "user" ? "사용자" : "시스템",
           message,
         });
       });
@@ -5830,7 +5831,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       const parsed = JSON.parse(text) as unknown;
       const sentences = parseLoadedConversation(parsed);
       if (sentences.length === 0) {
-        setErrorMessage("불러올 사용자 문장이 없습니다.");
+        setErrorMessage(getSimulatorLabel(uiLanguage, "불러올 사용자 문장이 없습니다."));
         return;
       }
       setLoadedScript({
@@ -5843,7 +5844,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       setErrorMessage("");
       inputRef.current?.focus();
     } catch {
-      setErrorMessage("JSON 대화 파일을 읽지 못했습니다.");
+      setErrorMessage(getSimulatorLabel(uiLanguage, "JSON 대화 파일을 읽지 못했습니다."));
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -5866,7 +5867,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             ))}
           </div>
         ) : (
-          <p>대상 없음</p>
+          <p>{getSimulatorLabel(uiLanguage, "대상 없음")}</p>
         )}
       </div>
     );
@@ -5963,18 +5964,16 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     const decision = getAppliedIntentDecision(analysis);
     return (
       <div className="simulator-analysis__block simulator-analysis__block--decision">
-        <strong>의도 인식 적용 단계</strong>
+        <strong>{getSimulatorLabel(uiLanguage, "의도 인식 적용 단계")}</strong>
         <div className="simulator-analysis__manual-card">
           <strong>{decision.method}</strong>
           <div>
-            <span>적용 대상</span>
+            <span>{getSimulatorLabel(uiLanguage, "적용 대상")}</span>
             <b>{decision.target}</b>
           </div>
           <small>{decision.reason}</small>
         </div>
-        <p className="simulator-analysis__hint">
-          판정 순서: 제외/무시 → 스몰토크 → Exacting Matching → 룰 → ML/시멘틱/LLM. 앞 단계가 적용되면 이후 단계는 실행하지 않습니다.
-        </p>
+        <p className="simulator-analysis__hint">{getSimulatorLabel(uiLanguage, "판정 순서: 제외/무시 → 스몰토크 → Exacting Matching → 룰 → ML/시멘틱/LLM. 앞 단계가 적용되면 이후 단계는 실행하지 않습니다.")}</p>
       </div>
     );
   }
@@ -5996,9 +5995,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       <div className="simulator-analysis__score-table">
         {rows.map((row) => (
           <div key={`manual-score-${row.intentName}`} className="simulator-analysis__score-item">
-            <span>의도</span>
+            <span>{getSimulatorLabel(uiLanguage, "의도")}</span>
             <strong>{row.intentName}</strong>
-            <span>스코어/확률</span>
+            <span>{getSimulatorLabel(uiLanguage, "스코어/확률")}</span>
             <strong>{formatScoreRate(row.score)}</strong>
             <span>Features</span>
             <strong>{row.features.length > 0 ? row.features.join(", ") : "-"}</strong>
@@ -6012,8 +6011,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     if (nluValidationDiagnostics.length === 0) {
       return (
         <div className="simulator-analysis__manual-section">
-          <strong>검증 문장 진단</strong>
-          <p>등록된 Validation 문장이 없습니다.</p>
+          <strong>{getSimulatorLabel(uiLanguage, "검증 문장 진단")}</strong>
+          <p>{getSimulatorLabel(uiLanguage, "등록된 Validation 문장이 없습니다.")}</p>
         </div>
       );
     }
@@ -6028,7 +6027,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     );
     return (
       <div className="simulator-analysis__manual-section">
-        <strong>검증 문장 진단</strong>
+        <strong>{getSimulatorLabel(uiLanguage, "검증 문장 진단")}</strong>
         <p>
           V 문장 {nluValidationDiagnostics.length}건 중 보완 후보 {problemCount}건
         </p>
@@ -6092,7 +6091,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     return (
       <div className="simulator-analysis__block simulator-analysis__block--nlu">
         <div className="simulator-analysis__manual-section">
-          <strong>Score Setting</strong>
+          <strong>{getSimulatorLabel(uiLanguage, "Score Setting")}</strong>
           <p>
             NLU Cut-off Score : {formatScoreSetting(analysis.cutoffScore)} / 유사의도 Score : {formatScoreSetting(analysis.similarIntentScore)}
           </p>
@@ -6100,12 +6099,12 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         </div>
 
         <div className="simulator-analysis__manual-section">
-          <strong>의도분류 Score-in</strong>
+          <strong>{getSimulatorLabel(uiLanguage, "의도분류 Score-in")}</strong>
           {renderManualScoreRows(analysis.scoreIn, "Cut-off 기준을 통과한 의도가 없습니다.")}
         </div>
 
         <div className="simulator-analysis__manual-section">
-          <strong>의도분류 Score-out</strong>
+          <strong>{getSimulatorLabel(uiLanguage, "의도분류 Score-out")}</strong>
           {renderManualScoreRows(scoreOutRows, "비교 가능한 Score-out 의도가 없습니다.")}
         </div>
 
@@ -6120,9 +6119,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         </div>
 
         <div className="simulator-analysis__manual-card">
-          <strong>대화시작 카드</strong>
+          <strong>{getSimulatorLabel(uiLanguage, "대화시작 카드")}</strong>
           <div>
-            <span>연결된 의도</span>
+            <span>{getSimulatorLabel(uiLanguage, "연결된 의도")}</span>
             <b>{analysis.selectedIntentName}</b>
           </div>
         </div>
@@ -6133,7 +6132,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
   function renderVariableTable(variables: Record<string, string>) {
     const entries = Object.entries(variables);
     if (entries.length === 0) {
-      return <p>변수값 없음</p>;
+      return <p>{getSimulatorLabel(uiLanguage, "변수값 없음")}</p>;
     }
 
     return (
@@ -6159,15 +6158,15 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         : "-";
     return (
       <div className="simulator-analysis__block simulator-analysis__block--runtime">
-        <strong>현재 런타임 상태</strong>
+        <strong>{getSimulatorLabel(uiLanguage, "현재 런타임 상태")}</strong>
         <div className="simulator-analysis__summary simulator-analysis__summary--compact">
-          <span>대화</span>
+          <span>{getSimulatorLabel(uiLanguage, "대화")}</span>
           <strong>{runtime?.dialog.name ?? selectedAnalysis?.selectedIntentName ?? "-"}</strong>
-          <span>다음 카드</span>
+          <span>{getSimulatorLabel(uiLanguage, "다음 카드")}</span>
           <strong>{runtime?.nextNodeId || "-"}</strong>
-          <span>대기 카드</span>
+          <span>{getSimulatorLabel(uiLanguage, "대기 카드")}</span>
           <strong>{runtime?.waitingTalkNodeId || "-"}</strong>
-          <span>종료 여부</span>
+          <span>{getSimulatorLabel(uiLanguage, "종료 여부")}</span>
           <strong>{runtimeStatus}</strong>
         </div>
         {renderVariableTable(currentVariables)}
@@ -6185,7 +6184,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
   function renderEntitySummary(analysis: SimulatorAnalysis) {
     return (
       <div className="simulator-analysis__block">
-        <strong>개체 인식</strong>
+        <strong>{getSimulatorLabel(uiLanguage, "개체 인식")}</strong>
         {analysis.entities.length > 0 ? (
           <div className="simulator-analysis__rows">
             {analysis.entities.map((entity) => (
@@ -6204,7 +6203,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             ))}
           </div>
         ) : (
-          <p>인식된 개체 없음</p>
+          <p>{getSimulatorLabel(uiLanguage, "인식된 개체 없음")}</p>
         )}
       </div>
     );
@@ -6214,7 +6213,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     const errors = analysis.cardLogs.filter(isErrorAnalysisLog);
     return (
       <div className="simulator-analysis__block">
-        <strong>오류 / 이상 상황</strong>
+        <strong>{getSimulatorLabel(uiLanguage, "오류 / 이상 상황")}</strong>
         {errors.length > 0 ? (
           <div className="simulator-analysis__rows">
             {errors.map((log, index) => (
@@ -6226,7 +6225,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             ))}
           </div>
         ) : (
-          <p>오류 없음</p>
+          <p>{getSimulatorLabel(uiLanguage, "오류 없음")}</p>
         )}
       </div>
     );
@@ -6236,7 +6235,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     const logs = analysis.cardLogs.filter((log) => !isErrorAnalysisLog(log));
     return (
       <div className="simulator-analysis__block">
-        <strong>시나리오 흐름</strong>
+        <strong>{getSimulatorLabel(uiLanguage, "시나리오 흐름")}</strong>
         {logs.length > 0 ? (
           <ol className="simulator-analysis__flow">
             {logs.map((log, index) => (
@@ -6249,7 +6248,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                   <small>{log.description}</small>
                   {Object.keys(log.variables).length > 0 ? (
                     <details className="simulator-analysis__flow-variables">
-                      <summary>카드 실행 후 변수값</summary>
+                      <summary>{getSimulatorLabel(uiLanguage, "카드 실행 후 변수값")}</summary>
                       {renderVariableTable(log.variables)}
                     </details>
                   ) : null}
@@ -6258,7 +6257,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             ))}
           </ol>
         ) : (
-          <p>표시할 카드 흐름 없음</p>
+          <p>{getSimulatorLabel(uiLanguage, "표시할 카드 흐름 없음")}</p>
         )}
       </div>
     );
@@ -6275,7 +6274,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
 
     return (
       <div className="simulator-analysis__block">
-        <strong>전체 처리 로그</strong>
+        <strong>{getSimulatorLabel(uiLanguage, "전체 처리 로그")}</strong>
         {logs.length > 0 ? (
           <div className="simulator-analysis__rows">
             {logs.map((log) => (
@@ -6292,7 +6291,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             ))}
           </div>
         ) : (
-          <p>처리 로그 없음</p>
+          <p>{getSimulatorLabel(uiLanguage, "처리 로그 없음")}</p>
         )}
       </div>
     );
@@ -6309,7 +6308,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
 
     return (
       <div className="simulator-analysis__block">
-        <strong>전체 변수 스냅샷</strong>
+        <strong>{getSimulatorLabel(uiLanguage, "전체 변수 스냅샷")}</strong>
         {snapshots.length > 0 ? (
           <div className="simulator-analysis__snapshots">
             {snapshots.map((snapshot, index) => (
@@ -6322,7 +6321,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             ))}
           </div>
         ) : (
-          <p>변수 스냅샷 없음</p>
+          <p>{getSimulatorLabel(uiLanguage, "변수 스냅샷 없음")}</p>
         )}
       </div>
     );
@@ -6350,7 +6349,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               <div className="simulator-title">
                 <span className="simulator-avatar" />
                 <span>
-                  <strong>{bot?.name ?? "봇"}</strong>
+                  <strong>{bot?.name ?? getSimulatorLabel(uiLanguage, "봇")}</strong>
                   <small>{versionId} / Simulator</small>
                 </span>
               </div>
@@ -6384,7 +6383,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                       <div className="chat-message">
                         {message.sender === "bot" ? (
                           <div className="chat-message__meta">
-                            <strong>{bot?.name ?? "봇"}</strong>
+                            <strong>{bot?.name ?? getSimulatorLabel(uiLanguage, "봇")}</strong>
                           </div>
                         ) : null}
                         <div className="chat-message__line">
@@ -6400,7 +6399,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                                 className="simulator-html-preview"
                                 sandbox=""
                                 srcDoc={sanitizeRichFormHtml(message.html)}
-                                title="HTML 메시지"
+                                title={getSimulatorLabel(uiLanguage, "HTML 메시지")}
                               />
                             ) : null}
                             {message.cardTitle ? (
@@ -6469,7 +6468,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                                       ))
                                     ) : (
                                       <tr>
-                                        <td colSpan={message.table.columns.length || 1}>표시할 항목이 없습니다.</td>
+                                        <td colSpan={message.table.columns.length || 1}>{getSimulatorLabel(uiLanguage, "표시할 항목이 없습니다.")}</td>
                                       </tr>
                                     )}
                                   </tbody>
@@ -6540,7 +6539,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                               };
                               const submitDtmf = () => {
                                 if (value.length < message.dtmf!.minLength || value.length > message.dtmf!.maxLength) {
-                                  setDtmfErrors((current) => ({ ...current, [message.id]: `${message.dtmf!.minLength}~${message.dtmf!.maxLength}자리로 입력하세요.` }));
+                                  setDtmfErrors((current) => ({ ...current, [message.id]: formatSimulatorText(SIMULATOR_DTMF_CATALOGS[uiLanguage].lengthError, { min: String(message.dtmf!.minLength), max: String(message.dtmf!.maxLength) }) }));
                                   return;
                                 }
                                 setDtmfValues((current) => ({ ...current, [message.id]: "" }));
@@ -6548,8 +6547,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                                 submitUtterance(value, {}, message.sourceTalkNodeId);
                               };
                               return (
-                                <div className="simulator-dtmf" aria-label="DTMF 입력">
-                                  <small>{message.dtmf.minLength}~{message.dtmf.maxLength}자리 입력 후 {message.dtmf.endCharacter}을 누르세요. 최초 {message.dtmf.firstInputTimeoutMs / 1000}초, 전체 {message.dtmf.overallInputTimeoutMs / 1000}초</small>
+                                <div className="simulator-dtmf" aria-label={getSimulatorLabel(uiLanguage, "DTMF 입력")}>
+                                  <small>{formatSimulatorText(SIMULATOR_DTMF_CATALOGS[uiLanguage].guide, { min: String(message.dtmf.minLength), max: String(message.dtmf.maxLength), end: message.dtmf.endCharacter, first: String(message.dtmf.firstInputTimeoutMs / 1000), overall: String(message.dtmf.overallInputTimeoutMs / 1000) })}</small>
                                   <output>{value || "입력 대기 중"}</output>
                                   <div className="simulator-dtmf__keypad">
                                     {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map((digit) => (
@@ -6561,8 +6560,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                                     <button type="button" disabled={disabled || !value} onClick={() => {
                                       setDtmfValues((current) => ({ ...current, [message.id]: value.slice(0, -1) }));
                                       setDtmfErrors((current) => ({ ...current, [message.id]: "" }));
-                                    }}>지우기</button>
-                                    <button type="button" disabled={disabled} onClick={submitDtmf}>입력 완료</button>
+                                    }}>{getSimulatorLabel(uiLanguage, "지우기")}</button>
+                                    <button type="button" disabled={disabled} onClick={submitDtmf}>{getSimulatorLabel(uiLanguage, "입력 완료")}</button>
                                   </div>
                                   {dtmfErrors[message.id] ? <p role="alert">{dtmfErrors[message.id]}</p> : null}
                                 </div>
@@ -6618,8 +6617,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 type="button"
                 className="tool-link"
                 onClick={handleRestart}
-                aria-label="대화 재시작"
-                title="대화 재시작"
+                aria-label={getSimulatorLabel(uiLanguage, "대화 재시작")}
+                title={getSimulatorLabel(uiLanguage, "대화 재시작")}
               >
                 <SimulatorToolbarIcon name="restart" />
               </button>
@@ -6628,8 +6627,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 type="button"
                 className="tool-link"
                 onClick={() => setFloatingButtonsVisible(false)}
-                aria-label="플로팅 버튼 닫기"
-                title="플로팅 버튼 닫기"
+                aria-label={getSimulatorLabel(uiLanguage, "플로팅 버튼 닫기")}
+                title={getSimulatorLabel(uiLanguage, "플로팅 버튼 닫기")}
               >
                 <SimulatorToolbarIcon name="close-floating" />
               </button>
@@ -6637,8 +6636,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 type="button"
                 className="tool-link"
                 onClick={() => fileInputRef.current?.click()}
-                aria-label="대화 불러오기"
-                title="대화 불러오기"
+                aria-label={getSimulatorLabel(uiLanguage, "대화 불러오기")}
+                title={getSimulatorLabel(uiLanguage, "대화 불러오기")}
               >
                 <SimulatorToolbarIcon name="load" />
               </button>
@@ -6646,8 +6645,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 type="button"
                 className="tool-link"
                 onClick={handleDownloadConversation}
-                aria-label="대화 저장하기"
-                title="대화 저장하기"
+                aria-label={getSimulatorLabel(uiLanguage, "대화 저장하기")}
+                title={getSimulatorLabel(uiLanguage, "대화 저장하기")}
               >
                 <SimulatorToolbarIcon name="download" />
               </button>
@@ -6656,8 +6655,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                   type="button"
                   className="tool-link"
                   onClick={() => setScriptViewerOpen(true)}
-                  aria-label="대화 전체보기"
-                  title="대화 전체보기"
+                  aria-label={getSimulatorLabel(uiLanguage, "대화 전체보기")}
+                  title={getSimulatorLabel(uiLanguage, "대화 전체보기")}
                 >
                   <SimulatorToolbarIcon name="list" />
                 </button>
@@ -6738,9 +6737,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             <>
               {renderRuntimeState()}
               <div className="simulator-analysis__summary">
-                <span>사용자 발화</span>
+                <span>{getSimulatorLabel(uiLanguage, "사용자 발화")}</span>
                 <strong>{selectedAnalysis.utterance}</strong>
-                <span>선택 의도</span>
+                <span>{getSimulatorLabel(uiLanguage, "선택 의도")}</span>
                 <strong>{selectedAnalysis.selectedIntentName}</strong>
               </div>
               {renderIntentDecisionSummary(selectedAnalysis)}
@@ -6750,11 +6749,11 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               {renderFlowSummary(selectedAnalysis)}
               <div className="simulator-analysis__block">
                 <details className="simulator-analysis__details">
-                  <summary>상세 진단 데이터</summary>
-                  {renderAnalysisList("의도분류 Score-in", selectedAnalysis.scoreIn)}
-                  {renderAnalysisList("의도분류 Score-out", selectedAnalysis.scoreOut)}
+                  <summary>{getSimulatorLabel(uiLanguage, "상세 진단 데이터")}</summary>
+                  {renderAnalysisList(getSimulatorLabel(uiLanguage, "의도분류 Score-in"), selectedAnalysis.scoreIn)}
+                  {renderAnalysisList(getSimulatorLabel(uiLanguage, "의도분류 Score-out"), selectedAnalysis.scoreOut)}
                   <div className="simulator-analysis__block simulator-analysis__block--nested">
-                    <strong>변수 스냅샷</strong>
+                    <strong>{getSimulatorLabel(uiLanguage, "변수 스냅샷")}</strong>
                     {selectedAnalysis.variableSnapshots.length > 0 ? (
                       <div className="simulator-analysis__snapshots">
                         {selectedAnalysis.variableSnapshots.map((snapshot, index) => (
@@ -6765,7 +6764,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                         ))}
                       </div>
                     ) : (
-                      <p>변수 스냅샷 없음</p>
+                      <p>{getSimulatorLabel(uiLanguage, "변수 스냅샷 없음")}</p>
                     )}
                   </div>
                 </details>
@@ -6782,7 +6781,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         <div className="entity-editor-backdrop" role="presentation">
           <div className="entity-editor-dialog simulator-script-dialog" role="dialog" aria-modal="true">
             <div className="entity-editor-dialog__header">
-              <strong>불러온 대화 전체보기</strong>
+              <strong>{getSimulatorLabel(uiLanguage, "불러온 대화 전체보기")}</strong>
               <button type="button" className="entity-editor-dialog__close" onClick={() => setScriptViewerOpen(false)}>
                 ×
               </button>
@@ -6797,9 +6796,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               </ol>
             </div>
             <div className="entity-editor-dialog__footer">
-              <button type="button" className="primary-action" onClick={() => setScriptViewerOpen(false)}>
-                확인
-              </button>
+              <button type="button" className="primary-action" onClick={() => setScriptViewerOpen(false)}>{getSimulatorLabel(uiLanguage, "확인")}</button>
             </div>
           </div>
         </div>
