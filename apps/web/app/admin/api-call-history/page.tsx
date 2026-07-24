@@ -6,10 +6,12 @@ import Link from "next/link";
 import { AdminHistoryTablePage } from "@/components/admin-history-table-page";
 import { fetchApiCallHistory, type AdminApiCallHistoryItem } from "@/lib/admin-api";
 import { useI18n } from "@/components/language-provider";
+import { ADMIN_API_CALL_HISTORY_CATALOGS } from "@/lib/i18n/admin-api-call-history";
 import { ADMIN_PAGE_CATALOGS } from "@/lib/i18n/admin-pages";
+import type { SupportedLanguage } from "@/lib/language";
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string, language: SupportedLanguage) {
+  return new Intl.DateTimeFormat(language, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -127,6 +129,7 @@ function traceHref(path: string, value: string) {
 export default function AdminApiCallHistoryPage() {
   const { language } = useI18n();
   const copy = ADMIN_PAGE_CATALOGS[language].apiCallHistory;
+  const detailCopy = ADMIN_API_CALL_HISTORY_CATALOGS[language];
   const [selectedItem, setSelectedItem] = useState<AdminApiCallHistoryItem | null>(null);
   const fetchItems = useCallback((token: string) => fetchApiCallHistory(token), []);
   const buildRow = useCallback((item: AdminApiCallHistoryItem) => ({
@@ -149,10 +152,10 @@ export default function AdminApiCallHistoryPage() {
       item.response_code,
       apiElapsedMs(item.data_json),
       item.user_key,
-      formatDate(item.called_at),
+      formatDate(item.called_at, language),
       apiCallDetail(item.data_json),
     ],
-  }), [copy.detail]);
+  }), [copy.detail, language]);
   const selectedRuntimeEvent = selectedItem ? apiRuntimeEvent(selectedItem.data_json) : null;
   const selectedQueueId = selectedItem ? traceValue(selectedItem.data_json, "queue_event_id") : "-";
 
@@ -170,10 +173,10 @@ export default function AdminApiCallHistoryPage() {
       {selectedItem ? (
         <>
           <div className="admin-log-detail__scrim" onClick={() => setSelectedItem(null)} />
-          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label="API 호출 상세 이력">
+          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label={detailCopy.dialogTitle}>
             <header className="admin-log-detail__header">
               <div>
-                <strong>API 호출 상세 이력</strong>
+                <strong>{detailCopy.dialogTitle}</strong>
                 <p>{selectedItem.api_name} / {selectedItem.bot_name} / {selectedItem.called_at}</p>
               </div>
               <button type="button" className="admin-log-detail__close" onClick={() => setSelectedItem(null)} aria-label={copy.close}>
@@ -182,47 +185,47 @@ export default function AdminApiCallHistoryPage() {
             </header>
             <div className="admin-log-detail__body">
               <section className="admin-log-detail__section">
-                <h3>요약</h3>
+                <h3>{detailCopy.summary}</h3>
                 <dl className="admin-log-detail__summary">
                   <div><dt>Method</dt><dd>{selectedItem.method}</dd></div>
                   <div><dt>URL</dt><dd>{selectedItem.url}</dd></div>
-                  <div><dt>채널</dt><dd>{selectedItem.channel_name}</dd></div>
-                  <div><dt>응답코드</dt><dd>{selectedItem.response_code}</dd></div>
-                  <div><dt>소요시간</dt><dd>{apiElapsedMs(selectedItem.data_json)} ms</dd></div>
-                  <div><dt>상세</dt><dd>{apiCallDetail(selectedItem.data_json)}</dd></div>
-                  <div><dt>발생 위치</dt><dd>{apiCallLocation(selectedItem.data_json)}</dd></div>
-                  <div><dt>완료 사유</dt><dd>{traceValue(selectedItem.data_json, "completion_reason")}</dd></div>
-                  <div><dt>대화 종료</dt><dd>{selectedItem.data_json.dialog_ended === true ? "예" : "아니오"}</dd></div>
-                  <div><dt>세션 종료</dt><dd>{selectedItem.data_json.session_ended === true ? "예" : "아니오"}</dd></div>
+                  <div><dt>{detailCopy.channel}</dt><dd>{selectedItem.channel_name}</dd></div>
+                  <div><dt>{detailCopy.responseCode}</dt><dd>{selectedItem.response_code}</dd></div>
+                  <div><dt>{detailCopy.elapsedTime}</dt><dd>{apiElapsedMs(selectedItem.data_json)} ms</dd></div>
+                  <div><dt>{detailCopy.detail}</dt><dd>{apiCallDetail(selectedItem.data_json)}</dd></div>
+                  <div><dt>{detailCopy.location}</dt><dd>{apiCallLocation(selectedItem.data_json)}</dd></div>
+                  <div><dt>{detailCopy.completionReason}</dt><dd>{traceValue(selectedItem.data_json, "completion_reason")}</dd></div>
+                  <div><dt>{detailCopy.dialogEnded}</dt><dd>{selectedItem.data_json.dialog_ended === true ? detailCopy.yes : detailCopy.no}</dd></div>
+                  <div><dt>{detailCopy.sessionEnded}</dt><dd>{selectedItem.data_json.session_ended === true ? detailCopy.yes : detailCopy.no}</dd></div>
                   <div><dt>Queue ID</dt><dd>{traceValue(selectedItem.data_json, "queue_event_id")}</dd></div>
                 </dl>
                 {selectedQueueId !== "-" ? (
                   <div className="admin-log-detail__actions">
                     <Link href={traceHref("/admin/queue-history", selectedQueueId)} className="admin-page__link-button">
-                      Queue 이력에서 보기
+                      {detailCopy.viewQueueHistory}
                     </Link>
                     <Link href={traceHref("/admin/conversations", selectedQueueId)} className="admin-page__link-button">
-                      대화 이력에서 보기
+                      {detailCopy.viewConversationHistory}
                     </Link>
                   </div>
                 ) : null}
               </section>
               <section className="admin-log-detail__section">
-                <h3>요청 데이터</h3>
+                <h3>{detailCopy.requestData}</h3>
                 <pre>{formatJson(apiRequestSummary(selectedItem.data_json))}</pre>
               </section>
               <section className="admin-log-detail__section">
-                <h3>응답 데이터</h3>
+                <h3>{detailCopy.responseData}</h3>
                 <pre>{formatJson(apiResponseSummary(selectedItem.data_json))}</pre>
               </section>
               {selectedRuntimeEvent ? (
                 <section className="admin-log-detail__section">
-                  <h3>런타임 이벤트</h3>
+                  <h3>{detailCopy.runtimeEvent}</h3>
                   <pre>{formatJson(selectedRuntimeEvent)}</pre>
                 </section>
               ) : null}
               <section className="admin-log-detail__section">
-                <h3>저장 데이터</h3>
+                <h3>{detailCopy.storedData}</h3>
                 <pre>{formatJson(selectedItem.data_json)}</pre>
               </section>
             </div>
