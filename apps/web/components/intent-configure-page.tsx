@@ -4,11 +4,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { flushSync } from "react-dom";
 
+import { useI18n } from "@/components/language-provider";
 import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { getBotVersionSettings, normalizeConfigurationScoring, type ConfigurationScoringConfig } from "@/lib/bot-settings";
+import { INTENT_CONFIGURE_INPUT_CATALOGS, formatIntentConfigureInputText } from "@/lib/i18n/intent-configure-input";
 import { applyUpdatedVersionToBot, getNextDialogNo, getVersionDialogs, withEnsuredDialogFlowGraph, withUpdatedDialogs } from "@/lib/dialog-assets";
 import {
   NLU_MODEL_OPTIONS_BY_TYPE,
@@ -2309,6 +2311,8 @@ function buildFlowGraph(dialog: VersionDialogAsset, answer: string, now: string,
 
 export function IntentConfigurePage() {
   const workspace = useStudioWorkspace();
+  const { language: uiLanguage } = useI18n();
+  const inputCopy = INTENT_CONFIGURE_INPUT_CATALOGS[uiLanguage];
   const router = useRouter();
   const params = useParams<{ botId: string; versionId: string }>();
   const botId = decodeURIComponent(params.botId);
@@ -2388,7 +2392,7 @@ export function IntentConfigurePage() {
     ? { provider: `llm:${configureLlmProvider}`, model: configureLlmModel }
     : nluModelEmbedding;
   const ragEmbeddingDescription = aiConfig.answer_mode === "llm_rag"
-    ? "LLM RAG 답변 방식이므로 선택한 LLM provider/model을 답변 문서 임베딩에도 사용합니다."
+    ? inputCopy.llmRagEmbeddingDescription
     : getNluModelDescription(configureNluType, configureNluModel);
   const ragEmbeddingLabel = aiConfig.answer_mode === "llm_rag"
     ? `${LLM_PROVIDER_OPTIONS.find((option) => option.value === configureLlmProvider)?.label ?? configureLlmProvider} ${getLlmModelLabel(configureLlmProvider, configureLlmModel)}`
@@ -3183,7 +3187,7 @@ export function IntentConfigurePage() {
   if (!loading && !authSession) return null;
 
   if (!bot || !effectiveVersion) {
-    return <StudioPageLoading title="구성 화면을 불러오는 중입니다." />;
+    return <StudioPageLoading title={inputCopy.loadingTitle} />;
   }
 
   return (
@@ -3193,25 +3197,25 @@ export function IntentConfigurePage() {
       {errorMessage ? <p className="manual-main__status manual-main__status--error">{errorMessage}</p> : null}
       {operatingVersion ? (
         <p className="manual-main__status manual-main__status--error">
-          운영버전은 구성 작업을 할 수 없습니다. 비운영 버전을 선택하거나 복사본 버전에서 작업해주세요.
+          {inputCopy.operatingVersionWarning}
         </p>
       ) : null}
 
       <div className="intent-configure">
         <section className="intent-configure__panel intent-configure__panel--input">
           <div className="intent-configure__panel-header">
-            <strong>{ragAnswerMode ? "RAG 답변 문서 구성" : "학습문장 입력"}</strong>
-            <span>구성용 엔진 · {getNluTypeLabel(nluType)} · {getNluModelLabel(nluType, nluModel)}</span>
+            <strong>{ragAnswerMode ? inputCopy.ragPanelTitle : inputCopy.utterancePanelTitle}</strong>
+            <span>{formatIntentConfigureInputText(inputCopy.engineSummary, { type: getNluTypeLabel(nluType), model: getNluModelLabel(nluType, nluModel) })}</span>
           </div>
           <div className="intent-configure__engine-row">
             <label>
-              <span>구성 엔진</span>
+              <span>{inputCopy.configureEngine}</span>
               <select value="llm" disabled>
                 <option value="llm">LLM Engine</option>
               </select>
             </label>
             <label>
-              <span>구성 모델</span>
+              <span>{inputCopy.configureModel}</span>
               <select
                 value={configureNluModel}
                 disabled={operatingVersion}
@@ -3260,11 +3264,13 @@ export function IntentConfigurePage() {
           <div className="intent-configure__lexicon-status">
             {canUseConfigureSettings && visibleDictionarySuggestions.length > 0 ? (
               <button type="button" className="secondary-action" onClick={() => setSettingsOpen(true)}>
-                구성 사전 반영 제안
-                {visibleDictionarySuggestions.length > 0 ? ` · 사전 등록 제안 ${visibleDictionarySuggestions.length}건` : ""}
+                {inputCopy.dictionaryProposal}
+                {visibleDictionarySuggestions.length > 0
+                  ? formatIntentConfigureInputText(inputCopy.dictionaryProposalCount, { count: visibleDictionarySuggestions.length })
+                  : ""}
               </button>
             ) : (
-              <span>자동 구성은 현재 버전의 최신 사전 기준을 사용합니다.</span>
+              <span>{inputCopy.latestDictionaryNote}</span>
             )}
           </div>
           {ragAnswerMode ? (
@@ -3278,7 +3284,7 @@ export function IntentConfigurePage() {
                     disabled={operatingVersion || ragConfiguring}
                     onChange={() => handleRagSourceTypeChange("text")}
                   />
-                  텍스트
+                  {inputCopy.text}
                 </label>
                 <label>
                   <input
@@ -3293,7 +3299,7 @@ export function IntentConfigurePage() {
               </div>
               {ragSourceType === "text" ? (
                 <label className="intent-configure__rag-field">
-                  <span>답변 텍스트</span>
+                  <span>{inputCopy.answerText}</span>
                   <textarea
                     value={ragAnswerText}
                     onChange={(event) => {
@@ -3301,26 +3307,26 @@ export function IntentConfigurePage() {
                       setRagEmbeddingResult(null);
                     }}
                     disabled={operatingVersion || ragConfiguring}
-                    placeholder={"의도 : 계약 해지 요청\n답변 : 고객님, 해지 요청 확인했습니다."}
+                    placeholder={inputCopy.answerTextPlaceholder}
                   />
                 </label>
               ) : (
                 <label className="intent-configure__rag-field">
-                  <span>PDF 파일</span>
+                  <span>{inputCopy.pdfFile}</span>
                   <input type="file" accept="application/pdf,.pdf" disabled={operatingVersion || ragConfiguring} onChange={handleRagFileChange} />
                 </label>
               )}
               <label className="intent-configure__rag-field">
-                <span>문서 제목</span>
+                <span>{inputCopy.documentTitle}</span>
                 <input
                   value={ragDocumentTitle}
                   onChange={(event) => setRagDocumentTitle(event.target.value)}
                   disabled={operatingVersion || ragConfiguring}
-                  placeholder={ragSourceType === "pdf" ? "임베딩 후 문서에서 인식됩니다." : "입력하지 않으면 답변 문서로 저장됩니다."}
+                  placeholder={ragSourceType === "pdf" ? inputCopy.pdfTitlePlaceholder : inputCopy.textTitlePlaceholder}
                 />
               </label>
               <div className="intent-configure__rag-engine">
-                <span>{ragEmbeddingDescription || "선택한 구성 모델 기준으로 답변 문서를 임베딩합니다."}</span>
+                <span>{ragEmbeddingDescription || inputCopy.embeddingFallback}</span>
                 <strong>{ragEmbeddingLabel}</strong>
               </div>
               {ragConfigureStep || ragEmbeddingResult ? (
@@ -3340,12 +3346,12 @@ export function IntentConfigurePage() {
               value={utteranceInput}
               onChange={(event) => setUtteranceInput(event.target.value)}
               disabled={operatingVersion}
-              placeholder={"학습문장을 줄 단위로 입력하세요.\n예) 상담원 연결해줘\n예) 콜백 예약하고 싶어\n예) 발신자 확인해줘"}
+              placeholder={inputCopy.utterancePlaceholder}
             />
           )}
           <div className="intent-configure__controls">
             <label>
-              <span>목표 의도 수</span>
+              <span>{inputCopy.targetIntentCount}</span>
               <input
                 type="number"
                 min={1}
@@ -3361,17 +3367,19 @@ export function IntentConfigurePage() {
               onClick={ragAnswerMode ? handleRagConfigure : handleClassify}
               disabled={loading || saving || classifying || ragConfiguring || operatingVersion}
             >
-              {ragAnswerMode ? (ragConfiguring ? "구성중" : "RAG 문서 구성") : (classifying ? "구성중" : "자동 구성")}
+              {ragAnswerMode
+                ? (ragConfiguring ? inputCopy.configuring : inputCopy.ragConfigure)
+                : (classifying ? inputCopy.configuring : inputCopy.autoConfigure)}
             </button>
           </div>
           <div className="intent-configure__policy">
-            <span>분류 수 기준</span>
-            {isMlConfigureNluType(nluType) ? <small>ML은 목표 수를 강제하지 않고, 유사도가 충분한 후보만 병합합니다.</small> : null}
-            <div className="intent-configure__policy-options" role="radiogroup" aria-label="분류 수 기준">
+            <span>{inputCopy.countPolicy}</span>
+            {isMlConfigureNluType(nluType) ? <small>{inputCopy.mlPolicyHint}</small> : null}
+            <div className="intent-configure__policy-options" role="radiogroup" aria-label={inputCopy.countPolicy}>
               {[
-                ["minimize", `${targetCount}개 이하로 최대한 적게`],
-                ["near", `${targetCount}개에 가깝게`],
-                ["exact", `무조건 ${targetCount}개`],
+                ["minimize", formatIntentConfigureInputText(inputCopy.minimizePolicy, { count: targetCount })],
+                ["near", formatIntentConfigureInputText(inputCopy.nearPolicy, { count: targetCount })],
+                ["exact", formatIntentConfigureInputText(inputCopy.exactPolicy, { count: targetCount })],
               ].map(([value, label]) => (
                 <label key={value}>
                   <input
