@@ -2659,7 +2659,7 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에서는 구성 작업을 실행할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.operatingVersionWarning);
       return;
     }
     if (!ragAnswerMode) {
@@ -2741,7 +2741,7 @@ export function IntentConfigurePage() {
   async function handleClassify() {
     const utterances = parseUtterances(utteranceInput);
     if (utterances.length === 0) {
-      setErrorMessage("분류할 학습문장을 입력해주세요.");
+      setErrorMessage(inputCopy.classificationUtterancesRequired);
       return;
     }
     if (!authSession || !bot || !effectiveVersion) {
@@ -2749,21 +2749,21 @@ export function IntentConfigurePage() {
       return;
     }
     if (isOperatingVersion(effectiveVersion)) {
-      setErrorMessage("운영버전에서는 구성 작업을 실행할 수 없습니다. 비운영 버전에서 작업해주세요.");
+      setErrorMessage(inputCopy.operatingVersionWarning);
       return;
     }
     const parsedMlSeedIntents = isMlConfigureNluType(nluType) ? parseMlSeedIntentText(mlSeedIntentText) : { seedIntents: [], invalidLines: [] };
     const mlSeedIntentPayload = parsedMlSeedIntents.seedIntents;
     if (isMlConfigureNluType(nluType) && parsedMlSeedIntents.invalidLines.length > 0) {
-      setErrorMessage(`ML 기준 의도 형식을 확인해주세요: ${parsedMlSeedIntents.invalidLines.slice(0, 3).join(" / ")}`);
+      setErrorMessage(formatIntentConfigureInputText(inputCopy.invalidSeedFormat, { lines: parsedMlSeedIntents.invalidLines.slice(0, 3).join(" / ") }));
       return;
     }
 
     flushSync(() => {
       setClassifying(true);
-      setClassifyProgressMessage("자동 구성을 준비 중입니다. 완료될 때까지 화면을 닫지 말고 기다려주세요.");
+      setClassifyProgressMessage(inputCopy.classificationPreparing);
       setErrorMessage("");
-      setMessage("자동 구성을 실행 중입니다. 문장 수에 따라 시간이 걸릴 수 있습니다.");
+      setMessage(inputCopy.classificationRunning);
     });
     await waitForBrowserPaint(3);
     try {
@@ -2839,8 +2839,8 @@ export function IntentConfigurePage() {
         }));
       } else {
         flushSync(() => {
-          setClassifyProgressMessage("ML 학습 엔진 기준으로 자동 구성 중입니다. 완료될 때까지 화면을 닫지 말고 기다려주세요.");
-          setMessage("ML 학습 엔진 기준으로 자동 구성 중입니다. 완료될 때까지 화면을 닫지 말고 기다려주세요.");
+          setClassifyProgressMessage(inputCopy.mlClassificationRunning);
+          setMessage(inputCopy.mlClassificationRunning);
         });
         await waitForBrowserPaint(3);
         const response = await configureStudioBotVersionMlIntents(authSession.access_token, bot.id, effectiveVersion.id, {
@@ -2860,16 +2860,22 @@ export function IntentConfigurePage() {
       }
       setBot(selectedBot);
       setClusters(nextClusters);
-      const mlSeedIntentMessage = isMlConfigureNluType(nluType) && mlSeedIntentPayload.length > 0
-        ? ` 기준 의도 ${mlSeedIntentPayload.length}개로 확신 배정하고, 애매한 문장은 검토 후보로 남겼습니다.`
-        : "";
-      setMessage(
-        `${nextClusters.length}개 그룹으로 분류했습니다.${mlSeedIntentMessage} ${engineLabel} 기준으로 사전 ${countUserDictionaryEntries(latestLexicon.dictionary)}건을 반영했습니다.${
-          nextDictionarySuggestions.length > 0 ? ` 사전 등록 제안 ${nextDictionarySuggestions.length}건을 확인해주세요.` : ""
-        }`,
-      );
+      const classificationMessages = [
+        formatIntentConfigureInputText(inputCopy.classificationSummary, {
+          groups: nextClusters.length,
+          engine: engineLabel,
+          dictionaryCount: countUserDictionaryEntries(latestLexicon.dictionary),
+        }),
+        isMlConfigureNluType(nluType) && mlSeedIntentPayload.length > 0
+          ? formatIntentConfigureInputText(inputCopy.seedAssignmentSummary, { count: mlSeedIntentPayload.length })
+          : "",
+        nextDictionarySuggestions.length > 0
+          ? formatIntentConfigureInputText(inputCopy.dictionarySuggestionSummary, { count: nextDictionarySuggestions.length })
+          : "",
+      ].filter(Boolean);
+      setMessage(classificationMessages.join(" "));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "최신 사전/개체 기준으로 자동 구성을 실행하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.classificationFailed);
     } finally {
       setClassifying(false);
       setClassifyProgressMessage("");
@@ -2889,7 +2895,7 @@ export function IntentConfigurePage() {
 
   function mergeSelectedClusters() {
     if (selectedClusterIds.length < 2) {
-      setErrorMessage("병합할 의도 후보를 2개 이상 선택해주세요.");
+      setErrorMessage(inputCopy.mergeAtLeastTwo);
       return;
     }
     setClusters((current) => {
@@ -2908,7 +2914,7 @@ export function IntentConfigurePage() {
     });
     setSelectedClusterIds([]);
     setMlTestResult(null);
-    setMessage("선택한 의도 후보를 병합했습니다.");
+    setMessage(inputCopy.mergeComplete);
     setErrorMessage("");
   }
 
