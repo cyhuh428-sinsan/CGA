@@ -349,3 +349,14 @@ def test_license_admin_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AdminLicenseCatalog>" in catalog_source
+
+
+def test_channel_admin_list_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/channels/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-channels.ts").read_text(encoding="utf-8")
+    assert "ADMIN_CHANNEL_CATALOGS[uiLanguage]" in page_source
+    assert "copy.searchPlaceholder" in page_source
+    assert "copy.connectionTest" in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, AdminChannelCatalog>" in catalog_source
