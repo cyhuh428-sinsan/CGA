@@ -754,3 +754,18 @@ def test_intent_configure_ml_runtime_messages_use_seven_language_catalog() -> No
     assert 'setMessage(`현재 버전 의도 ${parsed.seedIntents.length}개를 ML 기준 의도로 불러왔습니다.`)' not in page_source
     assert "mlTestUtteranceRequired: string" in catalog_source
     assert "seedCleared: string" in catalog_source
+
+
+def test_intent_configure_classification_runtime_messages_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert "inputCopy.classificationUtterancesRequired" in page_source
+    assert "inputCopy.classificationPreparing" in page_source
+    assert "inputCopy.classificationSummary" in page_source
+    assert "inputCopy.mergeAtLeastTwo" in page_source
+    assert "inputCopy.mergeComplete" in page_source
+    assert 'setErrorMessage("분류할 학습문장을 입력해주세요.")' not in page_source
+    assert 'setMessage("선택한 의도 후보를 병합했습니다.")' not in page_source
+    assert "classificationUtterancesRequired: string" in catalog_source
+    assert "classificationFailed: string" in catalog_source
+    assert "mergeComplete: string" in catalog_source
