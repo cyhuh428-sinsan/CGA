@@ -719,3 +719,15 @@ def test_intent_configure_candidate_panel_uses_seven_language_catalog() -> None:
     assert '<strong>의도 후보</strong>' not in page_source
     assert "mlTestTitle: string" in catalog_source
     assert "emptyUtterancePrompt: string" in catalog_source
+
+def test_intent_configure_seed_modal_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert "inputCopy.seedIntentEntry" in page_source
+    assert "inputCopy.seedBulkDescription" in page_source
+    assert "inputCopy.recognizedSeedCount" in page_source
+    assert "inputCopy.seedPlaceholder" in page_source
+    assert '<h2 id="intent-configure-seed-title">ML 기준 의도 입력</h2>' not in page_source
+    assert 'aria-label="닫기" onClick={() => setMlSeedIntentOpen(false)}' not in page_source
+    assert "seedIntentEntry: string" in catalog_source
+    assert "seedEmptyHint: string" in catalog_source
