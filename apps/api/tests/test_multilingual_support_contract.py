@@ -743,3 +743,14 @@ def test_intent_configure_settings_modal_uses_seven_language_catalog() -> None:
     assert '<strong>자동분류 가중치</strong>' not in page_source
     assert "criteriaScale: {" in catalog_source
     assert "settingsTitle: string" in catalog_source
+
+def test_intent_configure_ml_runtime_messages_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert "inputCopy.mlTestUtteranceRequired" in page_source
+    assert "inputCopy.seedLoaded" in page_source
+    assert "inputCopy.invalidSeedFormat" in page_source
+    assert 'setErrorMessage("테스트할 사용자 발화를 입력해주세요.")' not in page_source
+    assert 'setMessage(`현재 버전 의도 ${parsed.seedIntents.length}개를 ML 기준 의도로 불러왔습니다.`)' not in page_source
+    assert "mlTestUtteranceRequired: string" in catalog_source
+    assert "seedCleared: string" in catalog_source
