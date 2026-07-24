@@ -769,3 +769,18 @@ def test_intent_configure_classification_runtime_messages_use_seven_language_cat
     assert "classificationUtterancesRequired: string" in catalog_source
     assert "classificationFailed: string" in catalog_source
     assert "mergeComplete: string" in catalog_source
+
+
+def test_intent_configure_rag_runtime_messages_use_language_independent_progress_stage() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert 'type RagConfigureStage = "idle"' in page_source
+    assert "ragConfigureStepFloorPercent(stage: RagConfigureStage)" in page_source
+    assert 'setRagConfigureStage("embedding")' in page_source
+    assert 'step.includes("임베딩")' not in page_source
+    assert "inputCopy.ragAnswerModeOnly" in page_source
+    assert "inputCopy.ragCandidatesCreated" in page_source
+    assert 'setRagConfigureStep("Answer Vector DB에 답변 문서를 임베딩하는 중입니다.")' not in page_source
+    assert "ragUploadPdf: string" in catalog_source
+    assert "ragResultCompleted: string" in catalog_source
+    assert "ragConfigureFailed: string" in catalog_source
