@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { SimulatorFloatingLauncher } from "@/components/simulator-page";
 import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
@@ -10,6 +11,7 @@ import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { getBotVersionSettings, type BotVersionSettings } from "@/lib/bot-settings";
 import { applyUpdatedVersionToBot, getVersionDialogs, withUpdatedDialogs } from "@/lib/dialog-assets";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
+import { EVALUATION_CATALOGS, tEvaluation } from "@/lib/i18n/evaluation";
 import {
   LLM_MODEL_OPTIONS_BY_PROVIDER,
   LLM_PROVIDER_OPTIONS,
@@ -1083,6 +1085,8 @@ function buildFeatureChartItemsFromRow(row: EvaluationRow | null): FeatureChartI
 }
 
 function FeatureDetailChart({ items, emptyText }: { items: FeatureChartItem[]; emptyText: string }) {
+  const { language: uiLanguage } = useI18n();
+  const copy = EVALUATION_CATALOGS[uiLanguage];
   if (items.length === 0) {
     return <div className="evaluation-feature-detail__empty">{emptyText}</div>;
   }
@@ -1103,9 +1107,9 @@ function FeatureDetailChart({ items, emptyText }: { items: FeatureChartItem[]; e
         {items.map((item) => <span key={item.label}>{item.label}</span>)}
       </div>
       <div className="evaluation-feature-detail__legend" aria-hidden="true">
-        <span><i className="is-score" />의도 Score</span>
+        <span><i className="is-score" />{tEvaluation(copy, "의도 Score")}</span>
         <span><i className="is-weight" />Feature</span>
-        <span><i className="is-rarity" />희소성</span>
+        <span><i className="is-rarity" />{tEvaluation(copy, "희소성")}</span>
       </div>
     </div>
   );
@@ -1119,6 +1123,8 @@ function MatrixPreviewCanvas({
   matrixCounts: Map<string, number>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const { language: uiLanguage } = useI18n();
+  const copy = EVALUATION_CATALOGS[uiLanguage];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1158,8 +1164,8 @@ function MatrixPreviewCanvas({
 
   return (
     <div className="evaluation-matrix-preview">
-      <canvas ref={canvasRef} aria-label="Confusion Matrix 정적 미리보기" />
-      <p>의도가 100개 이상이면 전체 Matrix 이미지만 제공합니다.</p>
+      <canvas ref={canvasRef} aria-label={tEvaluation(copy, "Confusion Matrix 정적 미리보기")} />
+      <p>{tEvaluation(copy, "의도가 100개 이상이면 전체 Matrix 이미지만 제공합니다.")}</p>
     </div>
   );
 }
@@ -1192,6 +1198,8 @@ function SemanticEvaluationGrid({
   history: StoredNluEvaluation[];
   rows: EvaluationRow[];
 }) {
+  const { language: uiLanguage } = useI18n();
+  const copy = EVALUATION_CATALOGS[uiLanguage];
   const vectorStatus = getVectorConnectionStatus(bot);
   const top1Accuracy = latest?.fixed_accuracy ?? calculateAccuracy(rows);
   const top3Accuracy = calculateTopKAccuracy(rows, 3);
@@ -1204,19 +1212,19 @@ function SemanticEvaluationGrid({
     <div className="evaluation-dashboard__grid evaluation-dashboard__grid--nlu">
       <section className="evaluation-card">
         <div className="evaluation-card__title-row">
-          <h2>Vector DB 상태</h2>
+          <h2>{tEvaluation(copy, "Vector DB 상태")}</h2>
         </div>
         <dl className="evaluation-kpi-list evaluation-kpi-list--status">
-          <div><dt>연결</dt><dd>{vectorStatus.ready ? "정상" : "설정 필요"}</dd></div>
+          <div><dt>{tEvaluation(copy, "연결")}</dt><dd>{vectorStatus.ready ? tEvaluation(copy, "정상") : tEvaluation(copy, "설정 필요")}</dd></div>
           <div><dt>Index</dt><dd title={vectorStatus.indexName}>{vectorStatus.indexName}</dd></div>
-          <div><dt>검색 API</dt><dd title={vectorStatus.endpointUrl}>{vectorStatus.endpointUrl}</dd></div>
-          <div><dt>임베딩 모델</dt><dd>{getNluModelLabel(nluType, nluModel)}</dd></div>
+          <div><dt>{tEvaluation(copy, "검색 API")}</dt><dd title={vectorStatus.endpointUrl}>{vectorStatus.endpointUrl}</dd></div>
+          <div><dt>{tEvaluation(copy, "임베딩 모델")}</dt><dd>{getNluModelLabel(nluType, nluModel)}</dd></div>
         </dl>
       </section>
 
       <section className="evaluation-card">
         <div className="evaluation-card__title-row">
-          <h2>Top-K 검색 정확도</h2>
+          <h2>{tEvaluation(copy, "Top-K 검색 정확도")}</h2>
         </div>
         <div className="evaluation-score">
           <div className="evaluation-score__ring">
@@ -1225,7 +1233,7 @@ function SemanticEvaluationGrid({
           </div>
           <div className="evaluation-score__gap">
             <strong>{formatPercent(averageScore)}</strong>
-            <span>평균 Score</span>
+            <span>{tEvaluation(copy, "평균 Score")}</span>
           </div>
           <div className="evaluation-score__ring">
             <strong>{formatPercent(top3Accuracy)}</strong>
@@ -1236,28 +1244,28 @@ function SemanticEvaluationGrid({
 
       <section className="evaluation-card">
         <div className="evaluation-card__title-row">
-          <h2>9:1 Split 평가</h2>
+          <h2>{tEvaluation(copy, "9:1 Split 평가")}</h2>
         </div>
         <dl className="evaluation-kpi-list evaluation-kpi-list--compact">
           <div><dt>Random</dt><dd>{formatPercent(latest?.random_accuracy ?? null)}</dd></div>
           <div><dt>Fixed</dt><dd>{formatPercent(latest?.fixed_accuracy ?? null)}</dd></div>
-          <div><dt>차이</dt><dd>{latest?.gap != null ? `${(latest.gap * 100).toFixed(2)}%` : "-"}</dd></div>
-          <div><dt>평가 문장</dt><dd>{rows.length}</dd></div>
-          <div><dt>학습문장</dt><dd>{latest?.training_utterance_count ?? "-"}</dd></div>
-          <div><dt>최근 이력</dt><dd>{history.length}</dd></div>
+          <div><dt>{tEvaluation(copy, "차이")}</dt><dd>{latest?.gap != null ? `${(latest.gap * 100).toFixed(2)}%` : "-"}</dd></div>
+          <div><dt>{tEvaluation(copy, "평가 문장")}</dt><dd>{rows.length}</dd></div>
+          <div><dt>{tEvaluation(copy, "학습문장")}</dt><dd>{latest?.training_utterance_count ?? "-"}</dd></div>
+          <div><dt>{tEvaluation(copy, "최근 이력")}</dt><dd>{history.length}</dd></div>
         </dl>
       </section>
 
       <div className="evaluation-semantic-issue-row">
         <section className="evaluation-card evaluation-card--wide evaluation-card--semantic-errors">
           <div className="evaluation-card__title-row">
-            <h2>오분류 문장</h2>
+            <h2>{tEvaluation(copy, "오분류 문장")}</h2>
           </div>
           <div className="evaluation-result-table">
             <div className="evaluation-result-table__header">
-              <span>문장</span>
-              <span>정답 의도</span>
-              <span>예측 의도 / Score</span>
+              <span>{tEvaluation(copy, "문장")}</span>
+              <span>{tEvaluation(copy, "정답 의도")}</span>
+              <span>{tEvaluation(copy, "예측 의도 / Score")}</span>
             </div>
             {misclassifiedRows.length > 0 ? misclassifiedRows.map((row) => (
               <div key={row.id} className="evaluation-result-table__row">
@@ -1266,19 +1274,19 @@ function SemanticEvaluationGrid({
                 <span className="is-failure">{row.predictedName} / {formatScorePercent(row.score)}</span>
               </div>
             )) : (
-              <div className="evaluation-card__empty">오분류 문장이 없습니다.</div>
+              <div className="evaluation-card__empty">{tEvaluation(copy, "오분류 문장이 없습니다.")}</div>
             )}
           </div>
         </section>
 
         <section className="evaluation-card evaluation-card--semantic-low-score">
           <div className="evaluation-card__title-row">
-            <h2>낮은 Score 문장</h2>
+            <h2>{tEvaluation(copy, "낮은 Score 문장")}</h2>
           </div>
           <div className="evaluation-result-table">
             <div className="evaluation-result-table__header">
-              <span>문장</span>
-              <span>의도</span>
+              <span>{tEvaluation(copy, "문장")}</span>
+              <span>{tEvaluation(copy, "의도")}</span>
               <span>Score</span>
             </div>
             {lowScoreRows.length > 0 ? lowScoreRows.map((row) => (
@@ -1288,7 +1296,7 @@ function SemanticEvaluationGrid({
                 <span>{formatScorePercent(row.score)}</span>
               </div>
             )) : (
-              <div className="evaluation-card__empty">낮은 Score 문장이 없습니다.</div>
+              <div className="evaluation-card__empty">{tEvaluation(copy, "낮은 Score 문장이 없습니다.")}</div>
             )}
           </div>
         </section>
@@ -1296,16 +1304,16 @@ function SemanticEvaluationGrid({
 
       <section className="evaluation-card evaluation-card--semantic-collisions">
         <div className="evaluation-card__title-row">
-          <h2>유사 의도 충돌</h2>
+          <h2>{tEvaluation(copy, "유사 의도 충돌")}</h2>
         </div>
         <dl className="evaluation-kpi-list evaluation-kpi-list--compact evaluation-kpi-list--semantic-collisions">
           {collisions.length > 0 ? collisions.map((item) => (
             <div key={`${item.expectedName}-${item.predictedName}`}>
               <dt>{item.expectedName}</dt>
-              <dd>{item.predictedName} {item.count}건</dd>
+              <dd>{item.predictedName} {item.count} {tEvaluation(copy, "건수")}</dd>
             </div>
           )) : (
-            <div><dt>충돌</dt><dd>없음</dd></div>
+            <div><dt>{tEvaluation(copy, "충돌")}</dt><dd>{tEvaluation(copy, "없음")}</dd></div>
           )}
         </dl>
       </section>
@@ -1314,6 +1322,8 @@ function SemanticEvaluationGrid({
 }
 
 function CommonNluDiagnostics({ rows }: { rows: EvaluationRow[] }) {
+  const { language: uiLanguage } = useI18n();
+  const copy = EVALUATION_CATALOGS[uiLanguage];
   const lowScoreRows = rows.filter((row) => row.score < 70).slice(0, 10);
   const misclassifiedRows = rows.filter((row) => !row.correct).slice(0, 10);
   const collisions = buildSemanticCollisionPairs(rows);
@@ -1322,30 +1332,30 @@ function CommonNluDiagnostics({ rows }: { rows: EvaluationRow[] }) {
     <div className="evaluation-dashboard__grid evaluation-dashboard__grid--nlu">
       <div className="evaluation-semantic-issue-row">
         <section className="evaluation-card evaluation-card--wide evaluation-card--semantic-errors">
-          <div className="evaluation-card__title-row"><h2>오분류 문장</h2></div>
+          <div className="evaluation-card__title-row"><h2>{tEvaluation(copy, "오분류 문장")}</h2></div>
           <div className="evaluation-result-table">
-            <div className="evaluation-result-table__header"><span>문장</span><span>정답 의도</span><span>예측 의도 / Score</span></div>
+            <div className="evaluation-result-table__header"><span>{tEvaluation(copy, "문장")}</span><span>{tEvaluation(copy, "정답 의도")}</span><span>{tEvaluation(copy, "예측 의도 / Score")}</span></div>
             {misclassifiedRows.length > 0 ? misclassifiedRows.map((row) => (
               <div key={row.id} className="evaluation-result-table__row"><span>{row.utterance}</span><span>{row.expectedName}</span><span className="is-failure">{row.predictedName} / {formatScorePercent(row.score)}</span></div>
-            )) : <div className="evaluation-card__empty">오분류 문장이 없습니다.</div>}
+            )) : <div className="evaluation-card__empty">{tEvaluation(copy, "오분류 문장이 없습니다.")}</div>}
           </div>
         </section>
         <section className="evaluation-card evaluation-card--semantic-low-score">
-          <div className="evaluation-card__title-row"><h2>낮은 Score 문장</h2></div>
+          <div className="evaluation-card__title-row"><h2>{tEvaluation(copy, "낮은 Score 문장")}</h2></div>
           <div className="evaluation-result-table">
-            <div className="evaluation-result-table__header"><span>문장</span><span>의도</span><span>Score</span></div>
+            <div className="evaluation-result-table__header"><span>{tEvaluation(copy, "문장")}</span><span>{tEvaluation(copy, "의도")}</span><span>Score</span></div>
             {lowScoreRows.length > 0 ? lowScoreRows.map((row) => (
               <div key={row.id} className="evaluation-result-table__row"><span>{row.utterance}</span><span>{row.expectedName}</span><span>{formatScorePercent(row.score)}</span></div>
-            )) : <div className="evaluation-card__empty">낮은 Score 문장이 없습니다.</div>}
+            )) : <div className="evaluation-card__empty">{tEvaluation(copy, "낮은 Score 문장이 없습니다.")}</div>}
           </div>
         </section>
       </div>
       <section className="evaluation-card evaluation-card--semantic-collisions">
-        <div className="evaluation-card__title-row"><h2>유사 의도 충돌</h2></div>
+        <div className="evaluation-card__title-row"><h2>{tEvaluation(copy, "유사 의도 충돌")}</h2></div>
         <dl className="evaluation-kpi-list evaluation-kpi-list--compact evaluation-kpi-list--semantic-collisions">
           {collisions.length > 0 ? collisions.map((item) => (
-            <div key={`${item.expectedName}-${item.predictedName}`}><dt>{item.expectedName}</dt><dd>{item.predictedName} {item.count}건</dd></div>
-          )) : <div><dt>충돌</dt><dd>없음</dd></div>}
+            <div key={`${item.expectedName}-${item.predictedName}`}><dt>{item.expectedName}</dt><dd>{item.predictedName} {item.count} {tEvaluation(copy, "건수")}</dd></div>
+          )) : <div><dt>{tEvaluation(copy, "충돌")}</dt><dd>{tEvaluation(copy, "없음")}</dd></div>}
         </dl>
       </section>
     </div>
@@ -1360,6 +1370,8 @@ function LlmEvaluationGrid({
   latest: StoredNluEvaluation | null;
   rows: EvaluationRow[];
 }) {
+  const { language: uiLanguage } = useI18n();
+  const copy = EVALUATION_CATALOGS[uiLanguage];
   const llmProvider = typeof aiConfig.llm_provider === "string" ? aiConfig.llm_provider : undefined;
   const llmModel = typeof aiConfig.llm_model === "string" ? aiConfig.llm_model : undefined;
   const nluType = typeof aiConfig.nlu_type === "string" ? aiConfig.nlu_type : undefined;
@@ -1372,19 +1384,19 @@ function LlmEvaluationGrid({
     <div className="evaluation-dashboard__grid evaluation-dashboard__grid--nlu">
       <section className="evaluation-card">
         <div className="evaluation-card__title-row">
-          <h2>Provider / 모델 상태</h2>
+          <h2>{tEvaluation(copy, "Provider / 모델 상태")}</h2>
         </div>
         <dl className="evaluation-kpi-list evaluation-kpi-list--status">
           <div><dt>Provider</dt><dd>{providerLabel}</dd></div>
-          <div><dt>모델</dt><dd>{modelLabel}</dd></div>
-          <div><dt>NLU 모델</dt><dd>{getNluModelLabel(nluType, nluModel)}</dd></div>
-          <div><dt>상태</dt><dd>평가 화면 준비</dd></div>
+          <div><dt>{tEvaluation(copy, "모델")}</dt><dd>{modelLabel}</dd></div>
+          <div><dt>{tEvaluation(copy, "NLU 모델")}</dt><dd>{getNluModelLabel(nluType, nluModel)}</dd></div>
+          <div><dt>{tEvaluation(copy, "상태")}</dt><dd>{tEvaluation(copy, "평가 화면 준비")}</dd></div>
         </dl>
       </section>
 
       <section className="evaluation-card">
         <div className="evaluation-card__title-row">
-          <h2>LLM 분류 정확도</h2>
+          <h2>{tEvaluation(copy, "LLM 분류 정확도")}</h2>
         </div>
         <div className="evaluation-score">
           <div className="evaluation-score__ring">
@@ -1397,43 +1409,43 @@ function LlmEvaluationGrid({
           </div>
           <div className="evaluation-score__ring">
             <strong>{rows.length}</strong>
-            <span>평가 문장</span>
+            <span>{tEvaluation(copy, "평가 문장")}</span>
           </div>
         </div>
       </section>
 
       <section className="evaluation-card">
         <div className="evaluation-card__title-row">
-          <h2>지연시간 / 실패율 / 비용</h2>
+          <h2>{tEvaluation(copy, "지연시간 / 실패율 / 비용")}</h2>
         </div>
         <dl className="evaluation-kpi-list evaluation-kpi-list--compact">
-          <div><dt>평균 지연시간</dt><dd>-</dd></div>
-          <div><dt>실패율</dt><dd>-</dd></div>
+          <div><dt>{tEvaluation(copy, "평균 지연시간")}</dt><dd>-</dd></div>
+          <div><dt>{tEvaluation(copy, "실패율")}</dt><dd>-</dd></div>
           <div><dt>Token</dt><dd>-</dd></div>
-          <div><dt>예상 비용</dt><dd>-</dd></div>
+          <div><dt>{tEvaluation(copy, "예상 비용")}</dt><dd>-</dd></div>
         </dl>
-        <p className="evaluation-card__note">LLM 호출 기반 평가 저장이 붙으면 이 영역에 운영 비용과 실패율을 표시합니다.</p>
+        <p className="evaluation-card__note">{tEvaluation(copy, "LLM 호출 기반 평가 저장이 붙으면 이 영역에 운영 비용과 실패율을 표시합니다.")}</p>
       </section>
 
       <section className="evaluation-card evaluation-card--wide">
         <div className="evaluation-card__title-row">
-          <h2>오분류 케이스 / 선택 근거</h2>
+          <h2>{tEvaluation(copy, "오분류 케이스 / 선택 근거")}</h2>
         </div>
         <div className="evaluation-result-table">
           <div className="evaluation-result-table__header">
-            <span>문장</span>
-            <span>정답 의도</span>
-            <span>LLM 예측 / 근거</span>
+            <span>{tEvaluation(copy, "문장")}</span>
+            <span>{tEvaluation(copy, "정답 의도")}</span>
+            <span>{tEvaluation(copy, "LLM 예측 / 근거")}</span>
           </div>
           {wrongRows.length > 0 ? wrongRows.map((row) => (
             <div key={row.id} className="evaluation-result-table__row">
               <span>{row.utterance}</span>
               <span>{row.expectedName}</span>
-              <span className="is-failure">{row.predictedName} / 저장된 근거 없음</span>
+              <span className="is-failure">{row.predictedName} / {tEvaluation(copy, "저장된 근거 없음")}</span>
             </div>
           )) : (
             <div className="evaluation-card__empty">
-              저장된 LLM 평가 결과가 없습니다. 현재 학습은 의도/학습문장 스냅샷만 확정하며, 오분류 근거는 별도 LLM 평가 실행 후 표시됩니다.
+              {tEvaluation(copy, "저장된 LLM 평가 결과가 없습니다. 현재 학습은 의도/학습문장 스냅샷만 확정하며, 오분류 근거는 별도 LLM 평가 실행 후 표시됩니다.")}
             </div>
           )}
         </div>
@@ -1444,6 +1456,8 @@ function LlmEvaluationGrid({
 
 export function EvaluationPageClient({ botId: routeBotId, versionId }: EvaluationPageClientProps) {
   const workspace = useStudioWorkspace();
+  const { language: uiLanguage } = useI18n();
+  const copy = EVALUATION_CATALOGS[uiLanguage];
   const router = useRouter();
   const pathname = usePathname();
   const botId = useMemo(() => decodeURIComponent(routeBotId), [routeBotId]);
@@ -1536,7 +1550,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "평가 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -1590,7 +1604,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
       setVersions(refreshed.versions);
       setBot(refreshed.bot);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "학습 결과를 다시 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.refreshFailed);
     }
   }
   const document = useMemo(
@@ -1798,11 +1812,11 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
       const text = await file.text();
       const rows = parseUploadRows(text);
       if (rows.length === 0) {
-        setErrorMessage("평가 데이터에서 학습문장과 의도명을 찾지 못했습니다.");
+        setErrorMessage(copy.invalidEvaluationData);
         return;
       }
       if (!authSession || !bot || !effectiveVersion) {
-        setErrorMessage("평가 결과를 저장할 버전 정보를 찾지 못했습니다.");
+        setErrorMessage(copy.missingVersion);
         return;
       }
       const nextEvaluation: UploadEvaluation = {
@@ -1846,9 +1860,9 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
           updated_at: nextVersion.updated_at ?? current.updated_at,
         }
         : current);
-      setMessage("평가 데이터 일괄 업로드 및 저장이 완료되었습니다.");
+      setMessage(copy.uploadSaved);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "평가 데이터를 읽지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.readFailed);
     } finally {
       setSavingEvaluation(false);
     }
@@ -1868,16 +1882,16 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
       const text = await file.text();
       const rows = parseUploadRows(text);
       if (rows.length === 0) {
-        setErrorMessage("의도 이해도 평가 데이터에서 문장과 의도명을 찾지 못했습니다.");
+        setErrorMessage(copy.invalidHubData);
         return;
       }
       setHubEvaluation({
         fileName: file.name,
         rows: buildRowsFromUpload(document, aiConfig, versionSettings, rows),
       });
-      setMessage("봇 허브 의도 이해도 평가가 완료되었습니다.");
+      setMessage(copy.hubEvaluated);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "의도 이해도 평가 데이터를 읽지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.hubReadFailed);
     }
   }
 
@@ -1924,9 +1938,9 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
         },
       };
       setBot(applyUpdatedVersionToBot(bot, updatedVersion));
-      setMessage("대화가 저장되었습니다.");
+      setMessage(copy.conversationSaved);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "학습문장을 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.utteranceSaveFailed);
     } finally {
       setSaving(false);
     }
@@ -1978,7 +1992,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
   }
 
   if (!bot || !effectiveVersion) {
-    return <StudioPageLoading title="평가 화면을 불러오는 중입니다." />;
+    return <StudioPageLoading title={copy.loading} />;
   }
 
   return (
@@ -1986,7 +2000,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
 
       <header className="evaluation-dashboard__header">
         <div>
-          <h1>Overview <span>›</span> 의도 상세</h1>
+          <h1>Overview <span>›</span> {tEvaluation(copy, "의도 상세")}</h1>
         </div>
         <div className="evaluation-dashboard__actions">
           <button
@@ -1995,7 +2009,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
             onClick={() => downloadTextFile("training-evaluation.csv", buildEvaluationCsv(trainingRows))}
             disabled={trainingRows.length === 0}
           >
-            평가정보 내보내기
+            {tEvaluation(copy, "평가정보 내보내기")}
           </button>
         </div>
       </header>
@@ -2007,35 +2021,35 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
         <section className="evaluation-card" id="bot-evaluation">
           <div className="evaluation-card__title-row">
             <h2>
-              봇 평가
-              <EvaluationInfoTip text="별도 평가 데이터를 업로드해 사용자 발화의 최종 분류 결과를 검증합니다. 우선 처리 단계인 제외/무시, 스몰토크, Exacting Matching, 룰과 최종 NLU 엔진인 ML·시멘틱·LLM 결과를 함께 확인하여 오분류와 미응답 원인을 점검합니다." />
+              {copy.botEvaluation}
+              <EvaluationInfoTip text={tEvaluation(copy, "별도 평가 데이터를 업로드해 사용자 발화의 최종 분류 결과를 검증합니다.")} />
             </h2>
             <button
               type="button"
               className="studio-table-page__ghost"
               onClick={() => setDetailPanel("bot")}
             >
-              평가정보 더보기
+              {tEvaluation(copy, "평가정보 더보기")}
             </button>
           </div>
           <div className={`evaluation-card__empty evaluation-card__empty--circle${displayedBotEvaluation ? " is-saved" : ""}`}>
             {displayedBotEvaluation ? (
               <>
                   <strong>{formatPercent(botEvaluationAccuracy)}</strong>
-                  <span>{displayedBotEvaluation.rows.length}건 일괄 평가 완료</span>
+                  <span>{displayedBotEvaluation.rows.length} {tEvaluation(copy, "평가 데이터 일괄 업로드")}</span>
               </>
             ) : (
-              <span>봇 평가를 위해<br />평가 데이터를 업로드하세요.</span>
+              <span>{tEvaluation(copy, "봇 평가를 위해 평가 데이터를 업로드하세요.")}</span>
             )}
           </div>
           <div className="evaluation-card__bottom-actions">
             <button type="button" className="studio-table-page__ghost" onClick={() => setDetailPanel("bot")}>
-              평가 데이터 업로드
+              {tEvaluation(copy, "평가 데이터 업로드")}
             </button>
             <button
               type="button"
               className="manual-main__menu-button manual-main__menu-button--toolbar"
-              aria-label="봇 평가 더보기"
+              aria-label={`${copy.botEvaluation} ${tEvaluation(copy, "평가정보 더보기")}`}
               onClick={() => setDetailPanel("bot")}
             >
               ⋮
@@ -2046,11 +2060,11 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
         <section className="evaluation-card" id="model-evaluation">
           <div className="evaluation-card__title-row">
             <h2>
-              학습모델 평가
-              <EvaluationInfoTip text={`현재 NLU 평가 기준은 ${nluEvaluationLabel}입니다. 학습문장을 학습용과 검증용으로 분리해 일반화 성능을 비교합니다. Random은 평가할 때마다 검증 문장을 다시 선정하고, Fixed는 지정한 검증 문장을 유지합니다. 두 결과의 정확도와 차이를 함께 확인해 특정 문장에 치우친 학습이나 모델 불안정 여부를 판단합니다.`} />
+              {tEvaluation(copy, "학습모델 평가")}
+              <EvaluationInfoTip text={`${tEvaluation(copy, "현재 NLU 평가 기준은")} ${nluEvaluationLabel}. ${tEvaluation(copy, "학습문장을 학습용과 검증용으로 분리해 일반화 성능을 비교합니다.")}`} />
             </h2>
             <button type="button" className="studio-table-page__ghost" onClick={() => setDetailPanel("model")}>
-              평가정보 더보기
+              {tEvaluation(copy, "평가정보 더보기")}
             </button>
           </div>
           <div className="evaluation-score">
@@ -2064,7 +2078,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                   ? `${(evaluationGap * 100).toFixed(2)}%`
                   : "-"}
               </strong>
-              <span>차이</span>
+              <span>{tEvaluation(copy, "차이")}</span>
             </div>
             <div className="evaluation-score__ring">
               <strong>{formatPercent(fixedAccuracy)}</strong>
@@ -2075,9 +2089,9 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
 
         <section className="evaluation-card">
           <div className="evaluation-card__title-row">
-            <h2>평가 이력</h2>
+            <h2>{tEvaluation(copy, "평가 이력")}</h2>
             <button type="button" className="studio-table-page__ghost" onClick={() => setDetailPanel("model")}>
-              평가정보 더보기
+              {tEvaluation(copy, "평가정보 더보기")}
             </button>
           </div>
           <div className="evaluation-history">
@@ -2125,19 +2139,19 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                 </div>
               </>
             ) : (
-              <div className="evaluation-history__empty">학습 이력이 없습니다.</div>
+              <div className="evaluation-history__empty">{tEvaluation(copy, "학습 이력이 없습니다.")}</div>
             )}
           </div>
           <div className="evaluation-history__summary">
-            <span>의도 <strong>{storedEvaluation.latest?.intent_count ?? intents.length}개</strong></span>
-            <span>학습문장 <strong>{storedEvaluation.latest?.training_utterance_count ?? trainingRows.length}개</strong></span>
+            <span>{tEvaluation(copy, "의도")} <strong>{storedEvaluation.latest?.intent_count ?? intents.length}</strong></span>
+            <span>{tEvaluation(copy, "학습문장")} <strong>{storedEvaluation.latest?.training_utterance_count ?? trainingRows.length}</strong></span>
             <span>
               <button
                 type="button"
                 className="evaluation-history__download"
                 onClick={() => downloadTextFile("training-snapshot.csv", buildTrainingSnapshotCsv(document))}
               >
-                학습 데이터 다운로드
+                {tEvaluation(copy, "학습 데이터 다운로드")}
               </button>
             </span>
           </div>
@@ -2146,10 +2160,10 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
         <section className="evaluation-card evaluation-card--wide evaluation-card--feature">
           <div className="evaluation-card__title-row">
             <h2>
-              학습문장 / Feature Balance
-              <EvaluationInfoTip text="의도별 학습문장 수와 분류에 영향을 주는 Feature 수를 비교합니다. 평균에서 크게 벗어나거나 두 값의 차이가 큰 의도는 데이터 편중 또는 표현 다양성 부족 가능성이 있으므로 학습문장과 사전을 함께 점검합니다." />
+              {tEvaluation(copy, "학습문장 / Feature Balance")}
+              <EvaluationInfoTip text={tEvaluation(copy, "의도별 학습문장 수와 분류에 영향을 주는 Feature 수를 비교합니다.")} />
             </h2>
-            <div className="evaluation-feature-toggle" role="group" aria-label="Feature Balance 보기">
+            <div className="evaluation-feature-toggle" role="group" aria-label={tEvaluation(copy, "Feature Balance 보기")}>
               <button
                 type="button"
                 className={featureBalanceMode === "abnormal" ? "is-active" : ""}
@@ -2197,7 +2211,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
               </div>
             ))}
             <div className="evaluation-balance__legend" aria-hidden="true">
-              <span><i />학습문장</span>
+              <span><i />{tEvaluation(copy, "학습문장")}</span>
               <span><b />Feature</span>
             </div>
           </div>
@@ -2207,27 +2221,27 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
           <div className="evaluation-card__title-row">
             <h2>
               Confusion Matrix
-              <EvaluationInfoTip text="정답 의도와 실제 예측 의도의 분포를 비교합니다. 대각선은 올바른 분류, 대각선 밖의 값은 혼동된 의도 쌍을 뜻합니다. 반복되는 혼동은 학습문장 중복, 표현 범위, Cut-off 설정을 함께 점검합니다." />
+              <EvaluationInfoTip text={tEvaluation(copy, "정답 의도와 실제 예측 의도의 분포를 비교합니다.")} />
             </h2>
             <button type="button" className="studio-table-page__ghost" onClick={() => setDetailPanel("intent")}>
-              상세 보기
+              {tEvaluation(copy, "상세 보기")}
             </button>
           </div>
           <div className="evaluation-matrix-wrap">
-            <span className="evaluation-matrix__y-label">예측 의도(Y)</span>
+            <span className="evaluation-matrix__y-label">{tEvaluation(copy, "예측 의도(Y)")}</span>
             {matrixMode === "disabled" ? (
               <div className="evaluation-matrix-unavailable">
-                의도 수가 300개 이상이면 Confusion Matrix 기능을 제공하지 않습니다.
+                {tEvaluation(copy, "의도 수가 300개 이상이면 Confusion Matrix 기능을 제공하지 않습니다.")}
               </div>
             ) : matrixMode === "preview" ? (
               <MatrixPreviewCanvas intents={intents} matrixCounts={matrixCounts} />
             ) : (
               <>
-                <div className="evaluation-matrix-controls" aria-label="Confusion Matrix 확대 축소">
+                <div className="evaluation-matrix-controls" aria-label={tEvaluation(copy, "Confusion Matrix 확대 축소")}>
                   <button type="button" onClick={() => setMatrixScale((current) => Math.max(1, Math.round((current - 0.25) * 100) / 100))}>-</button>
                   <span>{Math.round(matrixScale * 100)}%</span>
                   <button type="button" onClick={() => setMatrixScale((current) => Math.min(3, Math.round((current + 0.25) * 100) / 100))}>+</button>
-                  <button type="button" onClick={() => setMatrixScale(1)}>초기화</button>
+                  <button type="button" onClick={() => setMatrixScale(1)}>{tEvaluation(copy, "초기화")}</button>
                 </div>
                 <div className="evaluation-matrix-scroll">
                   <div
@@ -2244,7 +2258,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                           <span
                             key={`${expected.id}-${predicted.id}`}
                             className={expected.id === predicted.id ? "is-dark" : ""}
-                            aria-label={`${expected.name}에서 ${predicted.name}으로 분류된 건수 ${count}`}
+                            aria-label={`${expected.name} → ${predicted.name}: ${count}`}
                             style={{ opacity: count > 0 ? 1 : 0.22 }}
                           >
                             {count || ""}
@@ -2259,7 +2273,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                     <span key={value}>{value}</span>
                   ))}
                 </div>
-                <span className="evaluation-matrix__x-label">정답 의도(X)</span>
+                <span className="evaluation-matrix__x-label">{tEvaluation(copy, "정답 의도(X)")}</span>
               </>
             )}
           </div>
@@ -2273,16 +2287,16 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
             <header className="evaluation-detail-drawer__header">
               <strong>
                 {detailPanel === "bot"
-                  ? "봇 평가"
+                  ? copy.botEvaluation
                   : detailPanel === "model"
-                    ? "평가 확인"
+                    ? tEvaluation(copy, "평가 확인")
                     : detailPanel === "intent"
-                      ? "의도 상세 확인하기"
+                      ? tEvaluation(copy, "의도 상세 확인하기")
                       : detailPanel === "utterance"
-                        ? "학습문장 조정하기"
-                        : "봇 허브 의도 이해도 평가하기"}
+                        ? tEvaluation(copy, "학습문장 조정하기")
+                        : tEvaluation(copy, "봇 허브 의도 이해도 평가하기")}
               </strong>
-              <button type="button" onClick={() => setDetailPanel(null)} aria-label="닫기">×</button>
+              <button type="button" onClick={() => setDetailPanel(null)} aria-label={tEvaluation(copy, "닫기")}>×</button>
             </header>
 
             <div className="evaluation-detail-drawer__body">
@@ -2290,7 +2304,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                 <>
                   <div className="evaluation-upload">
                     <label className="studio-table-page__primary">
-                      {savingEvaluation ? "저장 중..." : "평가 데이터 업로드"}
+                      {savingEvaluation ? tEvaluation(copy, "저장 중...") : tEvaluation(copy, "평가 데이터 업로드")}
                       <input type="file" accept=".csv,text/csv" onChange={handleUploadEvaluation} disabled={savingEvaluation} />
                     </label>
                     <button
@@ -2298,7 +2312,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                       className="studio-table-page__ghost"
                       onClick={() => downloadTextFile("bot-evaluation-template.csv", buildEvaluationUploadTemplateCsv())}
                     >
-                      업로드 양식
+                      {tEvaluation(copy, "업로드 양식")}
                     </button>
                     <button
                       type="button"
@@ -2306,19 +2320,19 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                       onClick={() => displayedBotEvaluation && downloadTextFile("bot-evaluation-result.csv", buildEvaluationCsv(displayedBotEvaluation.rows))}
                       disabled={!displayedBotEvaluation}
                     >
-                      평가 결과 다운로드
+                      {tEvaluation(copy, "평가 결과 다운로드")}
                     </button>
                   </div>
                   <div className="evaluation-upload-format">
-                    <strong>업로드 파일 형식</strong>
-                    <p>CSV 첫 줄은 `문장,정답 의도` 또는 `정답 의도,문장`을 사용합니다. 결과 다운로드는 판정 방식에 따라 예측 의도와 점수 칸에 `Exacting Matching`, `룰`, 또는 ML 점수를 표시합니다.</p>
+                    <strong>{tEvaluation(copy, "업로드 파일 형식")}</strong>
+                    <p>{tEvaluation(copy, "CSV 업로드 형식은 호환 헤더를 사용합니다.")}</p>
                     <code>문장,정답 의도</code>
                     <code>사람이랑 통화할래요,상담사 전환 요청</code>
                     <code>결과: 문장,정답 의도,예측 의도,점수,후보 의도1,점수,후보 의도2,점수,후보 의도3,점수,Feature,결과</code>
                   </div>
                   <dl className="evaluation-kpi-list">
-                    <div><dt>파일</dt><dd>{displayedBotEvaluation?.fileName ?? "-"}</dd></div>
-                    <div><dt>건수</dt><dd>{displayedBotEvaluation?.rows.length ?? 0}</dd></div>
+                    <div><dt>{tEvaluation(copy, "파일")}</dt><dd>{displayedBotEvaluation?.fileName ?? "-"}</dd></div>
+                    <div><dt>{tEvaluation(copy, "건수")}</dt><dd>{displayedBotEvaluation?.rows.length ?? 0}</dd></div>
                       <div><dt>Accuracy</dt><dd>{formatPercent(botEvaluationAccuracy)}</dd></div>
                   </dl>
                 </>
@@ -2329,15 +2343,15 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                     <dl className="evaluation-kpi-list evaluation-kpi-list--compact">
                       <div><dt>Random</dt><dd>{formatPercent(randomAccuracy)}</dd></div>
                       <div><dt>Fixed</dt><dd>{formatPercent(fixedAccuracy)}</dd></div>
-                      <div><dt>차이</dt><dd>{evaluationGap != null ? `${(evaluationGap * 100).toFixed(2)}%` : "-"}</dd></div>
+                      <div><dt>{tEvaluation(copy, "차이")}</dt><dd>{evaluationGap != null ? `${(evaluationGap * 100).toFixed(2)}%` : "-"}</dd></div>
                       <div><dt>Precision</dt><dd>{formatPercent(macroPrecision)}</dd></div>
                       <div><dt>Recall</dt><dd>{formatPercent(macroRecall)}</dd></div>
                       <div><dt>F1</dt><dd>{formatPercent(macroF1)}</dd></div>
-                      <div><dt>의도</dt><dd>{storedEvaluation.latest?.intent_count ?? intents.length}</dd></div>
-                      <div><dt>T 문장</dt><dd>{storedEvaluation.latest?.training_utterance_count ?? trainingRows.length}</dd></div>
-                      <div><dt>V 문장</dt><dd>{storedEvaluation.latest?.validation_utterance_count ?? 0}</dd></div>
+                      <div><dt>{tEvaluation(copy, "의도")}</dt><dd>{storedEvaluation.latest?.intent_count ?? intents.length}</dd></div>
+                      <div><dt>{tEvaluation(copy, "T 문장")}</dt><dd>{storedEvaluation.latest?.training_utterance_count ?? trainingRows.length}</dd></div>
+                      <div><dt>{tEvaluation(copy, "V 문장")}</dt><dd>{storedEvaluation.latest?.validation_utterance_count ?? 0}</dd></div>
                     </dl>
-                  <p className="evaluation-card__note">저장된 평가 이력 저장소가 아직 없어 현재 버전 기준 평가 결과만 표시합니다.</p>
+                  <p className="evaluation-card__note">{tEvaluation(copy, "저장된 평가 이력 저장소가 아직 없어 현재 버전 기준 평가 결과만 표시합니다.")}</p>
                 </>
               ) : null}
 
@@ -2345,7 +2359,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                 <>
                   <div className="evaluation-card__title-row">
                     <div className="evaluation-filter-row">
-                      <input value={intentQuery} onChange={(event) => setIntentQuery(event.target.value)} placeholder="의도명을 검색하세요." />
+                      <input value={intentQuery} onChange={(event) => setIntentQuery(event.target.value)} placeholder={tEvaluation(copy, "의도명을 검색하세요.")} />
                       <select value={sortMode} onChange={(event) => setSortMode(event.target.value as "worst" | "best")}>
                         <option value="worst">Worst</option>
                         <option value="best">Best</option>
@@ -2357,7 +2371,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                       onClick={() => downloadTextFile("intent-detail.csv", buildIntentDetailCsv(selectedRows))}
                       disabled={selectedRows.length === 0}
                     >
-                      의도별 상세 데이터 다운로드
+                      {tEvaluation(copy, "의도별 상세 데이터 다운로드")}
                     </button>
                   </div>
                   <div className="evaluation-detail">
@@ -2375,27 +2389,27 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                       ))}
                     </aside>
                     <div className="evaluation-intent-detail">
-                      <div className="evaluation-detail-tabs" role="tablist" aria-label="의도 상세 보기">
+                      <div className="evaluation-detail-tabs" role="tablist" aria-label={tEvaluation(copy, "의도 상세 보기")}>
                         <button
                           type="button"
                           className={intentDetailTab === "training" ? "is-active" : ""}
                           onClick={() => setIntentDetailTab("training")}
                         >
-                          학습문장
+                          {tEvaluation(copy, "학습문장")}
                         </button>
                         <button
                           type="button"
                           className={intentDetailTab === "feature" ? "is-active" : ""}
                           onClick={() => setIntentDetailTab("feature")}
                         >
-                          학습문장 분류 결과
+                          {tEvaluation(copy, "학습문장 분류 결과")}
                         </button>
                         <button
                           type="button"
                           className={intentDetailTab === "test" ? "is-active" : ""}
                           onClick={() => setIntentDetailTab("test")}
                         >
-                          테스트
+                          {tEvaluation(copy, "테스트")}
                         </button>
                       </div>
 
@@ -2403,8 +2417,8 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                         <>
                           <div className="evaluation-result-table">
                             <div className="evaluation-result-table__header">
-                              <span>학습문장</span>
-                              <span>분류 결과</span>
+                              <span>{tEvaluation(copy, "학습문장")}</span>
+                              <span>{tEvaluation(copy, "분류 결과")}</span>
                               <span>Feature</span>
                             </div>
                             {selectedRows.map((row) => (
@@ -2423,7 +2437,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                         </>
                       ) : intentDetailTab === "feature" ? (
                         <>
-                          <div className="evaluation-classification-strip" aria-label="의도 분류 결과">
+                          <div className="evaluation-classification-strip" aria-label={tEvaluation(copy, "의도 분류 결과")}>
                             {selectedClassificationGroups.map((group) => {
                               const isCorrectGroup = group.dialogId === selectedIntent?.id;
                               const firstRow = group.rows[0];
@@ -2443,7 +2457,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                               className="evaluation-inline-more"
                               onClick={() => setShowIntentEvaluationInfo((current) => !current)}
                             >
-                              평가정보 더보기
+                              {tEvaluation(copy, "평가정보 더보기")}
                             </button>
                           </div>
                           {showIntentEvaluationInfo && selectedIntentMetric ? (
@@ -2455,7 +2469,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                             </dl>
                           ) : null}
                           <div className="evaluation-selection-row">
-                            <span>학습문장 선택</span>
+                            <span>{tEvaluation(copy, "학습문장 선택")}</span>
                             <select
                               value={selectedTrainingRow?.id ?? ""}
                               onChange={(event) => setSelectedTrainingRowId(event.target.value)}
@@ -2465,7 +2479,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                               ))}
                             </select>
                           </div>
-                          <div className="evaluation-score-strip" aria-label="정답 의도와 의도분류 Top 10">
+                          <div className="evaluation-score-strip" aria-label={tEvaluation(copy, "정답 의도와 의도분류 Top 10")}>
                             {trainingScores.map((score, index) => {
                               const isExpected = score.dialogId === selectedTrainingRow?.expectedDialogId;
                               const isTopCorrect = index === 0 && isExpected;
@@ -2482,10 +2496,10 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                             })}
                           </div>
                           <div className="evaluation-chart-caption">
-                            <span>빈도수와 희소성</span>
-                            <span>{selectedTrainingRow?.score != null && selectedTrainingRow.score >= scoreCutoff ? "✓ " : ""}Cut-Off Score 통과 <em>(단위 : Weight(빈도*희소성))</em></span>
+                            <span>{tEvaluation(copy, "빈도수와 희소성")}</span>
+                            <span>{selectedTrainingRow?.score != null && selectedTrainingRow.score >= scoreCutoff ? "✓ " : ""}{tEvaluation(copy, "Cut-Off Score 통과")} <em>({tEvaluation(copy, "단위 : Weight(빈도*희소성)")})</em></span>
                           </div>
-                          <FeatureDetailChart items={trainingFeatureChartItems} emptyText="선택한 학습문장의 Feature 정보가 없습니다." />
+                          <FeatureDetailChart items={trainingFeatureChartItems} emptyText={tEvaluation(copy, "선택한 학습문장의 Feature 정보가 없습니다.")} />
                           <div className="evaluation-feature-buttons" aria-label="Feature">
                             {selectedTrainingRow?.features.slice(0, 10).map((feature) => {
                               const active = selectedTrainingFeatureNames.includes(feature);
@@ -2508,7 +2522,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                         </>
                       ) : (
                         <div className="evaluation-test-box">
-                          <input value={testUtterance} onChange={(event) => setTestUtterance(event.target.value)} placeholder="테스트 문장을 입력하세요." />
+                          <input value={testUtterance} onChange={(event) => setTestUtterance(event.target.value)} placeholder={tEvaluation(copy, "테스트 문장을 입력하세요.")} />
                           <div className="evaluation-test-box__scores">
                             {testScores.map((score, index) => {
                               const passedCutoff = score.score >= scoreCutoff;
@@ -2523,10 +2537,10 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                             })}
                           </div>
                           <div className="evaluation-chart-caption">
-                            <span>테스트 내용의 빈도수와 희소성</span>
-                            <span>{testScores[0]?.score != null && testScores[0].score >= scoreCutoff ? "✓ " : ""}Cut-Off Score 통과 <em>(단위 : Weight(빈도*희소성))</em></span>
+                            <span>{tEvaluation(copy, "테스트 내용의 빈도수와 희소성")}</span>
+                            <span>{testScores[0]?.score != null && testScores[0].score >= scoreCutoff ? "✓ " : ""}{tEvaluation(copy, "Cut-Off Score 통과")} <em>({tEvaluation(copy, "단위 : Weight(빈도*희소성)")})</em></span>
                           </div>
-                          <FeatureDetailChart items={testFeatureChartItems} emptyText="테스트 문장을 입력하면 의도별 Score와 Feature 정보가 표시됩니다." />
+                          <FeatureDetailChart items={testFeatureChartItems} emptyText={tEvaluation(copy, "테스트 문장을 입력하면 의도별 Score와 Feature 정보가 표시됩니다.")} />
                           <div className="evaluation-feature-buttons" aria-label="Feature">
                             {testScores.map((score) => {
                               const active = selectedTestFeatureNames.includes(score.dialogName);
@@ -2555,19 +2569,19 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
 
               {detailPanel === "utterance" ? (
                 <>
-                  <p className="evaluation-card__note">{selectedIntent?.name ?? "의도"} 학습문장을 조정합니다.</p>
+                  <p className="evaluation-card__note">{selectedIntent?.name ?? tEvaluation(copy, "의도")} {tEvaluation(copy, "학습문장 조정하기")}</p>
                   <div className="evaluation-utterance-editor">
                     {utteranceDrafts.map((utterance, index) => (
                       <div key={`${selectedIntent?.id}-${index}`}>
                         <input value={utterance} onChange={(event) => handleReplaceUtterance(index, event.target.value)} />
-                        <button type="button" onClick={() => handleDeleteUtterance(index)}>삭제</button>
+                        <button type="button" onClick={() => handleDeleteUtterance(index)}>{tEvaluation(copy, "삭제")}</button>
                       </div>
                     ))}
                     <button type="button" className="studio-table-page__ghost" onClick={() => setUtteranceDrafts((current) => [...current, ""])}>
-                      추가
+                      {tEvaluation(copy, "추가")}
                     </button>
                     <button type="button" className="studio-table-page__primary" onClick={handleSaveUtterances} disabled={saving || !selectedIntent}>
-                      저장
+                      {tEvaluation(copy, "저장")}
                     </button>
                   </div>
                 </>
@@ -2577,7 +2591,7 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                 <>
                   <div className="evaluation-upload">
                     <label className={`studio-table-page__primary${isNaturalHub ? "" : " is-disabled"}`}>
-                      파일 선택
+                      {tEvaluation(copy, "파일 선택")}
                       <input type="file" accept=".csv,text/csv" onChange={handleUploadHubEvaluation} disabled={!isNaturalHub} />
                     </label>
                     <button
@@ -2586,13 +2600,13 @@ export function EvaluationPageClient({ botId: routeBotId, versionId }: Evaluatio
                       onClick={() => hubEvaluation && downloadTextFile("bot-hub-understanding-evaluation.csv", buildEvaluationCsv(hubEvaluation.rows))}
                       disabled={!hubEvaluation}
                     >
-                      결과 다운로드
+                      {tEvaluation(copy, "결과 다운로드")}
                     </button>
                   </div>
                   <p className="evaluation-card__note">
                     {isNaturalHub
-                      ? "UTF-8 CSV 파일을 업로드하면 현재 버전 NLU 모델 기준으로 의도 이해도를 평가합니다."
-                      : "봇 허브 의도 이해도 평가는 자연어형 봇 허브에서만 사용할 수 있습니다."}
+                      ? tEvaluation(copy, "UTF-8 CSV 파일을 업로드하면 현재 버전 NLU 모델 기준으로 의도 이해도를 평가합니다.")
+                      : tEvaluation(copy, "봇 허브 의도 이해도 평가는 자연어형 봇 허브에서만 사용할 수 있습니다.")}
                   </p>
                 </>
               ) : null}
