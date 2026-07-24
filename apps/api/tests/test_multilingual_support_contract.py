@@ -932,3 +932,13 @@ def test_evaluation_page_uses_seven_language_catalog_without_changing_csv_compat
     assert 'setErrorMessage("평가 데이터에서 학습문장과 의도명을 찾지 못했습니다.")' not in page_source
     assert 'const rows = [["의도명", "학습문장"]]' in page_source
     assert "satisfies Record<SupportedLanguage, EvaluationCatalog>" in catalog_source
+
+def test_version_management_page_uses_seven_language_catalog_without_changing_status_values() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/version-management-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/version-management.ts").read_text(encoding="utf-8")
+    assert "const copy = VERSION_MANAGEMENT_CATALOGS[uiLanguage]" in page_source
+    assert "getVersionManagementLabel(copy" in page_source
+    assert "copy.loadFailed" in page_source
+    assert 'selectedVersion.status === "active"' in page_source
+    assert '<strong>버전 관리</strong>' not in page_source
+    assert "satisfies Record<SupportedLanguage, VersionManagementCatalog>" in catalog_source
