@@ -308,16 +308,16 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
   function validateValueField(nextValue: string) {
     const normalizedValue = nextValue.trim();
     if (!normalizedValue) {
-      return "개체값을 입력해주세요.";
+      return copy.validation.valueRequired;
     }
     if (normalizedValue.length > 100) {
-      return "개체값은 100자 이하로 입력해주세요.";
+      return copy.validation.valueMaxLength;
     }
     const duplicated = existingRows.some(
       (item) => item.id !== target.row.id && item.value.trim() === normalizedValue,
     );
     if (duplicated) {
-      return "동일한 이름의 개체값이 등록되어 있습니다.";
+      return copy.validation.duplicateValue;
     }
     return "";
   }
@@ -325,40 +325,40 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
   function addDetail() {
     const normalizedValue = detailInput.trim();
     if (!normalizedValue) {
-      setDetailError(rowType === "P" ? "패턴을 입력해주세요." : "동의어를 입력해주세요.");
+      setDetailError(rowType === "P" ? copy.validation.patternRequired : copy.validation.synonymRequired);
       return;
     }
 
     const maxLength = rowType === "P" ? 256 : 100;
     if (normalizedValue.length > maxLength) {
-      setDetailError(rowType === "P" ? "패턴은 256자 이하로 입력해주세요." : "동의어는 100자 이하로 입력해주세요.");
+      setDetailError(rowType === "P" ? copy.validation.patternMaxLength : copy.validation.synonymMaxLength);
       return;
     }
 
     if (details.some((item) => item === normalizedValue)) {
-      setDetailError(rowType === "P" ? "동일한 패턴이 등록되어 있습니다." : "동일한 이름의 동의어가 등록되어 있습니다.");
+      setDetailError(rowType === "P" ? copy.validation.duplicatePattern : copy.validation.duplicateSynonym);
       return;
     }
 
     if (rowType === "P") {
       const regexResult = tryCreateRegex(normalizedValue, copy.validation.invalidRegex);
       if (typeof regexResult === "string") {
-        setDetailError(`'${normalizedValue}' 정규식이 올바르지 않습니다. ${regexResult}`);
+        setDetailError(formatEntityEditorText(copy.validation.invalidRegexWithReason, { value: normalizedValue, reason: regexResult }));
         setPatternSyntaxState({
           tone: "error",
-          message: `정규식 문법 오류: ${regexResult}`,
+          message: formatEntityEditorText(copy.validation.regexSyntaxError, { reason: regexResult }),
         });
         return;
       }
 
       if (details.length >= 5) {
-        setDetailError("패턴은 최대 5개까지 등록할 수 있습니다.");
+        setDetailError(copy.validation.maxPatterns);
         return;
       }
 
       setPatternSyntaxState({
         tone: "success",
-        message: "등록 가능한 정규식입니다.",
+        message: copy.validRegex,
       });
     }
 
@@ -378,14 +378,14 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
   function runPatternSyntaxCheck() {
     const normalizedValue = detailInput.trim();
     if (!normalizedValue) {
-      setDetailError("확인할 패턴을 입력해주세요.");
+      setDetailError(copy.validation.patternCheckRequired);
       setPatternSyntaxState(null);
       return;
     }
 
     const regexResult = tryCreateRegex(normalizedValue, copy.validation.invalidRegex);
     if (typeof regexResult === "string") {
-      setDetailError(`'${normalizedValue}' 정규식이 올바르지 않습니다. ${regexResult}`);
+      setDetailError(formatEntityEditorText(copy.validation.invalidRegexWithReason, { value: normalizedValue, reason: regexResult }));
       setPatternSyntaxState({
         tone: "error",
         message: regexResult,
@@ -396,7 +396,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
     setDetailError("");
     setPatternSyntaxState({
       tone: "success",
-      message: "등록 가능한 정규식입니다.",
+      message: copy.validRegex,
     });
   }
 
@@ -404,7 +404,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
     if (details.length === 0) {
       setPatternTestState({
         tone: "error",
-        message: "먼저 패턴을 1개 이상 등록해주세요.",
+        message: copy.validation.patternRequiredBeforeTest,
       });
       return;
     }
@@ -412,7 +412,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
     if (!patternTestText.trim()) {
       setPatternTestState({
         tone: "error",
-        message: "테스트할 문장을 입력해주세요.",
+        message: copy.validation.testTextRequired,
       });
       return;
     }
@@ -429,11 +429,11 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
       matched.length > 0
         ? {
             tone: "success",
-            message: `일치하는 패턴: ${matched.join(", ")}`,
+            message: formatEntityEditorText(copy.matchedPatterns, { patterns: matched.join(", ") }),
           }
         : {
             tone: "error",
-            message: "일치하는 패턴이 없습니다.",
+            message: copy.noMatchedPatterns,
           },
     );
   }
@@ -448,12 +448,12 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
     const normalizedDetails = normalizeWordList(details);
     if (rowType === "P") {
       if (normalizedDetails.length === 0) {
-        setDetailError("패턴을 1개 이상 등록해주세요.");
+        setDetailError(copy.validation.atLeastOnePattern);
         return;
       }
       const invalidPattern = normalizedDetails.find((pattern) => typeof tryCreateRegex(pattern, copy.validation.invalidRegex) === "string");
       if (invalidPattern) {
-        setDetailError(`'${invalidPattern}' 정규식이 올바르지 않습니다.`);
+        setDetailError(formatEntityEditorText(copy.validation.invalidPattern, { value: invalidPattern }));
         return;
       }
     }
@@ -468,7 +468,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
     });
   }
 
-  const dialogTitle = target.mode === "new" ? "개체값 생성" : "개체값 수정";
+  const dialogTitle = target.mode === "new" ? copy.valueCreateTitle : copy.valueEditTitle;
 
   return (
     <div className="entity-editor-backdrop" role="presentation">
@@ -503,7 +503,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
             </label>
 
             <div className="entity-value-dialog__type-row">
-              <strong>유형</strong>
+              <strong>{copy.type}</strong>
               <label>
                 <input
                   type="radio"
@@ -518,7 +518,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
                     setPatternTestState(null);
                   }}
                 />
-                동의어
+                {copy.synonym}
               </label>
               <label>
                 <input
@@ -534,7 +534,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
                     setPatternTestState(null);
                   }}
                 />
-                패턴
+                {copy.pattern}
               </label>
             </div>
           </div>
@@ -543,13 +543,13 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
             <section className="entity-value-dialog__section">
               <div className="dictionary-editor-dialog__controls">
                 <label className="dictionary-editor-dialog__field">
-                  <span>동의어 검색</span>
+                  <span>{copy.synonymSearch}</span>
                   <input
                     type="text"
                     className="dictionary-editor-dialog__input"
                     value={detailSearch}
                     onChange={(event) => setDetailSearch(event.target.value)}
-                    placeholder="동의어를 검색하세요."
+                    placeholder={copy.synonymSearchPlaceholder}
                   />
                 </label>
 
@@ -573,7 +573,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
                       }}
                     />
                     <button type="button" className="secondary-action" onClick={addDetail}>
-                      추가
+                      {copy.add}
                     </button>
                   </div>
                   <div className="entity-value-dialog__meta">
@@ -585,7 +585,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
 
               <div className="entity-detail__section-header">
                 <div>
-                  <strong>동의어 목록</strong>
+                  <strong>{copy.synonymList}</strong>
                 </div>
                 <button
                   type="button"
@@ -593,7 +593,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
                   disabled={selectedDetails.length === 0}
                   onClick={deleteSelectedDetails}
                 >
-                  삭제
+                  {copy.delete}
                 </button>
               </div>
 
@@ -632,7 +632,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
 
                 {visibleDetails.length === 0 ? (
                   <div className="entity-detail__empty">
-                    {detailSearch.trim() ? "검색 조건에 맞는 동의어가 없습니다." : "등록된 동의어가 없습니다."}
+                    {detailSearch.trim() ? copy.noSynonymSearchResults : copy.emptySynonyms}
                   </div>
                 ) : null}
               </div>
@@ -641,7 +641,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
             <section className="entity-value-dialog__section">
               <label className="dictionary-editor-dialog__field">
                 <span>
-                  패턴 <em>*</em>
+                  {copy.pattern} <em>*</em>
                 </span>
                 <div className="dictionary-editor-dialog__add-row">
                   <input
@@ -673,7 +673,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
 
               <div className="entity-value-dialog__button-row">
                 <button type="button" className="secondary-action" onClick={runPatternSyntaxCheck}>
-                  정규식 확인
+                  {copy.regexCheck}
                 </button>
               </div>
               {patternSyntaxState ? (
@@ -688,7 +688,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
 
               <div className="entity-detail__section-header">
                 <div>
-                  <strong>패턴 목록</strong>
+                  <strong>{copy.patternList}</strong>
                 </div>
                 <button
                   type="button"
@@ -696,7 +696,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
                   disabled={selectedDetails.length === 0}
                   onClick={deleteSelectedDetails}
                 >
-                  삭제
+                  {copy.delete}
                 </button>
               </div>
 
@@ -711,7 +711,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
                       }
                     />
                   </span>
-                  <span>패턴</span>
+                  <span>{copy.pattern}</span>
                 </div>
 
                 {details.map((detail) => (
@@ -733,21 +733,21 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
                   </div>
                 ))}
 
-                {details.length === 0 ? <div className="entity-detail__empty">등록된 패턴이 없습니다.</div> : null}
+                {details.length === 0 ? <div className="entity-detail__empty">{copy.emptyPatterns}</div> : null}
               </div>
 
               <div className="entity-value-dialog__pattern-test">
-                <strong>정규식 테스트</strong>
+                <strong>{copy.regexTest}</strong>
                 <div className="entity-value-dialog__pattern-test-row">
                   <input
                     type="text"
                     className="dictionary-editor-dialog__input"
                     value={patternTestText}
                     onChange={(event) => setPatternTestText(event.target.value)}
-                    placeholder="테스트할 문장을 입력하세요."
+                    placeholder={copy.regexTestPlaceholder}
                   />
                   <button type="button" className="secondary-action" onClick={runPatternTest}>
-                    테스트
+                    {copy.test}
                   </button>
                 </div>
                 {patternTestState ? (
@@ -769,7 +769,7 @@ function EntityValueItemDialog({ existingRows, copy, target, onClose, onSave }: 
             {copy.cancel}
           </button>
           <button type="button" className="primary-action" onClick={handleSave}>
-            저장
+            {copy.save}
           </button>
         </div>
       </div>
