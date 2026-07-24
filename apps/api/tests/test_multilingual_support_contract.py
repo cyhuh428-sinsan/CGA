@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -1135,16 +1136,22 @@ def test_studio_page_native_catalog_covers_every_korean_source_label() -> None:
 
     catalog_source = catalog_path.read_text(encoding="utf-8")
     studio_source = (ROOT_DIR / "apps/web/lib/i18n/studio-pages.ts").read_text(encoding="utf-8")
-    korean_labels = set(re.findall(r'^\s*"([^"]*[가-힣][^"]*)"\s*:', studio_source, re.MULTILINE))
-    assert len(korean_labels) >= 300
+    direct_korean_labels = set(re.findall(r'"([^"]*[가-힣][^"]*)"\s*:', studio_source))
+    assert len(direct_korean_labels) >= 200
 
+    baseline_keys: set[str] | None = None
     for language in ("zh-CN", "ja", "vi", "fr", "de"):
         marker = f'  "{language}": {{'
         assert marker in catalog_source
         block = catalog_source.split(marker, 1)[1].split("\n  },", 1)[0]
-        translated = dict(re.findall(r'^\s*"((?:[^"\\\\]|\\\\.)*)"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"', block, re.MULTILINE))
-        assert korean_labels <= translated.keys(), language
+        translated = dict(re.findall(r'^\s*"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"', block, re.MULTILINE))
+        assert len(translated) >= 365, language
+        assert direct_korean_labels <= translated.keys(), language
         assert all(value.strip() and not re.search(r"[가-힣]", value) for value in translated.values()), language
+        if baseline_keys is None:
+            baseline_keys = set(translated)
+        else:
+            assert set(translated) == baseline_keys, language
 
     assert "STUDIO_PAGE_COMPLETE_NATIVE" in studio_source
     assert '...STUDIO_PAGE_COMPLETE_NATIVE["zh-CN"]' in studio_source
