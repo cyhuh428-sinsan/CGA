@@ -21,11 +21,13 @@ def test_admin_menu_omits_operations_dashboard() -> None:
 
 def test_operations_menu_routes_db_dashboard_to_admin_screen() -> None:
     studio_rail = _read("apps/web/components/studio-rail.tsx")
+    navigation = _read("apps/web/lib/i18n/shell-navigation.ts")
 
-    assert '{ code: "DB", label: "DB 운영 대시보드", href: "/admin/operations-dashboard" },' in studio_rail
+    assert '{ code: "DB", label: navigation.dbDashboard, href: "/admin/operations-dashboard" },' in studio_rail
     assert 'const isDbOperationsDashboardPath = pathname === "/admin/operations-dashboard";' in studio_rail
     assert 'const isAdminPath = pathname.startsWith("/admin") && !isDbOperationsDashboardPath;' in studio_rail
     assert "isDbOperationsDashboardPath ||" in studio_rail
+    assert 'dbDashboard: "DB 운영 대시보드"' in navigation
 
 
 def test_operations_role_keeps_dashboard_access_after_menu_removal() -> None:
