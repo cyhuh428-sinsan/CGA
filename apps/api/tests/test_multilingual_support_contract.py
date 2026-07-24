@@ -554,3 +554,14 @@ def test_remaining_admin_list_ui_uses_selected_language() -> None:
     assert "selectItem: string" in common_source
     assert 'Intl.DateTimeFormat("ko-KR"' not in login_source
     assert 'Intl.DateTimeFormat("ko-KR"' not in messages_source
+
+
+def test_template_renderer_defaults_follow_selected_language() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/templates/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-template-defaults.ts").read_text(encoding="utf-8")
+    assert "ADMIN_TEMPLATE_DEFAULT_CATALOGS[uiLanguage]" in page_source
+    assert "rendererDefaults" in page_source
+    assert 'description: "기본 텍스트 메시지"' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, AdminTemplateDefaultCatalog>" in catalog_source
