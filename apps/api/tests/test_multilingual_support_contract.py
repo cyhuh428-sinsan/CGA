@@ -431,7 +431,9 @@ def test_operations_dashboard_shell_uses_seven_language_catalog() -> None:
 
 def test_operations_dashboard_actions_use_localized_messages() -> None:
     page_source = (ROOT_DIR / "apps/web/app/admin/operations-dashboard/page.tsx").read_text(encoding="utf-8")
-    assert "copy.forceRelease" in page_source
-    assert "copy.cachePurgeConfirm" in page_source
-    assert "copy.dbBackfillConfirm" in page_source
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-operations-actions.ts").read_text(encoding="utf-8")
+    assert "actionCopy.forceRelease" in page_source
+    assert "actionCopy.cachePurgeConfirm" in page_source
+    assert "actionCopy.dbBackfillConfirm" in page_source
     assert "formatOperationsText" in page_source
+    assert "satisfies Record<SupportedLanguage,AdminOperationsActionCatalog>" in catalog_source
