@@ -638,3 +638,14 @@ def test_dictionary_editor_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, DictionaryEditorCatalog>" in catalog_source
+
+def test_entity_name_dialog_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/entity-name-dialog.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/entity-name-dialog.ts").read_text(encoding="utf-8")
+    assert "ENTITY_NAME_DIALOG_CATALOGS[uiLanguage]" in page_source
+    assert "copy.validation.required" in page_source
+    assert "copy.createTitle" in page_source
+    assert '"개체명 추가"' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, EntityNameDialogCatalog>" in catalog_source
