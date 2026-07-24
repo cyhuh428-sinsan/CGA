@@ -16,7 +16,7 @@ import {
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
 import { ADMIN_CHANNEL_CATALOGS } from "@/lib/i18n/admin-channels";
-import { ADMIN_CHANNEL_DIALOG_CATALOGS, CHANNEL_DELETE_LABELS, formatChannelDialogText, type AdminChannelDialogCatalog } from "@/lib/i18n/admin-channel-dialog";
+import { ADMIN_CHANNEL_DIALOG_CATALOGS, CHANNEL_DELETE_LABELS, CHANNEL_PAGE_MESSAGES, formatChannelDialogText, type AdminChannelDialogCatalog } from "@/lib/i18n/admin-channel-dialog";
 import { SUPPORTED_LANGUAGES } from "@/lib/language";
 import {
   LIST_PAGE_SIZE_OPTIONS,
@@ -138,6 +138,7 @@ export default function AdminChannelsPage() {
   const { language: uiLanguage } = useI18n();
   const copy = ADMIN_CHANNEL_CATALOGS[uiLanguage];
   const dialogCopy = ADMIN_CHANNEL_DIALOG_CATALOGS[uiLanguage];
+  const pageMessages = CHANNEL_PAGE_MESSAGES[uiLanguage];
   const locale = SUPPORTED_LANGUAGES.find((item) => item.code === uiLanguage)?.intlLocale ?? "ko-KR";
   const [token, setToken] = useState("");
   const [channels, setChannels] = useState<AdminChannelItem[]>([]);
@@ -175,7 +176,7 @@ export default function AdminChannelsPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(pageMessages.loginRequired);
       return;
     }
     setToken(session.access_token);
@@ -200,7 +201,7 @@ export default function AdminChannelsPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "채널 목록을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : pageMessages.loadFailed);
         }
       })
       .finally(() => {
@@ -212,7 +213,7 @@ export default function AdminChannelsPage() {
     return () => {
       ignore = true;
     };
-  }, [appliedQuery, appliedStatus, token]);
+  }, [appliedQuery, appliedStatus, pageMessages.loadFailed, token]);
 
   function applySearch() {
     setAppliedQuery(query.trim());
