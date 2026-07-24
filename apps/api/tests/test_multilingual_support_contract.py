@@ -897,3 +897,15 @@ def test_page_shell_and_utility_routes_use_seven_language_catalog() -> None:
     assert 'title="라이선스 정보 조회"' not in license_source
     assert 'title="테넌트 전환"' not in tenant_source
     assert "satisfies Record<SupportedLanguage, UtilityPageCatalog>" in catalog_source
+
+def test_analysis_page_uses_seven_language_catalog_without_changing_filter_keys() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/analysis-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/analysis.ts").read_text(encoding="utf-8")
+    assert "const copy = ANALYSIS_CATALOGS[uiLanguage]" in page_source
+    assert "getAnalysisMethodLabel(copy" in page_source
+    assert "copy.responseOverviewTitle" in page_source
+    assert "copy.selectedDateHistory" in page_source
+    assert '<h3>전체 응답률 / 응답률 Top 3</h3>' not in page_source
+    assert 'error.message : "분석 정보를 불러오지 못했습니다."' not in page_source
+    assert 'value="제외/무시"' in page_source
+    assert "satisfies Record<SupportedLanguage, AnalysisCatalog>" in catalog_source
