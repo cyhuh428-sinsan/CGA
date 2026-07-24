@@ -2492,7 +2492,7 @@ export function IntentConfigurePage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "구성 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : inputCopy.loadFailed);
         }
       })
       .finally(() => {
