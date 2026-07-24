@@ -415,3 +415,15 @@ def test_audit_log_admin_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'"{language}":' in catalog_source or f"{language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage,AdminAuditLogCatalog>" in catalog_source
+
+
+def test_operations_dashboard_shell_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/operations-dashboard/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-operations-dashboard.ts").read_text(encoding="utf-8")
+    assert "ADMIN_OPERATIONS_DASHBOARD_CATALOGS[uiLanguage]" in page_source
+    assert "copy.title" in page_source
+    assert "copy.cacheStatus" in page_source
+    assert "copy.systemErrorsTitle" in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'"{language}":' in catalog_source or f"{language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage,AdminOperationsDashboardCatalog>" in catalog_source
