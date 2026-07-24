@@ -11,6 +11,8 @@ import {
 import { SortHeaderLabel } from "@/components/sort-header-label";
 import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { loadAuthSession } from "@/lib/auth";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 type SortKey = "title" | "priority" | "userMessages" | "botMessages" | "updatedAt" | "updatedBy";
 type MessageKind = "user" | "bot";
@@ -102,6 +104,8 @@ function messageCount(value: unknown, fallback = "") {
 }
 
 export function SmalltalkSettingsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <BotSettingsShell activeMenu="smalltalk">
       {({ versionSettings, saveVersionSettings, setErrorMessage, setMessage }) => {
@@ -401,7 +405,7 @@ export function SmalltalkSettingsPage() {
         return (
           <>
             <section className="bot-settings-section">
-              <h2>스몰토크</h2>
+              <h2>{getStudioPageLabel(copy,"스몰토크")}</h2>
 
               <div className="settings-toolbar settings-toolbar--between">
                 <div className="settings-search-inline">
@@ -413,9 +417,9 @@ export function SmalltalkSettingsPage() {
                     className="settings-search-inline__input"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="스몰토크 이름을 검색하세요."
+                    placeholder={getStudioPageLabel(copy,"스몰토크 이름을 검색하세요.")}
                   />
-                  <button type="button" className="settings-search-inline__filter" aria-label="필터">
+                  <button type="button" className="settings-search-inline__filter" aria-label={getStudioPageLabel(copy,"필터")}>
                     ▾
                   </button>
                 </div>
@@ -426,9 +430,7 @@ export function SmalltalkSettingsPage() {
                     className="primary-action"
                     disabled={saving}
                     onClick={() => openEditor(createSmalltalkItem())}
-                  >
-                    + 스몰토크 추가
-                  </button>
+                  >{getStudioPageLabel(copy,"+ 스몰토크 추가")}</button>
                   <div className="settings-overflow" ref={moreMenuRef}>
                     <button
                       type="button"
@@ -443,28 +445,24 @@ export function SmalltalkSettingsPage() {
                         <span />
                         <span />
                       </span>
-                      <span className="sr-only">더보기</span>
+                      <span className="sr-only">{getStudioPageLabel(copy,"더보기")}</span>
                     </button>
                     {moreMenuOpen ? (
-                      <div className="settings-overflow__menu" role="menu" aria-label="파일 메뉴">
+                      <div className="settings-overflow__menu" role="menu" aria-label={getStudioPageLabel(copy,"파일 메뉴")}>
                         <button
                           type="button"
                           role="menuitem"
                           className="settings-overflow__item"
                           disabled={saving}
                           onClick={() => fileInputRef.current?.click()}
-                        >
-                          파일 업로드
-                        </button>
+                        >{getStudioPageLabel(copy,"파일 업로드")}</button>
                         <button
                           type="button"
                           role="menuitem"
                           className="settings-overflow__item"
                           disabled={saving}
                           onClick={handleDownload}
-                        >
-                          파일 다운로드
-                        </button>
+                        >{getStudioPageLabel(copy,"파일 다운로드")}</button>
                       </div>
                     ) : null}
                   </div>
@@ -503,9 +501,7 @@ export function SmalltalkSettingsPage() {
                   className="secondary-action secondary-action--danger"
                   disabled={saving || selectedIds.length === 0}
                   onClick={() => void handleDeleteSelected()}
-                >
-                  삭제
-                </button>
+                >{getStudioPageLabel(copy,"삭제")}</button>
               </div>
 
               <div className="settings-list-card">
@@ -545,7 +541,7 @@ export function SmalltalkSettingsPage() {
                 </div>
 
                 {pagedItems.length === 0 ? (
-                  <p className="bot-settings-page__loading">등록된 스몰토크가 없습니다.</p>
+                  <p className="bot-settings-page__loading">{getStudioPageLabel(copy,"등록된 스몰토크가 없습니다.")}</p>
                 ) : null}
 
                 {pagedItems.map((item) => {
@@ -609,19 +605,19 @@ export function SmalltalkSettingsPage() {
                     className="settings-dialog settings-dialog--smalltalk"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="스몰토크 상세"
+                    aria-label={getStudioPageLabel(copy,"스몰토크 상세")}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="settings-dialog__header">
                       <strong>{form.items.some((item) => item.id === editor.id) ? "스몰토크 수정" : "스몰토크 추가"}</strong>
-                      <button type="button" className="settings-dialog__close" onClick={() => setEditorOpen(false)} aria-label="닫기">
+                      <button type="button" className="settings-dialog__close" onClick={() => setEditorOpen(false)} aria-label={getStudioPageLabel(copy,"닫기")}>
                         ×
                       </button>
                     </div>
                     <div className="settings-dialog__body settings-dialog__body--form">
                       <div className="settings-smalltalk-meta-grid">
                         <label className="settings-smalltalk-field">
-                          <span>스몰토크 이름*</span>
+                          <span>{getStudioPageLabel(copy,"스몰토크 이름*")}</span>
                           <span>
                             <input
                               type="text"
@@ -655,19 +651,19 @@ export function SmalltalkSettingsPage() {
 
                         <div className="settings-smalltalk-meta">
                           <span>
-                            <strong>등록자</strong>
+                            <strong>{getStudioPageLabel(copy,"등록자")}</strong>
                             {editor.createdBy || "-"}
                           </span>
                           <span>
-                            <strong>등록일자</strong>
+                            <strong>{getStudioPageLabel(copy,"등록일자")}</strong>
                             {formatDateTime(editor.createdAt)}
                           </span>
                           <span>
-                            <strong>최종수정자</strong>
+                            <strong>{getStudioPageLabel(copy,"최종수정자")}</strong>
                             {editor.updatedBy || "-"}
                           </span>
                           <span>
-                            <strong>최종수정일시</strong>
+                            <strong>{getStudioPageLabel(copy,"최종수정일시")}</strong>
                             {formatDateTime(editor.updatedAt)}
                           </span>
                         </div>
@@ -685,9 +681,7 @@ export function SmalltalkSettingsPage() {
                               className="secondary-action"
                               disabled={selectedUserMessageIndexes.length === 0}
                               onClick={removeSelectedUserMessages}
-                            >
-                              삭제
-                            </button>
+                            >{getStudioPageLabel(copy,"삭제")}</button>
                           </div>
                           <div className="settings-message-input-row">
                             <input
@@ -700,9 +694,9 @@ export function SmalltalkSettingsPage() {
                                   addUserMessage();
                                 }
                               }}
-                              placeholder="사용자 메시지가 될 수 있는 문장을 입력하세요."
+                              placeholder={getStudioPageLabel(copy,"사용자 메시지가 될 수 있는 문장을 입력하세요.")}
                             />
-                            <button type="button" onClick={addUserMessage} aria-label="사용자 메시지 추가">
+                            <button type="button" onClick={addUserMessage} aria-label={getStudioPageLabel(copy,"사용자 메시지 추가")}>
                               +
                             </button>
                           </div>
@@ -716,10 +710,10 @@ export function SmalltalkSettingsPage() {
                                 }
                                 aria-label="사용자 메시지 전체 선택"
                               />
-                              <span>사용자 메시지</span>
+                              <span>{getStudioPageLabel(copy,"사용자 메시지")}</span>
                             </div>
                             {editorUserMessages.length === 0 ? (
-                              <p className="settings-message-list__empty">등록된 사용자 메시지가 없습니다.</p>
+                              <p className="settings-message-list__empty">{getStudioPageLabel(copy,"등록된 사용자 메시지가 없습니다.")}</p>
                             ) : null}
                             {editorUserMessages.map((message, index) => (
                               <label key={`${message}-${index}`} className="settings-message-list__row">
@@ -745,9 +739,7 @@ export function SmalltalkSettingsPage() {
                               className="secondary-action"
                               disabled={selectedBotMessageIndexes.length === 0}
                               onClick={removeSelectedBotMessages}
-                            >
-                              삭제
-                            </button>
+                            >{getStudioPageLabel(copy,"삭제")}</button>
                           </div>
                           <div className="settings-message-input-row">
                             <input
@@ -760,9 +752,9 @@ export function SmalltalkSettingsPage() {
                                   addBotMessage();
                                 }
                               }}
-                              placeholder="봇 메시지가 될 수 있는 문장을 입력하십시오. 메시지는 사용자에게 무작위로 표시됩니다."
+                              placeholder={getStudioPageLabel(copy,"봇 메시지가 될 수 있는 문장을 입력하십시오. 메시지는 사용자에게 무작위로 표시됩니다.")}
                             />
-                            <button type="button" onClick={addBotMessage} aria-label="봇 메시지 추가">
+                            <button type="button" onClick={addBotMessage} aria-label={getStudioPageLabel(copy,"봇 메시지 추가")}>
                               +
                             </button>
                           </div>
@@ -776,10 +768,10 @@ export function SmalltalkSettingsPage() {
                                 }
                                 aria-label="봇 메시지 전체 선택"
                               />
-                              <span>봇 메시지</span>
+                              <span>{getStudioPageLabel(copy,"봇 메시지")}</span>
                             </div>
                             {editorBotMessages.length === 0 ? (
-                              <p className="settings-message-list__empty">등록된 봇 메시지가 없습니다.</p>
+                              <p className="settings-message-list__empty">{getStudioPageLabel(copy,"등록된 봇 메시지가 없습니다.")}</p>
                             ) : null}
                             {editorBotMessages.map((message, index) => (
                               <label key={`${message}-${index}`} className="settings-message-list__row">
@@ -796,9 +788,7 @@ export function SmalltalkSettingsPage() {
                       </div>
                     </div>
                     <div className="settings-dialog__footer">
-                      <button type="button" className="secondary-action" onClick={() => setEditorOpen(false)}>
-                        취소
-                      </button>
+                      <button type="button" className="secondary-action" onClick={() => setEditorOpen(false)}>{getStudioPageLabel(copy,"취소")}</button>
                       <button type="button" className="primary-action" disabled={saving} onClick={() => void handleReflectEditor()}>
                         {saving ? "저장 중..." : "확인"}
                       </button>

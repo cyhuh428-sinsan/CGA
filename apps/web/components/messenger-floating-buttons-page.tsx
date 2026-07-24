@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { type FloatingButtonConfig } from "@/lib/bot-settings";
 import { BotSettingsShell } from "@/components/bot-settings-shell";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 function createEmptyFloatingButton(): FloatingButtonConfig {
   return {
@@ -17,6 +19,8 @@ function createEmptyFloatingButton(): FloatingButtonConfig {
 }
 
 export function MessengerFloatingButtonsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <BotSettingsShell activeMenu="floating-buttons">
       {({ mainHref, versionSettings, saveVersionSettings, setErrorMessage, setMessage }) => {
@@ -131,11 +135,9 @@ export function MessengerFloatingButtonsPage() {
         return (
           <>
             <section className="bot-settings-section">
-              <h2>플로팅 버튼</h2>
+              <h2>{getStudioPageLabel(copy,"플로팅 버튼")}</h2>
               <div className="settings-toolbar">
-                <button type="button" className="secondary-action" onClick={handleAddNew}>
-                  + 플로팅 버튼 추가
-                </button>
+                <button type="button" className="secondary-action" onClick={handleAddNew}>{getStudioPageLabel(copy,"+ 플로팅 버튼 추가")}</button>
                 <div className="settings-toolbar__spacer" />
                 <button type="button" className="secondary-action" disabled={!canMoveUp} onClick={() => moveSelected(-1)}>
                   ↑
@@ -148,13 +150,13 @@ export function MessengerFloatingButtonsPage() {
               <div className="settings-master-detail">
                 <div className="settings-list-card">
                   <div className="settings-list-card__header settings-list-card__header--four">
-                    <span>버튼명</span>
-                    <span>연결 유형</span>
-                    <span>값</span>
-                    <span>사용</span>
+                    <span>{getStudioPageLabel(copy,"버튼명")}</span>
+                    <span>{getStudioPageLabel(copy,"연결 유형")}</span>
+                    <span>{getStudioPageLabel(copy,"값")}</span>
+                    <span>{getStudioPageLabel(copy,"사용")}</span>
                   </div>
 
-                  {items.length === 0 ? <p className="bot-settings-page__loading">등록된 플로팅 버튼이 없습니다.</p> : null}
+                  {items.length === 0 ? <p className="bot-settings-page__loading">{getStudioPageLabel(copy,"등록된 플로팅 버튼이 없습니다.")}</p> : null}
 
                   {items.map((item) => (
                     <button
@@ -184,10 +186,10 @@ export function MessengerFloatingButtonsPage() {
                 </div>
 
                 <div className="settings-detail-card">
-                  <h3>플로팅 버튼 상세</h3>
+                  <h3>{getStudioPageLabel(copy,"플로팅 버튼 상세")}</h3>
                   <div className="settings-form-grid settings-form-grid--compact">
                     <label className="settings-form-card">
-                      <span>버튼명</span>
+                      <span>{getStudioPageLabel(copy,"버튼명")}</span>
                       <input
                         type="text"
                         className="bot-settings-card__input"
@@ -244,23 +246,19 @@ export function MessengerFloatingButtonsPage() {
                           }))
                         }
                       />
-                      <span>사용 여부</span>
+                      <span>{getStudioPageLabel(copy,"사용 여부")}</span>
                     </label>
                   </div>
 
                   <div className="settings-detail-card__actions">
-                    <button type="button" className="secondary-action" onClick={handleSaveItem}>
-                      목록에 반영
-                    </button>
+                    <button type="button" className="secondary-action" onClick={handleSaveItem}>{getStudioPageLabel(copy,"목록에 반영")}</button>
                   </div>
                 </div>
               </div>
             </section>
 
             <div className="bot-settings-page__footer">
-              <Link href={mainHref} className="secondary-action">
-                메인 화면으로
-              </Link>
+              <Link href={mainHref} className="secondary-action">{getStudioPageLabel(copy,"메인 화면으로")}</Link>
               <button type="button" className="primary-action" disabled={saving} onClick={handlePersist}>
                 {saving ? "저장 중..." : "저장"}
               </button>

@@ -7,6 +7,8 @@ import { type MessageItemConfig, type MessageSettingsConfig } from "@/lib/bot-se
 import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { getBotDialogs } from "@/lib/dialog-assets";
 import { type VersionDialogAsset } from "@/lib/version-document";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 const MESSAGE_HELP: Record<string, string> = {
   "첫 인사말": "사용자와 대화를 시작하면서 전달되는 최초 메시지입니다.",
@@ -287,6 +289,8 @@ function ModulePickerDialog({
 }
 
 export function ConversationMessageSettingsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <BotSettingsShell activeMenu="messages">
       {({ bot, mainHref, versionSettings, saveVersionSettings, setErrorMessage, setMessage }) => {
@@ -330,22 +334,20 @@ export function ConversationMessageSettingsPage() {
         return (
           <>
             <div className="bot-settings-page__top-actions">
-              <Link href={mainHref} className="secondary-action">
-                취소
-              </Link>
+              <Link href={mainHref} className="secondary-action">{getStudioPageLabel(copy,"취소")}</Link>
               <button type="button" className="primary-action" disabled={saving} onClick={handleSave}>
                 {saving ? "저장 중..." : "저장"}
               </button>
             </div>
 
             <MessageSection
-              title="기본 메시지(4)"
+              title={getStudioPageLabel(copy,"기본 메시지(4)")}
               description="대화 시작, 의도 미인식, 의도 종료, 버튼 불일치 등 기본 흐름에서 공통으로 사용하는 메시지를 설정합니다."
               defaultOpen
             >
               <div className="settings-message-grid settings-message-grid--two">
                 <MessageItemEditor
-                  title="첫 인사말"
+                  title={getStudioPageLabel(copy,"첫 인사말")}
                   help={MESSAGE_HELP["첫 인사말"]}
                   value={form.greeting}
                   onChange={(nextValue) => setForm((current) => ({ ...current, greeting: nextValue }))}
@@ -354,7 +356,7 @@ export function ConversationMessageSettingsPage() {
                   }
                 />
                 <MessageItemEditor
-                  title="사용자의 의도를 이해하지 못했을 경우 답변"
+                  title={getStudioPageLabel(copy,"사용자의 의도를 이해하지 못했을 경우 답변")}
                   help={MESSAGE_HELP["사용자의 의도를 이해하지 못했을 경우 답변"]}
                   value={form.fallback}
                   onChange={(nextValue) => setForm((current) => ({ ...current, fallback: nextValue }))}
@@ -384,7 +386,7 @@ export function ConversationMessageSettingsPage() {
             </MessageSection>
 
             <MessageSection
-              title="유사의도/되묻기(2)"
+              title={getStudioPageLabel(copy,"유사의도/되묻기(2)")}
               description="유사 의도가 여러 개 잡혔을 때 사용자에게 보여줄 안내 문구와 '원하는 의도 없음' 처리 메시지를 설정합니다."
             >
               <div className="settings-message-grid settings-message-grid--two">
@@ -410,7 +412,7 @@ export function ConversationMessageSettingsPage() {
                           }))
                         }
                       />
-                      <span>사용</span>
+                      <span>{getStudioPageLabel(copy,"사용")}</span>
                     </label>
                   </div>
 
@@ -488,12 +490,12 @@ export function ConversationMessageSettingsPage() {
             </MessageSection>
 
             <MessageSection
-              title="대화 종료(4)"
+              title={getStudioPageLabel(copy,"대화 종료(4)")}
               description="대화중 시스템에 문제가 생겼거나 사용자의 마지막 발화 이후 타임아웃 설정 시간동안 아무런 응답이 없었을 경우 대화가 자동으로 종료됩니다. 사용자에게 대화가 종료된 상황을 안내하기 위한 메시지도 설정해 주세요."
             >
               <div className="settings-message-grid settings-message-grid--two">
                 <MessageItemEditor
-                  title="봇 동작 오류시 안내 메시지"
+                  title={getStudioPageLabel(copy,"봇 동작 오류시 안내 메시지")}
                   help={MESSAGE_HELP["봇 동작 오류시 안내 메시지"]}
                   value={form.system.errorMessage}
                   onChange={(nextValue) =>
@@ -527,7 +529,7 @@ export function ConversationMessageSettingsPage() {
                   }
                 />
                 <MessageItemEditor
-                  title="Session End 안내 메시지"
+                  title={getStudioPageLabel(copy,"Session End 안내 메시지")}
                   help={MESSAGE_HELP["Session End 안내 메시지"]}
                   value={form.system.sessionEndMessage}
                   onChange={(nextValue) =>
@@ -564,7 +566,7 @@ export function ConversationMessageSettingsPage() {
             </MessageSection>
 
             <MessageSection
-              title="의도 전환/복귀(3)"
+              title={getStudioPageLabel(copy,"의도 전환/복귀(3)")}
               description="의도 전환 실패, 의도 전환 질문, 의도 복귀 실행 여부와 메시지를 설정합니다."
             >
               <div className="settings-message-grid settings-message-grid--two">
@@ -667,7 +669,7 @@ export function ConversationMessageSettingsPage() {
                             }))
                           }
                         />
-                        <span>미사용</span>
+                        <span>{getStudioPageLabel(copy,"미사용")}</span>
                       </label>
                       <label className="settings-choice-option">
                         <input
@@ -683,7 +685,7 @@ export function ConversationMessageSettingsPage() {
                             }))
                           }
                         />
-                        <span>사용</span>
+                        <span>{getStudioPageLabel(copy,"사용")}</span>
                       </label>
                     </div>
 
@@ -759,7 +761,7 @@ export function ConversationMessageSettingsPage() {
                   </div>
                   <div className="settings-form-grid settings-form-grid--compact">
                     <label className="settings-form-card">
-                      <span>버튼 표시명</span>
+                      <span>{getStudioPageLabel(copy,"버튼 표시명")}</span>
                       <input
                         type="text"
                         maxLength={100}
@@ -778,7 +780,7 @@ export function ConversationMessageSettingsPage() {
                     </label>
 
                     <label className="settings-message-item__value settings-form-card--wide">
-                      <span>선택 시 메시지</span>
+                      <span>{getStudioPageLabel(copy,"선택 시 메시지")}</span>
                       <textarea
                         className="bot-settings-intro__textarea settings-message-item__textarea"
                         maxLength={MESSAGE_TEXT_MAX_LENGTH}
@@ -887,7 +889,7 @@ export function ConversationMessageSettingsPage() {
                             }))
                           }
                         />
-                        <span>사용 안함</span>
+                        <span>{getStudioPageLabel(copy,"사용 안함")}</span>
                       </label>
                       <label className="settings-choice-option">
                         <input
@@ -903,7 +905,7 @@ export function ConversationMessageSettingsPage() {
                             }))
                           }
                         />
-                        <span>모든 의도 사용</span>
+                        <span>{getStudioPageLabel(copy,"모든 의도 사용")}</span>
                       </label>
                       <label className="settings-choice-option">
                         <input
@@ -919,7 +921,7 @@ export function ConversationMessageSettingsPage() {
                             }))
                           }
                         />
-                        <span>의도별 사용</span>
+                        <span>{getStudioPageLabel(copy,"의도별 사용")}</span>
                       </label>
                     </div>
 
