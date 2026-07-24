@@ -805,8 +805,8 @@ export function IntentListPage() {
     () =>
       [...new Set(dialogs.flatMap((dialog) => dialog.tags))]
         .filter(Boolean)
-        .sort((left, right) => left.localeCompare(right, "ko-KR")),
-    [dialogs],
+        .sort((left, right) => left.localeCompare(right, uiLanguage)),
+    [dialogs, uiLanguage],
   );
 
   function handleOpenDialogWorkspace(dialog: VersionDialogAsset) {
@@ -917,11 +917,11 @@ export function IntentListPage() {
       const compare =
         typeof leftValue === "number" && typeof rightValue === "number"
           ? leftValue - rightValue
-          : String(leftValue).localeCompare(String(rightValue), "ko-KR");
+          : String(leftValue).localeCompare(String(rightValue), uiLanguage);
 
       return sortDirection === "asc" ? compare : compare * -1;
     });
-  }, [dialogs, dialogFilter, query, scenarioIssueMap, sortDirection, sortKey, tagFilter, validationFilter]);
+  }, [dialogs, dialogFilter, query, scenarioIssueMap, sortDirection, sortKey, tagFilter, uiLanguage, validationFilter]);
 
   const totalPages = Math.max(1, Math.ceil(visibleDialogs.length / pageSize));
   const pagedDialogs = useMemo(() => {
