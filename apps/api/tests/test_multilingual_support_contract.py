@@ -1112,3 +1112,20 @@ def test_deep_studio_surfaces_localize_static_visible_text() -> None:
     assert 'data-help="카카오 앱 또는 스킬 식별값입니다.' not in station
     assert 'data-help="카카오 webhook 보호용 비밀값입니다.' not in station
     assert 'data-help="카카오 관리자센터에 등록할 실제 webhook 주소입니다.' not in station
+
+def test_server_route_labels_cross_a_localized_client_boundary() -> None:
+    page_shell = (ROOT_DIR / "apps/web/components/page-shell.tsx").read_text(encoding="utf-8")
+    table_page = (ROOT_DIR / "apps/web/components/studio-table-page.tsx").read_text(encoding="utf-8")
+    conversation_page = (
+        ROOT_DIR / "apps/web/app/studio/bots/[botId]/versions/[versionId]/conversations/page.tsx"
+    ).read_text(encoding="utf-8")
+    flow_page = (
+        ROOT_DIR / "apps/web/app/studio/bots/[botId]/versions/[versionId]/flows/page.tsx"
+    ).read_text(encoding="utf-8")
+
+    assert "STUDIO_PAGE_CATALOGS[language]" in page_shell
+    assert "getStudioPageLabel(studioCopy, title)" in page_shell
+    assert "getStudioPageLabel(studioCopy, description)" in page_shell
+    assert "export function StudioPageText" in table_page
+    assert "<StudioPageText>보기</StudioPageText>" in conversation_page
+    assert "<StudioPageText>대화 설계</StudioPageText>" in flow_page
