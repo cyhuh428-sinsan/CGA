@@ -457,3 +457,13 @@ def test_operations_dashboard_tables_and_details_use_seven_language_catalog() ->
     assert "detailsCopy.dialogs.operationsErrorTitle" in page_source
     assert "운영 오류 상세" not in page_source
     assert "satisfies Record<SupportedLanguage, AdminOperationsDetailsCatalog>" in catalog_source
+
+
+def test_admin_users_list_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/users/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-users.ts").read_text(encoding="utf-8")
+    assert "ADMIN_USERS_CATALOGS[uiLanguage]" in page_source
+    assert "copy.accountStatuses[item.account_status]" in page_source
+    assert "copy.roleNames[item.role_code]" in page_source
+    assert "new Intl.DateTimeFormat(uiLanguage" in page_source
+    assert "satisfies Record<SupportedLanguage, AdminUsersCatalog>" in catalog_source
