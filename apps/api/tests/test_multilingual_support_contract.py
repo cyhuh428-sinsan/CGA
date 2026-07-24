@@ -661,3 +661,11 @@ def test_entity_editor_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, EntityEditorCatalog>" in catalog_source
+
+def test_entity_value_item_dialog_uses_selected_language() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/entity-editor-dialog.tsx").read_text(encoding="utf-8")
+    assert "copy.valueCreateTitle" in page_source
+    assert "copy.validation.valueRequired" in page_source
+    assert "copy.regexTest" in page_source
+    assert '"개체값 생성"' not in page_source
+    assert '"등록 가능한 정규식입니다."' not in page_source
