@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { DataGrid, dataGridCellText, type DataGridRow, type DataGridSortState } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import {
   backfillVersionReadSnapshots,
   backfillVersionStorage,
@@ -26,16 +27,17 @@ import {
   type AdminOperationsDashboardSystemErrorItem,
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_OPERATIONS_DASHBOARD_CATALOGS } from "@/lib/i18n/admin-operations-dashboard";
 import { fetchStudioBots, forceReleaseEditLock, type StudioBotApiItem } from "@/lib/studio-bots-api";
 
 const PERIOD_OPTIONS = [
-  { value: "1h", label: "최근 1시간", hours: 1 },
-  { value: "6h", label: "최근 6시간", hours: 6 },
-  { value: "24h", label: "최근 24시간", hours: 24 },
-  { value: "7d", label: "최근 7일", days: 7 },
-  { value: "14d", label: "최근 14일", days: 14 },
-  { value: "30d", label: "최근 30일", days: 30 },
-  { value: "90d", label: "최근 90일", days: 90 },
+  { value: "1h", label: "1h", hours: 1 },
+  { value: "6h", label: "6h", hours: 6 },
+  { value: "24h", label: "24h", hours: 24 },
+  { value: "7d", label: "7d", days: 7 },
+  { value: "14d", label: "14d", days: 14 },
+  { value: "30d", label: "30d", days: 30 },
+  { value: "90d", label: "90d", days: 90 },
 ] as const;
 
 type PeriodValue = (typeof PERIOD_OPTIONS)[number]["value"];
@@ -220,6 +222,8 @@ function traceHref(path: string, value: string) {
 }
 
 export default function AdminOperationsDashboardPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = ADMIN_OPERATIONS_DASHBOARD_CATALOGS[uiLanguage];
   const [token, setToken] = useState("");
   const [period, setPeriod] = useState<PeriodValue>("1h");
   const [groupId, setGroupId] = useState("");
@@ -874,21 +878,21 @@ export default function AdminOperationsDashboardPage() {
     <section className="admin-page operations-dashboard">
       <div className="admin-page__title-row">
         <div>
-          <h2>운영 대시보드</h2>
-          <p className="operations-dashboard__subtitle">외부 채널 운영, API 호출, 의도 미분류, 학습 상태를 요약합니다.</p>
+          <h2>{copy.title}</h2>
+          <p className="operations-dashboard__subtitle">{copy.subtitle}</p>
         </div>
         <div className="admin-page__actions">
           <Link href="/admin/api-call-history" className="admin-page__link-button">
-            API 호출 이력
+            {copy.apiHistory}
           </Link>
           <Link href="/admin/queue-history" className="admin-page__link-button">
-            Queue 이력
+            {copy.queueHistory}
           </Link>
         </div>
       </div>
 
-      <div className="admin-page__filters" aria-label="운영 대시보드 검색 조건">
-        <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodValue)} aria-label="조회 기간">
+      <div className="admin-page__filters" aria-label={copy.filters}>
+        <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodValue)} aria-label={copy.period}>
           {PERIOD_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
@@ -899,33 +903,33 @@ export default function AdminOperationsDashboardPage() {
             setGroupId(event.target.value);
             setBotId("");
           }}
-          aria-label="그룹 필터"
+          aria-label={copy.groupFilter}
         >
-          <option value="">전체 그룹</option>
+          <option value="">{copy.allGroups}</option>
           {groups.map((group) => (
             <option key={group.id} value={group.id}>{group.name}</option>
           ))}
         </select>
-        <select value={botId} onChange={(event) => setBotId(event.target.value)} aria-label="봇 필터">
-          <option value="">전체 봇</option>
+        <select value={botId} onChange={(event) => setBotId(event.target.value)} aria-label={copy.botFilter}>
+          <option value="">{copy.allBots}</option>
           {filteredBots.map((bot) => (
             <option key={bot.id} value={bot.id}>{bot.name}</option>
           ))}
         </select>
-        <select value={channelCode} onChange={(event) => setChannelCode(event.target.value)} aria-label="채널 필터">
-          <option value="">전체 채널</option>
+        <select value={channelCode} onChange={(event) => setChannelCode(event.target.value)} aria-label={copy.channelFilter}>
+          <option value="">{copy.allChannels}</option>
           {channels.map((channel) => (
             <option key={channel.id} value={channel.code}>{channel.name}</option>
           ))}
         </select>
-        <button type="button" className="admin-page__ghost" onClick={resetFilters}>초기화</button>
+        <button type="button" className="admin-page__ghost" onClick={resetFilters}>{copy.reset}</button>
       </div>
 
       {errorMessage ? <p className="admin-error-message">{errorMessage}</p> : null}
       {statusMessage ? <p className="admin-loading-message">{statusMessage}</p> : null}
-      {loading ? <p className="admin-loading-message">불러오는 중입니다...</p> : null}
+      {loading ? <p className="admin-loading-message">{copy.loading}</p> : null}
       {readinessOnlyItems.length > 0 ? (
-        <div className="operations-dashboard__health" aria-label="기본 준비 상태">
+        <div className="operations-dashboard__health" aria-label={copy.readiness}>
           {readinessOnlyItems.map((item) => (
             <article key={item.key} className={`operations-dashboard__health-item is-${item.tone}`}>
               <span>{item.label}</span>
@@ -938,7 +942,7 @@ export default function AdminOperationsDashboardPage() {
 
       {dashboard ? (
         <>
-          <div className="operations-dashboard__health" aria-label="운영 상태 요약">
+          <div className="operations-dashboard__health" aria-label={copy.healthSummary}>
             {healthItems.map((item) => (
               <article key={item.key} className={`operations-dashboard__health-item is-${item.tone}`}>
                 <span>{item.label}</span>
@@ -950,10 +954,10 @@ export default function AdminOperationsDashboardPage() {
 
           <section className="operations-dashboard__panel operations-dashboard__alerts">
             <div className="operations-dashboard__panel-header">
-              <h3>운영 알림</h3>
-              <span>현재 수집 가능한 임계치 기준</span>
+              <h3>{copy.alerts}</h3>
+              <span>{copy.alertThreshold}</span>
               <Link href="/admin/audit-logs?tab=system" className="admin-page__link-button">
-                시스템 로그
+                {copy.systemLogs}
               </Link>
             </div>
             {operationsAlerts.length > 0 ? (
@@ -966,7 +970,7 @@ export default function AdminOperationsDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="operations-dashboard__empty">현재 운영 알림이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noAlerts}</p>
             )}
           </section>
 
@@ -981,15 +985,15 @@ export default function AdminOperationsDashboardPage() {
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>캐시 상태</h3>
-              <span>화면 단위 API Redis Cache-Aside 상태</span>
+              <h3>{copy.cacheStatus}</h3>
+              <span>{copy.cacheDescription}</span>
               <button type="button" className="admin-page__ghost" disabled={purgingCache} onClick={handlePurgeVersionCache}>
-                {purgingCache ? "초기화 중" : "버전 캐시 초기화"}
+                {purgingCache ? copy.purging : copy.purgeCache}
               </button>
             </div>
             <DataGrid
               variant="admin"
-              columns={["구분", "현재값", "상세", "최근 오류/Fallback"]}
+              columns={copy.cacheColumns}
               rows={cacheRows}
               sortableColumns={[false, false, false, false]}
               template="120px 180px 260px minmax(260px, 1fr)"
@@ -998,43 +1002,43 @@ export default function AdminOperationsDashboardPage() {
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>DB 분리 상태</h3>
+              <h3>{copy.dbIntegrity}</h3>
               <span>
                 {versionIntegrity
-                  ? `대화/대화설계 분리 테이블 적용 현황 · 점검 ${formatDate(versionIntegrity.generated_at)}`
-                  : "일반 운영 요약과 분리된 전체 버전 무결성 점검"}
+                  ? `${copy.integrityDescription} · ${copy.checkIntegrity} ${formatDate(versionIntegrity.generated_at)}`
+                  : copy.integrityPending}
               </span>
               <button type="button" className="admin-page__ghost" disabled={checkingVersionIntegrity} onClick={handleVersionIntegrityCheck}>
-                {checkingVersionIntegrity ? "무결성 점검 중" : "무결성 점검"}
+                {checkingVersionIntegrity ? copy.checkingIntegrity : copy.checkIntegrity}
               </button>
               <button type="button" className="admin-page__ghost" disabled={Boolean(backfillingVersionStorage)} onClick={() => handleVersionStorageBackfill(true)}>
-                {backfillingVersionStorage === "dry_run" ? "점검 중" : "Backfill 점검"}
+                {backfillingVersionStorage === "dry_run" ? copy.checkingIntegrity : copy.backfillCheck}
               </button>
               <button type="button" className="admin-page__ghost" disabled={Boolean(backfillingVersionStorage)} onClick={() => handleVersionStorageBackfill(false)}>
-                {backfillingVersionStorage === "run" ? "실행 중" : "Backfill 실행"}
+                {backfillingVersionStorage === "run" ? copy.checkingIntegrity : copy.backfillRun}
               </button>
               <button type="button" className="admin-page__ghost" disabled={Boolean(backfillingReadSnapshots)} onClick={() => handleVersionReadSnapshotBackfill(true)}>
-                {backfillingReadSnapshots === "dry_run" ? "스냅샷 점검 중" : "스냅샷 점검"}
+                {backfillingReadSnapshots === "dry_run" ? copy.checkingIntegrity : copy.snapshotCheck}
               </button>
               <button type="button" className="admin-page__ghost" disabled={Boolean(backfillingReadSnapshots)} onClick={() => handleVersionReadSnapshotBackfill(false)}>
-                {backfillingReadSnapshots === "run" ? "스냅샷 실행 중" : "스냅샷 생성"}
+                {backfillingReadSnapshots === "run" ? copy.checkingIntegrity : copy.snapshotCreate}
               </button>
             </div>
             {versionIntegrity ? (
               <DataGrid
                 variant="admin"
-                columns={["구분", "현재값", "기준/미적용", "상태"]}
+                columns={copy.integrityColumns}
                 rows={versionStorageRows}
                 sortableColumns={[false, false, false, false]}
                 template="160px 180px 220px minmax(220px, 1fr)"
               />
             ) : (
-              <p className="operations-dashboard__empty">무결성 점검을 실행하면 전체 버전의 DB 분리 및 스냅샷 상태를 표시합니다.</p>
+              <p className="operations-dashboard__empty">{copy.integrityEmpty}</p>
             )}
             {versionStorageIssueRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["상태", "봇", "버전", "대화", "그래프", "차이", "최종수정"]}
+                columns={copy.versionColumns}
                 rows={versionStorageIssueRows}
                 sortableColumns={[false, false, false, false, false, false, false]}
                 template="90px 170px 140px 100px 100px minmax(320px, 1fr) 180px"
@@ -1044,16 +1048,16 @@ export default function AdminOperationsDashboardPage() {
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>최근 오류</h3>
-              <span>생성 시각 {formatDate(dashboard.generated_at)}</span>
+              <h3>{copy.recentErrors}</h3>
+              <span>{copy.generatedAt} {formatDate(dashboard.generated_at)}</span>
               <Link href="/admin/queue-history" className="admin-page__link-button">
-                Queue 이력
+                {copy.queueHistory}
               </Link>
             </div>
             {sortedRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["", "구분", "봇", "위치", "이벤트", "메시지", "발생일시"]}
+                columns={copy.errorColumns}
                 rows={sortedRows}
                 sortState={sortState}
                 onSort={setSortState}
@@ -1061,109 +1065,109 @@ export default function AdminOperationsDashboardPage() {
                 template="76px 120px 170px 220px 220px minmax(320px, 1fr) 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 오류가 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noErrors}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>느린 요청 요약</h3>
-              <span>반복 지연 경로와 최대/평균 응답 시간</span>
+              <h3>{copy.slowSummary}</h3>
+              <span>{copy.slowSummaryDescription}</span>
               <Link href="/admin/audit-logs?tab=system&file=app" className="admin-page__link-button">
-                시스템 로그
+                {copy.systemLogs}
               </Link>
             </div>
             {slowRequestSummaryRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["구분", "Method", "경로", "건수", "최대 응답", "평균 응답", "최대 DB", "평균 DB", "최근 발생"]}
+                columns={copy.slowSummaryColumns}
                 rows={slowRequestSummaryRows}
                 sortableColumns={[false, false, false, false, false, false, false, false, false]}
                 template="100px 86px minmax(280px, 1fr) 70px 100px 100px 100px 100px 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 느린 요청이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noSlow}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>느린 요청 상세</h3>
-              <span>API 응답 시간과 DB 누적 시간 기준</span>
+              <h3>{copy.slowDetail}</h3>
+              <span>{copy.slowDetailDescription}</span>
             </div>
             {slowRequestRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["구분", "Method", "경로", "상태", "응답", "DB", "쿼리", "기준", "Request ID", "발생일시"]}
+                columns={copy.slowDetailColumns}
                 rows={slowRequestRows}
                 sortableColumns={[false, false, false, false, false, false, false, false, false, false]}
                 template="100px 86px minmax(260px, 1fr) 70px 90px 90px 70px 90px 240px 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 느린 요청이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noSlow}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>최근 실행 흐름</h3>
-              <span>Queue 결과에 저장된 런타임 이벤트</span>
+              <h3>{copy.runtimeFlow}</h3>
+              <span>{copy.runtimeDescription}</span>
               <Link href="/admin/conversations" className="admin-page__link-button">
-                대화 이력
+                {copy.conversationHistory}
               </Link>
             </div>
             {runtimeRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["", "채널", "레벨", "봇", "의도/모듈", "카드", "이벤트", "메시지", "발생일시"]}
+                columns={copy.runtimeColumns}
                 rows={runtimeRows}
                 sortableColumns={[false, false, false, false, false, false, false, false, false]}
                 template="76px 90px 90px 160px 160px 140px 220px minmax(260px, 1fr) 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 실행 흐름이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noRuntime}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>현재 편집 잠금</h3>
-              <span>만료되지 않은 대화 편집 잠금</span>
+              <h3>{copy.editLocks}</h3>
+              <span>{copy.editLocksDescription}</span>
               <Link href="/admin/audit-logs?tab=audit&q=edit_lock" className="admin-page__link-button">
-                감사 로그
+                {copy.auditLogs}
               </Link>
             </div>
             {editLockRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["조치", "봇", "버전", "영역", "대화 ID", "편집자", "마지막 확인", "만료 예정"]}
+                columns={copy.lockColumns}
                 rows={editLockRows}
                 sortableColumns={[false, false, false, false, false, false, false, false]}
                 template="100px 160px 120px 110px minmax(180px, 1fr) 140px 180px 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">현재 편집 잠금이 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noLocks}</p>
             )}
           </section>
 
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
-              <h3>최근 시스템 오류</h3>
-              <span>API 파일 로그의 요약, 상세에는 원문 포함</span>
+              <h3>{copy.systemErrorsTitle}</h3>
+              <span>{copy.systemErrorsDescription}</span>
               <Link href="/admin/audit-logs?tab=system&file=error" className="admin-page__link-button">
-                시스템 로그
+                {copy.systemLogs}
               </Link>
             </div>
             {systemErrorRows.length > 0 ? (
               <DataGrid
                 variant="admin"
-                columns={["", "레벨", "로거", "이벤트", "경로", "상태", "메시지", "발생일시"]}
+                columns={copy.systemErrorColumns}
                 rows={systemErrorRows}
                 sortableColumns={[false, false, false, false, false, false, false, false]}
                 template="76px 80px 140px 220px 220px 80px minmax(300px, 1fr) 180px"
               />
             ) : (
-              <p className="operations-dashboard__empty">최근 시스템 오류가 없습니다.</p>
+              <p className="operations-dashboard__empty">{copy.noSystemErrors}</p>
             )}
           </section>
         </>
