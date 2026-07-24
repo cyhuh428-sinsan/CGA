@@ -4,11 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { useI18n } from "@/components/language-provider";
 import { apiRequest } from "@/lib/api";
 import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_GROUPS_CATALOGS, type AdminGroupsCatalog } from "@/lib/i18n/admin-groups";
 
 export default function AdminGroupCreatePage() {
   const router = useRouter();
+  const { language: uiLanguage } = useI18n();
+  const copy: AdminGroupsCatalog = ADMIN_GROUPS_CATALOGS[uiLanguage];
   const [token, setToken] = useState("");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
@@ -18,7 +22,7 @@ export default function AdminGroupCreatePage() {
   useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setToken(session.access_token);
@@ -39,7 +43,7 @@ export default function AdminGroupCreatePage() {
       router.push("/admin/groups");
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "그룹 생성 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.createForm.submitError);
     } finally {
       setSubmitting(false);
     }
@@ -49,22 +53,22 @@ export default function AdminGroupCreatePage() {
     <section className="admin-detail">
       <div className="admin-detail__header">
         <div>
-          <h2>그룹 생성</h2>
-          <p>현재 서버에 속한 새 그룹을 생성합니다.</p>
+          <h2>{copy.createForm.title}</h2>
+          <p>{copy.createForm.subtitle}</p>
         </div>
         <Link href="/admin/groups" className="secondary-action">
-          목록으로
+          {copy.createForm.back}
         </Link>
       </div>
 
       <form className="admin-detail__card admin-detail__card--narrow" onSubmit={handleSubmit}>
         <label className="field-block">
-          <span>그룹 이름</span>
+          <span>{copy.createForm.name}</span>
           <input
             className="input-control"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="그룹 이름을 입력하세요."
+            placeholder={copy.createForm.placeholder}
           />
         </label>
 
@@ -73,7 +77,7 @@ export default function AdminGroupCreatePage() {
 
         <div className="admin-detail__actions">
           <button type="submit" className="primary-action" disabled={submitting || !name.trim() || !token}>
-            {submitting ? "생성 중..." : "그룹 생성"}
+            {submitting ? copy.createForm.submitting : copy.createForm.submit}
           </button>
         </div>
       </form>
