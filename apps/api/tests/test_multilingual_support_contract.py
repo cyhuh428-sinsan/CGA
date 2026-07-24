@@ -649,3 +649,15 @@ def test_entity_name_dialog_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, EntityNameDialogCatalog>" in catalog_source
+
+def test_entity_editor_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/entity-editor-dialog.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/entity-editor.ts").read_text(encoding="utf-8")
+    assert "ENTITY_EDITOR_CATALOGS[uiLanguage]" in page_source
+    assert "copy.validation.invalidRegex" in page_source
+    assert "copy.dictionaryImportTitle" in page_source
+    assert "copy.systemEntityDescription" in page_source
+    assert 'aria-label="사전 불러오기"' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, EntityEditorCatalog>" in catalog_source
