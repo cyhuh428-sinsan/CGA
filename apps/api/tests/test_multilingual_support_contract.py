@@ -393,3 +393,14 @@ def test_conversation_history_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'"{language}":' in catalog_source or f"{language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage,AdminConversationCatalog>" in catalog_source
+
+
+def test_queue_history_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/queue-history/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-queue-history.ts").read_text(encoding="utf-8")
+    assert "ADMIN_QUEUE_HISTORY_CATALOGS[uiLanguage]" in page_source
+    assert "copy.processQueued" in page_source
+    assert "copy.requestParameters" in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'"{language}":' in catalog_source or f"{language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage,AdminQueueHistoryCatalog>" in catalog_source
