@@ -956,3 +956,33 @@ def test_flow_designer_uses_seven_language_catalog_without_changing_graph_contra
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, FlowDesignerCatalog>" in catalog_source
+
+def test_remaining_bot_settings_and_hub_pages_use_seven_language_studio_catalog() -> None:
+    paths = (
+        "apps/web/components/conversation-message-settings-page.tsx",
+        "apps/web/components/conversation-default-settings-page.tsx",
+        "apps/web/components/rule-settings-page.tsx",
+        "apps/web/components/smalltalk-settings-page.tsx",
+        "apps/web/components/blocklist-settings-page.tsx",
+        "apps/web/components/botstation-settings-page.tsx",
+        "apps/web/components/messenger-settings-page.tsx",
+        "apps/web/components/messenger-floating-buttons-page.tsx",
+        "apps/web/components/messenger-recommended-intents-page.tsx",
+        "apps/web/components/bot-delete-page.tsx",
+        "apps/web/components/bot-hub-create-form.tsx",
+        "apps/web/components/bot-hub-home.tsx",
+        "apps/web/components/bot-hub-settings.tsx",
+        "apps/web/components/bot-hub-retraining-page.tsx",
+        "apps/web/components/bot-hub-composition.tsx",
+        "apps/web/components/bot-hub-delete.tsx",
+    )
+    for path in paths:
+        source = (ROOT_DIR / path).read_text(encoding="utf-8")
+        assert "useI18n" in source, path
+        assert "STUDIO_PAGE_CATALOGS[uiLanguage]" in source, path
+        assert "getStudioPageLabel(copy" in source, path
+
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/studio-pages.ts").read_text(encoding="utf-8")
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, StudioPageCatalog>" in catalog_source
