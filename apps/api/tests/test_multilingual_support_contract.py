@@ -882,3 +882,18 @@ def test_admin_audit_log_detail_and_csv_use_seven_language_catalog() -> None:
     assert "auditExportColumns:string[]" in catalog_source
     assert "level:string" in catalog_source
     assert "method:string" in catalog_source
+
+def test_page_shell_and_utility_routes_use_seven_language_catalog() -> None:
+    shell_source = (ROOT_DIR / "apps/web/components/page-shell.tsx").read_text(encoding="utf-8")
+    license_source = (ROOT_DIR / "apps/web/app/license/page.tsx").read_text(encoding="utf-8")
+    tenant_source = (ROOT_DIR / "apps/web/app/tenant-switch/page.tsx").read_text(encoding="utf-8")
+    dashboard_source = (ROOT_DIR / "apps/web/app/studio/dashboard/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/utility-pages.ts").read_text(encoding="utf-8")
+    assert "PAGE_SHELL_CATALOGS[language]" in shell_source
+    assert "UTILITY_PAGE_CATALOGS[language].license" in license_source
+    assert "UTILITY_PAGE_CATALOGS[language].tenantSwitch" in tenant_source
+    assert "UTILITY_PAGE_CATALOGS[language].dashboardPreparing" in dashboard_source
+    assert '"매뉴얼 대응 항목"' not in shell_source
+    assert 'title="라이선스 정보 조회"' not in license_source
+    assert 'title="테넌트 전환"' not in tenant_source
+    assert "satisfies Record<SupportedLanguage, UtilityPageCatalog>" in catalog_source
