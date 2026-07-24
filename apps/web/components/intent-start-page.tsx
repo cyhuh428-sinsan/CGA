@@ -5,6 +5,8 @@ import { useParams, usePathname, useRouter, useSearchParams } from "next/navigat
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { AssetUploadDialog } from "@/components/asset-upload-dialog";
+import { useI18n } from "@/components/language-provider";
+import { getIntentStartLabel, INTENT_START_CATALOGS } from "@/lib/i18n/intent-start";
 import { SimulatorFloatingLauncher } from "@/components/simulator-page";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import {
@@ -61,30 +63,28 @@ type ViewModeDialogProps = {
 };
 
 function SaveFailureDialog({ message, onClose }: SaveFailureDialogProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = INTENT_START_CATALOGS[uiLanguage];
   return (
     <div className="entity-editor-backdrop" role="presentation">
-      <div className="upload-result-dialog intent-editor__save-failure-dialog" role="dialog" aria-modal="true" aria-label="저장 실패">
+      <div className="upload-result-dialog intent-editor__save-failure-dialog" role="dialog" aria-modal="true" aria-label={getIntentStartLabel(copy,"저장 실패")}>
         <div className="entity-editor-dialog__header">
-          <strong>저장 실패</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <strong>{getIntentStartLabel(copy,"저장 실패")}</strong>
+          <button type="button" className="entity-editor-dialog__close" aria-label={getIntentStartLabel(copy,"닫기")} onClick={onClose}>
             ×
           </button>
         </div>
 
         <div className="entity-editor-dialog__body">
           <div className="upload-result-dialog__panel intent-editor__save-failure-panel">
-            <p className="upload-result-dialog__message">변경사항이 저장이 되지 않았습니다.</p>
+            <p className="upload-result-dialog__message">{getIntentStartLabel(copy,"변경사항이 저장이 되지 않았습니다.")}</p>
             <p className="upload-result-dialog__note">{message}</p>
           </div>
         </div>
 
         <div className="entity-editor-dialog__footer">
-          <button type="button" className="secondary-action" onClick={onClose}>
-            취소
-          </button>
-          <button type="button" className="primary-action" onClick={onClose}>
-            확인
-          </button>
+          <button type="button" className="secondary-action" onClick={onClose}>{getIntentStartLabel(copy,"취소")}</button>
+          <button type="button" className="primary-action" onClick={onClose}>{getIntentStartLabel(copy,"확인")}</button>
         </div>
       </div>
     </div>
@@ -92,12 +92,14 @@ function SaveFailureDialog({ message, onClose }: SaveFailureDialogProps) {
 }
 
 function ViewModeDialog({ ownerLabel, onCancel, onConfirm }: ViewModeDialogProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = INTENT_START_CATALOGS[uiLanguage];
   return (
     <div className="entity-editor-backdrop" role="presentation">
-      <div className="intent-editor__view-mode-dialog" role="dialog" aria-modal="true" aria-label="조회모드 입장">
+      <div className="intent-editor__view-mode-dialog" role="dialog" aria-modal="true" aria-label={getIntentStartLabel(copy,"조회모드 입장")}>
         <div className="entity-editor-dialog__header">
-          <strong>조회모드 입장</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onCancel}>
+          <strong>{getIntentStartLabel(copy,"조회모드 입장")}</strong>
+          <button type="button" className="entity-editor-dialog__close" aria-label={getIntentStartLabel(copy,"닫기")} onClick={onCancel}>
             ×
           </button>
         </div>
@@ -109,12 +111,8 @@ function ViewModeDialog({ ownerLabel, onCancel, onConfirm }: ViewModeDialogProps
         </div>
 
         <div className="entity-editor-dialog__footer">
-          <button type="button" className="secondary-action" onClick={onCancel}>
-            취소
-          </button>
-          <button type="button" className="primary-action" onClick={onConfirm}>
-            확인
-          </button>
+          <button type="button" className="secondary-action" onClick={onCancel}>{getIntentStartLabel(copy,"취소")}</button>
+          <button type="button" className="primary-action" onClick={onConfirm}>{getIntentStartLabel(copy,"확인")}</button>
         </div>
       </div>
     </div>
@@ -140,17 +138,19 @@ function ChatbotMessageDialog({
   onRemoveMessage,
   onConfirm,
 }: ChatbotMessageDialogProps) {
+  const { language: uiLanguage } = useI18n();
+  const copy = INTENT_START_CATALOGS[uiLanguage];
   return (
     <div className="entity-editor-backdrop" role="presentation">
       <div
         className="entity-editor-dialog intent-editor__chatbot-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="챗봇 메시지 설정"
+        aria-label={getIntentStartLabel(copy,"챗봇 메시지 설정")}
       >
         <div className="entity-editor-dialog__header">
           <strong>{formatEntityDisplayName(binding.entityName)} 챗봇 메시지</strong>
-          <button type="button" className="entity-editor-dialog__close" aria-label="닫기" onClick={onClose}>
+          <button type="button" className="entity-editor-dialog__close" aria-label={getIntentStartLabel(copy,"닫기")} onClick={onClose}>
             ×
           </button>
         </div>
@@ -170,16 +170,14 @@ function ChatbotMessageDialog({
                       type="button"
                       className="intent-editor__entity-message-remove"
                       onClick={() => onRemoveMessage(index)}
-                    >
-                      삭제
-                    </button>
+                    >{getIntentStartLabel(copy,"삭제")}</button>
                   ) : null}
                 </div>
                 <textarea
                   className="textarea-control intent-editor__entity-message-textarea"
                   value={chatbotMessage}
                   onChange={(event) => onChangeMessage(index, event.target.value)}
-                  placeholder="사용자에게 개체를 얻기 위한 질문을 입력하세요."
+                  placeholder={getIntentStartLabel(copy,"사용자에게 개체를 얻기 위한 질문을 입력하세요.")}
                   maxLength={1500}
                 />
                 <div className="intent-editor__entity-message-foot">
@@ -203,12 +201,8 @@ function ChatbotMessageDialog({
         </div>
 
         <div className="entity-editor-dialog__footer">
-          <button type="button" className="secondary-action" onClick={onClose}>
-            취소
-          </button>
-          <button type="button" className="primary-action" onClick={onConfirm}>
-            확인
-          </button>
+          <button type="button" className="secondary-action" onClick={onClose}>{getIntentStartLabel(copy,"취소")}</button>
+          <button type="button" className="primary-action" onClick={onConfirm}>{getIntentStartLabel(copy,"확인")}</button>
         </div>
       </div>
     </div>
@@ -562,6 +556,8 @@ function getDialogEditingUserLabel(dialog: VersionDialogAsset | null) {
 }
 
 export function IntentStartPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = INTENT_START_CATALOGS[uiLanguage];
   const workspace = useStudioWorkspace();
   const params = useParams<{ botId: string; versionId: string; intentId: string }>();
   const pathname = usePathname();
@@ -1696,7 +1692,7 @@ export function IntentStartPage() {
   if (loading) {
     return (
       <section className="intent-editor">
-        <p className="manual-main__empty">대화 시작 설정을 불러오는 중입니다...</p>
+        <p className="manual-main__empty">{getIntentStartLabel(copy,"대화 시작 설정을 불러오는 중입니다...")}</p>
       </section>
     );
   }
@@ -1708,7 +1704,7 @@ export function IntentStartPage() {
   if (!dialog) {
     return (
       <section className="intent-editor">
-        <p className="manual-main__empty">등록된 의도를 찾을 수 없습니다.</p>
+        <p className="manual-main__empty">{getIntentStartLabel(copy,"등록된 의도를 찾을 수 없습니다.")}</p>
       </section>
     );
   }
@@ -1722,20 +1718,18 @@ export function IntentStartPage() {
               의도 ({dialog.name})
             </button>
             <span>&gt;</span>
-            <span className="intent-editor__crumb-current">대화 시작</span>
+            <span className="intent-editor__crumb-current">{getIntentStartLabel(copy,"대화 시작")}</span>
             <button
               type="button"
               className="intent-editor__crumb-help"
-              title="대화 시작 안내"
-              aria-label="대화 시작 안내"
+              title={getIntentStartLabel(copy,"대화 시작 안내")}
+              aria-label={getIntentStartLabel(copy,"대화 시작 안내")}
               onClick={() => setStartHelpOpen(true)}
             >
               <span className="dialog-help-icon" aria-hidden="true">?</span>
             </button>
             <span>&gt;</span>
-            <button type="button" onClick={handleNavigateToFlow}>
-              대화 설계
-            </button>
+            <button type="button" onClick={handleNavigateToFlow}>{getIntentStartLabel(copy,"대화 설계")}</button>
           </h1>
         </div>
 
@@ -1767,8 +1761,7 @@ export function IntentStartPage() {
         <section className="intent-editor__panel intent-editor__panel--utterances">
           <div className="intent-editor__panel-header intent-editor__panel-header--utterances">
             <div className="intent-editor__panel-tools intent-editor__panel-tools--utterances">
-              <span className="intent-editor__count-label intent-editor__count-label--header">
-                학습문장 <strong>{displayedUtteranceCount}</strong>
+              <span className="intent-editor__count-label intent-editor__count-label--header">{getIntentStartLabel(copy,"학습문장")}<strong>{displayedUtteranceCount}</strong>
               </span>
               {fixedValidationIssue ? (
                 <div
@@ -1779,7 +1772,7 @@ export function IntentStartPage() {
                   <button
                     type="button"
                     className="intent-editor__validation-alert-button"
-                    aria-label="Validation 오류 보기"
+                    aria-label={getIntentStartLabel(copy,"Validation 오류 보기")}
                     onFocus={() => setValidationTooltipOpen(true)}
                     onBlur={() => setValidationTooltipOpen(false)}
                   >
@@ -1802,13 +1795,13 @@ export function IntentStartPage() {
                       commitUtteranceSearch();
                     }
                   }}
-                  placeholder="학습문장을 검색하세요."
+                  placeholder={copy.trainingSentenceSearch}
                 />
                 {searchDraftValue || searchValue ? (
                   <button
                     type="button"
                     className="intent-editor__search-clear"
-                    aria-label="검색어 지우기"
+                    aria-label={getIntentStartLabel(copy,"검색어 지우기")}
                     onClick={clearUtteranceSearch}
                   >
                     ×
@@ -1822,7 +1815,7 @@ export function IntentStartPage() {
                     className="bot-settings-card__input intent-editor__replace-inline-input"
                     value={replaceValue}
                     onChange={(event) => setReplaceValue(event.target.value)}
-                    placeholder="바꿀 내용을 입력하세요."
+                    placeholder={getIntentStartLabel(copy,"바꿀 내용을 입력하세요.")}
                     disabled={isViewMode}
                   />
                 ) : null}
@@ -1845,9 +1838,7 @@ export function IntentStartPage() {
                     className="studio-table-page__ghost"
                     disabled={selectedUtteranceIds.length === 0 || saving || isViewMode}
                     onClick={handleDeleteSelected}
-                  >
-                    삭제
-                  </button>
+                  >{getIntentStartLabel(copy,"삭제")}</button>
                   {isFixedValidationMode ? (
                     <button
                       type="button"
@@ -1862,7 +1853,7 @@ export function IntentStartPage() {
                     <button
                       type="button"
                       className="manual-main__menu-button"
-                      aria-label="학습문장 메뉴"
+                      aria-label={getIntentStartLabel(copy,"학습문장 메뉴")}
                       aria-expanded={menuOpen}
                       onClick={() => setMenuOpen((current) => !current)}
                     >
@@ -1880,9 +1871,7 @@ export function IntentStartPage() {
                               setUploadDialogOpen(true);
                             }
                           }}
-                        >
-                          파일 업로드
-                        </button>
+                        >{getIntentStartLabel(copy,"파일 업로드")}</button>
                         <button
                           type="button"
                           className="manual-main__menu-item manual-main__menu-item--button"
@@ -1890,9 +1879,7 @@ export function IntentStartPage() {
                             setMenuOpen(false);
                             handleDownloadUtterances();
                           }}
-                        >
-                          파일 다운로드
-                        </button>
+                        >{getIntentStartLabel(copy,"파일 다운로드")}</button>
                       </div>
                     ) : null}
                   </div>
@@ -1903,7 +1890,7 @@ export function IntentStartPage() {
           <div className="intent-editor__panel-body intent-editor__panel-body--fixed">
             <div className="intent-editor__composer">
               <label className="intent-editor__composer-type">
-                <span>구분</span>
+                <span>{getIntentStartLabel(copy,"구분")}</span>
                 <select
                   className="bot-settings-card__select"
                   value={isFixedValidationMode ? newUtteranceType : "T"}
@@ -1915,7 +1902,7 @@ export function IntentStartPage() {
                 </select>
               </label>
               <label className="intent-editor__composer-input">
-                <span>학습문장</span>
+                <span>{getIntentStartLabel(copy,"학습문장")}</span>
                 <input
                   type="text"
                   className="bot-settings-card__input"
@@ -1927,13 +1914,11 @@ export function IntentStartPage() {
                       handleAddUtterance();
                     }
                   }}
-                  placeholder="봇과 대화를 시작할 때 사용자가 입력할 만한 문장을 입력하고 Enter를 눌러주세요."
+                  placeholder={getIntentStartLabel(copy,"봇과 대화를 시작할 때 사용자가 입력할 만한 문장을 입력하고 Enter를 눌러주세요.")}
                   disabled={isViewMode}
                 />
               </label>
-              <button type="button" className="studio-table-page__primary" disabled={saving || isViewMode} onClick={handleAddUtterance}>
-                추가
-              </button>
+              <button type="button" className="studio-table-page__primary" disabled={saving || isViewMode} onClick={handleAddUtterance}>{getIntentStartLabel(copy,"추가")}</button>
             </div>
 
             <div className="intent-editor__status-row">
@@ -1948,7 +1933,7 @@ export function IntentStartPage() {
                 <span className="intent-editor__table-check">
                   <input
                     type="checkbox"
-                    aria-label="전체 선택"
+                    aria-label={getIntentStartLabel(copy,"전체 선택")}
                     disabled={isViewMode}
                     checked={filteredUtterances.length > 0 && filteredUtterances.every((item) => selectedUtteranceIds.includes(item.id))}
                     onChange={(event) =>
@@ -1956,8 +1941,8 @@ export function IntentStartPage() {
                     }
                   />
                 </span>
-                <span>구분</span>
-                <span>학습문장</span>
+                <span>{getIntentStartLabel(copy,"구분")}</span>
+                <span>{getIntentStartLabel(copy,"학습문장")}</span>
                 <span aria-hidden="true" />
               </div>
 
@@ -2013,16 +1998,12 @@ export function IntentStartPage() {
                               type="button"
                               className="intent-editor__utterance-edit-action"
                               onClick={() => handleCommitEditUtterance(item.id)}
-                            >
-                              저장
-                            </button>
+                            >{getIntentStartLabel(copy,"저장")}</button>
                             <button
                               type="button"
                               className="intent-editor__utterance-edit-action"
                               onClick={handleCancelEditUtterance}
-                            >
-                              취소
-                            </button>
+                            >{getIntentStartLabel(copy,"취소")}</button>
                           </span>
                         ) : (
                           <span>{renderHighlightedUtterance(item.text, searchValue)}</span>
@@ -2030,7 +2011,7 @@ export function IntentStartPage() {
                         <button
                           type="button"
                           className="intent-editor__utterance-edit-button"
-                          aria-label="학습문장 수정"
+                          aria-label={getIntentStartLabel(copy, "학습문장 수정")}
                           disabled={isViewMode}
                           onClick={() => handleStartEditUtterance(item)}
                         >
@@ -2052,7 +2033,7 @@ export function IntentStartPage() {
 
         <section className="intent-editor__panel intent-editor__panel--entities">
           <div className="intent-editor__panel-header">
-            <h2>추출할 개체 {entityBindings.length}</h2>
+            <h2>{copy.extractEntities} {entityBindings.length}</h2>
             <div className="intent-editor__panel-tools">
               <button
                 type="button"
@@ -2067,9 +2048,7 @@ export function IntentStartPage() {
                 className="studio-table-page__ghost"
                 disabled={selectedEntityBindingIds.length === 0 || saving || isViewMode}
                 onClick={handleDeleteEntityBindings}
-              >
-                삭제
-              </button>
+              >{getIntentStartLabel(copy,"삭제")}</button>
             </div>
           </div>
           <div className="intent-editor__panel-body">
@@ -2085,7 +2064,7 @@ export function IntentStartPage() {
                     setEntitySearchValue(event.target.value);
                     setEntityPickerOpen(true);
                   }}
-                  placeholder="대화에서 사용할 개체를 검색하여 파라미터로 등록하세요."
+                  placeholder={getIntentStartLabel(copy,"대화에서 사용할 개체를 검색하여 파라미터로 등록하세요.")}
                 />
               </label>
 
@@ -2097,7 +2076,7 @@ export function IntentStartPage() {
                         <span className="intent-editor__table-check">
                           <input
                             type="checkbox"
-                            aria-label="개체 후보 전체 선택"
+                            aria-label={getIntentStartLabel(copy,"개체 후보 전체 선택")}
                             disabled={candidateSelectableIds.length === 0 || isViewMode}
                             checked={
                               candidateSelectableIds.length > 0 &&
@@ -2108,9 +2087,9 @@ export function IntentStartPage() {
                             onChange={(event) => handleToggleAllCandidateEntities(event.target.checked)}
                           />
                         </span>
-                        <span>개체명</span>
-                        <span>구분</span>
-                        <span>개체값</span>
+                        <span>{getIntentStartLabel(copy,"개체명")}</span>
+                        <span>{getIntentStartLabel(copy,"구분")}</span>
+                        <span>{getIntentStartLabel(copy,"개체값")}</span>
                       </div>
                       {entityCandidateSections.map((section) => (
                         <div key={section.key} className="intent-editor__entity-candidate-section">
@@ -2138,7 +2117,7 @@ export function IntentStartPage() {
                                 </span>
                                 <span className="intent-editor__entity-candidate-name">
                                   <strong>{formatEntityDisplayName(entity.name)}</strong>
-                                  {alreadyBound ? <small>이미 추가됨</small> : null}
+                                  {alreadyBound ? <small>{getIntentStartLabel(copy,"이미 추가됨")}</small> : null}
                                 </span>
                                 <span className="intent-editor__entity-candidate-kind">
                                   {entity.system ? "시스템 개체" : "사용자 개체"}
@@ -2165,7 +2144,7 @@ export function IntentStartPage() {
               <span className="intent-editor__table-check">
                 <input
                   type="checkbox"
-                  aria-label="개체 전체 선택"
+                  aria-label={getIntentStartLabel(copy,"개체 전체 선택")}
                   disabled={isViewMode}
                   checked={
                     entityBindings.length > 0 &&
@@ -2178,12 +2157,12 @@ export function IntentStartPage() {
                   }
                 />
               </span>
-              <span>변수명</span>
-              <span>개체명</span>
-              <span>개체값</span>
-              <span>필수 변수</span>
-              <span>로컬 변수</span>
-              <span>챗봇 메시지</span>
+              <span>{getIntentStartLabel(copy,"변수명")}</span>
+              <span>{getIntentStartLabel(copy,"개체명")}</span>
+              <span>{getIntentStartLabel(copy,"개체값")}</span>
+              <span>{getIntentStartLabel(copy,"필수 변수")}</span>
+              <span>{getIntentStartLabel(copy,"로컬 변수")}</span>
+              <span>{getIntentStartLabel(copy,"챗봇 메시지")}</span>
             </div>
 
             {entityBindings.length > 0 ? (
@@ -2327,17 +2306,17 @@ export function IntentStartPage() {
 
       {uploadDialogOpen ? (
         <AssetUploadDialog
-          title="파일 업로드"
+          title={getIntentStartLabel(copy,"파일 업로드")}
           description={
-            <p>아래의 버튼으로 양식(.txt)을 다운받으신 후, 파일을 업로드 하세요.</p>
+            <p>{getIntentStartLabel(copy,"아래의 버튼으로 양식(.txt)을 다운받으신 후, 파일을 업로드 하세요.")}</p>
           }
           notice={
             <>
-              <p>UTF-8 형식으로 인코딩된 .txt/.csv 파일을 통해 학습문장을 한꺼번에 업로드할 수 있습니다.</p>
+              <p>{getIntentStartLabel(copy,"UTF-8 형식으로 인코딩된 .txt/.csv 파일을 통해 학습문장을 한꺼번에 업로드할 수 있습니다.")}</p>
               <ul className="asset-upload-dialog__list">
-                <li>쉼표(,)로 구분하는 CSV 형식을 사용하세요.</li>
-                <li>구분값은 T 또는 V만 허용합니다. 생략하면 T로 등록됩니다.</li>
-                <li>한 줄에 한 개의 학습문장을 입력하세요.</li>
+                <li>{getIntentStartLabel(copy,"쉼표(,)로 구분하는 CSV 형식을 사용하세요.")}</li>
+                <li>{getIntentStartLabel(copy,"구분값은 T 또는 V만 허용합니다. 생략하면 T로 등록됩니다.")}</li>
+                <li>{getIntentStartLabel(copy,"한 줄에 한 개의 학습문장을 입력하세요.")}</li>
               </ul>
             </>
           }
@@ -2353,7 +2332,7 @@ export function IntentStartPage() {
 
       {uploadResult ? (
         <UploadResultDialog
-          title="업로드 결과"
+          title={getIntentStartLabel(copy,"업로드 결과")}
           message={uploadResult.message}
           note={uploadResult.note}
           sections={uploadResult.sections}
@@ -2397,16 +2376,16 @@ export function IntentStartPage() {
             aria-labelledby="intent-start-help-title"
           >
             <header className="dialog-help-modal__header">
-              <h2 id="intent-start-help-title">대화 시작 안내</h2>
-              <button type="button" aria-label="닫기" onClick={() => setStartHelpOpen(false)}>
+              <h2 id="intent-start-help-title">{getIntentStartLabel(copy,"대화 시작 안내")}</h2>
+              <button type="button" aria-label={getIntentStartLabel(copy,"닫기")} onClick={() => setStartHelpOpen(false)}>
                 ×
               </button>
             </header>
             <div className="dialog-help-modal__body">
               <section className="dialog-help-modal__section">
-                <h3>대화시작 하기</h3>
+                <h3>{getIntentStartLabel(copy,"대화시작 하기")}</h3>
                 <div className="dialog-help-modal__notice">
-                  <p>학습문장과 개체를 등록하고 관리할 수 있습니다.</p>
+                  <p>{getIntentStartLabel(copy,"학습문장과 개체를 등록하고 관리할 수 있습니다.")}</p>
                   <p>
                     등록한 학습문장과 챗봇 사용자가 입력한 메시지를 비교해 사용자 의도와 가장 가까운 대화를
                     선택해 대화를 진행합니다.
@@ -2418,14 +2397,14 @@ export function IntentStartPage() {
                 </div>
               </section>
               <section className="dialog-help-modal__section">
-                <h3>단축키</h3>
+                <h3>{getIntentStartLabel(copy,"단축키")}</h3>
                 <div className="dialog-help-modal__notice">
                   <ul>
-                    <li>대화시작 저장: Ctrl + S</li>
-                    <li>대화시작표현 파일 다운로드: Ctrl + D</li>
-                    <li>대화시작표현 파일 업로드: Ctrl + U</li>
-                    <li>대화시작 저장 후 대화설계 이동: Ctrl + &gt;</li>
-                    <li>새로운 개체: Ctrl + E</li>
+                    <li>{getIntentStartLabel(copy,"대화시작 저장: Ctrl + S")}</li>
+                    <li>{getIntentStartLabel(copy,"대화시작표현 파일 다운로드: Ctrl + D")}</li>
+                    <li>{getIntentStartLabel(copy,"대화시작표현 파일 업로드: Ctrl + U")}</li>
+                    <li>{getIntentStartLabel(copy, "대화시작 저장 후 대화설계 이동: Ctrl + >")}</li>
+                    <li>{getIntentStartLabel(copy,"새로운 개체: Ctrl + E")}</li>
                   </ul>
                 </div>
               </section>
