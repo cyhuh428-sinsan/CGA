@@ -27,6 +27,7 @@ import {
   type AdminOperationsDashboardSystemErrorItem,
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_OPERATIONS_ACTION_CATALOGS, formatOperationsText } from "@/lib/i18n/admin-operations-actions";
 import { ADMIN_OPERATIONS_DASHBOARD_CATALOGS } from "@/lib/i18n/admin-operations-dashboard";
 import { fetchStudioBots, forceReleaseEditLock, type StudioBotApiItem } from "@/lib/studio-bots-api";
 
@@ -224,6 +225,7 @@ function traceHref(path: string, value: string) {
 export default function AdminOperationsDashboardPage() {
   const { language: uiLanguage } = useI18n();
   const copy = ADMIN_OPERATIONS_DASHBOARD_CATALOGS[uiLanguage];
+  const actionCopy = ADMIN_OPERATIONS_ACTION_CATALOGS[uiLanguage];
   const [token, setToken] = useState("");
   const [period, setPeriod] = useState<PeriodValue>("1h");
   const [groupId, setGroupId] = useState("");
@@ -430,7 +432,7 @@ export default function AdminOperationsDashboardPage() {
         disabled={releasingLockId === item.id}
         onClick={() => void handleForceReleaseEditLock(item)}
       >
-        {releasingLockId === item.id ? "해제 중" : "강제 해제"}
+        {releasingLockId === item.id ? actionCopy.releasing : actionCopy.forceRelease}
       </button>,
       item.bot_name,
       item.version_name,
@@ -730,7 +732,7 @@ export default function AdminOperationsDashboardPage() {
     if (!token || purgingCache) {
       return;
     }
-    const confirmed = window.confirm("Studio 화면 조회 캐시를 초기화하시겠습니까? 저장 데이터는 삭제되지 않습니다.");
+    const confirmed = window.confirm(actionCopy.cachePurgeConfirm);
     if (!confirmed) {
       return;
     }
@@ -741,8 +743,8 @@ export default function AdminOperationsDashboardPage() {
       const result = await purgeAdminCache(token, "studio_read_models");
       setStatusMessage(
         result.status === "purged"
-          ? `캐시 초기화 완료: ${result.purged.toLocaleString("ko-KR")}건`
-          : `캐시 초기화 건너뜀: ${result.reason || "캐시를 사용할 수 없습니다."}`,
+          ? formatOperationsText(actionCopy.cachePurged, { count: result.purged.toLocaleString(uiLanguage) })
+          : formatOperationsText(actionCopy.cacheSkipped, { reason: result.reason || "-" }),
       );
       const nextDashboard = await fetchOperationsDashboard(token, {
         ...dashboardPeriodFilters(period),
@@ -753,7 +755,7 @@ export default function AdminOperationsDashboardPage() {
       });
       setDashboard(nextDashboard);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "캐시 초기화에 실패했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : actionCopy.cachePurgeFailed);
     } finally {
       setPurgingCache(false);
     }
@@ -763,9 +765,7 @@ export default function AdminOperationsDashboardPage() {
     if (!token || releasingLockId) {
       return;
     }
-    const confirmed = window.confirm(
-      `${editLockOwner(item)}님의 편집 잠금을 강제 해제하시겠습니까? 저장 중인 사용자의 편집 권한이 해제될 수 있습니다.`,
-    );
+    const confirmed = window.confirm(formatOperationsText(actionCopy.forceReleaseConfirm, { owner: editLockOwner(item) }));
     if (!confirmed) {
       return;
     }
@@ -774,7 +774,7 @@ export default function AdminOperationsDashboardPage() {
     setStatusMessage("");
     try {
       const result = await forceReleaseEditLock(token, item.id);
-      setStatusMessage(result.released ? "편집 잠금을 해제했습니다." : "해제할 편집 잠금을 찾지 못했습니다.");
+      setStatusMessage(result.released ? actionCopy.lockReleased : actionCopy.lockNotFound);
       const nextDashboard = await fetchOperationsDashboard(token, {
         ...dashboardPeriodFilters(period),
         group_id: groupId || undefined,
@@ -784,7 +784,7 @@ export default function AdminOperationsDashboardPage() {
       });
       setDashboard(nextDashboard);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "편집 잠금을 해제하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : actionCopy.lockReleaseFailed);
     } finally {
       setReleasingLockId("");
     }
@@ -795,7 +795,7 @@ export default function AdminOperationsDashboardPage() {
       return;
     }
     if (!dryRun) {
-      const confirmed = window.confirm("현재 검색 조건의 DB 분리 backfill을 실행하시겠습니까? version_json은 유지되고 분리 테이블만 동기화됩니다.");
+      const confirmed = window.confirm(actionCopy.dbBackfillConfirm);
       if (!confirmed) {
         return;
       }
@@ -813,8 +813,11 @@ export default function AdminOperationsDashboardPage() {
       const failedCount = result.failed_versions.length;
       setStatusMessage(
         dryRun
-          ? `DB 분리 점검 완료: 대상 ${result.selected_versions.toLocaleString("ko-KR")}개 버전`
-          : `DB 분리 backfill 완료: 처리 ${result.processed_versions.toLocaleString("ko-KR")}개, 실패 ${failedCount.toLocaleString("ko-KR")}개`,
+          ? formatOperationsText(actionCopy.dbCheckComplete, { selected: result.selected_versions.toLocaleString(uiLanguage) })
+          : formatOperationsText(actionCopy.dbBackfillComplete, {
+              processed: result.processed_versions.toLocaleString(uiLanguage),
+              failed: failedCount.toLocaleString(uiLanguage),
+            }),
       );
       const nextDashboard = await fetchOperationsDashboard(token, {
         ...dashboardPeriodFilters(period),
@@ -826,7 +829,7 @@ export default function AdminOperationsDashboardPage() {
       setDashboard(nextDashboard);
       await handleVersionIntegrityCheck();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "DB 분리 backfill에 실패했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : actionCopy.dbBackfillFailed);
     } finally {
       setBackfillingVersionStorage("");
     }
@@ -837,7 +840,7 @@ export default function AdminOperationsDashboardPage() {
       return;
     }
     if (!dryRun) {
-      const confirmed = window.confirm("현재 검색 조건의 버전 요약 스냅샷 backfill을 실행하시겠습니까? version_json은 유지되고 요약 컬럼만 갱신됩니다.");
+      const confirmed = window.confirm(actionCopy.snapshotBackfillConfirm);
       if (!confirmed) {
         return;
       }
@@ -855,8 +858,11 @@ export default function AdminOperationsDashboardPage() {
       const failedCount = result.failed_versions.length;
       setStatusMessage(
         dryRun
-          ? `요약 스냅샷 점검 완료: 대상 ${result.selected_versions.toLocaleString("ko-KR")}개 버전`
-          : `요약 스냅샷 backfill 완료: 처리 ${result.processed_versions.toLocaleString("ko-KR")}개, 실패 ${failedCount.toLocaleString("ko-KR")}개`,
+          ? formatOperationsText(actionCopy.snapshotCheckComplete, { selected: result.selected_versions.toLocaleString(uiLanguage) })
+          : formatOperationsText(actionCopy.snapshotBackfillComplete, {
+              processed: result.processed_versions.toLocaleString(uiLanguage),
+              failed: failedCount.toLocaleString(uiLanguage),
+            }),
       );
       const nextDashboard = await fetchOperationsDashboard(token, {
         ...dashboardPeriodFilters(period),
@@ -868,7 +874,7 @@ export default function AdminOperationsDashboardPage() {
       setDashboard(nextDashboard);
       await handleVersionIntegrityCheck();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "요약 스냅샷 backfill에 실패했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : actionCopy.snapshotBackfillFailed);
     } finally {
       setBackfillingReadSnapshots("");
     }
