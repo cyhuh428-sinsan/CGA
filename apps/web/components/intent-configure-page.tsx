@@ -2553,7 +2553,7 @@ export function IntentConfigurePage() {
   async function handleMlConfigureTest() {
     const utterance = mlTestUtterance.trim();
     if (!utterance) {
-      setErrorMessage("테스트할 사용자 발화를 입력해주세요.");
+      setErrorMessage(inputCopy.mlTestUtteranceRequired);
       return;
     }
     if (!authSession || !bot || !effectiveVersion) {
@@ -2561,11 +2561,11 @@ export function IntentConfigurePage() {
       return;
     }
     if (!isMlConfigureNluType(nluType)) {
-      setErrorMessage("ML 구성 엔진에서만 구성 테스트를 사용할 수 있습니다.");
+      setErrorMessage(inputCopy.mlTestEngineOnly);
       return;
     }
     if (clusters.length === 0) {
-      setErrorMessage("먼저 자동 구성을 실행한 뒤 테스트해주세요.");
+      setErrorMessage(inputCopy.autoConfigureFirst);
       return;
     }
 
@@ -2610,7 +2610,7 @@ export function IntentConfigurePage() {
         .slice(0, 5);
       setMlTestResult({ utterance, tokens: inputTokens, candidates });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "ML 구성 테스트를 실행하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : inputCopy.mlTestFailed);
     } finally {
       setMlTesting(false);
     }
@@ -2619,27 +2619,27 @@ export function IntentConfigurePage() {
   function loadMlSeedIntentsFromCurrentVersion() {
     const seedIntentText = formatMlSeedIntentTextFromDialogs(dialogs);
     if (!seedIntentText.trim()) {
-      setErrorMessage("현재 버전에 불러올 의도 학습문장이 없습니다.");
+      setErrorMessage(inputCopy.noCurrentIntentUtterances);
       return;
     }
     const parsed = parseMlSeedIntentText(seedIntentText);
     setMlSeedIntentText(seedIntentText);
     setErrorMessage("");
-    setMessage(`현재 버전 의도 ${parsed.seedIntents.length}개를 ML 기준 의도로 불러왔습니다.`);
+    setMessage(formatIntentConfigureInputText(inputCopy.seedLoaded, { count: parsed.seedIntents.length }));
   }
 
   function applyMlSeedIntentText() {
     const parsed = parseMlSeedIntentText(mlSeedIntentText);
     if (parsed.invalidLines.length > 0) {
-      setErrorMessage(`ML 기준 의도 형식을 확인해주세요: ${parsed.invalidLines.slice(0, 3).join(" / ")}`);
+      setErrorMessage(formatIntentConfigureInputText(inputCopy.invalidSeedFormat, { lines: parsed.invalidLines.slice(0, 3).join(" / ") }));
       return;
     }
     setMlSeedIntentOpen(false);
     setErrorMessage("");
     setMessage(
       parsed.seedIntents.length > 0
-        ? `ML 기준 의도 ${parsed.seedIntents.length}개를 적용했습니다.`
-        : "ML 기준 의도를 비웠습니다. 자동 구성은 세밀한 후보 중심으로 실행됩니다.",
+        ? formatIntentConfigureInputText(inputCopy.seedApplied, { count: parsed.seedIntents.length })
+        : inputCopy.seedCleared,
     );
   }
 
