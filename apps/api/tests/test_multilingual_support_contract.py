@@ -613,3 +613,16 @@ def test_intent_list_sorting_uses_selected_ui_language() -> None:
     page_source = (ROOT_DIR / "apps/web/components/intent-list-page.tsx").read_text(encoding="utf-8")
     assert "localeCompare(right, uiLanguage)" in page_source
     assert 'localeCompare(right, "ko-KR")' not in page_source
+
+
+def test_dictionary_list_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/dictionary-list-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/dictionary-list.ts").read_text(encoding="utf-8")
+    assert "DICTIONARY_LIST_CATALOGS[uiLanguage]" in page_source
+    assert "copy.searchPlaceholder" in page_source
+    assert "copy.uploadResultTitle" in page_source
+    assert "copy.columns.word" in page_source
+    assert 'title="파일 업로드"' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, DictionaryListCatalog>" in catalog_source
