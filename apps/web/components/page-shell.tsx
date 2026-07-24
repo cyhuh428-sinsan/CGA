@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { ReactNode } from "react";
+
+import { useI18n } from "@/components/language-provider";
+import { PAGE_SHELL_CATALOGS } from "@/lib/i18n/utility-pages";
 
 type ManualReference = {
   section: string;
@@ -31,12 +36,14 @@ export function PageShell({
   notes,
   children,
 }: PageShellProps) {
+  const { language } = useI18n();
+  const copy = PAGE_SHELL_CATALOGS[language];
   return (
     <section className="content-card">
       <div className="content-header">
         <div>
           <p className="eyebrow">
-            {status === "partial" ? "부분 구현" : "화면 셸"}
+            {status === "partial" ? copy.partial : copy.shell}
           </p>
           <h1>{title}</h1>
           <p className="description">{description}</p>
@@ -44,12 +51,12 @@ export function PageShell({
       </div>
 
       <div className="manual-card">
-        <h2>매뉴얼 대응 항목</h2>
+        <h2>{copy.manualItems}</h2>
         <ul className="manual-list">
           {manualReferences.map((item) => (
             <li key={`${item.section}-${item.title}`}>
               <strong>{item.section}</strong> {item.title}
-              {item.inferred ? " (추측 포함)" : ""}
+              {item.inferred ? ` (${copy.inferred})` : ""}
             </li>
           ))}
         </ul>
@@ -57,7 +64,7 @@ export function PageShell({
 
       {notes && notes.length > 0 ? (
         <div className="manual-card">
-          <h2>현재 메모</h2>
+          <h2>{copy.currentNotes}</h2>
           <ul className="manual-list">
             {notes.map((note) => (
               <li key={note}>{note}</li>
@@ -68,7 +75,7 @@ export function PageShell({
 
       {quickLinks && quickLinks.length > 0 ? (
         <div className="manual-card">
-          <h2>다음 확인 경로</h2>
+          <h2>{copy.nextPaths}</h2>
           <div className="quick-links">
             {quickLinks.map((link) => (
               <Link key={link.href} href={link.href} className="chip-link">
