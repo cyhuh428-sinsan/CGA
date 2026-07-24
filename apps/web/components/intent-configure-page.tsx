@@ -3398,12 +3398,12 @@ export function IntentConfigurePage() {
           {isMlConfigureNluType(nluType) ? (
             <div className="intent-configure__settings-entry">
               <button type="button" className="secondary-action" onClick={() => setMlSeedIntentOpen(true)} disabled={operatingVersion}>
-                ML 기준 의도 입력
+                {inputCopy.seedIntentEntry}
               </button>
               <span>
                 {mlSeedIntentCount > 0
-                  ? `기준 의도 ${mlSeedIntentCount}개`
-                  : "기준 의도 없음 · 세밀 후보 중심"}
+                  ? formatIntentConfigureInputText(inputCopy.seedIntentCount, { count: mlSeedIntentCount })
+                  : inputCopy.seedIntentNone}
               </span>
             </div>
           ) : null}
@@ -3535,8 +3535,8 @@ export function IntentConfigurePage() {
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header className="intent-configure-settings-modal__header">
-              <h2 id="intent-configure-seed-title">ML 기준 의도 입력</h2>
-              <button type="button" aria-label="닫기" onClick={() => setMlSeedIntentOpen(false)}>
+              <h2 id="intent-configure-seed-title">{inputCopy.seedIntentEntry}</h2>
+              <button type="button" aria-label={inputCopy.close} onClick={() => setMlSeedIntentOpen(false)}>
                 ×
               </button>
             </header>
@@ -3544,11 +3544,11 @@ export function IntentConfigurePage() {
               <div className="intent-configure__seed-modal-panel">
                 <div className="intent-configure__criteria-header">
                   <div className="intent-configure__criteria-title">
-                    <strong>기준 의도 일괄 입력</strong>
-                    <span>줄마다 의도명과 대표발화를 입력합니다. 확신 있는 문장만 해당 기준 의도에 배정합니다.</span>
+                    <strong>{inputCopy.seedBulkTitle}</strong>
+                    <span>{inputCopy.seedBulkDescription}</span>
                   </div>
                   <button type="button" className="secondary-action" onClick={loadMlSeedIntentsFromCurrentVersion} disabled={operatingVersion}>
-                    현재 의도 불러오기
+                    {inputCopy.loadCurrentIntents}
                   </button>
                 </div>
                 <textarea
@@ -3556,29 +3556,25 @@ export function IntentConfigurePage() {
                   value={mlSeedIntentText}
                   disabled={operatingVersion}
                   onChange={(event) => setMlSeedIntentText(event.target.value)}
-                  placeholder={
-                    "해지요청 : 해약 할겁니다, 계약 철회할게요\n" +
-                    "무동의 계약 : 가입한적이 없습니다, 딸이 가입했다고 하던데, 제가 운전자 계약이 있나요\n" +
-                    "발신자 확인(삼성생명 보험인가요, 누구시죠, 어디서 전화하신거죠)"
-                  }
+                  placeholder={inputCopy.seedPlaceholder}
                 />
                 <div className="intent-configure__seed-format">
-                  <span>입력 형식</span>
-                  <code>의도명 : 대표발화1, 대표발화2</code>
-                  <code>의도명(대표발화1, 대표발화2)</code>
+                  <span>{inputCopy.inputFormat}</span>
+                  <code>{inputCopy.seedFormatColon}</code>
+                  <code>{inputCopy.seedFormatParentheses}</code>
                 </div>
                 <div className="intent-configure__seed-modal-footer">
                   <span>
                     {mlSeedIntentText.trim()
-                      ? `인식된 기준 의도 ${mlSeedIntentCount}개`
-                      : "기준 의도를 입력하지 않으면 ML이 세밀한 후보를 생성합니다."}
+                      ? formatIntentConfigureInputText(inputCopy.recognizedSeedCount, { count: mlSeedIntentCount })
+                      : inputCopy.seedEmptyHint}
                   </span>
                   <div>
                     <button type="button" className="secondary-action" onClick={() => setMlSeedIntentOpen(false)}>
-                      취소
+                      {inputCopy.cancel}
                     </button>
                     <button type="button" className="primary-action" onClick={applyMlSeedIntentText} disabled={operatingVersion}>
-                      적용
+                      {inputCopy.apply}
                     </button>
                   </div>
                 </div>
