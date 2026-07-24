@@ -942,3 +942,17 @@ def test_version_management_page_uses_seven_language_catalog_without_changing_st
     assert 'selectedVersion.status === "active"' in page_source
     assert '<strong>버전 관리</strong>' not in page_source
     assert "satisfies Record<SupportedLanguage, VersionManagementCatalog>" in catalog_source
+
+def test_flow_designer_uses_seven_language_catalog_without_changing_graph_contract() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/flow-designer-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/flow-designer.ts").read_text(encoding="utf-8")
+    assert "FLOW_DESIGNER_CATALOGS[uiLanguage]" in page_source
+    assert "getFlowDesignerLabel(copy" in page_source
+    assert "copy.loadFailed" in page_source
+    assert 'kind: "talk"' in page_source
+    assert 'kind: "condition"' in page_source
+    assert '<strong>대화 테스트</strong>' not in page_source
+    assert 'placeholder="봇 메시지를 검색하세요."' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, FlowDesignerCatalog>" in catalog_source
