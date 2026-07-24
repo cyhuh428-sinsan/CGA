@@ -1,17 +1,21 @@
+"use client";
+
+import { useI18n } from "@/components/language-provider";
 import { PageShell } from "@/components/page-shell";
+import { UTILITY_PAGE_CATALOGS } from "@/lib/i18n/utility-pages";
 
 export default function LicenseAlertPage() {
+  const { language } = useI18n();
+  const copy = UTILITY_PAGE_CATALOGS[language].licenseAlert;
   return (
     <main className="page">
       <PageShell
-        title="라이선스 알림창"
-        description="라이선스 만료 또는 상태 안내를 표시하는 화면 셸입니다."
-        manualReferences={[
-          { section: "2.3", title: "라이선스 알림창" },
-        ]}
+        title={copy.title}
+        description={copy.description}
+        manualReferences={[{ section: "2.3", title: copy.title }]}
         quickLinks={[
-          { href: "/license", label: "라이선스 정보 조회" },
-          { href: "/login", label: "로그인" },
+          { href: "/license", label: copy.licenseInfo },
+          { href: "/login", label: copy.login },
         ]}
       />
     </main>
