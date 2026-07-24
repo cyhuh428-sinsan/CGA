@@ -427,3 +427,11 @@ def test_operations_dashboard_shell_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'"{language}":' in catalog_source or f"{language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage,AdminOperationsDashboardCatalog>" in catalog_source
+
+
+def test_operations_dashboard_actions_use_localized_messages() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/operations-dashboard/page.tsx").read_text(encoding="utf-8")
+    assert "copy.forceRelease" in page_source
+    assert "copy.cachePurgeConfirm" in page_source
+    assert "copy.dbBackfillConfirm" in page_source
+    assert "formatOperationsText" in page_source
