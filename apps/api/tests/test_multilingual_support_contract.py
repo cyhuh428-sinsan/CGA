@@ -515,3 +515,16 @@ def test_api_call_history_detail_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AdminApiCallHistoryCatalog>" in catalog_source
+
+
+def test_intent_feedback_detail_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/intent-feedback/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-intent-feedback.ts").read_text(encoding="utf-8")
+    assert "ADMIN_INTENT_FEEDBACK_CATALOGS[language]" in page_source
+    assert "detailCopy.dialogTitle" in page_source
+    assert "detailCopy.suggestedTrainingSentences" in page_source
+    assert "formatIntentFeedbackCount" in page_source
+    assert "의도 피드백 상세" not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, AdminIntentFeedbackCatalog>" in catalog_source
