@@ -71,6 +71,8 @@ export function StudioRail() {
   const helpMenuRef = useRef<HTMLDivElement | null>(null);
 
   const currentGettingStartedSlide = railCopy.gettingStartedSlides[gettingStartedSlide];
+  const manualHref = (manual: "getting-started" | "user-manual" | "nlu-guide") =>
+    `/manuals/cga-${manual}-${language}.pdf`;
 
   useEffect(() => {
     const currentSession = loadAuthSession();
@@ -468,10 +470,13 @@ export function StudioRail() {
               >
                 {t("gettingStarted.title")}
               </button>
-              <a href="/manuals/cga-user-manual.pdf" target="_blank" rel="noreferrer">
+              <a href={manualHref("getting-started")} target="_blank" rel="noreferrer">
+                {t("gettingStarted.title")} PDF
+              </a>
+              <a href={manualHref("user-manual")} target="_blank" rel="noreferrer">
                 {t("help.userManual")}
               </a>
-              <a href="/manuals/cga-nlu-guide.pdf" target="_blank" rel="noreferrer">
+              <a href={manualHref("nlu-guide")} target="_blank" rel="noreferrer">
                 {t("help.nluGuide")}
               </a>
             </section>
