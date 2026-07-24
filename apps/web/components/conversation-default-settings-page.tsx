@@ -171,11 +171,14 @@ function ToggleField({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const { language } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[language];
+
   return (
     <div className="settings-switch-row">
       <FieldLabel title={title} help={help} />
       <label className="settings-switch">
-        <span>사용</span>
+        <span>{getStudioPageLabel(copy, "사용")}</span>
         <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
         <span className="settings-switch__track" />
       </label>
@@ -254,6 +257,9 @@ function ModuleField({
   value: string;
   onOpen: () => void;
 }) {
+  const { language } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[language];
+
   return (
     <div className="settings-defaults-field settings-defaults-field--wide">
       <FieldLabel title={title} help={help} />
@@ -263,7 +269,7 @@ function ModuleField({
           readOnly
           className="settings-module-field__input"
           value={value}
-          placeholder="우측 버튼을 클릭해 연결할 모듈을 선택하세요."
+          placeholder={getStudioPageLabel(copy, "우측 버튼을 클릭해 연결할 모듈을 선택하세요.")}
         />
         <button type="button" className="secondary-action settings-module-field__button" onClick={onOpen}>
           모듈 목록
@@ -288,6 +294,9 @@ function ModulePickerDialog({
   onClose: () => void;
   onSelect: (value: string) => void;
 }) {
+  const { language } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[language];
+
   if (!open) {
     return null;
   }
@@ -297,7 +306,7 @@ function ModulePickerDialog({
       <div className="settings-dialog" role="dialog" aria-modal="true" aria-label={title} onClick={(event) => event.stopPropagation()}>
         <div className="settings-dialog__header">
           <strong>{title}</strong>
-          <button type="button" className="settings-dialog__close" onClick={onClose} aria-label="닫기">
+          <button type="button" className="settings-dialog__close" onClick={onClose} aria-label={getStudioPageLabel(copy, "닫기")}>
             ×
           </button>
         </div>
@@ -334,7 +343,7 @@ function ModulePickerDialog({
               );
             })
           ) : (
-            <div className="settings-dialog__empty">등록된 모듈이 없습니다.</div>
+            <div className="settings-dialog__empty">{getStudioPageLabel(copy, "등록된 모듈이 없습니다.")}</div>
           )}
         </div>
       </div>
@@ -427,12 +436,12 @@ export function ConversationDefaultSettingsPage() {
                   <h3>{getStudioPageLabel(copy,"기본 정보")}</h3>
                     <div className="settings-defaults-grid settings-defaults-grid--two">
                       <div className="settings-defaults-field settings-defaults-field--readonly">
-                        <FieldLabel title={getStudioPageLabel(copy,"봇 ID")} help="봇을 내부적으로 식별하는 고유 ID입니다. 이름과 다르게 중복되지 않으며 저장과 참조의 기준이 됩니다." />
+                        <FieldLabel title={getStudioPageLabel(copy,"봇 ID")} help={getStudioPageLabel(copy, "봇을 내부적으로 식별하는 고유 ID입니다. 이름과 다르게 중복되지 않으며 저장과 참조의 기준이 됩니다.")} />
                         <strong>{bot.id}</strong>
                       </div>
 
                       <label className="settings-defaults-field settings-defaults-field--wide-mobile">
-                        <FieldLabel title="TTS URL" help="보이스봇일 때만 사용하는 설정입니다. Talk 카드의 봇 메시지와 개체 추출 필수 메시지를 읽어줄 TTS 연결 URL을 등록합니다." />
+                        <FieldLabel title="TTS URL" help={getStudioPageLabel(copy, "보이스봇일 때만 사용하는 설정입니다. Talk 카드의 봇 메시지와 개체 추출 필수 메시지를 읽어줄 TTS 연결 URL을 등록합니다.")} />
                         <input
                           type="text"
                           className="settings-defaults-input"
@@ -451,11 +460,11 @@ export function ConversationDefaultSettingsPage() {
 
                 <div className="settings-defaults-two-column">
                   <section className="settings-defaults-group settings-defaults-group--panel">
-                    <h3>NLU 판정 기준</h3>
+                    <h3>{getStudioPageLabel(copy, "NLU 판정 기준")}</h3>
                     <div className="settings-defaults-grid settings-defaults-grid--three">
                       <NumberStepperField
-                        title="의도파악 Cut-off Score"
-                        help="챗봇이 사용자의 질문을 의도로 인정할 최소 기준 점수입니다. ML, Semantic, LLM NLU에서 공통 판정 기준으로 사용합니다."
+                        title={getStudioPageLabel(copy, "의도파악 Cut-off Score")}
+                        help={getStudioPageLabel(copy, "챗봇이 사용자의 질문을 의도로 인정할 최소 기준 점수입니다. ML, Semantic, LLM NLU에서 공통 판정 기준으로 사용합니다.")}
                         value={form.ml.cutOffScore}
                         min={0}
                         max={0.99}
@@ -468,8 +477,8 @@ export function ConversationDefaultSettingsPage() {
                         }
                       />
                       <NumberStepperField
-                        title="유사의도 Score"
-                        help="최상위 의도와 얼마나 비슷하면 유사의도로 볼지 정하는 비율값입니다. ML, Semantic, LLM NLU에서 공통 판정 기준으로 사용합니다."
+                        title={getStudioPageLabel(copy, "유사의도 Score")}
+                        help={getStudioPageLabel(copy, "최상위 의도와 얼마나 비슷하면 유사의도로 볼지 정하는 비율값입니다. ML, Semantic, LLM NLU에서 공통 판정 기준으로 사용합니다.")}
                         value={form.ml.similarIntentScore}
                         min={0}
                         max={0.99}
@@ -482,8 +491,8 @@ export function ConversationDefaultSettingsPage() {
                         }
                       />
                       <NumberStepperField
-                        title="의도파악결과 최대개수"
-                        help="Cut-off를 넘는 의도나 유사의도가 여러 개일 때 상위 몇 개까지 보여줄지 설정합니다. 다중 의도 버튼과 되묻기 후보 수를 제한하는 값입니다."
+                        title={getStudioPageLabel(copy, "의도파악결과 최대개수")}
+                        help={getStudioPageLabel(copy, "Cut-off를 넘는 의도나 유사의도가 여러 개일 때 상위 몇 개까지 보여줄지 설정합니다. 다중 의도 버튼과 되묻기 후보 수를 제한하는 값입니다.")}
                         value={form.ml.maxIntentResults}
                         min={1}
                         max={10}
@@ -498,8 +507,8 @@ export function ConversationDefaultSettingsPage() {
 
                     <div className="settings-defaults-grid settings-defaults-grid--two">
                       <RadioField
-                        title="Validation Set 상태 설정"
-                        help="학습 문장을 training/validation으로 분리하는 방식을 Random 또는 Fixed 중에서 선택합니다."
+                        title={getStudioPageLabel(copy, "Validation Set 상태 설정")}
+                        help={getStudioPageLabel(copy, "학습 문장을 training/validation으로 분리하는 방식을 Random 또는 Fixed 중에서 선택합니다.")}
                         value={form.validation.mode}
                         options={[
                           { value: "random", label: "Random" },
@@ -515,7 +524,7 @@ export function ConversationDefaultSettingsPage() {
 
                       <BinaryRadioField
                         title="Exacting Matching"
-                        help="사용자 발화가 등록된 학습문장과 완전히 동일하면 Score 계산보다 먼저 해당 의도로 진입할지 설정합니다."
+                        help={getStudioPageLabel(copy, "사용자 발화가 등록된 학습문장과 완전히 동일하면 Score 계산보다 먼저 해당 의도로 진입할지 설정합니다.")}
                         checked={form.exactingMatching.enabled}
                         onChange={(checked) =>
                           updateSection("exactingMatching", {
@@ -525,8 +534,8 @@ export function ConversationDefaultSettingsPage() {
                       />
 
                       <BinaryRadioField
-                        title="Imbalance Oversampling 설정"
-                        help="의도별 학습 문장의 feature를 분석하여 데이터 불균형을 자동 보완한 뒤 학습하는 옵션입니다."
+                        title={getStudioPageLabel(copy, "Imbalance Oversampling 설정")}
+                        help={getStudioPageLabel(copy, "의도별 학습 문장의 feature를 분석하여 데이터 불균형을 자동 보완한 뒤 학습하는 옵션입니다.")}
                         checked={form.validation.imbalanceOversampling}
                         onChange={(checked) =>
                           updateSection("validation", {
@@ -542,10 +551,10 @@ export function ConversationDefaultSettingsPage() {
 
                 <div className="settings-defaults-two-column">
                   <section className="settings-defaults-group settings-defaults-group--panel">
-                    <h3>타임아웃</h3>
+                    <h3>{getStudioPageLabel(copy, "타임아웃")}</h3>
                     <ToggleField
                       title={getStudioPageLabel(copy,"타임아웃 사용")}
-                      help="버전 단위에서 타임아웃 기능을 사용할지 설정합니다. 세션 타이머 활성화 여부를 결정합니다."
+                      help={getStudioPageLabel(copy, "버전 단위에서 타임아웃 기능을 사용할지 설정합니다. 세션 타이머 활성화 여부를 결정합니다.")}
                       checked={form.timeout.enabled}
                       onChange={(checked) =>
                         updateSection("timeout", {
@@ -556,8 +565,8 @@ export function ConversationDefaultSettingsPage() {
                     />
                     <div className="settings-defaults-grid settings-defaults-grid--two">
                       <NumberStepperField
-                        title="타임아웃 시간"
-                        help="진행 중 대화에서 사용자 추가 발화가 없을 때 대화를 종료하기 전까지 기다릴 시간을 초 단위로 설정합니다."
+                        title={getStudioPageLabel(copy, "타임아웃 시간")}
+                        help={getStudioPageLabel(copy, "진행 중 대화에서 사용자 추가 발화가 없을 때 대화를 종료하기 전까지 기다릴 시간을 초 단위로 설정합니다.")}
                         value={form.timeout.seconds}
                         min={1}
                         max={999}
@@ -569,8 +578,8 @@ export function ConversationDefaultSettingsPage() {
                         }
                       />
                       <BinaryRadioField
-                        title="Push Message 타임아웃 적용"
-                        help="Push Message로 시작한 대화에도 일반 타임아웃 규칙을 적용할지 설정합니다."
+                        title={getStudioPageLabel(copy, "Push Message 타임아웃 적용")}
+                        help={getStudioPageLabel(copy, "Push Message로 시작한 대화에도 일반 타임아웃 규칙을 적용할지 설정합니다.")}
                         checked={form.timeout.applyToPushMessage}
                         onChange={(checked) =>
                           updateSection("timeout", {
@@ -583,11 +592,11 @@ export function ConversationDefaultSettingsPage() {
                   </section>
 
                   <section className="settings-defaults-group settings-defaults-group--panel">
-                    <h3>개체 파악</h3>
+                    <h3>{getStudioPageLabel(copy, "개체 파악")}</h3>
                     <div className="settings-defaults-grid settings-defaults-grid--two">
                       <NumberStepperField
-                        title="사용자에게 개체를 얻기 위한 질문의 최대 반복 횟수"
-                        help="Talk 카드의 최대 반복횟수가 0일 때 사용하는 기본값입니다. 의도 시작 문장에서 필수 변수로 설정된 개체에도 적용됩니다."
+                        title={getStudioPageLabel(copy, "사용자에게 개체를 얻기 위한 질문의 최대 반복 횟수")}
+                        help={getStudioPageLabel(copy, "Talk 카드의 최대 반복횟수가 0일 때 사용하는 기본값입니다. 의도 시작 문장에서 필수 변수로 설정된 개체에도 적용됩니다.")}
                         value={form.entityPrompt.maxRepeatCount}
                         min={0}
                         max={10}
@@ -607,7 +616,7 @@ export function ConversationDefaultSettingsPage() {
                     <div className="settings-defaults-grid settings-defaults-grid--two">
                       <NumberStepperField
                         title={getStudioPageLabel(copy,"사용자 응답 사이 최대 카드 수")}
-                        help="사용자 응답을 받은 뒤 다음 사용자 응답을 기다리기 전까지 연속 실행할 수 있는 최대 카드 수입니다. 이 값을 초과하면 루핑으로 보고 시나리오를 중단하며 분석 데이터에 오류를 표시합니다."
+                        help={getStudioPageLabel(copy, "사용자 응답을 받은 뒤 다음 사용자 응답을 기다리기 전까지 연속 실행할 수 있는 최대 카드 수입니다. 이 값을 초과하면 루핑으로 보고 시나리오를 중단하며 분석 데이터에 오류를 표시합니다.")}
                         value={form.runtime.maxCardsBetweenUserResponses}
                         min={1}
                         max={1000}
@@ -624,11 +633,11 @@ export function ConversationDefaultSettingsPage() {
 
                 {usesLlmAnswer ? (
                   <section className="settings-defaults-group settings-defaults-group--panel">
-                    <h3>LLM 답변</h3>
+                    <h3>{getStudioPageLabel(copy, "LLM 답변")}</h3>
                     <label className="settings-defaults-field settings-defaults-field--wide">
                       <FieldLabel
                         title={getStudioPageLabel(copy,"답변 생성 시스템 프롬프트")}
-                        help="LLM Engine 답변과 LLM Engine RAG 답변이 답변 문장을 생성할 때 사용하는 기본 지시문입니다. RAG 답변에서는 저장된 문서 밖의 지식을 사용하지 못하도록 시스템이 별도 안전 규칙을 추가합니다."
+                        help={getStudioPageLabel(copy, "LLM Engine 답변과 LLM Engine RAG 답변이 답변 문장을 생성할 때 사용하는 기본 지시문입니다. RAG 답변에서는 저장된 문서 밖의 지식을 사용하지 못하도록 시스템이 별도 안전 규칙을 추가합니다.")}
                       />
                       <textarea
                         className="bot-settings-intro__textarea"
@@ -647,11 +656,11 @@ export function ConversationDefaultSettingsPage() {
 
                 <div className="settings-defaults-two-column">
                   <section className="settings-defaults-group settings-defaults-group--panel">
-                    <h3>의도 파악</h3>
+                    <h3>{getStudioPageLabel(copy, "의도 파악")}</h3>
                     <div className="settings-defaults-grid settings-defaults-grid--two">
                       <NumberStepperField
-                        title="의도파악 시도 횟수"
-                        help="의도 파악을 연속으로 실패했을 때 몇 번까지 재시도할지 설정합니다."
+                        title={getStudioPageLabel(copy, "의도파악 시도 횟수")}
+                        help={getStudioPageLabel(copy, "의도 파악을 연속으로 실패했을 때 몇 번까지 재시도할지 설정합니다.")}
                         value={form.intentDetection.retryCount}
                         min={1}
                         max={10}
@@ -663,8 +672,8 @@ export function ConversationDefaultSettingsPage() {
                         }
                       />
                       <ModuleField
-                        title="의도파악 시도 횟수 초과시 실행할 모듈"
-                        help="의도 인식 실패가 누적되어 최대 시도 횟수를 넘겼을 때 실행할 모듈을 설정합니다."
+                        title={getStudioPageLabel(copy, "의도파악 시도 횟수 초과시 실행할 모듈")}
+                        help={getStudioPageLabel(copy, "의도 인식 실패가 누적되어 최대 시도 횟수를 넘겼을 때 실행할 모듈을 설정합니다.")}
                         value={form.intentDetection.overflowModule}
                         onOpen={() => setModulePickerTarget("overflowModule")}
                       />
@@ -675,20 +684,20 @@ export function ConversationDefaultSettingsPage() {
                     <h3>{getStudioPageLabel(copy,"모듈 연결")}</h3>
                     <div className="settings-defaults-grid settings-defaults-grid--one">
                       <ModuleField
-                        title="전처리 모듈"
-                        help="봇과 대화를 시작할 때 가장 먼저 실행할 모듈을 설정합니다."
+                        title={getStudioPageLabel(copy, "전처리 모듈")}
+                        help={getStudioPageLabel(copy, "봇과 대화를 시작할 때 가장 먼저 실행할 모듈을 설정합니다.")}
                         value={form.intentDetection.preprocessModule}
                         onOpen={() => setModulePickerTarget("preprocessModule")}
                       />
                       <ModuleField
-                        title="Session End 전 실행할 모듈"
-                        help="봇과 대화를 종료하기 직전에 실행할 모듈을 설정합니다."
+                        title={getStudioPageLabel(copy, "Session End 전 실행할 모듈")}
+                        help={getStudioPageLabel(copy, "봇과 대화를 종료하기 직전에 실행할 모듈을 설정합니다.")}
                         value={form.intentDetection.beforeSessionEndModule}
                         onOpen={() => setModulePickerTarget("beforeSessionEndModule")}
                       />
                       <ModuleField
-                        title="파악된 의도가 여러 개일 경우 버튼에 추가할 모듈"
-                        help="파악된 의도가 여러 개일 때 버튼 목록에 추가로 붙일 모듈을 설정합니다."
+                        title={getStudioPageLabel(copy, "파악된 의도가 여러 개일 경우 버튼에 추가할 모듈")}
+                        help={getStudioPageLabel(copy, "파악된 의도가 여러 개일 때 버튼 목록에 추가로 붙일 모듈을 설정합니다.")}
                         value={form.intentDetection.multiIntentButtonModule}
                         onOpen={() => setModulePickerTarget("multiIntentButtonModule")}
                       />
@@ -700,8 +709,8 @@ export function ConversationDefaultSettingsPage() {
                   <h3>{getStudioPageLabel(copy,"고급 설정")}</h3>
                   <div className="settings-defaults-grid settings-defaults-grid--two">
                     <RadioField
-                      title="버튼 선택 옵션"
-                      help="Talk 카드 Button 템플릿 사용 시 버튼명과 완전히 같은 경우만 선택할지, 입력 텍스트에 버튼명이 포함되어도 선택으로 볼지 결정합니다."
+                      title={getStudioPageLabel(copy, "버튼 선택 옵션")}
+                      help={getStudioPageLabel(copy, "Talk 카드 Button 템플릿 사용 시 버튼명과 완전히 같은 경우만 선택할지, 입력 텍스트에 버튼명이 포함되어도 선택으로 볼지 결정합니다.")}
                       value={form.buttonSelection.option}
                       options={[
                         { value: "contains", label: "Contains" },

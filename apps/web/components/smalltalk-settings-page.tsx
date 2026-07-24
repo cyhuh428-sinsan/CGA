@@ -492,9 +492,9 @@ export function SmalltalkSettingsPage() {
                     setPage(1);
                   }}
                 >
-                  <option value={10}>10개씩 보기</option>
-                  <option value={30}>30개씩 보기</option>
-                  <option value={50}>50개씩 보기</option>
+                  <option value={10}>{getStudioPageLabel(copy, "10개씩 보기")}</option>
+                  <option value={30}>{getStudioPageLabel(copy, "30개씩 보기")}</option>
+                  <option value={50}>{getStudioPageLabel(copy, "50개씩 보기")}</option>
                 </select>
                 <button
                   type="button"
@@ -521,22 +521,22 @@ export function SmalltalkSettingsPage() {
                     />
                   </span>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("title")}>
-                    <SortHeaderLabel label="스몰토크 이름" direction={sortKey === "title" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "스몰토크 이름")} direction={sortKey === "title" ? sortDirection : "none"} />
                   </button>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("priority")}>
-                    <SortHeaderLabel label="우선순위" direction={sortKey === "priority" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "우선순위")} direction={sortKey === "priority" ? sortDirection : "none"} />
                   </button>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("userMessages")}>
-                    <SortHeaderLabel label="사용자 메시지" direction={sortKey === "userMessages" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "사용자 메시지")} direction={sortKey === "userMessages" ? sortDirection : "none"} />
                   </button>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("botMessages")}>
-                    <SortHeaderLabel label="봇 메시지" direction={sortKey === "botMessages" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "봇 메시지")} direction={sortKey === "botMessages" ? sortDirection : "none"} />
                   </button>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedAt")}>
-                    <SortHeaderLabel label="최종수정일시" direction={sortKey === "updatedAt" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정일시")} direction={sortKey === "updatedAt" ? sortDirection : "none"} />
                   </button>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-                    <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정자")} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
                   </button>
                 </div>
 
@@ -609,7 +609,7 @@ export function SmalltalkSettingsPage() {
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="settings-dialog__header">
-                      <strong>{form.items.some((item) => item.id === editor.id) ? "스몰토크 수정" : "스몰토크 추가"}</strong>
+                      <strong>{getStudioPageLabel(copy, form.items.some((item) => item.id === editor.id) ? "스몰토크 수정" : "스몰토크 추가")}</strong>
                       <button type="button" className="settings-dialog__close" onClick={() => setEditorOpen(false)} aria-label={getStudioPageLabel(copy,"닫기")}>
                         ×
                       </button>
@@ -625,14 +625,14 @@ export function SmalltalkSettingsPage() {
                               value={editor.title}
                               maxLength={40}
                               onChange={(event) => setEditor((current) => ({ ...current, title: event.target.value }))}
-                              placeholder="유일한 스몰토크 이름을 입력하세요."
+                              placeholder={getStudioPageLabel(copy, "유일한 스몰토크 이름을 입력하세요.")}
                             />
-                            <em>한글/영문/숫자/공백/특수문자 -_()[]:; 만 입력/40</em>
+                            <em>{getStudioPageLabel(copy, "한글/영문/숫자/공백/특수문자 -_()[]:; 만 입력/40")}</em>
                           </span>
                         </label>
 
                         <label className="settings-smalltalk-field">
-                          <span>우선순위*</span>
+                          <span>{getStudioPageLabel(copy, "우선순위*")}</span>
                           <select
                             className="bot-settings-card__select"
                             value={editor.priority ?? "Medium"}
@@ -708,7 +708,7 @@ export function SmalltalkSettingsPage() {
                                 onChange={(event) =>
                                   setSelectedUserMessageIndexes(event.target.checked ? editorUserMessages.map((_, index) => index) : [])
                                 }
-                                aria-label="사용자 메시지 전체 선택"
+                                aria-label={getStudioPageLabel(copy, "사용자 메시지 전체 선택")}
                               />
                               <span>{getStudioPageLabel(copy,"사용자 메시지")}</span>
                             </div>
@@ -766,7 +766,7 @@ export function SmalltalkSettingsPage() {
                                 onChange={(event) =>
                                   setSelectedBotMessageIndexes(event.target.checked ? editorBotMessages.map((_, index) => index) : [])
                                 }
-                                aria-label="봇 메시지 전체 선택"
+                                aria-label={getStudioPageLabel(copy, "봇 메시지 전체 선택")}
                               />
                               <span>{getStudioPageLabel(copy,"봇 메시지")}</span>
                             </div>

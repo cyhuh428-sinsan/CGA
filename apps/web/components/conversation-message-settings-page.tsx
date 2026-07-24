@@ -96,6 +96,9 @@ function MessageItemEditor({
   onChange: (nextValue: MessageItemConfig) => void;
   onOpenModulePicker: (title: string, currentValue: string, onSelect: (value: string) => void) => void;
 }) {
+  const { language } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[language];
+
   return (
     <div className="settings-message-item">
       <div className="settings-message-item__header">
@@ -113,7 +116,7 @@ function MessageItemEditor({
               })
             }
           />
-          <span>사용</span>
+          <span>{getStudioPageLabel(copy, "사용")}</span>
         </label>
       </div>
 
@@ -130,7 +133,7 @@ function MessageItemEditor({
                 })
               }
             />
-            <span>메시지</span>
+            <span>{getStudioPageLabel(copy, "메시지")}</span>
           </label>
           <label className="settings-choice-option">
             <input
@@ -143,7 +146,7 @@ function MessageItemEditor({
                 })
               }
             />
-            <span>모듈 연결</span>
+            <span>{getStudioPageLabel(copy, "모듈 연결")}</span>
           </label>
         </div>
 
@@ -173,7 +176,7 @@ function MessageItemEditor({
                 readOnly
                 className="settings-module-field__input"
                 value={value.value}
-                placeholder="우측 버튼을 클릭해 연결할 모듈을 선택하세요."
+                placeholder={getStudioPageLabel(copy, "우측 버튼을 클릭해 연결할 모듈을 선택하세요.")}
               />
               <button
                 type="button"
@@ -234,6 +237,9 @@ function ModulePickerDialog({
   onClose: () => void;
   onSelect: (value: string) => void;
 }) {
+  const { language } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[language];
+
   if (!open) {
     return null;
   }
@@ -243,7 +249,7 @@ function ModulePickerDialog({
       <div className="settings-dialog" role="dialog" aria-modal="true" aria-label={title} onClick={(event) => event.stopPropagation()}>
         <div className="settings-dialog__header">
           <strong>{title}</strong>
-          <button type="button" className="settings-dialog__close" onClick={onClose} aria-label="닫기">
+          <button type="button" className="settings-dialog__close" onClick={onClose} aria-label={getStudioPageLabel(copy, "닫기")}>
             ×
           </button>
         </div>
@@ -280,7 +286,7 @@ function ModulePickerDialog({
               );
             })
           ) : (
-            <div className="settings-dialog__empty">등록된 모듈이 없습니다.</div>
+            <div className="settings-dialog__empty">{getStudioPageLabel(copy, "등록된 모듈이 없습니다.")}</div>
           )}
         </div>
       </div>
@@ -342,7 +348,7 @@ export function ConversationMessageSettingsPage() {
 
             <MessageSection
               title={getStudioPageLabel(copy,"기본 메시지(4)")}
-              description="대화 시작, 의도 미인식, 의도 종료, 버튼 불일치 등 기본 흐름에서 공통으로 사용하는 메시지를 설정합니다."
+              description={getStudioPageLabel(copy, "대화 시작, 의도 미인식, 의도 종료, 버튼 불일치 등 기본 흐름에서 공통으로 사용하는 메시지를 설정합니다.")}
               defaultOpen
             >
               <div className="settings-message-grid settings-message-grid--two">
@@ -365,7 +371,7 @@ export function ConversationMessageSettingsPage() {
                   }
                 />
                 <MessageItemEditor
-                  title="의도별 대화 종료시 안내 메시지"
+                  title={getStudioPageLabel(copy, "의도별 대화 종료시 안내 메시지")}
                   help={MESSAGE_HELP["의도별 대화 종료시 안내 메시지"]}
                   value={form.intentEndGuide}
                   onChange={(nextValue) => setForm((current) => ({ ...current, intentEndGuide: nextValue }))}
@@ -374,7 +380,7 @@ export function ConversationMessageSettingsPage() {
                   }
                 />
                 <MessageItemEditor
-                  title="버튼에 없는 값을 입력했을 경우 제공되는 메시지"
+                  title={getStudioPageLabel(copy, "버튼에 없는 값을 입력했을 경우 제공되는 메시지")}
                   help={MESSAGE_HELP["버튼에 없는 값을 입력했을 경우 제공되는 메시지"]}
                   value={form.buttonMismatch}
                   onChange={(nextValue) => setForm((current) => ({ ...current, buttonMismatch: nextValue }))}
@@ -387,14 +393,14 @@ export function ConversationMessageSettingsPage() {
 
             <MessageSection
               title={getStudioPageLabel(copy,"유사의도/되묻기(2)")}
-              description="유사 의도가 여러 개 잡혔을 때 사용자에게 보여줄 안내 문구와 '원하는 의도 없음' 처리 메시지를 설정합니다."
+              description={getStudioPageLabel(copy, "유사 의도가 여러 개 잡혔을 때 사용자에게 보여줄 안내 문구와 '원하는 의도 없음' 처리 메시지를 설정합니다.")}
             >
               <div className="settings-message-grid settings-message-grid--two">
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
                       <FieldLabel
-                        title="파악된 의도가 여러 개일 경우 안내 메시지"
+                        title={getStudioPageLabel(copy, "파악된 의도가 여러 개일 경우 안내 메시지")}
                         help={MESSAGE_HELP["파악된 의도가 여러 개일 경우 안내 메시지"]}
                       />
                     </strong>
@@ -443,15 +449,15 @@ export function ConversationMessageSettingsPage() {
                   <div className="settings-message-item__header">
                     <strong>
                       <FieldLabel
-                        title="'원하는 의도 없음' 버튼/메시지"
-                        help="후보 중 원하는 의도가 없을 때 표시할 버튼명과 선택 후 보여줄 메시지를 설정합니다."
+                        title={getStudioPageLabel(copy, "'원하는 의도 없음' 버튼/메시지")}
+                        help={getStudioPageLabel(copy, "후보 중 원하는 의도가 없을 때 표시할 버튼명과 선택 후 보여줄 메시지를 설정합니다.")}
                       />
                     </strong>
                   </div>
 
                   <div className="settings-form-grid settings-form-grid--compact">
                     <label className="settings-form-card">
-                      <FieldLabel title="'원하는 의도 없음' 버튼 표시명" help={MESSAGE_HELP["'원하는 의도 없음' 버튼 표시명"]} />
+                      <FieldLabel title={getStudioPageLabel(copy, "'원하는 의도 없음' 버튼 표시명")} help={MESSAGE_HELP["'원하는 의도 없음' 버튼 표시명"]} />
                       <input
                         type="text"
                         className="bot-settings-card__input"
@@ -469,7 +475,7 @@ export function ConversationMessageSettingsPage() {
                     </label>
 
                     <label className="settings-form-card settings-form-card--wide">
-                      <FieldLabel title="'원하는 의도 없음' 선택 시 메시지" help={MESSAGE_HELP["'원하는 의도 없음' 선택 시 메시지"]} />
+                      <FieldLabel title={getStudioPageLabel(copy, "'원하는 의도 없음' 선택 시 메시지")} help={MESSAGE_HELP["'원하는 의도 없음' 선택 시 메시지"]} />
                       <textarea
                         className="bot-settings-intro__textarea"
                         value={form.multiIntentGuide.noIntentButtonMessage}
@@ -491,7 +497,7 @@ export function ConversationMessageSettingsPage() {
 
             <MessageSection
               title={getStudioPageLabel(copy,"대화 종료(4)")}
-              description="대화중 시스템에 문제가 생겼거나 사용자의 마지막 발화 이후 타임아웃 설정 시간동안 아무런 응답이 없었을 경우 대화가 자동으로 종료됩니다. 사용자에게 대화가 종료된 상황을 안내하기 위한 메시지도 설정해 주세요."
+              description={getStudioPageLabel(copy, "대화중 시스템에 문제가 생겼거나 사용자의 마지막 발화 이후 타임아웃 설정 시간동안 아무런 응답이 없었을 경우 대화가 자동으로 종료됩니다. 사용자에게 대화가 종료된 상황을 안내하기 위한 메시지도 설정해 주세요.")}
             >
               <div className="settings-message-grid settings-message-grid--two">
                 <MessageItemEditor
@@ -512,7 +518,7 @@ export function ConversationMessageSettingsPage() {
                   }
                 />
                 <MessageItemEditor
-                  title="타임아웃 경과시 안내 메시지"
+                  title={getStudioPageLabel(copy, "타임아웃 경과시 안내 메시지")}
                   help={MESSAGE_HELP["타임아웃 경과시 안내 메시지"]}
                   value={form.system.timeoutMessage}
                   onChange={(nextValue) =>
@@ -546,7 +552,7 @@ export function ConversationMessageSettingsPage() {
                   }
                 />
                 <MessageItemEditor
-                  title="대화가 진행 중인 경우 안내 메시지"
+                  title={getStudioPageLabel(copy, "대화가 진행 중인 경우 안내 메시지")}
                   help={MESSAGE_HELP["대화가 진행 중인 경우 안내 메시지"]}
                   value={form.system.inProgressMessage}
                   onChange={(nextValue) =>
@@ -567,14 +573,14 @@ export function ConversationMessageSettingsPage() {
 
             <MessageSection
               title={getStudioPageLabel(copy,"의도 전환/복귀(3)")}
-              description="의도 전환 실패, 의도 전환 질문, 의도 복귀 실행 여부와 메시지를 설정합니다."
+              description={getStudioPageLabel(copy, "의도 전환 실패, 의도 전환 질문, 의도 복귀 실행 여부와 메시지를 설정합니다.")}
             >
               <div className="settings-message-grid settings-message-grid--two">
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
                       <FieldLabel
-                        title="의도 전환시도가 최대횟수를 초과했을 때 안내 메시지"
+                        title={getStudioPageLabel(copy, "의도 전환시도가 최대횟수를 초과했을 때 안내 메시지")}
                         help={MESSAGE_HELP["의도 전환시도가 최대횟수를 초과했을 때 안내 메시지"]}
                       />
                     </strong>
@@ -605,12 +611,12 @@ export function ConversationMessageSettingsPage() {
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
-                      <FieldLabel title="의도 전환 의사 질문 메시지" help="전환될 의도명 앞/뒤에 붙는 문구를 설정합니다." />
+                      <FieldLabel title={getStudioPageLabel(copy, "의도 전환 의사 질문 메시지")} help={getStudioPageLabel(copy, "전환될 의도명 앞/뒤에 붙는 문구를 설정합니다.")} />
                     </strong>
                   </div>
                   <div className="settings-form-grid settings-form-grid--compact">
                     <label className="settings-form-card">
-                      <FieldLabel title="의도명 전" help={MESSAGE_HELP["의도 전환 의사 질문 메시지 (의도명 전)"]} />
+                      <FieldLabel title={getStudioPageLabel(copy, "의도명 전")} help={MESSAGE_HELP["의도 전환 의사 질문 메시지 (의도명 전)"]} />
                       <input
                         type="text"
                         className="bot-settings-card__input"
@@ -628,7 +634,7 @@ export function ConversationMessageSettingsPage() {
                     </label>
 
                     <label className="settings-form-card">
-                      <FieldLabel title="의도명 후" help={MESSAGE_HELP["의도 전환 의사 질문 메시지 (의도명 후)"]} />
+                      <FieldLabel title={getStudioPageLabel(copy, "의도명 후")} help={MESSAGE_HELP["의도 전환 의사 질문 메시지 (의도명 후)"]} />
                       <input
                         type="text"
                         className="bot-settings-card__input"
@@ -650,7 +656,7 @@ export function ConversationMessageSettingsPage() {
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
-                      <FieldLabel title="의도 복귀 실행 메시지" help={MESSAGE_HELP["의도 복귀 실행 메시지"]} />
+                      <FieldLabel title={getStudioPageLabel(copy, "의도 복귀 실행 메시지")} help={MESSAGE_HELP["의도 복귀 실행 메시지"]} />
                     </strong>
                   </div>
                   <div className="settings-message-item__content">
@@ -692,7 +698,7 @@ export function ConversationMessageSettingsPage() {
                     <label className="settings-message-item__value">
                       <span>
                         <FieldLabel
-                          title="의도별 피드백을 묻기위해 출력되는 메시지"
+                          title={getStudioPageLabel(copy, "의도별 피드백을 묻기위해 출력되는 메시지")}
                           help={MESSAGE_HELP["의도별 피드백을 묻기위해 출력되는 메시지"]}
                         />
                       </span>
@@ -720,14 +726,14 @@ export function ConversationMessageSettingsPage() {
             </MessageSection>
 
             <MessageSection
-              title="대기업무 메시지"
-              description="병렬로 처리할 다른 업무가 생겼을 때 사용자에게 보여줄 안내 문구와 강제 전환 메시지를 설정합니다."
+              title={getStudioPageLabel(copy, "대기업무 메시지")}
+              description={getStudioPageLabel(copy, "병렬로 처리할 다른 업무가 생겼을 때 사용자에게 보여줄 안내 문구와 강제 전환 메시지를 설정합니다.")}
             >
               <div className="settings-message-grid settings-message-grid--two">
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
-                      <FieldLabel title="대기업무가 발생한 경우 사용자에게 제시할 첫 메시지" />
+                      <FieldLabel title={getStudioPageLabel(copy, "대기업무가 발생한 경우 사용자에게 제시할 첫 메시지")} />
                     </strong>
                   </div>
                   <div className="settings-message-item__content">
@@ -756,7 +762,7 @@ export function ConversationMessageSettingsPage() {
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
-                      <FieldLabel title="'대기업무를 처리하지 않음' 버튼/메시지" />
+                      <FieldLabel title={getStudioPageLabel(copy, "'대기업무를 처리하지 않음' 버튼/메시지")} />
                     </strong>
                   </div>
                   <div className="settings-form-grid settings-form-grid--compact">
@@ -805,7 +811,7 @@ export function ConversationMessageSettingsPage() {
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
-                      <FieldLabel title="우선순위가 높은 대기업무 강제 실행 메시지" />
+                      <FieldLabel title={getStudioPageLabel(copy, "우선순위가 높은 대기업무 강제 실행 메시지")} />
                     </strong>
                   </div>
                   <div className="settings-message-item__content">
@@ -834,7 +840,7 @@ export function ConversationMessageSettingsPage() {
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
-                      <FieldLabel title="진행중인 업무 강제 종료 메시지" />
+                      <FieldLabel title={getStudioPageLabel(copy, "진행중인 업무 강제 종료 메시지")} />
                     </strong>
                   </div>
                   <div className="settings-message-item__content">
@@ -863,14 +869,14 @@ export function ConversationMessageSettingsPage() {
             </MessageSection>
 
             <MessageSection
-              title="피드백 수집"
-              description="답변 후 사용자 만족도를 묻는 방식과 척도 표시 문구를 설정합니다."
+              title={getStudioPageLabel(copy, "피드백 수집")}
+              description={getStudioPageLabel(copy, "답변 후 사용자 만족도를 묻는 방식과 척도 표시 문구를 설정합니다.")}
             >
               <div className="settings-message-grid settings-message-grid--two">
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
-                      <FieldLabel title="사용 유형" help="피드백을 사용하지 않거나, 모든 의도 또는 특정 의도에만 피드백을 받을지 선택합니다." />
+                      <FieldLabel title={getStudioPageLabel(copy, "사용 유형")} help={getStudioPageLabel(copy, "피드백을 사용하지 않거나, 모든 의도 또는 특정 의도에만 피드백을 받을지 선택합니다.")} />
                     </strong>
                   </div>
                   <div className="settings-message-item__content">
@@ -950,7 +956,7 @@ export function ConversationMessageSettingsPage() {
                 <div className="settings-message-item">
                   <div className="settings-message-item__header">
                     <strong>
-                      <FieldLabel title="의도별 피드백 척도" help="2점 또는 5점 척도를 선택하고, 각 점수에 표시할 문구를 수정합니다." />
+                      <FieldLabel title={getStudioPageLabel(copy, "의도별 피드백 척도")} help={getStudioPageLabel(copy, "2점 또는 5점 척도를 선택하고, 각 점수에 표시할 문구를 수정합니다.")} />
                     </strong>
                   </div>
 
@@ -970,7 +976,7 @@ export function ConversationMessageSettingsPage() {
                             }))
                           }
                         />
-                        <span>2점</span>
+                        <span>{getStudioPageLabel(copy, "2점")}</span>
                       </label>
                       <label className="settings-choice-option">
                         <input
@@ -986,7 +992,7 @@ export function ConversationMessageSettingsPage() {
                             }))
                           }
                         />
-                        <span>5점</span>
+                        <span>{getStudioPageLabel(copy, "5점")}</span>
                       </label>
                     </div>
 

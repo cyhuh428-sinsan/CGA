@@ -137,7 +137,7 @@ export function BotHubHome({ hubId }: Props) {
 
       <section className="bot-hub__panel bot-hub__panel--members">
         <div className="bot-hub__panel-title">
-          <h2>봇 허브에 담긴 챗봇 정보 목록</h2>
+          <h2>{getStudioPageLabel(copy, "봇 허브에 담긴 챗봇 정보 목록")}</h2>
           <span>{hub.members.length}개</span>
         </div>
         {hub.members.length === 0 ? (
@@ -146,7 +146,7 @@ export function BotHubHome({ hubId }: Props) {
           <table className="bot-hub__table">
             <thead>
               <tr>
-                <th>{getStudioPageLabel(copy,"순서")}</th><th>{getStudioPageLabel(copy,"봇 이름")}</th><th>{getStudioPageLabel(copy,"표시명")}</th><th>{getStudioPageLabel(copy,"봇 설명")}</th><th>{getStudioPageLabel(copy,"운영버전")}</th><th>{getStudioPageLabel(copy,"학습상태")}</th><th>{getStudioPageLabel(copy,"학습 완료 시간")}</th><th>봇 허브 스몰토크</th>
+                <th>{getStudioPageLabel(copy,"순서")}</th><th>{getStudioPageLabel(copy,"봇 이름")}</th><th>{getStudioPageLabel(copy,"표시명")}</th><th>{getStudioPageLabel(copy,"봇 설명")}</th><th>{getStudioPageLabel(copy,"운영버전")}</th><th>{getStudioPageLabel(copy,"학습상태")}</th><th>{getStudioPageLabel(copy,"학습 완료 시간")}</th><th>{getStudioPageLabel(copy, "봇 허브 스몰토크")}</th>
               </tr>
             </thead>
             <tbody>

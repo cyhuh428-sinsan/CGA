@@ -548,9 +548,9 @@ export function RuleSettingsPage() {
                     setPage(1);
                   }}
                 >
-                  <option value={30}>30개 보기</option>
-                  <option value={50}>50개 보기</option>
-                  <option value={100}>100개 보기</option>
+                  <option value={30}>{getStudioPageLabel(copy, "30개 보기")}</option>
+                  <option value={50}>{getStudioPageLabel(copy, "50개 보기")}</option>
+                  <option value={100}>{getStudioPageLabel(copy, "100개 보기")}</option>
                 </select>
                 <button
                   type="button"
@@ -595,22 +595,22 @@ export function RuleSettingsPage() {
                     </span>
                     <span>{getStudioPageLabel(copy,"우선순위")}</span>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("name")}>
-                      <SortHeaderLabel label="룰 이름" direction={sortKey === "name" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "룰 이름")} direction={sortKey === "name" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("expression")}>
-                      <SortHeaderLabel label="룰 표현식" direction={sortKey === "expression" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "룰 표현식")} direction={sortKey === "expression" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("target")}>
-                      <SortHeaderLabel label="연결할 의도/모듈" direction={sortKey === "target" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "연결할 의도/모듈")} direction={sortKey === "target" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("enabled")}>
-                      <SortHeaderLabel label="사용" direction={sortKey === "enabled" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "사용")} direction={sortKey === "enabled" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedAt")}>
-                      <SortHeaderLabel label="최종수정일시" direction={sortKey === "updatedAt" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정일시")} direction={sortKey === "updatedAt" ? sortDirection : "none"} />
                     </button>
                     <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-                      <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+                      <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정자")} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
                     </button>
                   </div>
 

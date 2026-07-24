@@ -200,7 +200,7 @@ export function BotHubSettings({ hubId }: Props) {
       <section className="bot-hub__settings">
         <section className="bot-hub__profile-settings bot-hub__settings-wide" aria-labelledby="hub-profile-title">
           <div className="bot-hub__profile-settings-heading">
-            <div><h2 id="hub-profile-title">{getStudioPageLabel(copy,"프로필 설정")}</h2><p>봇 허브의 이름, 기본 프로필 또는 PC 이미지를 관리합니다.</p></div>
+            <div><h2 id="hub-profile-title">{getStudioPageLabel(copy,"프로필 설정")}</h2><p>{getStudioPageLabel(copy, "봇 허브의 이름, 기본 프로필 또는 PC 이미지를 관리합니다.")}</p></div>
             <button type="button" className="bot-hub__secondary" onClick={saveProfile} disabled={savingProfile}>{savingProfile ? "저장 중..." : "프로필 저장"}</button>
           </div>
           <div className="bot-hub__profile-editor">
@@ -229,11 +229,11 @@ export function BotHubSettings({ hubId }: Props) {
           <div className="bot-hub__settings-fields">
             <label>Bot ID<input value={hub.id} readOnly /></label>
             {natural ? <>
-              <label>의도 파악 Cut-off Score<input type="number" min="0.01" max="0.99" step="0.01" value={form.intent_cutoff_score} onChange={(event) => update("intent_cutoff_score", Number(event.target.value))} /></label>
-              <label>유사 의도 Score<input type="number" min="0.01" max="0.99" step="0.01" value={form.similar_intent_score} onChange={(event) => update("similar_intent_score", Number(event.target.value))} /></label>
-              <label>의도 파악 결과 최대 개수<input type="number" min="1" max="10" value={form.max_intent_candidates} onChange={(event) => update("max_intent_candidates", Number(event.target.value))} /></label>
+              <label>{getStudioPageLabel(copy, "의도 파악 Cut-off Score")}<input type="number" min="0.01" max="0.99" step="0.01" value={form.intent_cutoff_score} onChange={(event) => update("intent_cutoff_score", Number(event.target.value))} /></label>
+              <label>{getStudioPageLabel(copy, "유사 의도 Score")}<input type="number" min="0.01" max="0.99" step="0.01" value={form.similar_intent_score} onChange={(event) => update("similar_intent_score", Number(event.target.value))} /></label>
+              <label>{getStudioPageLabel(copy, "의도 파악 결과 최대 개수")}<input type="number" min="1" max="10" value={form.max_intent_candidates} onChange={(event) => update("max_intent_candidates", Number(event.target.value))} /></label>
             </> : null}
-            <label>버튼 선택 옵션<select value={form.button_match_mode} onChange={(event) => update("button_match_mode", event.target.value as FormState["button_match_mode"])}><option value="contains">포함 일치</option><option value="exact">완전 일치</option></select></label>
+            <label>{getStudioPageLabel(copy, "버튼 선택 옵션")}<select value={form.button_match_mode} onChange={(event) => update("button_match_mode", event.target.value as FormState["button_match_mode"])}><option value="contains">{getStudioPageLabel(copy, "포함 일치")}</option><option value="exact">{getStudioPageLabel(copy, "완전 일치")}</option></select></label>
           </div>
         </section>
 
@@ -242,28 +242,28 @@ export function BotHubSettings({ hubId }: Props) {
           <div className="bot-hub__settings-fields">
             <label className="bot-hub__settings-wide">{getStudioPageLabel(copy,"첫 인사말")}<textarea value={form.greeting_message || ""} onChange={(event) => update("greeting_message", event.target.value)} /></label>
             {natural ? <>
-              <label className="bot-hub__check"><input type="checkbox" checked={form.show_members_in_greeting} onChange={(event) => update("show_members_in_greeting", event.target.checked)} /> 첫 인사말에 하위 봇 버튼 노출</label>
+              <label className="bot-hub__check"><input type="checkbox" checked={form.show_members_in_greeting} onChange={(event) => update("show_members_in_greeting", event.target.checked)} />{getStudioPageLabel(copy, "첫 인사말에 하위 봇 버튼 노출")}</label>
               <label className="bot-hub__settings-wide">{getStudioPageLabel(copy,"사용자의 의도를 이해하지 못한 경우")}<textarea value={form.unrecognized_message || ""} onChange={(event) => update("unrecognized_message", event.target.value)} /></label>
-              <label className="bot-hub__settings-wide">파악된 봇이 여러 개인 경우<textarea value={form.multiple_candidates_message || ""} onChange={(event) => update("multiple_candidates_message", event.target.value)} /></label>
-              <label className="bot-hub__settings-wide">봇 허브 동작 오류 시<textarea value={form.runtime_error_message || ""} onChange={(event) => update("runtime_error_message", event.target.value)} /></label>
+              <label className="bot-hub__settings-wide">{getStudioPageLabel(copy, "파악된 봇이 여러 개인 경우")}<textarea value={form.multiple_candidates_message || ""} onChange={(event) => update("multiple_candidates_message", event.target.value)} /></label>
+              <label className="bot-hub__settings-wide">{getStudioPageLabel(copy, "봇 허브 동작 오류 시")}<textarea value={form.runtime_error_message || ""} onChange={(event) => update("runtime_error_message", event.target.value)} /></label>
               <label className="bot-hub__settings-wide">{getStudioPageLabel(copy,"대화가 진행 중인 경우")}<textarea value={form.conversation_in_progress_message || ""} onChange={(event) => update("conversation_in_progress_message", event.target.value)} /></label>
             </> : null}
             <label>{getStudioPageLabel(copy,"타임아웃 시간(초)")}<input type="number" min="0" max="86400" value={form.timeout_seconds ?? 0} onChange={(event) => update("timeout_seconds", Number(event.target.value))} /></label>
-            <label className="bot-hub__check"><input type="checkbox" checked={form.apply_timeout_to_push} onChange={(event) => update("apply_timeout_to_push", event.target.checked)} /> Push Message 대화에도 적용</label>
+            <label className="bot-hub__check"><input type="checkbox" checked={form.apply_timeout_to_push} onChange={(event) => update("apply_timeout_to_push", event.target.checked)} />{getStudioPageLabel(copy, "Push Message 대화에도 적용")}</label>
             <label className="bot-hub__settings-wide">{getStudioPageLabel(copy,"타임아웃 경과 시")}<textarea value={form.timeout_message || ""} onChange={(event) => update("timeout_message", event.target.value)} /></label>
-            <label>원하는 봇 없음 버튼명<input value={form.no_bot_label || ""} onChange={(event) => update("no_bot_label", event.target.value)} /></label>
-            <label className="bot-hub__settings-wide">원하는 봇이 없다고 응답했을 경우<textarea value={form.no_bot_message || ""} onChange={(event) => update("no_bot_message", event.target.value)} /></label>
+            <label>{getStudioPageLabel(copy, "원하는 봇 없음 버튼명")}<input value={form.no_bot_label || ""} onChange={(event) => update("no_bot_label", event.target.value)} /></label>
+            <label className="bot-hub__settings-wide">{getStudioPageLabel(copy, "원하는 봇이 없다고 응답했을 경우")}<textarea value={form.no_bot_message || ""} onChange={(event) => update("no_bot_message", event.target.value)} /></label>
           </div>
         </section>
         <section className="bot-hub__call-rules bot-hub__settings-wide" aria-labelledby="hub-call-rules-title">
           <div className="bot-hub__call-rules-heading">
-            <div><h2 id="hub-call-rules-title">봇 허브 호출 단어</h2><p>채널 사용자의 발화가 룰과 일치하면 이 봇 허브의 선택 화면으로 연결됩니다.</p></div>
+            <div><h2 id="hub-call-rules-title">{getStudioPageLabel(copy, "봇 허브 호출 단어")}</h2><p>{getStudioPageLabel(copy, "채널 사용자의 발화가 룰과 일치하면 이 봇 허브의 선택 화면으로 연결됩니다.")}</p></div>
             <button type="button" className="bot-hub__secondary" onClick={addHubCallRule}>{getStudioPageLabel(copy,"+ 룰 추가")}</button>
           </div>
-          {form.hub_call_rules.length === 0 ? <p className="bot-hub__call-rules-empty">등록된 호출 단어가 없습니다.</p> : form.hub_call_rules.map((rule, index) => (
+          {form.hub_call_rules.length === 0 ? <p className="bot-hub__call-rules-empty">{getStudioPageLabel(copy, "등록된 호출 단어가 없습니다.")}</p> : form.hub_call_rules.map((rule, index) => (
             <div className="bot-hub__call-rule" key={rule.id || `${rule.expression}-${index}`}>
               <label>{getStudioPageLabel(copy,"룰 이름")}<input value={rule.name} maxLength={120} onChange={(event) => updateHubCallRule(index, { name: event.target.value })} /></label>
-              <label>호출 단어 또는 정규식<input value={rule.expression} maxLength={500} onChange={(event) => updateHubCallRule(index, { expression: event.target.value })} /></label>
+              <label>{getStudioPageLabel(copy, "호출 단어 또는 정규식")}<input value={rule.expression} maxLength={500} onChange={(event) => updateHubCallRule(index, { expression: event.target.value })} /></label>
               <label className="bot-hub__check"><input type="checkbox" checked={rule.enabled} onChange={(event) => updateHubCallRule(index, { enabled: event.target.checked })} />{getStudioPageLabel(copy,"사용")}</label>
               <button type="button" className="bot-hub__danger" onClick={() => removeHubCallRule(index)} aria-label={`${rule.name || rule.expression || "호출 단어"} 삭제`}>{getStudioPageLabel(copy,"삭제")}</button>
             </div>

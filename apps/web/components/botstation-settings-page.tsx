@@ -316,7 +316,7 @@ export function BotStationSettingsPage() {
                     <div className="settings-list-card">
                       <div className="settings-list-card__header settings-list-card__header--botstation">
                         <span>
-                          <SortHeaderLabel label="채널" />
+                          <SortHeaderLabel label={getStudioPageLabel(copy, "채널")} />
                         </span>
                         <span>{getStudioPageLabel(copy,"설정정보")}</span>
                         <span>{getStudioPageLabel(copy,"상태")}</span>
@@ -392,7 +392,7 @@ export function BotStationSettingsPage() {
                             <input className="bot-settings-card__input" value={meta.provider} readOnly />
                           </label>
                           <label className="botstation-dialog__field">
-                            <span>렌더러</span>
+                            <span>{getStudioPageLabel(copy, "렌더러")}</span>
                             <input className="bot-settings-card__input" value={meta.rendererType} readOnly />
                           </label>
                           <label className="botstation-dialog__field">
@@ -427,10 +427,10 @@ export function BotStationSettingsPage() {
                         App ID
                         <span
                           className="admin-inline-help"
-                          data-help="카카오 앱 또는 스킬 식별값입니다. 운영 식별 용도이며, token 방식 검증값과는 별개입니다."
+                          data-help={getStudioPageLabel(copy, "카카오 앱 또는 스킬 식별값입니다. 운영 식별 용도이며, token 방식 검증값과는 별개입니다.")}
                           tabIndex={0}
                           role="img"
-                          aria-label="App ID 설명"
+                          aria-label={getStudioPageLabel(copy, "App ID 설명")}
                         >
                           i
                         </span>
@@ -450,10 +450,10 @@ export function BotStationSettingsPage() {
                         App Secret
                         <span
                           className="admin-inline-help"
-                          data-help="카카오 webhook 보호용 비밀값입니다. 1차 운영에서는 보통 채널 인증 정보 JSON의 token 또는 appSecret 값과 같은 의미로 맞춰 사용합니다."
+                          data-help={getStudioPageLabel(copy, "카카오 webhook 보호용 비밀값입니다. 1차 운영에서는 보통 채널 인증 정보 JSON의 token 또는 appSecret 값과 같은 의미로 맞춰 사용합니다.")}
                           tabIndex={0}
                           role="img"
-                          aria-label="App Secret 설명"
+                          aria-label={getStudioPageLabel(copy, "App Secret 설명")}
                         >
                           i
                         </span>
@@ -473,10 +473,10 @@ export function BotStationSettingsPage() {
                         Callback URL
                         <span
                           className="admin-inline-help"
-                          data-help="카카오 관리자센터 또는 스킬 설정 화면에 등록할 실제 호출 주소입니다. 보통 기본 webhook 값을 그대로 사용합니다."
+                          data-help={getStudioPageLabel(copy, "카카오 관리자센터 또는 스킬 설정 화면에 등록할 실제 호출 주소입니다. 보통 기본 webhook 값을 그대로 사용합니다.")}
                           tabIndex={0}
                           role="img"
-                          aria-label="Callback URL 설명"
+                          aria-label={getStudioPageLabel(copy, "Callback URL 설명")}
                         >
                           i
                         </span>
@@ -508,13 +508,13 @@ export function BotStationSettingsPage() {
                           {isKakaoMeta(meta) ? (
                             <>
                               <p>
-                                <code>App ID</code>는 카카오 앱/스킬 식별값, <code>App Secret</code>은 webhook 보호용 비밀값입니다.
+                                <code>App ID</code>{getStudioPageLabel(copy, "는 카카오 앱/스킬 식별값,")}<code>App Secret</code>은 webhook 보호용 비밀값입니다.
                               </p>
                               <p>
                                 <code>Callback URL</code>에는 카카오 관리자센터에 등록할 실제 호출 주소를 넣습니다. 보통 기본 webhook 값을 그대로 사용하면 됩니다.
                               </p>
                               <p>
-                                1차 테스트는 채널 관리에서 인증 방식을 <code>{getStudioPageLabel(copy,"없음")}</code>으로 두고 응답 왕복을 먼저 확인한 뒤, 운영 전환 시 <code>Token</code>으로 올리는 순서를 권장합니다.
+                                1차 테스트는 채널 관리에서 인증 방식을 <code>{getStudioPageLabel(copy,"없음")}</code>{getStudioPageLabel(copy, "으로 두고 응답 왕복을 먼저 확인한 뒤, 운영 전환 시")}<code>Token</code>으로 올리는 순서를 권장합니다.
                               </p>
                             </>
                           ) : (
