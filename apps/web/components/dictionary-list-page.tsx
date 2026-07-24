@@ -10,11 +10,13 @@ import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { SortHeaderLabel } from "@/components/sort-header-label";
+import { useI18n } from "@/components/language-provider";
 import {
   UploadResultDialog,
   type UploadResultSection,
 } from "@/components/upload-result-dialog";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
+import { DICTIONARY_LIST_CATALOGS, formatDictionaryListText, type DictionaryListCatalog } from "@/lib/i18n/dictionary-list";
 import {
   buildAssetExportFilename,
   buildDictionaryText,
@@ -79,6 +81,7 @@ function buildSummaryCards(
   bot?: StudioBotApiItem | null,
   dictionaryCount?: number,
   entityCount?: number,
+  copy?: DictionaryListCatalog,
 ): SummaryStatItem[] {
   const counts = bot?.active_version?.asset_counts;
   const dialogCount = getBotVersionDocument(bot).dialogs.length;
@@ -91,38 +94,38 @@ function buildSummaryCards(
   const activeDictionaryCount = dictionaryCount === undefined ? (counts?.dictionary ?? "-") : dictionaryCount;
   return [
     {
-      label: "의도",
+      label: copy?.summary.intent ?? "-",
       value: String(intentCount),
       href: buildVersionAssetHref(botId, versionName, "intents"),
     },
     {
-      label: "구성",
+      label: copy?.summary.configure ?? "-",
       value: "-",
       href: buildVersionAssetHref(botId, versionName, "configure"),
     },
     {
-      label: "개체",
+      label: copy?.summary.entity ?? "-",
       value: String(entityCount === undefined ? (counts?.entities ?? "-") : entityCount),
       href: buildVersionAssetHref(botId, versionName, "entities"),
     },
     {
-      label: "사전",
+      label: copy?.summary.dictionary ?? "-",
       value: String(activeDictionaryCount),
       active: true,
       href: buildVersionAssetHref(botId, versionName, "dictionary"),
     },
     {
-      label: "평가",
+      label: copy?.summary.evaluation ?? "-",
       value: "-",
       href: buildVersionAssetHref(botId, versionName, "evaluation"),
     },
     {
-      label: "재학습",
+      label: copy?.summary.retraining ?? "-",
       value: String(retrainingCount),
       href: buildVersionAssetHref(botId, versionName, "retraining"),
     },
     {
-      label: "분석",
+      label: copy?.summary.analysis ?? "-",
       value: "-",
       href: buildVersionAssetHref(botId, versionName, "analysis"),
     },
@@ -156,24 +159,24 @@ function createEmptyDictionaryUploadCounts(): DictionaryUploadCounts {
   };
 }
 
-function buildDictionaryUploadDialog(counts: DictionaryUploadCounts): UploadDialogState {
+function buildDictionaryUploadDialog(counts: DictionaryUploadCounts, copy: DictionaryListCatalog): UploadDialogState {
   return {
-    title: "업로드 결과",
-    message: "등록이 완료되었습니다.",
-    note: "단, 중복되거나 100자 초과 단어는 등록되지 않습니다. 동의어 개수 초과 시 최대 개수(500개)까지만 등록됩니다.",
+    title: copy.uploadResultTitle,
+    message: copy.uploadComplete,
+    note: copy.uploadNote,
     sections: [
       {
         rows: [
-          { label: "추가된 단어", value: counts.addedWords },
-          { label: "추가된 동의어", value: counts.addedSynonyms },
+          { label: copy.addedWords, value: counts.addedWords },
+          { label: copy.addedSynonyms, value: counts.addedSynonyms },
         ],
       },
       {
         rows: [
-          { label: "중복된 단어", value: counts.duplicateWords },
-          { label: "중복된 동의어", value: counts.duplicateSynonyms },
-          { label: "100자를 초과하는 단어", value: counts.overLengthWords },
-          { label: "100자를 초과하는 동의어", value: counts.overLengthSynonyms },
+          { label: copy.duplicateWords, value: counts.duplicateWords },
+          { label: copy.duplicateSynonyms, value: counts.duplicateSynonyms },
+          { label: copy.overLengthWords, value: counts.overLengthWords },
+          { label: copy.overLengthSynonyms, value: counts.overLengthSynonyms },
         ],
       },
     ],
@@ -193,6 +196,8 @@ function buildDictionaryExportName(bot?: StudioBotApiItem | null) {
 }
 
 export function DictionaryListPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = DICTIONARY_LIST_CATALOGS[uiLanguage];
   const workspace = useStudioWorkspace();
   const params = useParams<{ botId: string; versionId: string }>();
   const pathname = usePathname();
@@ -262,7 +267,7 @@ export function DictionaryListPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "사전 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -274,7 +279,7 @@ export function DictionaryListPage() {
     return () => {
       ignore = true;
     };
-  }, [authSession, bot, bot?.active_version]);
+  }, [authSession, bot, bot?.active_version, copy.loadFailed]);
 
   useEffect(() => {
     if (pathname && bot && !errorMessage) {
@@ -331,12 +336,12 @@ export function DictionaryListPage() {
       setVersions(refreshed.versions);
       setBot(refreshed.bot);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "학습 결과를 다시 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.reloadFailed);
     }
   }
   const summaryCards = useMemo(
-    () => buildSummaryCards(effectiveBotId, effectiveVersionName, bot, dictionaryCountForSummary, userEntityCountForSummary),
-    [bot, dictionaryCountForSummary, effectiveBotId, effectiveVersionName, userEntityCountForSummary],
+    () => buildSummaryCards(effectiveBotId, effectiveVersionName, bot, dictionaryCountForSummary, userEntityCountForSummary, copy),
+    [bot, copy, dictionaryCountForSummary, effectiveBotId, effectiveVersionName, userEntityCountForSummary],
   );
   const visibleEntries = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -463,7 +468,7 @@ export function DictionaryListPage() {
       setPage(1);
       setMessage(successMessage);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "사전 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -476,7 +481,7 @@ export function DictionaryListPage() {
 
     await persistDictionary(
       dictionary.filter((entry) => !selectedIds.includes(entry.id)),
-      "선택한 사전이 삭제되었습니다.",
+      copy.deleteSuccess,
     );
   }
 
@@ -486,10 +491,10 @@ export function DictionaryListPage() {
       return;
     }
 
-    const usageLabel = "의도 사용여부";
+    const usageLabel = copy.usageLabel;
     await persistDictionary(
       dictionary.map((entry) => (entry.id === entryId ? { ...entry, [field]: value } : entry)),
-      `${usageLabel} 변경에 성공하였습니다.`,
+      formatDictionaryListText(copy.usageChanged, { label: usageLabel }),
     );
   }
 
@@ -499,10 +504,10 @@ export function DictionaryListPage() {
     }
 
     const nextIds = new Set(selectedEntries.map((entry) => entry.id));
-    const usageLabel = "의도 사용여부";
+    const usageLabel = copy.usageLabel;
     await persistDictionary(
       dictionary.map((entry) => (nextIds.has(entry.id) ? { ...entry, [field]: value } : entry)),
-      `${selectedEntries.length}건의 ${usageLabel}를 변경했습니다.`,
+      formatDictionaryListText(copy.selectedUsageChanged, { count: selectedEntries.length, label: usageLabel }),
     );
   }
 
@@ -516,7 +521,7 @@ export function DictionaryListPage() {
       const text = await file.text();
       const importedRows = parseDictionaryImportRows(text);
       if (importedRows.length === 0) {
-        setErrorMessage("업로드 가능한 사전이 없습니다.");
+        setErrorMessage(copy.noUploadable);
         return;
       }
 
@@ -647,10 +652,10 @@ export function DictionaryListPage() {
         return;
       }
 
-      await persistDictionary(nextDictionary, "사전 업로드가 완료되었습니다.");
-      setUploadResult(buildDictionaryUploadDialog(counts));
+      await persistDictionary(nextDictionary, copy.uploadSuccess);
+      setUploadResult(buildDictionaryUploadDialog(counts, copy));
     } catch {
-      setErrorMessage("사전 업로드 파일을 읽지 못했습니다.");
+      setErrorMessage(copy.uploadReadFailed);
     }
   }
 
@@ -675,7 +680,7 @@ export function DictionaryListPage() {
   }
 
   if (!bot || !effectiveVersion) {
-    return <StudioPageLoading title="사전 화면을 불러오는 중입니다." />;
+    return <StudioPageLoading title={copy.pageLoading} />;
   }
 
   return (
@@ -692,24 +697,24 @@ export function DictionaryListPage() {
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="단어 또는 동의어를 검색하세요."
+              placeholder={copy.searchPlaceholder}
             />
           </label>
-          <button type="button" className="manual-main__icon-button" aria-label="필터">
+          <button type="button" className="manual-main__icon-button" aria-label={copy.filter}>
             ▾
           </button>
         </div>
 
         <div className="manual-main__toolbar-right">
           <button type="button" className="manual-main__action-button" onClick={() => setEditingEntryId("new")}>
-            + 단어 추가
+            {copy.addWord}
           </button>
 
           <div className="manual-main__menu" ref={actionMenuRef}>
             <button
               type="button"
               className="manual-main__menu-button"
-              aria-label="사전 메뉴"
+              aria-label={copy.menu}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((current) => !current)}
             >
@@ -726,7 +731,7 @@ export function DictionaryListPage() {
                     setUploadDialogOpen(true);
                   }}
                 >
-                  파일 업로드
+                  {copy.uploadFile}
                 </button>
                 <button
                   type="button"
@@ -736,7 +741,7 @@ export function DictionaryListPage() {
                     handleDownload();
                   }}
                 >
-                  파일 다운로드
+                  {copy.downloadFile}
                 </button>
               </div>
             ) : null}
@@ -747,17 +752,17 @@ export function DictionaryListPage() {
       <div className="manual-main__toolbar manual-main__toolbar--secondary">
         <div className="manual-main__toolbar-left">
           <div className="manual-main__toolbar-group manual-main__toolbar-group--meta">
-            <strong>전체 {dictionary.length}건</strong>
+            <strong>{formatDictionaryListText(copy.totalCount, { count: dictionary.length })}</strong>
             <label className="manual-main__mini-select manual-main__mini-select--select">
               <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
-                <option value={10}>10개씩 보기</option>
-                <option value={25}>25개씩 보기</option>
-                <option value={50}>50개씩 보기</option>
-                <option value={100}>100개씩 보기</option>
+                <option value={10}>{formatDictionaryListText(copy.pageSize, { count: 10 })}</option>
+                <option value={25}>{formatDictionaryListText(copy.pageSize, { count: 25 })}</option>
+                <option value={50}>{formatDictionaryListText(copy.pageSize, { count: 50 })}</option>
+                <option value={100}>{formatDictionaryListText(copy.pageSize, { count: 100 })}</option>
                 </select>
               </label>
             </div>
-            {selectedIds.length > 0 ? <span className="studio-table-page__selection">{selectedIds.length}개 선택</span> : null}
+            {selectedIds.length > 0 ? <span className="studio-table-page__selection">{formatDictionaryListText(copy.selectedCount, { count: selectedIds.length })}</span> : null}
           </div>
           <div className="manual-main__toolbar-right">
             <div className="manual-main__toolbar-group manual-main__toolbar-group--actions">
@@ -767,7 +772,7 @@ export function DictionaryListPage() {
                 disabled={selectedIds.length === 0 || saving}
                 onClick={() => void handleDeleteSelected()}
               >
-                삭제
+                {copy.delete}
               </button>
               <button
                 type="button"
@@ -775,7 +780,7 @@ export function DictionaryListPage() {
                 disabled={!canEnableIntent || saving}
                 onClick={() => void updateSelectedUsage("intentEnabled", true)}
               >
-                의도 사용
+                {copy.enableIntent}
               </button>
               <button
                 type="button"
@@ -783,7 +788,7 @@ export function DictionaryListPage() {
                 disabled={!canDisableIntent || saving}
                 onClick={() => void updateSelectedUsage("intentEnabled", false)}
               >
-                의도 미사용
+                {copy.disableIntent}
               </button>
             </div>
           </div>
@@ -794,7 +799,7 @@ export function DictionaryListPage() {
           <span className="manual-main__cell manual-main__cell--check">
             <input
               type="checkbox"
-              aria-label="전체 선택"
+              aria-label={copy.selectAll}
               checked={pagedEntries.length > 0 && pagedEntries.every((entry) => selectedIds.includes(entry.id))}
               onChange={(event) =>
                 setSelectedIds(event.target.checked ? pagedEntries.map((entry) => entry.id) : [])
@@ -803,32 +808,32 @@ export function DictionaryListPage() {
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("word")}>
-              <SortHeaderLabel label="단어" direction={sortKey === "word" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.word} direction={sortKey === "word" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("synonym")}>
-              <SortHeaderLabel label="동의어" direction={sortKey === "synonym" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.synonym} direction={sortKey === "synonym" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("synonymCount")}>
-              <SortHeaderLabel label="동의어 개수" direction={sortKey === "synonymCount" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.synonymCount} direction={sortKey === "synonymCount" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("intent")}>
-              <SortHeaderLabel label="의도 사용여부" direction={sortKey === "intent" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.intentUsage} direction={sortKey === "intent" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("updated")}>
-              <SortHeaderLabel label="최종수정일시" direction={sortKey === "updated" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.updatedAt} direction={sortKey === "updated" ? sortDirection : "none"} />
             </button>
           </span>
           <span className="manual-main__cell">
             <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-              <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+              <SortHeaderLabel label={copy.columns.updatedBy} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
             </button>
           </span>
         </div>
@@ -838,7 +843,7 @@ export function DictionaryListPage() {
             <span className="manual-main__cell manual-main__cell--check">
               <input
                 type="checkbox"
-                aria-label={`${entry.word} 선택`}
+                aria-label={formatDictionaryListText(copy.selectRow, { word: entry.word })}
                 checked={selectedIds.includes(entry.id)}
                 onChange={() =>
                   setSelectedIds((current) =>
@@ -861,7 +866,7 @@ export function DictionaryListPage() {
                 disabled={saving}
                 onClick={() => void updateEntryUsage(entry.id, "intentEnabled", !entry.intentEnabled)}
               >
-                {entry.intentEnabled ? "사용" : "미사용"}
+                {entry.intentEnabled ? copy.enabled : copy.disabled}
               </button>
             </span>
             <span className="manual-main__cell">{formatDictionaryUpdatedAt(entry)}</span>
@@ -874,8 +879,8 @@ export function DictionaryListPage() {
             <span className="manual-main__cell manual-main__cell--check" />
             <span className="manual-main__cell manual-main__cell--empty-message">
               {query.trim()
-                ? "검색 조건에 맞는 사전이 없습니다."
-                : "등록된 사전이 없습니다. 먼저 단어를 추가해주세요."}
+                ? copy.noSearchResults
+                : copy.empty}
             </span>
           </div>
         ) : null}
@@ -930,19 +935,19 @@ export function DictionaryListPage() {
 
       {uploadDialogOpen ? (
         <AssetUploadDialog
-          title="파일 업로드"
-          description="아래의 버튼으로 양식(.txt)을 다운받으신 후, 파일을 업로드 하세요."
+          title={copy.uploadTitle}
+          description={copy.uploadDescription}
           notice={
             <>
-              <p>UTF-8 형식으로 인코딩된 .txt/.csv 파일을 통해 사전을 한번에 업로드 할 수 있습니다.</p>
+              <p>{copy.uploadEncodingHelp}</p>
               <ul className="asset-upload-dialog__list">
-                <li>쉼표(,)로 구분하는 CSV 형식을 사용하세요.</li>
-                <li>동의어는 필수값이 아닙니다. 대표어만 입력도 가능합니다.</li>
-                <li>단어 길이는 100자로 제한하며, 동의어 개수는 최대 500개까지 허용합니다.</li>
+                <li>{copy.uploadCsvHelp}</li>
+                <li>{copy.uploadSynonymHelp}</li>
+                <li>{copy.uploadLimitHelp}</li>
               </ul>
             </>
           }
-          exampleTitle="예시"
+          exampleTitle={copy.example}
           exampleLines={[
             "대표어,유의어1,유의어2",
             "갤럭시노트9,갤노트9,갤노트나인,갤럭시노트나인",
