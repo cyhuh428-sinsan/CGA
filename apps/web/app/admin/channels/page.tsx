@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
 import { ADMIN_CHANNEL_CATALOGS } from "@/lib/i18n/admin-channels";
+import { ADMIN_CHANNEL_DIALOG_CATALOGS, CHANNEL_DELETE_LABELS, formatChannelDialogText, type AdminChannelDialogCatalog } from "@/lib/i18n/admin-channel-dialog";
 import { SUPPORTED_LANGUAGES } from "@/lib/language";
 import {
   LIST_PAGE_SIZE_OPTIONS,
@@ -25,16 +26,16 @@ import {
 
 type ChannelStatus = AdminChannelItem["status"];
 
-function authTypeGuide(authType: string) {
+function authTypeGuide(authType: string, copy: AdminChannelDialogCatalog) {
   switch (authType) {
     case "token":
-      return "Token: 요청 헤더의 고정 토큰으로 인증합니다. Kakao는 현재 none 또는 token만 실사용 기준입니다.";
+      return copy.tokenGuide;
     case "oauth":
-      return "OAuth: 외부 서비스가 access token 발급 흐름을 제공할 때 사용합니다. 현재 Kakao 채널 1차 범위에서는 사용하지 않습니다.";
+      return copy.oauthGuide;
     case "basic":
-      return "Basic: id/password를 Base64 헤더로 보내는 방식입니다. 현재 Kakao 채널 1차 범위에서는 사용하지 않습니다.";
+      return copy.basicGuide;
     default:
-      return "없음: 인증 없이 webhook을 받습니다. 내부 테스트나 초기 연결 확인용으로만 권장합니다.";
+      return copy.noneGuide;
   }
 }
 
@@ -136,6 +137,7 @@ function parseCsv(text: string) {
 export default function AdminChannelsPage() {
   const { language: uiLanguage } = useI18n();
   const copy = ADMIN_CHANNEL_CATALOGS[uiLanguage];
+  const dialogCopy = ADMIN_CHANNEL_DIALOG_CATALOGS[uiLanguage];
   const locale = SUPPORTED_LANGUAGES.find((item) => item.code === uiLanguage)?.intlLocale ?? "ko-KR";
   const [token, setToken] = useState("");
   const [channels, setChannels] = useState<AdminChannelItem[]>([]);
@@ -297,11 +299,11 @@ export default function AdminChannelsPage() {
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           authConfig = parsed as Record<string, unknown>;
         } else {
-          setNoticeMessage("인증 정보는 JSON Object 형식이어야 합니다.");
+          setNoticeMessage(dialogCopy.jsonObject);
           return;
         }
       } catch {
-        setNoticeMessage("인증 정보 JSON 형식을 확인해주세요.");
+        setNoticeMessage(dialogCopy.jsonInvalid);
         return;
       }
     }
@@ -330,15 +332,15 @@ export default function AdminChannelsPage() {
           description: payload.description,
           status: payload.status,
         });
-        setNoticeMessage("채널 정보가 수정되었습니다.");
+        setNoticeMessage(dialogCopy.updated);
       } else {
         await createChannel(token, payload);
-        setNoticeMessage("채널이 생성되었습니다.");
+        setNoticeMessage(dialogCopy.created);
       }
       closeDialog();
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "채널 저장에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : dialogCopy.saveFailed);
     }
   }
 
@@ -351,7 +353,7 @@ export default function AdminChannelsPage() {
       const suffix = result.issues.length > 0 ? ` (${result.issues.join(" / ")})` : "";
       setNoticeMessage(`${channel.name}: ${result.message}${suffix}`);
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "채널 연결 테스트에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : dialogCopy.connectionFailed);
     }
   }
   async function removeChannel() {
@@ -361,11 +363,11 @@ export default function AdminChannelsPage() {
 
     try {
       await deleteChannel(token, editing.id);
-      setNoticeMessage("채널이 삭제되었습니다.");
+      setNoticeMessage(dialogCopy.deleted);
       closeDialog();
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "채널 삭제에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : dialogCopy.deleteFailed);
     }
   }
 
@@ -444,10 +446,10 @@ export default function AdminChannelsPage() {
       }
 
       setMenuOpen(false);
-      setNoticeMessage(`${savedCount}건 반영, ${skippedCount}건 제외되었습니다.`);
+      setNoticeMessage(formatChannelDialogText(dialogCopy.uploadResult,{saved:savedCount,skipped:skippedCount}));
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "채널 업로드에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : dialogCopy.uploadFailed);
     }
   }
 
@@ -646,31 +648,22 @@ export default function AdminChannelsPage() {
         <div className="settings-dialog-backdrop">
           <div className="settings-dialog admin-variable-dialog">
             <div className="settings-dialog__header">
-              <strong>{editing ? "채널 정보 수정" : "채널 생성"}</strong>
-              <button type="button" className="settings-dialog__close" onClick={closeDialog} aria-label="닫기">
+              <strong>{editing ? dialogCopy.editTitle : dialogCopy.createTitle}</strong>
+              <button type="button" className="settings-dialog__close" onClick={closeDialog} aria-label={dialogCopy.close}>
                 ×
               </button>
             </div>
             <div className="admin-variable-dialog__body">
               {isKakaoDraft(draft.provider, draft.renderer_type) ? (
                 <div className="admin-form-guide admin-form-guide--wide">
-                  <strong>Kakao 채널 설정 안내</strong>
-                  <p>
-                    1차 기준 권장값은 <code>Provider = kakao</code>, <code>렌더러 타입 = kakao</code>,{" "}
-                    <code>Endpoint URL = /api/v1/channels/kakao/webhook</code> 입니다.
-                  </p>
-                  <p>
-                    인증 방식은 현재 <code>없음</code> 또는 <code>Token</code>만 운영 기준으로 지원합니다.
-                    <code>Token</code>을 쓰면 인증 정보 JSON에 <code>{"{\"token\":\"...\"}"}</code> 또는{" "}
-                    <code>{"{\"appSecret\":\"...\"}"}</code> 형태로 값을 넣어야 합니다.
-                  </p>
-                  <p>
-                    <code>OAuth</code>, <code>Basic</code>은 공용 채널 모델에 있는 선택지이며, 현재 Kakao 1차 연결 기준에서는 사용하지 않습니다.
-                  </p>
+                  <strong>{dialogCopy.kakaoGuideTitle}</strong>
+                  <p>{dialogCopy.kakaoRecommended}</p>
+                  <p>{dialogCopy.kakaoAuth}</p>
+                  <p>{dialogCopy.kakaoUnsupported}</p>
                 </div>
               ) : null}
               <label>
-                <span>채널 아이디</span>
+                <span>{dialogCopy.channelId}</span>
                 <input
                   type="text"
                   value={draft.code}
@@ -679,7 +672,7 @@ export default function AdminChannelsPage() {
                 />
               </label>
               <label>
-                <span>채널 이름</span>
+                <span>{dialogCopy.channelName}</span>
                 <input
                   type="text"
                   value={draft.name}
@@ -706,7 +699,7 @@ export default function AdminChannelsPage() {
                 </select>
               </label>
               <label>
-                <span>렌더러 타입</span>
+                <span>{dialogCopy.renderer}</span>
                 <input
                   type="text"
                   value={draft.renderer_type}
@@ -724,13 +717,13 @@ export default function AdminChannelsPage() {
               </label>
               <label>
                 <span className="admin-inline-label">
-                  인증 방식
+                  {dialogCopy.authType}
                   <span
                     className="admin-inline-help"
-                    data-help="없음: 공개 webhook 테스트용입니다. Token: 고정 토큰 또는 appSecret 값을 헤더로 검증합니다. OAuth/Basic: 현재 Kakao 1차 범위에서는 사용하지 않습니다."
+                    data-help={dialogCopy.authHelp}
                     tabIndex={0}
                     role="img"
-                    aria-label="인증 방식 설명"
+                    aria-label={dialogCopy.authHelpLabel}
                   >
                     i
                   </span>
@@ -740,22 +733,22 @@ export default function AdminChannelsPage() {
                   value={draft.auth_type}
                   onChange={(event) => setDraft((current) => ({ ...current, auth_type: event.target.value }))}
                 >
-                  <option value="none">없음</option>
+                  <option value="none">{dialogCopy.none}</option>
                   <option value="token">Token</option>
                   <option value="oauth">OAuth</option>
                   <option value="basic">Basic</option>
                 </select>
               </label>
-              <p className="admin-form-guide__inline">{authTypeGuide(draft.auth_type)}</p>
+              <p className="admin-form-guide__inline">{authTypeGuide(draft.auth_type, dialogCopy)}</p>
               <label>
                 <span className="admin-inline-label">
-                  인증 정보 JSON
+                  {dialogCopy.authJson}
                   <span
                     className="admin-inline-help"
-                    data-help='Token 인증이면 {"token":"..."} 또는 {"appSecret":"..."} 형식으로 입력합니다. 없음이면 {} 로 두면 됩니다.'
+                    data-help={dialogCopy.authJsonHelp}
                     tabIndex={0}
                     role="img"
-                    aria-label="인증 정보 JSON 설명"
+                    aria-label={dialogCopy.authJsonLabel}
                   >
                     i
                   </span>
@@ -767,35 +760,35 @@ export default function AdminChannelsPage() {
                 />
               </label>
               <label>
-                <span>상세 설명</span>
+                <span>{dialogCopy.description}</span>
                 <textarea
                   value={draft.description}
                   onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
                 />
               </label>
               <label>
-                <span>사용 여부</span>
+                <span>{dialogCopy.usage}</span>
                 <select
                   className="login-select"
                   value={draft.status}
                   onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as ChannelStatus }))}
                 >
-                  <option value="active">사용</option>
-                  <option value="inactive">미사용</option>
+                  <option value="active">{copy.active}</option>
+                  <option value="inactive">{copy.inactive}</option>
                 </select>
               </label>
             </div>
             <div className="entity-editor-dialog__footer">
               {editing ? (
                 <button type="button" className="secondary-action" onClick={removeChannel}>
-                  삭제
+                  {CHANNEL_DELETE_LABELS[uiLanguage]}
                 </button>
               ) : null}
               <button type="button" className="secondary-action" onClick={closeDialog}>
-                취소
+                {dialogCopy.cancel}
               </button>
               <button type="button" className="primary-action" onClick={saveChannel}>
-                확인
+                {dialogCopy.confirm}
               </button>
             </div>
           </div>
