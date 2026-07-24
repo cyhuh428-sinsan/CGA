@@ -4,10 +4,12 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { DataGrid, type DataGridRow } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import { StudioPageLoading } from "@/components/studio-page-loading";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
+import { ANALYSIS_CATALOGS, formatAnalysisText, getAnalysisMethodLabel, type AnalysisCatalog } from "@/lib/i18n/analysis";
 import {
   type AdminConversationHistoryItem,
   fetchConversationHistory,
@@ -744,6 +746,7 @@ function buildTopIntentItems(items: AdminConversationHistoryItem[]) {
 function makeHistoryRows(
   items: SessionHistoryItem[],
   onSelect: (item: SessionHistoryItem) => void,
+  copy: AnalysisCatalog,
   limit?: number,
 ): DataGridRow[] {
   const targetItems = typeof limit === "number" ? items.slice(0, limit) : items;
@@ -782,6 +785,7 @@ function conversationProgressSummary(item: AdminConversationHistoryItem) {
 function makeConversationLookupRows(
   items: SessionHistoryItem[],
   onSelect: (item: SessionHistoryItem) => void,
+  copy: AnalysisCatalog,
 ): DataGridRow[] {
   return items.map((item) => ({
     key: `lookup-${item.sessionKey}`,
@@ -792,7 +796,7 @@ function makeConversationLookupRows(
         className="analysis-history-link"
         onClick={() => onSelect(item)}
       >
-        상세
+        {copy.details}
       </button>,
       item.representative.group_name,
       item.representative.bot_name,
@@ -813,13 +817,13 @@ function makeConversationLookupRows(
   }));
 }
 
-function makeHubHistoryRows(items: AdminConversationHistoryItem[]): DataGridRow[] {
+function makeHubHistoryRows(items: AdminConversationHistoryItem[], copy: AnalysisCatalog): DataGridRow[] {
   return items.slice(0, 8).map((item) => ({
     key: item.id,
     cells: [
       formatKoreanDateTime(item.uttered_at, "minute"),
       item.bot_name,
-      classifyMethod(item),
+      getAnalysisMethodLabel(copy, classifyMethod(item)),
       item.intent_or_module_name === "-" ? item.result : item.intent_or_module_name,
     ],
   }));
@@ -827,6 +831,8 @@ function makeHubHistoryRows(items: AdminConversationHistoryItem[]): DataGridRow[
 
 export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPageClientProps) {
   const workspace = useStudioWorkspace();
+  const { language: uiLanguage } = useI18n();
+  const copy = ANALYSIS_CATALOGS[uiLanguage];
   const pathname = usePathname();
   const botId = useMemo(() => decodeURIComponent(routeBotId), [routeBotId]);
   const versionName = useMemo(() => decodeURIComponent(versionId), [versionId]);
@@ -861,7 +867,7 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "분석 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -898,7 +904,7 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
       setVersions(refreshed.versions);
       setBot(refreshed.bot);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "학습 결과를 다시 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.refreshFailed);
     }
   }
   const botRows = useMemo(
@@ -1030,7 +1036,7 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
   }, [loading, totalAnswered, visibleDisplayRows.length, workspace.setSummaryCardValue]);
 
   if (!bot || !effectiveVersion) {
-    return <StudioPageLoading title="분석 화면을 불러오는 중입니다." />;
+    return <StudioPageLoading title={copy.loading} />;
   }
 
   return (
@@ -1039,7 +1045,7 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
       {errorMessage ? <p className="analysis-page__error">{errorMessage}</p> : null}
 
       <div className="analysis-page__filters">
-        <select value={selectedChannel} onChange={(event) => setChannel(event.target.value)} aria-label="채널 선택">
+        <select value={selectedChannel} onChange={(event) => setChannel(event.target.value)} aria-label={copy.channelSelect}>
           {channels.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
         <button type="button" onClick={() => {
@@ -1056,11 +1062,11 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
       {isHub ? (
         <div className="analysis-hub">
           <section className="analysis-panel analysis-panel--hub-rate">
-            <h3>전체 응답률 / 응답률 Top 3</h3>
+            <h3>{copy.responseOverviewTitle}</h3>
             <div className="analysis-hub-rate">
               <div>
                 <strong>{responseRate(totalAnswered, visibleDisplayRows.length)}%</strong>
-                <span>전체 응답률</span>
+                <span>{copy.totalResponseRate}</span>
               </div>
               {topIntents.slice(0, 3).map((item) => (
                 <div key={item.name}>
@@ -1072,32 +1078,32 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
           </section>
 
           <section className="analysis-panel analysis-panel--hub-history">
-            <h3>봇 허브 대화이력</h3>
+            <h3>{copy.hubHistory}</h3>
             <div className="analysis-hub__search">
-              <input value={hubQuery} onChange={(event) => setHubQuery(event.target.value)} placeholder="봇 이름" />
+              <input value={hubQuery} onChange={(event) => setHubQuery(event.target.value)} placeholder={copy.botName} />
               <select value={hubMethod} onChange={(event) => setHubMethod(event.target.value)}>
-                <option value="">분류 방식 전체</option>
-                <option value="제외/무시">제외/무시</option>
-                <option value="스몰토크">스몰토크</option>
-                <option value="Exacting Matching">Exacting Matching</option>
-                <option value="룰">룰</option>
+                <option value="">{copy.allMethods}</option>
+                <option value="제외/무시">{getAnalysisMethodLabel(copy, "제외/무시")}</option>
+                <option value="스몰토크">{getAnalysisMethodLabel(copy, "스몰토크")}</option>
+                <option value="Exacting Matching">{getAnalysisMethodLabel(copy, "Exacting Matching")}</option>
+                <option value="룰">{getAnalysisMethodLabel(copy, "룰")}</option>
                 <option value="ML">ML</option>
-                <option value="시멘틱">시멘틱</option>
+                <option value="시멘틱">{getAnalysisMethodLabel(copy, "시멘틱")}</option>
                 <option value="LLM">LLM</option>
               </select>
               <select value={hubResult} onChange={(event) => setHubResult(event.target.value)}>
-                <option value="">봇 분류 결과 전체</option>
-                <option value="응답">정상분류</option>
-                <option value="유사">유사의도 발생</option>
-                <option value="미응답">미분류</option>
+                <option value="">{copy.allResults}</option>
+                <option value="응답">{copy.classified}</option>
+                <option value="유사">{copy.similarIntent}</option>
+                <option value="미응답">{copy.unclassified}</option>
               </select>
-              <button type="button" onClick={() => { setHubQuery(""); setHubMethod(""); setHubResult(""); }}>초기화</button>
+              <button type="button" onClick={() => { setHubQuery(""); setHubMethod(""); setHubResult(""); }}>{copy.reset}</button>
             </div>
             <DataGrid
               variant="studio"
               template="150px 1fr 140px 180px"
-              columns={["발화일시", "봇 이름", "분류 방식", "봇 분류 결과"]}
-              rows={makeHubHistoryRows(hubRows)}
+              columns={[copy.utteredAt, copy.botName, copy.classificationMethod, copy.classificationResult]}
+              rows={makeHubHistoryRows(hubRows, copy)}
             />
           </section>
         </div>
@@ -1105,12 +1111,12 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
         <>
           <div className="analysis-page__summary">
             <h2>
-              누적 대화량
-                <AnalysisInfoTip text="챗봇 생성 이후 현재까지 누적된 분류 결과를 보여줍니다. 제외/무시, 스몰토크, Exacting Matching, 룰이 먼저 적용되며, 어느 단계에도 해당하지 않은 발화만 ML·시멘틱·LLM 엔진으로 분류됩니다. 한 발화에는 실제 적용된 한 단계만 집계됩니다." />
+              {copy.cumulativeVolume}
+                <AnalysisInfoTip text={copy.cumulativeHelp} />
             </h2>
             <div className="analysis-page__legend">
               {methodCounts.map((item) => (
-                <span key={item.method}>{item.method} {cumulativeRows.length ? Math.round((item.count / cumulativeRows.length) * 100) : 0}% ({item.count}건)</span>
+                <span key={item.method}>{getAnalysisMethodLabel(copy, item.method)} {cumulativeRows.length ? Math.round((item.count / cumulativeRows.length) * 100) : 0}% ({item.count} {copy.cases})</span>
               ))}
             </div>
           </div>
@@ -1118,35 +1124,35 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
           <div className="analysis-dashboard analysis-dashboard--manual">
             <section className="analysis-panel analysis-panel--ring">
               <h3>
-                기간내 대화량
-                <AnalysisInfoTip text="선택한 월과 채널의 문의 대비 응답 현황을 보여줍니다. 응답 상세는 실제 적용된 단일 분류 단계별로 집계하며, 앞 단계가 적용되면 뒤 단계는 실행하거나 중복 집계하지 않습니다." />
+                {copy.periodVolume}
+                <AnalysisInfoTip text={copy.periodHelp} />
               </h3>
               <div className="analysis-ring">
                 <div className="analysis-ring__circle">
                   <strong>{responseRate(totalAnswered, visibleDisplayRows.length)}%</strong>
-                  <span>응답률</span>
+                  <span>{copy.responseRate}</span>
                   <small>{totalAnswered} / {visibleDisplayRows.length}</small>
                 </div>
                 <div className="analysis-ring__breakdown">
                   <div className="analysis-ring__breakdown-head">
                     <span />
-                    <span>비율</span>
-                    <span>건</span>
+                    <span>{copy.ratio}</span>
+                    <span>{copy.cases}</span>
                   </div>
                   <div className="analysis-ring__breakdown-row analysis-ring__breakdown-row--group">
-                    <strong>응답</strong>
+                    <strong>{copy.response}</strong>
                     <span>{responseRate(totalAnswered, visibleDisplayRows.length)}%</span>
                     <span>{totalAnswered}</span>
                   </div>
                   {periodMethodCounts.map((item) => (
                     <div className="analysis-ring__breakdown-row" key={item.method}>
-                      <strong>{item.method}</strong>
+                      <strong>{getAnalysisMethodLabel(copy, item.method)}</strong>
                       <span>{responseRate(item.count, visibleDisplayRows.length)}%</span>
                       <span>{item.count}</span>
                     </div>
                   ))}
                   <div className="analysis-ring__breakdown-row analysis-ring__breakdown-row--group">
-                    <strong>미응답</strong>
+                    <strong>{copy.noResponse}</strong>
                     <span>{responseRate(visibleDisplayRows.length - totalAnswered, visibleDisplayRows.length)}%</span>
                     <span>{visibleDisplayRows.length - totalAnswered}</span>
                   </div>
@@ -1157,22 +1163,22 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
             <section className="analysis-panel">
               <div className="analysis-panel__title-row">
                 <h3>
-                  기간별 대화량
-                  <AnalysisInfoTip text="선택한 기간의 일자별 사용자 발화, 문의, 응답, 사용자 수 추이를 보여줍니다. 막대를 선택하면 해당 날짜의 대화 이력을 확인할 수 있습니다." />
+                  {copy.periodTrend}
+                  <AnalysisInfoTip text={copy.periodTrendHelp} />
                 </h3>
               </div>
-              <div className="analysis-period-legend" aria-label="기간별 대화량 범례">
-                <span className="is-user">사용자 발화</span>
-                <span className="is-inquiry">문의</span>
-                <span className="is-answer">응답</span>
-                <span className="is-user-count">사용자수</span>
+              <div className="analysis-period-legend" aria-label={copy.periodLegend}>
+                <span className="is-user">{copy.userUtterance}</span>
+                <span className="is-inquiry">{copy.inquiry}</span>
+                <span className="is-answer">{copy.response}</span>
+                <span className="is-user-count">{copy.userCount}</span>
               </div>
               <div className="analysis-period-chart">
                 <button
                   type="button"
                   className="analysis-period-chart__move analysis-period-chart__move--prev"
                   onClick={() => syncWeekSelection(weekIndex - 1)}
-                  aria-label="이전 주차"
+                  aria-label={copy.previousWeek}
                 >
                   ‹
                 </button>
@@ -1196,19 +1202,19 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
                   type="button"
                   className="analysis-period-chart__move analysis-period-chart__move--next"
                   onClick={() => syncWeekSelection(weekIndex + 1)}
-                  aria-label="다음 주차"
+                  aria-label={copy.nextWeek}
                 >
                   ›
                 </button>
               </div>
-              <div className="analysis-period-chart__pages" aria-label="주차 페이지">
+              <div className="analysis-period-chart__pages" aria-label={copy.weekPages}>
                 {Array.from({ length: Math.max(1, Math.ceil(dailyRows.length / 7)) }, (_, index) => (
                   <button
                     type="button"
                     key={index}
                     className={index === weekIndex ? "is-active" : ""}
                     onClick={() => syncWeekSelection(index)}
-                    aria-label={`${index + 1}주차`}
+                    aria-label={formatAnalysisText(copy.week, { count: index + 1 })}
                   />
                 ))}
               </div>
@@ -1218,41 +1224,41 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
                 disabled={!selectedDate}
                 onClick={() => setShowSelectedDateHistory(true)}
               >
-                선택일자 대화 전체보기
+                {copy.selectedDateAll}
               </button>
             </section>
 
             <section className="analysis-panel">
               <h3>
-                가장 많은 문의 Top 5
-                <AnalysisInfoTip text="자주 묻는 의도/모듈을 집계해 문의량과 응답률을 보여줍니다." />
+                {copy.topInquiries}
+                <AnalysisInfoTip text={copy.topInquiriesHelp} />
               </h3>
               <DataGrid
                 variant="studio"
                 template="64px 1fr 120px 90px 90px"
-                columns={["순위", "의도/모듈명", "분류방식", "건수", "응답률"]}
+                columns={[copy.rank, copy.intentModuleName, copy.classificationMethod, copy.count, copy.responseRate]}
                 rows={topIntents.map((item, index) => ({
                   key: item.name,
-                  cells: [String(index + 1), item.name, item.method, String(item.count), `${responseRate(item.answered, item.count)}%`],
+                  cells: [String(index + 1), item.name, getAnalysisMethodLabel(copy, item.method), String(item.count), `${responseRate(item.answered, item.count)}%`],
                 }))}
               />
             </section>
 
             <section className="analysis-panel">
               <h3>
-                선택일자 대화 이력
-                <AnalysisInfoTip text="선택한 날짜의 대화 이력 중 최근 5건을 표시합니다. 상세 조회는 선택일자 대화 전체보기에서 확인합니다." />
+                {copy.selectedDateHistory}
+                <AnalysisInfoTip text={copy.selectedDateHistoryHelp} />
               </h3>
               <DataGrid
                 variant="studio"
                 template="1.6fr 1.2fr 1fr 150px"
                 columns={[
-                  "사용자 발화",
-                  "의도/모듈명",
-                  "실행 결과",
-                  "발생시간",
+                  copy.userUtterance,
+                  copy.intentModuleName,
+                  copy.executionResult,
+                  copy.occurredAt,
                 ]}
-                rows={makeHistoryRows(selectedRowsForTable, setSelectedHistory, 5)}
+                rows={makeHistoryRows(selectedRowsForTable, setSelectedHistory, copy, 5)}
               />
             </section>
           </div>
@@ -1264,15 +1270,15 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
             className="analysis-conversation-dialog analysis-conversation-dialog--list"
             role="dialog"
             aria-modal="true"
-            aria-label="선택일자 대화 전체보기"
+            aria-label={copy.selectedDateAll}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header>
               <div>
-                <strong>선택일자 대화 전체보기</strong>
-                <span>{selectedDate || "선택된 일자 없음"} · {selectedRowsForTable.length}건</span>
+                <strong>{copy.selectedDateAll}</strong>
+                <span>{selectedDate || copy.noSelectedDate} · {selectedRowsForTable.length} {copy.cases}</span>
               </div>
-              <button type="button" onClick={() => setShowSelectedDateHistory(false)} aria-label="닫기">×</button>
+              <button type="button" onClick={() => setShowSelectedDateHistory(false)} aria-label={copy.close}>×</button>
             </header>
             <div className="analysis-conversation-dialog__table">
               <DataGrid
@@ -1280,16 +1286,16 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
                 template="64px 130px 140px 72px minmax(220px, 1fr) 170px 160px minmax(220px, 1fr)"
                 columns={[
                   "",
-                  "그룹",
-                  "봇",
-                  "버전",
-                  "사용자 발화",
-                  "의도/모듈명",
-                  "발화일시",
-                  "실행 결과",
-                  "오류/진행",
+                  copy.group,
+                  copy.bot,
+                  copy.version,
+                  copy.userUtterance,
+                  copy.intentModuleName,
+                  copy.utteredAt,
+                  copy.executionResult,
+                  copy.errorProgress,
                 ]}
-                rows={makeConversationLookupRows(selectedRowsForTable, setSelectedHistory)}
+                rows={makeConversationLookupRows(selectedRowsForTable, setSelectedHistory, copy)}
               />
             </div>
           </section>
@@ -1301,7 +1307,7 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
             className="analysis-conversation-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="대화 내용 상세"
+            aria-label={copy.conversationDetail}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header>
@@ -1309,12 +1315,12 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
                 <strong>{selectedHistory.representative.bot_name}</strong>
                 <span>{formatKoreanDateTime(selectedHistory.startedAt)}</span>
               </div>
-              <button type="button" onClick={() => setSelectedHistory(null)} aria-label="닫기">×</button>
+              <button type="button" onClick={() => setSelectedHistory(null)} aria-label={copy.close}>×</button>
             </header>
             <div className="analysis-conversation-dialog__summary">
-              <span>분류 방식 <strong>{classifyMethod(selectedHistory.representative)}</strong></span>
-              <span>의도/지식 <strong>{selectedHistory.intentOrKnowledgeName}</strong></span>
-              <span>실행 결과 <strong>{selectedHistory.result}</strong></span>
+              <span>{copy.classificationMethod} <strong>{getAnalysisMethodLabel(copy, classifyMethod(selectedHistory.representative))}</strong></span>
+              <span>{copy.intentKnowledge} <strong>{selectedHistory.intentOrKnowledgeName}</strong></span>
+              <span>{copy.executionResult} <strong>{selectedHistory.result}</strong></span>
             </div>
             <div className="analysis-conversation-dialog__messages">
               {selectedHistory.messages.filter(isVisibleConversationMessage).length > 0
@@ -1325,7 +1331,7 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
                     const isUser = String(item.participant_kind ?? "").toLowerCase() === "user";
                     return (
                       <article className={isUser ? "is-user" : "is-bot"} key={String(item.id ?? index)}>
-                        <small>{String(item.participant_name ?? (isUser ? "사용자" : selectedHistory.representative.bot_name))}</small>
+                        <small>{String(item.participant_name ?? (isUser ? copy.user : selectedHistory.representative.bot_name))}</small>
                         <p>{visibleConversationText(item) || "-"}</p>
                         <time>{formatKoreanDateTime(String(item.created_at ?? ""))}</time>
                       </article>
@@ -1333,7 +1339,7 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
                   })
                 : (
                   <article className="is-user">
-                    <small>사용자</small>
+                    <small>{copy.user}</small>
                     <p>{selectedHistory.firstUtterance}</p>
                     <time>{formatKoreanDateTime(selectedHistory.startedAt)}</time>
                   </article>
