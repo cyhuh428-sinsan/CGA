@@ -467,3 +467,12 @@ def test_admin_users_list_uses_seven_language_catalog() -> None:
     assert "copy.roleNames[item.role_code]" in page_source
     assert "new Intl.DateTimeFormat(uiLanguage" in page_source
     assert "satisfies Record<SupportedLanguage, AdminUsersCatalog>" in catalog_source
+
+
+def test_admin_groups_list_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/groups/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-groups.ts").read_text(encoding="utf-8")
+    assert "ADMIN_GROUPS_CATALOGS[uiLanguage]" in page_source
+    assert "copy.statuses[item.status]" in page_source
+    assert "new Intl.DateTimeFormat(uiLanguage" in page_source
+    assert "satisfies Record<SupportedLanguage, AdminGroupsCatalog>" in catalog_source
