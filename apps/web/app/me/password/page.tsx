@@ -5,8 +5,12 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { apiRequest } from "@/lib/api";
 import { loadAuthSession } from "@/lib/auth";
+import { useI18n } from "@/components/language-provider";
+import { ACCOUNT_PAGE_CATALOGS } from "@/lib/i18n/account-pages";
 
 export default function PasswordPage() {
+  const { language } = useI18n();
+  const copy = ACCOUNT_PAGE_CATALOGS[language].password;
   const [token, setToken] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -18,11 +22,11 @@ export default function PasswordPage() {
   useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setToken(session.access_token);
-  }, []);
+  }, [copy.loginRequired]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,7 +34,7 @@ export default function PasswordPage() {
     setErrorMessage("");
 
     if (newPassword !== newPasswordConfirm) {
-      setErrorMessage("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+      setErrorMessage(copy.mismatch);
       return;
     }
 
@@ -53,7 +57,7 @@ export default function PasswordPage() {
       setNewPassword("");
       setNewPasswordConfirm("");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "비밀번호 변경 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.changeFailed);
     } finally {
       setSubmitting(false);
     }
@@ -64,17 +68,17 @@ export default function PasswordPage() {
       <section className="auth-form-card">
         <div className="admin-detail__header">
           <div>
-            <h2>비밀번호 변경</h2>
-            <p>현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.</p>
+            <h2>{copy.title}</h2>
+            <p>{copy.description}</p>
           </div>
           <Link href="/me/profile" className="secondary-action">
-            내 정보
+            {copy.profile}
           </Link>
         </div>
 
         <form className="auth-form-card__body" onSubmit={handleSubmit}>
           <label className="field-block">
-            <span>현재 비밀번호</span>
+            <span>{copy.currentPassword}</span>
             <input
               className="input-control"
               type="password"
@@ -85,7 +89,7 @@ export default function PasswordPage() {
           </label>
 
           <label className="field-block">
-            <span>새 비밀번호</span>
+            <span>{copy.newPassword}</span>
             <input
               className="input-control"
               type="password"
@@ -96,7 +100,7 @@ export default function PasswordPage() {
           </label>
 
           <label className="field-block">
-            <span>새 비밀번호 확인</span>
+            <span>{copy.newPasswordConfirm}</span>
             <input
               className="input-control"
               type="password"
@@ -120,7 +124,7 @@ export default function PasswordPage() {
               !newPasswordConfirm
             }
           >
-            {submitting ? "변경 중..." : "비밀번호 변경"}
+            {submitting ? copy.changing : copy.submit}
           </button>
         </form>
       </section>
