@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataGrid, dataGridCellText, type DataGridRow, type DataGridSortState } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import {
   createChannel,
   deleteChannel,
@@ -14,6 +15,8 @@ import {
   type AdminChannelPayload,
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_CHANNEL_CATALOGS } from "@/lib/i18n/admin-channels";
+import { SUPPORTED_LANGUAGES } from "@/lib/language";
 import {
   LIST_PAGE_SIZE_OPTIONS,
   type ListPageSize,
@@ -39,8 +42,8 @@ function isKakaoDraft(provider: string, rendererType: string) {
   return provider.trim().toLowerCase() === "kakao" || rendererType.trim().toLowerCase() === "kakao";
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string, locale = "ko-KR") {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -131,6 +134,9 @@ function parseCsv(text: string) {
 }
 
 export default function AdminChannelsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = ADMIN_CHANNEL_CATALOGS[uiLanguage];
+  const locale = SUPPORTED_LANGUAGES.find((item) => item.code === uiLanguage)?.intlLocale ?? "ko-KR";
   const [token, setToken] = useState("");
   const [channels, setChannels] = useState<AdminChannelItem[]>([]);
   const [query, setQuery] = useState("");
@@ -458,13 +464,13 @@ export default function AdminChannelsPage() {
       channel.status_label,
       channel.creator_name,
       channel.updater_name,
-      formatDate(channel.updated_at),
+      formatDate(channel.updated_at, locale),
       <div key={`manage-${channel.id}`} className="admin-page__table-actions">
         <button type="button" className="admin-page__ghost" onClick={() => checkChannelConnection(channel)}>
-          연결 테스트
+          {copy.connectionTest}
         </button>
         <button type="button" className="admin-page__ghost" onClick={() => openEdit(channel)}>
-          수정
+          {copy.edit}
         </button>
       </div>,
     ],
@@ -482,10 +488,10 @@ export default function AdminChannelsPage() {
         leftText.trim() !== "" && rightText.trim() !== "" && Number.isFinite(leftNumber) && Number.isFinite(rightNumber);
       const result = bothNumeric
         ? leftNumber - rightNumber
-        : leftText.localeCompare(rightText, "ko-KR", { numeric: true, sensitivity: "base" });
+        : leftText.localeCompare(rightText, locale, { numeric: true, sensitivity: "base" });
       return sortState.direction === "asc" ? result : -result;
     });
-  }, [rows, sortState]);
+  }, [locale, rows, sortState]);
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const pagedRows = sortedRows.slice((page - 1) * pageSize, page * pageSize);
 
@@ -501,7 +507,7 @@ export default function AdminChannelsPage() {
 
   return (
     <section className="admin-page">
-      <h2>채널 관리</h2>
+      <h2>{copy.title}</h2>
 
       <div className="admin-page__search-row admin-channels__search-row">
         <label className="admin-page__search">
@@ -510,30 +516,30 @@ export default function AdminChannelsPage() {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="채널 아이디 또는 채널 이름을 검색하세요."
+            placeholder={copy.searchPlaceholder}
           />
         </label>
         <select className="login-select" value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value="">전체 사용여부</option>
-          <option value="active">사용</option>
-          <option value="inactive">미사용</option>
+          <option value="">{copy.allStatus}</option>
+          <option value="active">{copy.active}</option>
+          <option value="inactive">{copy.inactive}</option>
         </select>
         <button type="button" className="admin-page__filter" onClick={resetSearch}>
-          초기화
+          {copy.reset}
         </button>
         <div className="admin-page__search-actions">
           <button type="button" className="admin-page__primary" onClick={applySearch}>
-            조회
+            {copy.search}
           </button>
           <button type="button" className="admin-page__primary" onClick={openCreate}>
-            + 채널 생성
+            + {copy.create}
           </button>
           <div className="admin-common-variables__more">
             <button
               type="button"
               className="admin-common-variables__more-button"
               onClick={() => setMenuOpen((current) => !current)}
-              aria-label="채널 더보기"
+              aria-label={copy.more}
             >
               <span className="admin-common-variables__more-dots" aria-hidden="true">
                 <span />
@@ -550,7 +556,7 @@ export default function AdminChannelsPage() {
                     fileInputRef.current?.click();
                   }}
                 >
-                  파일 업로드
+                  {copy.upload}
                 </button>
                 <button
                   type="button"
@@ -559,7 +565,7 @@ export default function AdminChannelsPage() {
                     downloadChannels(channels);
                   }}
                 >
-                  파일 다운로드
+                  {copy.download}
                 </button>
               </div>
             ) : null}
@@ -579,12 +585,12 @@ export default function AdminChannelsPage() {
 
       <div className="admin-page__toolbar">
         <div className="admin-page__toolbar-left">
-          <strong>전체 {channels.length}건</strong>
+          <strong>{copy.total} {channels.length}</strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
               {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}개씩 보기
+                  {option} {copy.perPage}
                 </option>
               ))}
             </select>
@@ -597,7 +603,7 @@ export default function AdminChannelsPage() {
         <div className="admin-state-box">
           <p>{errorMessage}</p>
           <Link href="/login" className="ghost-pill">
-            로그인으로 이동
+            {copy.login}
           </Link>
         </div>
       ) : null}
@@ -607,14 +613,14 @@ export default function AdminChannelsPage() {
           <DataGrid
             variant="admin"
             template="70px 130px 150px 120px 130px 100px 130px 130px 170px 180px"
-            columns={["순서", "채널 아이디", "채널", "Provider", "렌더러 타입", "사용여부", "생성자", "최종수정자", "최종수정일시", "관리"]}
+            columns={[copy.order, copy.channelId, copy.channel, "Provider", copy.renderer, copy.status, copy.creator, copy.updatedBy, copy.updatedAt, copy.manage]}
             rows={loading ? [] : pagedRows}
             sortState={sortState}
             onSort={setSortState}
           />
 
-          {loading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
-          {!loading && rows.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+          {loading ? <p className="admin-page__empty">{copy.loading}</p> : null}
+          {!loading && rows.length === 0 ? <p className="admin-page__empty">{copy.empty}</p> : null}
 
           <div className="admin-page__pagination">
             <button type="button" disabled={page === 1} onClick={() => setPage(1)}>
