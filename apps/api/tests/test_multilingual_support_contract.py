@@ -501,3 +501,17 @@ def test_admin_user_detail_uses_selected_ui_language_and_preserves_status_compat
     assert "resolveAdminAccountStatus(data.account_status)" in page_source
     assert "copy.roleNames[selectedRole]" in page_source
     assert "LEGACY_ACCOUNT_STATUS_ALIASES" in catalog_source
+
+
+def test_api_call_history_detail_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/api-call-history/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-api-call-history.ts").read_text(encoding="utf-8")
+    assert "ADMIN_API_CALL_HISTORY_CATALOGS[language]" in page_source
+    assert "detailCopy.dialogTitle" in page_source
+    assert "detailCopy.requestData" in page_source
+    assert "detailCopy.yes" in page_source
+    assert "new Intl.DateTimeFormat(language" in page_source
+    assert "API 호출 상세 이력" not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, AdminApiCallHistoryCatalog>" in catalog_source
