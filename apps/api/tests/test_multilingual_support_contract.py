@@ -784,3 +784,17 @@ def test_intent_configure_rag_runtime_messages_use_language_independent_progress
     assert "ragUploadPdf: string" in catalog_source
     assert "ragResultCompleted: string" in catalog_source
     assert "ragConfigureFailed: string" in catalog_source
+
+
+def test_intent_configure_save_runtime_messages_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert "inputCopy.dictionarySuggestionsApplied" in page_source
+    assert "inputCopy.scoringSaved" in page_source
+    assert "inputCopy.criteriaApplied" in page_source
+    assert "inputCopy.versionOverwritten" in page_source
+    assert 'setErrorMessage("먼저 학습문장을 분류해주세요.")' not in page_source
+    assert 'setMessage("구성 자동분류 가중치를 봇 설정에 저장했습니다.")' not in page_source
+    assert "dictionarySuggestionsApplied: string" in catalog_source
+    assert "criteriaApplied: string" in catalog_source
+    assert "versionOverwritten: string" in catalog_source
