@@ -798,3 +798,11 @@ def test_intent_configure_save_runtime_messages_use_seven_language_catalog() -> 
     assert "dictionarySuggestionsApplied: string" in catalog_source
     assert "criteriaApplied: string" in catalog_source
     assert "versionOverwritten: string" in catalog_source
+
+
+def test_intent_configure_load_failure_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-configure-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-configure-input.ts").read_text(encoding="utf-8")
+    assert "inputCopy.loadFailed" in page_source
+    assert 'error.message : "구성 정보를 불러오지 못했습니다."' not in page_source
+    assert "loadFailed: string" in catalog_source
