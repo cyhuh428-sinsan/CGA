@@ -5,9 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ApiEditorDialog } from "@/components/api-store-list-page";
+import { useI18n } from "@/components/language-provider";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { normalizeApiAssets, withUpdatedApiAssets, type VersionApiAsset } from "@/lib/api-assets";
 import { applyUpdatedVersionToBot } from "@/lib/dialog-assets";
+import { API_MANAGEMENT_CATALOGS } from "@/lib/i18n/api-management";
 import { hasApiWriteRole, saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import {
   fetchStudioBotVersionApis,
@@ -64,6 +66,8 @@ function getOutputRows(method: VersionApiAsset["methods"][number]) {
 
 export function ApiStoreDetailPage() {
   const workspace = useStudioWorkspace();
+  const { language: uiLanguage } = useI18n();
+  const common = API_MANAGEMENT_CATALOGS[uiLanguage];
   const params = useParams<{ botId: string; versionId: string; apiId: string }>();
   const router = useRouter();
   const botId = workspace.bot.id || decodeURIComponent(params.botId);
@@ -116,7 +120,7 @@ export function ApiStoreDetailPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "API 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : common.detailLoadFailed);
         }
       });
 
@@ -137,7 +141,7 @@ export function ApiStoreDetailPage() {
       return;
     }
     if (!canWriteApi) {
-      setErrorMessage("API 수정 권한이 없습니다.");
+      setErrorMessage(common.editForbidden);
       setEditing(false);
       return;
     }
@@ -172,9 +176,9 @@ export function ApiStoreDetailPage() {
       };
       setBot((current) => (current ? applyUpdatedVersionToBot(current, updatedVersion) : current));
       setEditing(false);
-      setMessage("API가 수정되었습니다. 대화에 반영하려면 대화 설계 화면에서 한 번 더 저장하세요.");
+      setMessage(common.updatedWithDesignNotice);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "API 수정 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : common.updateFailed);
     } finally {
       setSaving(false);
     }
@@ -186,10 +190,10 @@ export function ApiStoreDetailPage() {
       return;
     }
     if (!canWriteApi) {
-      setErrorMessage("API 삭제 권한이 없습니다.");
+      setErrorMessage(common.deleteForbidden);
       return;
     }
-    if (!window.confirm("API를 삭제하시겠습니까?")) {
+    if (!window.confirm(common.confirmDelete)) {
       return;
     }
 
@@ -205,7 +209,7 @@ export function ApiStoreDetailPage() {
       await updateStudioBotVersionApis(authSession.access_token, bot.id, bot.active_version.id, nextDocument.apis);
       router.push(`/studio/bots/${botId}/versions/${versionId}/apis`);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "API 삭제 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : common.deleteFailed);
     } finally {
       setSaving(false);
     }
@@ -244,7 +248,7 @@ export function ApiStoreDetailPage() {
     } catch (error) {
       setTestOutputs((current) => ({
         ...current,
-        [methodId]: error instanceof Error ? error.message : "API 테스트 중 오류가 발생했습니다.",
+        [methodId]: error instanceof Error ? error.message : common.testFailed,
       }));
     } finally {
       setTestingMethodId("");
@@ -272,23 +276,23 @@ export function ApiStoreDetailPage() {
           <h1>
             <Link href={`/studio/bots/${botId}/versions/${versionId}/apis`}>API</Link>
             <span>&gt;</span>
-            <span>API 조회</span>
+            <span>{common.detailTitle}</span>
           </h1>
-          <p>{api?.baseUrl ?? "등록된 API 정보를 확인합니다."}</p>
+          <p>{api?.baseUrl ?? common.detailIntro}</p>
         </div>
         <div className="api-detail-page__actions">
           {api && canWriteApi ? (
             <>
               <button type="button" className="studio-table-page__ghost" disabled={saving} onClick={handleDeleteApi}>
-                삭제
+                {common.delete}
               </button>
               <button type="button" className="studio-table-page__primary" disabled={saving} onClick={() => setEditing(true)}>
-                수정
+                {common.edit}
               </button>
             </>
           ) : null}
           <Link className="studio-table-page__ghost" href={`/studio/bots/${botId}/versions/${versionId}/apis`}>
-            목록
+            {common.list}
           </Link>
         </div>
       </header>
@@ -303,33 +307,33 @@ export function ApiStoreDetailPage() {
           ) : null}
           <div className="api-detail-page__content">
             <section className="api-detail-page__section">
-              <strong>API 등록기본</strong>
+              <strong>{common.apiBasic}</strong>
               <div className="api-detail-page__info-grid">
                 <dl>
-                  <dt>API 이름</dt>
+                  <dt>{common.apiName}</dt>
                   <dd>{api.name}</dd>
-                  <dt>상세설명</dt>
+                  <dt>{common.description}</dt>
                   <dd>{api.description || "-"}</dd>
-                  <dt>생성일시</dt>
+                  <dt>{common.createdAt}</dt>
                   <dd>{api.updatedAt ? api.updatedAt.replace("T", " ").slice(0, 19) : "-"}</dd>
-                  <dt>최종수정일시</dt>
+                  <dt>{common.updatedAt}</dt>
                   <dd>{api.updatedAt ? api.updatedAt.replace("T", " ").slice(0, 19) : "-"}</dd>
                 </dl>
                 <dl>
                   <dt>API Key</dt>
                   <dd>{api.apiKey}</dd>
-                  <dt>목적지 Base URL</dt>
+                  <dt>{common.baseUrl}</dt>
                   <dd>{api.baseUrl}</dd>
-                  <dt>생성자</dt>
+                  <dt>{common.creator}</dt>
                   <dd>{api.updatedBy || "-"}</dd>
-                  <dt>최종수정자</dt>
+                  <dt>{common.updatedBy}</dt>
                   <dd>{api.updatedBy || "-"}</dd>
                 </dl>
               </div>
             </section>
 
             <section className="api-detail-page__section">
-              <strong>API 메서드</strong>
+              <strong>{common.methods}</strong>
               <div className="api-detail-page__method-list">
               {api.methods.map((method) => (
                 <details key={method.id} className="api-detail-page__method">
@@ -341,52 +345,52 @@ export function ApiStoreDetailPage() {
                       </span>
                       <span>
                         <span className="api-detail-page__method-badge api-detail-page__method-badge--sync">Sync</span>
-                        <span className="api-detail-page__method-description">{method.description || "메서드에 대한 상세 설명을 입력하세요."}</span>
+                        <span className="api-detail-page__method-description">{method.description || common.methodDescription}</span>
                       </span>
                     </span>
                     <span className="api-detail-page__method-chevron">⌄</span>
                   </summary>
                   <div className="api-detail-page__method-body">
-                    <strong className="api-detail-page__method-subhead">기본 정보</strong>
+                    <strong className="api-detail-page__method-subhead">{common.basicInfo}</strong>
                     <div className="api-detail-page__method-config">
                       <dl>
-                        <dt>메서드 URL</dt>
+                        <dt>{common.methodUrl}</dt>
                         <dd>{method.methodUrl || "-"}</dd>
-                        <dt>유형</dt>
+                        <dt>{common.type}</dt>
                         <dd>
                           <label>
-                            <input type="checkbox" checked={method.loggingEnabled} readOnly /> 로깅
+                            <input type="checkbox" checked={method.loggingEnabled} readOnly /> {common.logging}
                           </label>
                           <label>
-                            <input type="checkbox" checked={method.proxyEnabled} readOnly /> 프록시
+                            <input type="checkbox" checked={method.proxyEnabled} readOnly /> {common.proxy}
                           </label>
                         </dd>
                       </dl>
                       <dl>
-                        <dt>상세설명</dt>
+                        <dt>{common.description}</dt>
                         <dd>{method.description || "-"}</dd>
-                        <dt>전송방식</dt>
+                        <dt>{common.transfer}</dt>
                         <dd>
                           <label>
-                            <input type="radio" checked readOnly /> 동기
+                            <input type="radio" checked readOnly /> {common.sync}
                           </label>
                           <label className="is-disabled">
-                            <input type="radio" disabled readOnly /> 비동기
+                            <input type="radio" disabled readOnly /> {common.async}
                           </label>
                         </dd>
                       </dl>
                     </div>
                     <div className="api-detail-page__method-main">
                       <section>
-                        <strong>파라미터</strong>
+                        <strong>{common.parameters}</strong>
                         <table>
                           <thead>
                             <tr>
-                              <th>Name</th>
-                              <th>설명</th>
-                              <th>유형</th>
-                              <th>Data type</th>
-                              <th>테스트 입력값</th>
+                              <th>{common.name}</th>
+                              <th>{common.parameterDescription}</th>
+                              <th>{common.parameterType}</th>
+                              <th>{common.dataType}</th>
+                              <th>{common.testInput}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -422,13 +426,13 @@ export function ApiStoreDetailPage() {
                         </table>
                       </section>
                       <section>
-                        <strong>파라미터 응답</strong>
+                        <strong>{common.response}</strong>
                         <div className="api-detail-page__output-scroll">
                           <table>
                             <thead>
                               <tr>
-                                <th>Name</th>
-                                <th>Data type</th>
+                                <th>{common.name}</th>
+                                <th>{common.dataType}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -458,9 +462,9 @@ export function ApiStoreDetailPage() {
                     </div>
                     <section className="api-detail-page__test-output">
                       <div className="api-detail-page__test-output-head">
-                        <strong>Test Output</strong>
+                        <strong>{common.testOutput}</strong>
                         <button type="button" disabled={testingMethodId === method.id} onClick={() => void handleTestMethod(method.id)}>
-                          Test
+                          {common.test}
                         </button>
                       </div>
                       <pre>{testOutputs[method.id] ?? ""}</pre>
@@ -473,7 +477,7 @@ export function ApiStoreDetailPage() {
           </div>
         </div>
       ) : !errorMessage ? (
-        <p className="manual-main__status">API 정보를 불러오는 중입니다.</p>
+        <p className="manual-main__status">{common.detailLoading}</p>
       ) : null}
     </section>
   );
