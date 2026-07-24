@@ -1129,3 +1129,22 @@ def test_server_route_labels_cross_a_localized_client_boundary() -> None:
     assert "export function StudioPageText" in table_page
     assert "<StudioPageText>보기</StudioPageText>" in conversation_page
     assert "<StudioPageText>대화 설계</StudioPageText>" in flow_page
+def test_studio_page_native_catalog_covers_every_korean_source_label() -> None:
+    catalog_path = ROOT_DIR / "apps/web/lib/i18n/studio-pages-complete-native.ts"
+    assert catalog_path.is_file()
+
+    catalog_source = catalog_path.read_text(encoding="utf-8")
+    studio_source = (ROOT_DIR / "apps/web/lib/i18n/studio-pages.ts").read_text(encoding="utf-8")
+    korean_labels = set(re.findall(r'^\s*"([^"]*[가-힣][^"]*)"\s*:', studio_source, re.MULTILINE))
+    assert len(korean_labels) >= 300
+
+    for language in ("zh-CN", "ja", "vi", "fr", "de"):
+        marker = f'  "{language}": {{'
+        assert marker in catalog_source
+        block = catalog_source.split(marker, 1)[1].split("\n  },", 1)[0]
+        translated = dict(re.findall(r'^\s*"((?:[^"\\\\]|\\\\.)*)"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"', block, re.MULTILINE))
+        assert korean_labels <= translated.keys(), language
+        assert all(value.strip() and not re.search(r"[가-힣]", value) for value in translated.values()), language
+
+    assert "STUDIO_PAGE_COMPLETE_NATIVE" in studio_source
+    assert '...STUDIO_PAGE_COMPLETE_NATIVE["zh-CN"]' in studio_source
