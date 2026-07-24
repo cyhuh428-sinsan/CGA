@@ -29,6 +29,7 @@ import {
 import { loadAuthSession } from "@/lib/auth";
 import { ADMIN_OPERATIONS_ACTION_CATALOGS, formatOperationsText } from "@/lib/i18n/admin-operations-actions";
 import { ADMIN_OPERATIONS_DASHBOARD_CATALOGS } from "@/lib/i18n/admin-operations-dashboard";
+import { ADMIN_OPERATIONS_STATUS_CATALOGS, type AdminOperationsStatusCatalog } from "@/lib/i18n/admin-operations-status";
 import { fetchStudioBots, forceReleaseEditLock, type StudioBotApiItem } from "@/lib/studio-bots-api";
 
 const PERIOD_OPTIONS = [
@@ -48,31 +49,14 @@ function dashboardPeriodFilters(period: PeriodValue) {
   return "hours" in option ? { hours: option.hours } : { days: option.days };
 }
 
-const SUMMARY_LABELS: Array<{ key: keyof AdminOperationsDashboardResponse["summary"]; label: string; tone?: "warning" | "normal" }> = [
-  { key: "total_bots", label: "전체 봇" },
-  { key: "operating_bots", label: "운영 버전 봇" },
-  { key: "botstation_connected_bots", label: "봇스테이션 연결" },
-  { key: "active_channels", label: "활성 채널" },
-  { key: "channel_rooms", label: "대화방" },
-  { key: "user_messages", label: "사용자 발화" },
-  { key: "queue_events", label: "Queue 전체" },
-  { key: "queue_queued", label: "Queue 대기", tone: "warning" },
-  { key: "queue_processing", label: "Queue 처리중" },
-  { key: "queue_completed", label: "Queue 완료" },
-  { key: "queue_failed", label: "Queue 실패", tone: "warning" },
-  { key: "runtime_events", label: "실행 이벤트" },
-  { key: "runtime_problem_events", label: "실행 경고/오류", tone: "warning" },
-  { key: "system_errors", label: "시스템 오류", tone: "warning" },
-  { key: "slow_api_requests", label: "느린 API", tone: "warning" },
-  { key: "slow_db_requests", label: "DB 지연", tone: "warning" },
-  { key: "active_edit_locks", label: "편집 잠금", tone: "warning" },
-  { key: "expired_edit_locks", label: "만료 잠금", tone: "warning" },
-  { key: "edit_lock_conflicts", label: "편집 충돌", tone: "warning" },
-  { key: "api_calls", label: "API 호출" },
-  { key: "api_errors", label: "API 오류", tone: "warning" },
-  { key: "intent_fallbacks", label: "의도 미분류", tone: "warning" },
-  { key: "training_success", label: "학습 성공" },
-  { key: "training_failed", label: "학습 확인 필요", tone: "warning" },
+const SUMMARY_LABELS: Array<{ key: keyof AdminOperationsDashboardResponse["summary"]; tone?: "warning" | "normal" }> = [
+  { key: "total_bots" }, { key: "operating_bots" }, { key: "botstation_connected_bots" }, { key: "active_channels" },
+  { key: "channel_rooms" }, { key: "user_messages" }, { key: "queue_events" }, { key: "queue_queued", tone: "warning" },
+  { key: "queue_processing" }, { key: "queue_completed" }, { key: "queue_failed", tone: "warning" }, { key: "runtime_events" },
+  { key: "runtime_problem_events", tone: "warning" }, { key: "system_errors", tone: "warning" }, { key: "slow_api_requests", tone: "warning" },
+  { key: "slow_db_requests", tone: "warning" }, { key: "active_edit_locks", tone: "warning" }, { key: "expired_edit_locks", tone: "warning" },
+  { key: "edit_lock_conflicts", tone: "warning" }, { key: "api_calls" }, { key: "api_errors", tone: "warning" },
+  { key: "intent_fallbacks", tone: "warning" }, { key: "training_success" }, { key: "training_failed", tone: "warning" },
 ];
 
 function formatDate(value: string) {
@@ -113,12 +97,12 @@ function formatMs(value: number | null | undefined) {
   return `${value.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}ms`;
 }
 
-function slowRequestKindLabel(item: AdminOperationsDashboardSlowRequestItem) {
-  return item.kind === "db" ? "DB 지연" : "느린 API";
+function slowRequestKindLabel(item: AdminOperationsDashboardSlowRequestItem, statusCopy: AdminOperationsStatusCatalog) {
+  return item.kind === "db" ? statusCopy.slowDb : statusCopy.slowApi;
 }
 
-function slowRequestSummaryKindLabel(item: AdminOperationsDashboardSlowRequestSummaryItem) {
-  return item.kind === "db" ? "DB 지연" : "느린 API";
+function slowRequestSummaryKindLabel(item: AdminOperationsDashboardSlowRequestSummaryItem, statusCopy: AdminOperationsStatusCatalog) {
+  return item.kind === "db" ? statusCopy.slowDb : statusCopy.slowApi;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -181,11 +165,8 @@ function runtimeItemLocation(item: AdminOperationsDashboardRuntimeItem) {
   return eventLocation({ dialog_name: item.dialog_name, node_title: item.node_title });
 }
 
-function editLockAreaLabel(area: string) {
-  if (area === "dialog") return "대화";
-  if (area === "start") return "대화 시작";
-  if (area === "flow") return "대화 설계";
-  if (area === "settings") return "설정";
+function editLockAreaLabel(area: string, statusCopy: AdminOperationsStatusCatalog) {
+  if (area in statusCopy.editAreas) return statusCopy.editAreas[area];
   return area || "-";
 }
 
@@ -193,10 +174,10 @@ function editLockOwner(item: AdminOperationsDashboardEditLockItem) {
   return item.owner_name?.trim() || item.owner_login_id || "-";
 }
 
-function cacheAvailabilityLabel(enabled: boolean, available: boolean | null) {
-  if (!enabled) return "미사용";
-  if (available === null) return "확인 대기";
-  return available ? "사용 가능" : "Fallback";
+function cacheAvailabilityLabel(enabled: boolean, available: boolean | null, statusCopy: AdminOperationsStatusCatalog) {
+  if (!enabled) return statusCopy.cacheAvailability.disabled;
+  if (available === null) return statusCopy.cacheAvailability.pending;
+  return available ? statusCopy.cacheAvailability.available : statusCopy.cacheAvailability.fallback;
 }
 function runtimeVariableTrace(dataJson: Record<string, unknown>) {
   const runtimeEvent = runtimeEventFromData(dataJson);
@@ -226,6 +207,7 @@ export default function AdminOperationsDashboardPage() {
   const { language: uiLanguage } = useI18n();
   const copy = ADMIN_OPERATIONS_DASHBOARD_CATALOGS[uiLanguage];
   const actionCopy = ADMIN_OPERATIONS_ACTION_CATALOGS[uiLanguage];
+  const statusCopy = ADMIN_OPERATIONS_STATUS_CATALOGS[uiLanguage];
   const [token, setToken] = useState("");
   const [period, setPeriod] = useState<PeriodValue>("1h");
   const [groupId, setGroupId] = useState("");
@@ -257,7 +239,7 @@ export default function AdminOperationsDashboardPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(statusCopy.loginRequired);
       return;
     }
     setToken(session.access_token);
@@ -284,7 +266,7 @@ export default function AdminOperationsDashboardPage() {
         setChannels(channelResponse.items);
       })
       .catch((error) => {
-        if (!ignore) setErrorMessage(error instanceof Error ? error.message : "운영 필터 정보를 불러오지 못했습니다.");
+        if (!ignore) setErrorMessage(error instanceof Error ? error.message : statusCopy.filterLoadFailed);
       });
     return () => {
       ignore = true;
@@ -316,7 +298,7 @@ export default function AdminOperationsDashboardPage() {
           return;
         }
         setDashboard(null);
-        setErrorMessage(dashboardResult.reason instanceof Error ? dashboardResult.reason.message : "운영 현황을 불러오지 못했습니다.");
+        setErrorMessage(dashboardResult.reason instanceof Error ? dashboardResult.reason.message : statusCopy.dashboardLoadFailed);
       })
       .finally(() => {
         if (!ignore) setLoading(false);
@@ -337,7 +319,7 @@ export default function AdminOperationsDashboardPage() {
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__ghost" onClick={() => setSelectedError(item)}>
-        상세
+        {statusCopy.detail}
       </button>,
       item.source,
       item.bot_name,
@@ -362,7 +344,7 @@ export default function AdminOperationsDashboardPage() {
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__ghost" onClick={() => setSelectedRuntimeEvent(item)}>
-        상세
+        {statusCopy.detail}
       </button>,
       item.source,
       item.level,
@@ -378,7 +360,7 @@ export default function AdminOperationsDashboardPage() {
     key: item.id,
     cells: [
       <button key="detail" type="button" className="admin-page__ghost" onClick={() => setSelectedSystemError(item)}>
-        상세
+        {statusCopy.detail}
       </button>,
       item.level || "-",
       item.logger || "-",
@@ -392,7 +374,7 @@ export default function AdminOperationsDashboardPage() {
   const slowRequestRows: DataGridRow[] = (dashboard?.recent_slow_requests ?? []).map((item) => ({
     key: item.id,
     cells: [
-      slowRequestKindLabel(item),
+      slowRequestKindLabel(item, statusCopy),
       item.method,
       item.path,
       item.status_code ? String(item.status_code) : "-",
@@ -411,7 +393,7 @@ export default function AdminOperationsDashboardPage() {
   const slowRequestSummaryRows: DataGridRow[] = (dashboard?.recent_slow_request_summary ?? []).map((item) => ({
     key: item.id,
     cells: [
-      slowRequestSummaryKindLabel(item),
+      slowRequestSummaryKindLabel(item, statusCopy),
       item.method,
       item.path,
       item.count.toLocaleString("ko-KR"),
@@ -436,7 +418,7 @@ export default function AdminOperationsDashboardPage() {
       </button>,
       item.bot_name,
       item.version_name,
-      editLockAreaLabel(item.area),
+      editLockAreaLabel(item.area, statusCopy),
       item.dialog_id,
       editLockOwner(item),
       formatDate(item.last_seen_at),
@@ -449,7 +431,7 @@ export default function AdminOperationsDashboardPage() {
           key: "status",
           cells: [
             "상태",
-            cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available),
+            cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available, statusCopy),
             `Backend ${dashboard.cache.backend} / 상태 ${dashboard.cache.connection_state}`,
             dashboard.cache.last_error || "-",
           ],
@@ -585,25 +567,25 @@ export default function AdminOperationsDashboardPage() {
     ? [
         {
           key: "api-readiness",
-          label: "API/DB 준비",
-          value: apiReadiness?.ok ? "정상" : "확인 필요",
+          label: statusCopy.health.apiReadiness,
+          value: apiReadiness?.ok ? statusCopy.health.healthy : statusCopy.health.checkRequired,
           detail: apiReadiness
             ? `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString("ko-KR")}ms`}`
-            : "확인 중",
+            : statusCopy.health.checking,
           tone: apiReadiness?.ok ? "normal" : "critical",
         },
         {
           key: "cache",
-          label: "캐시",
-          value: cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available),
+          label: statusCopy.health.cache,
+          value: cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available, statusCopy),
           detail:
             dashboard.cache.read_errors + dashboard.cache.write_errors + dashboard.cache.purge_errors > 0
-              ? `오류 ${(
+              ? formatOperationsText(statusCopy.health.errorCount, { count: (
                   dashboard.cache.read_errors
                   + dashboard.cache.write_errors
                   + dashboard.cache.purge_errors
-                ).toLocaleString("ko-KR")}건`
-              : `Hit Rate ${dashboard.cache.hit_rate.toLocaleString("ko-KR")}%`,
+                ).toLocaleString(uiLanguage) })
+              : `Hit Rate ${dashboard.cache.hit_rate.toLocaleString(uiLanguage)}%`,
           tone:
             dashboard.cache.enabled && (!dashboard.cache.available || (dashboard.cache.memory_usage_percent ?? 0) >= 80)
               ? "warning"
@@ -611,24 +593,27 @@ export default function AdminOperationsDashboardPage() {
         },
         {
           key: "slow-api",
-          label: "응답 지연",
+          label: statusCopy.health.responseDelay,
           value: (
             dashboard.summary.slow_api_requests
             + dashboard.summary.slow_db_requests
-          ).toLocaleString("ko-KR"),
-          detail: `API ${dashboard.summary.slow_api_requests.toLocaleString("ko-KR")} / ${formatMs(dashboard.summary.slow_api_threshold_ms)} · DB ${dashboard.summary.slow_db_requests.toLocaleString("ko-KR")} / ${formatMs(dashboard.summary.slow_db_threshold_ms)}`,
+          ).toLocaleString(uiLanguage),
+          detail: `API ${dashboard.summary.slow_api_requests.toLocaleString(uiLanguage)} / ${formatMs(dashboard.summary.slow_api_threshold_ms)} · DB ${dashboard.summary.slow_db_requests.toLocaleString(uiLanguage)} / ${formatMs(dashboard.summary.slow_db_threshold_ms)}`,
           tone: dashboard.summary.slow_api_requests + dashboard.summary.slow_db_requests > 0 ? "warning" : "normal",
         },
         {
           key: "errors",
-          label: "오류",
+          label: statusCopy.health.errors,
           value: (
             dashboard.summary.system_errors
             + dashboard.summary.queue_failed
             + dashboard.summary.runtime_problem_events
             + dashboard.summary.api_errors
-          ).toLocaleString("ko-KR"),
-          detail: `시스템 ${dashboard.summary.system_errors.toLocaleString("ko-KR")} · Queue ${dashboard.summary.queue_failed.toLocaleString("ko-KR")}`,
+          ).toLocaleString(uiLanguage),
+          detail: formatOperationsText(statusCopy.health.systemQueue, {
+            system: dashboard.summary.system_errors.toLocaleString(uiLanguage),
+            queue: dashboard.summary.queue_failed.toLocaleString(uiLanguage),
+          }),
           tone:
             dashboard.summary.system_errors > 0 || dashboard.summary.queue_failed > 0
               ? "critical"
@@ -638,13 +623,17 @@ export default function AdminOperationsDashboardPage() {
         },
         {
           key: "locks",
-          label: "편집 잠금",
+          label: statusCopy.health.editLocks,
           value: (
             dashboard.summary.active_edit_locks
             + dashboard.summary.expired_edit_locks
             + dashboard.summary.edit_lock_conflicts
-          ).toLocaleString("ko-KR"),
-          detail: `활성 ${dashboard.summary.active_edit_locks.toLocaleString("ko-KR")} · 만료 ${dashboard.summary.expired_edit_locks.toLocaleString("ko-KR")} · 충돌 ${dashboard.summary.edit_lock_conflicts.toLocaleString("ko-KR")}`,
+          ).toLocaleString(uiLanguage),
+          detail: formatOperationsText(statusCopy.health.lockDetail, {
+            active: dashboard.summary.active_edit_locks.toLocaleString(uiLanguage),
+            expired: dashboard.summary.expired_edit_locks.toLocaleString(uiLanguage),
+            conflicts: dashboard.summary.edit_lock_conflicts.toLocaleString(uiLanguage),
+          }),
           tone:
             dashboard.summary.expired_edit_locks > 0 || dashboard.summary.edit_lock_conflicts > 0 || dashboard.summary.active_edit_locks > 0
               ? "warning"
@@ -652,13 +641,18 @@ export default function AdminOperationsDashboardPage() {
         },
         {
           key: "version-storage",
-          label: "DB 분리",
+          label: statusCopy.health.dbSplit,
           value: integritySummary
-            ? (integritySummary.version_storage_mismatch_versions + integritySummary.version_read_snapshot_missing_versions).toLocaleString("ko-KR")
-            : "점검 대기",
+            ? (integritySummary.version_storage_mismatch_versions + integritySummary.version_read_snapshot_missing_versions).toLocaleString(uiLanguage)
+            : statusCopy.health.checkPending,
           detail: integritySummary
-            ? `분리 미적용 ${integritySummary.version_storage_missing_versions.toLocaleString("ko-KR")} · 스냅샷 누락 ${integritySummary.version_read_snapshot_missing_versions.toLocaleString("ko-KR")} · 적용 ${integritySummary.version_storage_split_versions.toLocaleString("ko-KR")}/${integritySummary.version_storage_total_versions.toLocaleString("ko-KR")}`
-            : "DB 분리 상태에서 무결성 점검을 실행하세요.",
+            ? formatOperationsText(statusCopy.health.splitDetail, {
+                missing: integritySummary.version_storage_missing_versions.toLocaleString(uiLanguage),
+                snapshots: integritySummary.version_read_snapshot_missing_versions.toLocaleString(uiLanguage),
+                split: integritySummary.version_storage_split_versions.toLocaleString(uiLanguage),
+                total: integritySummary.version_storage_total_versions.toLocaleString(uiLanguage),
+              })
+            : statusCopy.health.integrityPrompt,
           tone: !integritySummary
             ? "warning"
             : integritySummary.version_storage_mismatch_versions > 0
@@ -671,15 +665,15 @@ export default function AdminOperationsDashboardPage() {
           const acceleration = dashboard.nlu_acceleration[engine];
           const executionCount = acceleration.execution_count ?? 0;
           const value = acceleration.available === true
-            ? executionCount > 0 ? "실행 확인" : "사용 가능"
-            : acceleration.available === false ? "미사용" : "확인 대기";
+            ? executionCount > 0 ? statusCopy.health.executionConfirmed : statusCopy.health.available
+            : acceleration.available === false ? statusCopy.health.disabled : statusCopy.health.gpuPending;
           const detail = acceleration.available === true
-            ? `${acceleration.device ?? "CUDA"} · 컨테이너 시작 후 ${executionCount.toLocaleString("ko-KR")}회${acceleration.last_execution_at ? ` · 최근 ${formatDate(acceleration.last_execution_at)}` : ""}`
+            ? `${acceleration.device ?? "CUDA"} · ${formatOperationsText(statusCopy.health.gpuExecution, { count: executionCount.toLocaleString(uiLanguage) })}${acceleration.last_execution_at ? ` · ${formatOperationsText(statusCopy.health.recent, { date: formatDate(acceleration.last_execution_at) })}` : ""}`
             : acceleration.available === false
-              ? acceleration.error ?? "CUDA 또는 엔진 상태를 확인하세요."
-              : "GPU 연산이 아직 실행되지 않았습니다.";          return {
+              ? acceleration.error ?? statusCopy.health.gpuCheck
+              : statusCopy.health.gpuNotRun;          return {
             key: `${engine}-gpu`,
-            label: engine === "ml" ? "ML GPU" : "시멘틱 GPU",
+            label: engine === "ml" ? statusCopy.health.mlGpu : statusCopy.health.semanticGpu,
             value,
             detail,
             tone: acceleration.available ? "normal" : "warning",
@@ -694,8 +688,8 @@ export default function AdminOperationsDashboardPage() {
     ? [
         {
           key: "api-readiness",
-          label: "API/DB 준비",
-          value: apiReadiness.ok ? "정상" : "확인 필요",
+          label: statusCopy.health.apiReadiness,
+          value: apiReadiness.ok ? statusCopy.health.healthy : statusCopy.health.checkRequired,
           detail: `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString("ko-KR")}ms`}`,
           tone: apiReadiness.ok ? "normal" : "critical",
         },
@@ -722,7 +716,7 @@ export default function AdminOperationsDashboardPage() {
       });
       setVersionIntegrity(result);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "버전 무결성 상태를 불러오지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : statusCopy.integrityLoadFailed);
     } finally {
       setCheckingVersionIntegrity(false);
     }
@@ -983,8 +977,8 @@ export default function AdminOperationsDashboardPage() {
           <div className="operations-dashboard__grid">
             {SUMMARY_LABELS.map((item) => (
               <article key={item.key} className={`operations-dashboard__metric${item.tone === "warning" ? " is-warning" : ""}`}>
-                <span>{item.label}</span>
-                <strong>{dashboard.summary[item.key].toLocaleString("ko-KR")}</strong>
+                <span>{statusCopy.summaryLabels[item.key]}</span>
+                <strong>{dashboard.summary[item.key].toLocaleString(uiLanguage)}</strong>
               </article>
             ))}
           </div>
