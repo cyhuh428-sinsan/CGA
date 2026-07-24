@@ -871,3 +871,14 @@ def test_group_api_detail_runtime_and_table_labels_use_seven_language_catalog() 
     assert "<strong>{copy.testOutput}</strong>" in page_source
     assert 'setMessage("API가 수정되었습니다.")' not in page_source
     assert '<strong>Test Output</strong>' not in page_source
+
+def test_admin_audit_log_detail_and_csv_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/audit-logs/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-audit-logs.ts").read_text(encoding="utf-8")
+    assert "downloadCsv(items, copy.auditExportColumns, locale)" in page_source
+    assert "{copy.level}" in page_source
+    assert "{copy.method}" in page_source
+    assert 'const headers = ["작업", "대상", "대상 ID", "사용자", "IP", "발생일시", "요약"]' not in page_source
+    assert "auditExportColumns:string[]" in catalog_source
+    assert "level:string" in catalog_source
+    assert "method:string" in catalog_source
