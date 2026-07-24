@@ -921,3 +921,14 @@ def test_retraining_page_uses_seven_language_catalog_and_preserves_status_keys()
     assert 'updateRecordStatus("재학습제외")' in page_source
     assert 'type RetrainingStatus = "미학습" | "보류" | "재학습제외" | "재학습완료" | "삭제"' in page_source
     assert "satisfies Record<SupportedLanguage, RetrainingCatalog>" in catalog_source
+
+def test_evaluation_page_uses_seven_language_catalog_without_changing_csv_compatibility() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/evaluation-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/evaluation.ts").read_text(encoding="utf-8")
+    assert "const copy = EVALUATION_CATALOGS[uiLanguage]" in page_source
+    assert "tEvaluation(copy" in page_source
+    assert "copy.loadFailed" in page_source
+    assert "copy.botEvaluation" in page_source
+    assert 'setErrorMessage("평가 데이터에서 학습문장과 의도명을 찾지 못했습니다.")' not in page_source
+    assert 'const rows = [["의도명", "학습문장"]]' in page_source
+    assert "satisfies Record<SupportedLanguage, EvaluationCatalog>" in catalog_source
