@@ -23,7 +23,7 @@ import {
 import { applyUpdatedVersionToBot } from "@/lib/dialog-assets";
 import { hasApiWriteRole, loadAuthSession, saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { API_EDITOR_CATALOGS } from "@/lib/i18n/api-editor";
-import { API_MANAGEMENT_CATALOGS } from "@/lib/i18n/api-management";
+import { API_MANAGEMENT_CATALOGS, formatApiManagementText } from "@/lib/i18n/api-management";
 import {
   fetchStudioBotVersionApis,
   type StudioBotApiItem,
@@ -710,7 +710,7 @@ export function ApiStoreListPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "API 목록을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : common.loadFailed);
         }
       })
       .finally(() => {
@@ -743,7 +743,7 @@ export function ApiStoreListPage() {
     }
     if (!canWriteApi) {
       router.replace(`/studio/bots/${botId}/versions/${versionId}/apis`, { scroll: false });
-      setErrorMessage("API 등록 권한이 없습니다.");
+      setErrorMessage(common.createForbidden);
       return;
     }
 
@@ -757,7 +757,7 @@ export function ApiStoreListPage() {
       return;
     }
     if (!canWriteApi) {
-      setErrorMessage("API 수정 권한이 없습니다.");
+      setErrorMessage(common.editForbidden);
       return;
     }
 
@@ -778,7 +778,7 @@ export function ApiStoreListPage() {
       setEditingApi(null);
       setMessage(successMessage);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "API 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : common.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -788,21 +788,21 @@ export function ApiStoreListPage() {
     const selectedIdSet = new Set(selectedIds);
     const targetApis = selectedOnly ? apis.filter((api) => selectedIdSet.has(api.id)) : apis;
     if (targetApis.length === 0) {
-      setErrorMessage(selectedOnly ? "다운로드할 API를 선택해주세요." : "다운로드할 API가 없습니다.");
+      setErrorMessage(selectedOnly ? common.downloadSelectionRequired : common.downloadEmpty);
       return;
     }
     downloadTextFile(
       selectedOnly ? "api-selected.json" : "api-all.json",
       JSON.stringify(buildApiExportPayload(targetApis), null, 2),
     );
-    setMessage(selectedOnly ? `${targetApis.length}개 API를 다운로드했습니다.` : "전체 API를 다운로드했습니다.");
+    setMessage(selectedOnly ? formatApiManagementText(common.downloadedSelected, { count: targetApis.length }) : common.downloadedAll);
   }
 
   async function handleUploadFile(file: File) {
     try {
       const importedApis = parseApiImportPayload(JSON.parse(await file.text()));
       if (importedApis.length === 0) {
-        setErrorMessage("업로드할 API 데이터가 없습니다.");
+        setErrorMessage(common.uploadEmpty);
         return;
       }
       const byKey = new Map(apis.map((api) => [api.apiKey, api]));
@@ -816,9 +816,9 @@ export function ApiStoreListPage() {
           nextApis.push({ ...api, id: crypto.randomUUID(), updatedAt: new Date().toISOString() });
         }
       });
-      await persistApis(nextApis, `${importedApis.length}개 API를 업로드했습니다.`);
+      await persistApis(nextApis, formatApiManagementText(common.uploaded, { count: importedApis.length }));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "API 업로드 파일을 읽지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : common.uploadReadFailed);
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -832,7 +832,7 @@ export function ApiStoreListPage() {
       existingIndex >= 0
         ? apis.map((item) => (item.id === api.id ? api : item))
         : [...apis, api];
-    void persistApis(nextApis, existingIndex >= 0 ? "API가 수정되었습니다." : "API가 등록되었습니다.");
+    void persistApis(nextApis, existingIndex >= 0 ? common.updated : common.created);
   }
 
   const rows: DataGridRow[] = filteredApis.map((api) => ({
@@ -950,7 +950,7 @@ export function ApiStoreListPage() {
               type="button"
               className="studio-table-page__ghost"
               disabled={selectedIds.length === 0 || saving}
-              onClick={() => persistApis(apis.filter((api) => !selectedIds.includes(api.id)), "선택한 API가 삭제되었습니다.")}
+              onClick={() => persistApis(apis.filter((api) => !selectedIds.includes(api.id)), common.deletedSelected)}
             >
               {common.delete}
             </button>
