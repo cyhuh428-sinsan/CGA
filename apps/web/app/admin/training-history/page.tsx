@@ -11,9 +11,15 @@ import {
 import { getNluModelLabel, getNluTypeLabel, normalizeNluType } from "@/lib/nlu-options";
 import { useI18n } from "@/components/language-provider";
 import { ADMIN_PAGE_CATALOGS } from "@/lib/i18n/admin-pages";
+import {
+  ADMIN_TRAINING_HISTORY_CATALOGS,
+  formatTrainingHistoryText,
+  type AdminTrainingHistoryCatalog,
+} from "@/lib/i18n/admin-training-history";
+import type { SupportedLanguage } from "@/lib/language";
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string, language: SupportedLanguage) {
+  return new Intl.DateTimeFormat(language, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -32,12 +38,12 @@ function formatMaybePercent(value: number | undefined) {
   return typeof value === "number" ? formatPercent(value) : "-";
 }
 
-function renderCountMap(value?: Record<string, number>) {
+function renderCountMap(value: Record<string, number> | undefined, copy: AdminTrainingHistoryCatalog) {
   if (!value || Object.keys(value).length === 0) {
     return "-";
   }
   return Object.entries(value)
-    .map(([key, count]) => `${key} ${count}건`)
+    .map(([key, count]) => `${key} ${formatTrainingHistoryText(copy.countPattern, { count })}`)
     .join(" / ");
 }
 
@@ -46,7 +52,7 @@ function formatTrainingEngine(item: AdminTrainingHistoryItem) {
   return `${getNluTypeLabel(nluType)} / ${getNluModelLabel(nluType, item.nlu_model)}`;
 }
 
-function TrainingQualityDetail({ item }: { item: AdminTrainingHistoryItem }) {
+function TrainingQualityDetail({ item, qualityCopy }: { item: AdminTrainingHistoryItem; qualityCopy: AdminTrainingHistoryCatalog }) {
   const diagnostics = item.data_json.quality_diagnostics;
   const summary = diagnostics?.summary ?? {};
   const settings = diagnostics?.settings ?? {};
@@ -57,35 +63,35 @@ function TrainingQualityDetail({ item }: { item: AdminTrainingHistoryItem }) {
     return (
       <section className="admin-training-quality">
         <div className="admin-training-quality__header">
-          <strong>Semantic NLU 학습문장 자기검증</strong>
+          <strong>{qualityCopy.semanticValidationTitle}</strong>
           <span>
             Index {settings.index_name || "-"} / Top-K {settings.top_k ?? 3}
           </span>
         </div>
         <div className="admin-training-quality__summary">
-          <span>점검 {summary.total_checked ?? 0}건</span>
-          <span>T {summary.training_checked ?? 0}건</span>
-          <span>Exact {summary.exact_match_count ?? 0}건</span>
-          <span>정확도 {formatMaybePercent(summary.accuracy)}</span>
-          <span>문제 후보 {summary.problem_count ?? rows.length}건</span>
+          <span>{qualityCopy.checked} {formatTrainingHistoryText(qualityCopy.countPattern, { count: summary.total_checked ?? 0 })}</span>
+          <span>T {formatTrainingHistoryText(qualityCopy.countPattern, { count: summary.training_checked ?? 0 })}</span>
+          <span>{qualityCopy.exact} {formatTrainingHistoryText(qualityCopy.countPattern, { count: summary.exact_match_count ?? 0 })}</span>
+          <span>{qualityCopy.accuracy} {formatMaybePercent(summary.accuracy)}</span>
+          <span>{qualityCopy.problemCandidates} {formatTrainingHistoryText(qualityCopy.countPattern, { count: summary.problem_count ?? rows.length })}</span>
         </div>
-        <p className="admin-training-quality__meta">상태: {renderCountMap(summary.status_counts)}</p>
-        <p className="admin-training-quality__meta">원인: {renderCountMap(summary.diagnosis_counts)}</p>
+        <p className="admin-training-quality__meta">{qualityCopy.status}: {renderCountMap(summary.status_counts, qualityCopy)}</p>
+        <p className="admin-training-quality__meta">{qualityCopy.cause}: {renderCountMap(summary.diagnosis_counts, qualityCopy)}</p>
         {rows.length === 0 ? (
-          <p className="admin-page__empty">전체 학습 인덱스 자기검증에서 보완 후보가 없습니다.</p>
+          <p className="admin-page__empty">{qualityCopy.noSemanticCandidates}</p>
         ) : (
           <div className="admin-training-quality__list">
             {rows.slice(0, 30).map((row: AdminNluQualityDiagnosticItem) => (
               <div key={row.id} className="admin-training-quality__item">
                 <span>{row.row_type ?? "T"}</span>
-                <strong>{row.status ?? "문제"}</strong>
-                <b>{row.diagnosis_type ?? "Semantic 검색 불일치"}</b>
+                <strong>{row.status ?? qualityCopy.issue}</strong>
+                <b>{row.diagnosis_type ?? qualityCopy.semanticMismatch}</b>
                 <p>{row.utterance}</p>
                 <small>
-                  기대: {row.expected_name} / 1순위: {row.predicted_name} {formatMaybePercent(row.top_score)} / 2순위:{" "}
+                  {qualityCopy.expected}: {row.expected_name} / {qualityCopy.firstRank}: {row.predicted_name} {formatMaybePercent(row.top_score)} / {qualityCopy.secondRank}:{" "}
                   {row.second_name ?? "-"} {formatMaybePercent(row.second_score)}
                 </small>
-                <small>매칭 문장: {row.features?.join(", ") || "-"}</small>
+                <small>{qualityCopy.matchedSentence}: {row.features?.join(", ") || "-"}</small>
                 <small>{row.reason || "-"}</small>
                 <small>{row.recommendation || "-"}</small>
               </div>
@@ -99,22 +105,22 @@ function TrainingQualityDetail({ item }: { item: AdminTrainingHistoryItem }) {
   return (
     <section className="admin-training-quality">
       <div className="admin-training-quality__header">
-        <strong>NLU 학습 품질 진단</strong>
+        <strong>{qualityCopy.nluQualityTitle}</strong>
         <span>
-          Cut-off {formatPercent((settings.score_cutoff ?? 0) * 100)} / 유사의도{" "}
+          Cut-off {formatPercent((settings.score_cutoff ?? 0) * 100)} / {qualityCopy.similarIntent}{" "}
           {formatPercent((settings.similar_intent_score ?? 0) * 100)}
         </span>
       </div>
       <div className="admin-training-quality__summary">
-        <span>점검 {summary.total_checked ?? 0}건</span>
-        <span>T {summary.training_checked ?? 0}건</span>
-        <span>V {summary.validation_checked ?? 0}건</span>
-        <span>문제 후보 {summary.problem_count ?? rows.length}건</span>
+        <span>{qualityCopy.checked} {formatTrainingHistoryText(qualityCopy.countPattern, { count: summary.total_checked ?? 0 })}</span>
+        <span>T {formatTrainingHistoryText(qualityCopy.countPattern, { count: summary.training_checked ?? 0 })}</span>
+        <span>V {formatTrainingHistoryText(qualityCopy.countPattern, { count: summary.validation_checked ?? 0 })}</span>
+        <span>{qualityCopy.problemCandidates} {formatTrainingHistoryText(qualityCopy.countPattern, { count: summary.problem_count ?? rows.length })}</span>
       </div>
-      <p className="admin-training-quality__meta">상태: {renderCountMap(summary.status_counts)}</p>
-      <p className="admin-training-quality__meta">원인: {renderCountMap(summary.diagnosis_counts)}</p>
+      <p className="admin-training-quality__meta">{qualityCopy.status}: {renderCountMap(summary.status_counts, qualityCopy)}</p>
+      <p className="admin-training-quality__meta">{qualityCopy.cause}: {renderCountMap(summary.diagnosis_counts, qualityCopy)}</p>
       {rows.length === 0 ? (
-        <p className="admin-page__empty">보완 후보가 없습니다.</p>
+        <p className="admin-page__empty">{qualityCopy.noCandidates}</p>
       ) : (
         <div className="admin-training-quality__list">
           {rows.slice(0, 30).map((row: AdminNluQualityDiagnosticItem) => (
@@ -124,8 +130,8 @@ function TrainingQualityDetail({ item }: { item: AdminTrainingHistoryItem }) {
               <b>{row.diagnosis_type}</b>
               <p>{row.utterance}</p>
               <small>
-                기대: {row.expected_name} {formatPercent(row.expected_score)} / 1순위: {row.predicted_name}{" "}
-                {formatPercent(row.top_score)} / 2순위: {row.second_name} {formatPercent(row.second_score)}
+                {qualityCopy.expected}: {row.expected_name} {formatPercent(row.expected_score)} / {qualityCopy.firstRank}: {row.predicted_name}{" "}
+                {formatPercent(row.top_score)} / {qualityCopy.secondRank}: {row.second_name} {formatPercent(row.second_score)}
               </small>
               <small>Features: {row.features?.join(", ") || "-"}</small>
               <small>{row.reason}</small>
@@ -141,25 +147,26 @@ function TrainingQualityDetail({ item }: { item: AdminTrainingHistoryItem }) {
 export default function AdminTrainingHistoryPage() {
   const { language } = useI18n();
   const copy = ADMIN_PAGE_CATALOGS[language].trainingHistory;
+  const qualityCopy = ADMIN_TRAINING_HISTORY_CATALOGS[language];
   const [selectedItem, setSelectedItem] = useState<AdminTrainingHistoryItem | null>(null);
   const fetchItems = useCallback((token: string) => fetchTrainingHistory(token), []);
   const buildRow = useCallback((item: AdminTrainingHistoryItem, index: number) => ({
     key: item.id,
     cells: [
-      <input key={`check-${item.id}`} type="checkbox" aria-label={`학습 이력 ${index + 1} 선택`} />,
+      <input key={`check-${item.id}`} type="checkbox" aria-label={formatTrainingHistoryText(qualityCopy.selectRow, { index: index + 1 })} />,
       item.group_name,
       item.bot_name,
       String(item.version_no),
       formatTrainingEngine(item),
       item.training_status,
       item.user_login_id,
-      formatDate(item.started_at),
-      formatDate(item.completed_at),
+      formatDate(item.started_at, language),
+      formatDate(item.completed_at, language),
       <button key={`detail-${item.id}`} type="button" className="admin-page__ghost admin-page__table-button" onClick={() => setSelectedItem(item)}>
         {copy.detail}
       </button>,
     ],
-  }), [copy.detail]);
+  }), [copy.detail, language, qualityCopy]);
 
   return (
     <>
@@ -172,7 +179,7 @@ export default function AdminTrainingHistoryPage() {
         buildRow={buildRow}
         filterColumns={{ group: 1, bot: 2, date: 7 }}
       />
-      {selectedItem ? <TrainingQualityDetail item={selectedItem} /> : null}
+      {selectedItem ? <TrainingQualityDetail item={selectedItem} qualityCopy={qualityCopy} /> : null}
     </>
   );
 }
