@@ -404,3 +404,14 @@ def test_queue_history_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'"{language}":' in catalog_source or f"{language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage,AdminQueueHistoryCatalog>" in catalog_source
+
+
+def test_audit_log_admin_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/audit-logs/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-audit-logs.ts").read_text(encoding="utf-8")
+    assert "ADMIN_AUDIT_LOG_CATALOGS[uiLanguage]" in page_source
+    assert "copy.auditDetailTitle" in page_source
+    assert "copy.systemDetailTitle" in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'"{language}":' in catalog_source or f"{language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage,AdminAuditLogCatalog>" in catalog_source
