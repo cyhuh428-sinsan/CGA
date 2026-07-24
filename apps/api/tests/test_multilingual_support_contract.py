@@ -528,3 +528,16 @@ def test_intent_feedback_detail_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AdminIntentFeedbackCatalog>" in catalog_source
+
+
+def test_training_history_quality_panel_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/training-history/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-training-history.ts").read_text(encoding="utf-8")
+    assert "ADMIN_TRAINING_HISTORY_CATALOGS[language]" in page_source
+    assert "qualityCopy.semanticValidationTitle" in page_source
+    assert "qualityCopy.nluQualityTitle" in page_source
+    assert "new Intl.DateTimeFormat(language" in page_source
+    assert "Semantic NLU 학습문장 자기검증" not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, AdminTrainingHistoryCatalog>" in catalog_source
