@@ -819,3 +819,16 @@ def test_api_store_list_body_uses_seven_language_catalog() -> None:
     assert "common.updatedBy" in page_source
     assert 'placeholder="API 이름 또는 목적지 Base URL을 검색하세요."' not in page_source
     assert 'label="API 이름"' not in page_source
+
+
+def test_api_store_list_runtime_messages_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/api-store-list-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/api-management.ts").read_text(encoding="utf-8")
+    assert "common.loadFailed" in page_source
+    assert "common.downloadedSelected" in page_source
+    assert "common.uploaded" in page_source
+    assert "common.deletedSelected" in page_source
+    assert 'setErrorMessage("API 등록 권한이 없습니다.")' not in page_source
+    assert '"선택한 API가 삭제되었습니다."' not in page_source
+    assert "loadFailed: string" in catalog_source
+    assert "formatApiManagementText" in catalog_source
