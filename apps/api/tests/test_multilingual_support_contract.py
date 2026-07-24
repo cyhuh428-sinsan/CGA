@@ -806,3 +806,16 @@ def test_intent_configure_load_failure_uses_seven_language_catalog() -> None:
     assert "inputCopy.loadFailed" in page_source
     assert 'error.message : "구성 정보를 불러오지 못했습니다."' not in page_source
     assert "loadFailed: string" in catalog_source
+
+
+def test_api_store_list_body_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/api-store-list-page.tsx").read_text(encoding="utf-8")
+    assert "const common = API_MANAGEMENT_CATALOGS[uiLanguage]" in page_source
+    assert "placeholder={common.search}" in page_source
+    assert "aria-label={common.filter}" in page_source
+    assert "{common.create}" in page_source
+    assert "{common.downloadAll}" in page_source
+    assert "{common.category}" in page_source
+    assert "{common.updatedBy}" in page_source
+    assert 'placeholder="API 이름 또는 목적지 Base URL을 검색하세요."' not in page_source
+    assert 'label="API 이름"' not in page_source
