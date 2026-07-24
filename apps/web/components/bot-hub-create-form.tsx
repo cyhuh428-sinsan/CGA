@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { loadAuthSession } from "@/lib/auth";
 import { createStudioBot } from "@/lib/studio-bots-api";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 const NAME_PATTERN = /^[0-9A-Za-z가-힣 _().-]+$/;
 const MAX_NAME_LENGTH = 40;
@@ -52,6 +54,8 @@ function readImage(file: File): Promise<string> {
 }
 
 export function BotHubCreateForm() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [callMethod, setCallMethod] = useState<CallMethod>("button");
@@ -120,10 +124,10 @@ export function BotHubCreateForm() {
     <form className="hub-create" onSubmit={handleSubmit}>
       <section>
         <h1>봇/봇 허브 생성</h1>
-        <label className="type"><input type="radio" disabled /> 봇</label>
+        <label className="type"><input type="radio" disabled />{getStudioPageLabel(copy,"봇")}</label>
         <span className="disabled-mode">텍스트형</span>
         <span className="disabled-mode">보이스형</span>
-        <label className="type"><input type="radio" checked readOnly /> 봇 허브</label>
+        <label className="type"><input type="radio" checked readOnly />{getStudioPageLabel(copy,"봇 허브")}</label>
       </section>
 
       <label>
@@ -135,7 +139,7 @@ export function BotHubCreateForm() {
       </label>
 
       <section>
-        <strong>봇 프로필 <em>*</em></strong>
+        <strong>{getStudioPageLabel(copy,"봇 프로필")}<em>*</em></strong>
         <div className="profiles">
           <button className="upload" type="button" onClick={() => fileInputRef.current?.click()}>
             {profileImageData ? <img src={profileImageData} alt="선택한 프로필" /> : "이미지"}
@@ -156,26 +160,26 @@ export function BotHubCreateForm() {
       </section>
 
       <label>
-        <strong>봇 이름 <em>*</em></strong>
-        <input value={name} maxLength={MAX_NAME_LENGTH} onChange={(event) => setName(event.target.value)} placeholder="봇 허브 이름을 입력해주세요." />
+        <strong>{getStudioPageLabel(copy,"봇 이름")}<em>*</em></strong>
+        <input value={name} maxLength={MAX_NAME_LENGTH} onChange={(event) => setName(event.target.value)} placeholder={getStudioPageLabel(copy,"봇 허브 이름을 입력해주세요.")} />
         <small>한글/영문/숫자/공백/특수문자(-, _, ., ( ))만 입력</small>
         <i>{name.length}/{MAX_NAME_LENGTH}</i>
       </label>
 
       <label>
-        <strong>언어 <em>*</em></strong>
+        <strong>{getStudioPageLabel(copy,"언어")}<em>*</em></strong>
         <select value="ko" disabled><option value="ko">한국어</option></select>
       </label>
 
       <label>
-        <strong>소개</strong>
-        <textarea value={introduction} maxLength={MAX_INTRODUCTION_LENGTH} onChange={(event) => setIntroduction(event.target.value)} placeholder="봇 허브를 설명할 수 있는 소개 문장을 입력해주세요." />
+        <strong>{getStudioPageLabel(copy,"소개")}</strong>
+        <textarea value={introduction} maxLength={MAX_INTRODUCTION_LENGTH} onChange={(event) => setIntroduction(event.target.value)} placeholder={getStudioPageLabel(copy,"봇 허브를 설명할 수 있는 소개 문장을 입력해주세요.")} />
         <i>{introduction.length}/{MAX_INTRODUCTION_LENGTH}</i>
       </label>
 
       {errorMessage ? <p className="error" role="alert">{errorMessage}</p> : null}
       <footer>
-        <button type="button" onClick={() => router.push("/studio/hubs")}>취소</button>
+        <button type="button" onClick={() => router.push("/studio/hubs")}>{getStudioPageLabel(copy,"취소")}</button>
         <button type="submit" disabled={isSubmitting}>{isSubmitting ? "생성 중" : "확인"}</button>
       </footer>
 

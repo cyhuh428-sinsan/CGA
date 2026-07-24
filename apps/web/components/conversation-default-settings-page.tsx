@@ -7,6 +7,8 @@ import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { type ConversationDefaultsConfig } from "@/lib/bot-settings";
 import { getBotDialogs } from "@/lib/dialog-assets";
 import { type VersionDialogAsset } from "@/lib/version-document";
+import { useI18n } from "@/components/language-provider";
+import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
 type ModuleFieldKey =
   | "overflowModule"
@@ -341,6 +343,8 @@ function ModulePickerDialog({
 }
 
 export function ConversationDefaultSettingsPage() {
+  const { language: uiLanguage } = useI18n();
+  const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   return (
     <BotSettingsShell activeMenu="conversation-defaults">
       {({ bot, mainHref, versionSettings, saveVersionSettings, setErrorMessage, setMessage }) => {
@@ -411,21 +415,19 @@ export function ConversationDefaultSettingsPage() {
         return (
           <>
             <div className="bot-settings-page__top-actions">
-              <Link href={mainHref} className="secondary-action">
-                취소
-              </Link>
+              <Link href={mainHref} className="secondary-action">{getStudioPageLabel(copy,"취소")}</Link>
               <button type="button" className="primary-action" disabled={saving} onClick={handleSave}>
                 {saving ? "저장 중..." : "저장"}
               </button>
             </div>
 
-            <SettingsBlock title="기본값 설정">
+            <SettingsBlock title={getStudioPageLabel(copy,"기본값 설정")}>
               <div className="settings-defaults-stack">
                 <section className="settings-defaults-group settings-defaults-group--panel">
-                  <h3>기본 정보</h3>
+                  <h3>{getStudioPageLabel(copy,"기본 정보")}</h3>
                     <div className="settings-defaults-grid settings-defaults-grid--two">
                       <div className="settings-defaults-field settings-defaults-field--readonly">
-                        <FieldLabel title="봇 ID" help="봇을 내부적으로 식별하는 고유 ID입니다. 이름과 다르게 중복되지 않으며 저장과 참조의 기준이 됩니다." />
+                        <FieldLabel title={getStudioPageLabel(copy,"봇 ID")} help="봇을 내부적으로 식별하는 고유 ID입니다. 이름과 다르게 중복되지 않으며 저장과 참조의 기준이 됩니다." />
                         <strong>{bot.id}</strong>
                       </div>
 
@@ -542,7 +544,7 @@ export function ConversationDefaultSettingsPage() {
                   <section className="settings-defaults-group settings-defaults-group--panel">
                     <h3>타임아웃</h3>
                     <ToggleField
-                      title="타임아웃 사용"
+                      title={getStudioPageLabel(copy,"타임아웃 사용")}
                       help="버전 단위에서 타임아웃 기능을 사용할지 설정합니다. 세션 타이머 활성화 여부를 결정합니다."
                       checked={form.timeout.enabled}
                       onChange={(checked) =>
@@ -601,10 +603,10 @@ export function ConversationDefaultSettingsPage() {
 
                 <div className="settings-defaults-two-column">
                   <section className="settings-defaults-group settings-defaults-group--panel">
-                    <h3>실행 제한</h3>
+                    <h3>{getStudioPageLabel(copy,"실행 제한")}</h3>
                     <div className="settings-defaults-grid settings-defaults-grid--two">
                       <NumberStepperField
-                        title="사용자 응답 사이 최대 카드 수"
+                        title={getStudioPageLabel(copy,"사용자 응답 사이 최대 카드 수")}
                         help="사용자 응답을 받은 뒤 다음 사용자 응답을 기다리기 전까지 연속 실행할 수 있는 최대 카드 수입니다. 이 값을 초과하면 루핑으로 보고 시나리오를 중단하며 분석 데이터에 오류를 표시합니다."
                         value={form.runtime.maxCardsBetweenUserResponses}
                         min={1}
@@ -625,14 +627,14 @@ export function ConversationDefaultSettingsPage() {
                     <h3>LLM 답변</h3>
                     <label className="settings-defaults-field settings-defaults-field--wide">
                       <FieldLabel
-                        title="답변 생성 시스템 프롬프트"
+                        title={getStudioPageLabel(copy,"답변 생성 시스템 프롬프트")}
                         help="LLM Engine 답변과 LLM Engine RAG 답변이 답변 문장을 생성할 때 사용하는 기본 지시문입니다. RAG 답변에서는 저장된 문서 밖의 지식을 사용하지 못하도록 시스템이 별도 안전 규칙을 추가합니다."
                       />
                       <textarea
                         className="bot-settings-intro__textarea"
                         value={form.llmAnswer.systemPrompt}
                         rows={5}
-                        placeholder="LLM이 답변을 생성할 때 따라야 할 말투, 형식, 제한사항을 입력하세요."
+                        placeholder={getStudioPageLabel(copy,"LLM이 답변을 생성할 때 따라야 할 말투, 형식, 제한사항을 입력하세요.")}
                         onChange={(event) =>
                           updateSection("llmAnswer", {
                             systemPrompt: event.target.value,
@@ -670,7 +672,7 @@ export function ConversationDefaultSettingsPage() {
                   </section>
 
                   <section className="settings-defaults-group settings-defaults-group--panel">
-                    <h3>모듈 연결</h3>
+                    <h3>{getStudioPageLabel(copy,"모듈 연결")}</h3>
                     <div className="settings-defaults-grid settings-defaults-grid--one">
                       <ModuleField
                         title="전처리 모듈"
@@ -695,7 +697,7 @@ export function ConversationDefaultSettingsPage() {
                 </div>
 
                 <section className="settings-defaults-group settings-defaults-group--panel">
-                  <h3>고급 설정</h3>
+                  <h3>{getStudioPageLabel(copy,"고급 설정")}</h3>
                   <div className="settings-defaults-grid settings-defaults-grid--two">
                     <RadioField
                       title="버튼 선택 옵션"
