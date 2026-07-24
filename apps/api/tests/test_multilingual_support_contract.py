@@ -1091,3 +1091,24 @@ def test_help_popover_links_all_seven_language_manual_pdfs() -> None:
 
     assert (ROOT_DIR / "apps/web/public/manuals/cga-user-manual.pdf").is_file()
     assert (ROOT_DIR / "apps/web/public/manuals/cga-nlu-guide.pdf").is_file()
+
+def test_deep_studio_surfaces_localize_static_visible_text() -> None:
+    simulator = (ROOT_DIR / "apps/web/components/simulator-page.tsx").read_text(encoding="utf-8")
+    for literal in (
+        '>이미지 열기</a>', '>표시할 항목이 없습니다.</p>', '>이전으로</button>',
+        '<span>지도</span>', '<span>스카이뷰</span>', 'aria-label="팝업 열기"',
+        'aria-label="닫기"', '>팝업에 표시할 데이터가 없습니다.</p>',
+        '<option value="">선택하세요</option>',
+    ):
+        assert literal not in simulator
+    assert "getSimulatorLabel(uiLanguage" in simulator
+
+    workspace = (ROOT_DIR / "apps/web/components/studio-workspace-provider.tsx").read_text(encoding="utf-8")
+    assert "useI18n" in workspace
+    assert "getStudioPageLabel(copy" in workspace
+    assert '>이 봇에는 등록된 버전이 없습니다.</strong>' not in workspace
+
+    station = (ROOT_DIR / "apps/web/components/admin-botstation-status-page.tsx").read_text(encoding="utf-8")
+    assert 'data-help="카카오 앱 또는 스킬 식별값입니다.' not in station
+    assert 'data-help="카카오 webhook 보호용 비밀값입니다.' not in station
+    assert 'data-help="카카오 관리자센터에 등록할 실제 webhook 주소입니다.' not in station
