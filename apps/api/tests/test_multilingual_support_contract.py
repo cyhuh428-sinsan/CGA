@@ -565,3 +565,19 @@ def test_template_renderer_defaults_follow_selected_language() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AdminTemplateDefaultCatalog>" in catalog_source
+
+
+def test_account_pages_use_seven_language_catalog() -> None:
+    signup_source = (ROOT_DIR / "apps/web/app/signup/page.tsx").read_text(encoding="utf-8")
+    profile_source = (ROOT_DIR / "apps/web/app/me/profile/page.tsx").read_text(encoding="utf-8")
+    password_source = (ROOT_DIR / "apps/web/app/me/password/page.tsx").read_text(encoding="utf-8")
+    language_source = (ROOT_DIR / "apps/web/app/me/language/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/account-pages.ts").read_text(encoding="utf-8")
+    assert "ACCOUNT_PAGE_CATALOGS[language].signup" in signup_source
+    assert "ACCOUNT_PAGE_CATALOGS[language].profile" in profile_source
+    assert "ACCOUNT_PAGE_CATALOGS[language].password" in password_source
+    assert "ACCOUNT_PAGE_CATALOGS[language].language" in language_source
+    assert "getAccountRoleLabel" in profile_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, AccountPageCatalog>" in catalog_source
