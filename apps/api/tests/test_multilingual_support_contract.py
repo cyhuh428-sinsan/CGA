@@ -1016,3 +1016,16 @@ def test_conversation_and_flow_route_shells_delegate_visible_labels_to_client_ca
     assert "getStudioPageLabel(copy, searchPlaceholder)" in studio_table
     assert "getStudioPageLabel(copy, String(column))" in studio_table
     assert "getStudioPageLabel(copy, label)" in sort_header
+
+def test_intent_start_page_uses_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/intent-start-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/intent-start.ts").read_text(encoding="utf-8")
+    assert "useI18n" in page_source
+    assert "INTENT_START_CATALOGS[uiLanguage]" in page_source
+    assert "copy.trainingSentenceSearch" in page_source
+    assert "copy.extractEntities" in page_source
+    assert 'placeholder="학습문장을 검색하세요."' not in page_source
+    assert '<span>챗봇 메시지</span>' not in page_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, IntentStartCatalog>" in catalog_source
