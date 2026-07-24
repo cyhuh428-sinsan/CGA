@@ -16,7 +16,7 @@ import {
 } from "@/lib/api-assets";
 import { hasApiWriteRole, loadAuthSession, type AuthSession } from "@/lib/auth";
 import { fetchStudioGroupApis, updateStudioGroupApis } from "@/lib/studio-bots-api";
-import { API_MANAGEMENT_CATALOGS } from "@/lib/i18n/api-management";
+import { API_MANAGEMENT_CATALOGS, formatApiManagementText } from "@/lib/i18n/api-management";
 import {
   LIST_PAGE_SIZE_OPTIONS,
   type ListPageSize,
@@ -102,7 +102,7 @@ export function GroupApiListPage() {
     setAuthSession(session);
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
 
@@ -118,7 +118,7 @@ export function GroupApiListPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "API 목록을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -250,7 +250,7 @@ export function GroupApiListPage() {
 
   async function saveApis(nextApis: VersionApiAsset[], successMessage: string) {
     if (!authSession) {
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setSaving(true);
@@ -263,7 +263,7 @@ export function GroupApiListPage() {
       setEditingApi(null);
       setMessage(successMessage);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "API 저장 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -271,7 +271,7 @@ export function GroupApiListPage() {
 
   function openApiCreate() {
     if (!canWriteApi) {
-      setErrorMessage("API 등록 권한이 없습니다.");
+      setErrorMessage(copy.createForbidden);
       return;
     }
     setEditingApi(createEmptyApiAsset());
@@ -279,7 +279,7 @@ export function GroupApiListPage() {
 
   function handleSaveApi(api: VersionApiAsset) {
     if (!canWriteApi) {
-      setErrorMessage("API 저장 권한이 없습니다.");
+      setErrorMessage(copy.saveForbidden);
       return;
     }
 
@@ -300,7 +300,7 @@ export function GroupApiListPage() {
         ? apis.map((item, index) => (index === existingIndex ? { ...preparedApi, apiKey: item.apiKey || preparedApi.apiKey } : item))
         : [...apis, preparedApi];
 
-    void saveApis(nextApis, existingIndex >= 0 ? "API가 수정되었습니다." : "API가 등록되었습니다.");
+    void saveApis(nextApis, existingIndex >= 0 ? copy.updated : copy.created);
   }
 
   function handleDownloadApis(selectedOnly: boolean) {
@@ -308,7 +308,7 @@ export function GroupApiListPage() {
     const targetApis = selectedOnly ? apis.filter((api) => selectedIdSet.has(apiIdentity(api))) : filteredApis;
 
     if (targetApis.length === 0) {
-      setErrorMessage(selectedOnly ? "다운로드할 API를 선택해주세요." : "다운로드할 API가 없습니다.");
+      setErrorMessage(selectedOnly ? copy.downloadSelectionRequired : copy.downloadEmpty);
       return;
     }
 
@@ -317,12 +317,12 @@ export function GroupApiListPage() {
       selectedOnly ? "api-selected.json" : "api-all.json",
       JSON.stringify(buildApiExportPayload(targetApis), null, 2),
     );
-    setMessage(selectedOnly ? `${targetApis.length}개 API를 다운로드했습니다.` : "전체 API를 다운로드했습니다.");
+    setMessage(selectedOnly ? formatApiManagementText(copy.downloadedSelected, { count: targetApis.length }) : copy.downloadedAll);
   }
 
   async function handleUploadFile(file: File) {
     if (!canWriteApi) {
-      setErrorMessage("API 업로드 권한이 없습니다.");
+      setErrorMessage(copy.uploadForbidden);
       return;
     }
 
@@ -332,12 +332,12 @@ export function GroupApiListPage() {
     try {
       const importedApis = parseApiImportPayload(JSON.parse(await file.text()));
       if (importedApis.length === 0) {
-        setErrorMessage("업로드할 API 데이터가 없습니다.");
+        setErrorMessage(copy.uploadEmpty);
         return;
       }
-      await saveApis(mergeApisByApiKey(apis, importedApis), `${importedApis.length}개 API를 업로드했습니다.`);
+      await saveApis(mergeApisByApiKey(apis, importedApis), formatApiManagementText(copy.uploaded, { count: importedApis.length }));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "API 업로드 파일을 읽지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.uploadReadFailed);
     } finally {
       setSaving(false);
       if (fileInputRef.current) {
@@ -465,7 +465,7 @@ export function GroupApiListPage() {
               type="button"
               className="studio-table-page__ghost"
               disabled={selectedIds.length === 0 || saving}
-              onClick={() => saveApis(apis.filter((api) => !selectedIds.includes(apiIdentity(api))), "선택한 API를 삭제했습니다.")}
+              onClick={() => saveApis(apis.filter((api) => !selectedIds.includes(apiIdentity(api))), copy.deletedSelected)}
             >
               {copy.delete}
             </button>

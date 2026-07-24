@@ -85,7 +85,7 @@ export function GroupApiDetailPage() {
     setAuthSession(session);
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
 
@@ -101,7 +101,7 @@ export function GroupApiDetailPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "API 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.detailLoadFailed);
         }
       })
       .finally(() => {
@@ -131,7 +131,7 @@ export function GroupApiDetailPage() {
       return;
     }
     if (!canWriteApi) {
-      setErrorMessage("API 수정 권한이 없습니다.");
+      setErrorMessage(copy.editForbidden);
       setEditing(false);
       return;
     }
@@ -158,9 +158,9 @@ export function GroupApiDetailPage() {
       const response = await updateStudioGroupApis(authSession.access_token, nextApis);
       setApis(normalizeApiAssets(response.items));
       setEditing(false);
-      setMessage("API가 수정되었습니다.");
+      setMessage(copy.updated);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "API 수정 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.updateFailed);
     } finally {
       setSaving(false);
     }
@@ -172,7 +172,7 @@ export function GroupApiDetailPage() {
       return;
     }
     if (!canWriteApi) {
-      setErrorMessage("API 삭제 권한이 없습니다.");
+      setErrorMessage(copy.deleteForbidden);
       return;
     }
     if (!window.confirm(copy.confirmDelete)) {
@@ -189,7 +189,7 @@ export function GroupApiDetailPage() {
       await updateStudioGroupApis(authSession.access_token, nextApis);
       router.push("/studio/apis");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "API 삭제 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.deleteFailed);
     } finally {
       setSaving(false);
     }
@@ -228,7 +228,7 @@ export function GroupApiDetailPage() {
     } catch (error) {
       setTestOutputs((current) => ({
         ...current,
-        [methodId]: error instanceof Error ? error.message : "API 테스트 중 오류가 발생했습니다.",
+        [methodId]: error instanceof Error ? error.message : copy.testFailed,
       }));
     } finally {
       setTestingMethodId("");
@@ -368,10 +368,10 @@ export function GroupApiDetailPage() {
                           <table>
                             <thead>
                               <tr>
-                                <th>Name</th>
+                                <th>{copy.name}</th>
                                 <th>{copy.parameterDescription}</th>
                                 <th>{copy.parameterType}</th>
-                                <th>Data type</th>
+                                <th>{copy.dataType}</th>
                                 <th>{copy.testInput}</th>
                               </tr>
                             </thead>
@@ -413,8 +413,8 @@ export function GroupApiDetailPage() {
                             <table>
                               <thead>
                                 <tr>
-                                  <th>Name</th>
-                                  <th>Data type</th>
+                                  <th>{copy.name}</th>
+                                  <th>{copy.dataType}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -435,9 +435,9 @@ export function GroupApiDetailPage() {
                       </div>
                       <section className="api-detail-page__test-output">
                         <div className="api-detail-page__test-output-head">
-                          <strong>Test Output</strong>
+                          <strong>{copy.testOutput}</strong>
                           <button type="button" disabled={testingMethodId === method.id} onClick={() => void handleTestMethod(method.id)}>
-                            Test
+                            {copy.test}
                           </button>
                         </div>
                         <pre>{testOutputs[method.id] ?? ""}</pre>
