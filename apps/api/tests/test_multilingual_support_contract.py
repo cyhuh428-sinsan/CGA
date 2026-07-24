@@ -1076,3 +1076,18 @@ def test_admin_botstation_status_uses_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AdminBotstationStatusCatalog>" in catalog_source
+
+def test_help_popover_links_all_seven_language_manual_pdfs() -> None:
+    rail_source = (ROOT_DIR / "apps/web/components/studio-rail.tsx").read_text(encoding="utf-8")
+    assert "manualHref(\"getting-started\")" in rail_source
+    assert "manualHref(\"user-manual\")" in rail_source
+    assert "manualHref(\"nlu-guide\")" in rail_source
+    assert 'href="/manuals/cga-user-manual.pdf"' not in rail_source
+    assert 'href="/manuals/cga-nlu-guide.pdf"' not in rail_source
+
+    for language in SUPPORTED_LANGUAGES:
+        for manual in ("getting-started", "user-manual", "nlu-guide"):
+            assert (ROOT_DIR / f"apps/web/public/manuals/cga-{manual}-{language}.pdf").is_file()
+
+    assert (ROOT_DIR / "apps/web/public/manuals/cga-user-manual.pdf").is_file()
+    assert (ROOT_DIR / "apps/web/public/manuals/cga-nlu-guide.pdf").is_file()
