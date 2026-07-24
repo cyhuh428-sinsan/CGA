@@ -61,8 +61,8 @@ function parseCsv(text: string) {
   return rows;
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string, uiLanguage: SupportedLanguage) {
+  return new Intl.DateTimeFormat(uiLanguage, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -304,7 +304,7 @@ export default function AdminDefaultMessagesPage() {
       item.scope_label,
       item.status_label,
       <span key="text" className="admin-truncate" title={item.message_text}>{item.message_text}</span>,
-      formatDate(item.updated_at),
+      formatDate(item.updated_at, uiLanguage),
       item.updater_name,
     ],
   }));
