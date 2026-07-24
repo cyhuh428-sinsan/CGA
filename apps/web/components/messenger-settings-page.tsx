@@ -225,7 +225,7 @@ export function MessengerSettingsPage() {
             <section className="bot-settings-section messenger-settings-section">
               <h2>{getStudioPageLabel(copy,"메신저 편의 기능")}</h2>
 
-              <div className="messenger-settings__tabs" role="tablist" aria-label="메신저 편의 기능 탭">
+              <div className="messenger-settings__tabs" role="tablist" aria-label={getStudioPageLabel(copy, "메신저 편의 기능 탭")}>
                 <button
                   type="button"
                   className={`messenger-settings__tab${activeTab === "floating-buttons" ? " is-active" : ""}`}
@@ -346,7 +346,7 @@ export function MessengerSettingsPage() {
                         value={newIntentId}
                         onChange={(event) => setNewIntentId(event.target.value)}
                       >
-                        {intentOptions.length === 0 ? <option value="">등록된 의도 없음</option> : null}
+                        {intentOptions.length === 0 ? <option value="">{getStudioPageLabel(copy, "등록된 의도 없음")}</option> : null}
                         {intentOptions.map((option) => (
                           <option key={option.id} value={option.id}>
                             {option.label}
@@ -429,7 +429,7 @@ export function MessengerSettingsPage() {
                         </label>
 
                         <label className="settings-form-card">
-                          <span>Key/Command 옵션</span>
+                          <span>{getStudioPageLabel(copy, "Key/Command 옵션")}</span>
                           <select
                             className="bot-settings-card__select"
                             value={editingButton.actionType}
@@ -447,7 +447,7 @@ export function MessengerSettingsPage() {
                         </label>
 
                         <label className="settings-form-card">
-                          <span>Key/Command 값</span>
+                          <span>{getStudioPageLabel(copy, "Key/Command 값")}</span>
                           {editingButton.actionType === "command" ? (
                             <select
                               className="bot-settings-card__select"

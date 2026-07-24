@@ -123,18 +123,18 @@ export function BotHubCreateForm() {
   return (
     <form className="hub-create" onSubmit={handleSubmit}>
       <section>
-        <h1>봇/봇 허브 생성</h1>
+        <h1>{getStudioPageLabel(copy, "봇/봇 허브 생성")}</h1>
         <label className="type"><input type="radio" disabled />{getStudioPageLabel(copy,"봇")}</label>
-        <span className="disabled-mode">텍스트형</span>
-        <span className="disabled-mode">보이스형</span>
+        <span className="disabled-mode">{getStudioPageLabel(copy, "텍스트형")}</span>
+        <span className="disabled-mode">{getStudioPageLabel(copy, "보이스형")}</span>
         <label className="type"><input type="radio" checked readOnly />{getStudioPageLabel(copy,"봇 허브")}</label>
       </section>
 
       <label>
-        <strong>호출 방법 <em>*</em></strong>
+        <strong>{getStudioPageLabel(copy, "호출 방법")}<em>*</em></strong>
         <select value={callMethod} onChange={(event) => setCallMethod(event.target.value as CallMethod)}>
-          <option value="button">버튼 선택형</option>
-          <option value="natural">자연어 입력형</option>
+          <option value="button">{getStudioPageLabel(copy, "버튼 선택형")}</option>
+          <option value="natural">{getStudioPageLabel(copy, "자연어 입력형")}</option>
         </select>
       </label>
 
@@ -162,13 +162,13 @@ export function BotHubCreateForm() {
       <label>
         <strong>{getStudioPageLabel(copy,"봇 이름")}<em>*</em></strong>
         <input value={name} maxLength={MAX_NAME_LENGTH} onChange={(event) => setName(event.target.value)} placeholder={getStudioPageLabel(copy,"봇 허브 이름을 입력해주세요.")} />
-        <small>한글/영문/숫자/공백/특수문자(-, _, ., ( ))만 입력</small>
+        <small>{getStudioPageLabel(copy, "한글/영문/숫자/공백/특수문자(-, _, ., ( ))만 입력")}</small>
         <i>{name.length}/{MAX_NAME_LENGTH}</i>
       </label>
 
       <label>
         <strong>{getStudioPageLabel(copy,"언어")}<em>*</em></strong>
-        <select value="ko" disabled><option value="ko">한국어</option></select>
+        <select value="ko" disabled><option value="ko">{getStudioPageLabel(copy, "한국어")}</option></select>
       </label>
 
       <label>

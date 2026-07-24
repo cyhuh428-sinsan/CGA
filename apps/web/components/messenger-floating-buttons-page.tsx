@@ -204,7 +204,7 @@ export function MessengerFloatingButtonsPage() {
                     </label>
 
                     <label className="settings-form-card">
-                      <span>Key/Command 옵션</span>
+                      <span>{getStudioPageLabel(copy, "Key/Command 옵션")}</span>
                       <select
                         className="bot-settings-card__select"
                         value={editingItem.actionType}
@@ -221,7 +221,7 @@ export function MessengerFloatingButtonsPage() {
                     </label>
 
                     <label className="settings-form-card">
-                      <span>Key/Command 값</span>
+                      <span>{getStudioPageLabel(copy, "Key/Command 값")}</span>
                       <input
                         type="text"
                         className="bot-settings-card__input"

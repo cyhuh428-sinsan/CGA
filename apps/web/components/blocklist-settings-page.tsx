@@ -315,7 +315,7 @@ export function BlocklistSettingsPage() {
                     className="settings-search-inline__input"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="제외/무시 목록 이름 또는 제외/무시 텍스트/정규식"
+                    placeholder={getStudioPageLabel(copy, "제외/무시 목록 이름 또는 제외/무시 텍스트/정규식")}
                   />
                   <button type="button" className="settings-search-inline__filter" aria-label={getStudioPageLabel(copy,"필터")}>
                     ▾
@@ -377,14 +377,14 @@ export function BlocklistSettingsPage() {
 
               <div className="settings-search-grid settings-search-grid--test">
                 <label className="settings-form-card">
-                  <span>발화 제외/무시 테스트</span>
+                  <span>{getStudioPageLabel(copy, "발화 제외/무시 테스트")}</span>
                   <div className="settings-inline-actions">
                     <input
                       type="text"
                       className="bot-settings-card__input"
                       value={testSentence}
                       onChange={(event) => setTestSentence(event.target.value)}
-                      placeholder="제외/무시 규칙을 시험할 발화"
+                      placeholder={getStudioPageLabel(copy, "제외/무시 규칙을 시험할 발화")}
                     />
                     <button type="button" className="secondary-action" onClick={handleTest}>{getStudioPageLabel(copy,"테스트")}</button>
                   </div>
@@ -420,18 +420,18 @@ export function BlocklistSettingsPage() {
                     />
                   </span>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("name")}>
-                    <SortHeaderLabel label="제외/무시 목록 이름" />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "제외/무시 목록 이름")} />
                   </button>
                   <span>{getStudioPageLabel(copy,"유형")}</span>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("pattern")}>
-                    <SortHeaderLabel label="제외/무시 텍스트/정규식" />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "제외/무시 텍스트/정규식")} />
                   </button>
                   <span>{getStudioPageLabel(copy,"사용")}</span>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedAt")}>
-                    <SortHeaderLabel label="최종수정일시" direction={sortKey === "updatedAt" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정일시")} direction={sortKey === "updatedAt" ? sortDirection : "none"} />
                   </button>
                   <button type="button" className="settings-sort-button" onClick={() => toggleSort("updatedBy")}>
-                    <SortHeaderLabel label="최종수정자" direction={sortKey === "updatedBy" ? sortDirection : "none"} />
+                    <SortHeaderLabel label={getStudioPageLabel(copy, "최종수정자")} direction={sortKey === "updatedBy" ? sortDirection : "none"} />
                   </button>
                 </div>
 
@@ -491,7 +491,7 @@ export function BlocklistSettingsPage() {
 
               {testSentence.trim() ? (
                 <div className="settings-test-result">
-                  <strong>제외/무시 규칙 테스트 결과</strong>
+                  <strong>{getStudioPageLabel(copy, "제외/무시 규칙 테스트 결과")}</strong>
                   {testResults.length > 0 ? (
                     <ul>
                       {testResults.map((item) => (
@@ -499,7 +499,7 @@ export function BlocklistSettingsPage() {
                       ))}
                     </ul>
                   ) : (
-                    <p>적용되는 제외/무시 규칙이 없습니다.</p>
+                    <p>{getStudioPageLabel(copy, "적용되는 제외/무시 규칙이 없습니다.")}</p>
                   )}
                 </div>
               ) : null}
@@ -543,8 +543,8 @@ export function BlocklistSettingsPage() {
                               }))
                             }
                           >
-                            <option value="word">텍스트 제외/무시</option>
-                            <option value="regex">정규식 제외/무시</option>
+                            <option value="word">{getStudioPageLabel(copy, "텍스트 제외/무시")}</option>
+                            <option value="regex">{getStudioPageLabel(copy, "정규식 제외/무시")}</option>
                           </select>
                         </label>
 

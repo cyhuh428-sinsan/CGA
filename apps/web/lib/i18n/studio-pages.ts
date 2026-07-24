@@ -1,8 +1,10 @@
 import type { SupportedLanguage } from "@/lib/language";
+import { STUDIO_PAGE_EN_ADDITIONAL } from "@/lib/i18n/studio-pages-extra";
 
 export type StudioPageCatalog = { labels: Record<string, string> };
 
 const enLabels: Record<string, string> = {
+  ...STUDIO_PAGE_EN_ADDITIONAL,
   "로그인 정보 없음":"No sign-in information","세션이 만료되었거나 로그인이 필요합니다.":"The session has expired or sign-in is required.","로그인":"Sign in","권한 없음":"No role","내 정보":"My profile","비밀번호 변경":"Change password","로그아웃 중...":"Signing out...","로그아웃":"Sign out",
   "파일 업로드":"File upload","양식 다운로드":"Download template","유의사항":"Important notes","예시":"Example","파일을 선택하세요":"Select a file","파일 선택":"Choose file","업로드 결과":"Upload result","건":"items",
   "화면을 불러오는 중입니다.":"Loading the page.","실제 봇과 버전 정보를 확인하는 중입니다.":"Checking the bot and version information.","필터":"Filter","시뮬레이터 열기":"Open simulator",

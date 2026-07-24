@@ -115,7 +115,7 @@ export function MessengerRecommendedIntentsPage() {
                   value={newIntentId}
                   onChange={(event) => setNewIntentId(event.target.value)}
                 >
-                  {intentOptions.length === 0 ? <option value="">등록된 의도 없음</option> : null}
+                  {intentOptions.length === 0 ? <option value="">{getStudioPageLabel(copy, "등록된 의도 없음")}</option> : null}
                   {intentOptions.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.label}

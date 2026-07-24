@@ -110,7 +110,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
         <div>
           <Link href={`/studio/hubs/${hubId}`} className="bot-hub__back">{hub?.name || "봇 허브"} 구성</Link>
           <h1>{getStudioPageLabel(copy,"봇 허브 재학습")}</h1>
-          <p>봇 허브를 거쳐 처리된 사용자 발화를 확인하고, 선택된 하위 봇의 운영 버전에 학습문장을 반영합니다.</p>
+          <p>{getStudioPageLabel(copy, "봇 허브를 거쳐 처리된 사용자 발화를 확인하고, 선택된 하위 봇의 운영 버전에 학습문장을 반영합니다.")}</p>
         </div>
       </header>
 
@@ -118,7 +118,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
 
       <section className="bot-hub__panel bot-hub__retraining">
         <div className="bot-hub__panel-title">
-          <h2>재학습 후보 이력</h2>
+          <h2>{getStudioPageLabel(copy, "재학습 후보 이력")}</h2>
           <span>{total}건</span>
         </div>
         <div className="bot-hub__filters">
@@ -141,7 +141,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
           </label>
         </div>
 
-        <p className="bot-hub__help">Rule, SmallTalk, Exact Matching으로 처리된 대화는 학습 후보가 아닙니다. 학습할 후보는 하위 봇 재학습 화면에서 발화와 대상 의도를 확인한 뒤 저장합니다.</p>
+        <p className="bot-hub__help">{getStudioPageLabel(copy, "Rule, SmallTalk, Exact Matching으로 처리된 대화는 학습 후보가 아닙니다. 학습할 후보는 하위 봇 재학습 화면에서 발화와 대상 의도를 확인한 뒤 저장합니다.")}</p>
 
         <div className="bot-hub__history-table" role="table" aria-label={getStudioPageLabel(copy,"봇 허브 재학습 후보 이력")}>
           <div className="bot-hub__history-head" role="row">
@@ -164,7 +164,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
               </div>
             );
           })}
-          {!loading && candidates.length === 0 ? <p className="bot-hub__empty">조건에 맞는 봇 허브 대화 이력이 없습니다.</p> : null}
+          {!loading && candidates.length === 0 ? <p className="bot-hub__empty">{getStudioPageLabel(copy, "조건에 맞는 봇 허브 대화 이력이 없습니다.")}</p> : null}
         </div>
       </section>
     </main>
