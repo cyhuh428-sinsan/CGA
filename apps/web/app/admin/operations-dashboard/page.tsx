@@ -29,6 +29,7 @@ import {
 import { loadAuthSession } from "@/lib/auth";
 import { ADMIN_OPERATIONS_ACTION_CATALOGS, formatOperationsText } from "@/lib/i18n/admin-operations-actions";
 import { ADMIN_OPERATIONS_DASHBOARD_CATALOGS } from "@/lib/i18n/admin-operations-dashboard";
+import { ADMIN_OPERATIONS_DETAILS_CATALOGS } from "@/lib/i18n/admin-operations-details";
 import { ADMIN_OPERATIONS_STATUS_CATALOGS, type AdminOperationsStatusCatalog } from "@/lib/i18n/admin-operations-status";
 import { fetchStudioBots, forceReleaseEditLock, type StudioBotApiItem } from "@/lib/studio-bots-api";
 
@@ -59,8 +60,8 @@ const SUMMARY_LABELS: Array<{ key: keyof AdminOperationsDashboardResponse["summa
   { key: "intent_fallbacks", tone: "warning" }, { key: "training_success" }, { key: "training_failed", tone: "warning" },
 ];
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -79,9 +80,9 @@ function formatJson(value: unknown) {
   }
 }
 
-function formatBytes(value: number | null) {
+function formatBytes(value: number | null, locale: string) {
   if (value === null) return "-";
-  if (value < 1024) return `${value.toLocaleString("ko-KR")} B`;
+  if (value < 1024) return `${value.toLocaleString(locale)} B`;
   const units = ["KB", "MB", "GB", "TB"];
   let nextValue = value / 1024;
   let unitIndex = 0;
@@ -89,12 +90,12 @@ function formatBytes(value: number | null) {
     nextValue /= 1024;
     unitIndex += 1;
   }
-  return `${nextValue.toLocaleString("ko-KR", { maximumFractionDigits: 1 })} ${units[unitIndex]}`;
+  return `${nextValue.toLocaleString(locale, { maximumFractionDigits: 1 })} ${units[unitIndex]}`;
 }
 
-function formatMs(value: number | null | undefined) {
+function formatMs(value: number | null | undefined, locale: string) {
   if (value === null || value === undefined) return "-";
-  return `${value.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}ms`;
+  return `${value.toLocaleString(locale, { maximumFractionDigits: 1 })}ms`;
 }
 
 function slowRequestKindLabel(item: AdminOperationsDashboardSlowRequestItem, statusCopy: AdminOperationsStatusCatalog) {
@@ -208,6 +209,7 @@ export default function AdminOperationsDashboardPage() {
   const copy = ADMIN_OPERATIONS_DASHBOARD_CATALOGS[uiLanguage];
   const actionCopy = ADMIN_OPERATIONS_ACTION_CATALOGS[uiLanguage];
   const statusCopy = ADMIN_OPERATIONS_STATUS_CATALOGS[uiLanguage];
+  const detailsCopy = ADMIN_OPERATIONS_DETAILS_CATALOGS[uiLanguage];
   const [token, setToken] = useState("");
   const [period, setPeriod] = useState<PeriodValue>("1h");
   const [groupId, setGroupId] = useState("");
@@ -326,7 +328,7 @@ export default function AdminOperationsDashboardPage() {
       locationFromData(item.data_json),
       item.event || "-",
       item.message,
-      formatDate(item.occurred_at),
+      formatDate(item.occurred_at, uiLanguage),
     ],
   }));
   const sortedRows = useMemo(() => {
@@ -336,10 +338,10 @@ export default function AdminOperationsDashboardPage() {
     return [...rows].sort((left, right) => {
       const leftText = dataGridCellText(left.cells[sortState.columnIndex]);
       const rightText = dataGridCellText(right.cells[sortState.columnIndex]);
-      const result = leftText.localeCompare(rightText, "ko-KR", { numeric: true, sensitivity: "base" });
+      const result = leftText.localeCompare(rightText, uiLanguage, { numeric: true, sensitivity: "base" });
       return sortState.direction === "asc" ? result : -result;
     });
-  }, [rows, sortState]);
+  }, [rows, sortState, uiLanguage]);
   const runtimeRows: DataGridRow[] = (dashboard?.recent_runtime_events ?? []).map((item) => ({
     key: item.id,
     cells: [
@@ -353,7 +355,7 @@ export default function AdminOperationsDashboardPage() {
       item.node_title,
       item.event || "-",
       item.message,
-      formatDate(item.occurred_at),
+      formatDate(item.occurred_at, uiLanguage),
     ],
   }));
   const systemErrorRows: DataGridRow[] = (dashboard?.recent_system_errors ?? []).map((item) => ({
@@ -368,7 +370,7 @@ export default function AdminOperationsDashboardPage() {
       item.path || "-",
       item.status_code ? String(item.status_code) : "-",
       item.message,
-      formatDate(item.occurred_at),
+      formatDate(item.occurred_at, uiLanguage),
     ],
   }));
   const slowRequestRows: DataGridRow[] = (dashboard?.recent_slow_requests ?? []).map((item) => ({
@@ -378,16 +380,16 @@ export default function AdminOperationsDashboardPage() {
       item.method,
       item.path,
       item.status_code ? String(item.status_code) : "-",
-      formatMs(item.elapsed_ms),
-      formatMs(item.db_duration_ms),
-      item.db_query_count.toLocaleString("ko-KR"),
-      formatMs(item.threshold_ms),
+      formatMs(item.elapsed_ms, uiLanguage),
+      formatMs(item.db_duration_ms, uiLanguage),
+      item.db_query_count.toLocaleString(uiLanguage),
+      formatMs(item.threshold_ms, uiLanguage),
       item.request_id ? (
         <Link key="request" href={`/admin/audit-logs?tab=system&file=app&request_id=${encodeURIComponent(item.request_id)}`} className="table-link">
           {item.request_id}
         </Link>
       ) : "-",
-      formatDate(item.occurred_at),
+      formatDate(item.occurred_at, uiLanguage),
     ],
   }));
   const slowRequestSummaryRows: DataGridRow[] = (dashboard?.recent_slow_request_summary ?? []).map((item) => ({
@@ -396,12 +398,12 @@ export default function AdminOperationsDashboardPage() {
       slowRequestSummaryKindLabel(item, statusCopy),
       item.method,
       item.path,
-      item.count.toLocaleString("ko-KR"),
-      formatMs(item.max_elapsed_ms),
-      formatMs(item.avg_elapsed_ms),
-      formatMs(item.max_db_duration_ms),
-      formatMs(item.avg_db_duration_ms),
-      formatDate(item.latest_occurred_at),
+      item.count.toLocaleString(uiLanguage),
+      formatMs(item.max_elapsed_ms, uiLanguage),
+      formatMs(item.avg_elapsed_ms, uiLanguage),
+      formatMs(item.max_db_duration_ms, uiLanguage),
+      formatMs(item.avg_db_duration_ms, uiLanguage),
+      formatDate(item.latest_occurred_at, uiLanguage),
     ],
   }));
   const editLockRows: DataGridRow[] = (dashboard?.active_edit_locks ?? []).map((item) => ({
@@ -421,8 +423,8 @@ export default function AdminOperationsDashboardPage() {
       editLockAreaLabel(item.area, statusCopy),
       item.dialog_id,
       editLockOwner(item),
-      formatDate(item.last_seen_at),
-      formatDate(item.expires_at),
+      formatDate(item.last_seen_at, uiLanguage),
+      formatDate(item.expires_at, uiLanguage),
     ],
   }));
   const cacheRows: DataGridRow[] = dashboard?.cache
@@ -430,44 +432,44 @@ export default function AdminOperationsDashboardPage() {
         {
           key: "status",
           cells: [
-            "상태",
+            detailsCopy.cache.status,
             cacheAvailabilityLabel(dashboard.cache.enabled, dashboard.cache.available, statusCopy),
-            `Backend ${dashboard.cache.backend} / 상태 ${dashboard.cache.connection_state}`,
+            formatOperationsText(detailsCopy.cache.backendState, { backend: dashboard.cache.backend, state: dashboard.cache.connection_state }),
             dashboard.cache.last_error || "-",
           ],
         },
         {
           key: "readiness",
           cells: [
-            "준비",
-            dashboard.cache.redis_url_configured ? "Redis URL 설정" : "Redis URL 없음",
-            dashboard.cache.package_installed ? "redis 패키지 설치됨" : "redis 패키지 없음",
-            dashboard.cache.enabled ? "활성화됨" : "비활성화됨",
+            detailsCopy.cache.readiness,
+            dashboard.cache.redis_url_configured ? detailsCopy.cache.redisConfigured : detailsCopy.cache.redisMissing,
+            dashboard.cache.package_installed ? detailsCopy.cache.packageInstalled : detailsCopy.cache.packageMissing,
+            dashboard.cache.enabled ? detailsCopy.cache.enabled : detailsCopy.cache.disabled,
           ],
         },
         {
           key: "reads",
           cells: [
-            "조회",
-            `${dashboard.cache.hit_rate.toLocaleString("ko-KR")}%`,
-            `Hit ${dashboard.cache.hits.toLocaleString("ko-KR")} / Miss ${dashboard.cache.misses.toLocaleString("ko-KR")}`,
-            `Fallback ${dashboard.cache.fallbacks.toLocaleString("ko-KR")}`,
+            detailsCopy.cache.reads,
+            `${dashboard.cache.hit_rate.toLocaleString(uiLanguage)}%`,
+            `Hit ${dashboard.cache.hits.toLocaleString(uiLanguage)} / Miss ${dashboard.cache.misses.toLocaleString(uiLanguage)}`,
+            `Fallback ${dashboard.cache.fallbacks.toLocaleString(uiLanguage)}`,
           ],
         },
         {
           key: "errors",
           cells: [
-            "오류",
-            `Read ${dashboard.cache.read_errors.toLocaleString("ko-KR")}`,
-            `Write ${dashboard.cache.write_errors.toLocaleString("ko-KR")}`,
-            `Purge ${dashboard.cache.purge_errors.toLocaleString("ko-KR")}`,
+            detailsCopy.cache.errors,
+            `Read ${dashboard.cache.read_errors.toLocaleString(uiLanguage)}`,
+            `Write ${dashboard.cache.write_errors.toLocaleString(uiLanguage)}`,
+            `Purge ${dashboard.cache.purge_errors.toLocaleString(uiLanguage)}`,
           ],
         },
         {
           key: "purges",
           cells: [
-            "초기화",
-            `${dashboard.cache.purges.toLocaleString("ko-KR")}회`,
+            detailsCopy.cache.purges,
+            formatOperationsText(detailsCopy.cache.times, { count: dashboard.cache.purges.toLocaleString(uiLanguage) }),
             "studio read-model cache",
             "-",
           ],
@@ -475,10 +477,10 @@ export default function AdminOperationsDashboardPage() {
         {
           key: "memory",
           cells: [
-            "메모리",
-            dashboard.cache.memory_usage_percent === null ? "-" : `${dashboard.cache.memory_usage_percent.toLocaleString("ko-KR")}%`,
-            `${formatBytes(dashboard.cache.memory_used_bytes)} / ${formatBytes(dashboard.cache.memory_max_bytes)}`,
-            dashboard.cache.memory_max_bytes === null ? "maxmemory 미설정" : "-",
+            detailsCopy.cache.memory,
+            dashboard.cache.memory_usage_percent === null ? "-" : `${dashboard.cache.memory_usage_percent.toLocaleString(uiLanguage)}%`,
+            `${formatBytes(dashboard.cache.memory_used_bytes, uiLanguage)} / ${formatBytes(dashboard.cache.memory_max_bytes, uiLanguage)}`,
+            dashboard.cache.memory_max_bytes === null ? detailsCopy.cache.maxmemoryUnset : "-",
           ],
         },
       ]
@@ -489,59 +491,59 @@ export default function AdminOperationsDashboardPage() {
         {
           key: "versions",
           cells: [
-            "버전",
-            `${integritySummary.version_storage_split_versions.toLocaleString("ko-KR")} / ${integritySummary.version_storage_total_versions.toLocaleString("ko-KR")}`,
-            `미적용 ${integritySummary.version_storage_missing_versions.toLocaleString("ko-KR")}`,
-            `불일치 ${integritySummary.version_storage_mismatch_versions.toLocaleString("ko-KR")}`,
+            detailsCopy.integrity.version,
+            `${integritySummary.version_storage_split_versions.toLocaleString(uiLanguage)} / ${integritySummary.version_storage_total_versions.toLocaleString(uiLanguage)}`,
+            formatOperationsText(detailsCopy.integrity.notApplied, { count: integritySummary.version_storage_missing_versions.toLocaleString(uiLanguage) }),
+            formatOperationsText(detailsCopy.integrity.mismatch, { count: integritySummary.version_storage_mismatch_versions.toLocaleString(uiLanguage) }),
           ],
         },
         {
           key: "dialogs",
           cells: [
-            "대화/모듈",
-            integritySummary.version_storage_actual_dialog_rows.toLocaleString("ko-KR"),
-            `기준 ${integritySummary.version_storage_expected_dialog_rows.toLocaleString("ko-KR")}`,
-            integritySummary.version_storage_actual_dialog_rows === integritySummary.version_storage_expected_dialog_rows ? "일치" : "확인 필요",
+            detailsCopy.integrity.dialogs,
+            integritySummary.version_storage_actual_dialog_rows.toLocaleString(uiLanguage),
+            formatOperationsText(detailsCopy.integrity.baseline, { count: integritySummary.version_storage_expected_dialog_rows.toLocaleString(uiLanguage) }),
+            integritySummary.version_storage_actual_dialog_rows === integritySummary.version_storage_expected_dialog_rows ? detailsCopy.integrity.match : detailsCopy.integrity.checkRequired,
           ],
         },
         {
           key: "graphs",
           cells: [
-            "대화설계 그래프",
-            integritySummary.version_storage_actual_graph_rows.toLocaleString("ko-KR"),
-            `기준 ${integritySummary.version_storage_expected_graph_rows.toLocaleString("ko-KR")}`,
-            integritySummary.version_storage_actual_graph_rows === integritySummary.version_storage_expected_graph_rows ? "일치" : "확인 필요",
+            detailsCopy.integrity.graphs,
+            integritySummary.version_storage_actual_graph_rows.toLocaleString(uiLanguage),
+            formatOperationsText(detailsCopy.integrity.baseline, { count: integritySummary.version_storage_expected_graph_rows.toLocaleString(uiLanguage) }),
+            integritySummary.version_storage_actual_graph_rows === integritySummary.version_storage_expected_graph_rows ? detailsCopy.integrity.match : detailsCopy.integrity.checkRequired,
           ],
         },
         {
           key: "read-snapshot",
           cells: [
-            "요약 스냅샷",
-            `${integritySummary.version_read_snapshot_complete_versions.toLocaleString("ko-KR")} / ${integritySummary.version_read_snapshot_total_versions.toLocaleString("ko-KR")}`,
-            `누락 ${integritySummary.version_read_snapshot_missing_versions.toLocaleString("ko-KR")}`,
+            detailsCopy.integrity.snapshot,
+            `${integritySummary.version_read_snapshot_complete_versions.toLocaleString(uiLanguage)} / ${integritySummary.version_read_snapshot_total_versions.toLocaleString(uiLanguage)}`,
+            formatOperationsText(detailsCopy.integrity.missing, { count: integritySummary.version_read_snapshot_missing_versions.toLocaleString(uiLanguage) }),
             [
               integritySummary.version_read_snapshot_missing_asset_counts > 0
-                ? `count ${integritySummary.version_read_snapshot_missing_asset_counts.toLocaleString("ko-KR")}`
+                ? `count ${integritySummary.version_read_snapshot_missing_asset_counts.toLocaleString(uiLanguage)}`
                 : "",
               integritySummary.version_read_snapshot_missing_scenario_validation > 0
-                ? `검증 ${integritySummary.version_read_snapshot_missing_scenario_validation.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.validation, { count: integritySummary.version_read_snapshot_missing_scenario_validation.toLocaleString(uiLanguage) })
                 : "",
               integritySummary.version_read_snapshot_missing_nlu_training > 0
-                ? `학습 ${integritySummary.version_read_snapshot_missing_nlu_training.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.training, { count: integritySummary.version_read_snapshot_missing_nlu_training.toLocaleString(uiLanguage) })
                 : "",
               integritySummary.version_read_snapshot_missing_entities > 0
-                ? `개체 ${integritySummary.version_read_snapshot_missing_entities.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.entities, { count: integritySummary.version_read_snapshot_missing_entities.toLocaleString(uiLanguage) })
                 : "",
               integritySummary.version_read_snapshot_missing_dictionary > 0
-                ? `사전 ${integritySummary.version_read_snapshot_missing_dictionary.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.dictionary, { count: integritySummary.version_read_snapshot_missing_dictionary.toLocaleString(uiLanguage) })
                 : "",
               integritySummary.version_read_snapshot_missing_apis > 0
-                ? `API ${integritySummary.version_read_snapshot_missing_apis.toLocaleString("ko-KR")}`
+                ? `API ${integritySummary.version_read_snapshot_missing_apis.toLocaleString(uiLanguage)}`
                 : "",
               integritySummary.version_read_snapshot_missing_system_config > 0
-                ? `설정 ${integritySummary.version_read_snapshot_missing_system_config.toLocaleString("ko-KR")}`
+                ? formatOperationsText(detailsCopy.integrity.settings, { count: integritySummary.version_read_snapshot_missing_system_config.toLocaleString(uiLanguage) })
                 : "",
-            ].filter(Boolean).join(" / ") || "정상",
+            ].filter(Boolean).join(" / ") || detailsCopy.integrity.healthy,
           ],
         },
       ]
@@ -549,18 +551,18 @@ export default function AdminOperationsDashboardPage() {
   const versionStorageIssueRows: DataGridRow[] = (versionIntegrity?.version_storage_issues ?? []).map((item) => ({
     key: item.version_id,
     cells: [
-      item.status === "missing" ? "미적용" : "불일치",
+      item.status === "missing" ? detailsCopy.integrity.missingStatus : detailsCopy.integrity.mismatchStatus,
       item.bot_name,
       `v${item.version_no} · ${item.version_name}`,
-      `${item.actual_dialog_rows.toLocaleString("ko-KR")} / ${item.expected_dialog_rows.toLocaleString("ko-KR")}`,
-      `${item.actual_graph_rows.toLocaleString("ko-KR")} / ${item.expected_graph_rows.toLocaleString("ko-KR")}`,
+      `${item.actual_dialog_rows.toLocaleString(uiLanguage)} / ${item.expected_dialog_rows.toLocaleString(uiLanguage)}`,
+      `${item.actual_graph_rows.toLocaleString(uiLanguage)} / ${item.expected_graph_rows.toLocaleString(uiLanguage)}`,
       [
-        item.missing_dialog_ids.length ? `대화 누락 ${item.missing_dialog_ids.join(", ")}` : "",
-        item.extra_dialog_ids.length ? `대화 초과 ${item.extra_dialog_ids.join(", ")}` : "",
-        item.missing_graph_ids.length ? `그래프 누락 ${item.missing_graph_ids.join(", ")}` : "",
-        item.extra_graph_ids.length ? `그래프 초과 ${item.extra_graph_ids.join(", ")}` : "",
+        item.missing_dialog_ids.length ? formatOperationsText(detailsCopy.integrity.missingDialog, { ids: item.missing_dialog_ids.join(", ") }) : "",
+        item.extra_dialog_ids.length ? formatOperationsText(detailsCopy.integrity.extraDialog, { ids: item.extra_dialog_ids.join(", ") }) : "",
+        item.missing_graph_ids.length ? formatOperationsText(detailsCopy.integrity.missingGraph, { ids: item.missing_graph_ids.join(", ") }) : "",
+        item.extra_graph_ids.length ? formatOperationsText(detailsCopy.integrity.extraGraph, { ids: item.extra_graph_ids.join(", ") }) : "",
       ].filter(Boolean).join(" / ") || "-",
-      item.updated_at ? formatDate(item.updated_at) : "-",
+      item.updated_at ? formatDate(item.updated_at, uiLanguage) : "-",
     ],
   }));
   const healthItems = dashboard
@@ -570,7 +572,7 @@ export default function AdminOperationsDashboardPage() {
           label: statusCopy.health.apiReadiness,
           value: apiReadiness?.ok ? statusCopy.health.healthy : statusCopy.health.checkRequired,
           detail: apiReadiness
-            ? `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString("ko-KR")}ms`}`
+            ? `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString(uiLanguage)}ms`}`
             : statusCopy.health.checking,
           tone: apiReadiness?.ok ? "normal" : "critical",
         },
@@ -598,7 +600,7 @@ export default function AdminOperationsDashboardPage() {
             dashboard.summary.slow_api_requests
             + dashboard.summary.slow_db_requests
           ).toLocaleString(uiLanguage),
-          detail: `API ${dashboard.summary.slow_api_requests.toLocaleString(uiLanguage)} / ${formatMs(dashboard.summary.slow_api_threshold_ms)} · DB ${dashboard.summary.slow_db_requests.toLocaleString(uiLanguage)} / ${formatMs(dashboard.summary.slow_db_threshold_ms)}`,
+          detail: `API ${dashboard.summary.slow_api_requests.toLocaleString(uiLanguage)} / ${formatMs(dashboard.summary.slow_api_threshold_ms, uiLanguage)} · DB ${dashboard.summary.slow_db_requests.toLocaleString(uiLanguage)} / ${formatMs(dashboard.summary.slow_db_threshold_ms, uiLanguage)}`,
           tone: dashboard.summary.slow_api_requests + dashboard.summary.slow_db_requests > 0 ? "warning" : "normal",
         },
         {
@@ -668,7 +670,7 @@ export default function AdminOperationsDashboardPage() {
             ? executionCount > 0 ? statusCopy.health.executionConfirmed : statusCopy.health.available
             : acceleration.available === false ? statusCopy.health.disabled : statusCopy.health.gpuPending;
           const detail = acceleration.available === true
-            ? `${acceleration.device ?? "CUDA"} · ${formatOperationsText(statusCopy.health.gpuExecution, { count: executionCount.toLocaleString(uiLanguage) })}${acceleration.last_execution_at ? ` · ${formatOperationsText(statusCopy.health.recent, { date: formatDate(acceleration.last_execution_at) })}` : ""}`
+            ? `${acceleration.device ?? "CUDA"} · ${formatOperationsText(statusCopy.health.gpuExecution, { count: executionCount.toLocaleString(uiLanguage) })}${acceleration.last_execution_at ? ` · ${formatOperationsText(statusCopy.health.recent, { date: formatDate(acceleration.last_execution_at, uiLanguage) })}` : ""}`
             : acceleration.available === false
               ? acceleration.error ?? statusCopy.health.gpuCheck
               : statusCopy.health.gpuNotRun;          return {
@@ -690,7 +692,7 @@ export default function AdminOperationsDashboardPage() {
           key: "api-readiness",
           label: statusCopy.health.apiReadiness,
           value: apiReadiness.ok ? statusCopy.health.healthy : statusCopy.health.checkRequired,
-          detail: `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString("ko-KR")}ms`}`,
+          detail: `API ${apiReadiness.app} · DB ${apiReadiness.database}${apiReadiness.elapsed_ms === null ? "" : ` · ${apiReadiness.elapsed_ms.toLocaleString(uiLanguage)}ms`}`,
           tone: apiReadiness.ok ? "normal" : "critical",
         },
       ]
@@ -1005,7 +1007,7 @@ export default function AdminOperationsDashboardPage() {
               <h3>{copy.dbIntegrity}</h3>
               <span>
                 {versionIntegrity
-                  ? `${copy.integrityDescription} · ${copy.checkIntegrity} ${formatDate(versionIntegrity.generated_at)}`
+                  ? `${copy.integrityDescription} · ${copy.checkIntegrity} ${formatDate(versionIntegrity.generated_at, uiLanguage)}`
                   : copy.integrityPending}
               </span>
               <button type="button" className="admin-page__ghost" disabled={checkingVersionIntegrity} onClick={handleVersionIntegrityCheck}>
@@ -1049,7 +1051,7 @@ export default function AdminOperationsDashboardPage() {
           <section className="operations-dashboard__panel">
             <div className="operations-dashboard__panel-header">
               <h3>{copy.recentErrors}</h3>
-              <span>{copy.generatedAt} {formatDate(dashboard.generated_at)}</span>
+              <span>{copy.generatedAt} {formatDate(dashboard.generated_at, uiLanguage)}</span>
               <Link href="/admin/queue-history" className="admin-page__link-button">
                 {copy.queueHistory}
               </Link>
@@ -1175,19 +1177,19 @@ export default function AdminOperationsDashboardPage() {
       {selectedError ? (
         <>
           <div className="admin-log-detail__scrim" onClick={() => setSelectedError(null)} />
-          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label="운영 오류 상세">
+          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label={detailsCopy.dialogs.operationsErrorTitle}>
             <header className="admin-log-detail__header">
               <div>
-                <strong>운영 오류 상세</strong>
+                <strong>{detailsCopy.dialogs.operationsErrorTitle}</strong>
                 <p>{selectedError.bot_name} · {selectedError.event || "-"}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedError(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedError(null)} aria-label={detailsCopy.dialogs.close}>
                 x
               </button>
             </header>
             <div className="admin-log-detail__body">
               <section className="admin-log-detail__section">
-                <h3>오류 요약</h3>
+                <h3>{detailsCopy.dialogs.errorSummary}</h3>
                 <pre>
                   {formatJson({
                     source: selectedError.source,
@@ -1201,7 +1203,7 @@ export default function AdminOperationsDashboardPage() {
               </section>
               {selectedErrorVariableTrace?.hasTrace ? (
                 <section className="admin-log-detail__section">
-                  <h3>변수 변경</h3>
+                  <h3>{detailsCopy.dialogs.variableChanges}</h3>
                   <pre>
                     {formatJson({
                       updatedVariables: selectedErrorVariableTrace?.updatedVariables ?? [],
@@ -1212,22 +1214,22 @@ export default function AdminOperationsDashboardPage() {
               ) : null}
               {selectedErrorQueueId ? (
                 <section className="admin-log-detail__section">
-                  <h3>연결 이력</h3>
+                  <h3>{detailsCopy.dialogs.linkedHistory}</h3>
                   <div className="admin-log-detail__actions">
                     <Link href={traceHref("/admin/queue-history", selectedErrorQueueId)} className="admin-page__link-button">
-                      Queue 이력
+                      {detailsCopy.dialogs.queueHistory}
                     </Link>
                     <Link href={traceHref("/admin/conversations", selectedErrorQueueId)} className="admin-page__link-button">
-                      대화 이력
+                      {detailsCopy.dialogs.conversationHistory}
                     </Link>
                     <Link href={traceHref("/admin/api-call-history", selectedErrorQueueId)} className="admin-page__link-button">
-                      API 이력
+                      {detailsCopy.dialogs.apiHistory}
                     </Link>
                   </div>
                 </section>
               ) : null}
               <section className="admin-log-detail__section">
-                <h3>상세 데이터</h3>
+                <h3>{detailsCopy.dialogs.detailData}</h3>
                 <pre>{formatJson(selectedError.data_json ?? {})}</pre>
               </section>
             </div>
@@ -1237,19 +1239,19 @@ export default function AdminOperationsDashboardPage() {
       {selectedRuntimeEvent ? (
         <>
           <div className="admin-log-detail__scrim" onClick={() => setSelectedRuntimeEvent(null)} />
-          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label="실행 흐름 상세">
+          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label={detailsCopy.dialogs.runtimeTitle}>
             <header className="admin-log-detail__header">
               <div>
-                <strong>실행 흐름 상세</strong>
+                <strong>{detailsCopy.dialogs.runtimeTitle}</strong>
                 <p>{selectedRuntimeEvent.bot_name} · {selectedRuntimeEvent.event || "-"}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedRuntimeEvent(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedRuntimeEvent(null)} aria-label={detailsCopy.dialogs.close}>
                 x
               </button>
             </header>
             <div className="admin-log-detail__body">
               <section className="admin-log-detail__section">
-                <h3>실행 요약</h3>
+                <h3>{detailsCopy.dialogs.runtimeSummary}</h3>
                 <pre>
                   {formatJson({
                     source: selectedRuntimeEvent.source,
@@ -1266,7 +1268,7 @@ export default function AdminOperationsDashboardPage() {
               </section>
               {selectedRuntimeEventVariableTrace?.hasTrace ? (
                 <section className="admin-log-detail__section">
-                  <h3>변수 변경</h3>
+                  <h3>{detailsCopy.dialogs.variableChanges}</h3>
                   <pre>
                     {formatJson({
                       updatedVariables: selectedRuntimeEventVariableTrace?.updatedVariables ?? [],
@@ -1277,22 +1279,22 @@ export default function AdminOperationsDashboardPage() {
               ) : null}
               {selectedRuntimeQueueId ? (
                 <section className="admin-log-detail__section">
-                  <h3>연결 이력</h3>
+                  <h3>{detailsCopy.dialogs.linkedHistory}</h3>
                   <div className="admin-log-detail__actions">
                     <Link href={traceHref("/admin/queue-history", selectedRuntimeQueueId)} className="admin-page__link-button">
-                      Queue 이력
+                      {detailsCopy.dialogs.queueHistory}
                     </Link>
                     <Link href={traceHref("/admin/conversations", selectedRuntimeQueueId)} className="admin-page__link-button">
-                      대화 이력
+                      {detailsCopy.dialogs.conversationHistory}
                     </Link>
                     <Link href={traceHref("/admin/api-call-history", selectedRuntimeQueueId)} className="admin-page__link-button">
-                      API 이력
+                      {detailsCopy.dialogs.apiHistory}
                     </Link>
                   </div>
                 </section>
               ) : null}
               <section className="admin-log-detail__section">
-                <h3>상세 데이터</h3>
+                <h3>{detailsCopy.dialogs.detailData}</h3>
                 <pre>{formatJson(selectedRuntimeEvent.data_json ?? {})}</pre>
               </section>
             </div>
@@ -1302,19 +1304,19 @@ export default function AdminOperationsDashboardPage() {
       {selectedSystemError ? (
         <>
           <div className="admin-log-detail__scrim" onClick={() => setSelectedSystemError(null)} />
-          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label="시스템 오류 상세">
+          <section className="admin-log-detail" role="dialog" aria-modal="true" aria-label={detailsCopy.dialogs.systemErrorTitle}>
             <header className="admin-log-detail__header">
               <div>
-                <strong>시스템 오류 상세</strong>
+                <strong>{detailsCopy.dialogs.systemErrorTitle}</strong>
                 <p>{selectedSystemError.logger || "-"} · {selectedSystemError.event || "-"}</p>
               </div>
-              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedSystemError(null)} aria-label="닫기">
+              <button type="button" className="admin-log-detail__close" onClick={() => setSelectedSystemError(null)} aria-label={detailsCopy.dialogs.close}>
                 x
               </button>
             </header>
             <div className="admin-log-detail__body">
               <section className="admin-log-detail__section">
-                <h3>오류 요약</h3>
+                <h3>{detailsCopy.dialogs.errorSummary}</h3>
                 <pre>
                   {formatJson({
                     source: selectedSystemError.source,
@@ -1331,18 +1333,18 @@ export default function AdminOperationsDashboardPage() {
               </section>
               {selectedSystemError.request_id ? (
                 <section className="admin-log-detail__section">
-                  <h3>로그 추적</h3>
+                  <h3>{detailsCopy.dialogs.logTrace}</h3>
                   <Link
                     href={`/admin/audit-logs?tab=system&file=error&request_id=${encodeURIComponent(selectedSystemError.request_id)}`}
                     className="admin-page__ghost"
                   >
-                    요청 ID로 시스템 로그 조회
+                    {detailsCopy.dialogs.systemLogsByRequest}
                   </Link>
                 </section>
               ) : null}
               {selectedSystemErrorVariableTrace?.hasTrace ? (
                 <section className="admin-log-detail__section">
-                  <h3>변수 변경</h3>
+                  <h3>{detailsCopy.dialogs.variableChanges}</h3>
                   <pre>
                     {formatJson({
                       updatedVariables: selectedSystemErrorVariableTrace?.updatedVariables ?? [],
@@ -1352,7 +1354,7 @@ export default function AdminOperationsDashboardPage() {
                 </section>
               ) : null}
               <section className="admin-log-detail__section">
-                <h3>상세 데이터</h3>
+                <h3>{detailsCopy.dialogs.detailData}</h3>
                 <pre>{formatJson(selectedSystemError.data_json ?? {})}</pre>
               </section>
             </div>
