@@ -7,6 +7,37 @@ export type SimulatorCatalog = {
   intentFallback: string; multiIntentGuide: string; runtimeFlowError: string; systemError: string;
 };
 
+const enUiLabels: Record<string, string> = {
+  "봇":"Bot","HTML 메시지":"HTML message","표시할 항목이 없습니다.":"No items to display.","DTMF 입력":"DTMF input",
+  "입력 대기 중":"Waiting for input","지우기":"Delete","입력 완료":"Submit input","대화 재시작":"Restart conversation",
+  "플로팅 버튼 닫기":"Close floating buttons","대화 불러오기":"Load conversation","대화 저장하기":"Save conversation","대화 전체보기":"View full conversation",
+  "사용자 발화":"User utterance","선택 의도":"Selected intent","상세 진단 데이터":"Detailed diagnostic data","의도분류 Score-in":"Intent classification Score-in",
+  "의도분류 Score-out":"Intent classification Score-out","변수 스냅샷":"Variable snapshots","변수 스냅샷 없음":"No variable snapshots",
+  "불러온 대화 전체보기":"View loaded conversation","확인":"Confirm","대상 없음":"No targets","전체 변수 스냅샷":"All variable snapshots",
+  "전체 처리 로그":"All processing logs","처리 로그 없음":"No processing logs","현재 런타임 상태":"Current runtime state","대화":"Conversation",
+  "다음 카드":"Next card","대기 카드":"Waiting card","종료 여부":"End status","세션 종료":"Session ended","대화 종료":"Conversation ended","진행 중":"In progress",
+  "변수값 없음":"No variable values","(빈 값)":"(empty)","개체 인식":"Entity recognition","인식된 개체 없음":"No recognized entities","미인식":"Not recognized",
+  "오류 / 이상 상황":"Errors / anomalies","오류 없음":"No errors","시나리오 흐름":"Scenario flow","카드 실행 후 변수값":"Variable values after card execution",
+  "표시할 카드 흐름 없음":"No card flow to display","의도 인식 적용 단계":"Applied intent recognition stage","적용 대상":"Applied target",
+  "의도":"Intent","스코어/확률":"Score/Probability","검증 문장 진단":"Validation utterance diagnostics","등록된 Validation 문장이 없습니다.":"No validation utterances are registered.",
+  "Score Setting":"Score Setting","대화시작 카드":"Conversation start card","연결된 의도":"Connected intent","분류 결과":"Classification result",
+  "Semantic 검색 근거":"Semantic search evidence","LLM 분류 근거":"LLM classification evidence","형태소":"Morphemes","근거":"Evidence","분류 토큰":"Classification tokens",
+  "판정 순서: 제외/무시 → 스몰토크 → Exacting Matching → 룰 → ML/시멘틱/LLM. 앞 단계가 적용되면 이후 단계는 실행하지 않습니다.":"Decision order: Exclude/Ignore → Small Talk → Exact Matching → Rule → ML/Semantic/LLM. Once a stage applies, later stages are not run.",
+  "불러올 사용자 문장이 없습니다.":"There are no user utterances to load.","JSON 대화 파일을 읽지 못했습니다.":"Could not read the JSON conversation file."
+};
+
+const simulatorUiLabels: Record<SupportedLanguage, Record<string, string>> = {
+  ko: {}, en: enUiLabels,
+  "zh-CN": { ...enUiLabels, "봇":"机器人","대화 재시작":"重新开始对话","대화 불러오기":"加载对话","대화 저장하기":"保存对话","대화 전체보기":"查看完整对话","사용자 발화":"用户话语","선택 의도":"所选意图","상세 진단 데이터":"详细诊断数据","변수 스냅샷":"变量快照","확인":"确认","현재 런타임 상태":"当前运行状态","개체 인식":"实体识别","오류 / 이상 상황":"错误 / 异常","시나리오 흐름":"场景流程" },
+  ja: { ...enUiLabels, "봇":"ボット","대화 재시작":"会話を再開","대화 불러오기":"会話を読み込む","대화 저장하기":"会話を保存","대화 전체보기":"会話全体を表示","사용자 발화":"ユーザー発話","선택 의도":"選択インテント","상세 진단 데이터":"詳細診断データ","변수 스냅샷":"変数スナップショット","확인":"確認","현재 런타임 상태":"現在のランタイム状態","개체 인식":"エンティティ認識","오류 / 이상 상황":"エラー / 異常","시나리오 흐름":"シナリオフロー" },
+  vi: { ...enUiLabels, "봇":"Bot","대화 재시작":"Khởi động lại hội thoại","대화 불러오기":"Tải hội thoại","대화 저장하기":"Lưu hội thoại","대화 전체보기":"Xem toàn bộ hội thoại","사용자 발화":"Phát ngôn người dùng","선택 의도":"Ý định đã chọn","상세 진단 데이터":"Dữ liệu chẩn đoán chi tiết","변수 스냅샷":"Ảnh chụp biến","확인":"Xác nhận","현재 런타임 상태":"Trạng thái chạy hiện tại","개체 인식":"Nhận dạng thực thể","오류 / 이상 상황":"Lỗi / bất thường","시나리오 흐름":"Luồng kịch bản" },
+  fr: { ...enUiLabels, "봇":"Bot","대화 재시작":"Redémarrer la conversation","대화 불러오기":"Charger la conversation","대화 저장하기":"Enregistrer la conversation","대화 전체보기":"Voir toute la conversation","사용자 발화":"Énoncé utilisateur","선택 의도":"Intention sélectionnée","상세 진단 데이터":"Données de diagnostic détaillées","변수 스냅샷":"Instantanés des variables","확인":"Confirmer","현재 런타임 상태":"État d’exécution actuel","개체 인식":"Reconnaissance d’entités","오류 / 이상 상황":"Erreurs / anomalies","시나리오 흐름":"Flux du scénario" },
+  de: { ...enUiLabels, "봇":"Bot","대화 재시작":"Gespräch neu starten","대화 불러오기":"Gespräch laden","대화 저장하기":"Gespräch speichern","대화 전체보기":"Gesamtes Gespräch anzeigen","사용자 발화":"Benutzeräußerung","선택 의도":"Ausgewählter Intent","상세 진단 데이터":"Detaillierte Diagnosedaten","변수 스냅샷":"Variablen-Snapshots","확인":"Bestätigen","현재 런타임 상태":"Aktueller Laufzeitstatus","개체 인식":"Entitätserkennung","오류 / 이상 상황":"Fehler / Auffälligkeiten","시나리오 흐름":"Szenarioablauf" },
+};
+
+export function getSimulatorLabel(language: SupportedLanguage, value: string): string {
+  return simulatorUiLabels[language][value] ?? (language === "ko" ? value : enUiLabels[value] ?? value);
+}
 export const SIMULATOR_CATALOGS = {
   ko: {
     botTestBreadcrumb: "봇 테스트 사용하기 > 봇과 대화하기", botTestTitle: "봇 테스트",
@@ -80,6 +111,15 @@ export const SIMULATOR_CATALOGS = {
   },
 } satisfies Record<SupportedLanguage, SimulatorCatalog>;
 
+export const SIMULATOR_DTMF_CATALOGS = {
+  ko: { guide: "{min}~{max}자리 입력 후 {end}을 누르세요. 최초 {first}초, 전체 {overall}초", lengthError: "{min}~{max}자리로 입력하세요." },
+  en: { guide: "Enter {min} to {max} digits, then press {end}. First input: {first}s, total: {overall}s", lengthError: "Enter {min} to {max} digits." },
+  "zh-CN": { guide: "输入 {min}~{max} 位后按 {end}。首次 {first} 秒，总计 {overall} 秒", lengthError: "请输入 {min}~{max} 位。" },
+  ja: { guide: "{min}〜{max}桁を入力してから {end} を押してください。初回 {first}秒、全体 {overall}秒", lengthError: "{min}〜{max}桁で入力してください。" },
+  vi: { guide: "Nhập {min}~{max} chữ số rồi nhấn {end}. Lần đầu {first} giây, tổng {overall} giây", lengthError: "Hãy nhập {min}~{max} chữ số." },
+  fr: { guide: "Saisissez {min} à {max} chiffres, puis appuyez sur {end}. Première saisie : {first}s, total : {overall}s", lengthError: "Saisissez {min} à {max} chiffres." },
+  de: { guide: "Geben Sie {min} bis {max} Ziffern ein und drücken Sie dann {end}. Erste Eingabe: {first}s, gesamt: {overall}s", lengthError: "Geben Sie {min} bis {max} Ziffern ein." },
+} satisfies Record<SupportedLanguage, { guide: string; lengthError: string }>;
 export function formatSimulatorText(template: string, values: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? "");
 }
