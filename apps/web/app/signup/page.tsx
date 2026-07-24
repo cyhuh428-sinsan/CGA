@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api";
 import { useI18n } from "@/components/language-provider";
 import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
+import { ACCOUNT_PAGE_CATALOGS } from "@/lib/i18n/account-pages";
 
 type SignupOptions = {
   organization: {
@@ -22,6 +23,7 @@ type SignupOptions = {
 
 export default function SignupPage() {
   const { language, setLanguage, t } = useI18n();
+  const copy = ACCOUNT_PAGE_CATALOGS[language].signup;
   const [options, setOptions] = useState<SignupOptions | null>(null);
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
@@ -48,14 +50,14 @@ export default function SignupPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "회원가입 옵션을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       });
 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [copy.loadFailed]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,7 +85,7 @@ export default function SignupPage() {
       setName("");
       setComment("");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "회원가입 처리 중 오류가 발생했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : copy.submitFailed);
     } finally {
       setIsSubmitting(false);
     }
@@ -93,71 +95,71 @@ export default function SignupPage() {
     <main className="auth-page auth-page--form auth-page--signup">
       <section className="auth-form-card auth-form-card--signup">
         <div className="auth-form-card__header">
-          <h1>회원 가입</h1>
-          <p>관리자 승인 후 로그인할 수 있습니다.</p>
+          <h1>{copy.title}</h1>
+          <p>{copy.description}</p>
         </div>
 
         <form className="auth-form-card__body auth-form-card__body--signup" onSubmit={handleSubmit}>
           <label className="field-block">
-            <span>아이디</span>
+            <span>{copy.loginId}</span>
             <input
               className="input-control"
               value={loginId}
               onChange={(event) => setLoginId(event.target.value)}
-              placeholder="아이디를 입력하세요."
+              placeholder={copy.loginIdPlaceholder}
             />
           </label>
 
           <label className="field-block">
-            <span>비밀번호</span>
+            <span>{copy.password}</span>
             <input
               className="input-control"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="비밀번호를 입력하세요."
+              placeholder={copy.passwordPlaceholder}
             />
           </label>
 
           <label className="field-block">
-            <span>비밀번호 확인</span>
+            <span>{copy.passwordConfirm}</span>
             <input
               className="input-control"
               type="password"
               value={passwordConfirm}
               onChange={(event) => setPasswordConfirm(event.target.value)}
-              placeholder="비밀번호를 다시 입력하세요."
+              placeholder={copy.passwordConfirmPlaceholder}
             />
           </label>
 
           <label className="field-block">
-            <span>이름</span>
+            <span>{copy.name}</span>
             <input
               className="input-control"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="이름을 입력하세요."
+              placeholder={copy.namePlaceholder}
             />
           </label>
 
           <label className="field-block field-block--full">
-            <span>코멘트</span>
+            <span>{copy.comment}</span>
             <textarea
               className="textarea-control"
               value={comment}
               onChange={(event) => setComment(event.target.value)}
-              placeholder="코멘트를 입력하세요."
+              placeholder={copy.commentPlaceholder}
             />
           </label>
 
           <label className="field-block">
-            <span>서버</span>
+            <span>{copy.server}</span>
             <input
               className="input-control"
               value={
                 options?.organization.name === "기본 테넌트"
-                  ? "기본 서버"
-                  : options?.organization.name ?? "기본 서버"
+                  ? copy.defaultServer
+                  : options?.organization.name ?? copy.defaultServer
               }
               readOnly
               disabled
@@ -165,7 +167,7 @@ export default function SignupPage() {
           </label>
 
           <label className="field-block">
-            <span>그룹</span>
+            <span>{copy.group}</span>
             <select
               className="login-select"
               value={groupId}
@@ -201,14 +203,14 @@ export default function SignupPage() {
             className="primary-action primary-action--full field-block--full"
             disabled={isSubmitting || !groupId}
           >
-            {isSubmitting ? "회원가입 신청 중..." : "회원가입 신청"}
+            {isSubmitting ? copy.submitting : copy.submit}
           </button>
         </form>
 
         <div className="auth-form-card__footer">
-          <span>이미 계정이 있으신가요?</span>
+          <span>{copy.existingAccount}</span>
           <Link href="/login" className="ghost-pill">
-            로그인
+            {copy.login}
           </Link>
         </div>
       </section>
