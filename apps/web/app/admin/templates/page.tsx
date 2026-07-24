@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataGrid, dataGridCellText, type DataGridRow, type DataGridSortState } from "@/components/data-grid";
+import { useI18n } from "@/components/language-provider";
 import {
   createTemplate,
   deleteTemplate,
@@ -15,6 +16,8 @@ import {
   type AdminTemplatePayload,
 } from "@/lib/admin-api";
 import { loadAuthSession } from "@/lib/auth";
+import { ADMIN_TEMPLATE_CATALOGS, formatAdminTemplateText } from "@/lib/i18n/admin-templates";
+import { SUPPORTED_LANGUAGES } from "@/lib/language";
 import {
   LIST_PAGE_SIZE_OPTIONS,
   type ListPageSize,
@@ -24,7 +27,7 @@ import {
 type TemplateStatus = AdminTemplateItem["status"];
 
 const RENDERER_OPTIONS = [
-  { value: "text", label: "기본 메시지" },
+  { value: "text", label: "text" },
   { value: "html", label: "Html" },
   { value: "card", label: "Card" },
   { value: "table", label: "Table" },
@@ -89,8 +92,8 @@ function normalizeTemplateDraftByChannel(
   };
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatDate(value: string,locale="ko-KR") {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -171,6 +174,9 @@ function parseCsv(text: string) {
 }
 
 export default function AdminTemplatesPage() {
+  const {language:uiLanguage}=useI18n();
+  const copy=ADMIN_TEMPLATE_CATALOGS[uiLanguage];
+  const locale=SUPPORTED_LANGUAGES.find((item)=>item.code===uiLanguage)?.intlLocale??"ko-KR";
   const [token, setToken] = useState("");
   const [templates, setTemplates] = useState<AdminTemplateItem[]>([]);
   const [activeChannels, setActiveChannels] = useState<AdminChannelItem[]>([]);
@@ -207,7 +213,7 @@ export default function AdminTemplatesPage() {
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(copy.loginRequired);
       return;
     }
     setToken(session.access_token);
@@ -233,7 +239,7 @@ export default function AdminTemplatesPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "템플릿 목록을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
         }
       })
       .finally(() => {
@@ -245,7 +251,7 @@ export default function AdminTemplatesPage() {
     return () => {
       ignore = true;
     };
-  }, [appliedChannelCode, appliedQuery, appliedStatus, token]);
+  }, [appliedChannelCode, appliedQuery, appliedStatus, copy.loadFailed, token]);
 
   useEffect(() => {
     if (!token) {
@@ -269,14 +275,14 @@ export default function AdminTemplatesPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setNoticeMessage(error instanceof Error ? error.message : "활성 채널 목록을 불러오지 못했습니다.");
+          setNoticeMessage(error instanceof Error ? error.message : copy.channelsFailed);
         }
       });
 
     return () => {
       ignore = true;
     };
-  }, [token]);
+  }, [copy.channelsFailed, token]);
 
   async function reload() {
     if (!token) {
@@ -361,15 +367,15 @@ export default function AdminTemplatesPage() {
           description: payload.description,
           status: payload.status,
         });
-        setNoticeMessage("템플릿 정보가 수정되었습니다.");
+        setNoticeMessage(copy.updated);
       } else {
         await createTemplate(token, payload);
-        setNoticeMessage("템플릿이 등록되었습니다.");
+        setNoticeMessage(copy.created);
       }
       closeDialog();
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "템플릿 저장에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.saveFailed);
     }
   }
 
@@ -380,11 +386,11 @@ export default function AdminTemplatesPage() {
 
     try {
       await deleteTemplate(token, editing.id);
-      setNoticeMessage("템플릿이 삭제되었습니다.");
+      setNoticeMessage(copy.deleted);
       closeDialog();
       await reload();
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "템플릿 삭제에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.deleteFailed);
     }
   }
 
@@ -436,18 +442,22 @@ export default function AdminTemplatesPage() {
           savedCount += 1;
         } catch (error) {
           const csvRowNumber = rowIndex + (hasHeader ? 2 : 1);
-          const reason = error instanceof Error ? error.message : "알 수 없는 오류";
-          failedRows.push(`${csvRowNumber}행 ${payload.channel_code}/${payload.name}: ${reason}`);
+          const reason = error instanceof Error ? error.message : copy.unknownError;
+          failedRows.push(`${csvRowNumber} ${payload.channel_code}/${payload.name}: ${reason}`);
         }
       }
 
       setMenuOpen(false);
       await reload();
-      const summary = `${savedCount}건 반영, ${skippedCount}건 제외, ${failedRows.length}건 실패되었습니다.`
-        + (failedRows[0] ? ` 첫 실패: ${failedRows[0]}` : "");
+      const summary =
+        formatAdminTemplateText(copy.uploadSummary, {
+          saved: savedCount,
+          skipped: skippedCount,
+          failed: failedRows.length,
+        }) + (failedRows[0] ? ` (${failedRows[0]})` : "");
       setNoticeMessage(summary);
     } catch (error) {
-      setNoticeMessage(error instanceof Error ? error.message : "템플릿 업로드에 실패했습니다.");
+      setNoticeMessage(error instanceof Error ? error.message : copy.uploadFailed);
     }
   }
 
@@ -469,7 +479,7 @@ export default function AdminTemplatesPage() {
       template.renderer_type,
       template.status_label,
       template.updater_name,
-      formatDate(template.updated_at),
+      formatDate(template.updated_at,locale),
     ],
   }));
   const sortedRows = useMemo(() => {
@@ -485,10 +495,10 @@ export default function AdminTemplatesPage() {
         leftText.trim() !== "" && rightText.trim() !== "" && Number.isFinite(leftNumber) && Number.isFinite(rightNumber);
       const result = bothNumeric
         ? leftNumber - rightNumber
-        : leftText.localeCompare(rightText, "ko-KR", { numeric: true, sensitivity: "base" });
+        : leftText.localeCompare(rightText, locale, { numeric: true, sensitivity: "base" });
       return sortState.direction === "asc" ? result : -result;
     });
-  }, [rows, sortState]);
+  }, [locale, rows, sortState]);
   const rendererOptions = useMemo(() => {
     if (isKakaoTemplateChannel(draft.channel_code)) {
       return RENDERER_OPTIONS.filter((option) =>
@@ -540,7 +550,7 @@ export default function AdminTemplatesPage() {
 
   return (
     <section className="admin-page">
-      <h2>템플릿 목록</h2>
+      <h2>{copy.title}</h2>
 
       <div className="admin-page__search-row admin-template-list__search-row">
         <label className="admin-page__search">
@@ -549,7 +559,7 @@ export default function AdminTemplatesPage() {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="템플릿 이름을 검색하세요."
+            placeholder={copy.searchPlaceholder}
           />
         </label>
         <select
@@ -557,7 +567,7 @@ export default function AdminTemplatesPage() {
           value={channelCode}
           onChange={(event) => setChannelCode(event.target.value)}
         >
-          <option value="">전체 채널</option>
+          <option value="">{copy.allChannels}</option>
           {channelOptions.map((channel) => (
             <option key={channel.value} value={channel.value}>
               {channel.label}
@@ -565,26 +575,24 @@ export default function AdminTemplatesPage() {
           ))}
         </select>
         <select className="login-select" value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value="">전체 사용여부</option>
-          <option value="active">사용</option>
-          <option value="inactive">미사용</option>
+          <option value="">{copy.allStatus}</option><option value="active">{copy.active}</option><option value="inactive">{copy.inactive}</option>
         </select>
         <button type="button" className="admin-page__filter" onClick={resetSearch}>
-          초기화
+          {copy.reset}
         </button>
         <div className="admin-page__search-actions">
           <button type="button" className="admin-page__primary" onClick={applySearch}>
-            조회
+            {copy.search}
           </button>
           <button type="button" className="admin-page__primary" onClick={openCreate}>
-            + 템플릿 등록
+            + {copy.create}
           </button>
           <div className="admin-common-variables__more">
             <button
               type="button"
               className="admin-common-variables__more-button"
               onClick={() => setMenuOpen((current) => !current)}
-              aria-label="템플릿 더보기"
+              aria-label={copy.more}
             >
               ⋮
             </button>
@@ -597,7 +605,7 @@ export default function AdminTemplatesPage() {
                     fileInputRef.current?.click();
                   }}
                 >
-                  파일 업로드
+                  {copy.upload}
                 </button>
                 <button
                   type="button"
@@ -606,7 +614,7 @@ export default function AdminTemplatesPage() {
                     downloadTemplates(templates);
                   }}
                 >
-                  파일 다운로드
+                  {copy.download}
                 </button>
               </div>
             ) : null}
@@ -626,12 +634,12 @@ export default function AdminTemplatesPage() {
 
       <div className="admin-page__toolbar">
         <div className="admin-page__toolbar-left">
-          <strong>전체 {templates.length}건</strong>
+          <strong>{copy.total} {templates.length}</strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
               {LIST_PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}개씩 보기
+                  {option} {copy.perPage}
                 </option>
               ))}
             </select>
@@ -644,7 +652,7 @@ export default function AdminTemplatesPage() {
         <div className="admin-state-box">
           <p>{errorMessage}</p>
           <Link href="/login" className="ghost-pill">
-            로그인으로 이동
+            {copy.login}
           </Link>
         </div>
       ) : null}
@@ -655,14 +663,14 @@ export default function AdminTemplatesPage() {
               variant="admin"
               className="admin-template-list__grid"
               template="80px 150px 220px 120px 1fr 160px 120px 160px 180px"
-            columns={["순서", "채널", "템플릿 이름", "아이템 개수", "아이템 타입", "렌더러 타입", "사용여부", "최종수정자", "최종수정일시"]}
+            columns={[copy.order,copy.channel,copy.name,copy.itemCount,copy.itemType,copy.renderer,copy.status,copy.updatedBy,copy.updatedAt]}
             rows={loading ? [] : pagedRows}
             sortState={sortState}
             onSort={setSortState}
           />
 
-          {loading ? <p className="admin-page__empty">불러오는 중입니다...</p> : null}
-          {!loading && rows.length === 0 ? <p className="admin-page__empty">조회 결과가 없습니다.</p> : null}
+          {loading ? <p className="admin-page__empty">{copy.loading}</p> : null}
+          {!loading && rows.length === 0 ? <p className="admin-page__empty">{copy.empty}</p> : null}
 
           <div className="admin-page__pagination">
             <button type="button" disabled={page === 1} onClick={() => setPage(1)}>
@@ -688,14 +696,14 @@ export default function AdminTemplatesPage() {
         <div className="settings-dialog-backdrop">
           <div className="settings-dialog admin-variable-dialog">
             <div className="settings-dialog__header">
-              <strong>{editing ? "템플릿 정보 수정" : "템플릿 등록"}</strong>
-              <button type="button" className="settings-dialog__close" onClick={closeDialog} aria-label="닫기">
+              <strong>{editing ? copy.editTitle : copy.create}</strong>
+              <button type="button" className="settings-dialog__close" onClick={closeDialog} aria-label={copy.close}>
                 ×
               </button>
             </div>
             <div className="admin-variable-dialog__body">
               <label>
-                <span>채널</span>
+                <span>{copy.channel}</span>
                 {editing ? (
                   <input type="text" value={draft.channel_code} disabled />
                 ) : (
@@ -708,7 +716,7 @@ export default function AdminTemplatesPage() {
                       )
                     }
                   >
-                    {activeChannels.length === 0 ? <option value="">사용 가능한 채널 없음</option> : null}
+                    {activeChannels.length === 0 ? <option value="">{copy.noChannel}</option> : null}
                     {activeChannels.map((channel) => (
                       <option key={channel.id} value={channel.code}>
                         {channel.name} ({channel.code})
@@ -719,19 +727,11 @@ export default function AdminTemplatesPage() {
               </label>
               {isKakaoTemplateChannel(draft.channel_code) ? (
                 <div className="admin-form-guide admin-form-guide--wide">
-                  <strong>Kakao 템플릿 정의 기준</strong>
-                  <p>
-                    Kakao 채널은 <code>simple-text</code>, <code>quick-reply</code>, <code>basic-card</code>,
-                    <code>list-card</code>, <code>carousel</code> 템플릿을 정의합니다.
-                  </p>
-                  <p>
-                    이 화면에서는 Kakao 채널에 맞는 렌더러 타입만 선택되도록 제한해, Webchat/Simulator 전용 템플릿이
-                    Kakao 채널에 섞여 등록되지 않게 합니다.
-                  </p>
+                  <strong>{copy.kakaoGuideTitle}</strong><p>{copy.kakaoGuideTypes}</p><p>{copy.kakaoGuideScope}</p>
                 </div>
               ) : null}
               <label>
-                <span>템플릿 이름</span>
+                <span>{copy.name}</span>
                 <input
                   type="text"
                   value={draft.name}
@@ -739,7 +739,7 @@ export default function AdminTemplatesPage() {
                 />
               </label>
               <label>
-                <span>렌더러 타입</span>
+                <span>{copy.renderer}</span>
                 <select
                   className="login-select"
                   value={draft.renderer_type}
@@ -764,7 +764,7 @@ export default function AdminTemplatesPage() {
                 </select>
               </label>
               <label>
-                <span>아이템 타입</span>
+                <span>{copy.itemType}</span>
                 <input
                   type="text"
                   value={draft.item_types}
@@ -772,35 +772,34 @@ export default function AdminTemplatesPage() {
                 />
               </label>
               <label>
-                <span>상세 설명</span>
+                <span>{copy.description}</span>
                 <textarea
                   value={draft.description}
                   onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
                 />
               </label>
               <label>
-                <span>사용 여부</span>
+                <span>{copy.status}</span>
                 <select
                   className="login-select"
                   value={draft.status}
                   onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as TemplateStatus }))}
                 >
-                  <option value="active">사용</option>
-                  <option value="inactive">미사용</option>
+                  <option value="active">{copy.active}</option><option value="inactive">{copy.inactive}</option>
                 </select>
               </label>
             </div>
             <div className="entity-editor-dialog__footer">
               {editing ? (
                 <button type="button" className="secondary-action" onClick={removeTemplate}>
-                  삭제
+                  {copy.delete}
                 </button>
               ) : null}
               <button type="button" className="secondary-action" onClick={closeDialog}>
-                취소
+                {copy.cancel}
               </button>
               <button type="button" className="primary-action" onClick={saveTemplate}>
-                확인
+                {copy.confirm}
               </button>
             </div>
           </div>
