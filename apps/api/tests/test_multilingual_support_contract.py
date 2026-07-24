@@ -986,3 +986,33 @@ def test_remaining_bot_settings_and_hub_pages_use_seven_language_studio_catalog(
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, StudioPageCatalog>" in catalog_source
+
+def test_core_shared_studio_components_use_language_context() -> None:
+    paths = (
+        "apps/web/components/bots-workspace.tsx",
+        "apps/web/components/auth-session-toolbar.tsx",
+        "apps/web/components/manual-main-version-select.tsx",
+        "apps/web/components/asset-upload-dialog.tsx",
+        "apps/web/components/studio-page-loading.tsx",
+        "apps/web/components/studio-table-page.tsx",
+        "apps/web/components/sort-header-label.tsx",
+        "apps/web/components/upload-result-dialog.tsx",
+    )
+    for path in paths:
+        source = (ROOT_DIR / path).read_text(encoding="utf-8")
+        assert "useI18n" in source, path
+        assert "STUDIO_PAGE_CATALOGS[uiLanguage]" in source, path
+        assert "getStudioPageLabel(copy" in source, path
+
+    bots_source = (ROOT_DIR / "apps/web/components/bots-workspace.tsx").read_text(encoding="utf-8")
+    assert '>+ 봇/봇 허브 생성<' not in bots_source
+    assert '>봇 목록을 불러오는 중입니다...<' not in bots_source
+
+
+def test_conversation_and_flow_route_shells_delegate_visible_labels_to_client_catalog() -> None:
+    studio_table = (ROOT_DIR / "apps/web/components/studio-table-page.tsx").read_text(encoding="utf-8")
+    sort_header = (ROOT_DIR / "apps/web/components/sort-header-label.tsx").read_text(encoding="utf-8")
+    assert "getStudioPageLabel(copy, title)" in studio_table
+    assert "getStudioPageLabel(copy, searchPlaceholder)" in studio_table
+    assert "getStudioPageLabel(copy, String(column))" in studio_table
+    assert "getStudioPageLabel(copy, label)" in sort_header
