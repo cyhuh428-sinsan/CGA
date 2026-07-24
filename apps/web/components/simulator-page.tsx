@@ -1554,6 +1554,11 @@ function richFormShouldShowImageCaption(value: string) {
   if (/\.(?:png|jpe?g|gif|webp|svg)(?:[?#].*)?$/i.test(text)) return false;
   return true;
 }
+function SimulatorLocalizedText({ value }: { value: string }) {
+  const { language: uiLanguage } = useI18n();
+  return <>{getSimulatorLabel(uiLanguage, value)}</>;
+}
+
 function renderRichFormImageElement(
   url: string,
   alt: string,
@@ -1561,7 +1566,7 @@ function renderRichFormImageElement(
   options?: { caption?: string; link?: string },
 ) {
   const rawAlt = cleanRichFormText(alt);
-  const safeAlt = rawAlt || "이미지";
+  const safeAlt = rawAlt || "Image";
   const caption = options?.caption ?? (rawAlt && richFormShouldShowImageCaption(rawAlt) ? rawAlt : "");
   const link = cleanRichFormText(options?.link);
   const imageUrl = normalizeRichFormImageUrl(url);
@@ -1576,7 +1581,7 @@ function renderRichFormImageElement(
           event.currentTarget.nextElementSibling?.classList.add("is-visible");
         }}
       />
-      <a className="rich-form-image-fallback" href={imageUrl} target="_blank" rel="noreferrer">이미지 열기</a>
+      <a className="rich-form-image-fallback" href={imageUrl} target="_blank" rel="noreferrer"><SimulatorLocalizedText value="이미지 열기" /></a>
     </>
   ) : null;
 
@@ -2206,6 +2211,7 @@ function SimulatorRichFormTableView({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const rows = richFormDataRows(component);
   const pageSize = richFormPageSize(component, rows.length);
   const [page, setPage] = useState(0);
@@ -2216,7 +2222,7 @@ function SimulatorRichFormTableView({
   const titles = richFormDataTitles(component, keys);
   const forms = readAidotRichFormArray(component, ["dataValueForm"]);
   const selectable = richFormIsSelectable(component);
-  if (keys.length === 0) return <p className="simulator-rich-form__muted">표시할 항목이 없습니다.</p>;
+  if (keys.length === 0) return <p className="simulator-rich-form__muted">{getSimulatorLabel(uiLanguage, "표시할 항목이 없습니다.")}</p>;
   return (
     <div className="simulator-rich-form__table">
       <table>
@@ -2233,7 +2239,7 @@ function SimulatorRichFormTableView({
                 {keys.map((column, columnIndex) => <td key={column}>{renderSimulatorDataValueForm(forms[columnIndex], row, row[column])}</td>)}
               </tr>
             );
-          }) : <tr><td colSpan={Math.max(keys.length, 1)}>표시할 항목이 없습니다.</td></tr>}
+          }) : <tr><td colSpan={Math.max(keys.length, 1)}>{getSimulatorLabel(uiLanguage, "표시할 항목이 없습니다.")}</td></tr>}
         </tbody>
       </table>
       <RichFormPager className="simulator-rich-form__pager" page={safePage} pageCount={pageCount} onPageChange={setPage} />
@@ -2258,6 +2264,7 @@ function SimulatorRichFormCardsView({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const rootRows = richFormDataRows(component);
   const childRows = simulatorObjectItems(component.multiLevelDataValue || component.multilevelDataValue);
   const forms = richFormListForms(component);
@@ -2279,7 +2286,7 @@ function SimulatorRichFormCardsView({
   return (
     <div className={`simulator-rich-form__cards ${isImageList ? "simulator-rich-form__cards--image-list" : ""}`}>
       {title ? <strong>{title}</strong> : null}{renderRichFormLines(text)}
-      {canGoBack ? <button type="button" className="simulator-rich-form__back-button" onClick={() => { setPath((current) => current.slice(0, -1)); setPage(0); }}>이전으로</button> : null}
+      {canGoBack ? <button type="button" className="simulator-rich-form__back-button" onClick={() => { setPath((current) => current.slice(0, -1)); setPage(0); }}>{getSimulatorLabel(uiLanguage, "이전으로")}</button> : null}
       <div>{visibleRows.map((row, rowIndex) => {
         const absoluteIndex = safePage * pageSize + rowIndex;
         const rowId = String(row.id ?? "");
@@ -2287,7 +2294,7 @@ function SimulatorRichFormCardsView({
         const canDrillDown = type === "CAROUSEL" && multiLevel > path.length + 1 && childCandidates.length > 0;
         const url = normalizeRichFormAssetUrl(richFormRecordImageUrl(row));
         const link = cleanRichFormText(row.link || row.urlLink || row.href);
-        const label = cleanRichFormText(row.alt || row.title || row.label || row.value || row.name || `항목 ${absoluteIndex + 1}`);
+        const label = cleanRichFormText(row.alt || row.title || row.label || row.value || row.name || `${getSimulatorLabel(uiLanguage, "항목")} ${absoluteIndex + 1}`);
         const canOpenLink = isImageList && Boolean(link);
         const content = forms.length > 0
           ? <>{isImageList && url ? renderRichFormImageElement(url, label, "", { link }) : null}<div className="simulator-rich-form__card-form">{forms.map((form, formIndex) => <Fragment key={`card-form-${absoluteIndex}-${formIndex}`}>{renderSimulatorDataValueForm(form, row, label || formIndex)}</Fragment>)}</div></>
@@ -2334,6 +2341,7 @@ function SimulatorRichFormMapView({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const rows = richFormDataRows(component);
   const pageSize = richFormPageSize(component, rows.length);
   const [page, setPage] = useState(0);
@@ -2343,13 +2351,13 @@ function SimulatorRichFormMapView({
   const selectable = richFormIsSelectable(component);
   return (
     <div className="simulator-rich-form__map">
-      <strong>{title || "카카오맵"}</strong>{renderRichFormLines(text)}
-      <div className="simulator-rich-form__map-box"><span>지도</span><span>스카이뷰</span><i /></div>
+      <strong>{title || getSimulatorLabel(uiLanguage, "카카오맵")}</strong>{renderRichFormLines(text)}
+      <div className="simulator-rich-form__map-box"><span>{getSimulatorLabel(uiLanguage, "지도")}</span><span>{getSimulatorLabel(uiLanguage, "스카이뷰")}</span><i /></div>
       {visibleRows.map((row, rowIndex) => {
         const absoluteIndex = safePage * pageSize + rowIndex;
         return (
           <button key={absoluteIndex} className={selectable ? "is-selectable" : undefined} type="button" disabled={disabled || component.disabled === true || !selectable} onClick={() => (formApi ? formApi.setValue(component, richFormSelectedDataValue(component, row), `map${absoluteIndex + 1}`) : onAction(simulatorRichFormResultPayload(component, richFormSelectedDataValue(component, row), `map${absoluteIndex + 1}`)))}>
-            <strong>{cleanRichFormText(row.branchName || row.branchPrdNm || row.title || `위치 ${absoluteIndex + 1}`)}</strong>
+            <strong>{cleanRichFormText(row.branchName || row.branchPrdNm || row.title || `${getSimulatorLabel(uiLanguage, "위치")} ${absoluteIndex + 1}`)}</strong>
             {renderRichFormLines(`${row.distance ? `${row.distance}km
 ` : ""}${row.telNo || ""}
 ${row.addr1 || ""}
@@ -2394,6 +2402,7 @@ function SimulatorRichFormInputPopupView({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const popupComponent = richFormPopupComponent(component);
   const dataComponent = richFormPopupDataComponent(popupComponent);
   const rows = richFormDataRows(dataComponent);
@@ -2408,7 +2417,7 @@ function SimulatorRichFormInputPopupView({
   const titles = richFormDataTitles(dataComponent, keys);
   const forms = readAidotRichFormArray(dataComponent, ["dataValueForm"]);
   const selectedDataKey = readAidotRichFormString(component, ["selectedDataKey"]) || readAidotRichFormString(dataComponent, ["selectedDataKey"]);
-  const placeholder = readAidotRichFormString(component, ["hint", "placeholder"], title || "선택하세요");
+  const placeholder = readAidotRichFormString(component, ["hint", "placeholder"], title || getSimulatorLabel(uiLanguage, "선택하세요"));
   const selectedValue = selected
     ? cleanRichFormText(selectedDataKey ? selected[selectedDataKey] : richFormSelectedDataValue(dataComponent, selected))
     : readAidotRichFormString(component, ["value", "defaultValue"]);
@@ -2426,14 +2435,14 @@ function SimulatorRichFormInputPopupView({
         {title ? <span>{title}{component.required === true ? " *" : ""}</span> : null}
         <div className="simulator-rich-form__input-popup-field">
           <input readOnly placeholder={placeholder} value={selectedValue} disabled={isDisabled} />
-          <button type="button" disabled={isDisabled} aria-label="팝업 열기" onClick={() => setOpen(true)}>⌕</button>
+          <button type="button" disabled={isDisabled} aria-label={getSimulatorLabel(uiLanguage, "팝업 열기")} onClick={() => setOpen(true)}>⌕</button>
         </div>
       </label>
       {open ? (
         <div className="simulator-rich-form__modal" role="dialog" aria-modal="true">
           <div className="simulator-rich-form__modal-panel">
-            <button type="button" className="simulator-rich-form__modal-close" aria-label="닫기" onClick={() => setOpen(false)}>×</button>
-            <strong>{readAidotRichFormString(popupComponent, ["popupTitle", "title", "popupName"], "팝업타이틀")}</strong>
+            <button type="button" className="simulator-rich-form__modal-close" aria-label={getSimulatorLabel(uiLanguage, "닫기")} onClick={() => setOpen(false)}>×</button>
+            <strong>{readAidotRichFormString(popupComponent, ["popupTitle", "title", "popupName"], getSimulatorLabel(uiLanguage, "팝업타이틀"))}</strong>
             {renderRichFormLines(readAidotRichFormString(popupComponent, ["popupText", "description"]))}
             {rows.length > 0 ? (
               <div className="simulator-rich-form__table simulator-rich-form__table--popup">
@@ -2444,14 +2453,14 @@ function SimulatorRichFormInputPopupView({
                     const isSelected = selected === row;
                     return (
                       <tr key={absoluteIndex} className={isSelected ? "is-selected" : undefined} onClick={() => selectRow(row)}>
-                        {keys.map((fieldKey, fieldIndex) => <td key={fieldKey}>{renderSimulatorDataValueForm(forms[fieldIndex], row, row[fieldKey] ?? (fieldIndex === 0 ? `항목 ${absoluteIndex + 1}` : "-"))}</td>)}
+                        {keys.map((fieldKey, fieldIndex) => <td key={fieldKey}>{renderSimulatorDataValueForm(forms[fieldIndex], row, row[fieldKey] ?? (fieldIndex === 0 ? `${getSimulatorLabel(uiLanguage, "항목")} ${absoluteIndex + 1}` : "-"))}</td>)}
                       </tr>
                     );
                   })}</tbody>
                 </table>
                 <RichFormPager className="simulator-rich-form__pager" page={safePage} pageCount={pageCount} onPageChange={setPage} />
               </div>
-            ) : <p className="simulator-rich-form__muted">팝업에 표시할 데이터가 없습니다.</p>}
+            ) : <p className="simulator-rich-form__muted">{getSimulatorLabel(uiLanguage, "팝업에 표시할 데이터가 없습니다.")}</p>}
           </div>
         </div>
       ) : null}
@@ -2477,6 +2486,7 @@ function SimulatorRichFormButtonPopupAction({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const popupComponent = richFormPopupComponent(action);
   const popupContent = richFormPopupContentComponents(popupComponent);
   const dataComponent = richFormPopupDataComponent(popupComponent);
@@ -2507,8 +2517,8 @@ function SimulatorRichFormButtonPopupAction({
       {open ? (
         <div className="simulator-rich-form__modal" role="dialog" aria-modal="true">
           <div className="simulator-rich-form__modal-panel simulator-rich-form__popup-panel--button">
-            <button type="button" className="simulator-rich-form__modal-close" aria-label="닫기" onClick={() => setOpen(false)}>×</button>
-            <strong>{readAidotRichFormString(popupComponent, ["popupTitle", "title", "popupName"], label || "팝업")}</strong>
+            <button type="button" className="simulator-rich-form__modal-close" aria-label={getSimulatorLabel(uiLanguage, "닫기")} onClick={() => setOpen(false)}>×</button>
+            <strong>{readAidotRichFormString(popupComponent, ["popupTitle", "title", "popupName"], label || getSimulatorLabel(uiLanguage, "팝업"))}</strong>
             {renderRichFormLines(readAidotRichFormString(popupComponent, ["popupText", "description"]))}
             {popupContent.length > 0 ? (
               <div className="simulator-rich-form__popup-content">
@@ -2526,7 +2536,7 @@ function SimulatorRichFormButtonPopupAction({
                     const isSelected = selected === row;
                     return (
                       <tr key={absoluteIndex} className={isSelected ? "is-selected" : undefined} onClick={() => selectRow(row)}>
-                        {keys.map((fieldKey, fieldIndex) => <td key={fieldKey}>{renderSimulatorDataValueForm(forms[fieldIndex], row, row[fieldKey] ?? (fieldIndex === 0 ? `항목 ${absoluteIndex + 1}` : "-"))}</td>)}
+                        {keys.map((fieldKey, fieldIndex) => <td key={fieldKey}>{renderSimulatorDataValueForm(forms[fieldIndex], row, row[fieldKey] ?? (fieldIndex === 0 ? `${getSimulatorLabel(uiLanguage, "항목")} ${absoluteIndex + 1}` : "-"))}</td>)}
                       </tr>
                     );
                   })}</tbody>
@@ -2534,7 +2544,7 @@ function SimulatorRichFormButtonPopupAction({
                 <RichFormPager className="simulator-rich-form__pager" page={safePage} pageCount={pageCount} onPageChange={setPage} />
               </div>
             ) : null}
-            {popupContent.length === 0 && rows.length === 0 ? <p className="simulator-rich-form__muted">팝업에 표시할 데이터가 없습니다.</p> : null}
+            {popupContent.length === 0 && rows.length === 0 ? <p className="simulator-rich-form__muted">{getSimulatorLabel(uiLanguage, "팝업에 표시할 데이터가 없습니다.")}</p> : null}
           </div>
         </div>
       ) : null}
@@ -2558,6 +2568,7 @@ function SimulatorRichFormChoiceView({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const rows = richFormChoiceRows(component);
   const isCombo = type.includes("COMBO");
   const dataDirection = readAidotRichFormString(component, ["dataDirection", "direction"], isCombo ? "vertical" : "horizontal").toLowerCase();
@@ -2597,7 +2608,7 @@ function SimulatorRichFormChoiceView({
             commitSelection([nextIndex]);
           }}
         >
-          <option value="">선택하세요</option>
+          <option value="">{getSimulatorLabel(uiLanguage, "선택하세요")}</option>
           {rows.map((row, rowIndex) => <option key={`combo-${index}-${rowIndex}`} value={rowIndex}>{richFormChoiceLabel(row, rowIndex)}</option>)}
         </select>
       </div>

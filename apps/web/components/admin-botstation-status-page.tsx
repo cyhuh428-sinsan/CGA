@@ -977,16 +977,16 @@ export function AdminBotstationStatusPage() {
                     <strong>{getAdminBotstationStatusLabel(stationCopy,"Kakao 입력/테스트 안내")}</strong>
                     <ul className="admin-form-guide__list">
                       <li>
-                        <code>App ID</code>: 카카오 앱 또는 스킬 식별값
+                        <code>App ID</code>: {getAdminBotstationStatusLabel(stationCopy, "카카오 앱 또는 스킬 식별값")}
                       </li>
                       <li>
-                        <code>App Secret</code>: webhook 보호용 비밀값 또는 토큰 값
+                        <code>App Secret</code>: {getAdminBotstationStatusLabel(stationCopy, "webhook 보호용 비밀값 또는 토큰 값")}
                       </li>
                       <li>
-                        <code>Callback URL</code>: 카카오 관리자센터에 등록할 실제 webhook 주소
+                        <code>Callback URL</code>: {getAdminBotstationStatusLabel(stationCopy, "카카오 관리자센터에 등록할 실제 webhook 주소")}
                       </li>
                       <li>
-                        1차 연결 테스트는 <code>안녕</code> 같은 단순 발화로 webhook 응답, 대화 이력 저장, 최근 카카오 로그 적재까지 함께 확인합니다.
+                        {getAdminBotstationStatusLabel(stationCopy, "1차 연결 테스트는 안녕 같은 단순 발화로 webhook 응답, 대화 이력 저장, 최근 카카오 로그 적재까지 함께 확인합니다.")}
                       </li>
                     </ul>
                   </div>
@@ -1013,7 +1013,7 @@ export function AdminBotstationStatusPage() {
                     App ID
                     <span
                       className="admin-inline-help"
-                      data-help="카카오 앱 또는 스킬 식별값입니다. 운영자가 어떤 카카오 자원과 연결되는지 구분할 때 사용합니다."
+                      data-help={getAdminBotstationStatusLabel(stationCopy, "카카오 앱 또는 스킬 식별값입니다. 운영자가 어떤 카카오 자원과 연결되는지 구분할 때 사용합니다.")}
                       tabIndex={0}
                       role="img"
                       aria-label={getAdminBotstationStatusLabel(stationCopy,"App ID 설명")}
@@ -1033,7 +1033,7 @@ export function AdminBotstationStatusPage() {
                     App Secret
                     <span
                       className="admin-inline-help"
-                      data-help="카카오 webhook 보호용 비밀값입니다. token 인증을 쓸 때는 채널 인증 정보와 같은 값으로 맞춰 관리하는 것을 권장합니다."
+                      data-help={getAdminBotstationStatusLabel(stationCopy, "카카오 webhook 보호용 비밀값입니다. token 인증을 쓸 때는 채널 인증 정보와 같은 값으로 맞춰 관리하는 것을 권장합니다.")}
                       tabIndex={0}
                       role="img"
                       aria-label={getAdminBotstationStatusLabel(stationCopy,"App Secret 설명")}
@@ -1053,7 +1053,7 @@ export function AdminBotstationStatusPage() {
                     Callback URL
                     <span
                       className="admin-inline-help"
-                      data-help="카카오 관리자센터에 등록할 실제 webhook 주소입니다. 외부에서 호출 가능한 운영 도메인 주소여야 합니다."
+                      data-help={getAdminBotstationStatusLabel(stationCopy, "카카오 관리자센터에 등록할 실제 webhook 주소입니다. 외부에서 호출 가능한 운영 도메인 주소여야 합니다.")}
                       tabIndex={0}
                       role="img"
                       aria-label={getAdminBotstationStatusLabel(stationCopy,"Callback URL 설명")}
