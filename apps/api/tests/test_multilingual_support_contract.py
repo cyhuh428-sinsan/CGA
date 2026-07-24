@@ -848,3 +848,26 @@ def test_api_store_detail_body_and_runtime_messages_use_seven_language_catalog()
     assert "detailTitle: string" in catalog_source
     assert "updatedWithDesignNotice: string" in catalog_source
     assert "testFailed: string" in catalog_source
+
+def test_group_api_list_runtime_messages_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/group-api-list-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/api-management.ts").read_text(encoding="utf-8")
+    assert "copy.loginRequired" in page_source
+    assert "copy.saveForbidden" in page_source
+    assert "copy.uploadForbidden" in page_source
+    assert "formatApiManagementText(copy.uploaded" in page_source
+    assert 'setErrorMessage("로그인이 필요합니다.")' not in page_source
+    assert '"선택한 API를 삭제했습니다."' not in page_source
+    assert "loginRequired: string" in catalog_source
+    assert "uploadForbidden: string" in catalog_source
+
+
+def test_group_api_detail_runtime_and_table_labels_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/components/group-api-detail-page.tsx").read_text(encoding="utf-8")
+    assert "copy.detailLoadFailed" in page_source
+    assert "copy.deleteForbidden" in page_source
+    assert "copy.testFailed" in page_source
+    assert "<th>{copy.name}</th>" in page_source
+    assert "<strong>{copy.testOutput}</strong>" in page_source
+    assert 'setMessage("API가 수정되었습니다.")' not in page_source
+    assert '<strong>Test Output</strong>' not in page_source
