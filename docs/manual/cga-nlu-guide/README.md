@@ -129,7 +129,7 @@ ML 변경 전 점검:
 
 ### 7.1 유형
 
-- `Semantic - Vector Worker`: Aidot Vector Worker 기본 모델과 Local Vector DB를 사용하는 유형
+- `Semantic - Vector Worker`: CGA Vector Worker 기본 모델과 Local Vector DB를 사용하는 유형
 - `Semantic - External Embedding`: 외부 임베딩과 Local Vector DB를 연결하는 유형
 
 ### 7.2 설정
