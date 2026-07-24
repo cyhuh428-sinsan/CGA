@@ -437,3 +437,13 @@ def test_operations_dashboard_actions_use_localized_messages() -> None:
     assert "actionCopy.dbBackfillConfirm" in page_source
     assert "formatOperationsText" in page_source
     assert "satisfies Record<SupportedLanguage,AdminOperationsActionCatalog>" in catalog_source
+
+
+def test_operations_dashboard_status_cards_use_seven_language_catalog() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/operations-dashboard/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-operations-status.ts").read_text(encoding="utf-8")
+    assert "statusCopy.summaryLabels" in page_source
+    assert "statusCopy.detail" in page_source
+    assert "statusCopy.loginRequired" in page_source
+    assert "statusCopy.health.apiReadiness" in page_source
+    assert "satisfies Record<SupportedLanguage, AdminOperationsStatusCatalog>" in catalog_source
