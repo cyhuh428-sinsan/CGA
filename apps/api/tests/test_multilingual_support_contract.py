@@ -581,3 +581,16 @@ def test_account_pages_use_seven_language_catalog() -> None:
     for language in SUPPORTED_LANGUAGES:
         assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
     assert "satisfies Record<SupportedLanguage, AccountPageCatalog>" in catalog_source
+
+
+def test_studio_rail_getting_started_uses_seven_language_catalog() -> None:
+    rail_source = (ROOT_DIR / "apps/web/components/studio-rail.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/studio-rail.ts").read_text(encoding="utf-8")
+    assert "STUDIO_RAIL_CATALOGS[language]" in rail_source
+    assert "railCopy.gettingStartedSlides" in rail_source
+    assert "railCopy.noPermission" in rail_source
+    assert "getAccountRoleLabel" in rail_source
+    assert "쉽고 빠르게 AI 챗봇을 만들 수 있습니다." not in rail_source
+    for language in SUPPORTED_LANGUAGES:
+        assert f'  "{language}":' in catalog_source or f"  {language}:" in catalog_source
+    assert "satisfies Record<SupportedLanguage, StudioRailCatalog>" in catalog_source
