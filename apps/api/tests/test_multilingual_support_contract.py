@@ -491,3 +491,13 @@ def test_admin_group_detail_uses_selected_ui_language() -> None:
     assert "copy.detailForm.title" in page_source
     assert "copy.statuses[status]" in page_source
     assert "new Intl.DateTimeFormat(uiLanguage" in page_source
+
+
+def test_admin_user_detail_uses_selected_ui_language_and_preserves_status_compatibility() -> None:
+    page_source = (ROOT_DIR / "apps/web/app/admin/users/[entryId]/page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/admin-users.ts").read_text(encoding="utf-8")
+    assert "ADMIN_USERS_CATALOGS[uiLanguage]" in page_source
+    assert "copy.detailForm.title" in page_source
+    assert "resolveAdminAccountStatus(data.account_status)" in page_source
+    assert "copy.roleNames[selectedRole]" in page_source
+    assert "LEGACY_ACCOUNT_STATUS_ALIASES" in catalog_source
