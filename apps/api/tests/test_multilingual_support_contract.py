@@ -1236,4 +1236,42 @@ def test_studio_runtime_message_catalog_has_complete_native_translations() -> No
             assert set(translated) == baseline_keys, language
 
     assert 'DELETE' in catalog_source
+
+
+def test_dynamic_studio_copy_does_not_fall_back_to_korean() -> None:
+    """Dynamic labels and generated defaults must honor the selected UI or bot language."""
+
+    forbidden_by_component = {
+        "analysis-page.tsx": ('padStart(2, "0")}일`',),
+        "flow-designer-page.tsx": (
+            "정의되지 않은 변수 '$${root}'를 사용하고 있습니다.",
+            "`TTS 테스트 URL: ${",
+            "label: `조건 ${regularIndex}`",
+        ),
+        "rule-settings-page.tsx": (
+            "`정규식 문법 오류: ${regexResult}`",
+            '`${matchedRule.target || "의도/모듈 미연결"} 으로 연결됩니다.`',
+            '"룰이 매칭되지 않는 표현입니다."',
+        ),
+        "intent-configure-page.tsx": (
+            "cluster.name || `RAG 의도 ${index + 1}`",
+            "cluster.name || `의도 ${index + 1}`",
+            "makeDefaultAnswer(cluster.name || `의도 ${index + 1}`)",
+        ),
+        "version-management-page.tsx": ('`${selectedVersion.name} 복사본`',),
+        "simulator-page.tsx": (
+            '`항목 ${index + 1}`', '`주소 ${itemIndex + 1}`', '`${year}년 ${month + 1}월`',
+            '`${fallback} 값을 확인해 주세요.`', '`${fallback}은(는) 필수입니다.`',
+            '`탭 ${tabIndex + 1}`', '`${type || "UNKNOWN"} 컴포넌트`',
+        ),
+    }
+    violations: list[str] = []
+    component_dir = ROOT_DIR / "apps" / "web" / "components"
+    for name, snippets in forbidden_by_component.items():
+        source = (component_dir / name).read_text(encoding="utf-8")
+        for snippet in snippets:
+            if snippet in source:
+                violations.append(f"{name}: {snippet}")
+
+    assert not violations, "Dynamic Korean copy remains:\n" + "\n".join(violations)
     assert '`$_`' in catalog_source
