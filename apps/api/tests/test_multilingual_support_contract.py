@@ -1263,6 +1263,9 @@ def test_dynamic_studio_copy_does_not_fall_back_to_korean() -> None:
             '`항목 ${index + 1}`', '`주소 ${itemIndex + 1}`', '`${year}년 ${month + 1}월`',
             '`${fallback} 값을 확인해 주세요.`', '`${fallback}은(는) 필수입니다.`',
             '`탭 ${tabIndex + 1}`', '`${type || "UNKNOWN"} 컴포넌트`',
+            'first || "Card 메시지입니다."', 'baseMessages[0] || "선택하세요."',
+            'baseMessages[0] || "링크 버튼 메시지입니다."', 'first || "Carousel 메시지입니다."',
+            'baseMessages[0] || "번호를 입력하세요."',
         ),
     }
     violations: list[str] = []
