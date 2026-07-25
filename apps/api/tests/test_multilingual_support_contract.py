@@ -1294,6 +1294,10 @@ def test_simulator_separates_bot_language_from_analysis_language() -> None:
         'description: "카드를 실행했습니다."', 'description: "사용자 입력을 기다립니다."',
         'description: "변수값을 갱신했습니다."',
         'description: "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다."',
+        '["일", "월", "화", "수", "목", "금", "토"]',
+        'value || "시간 선택"', 'title || "토글"', 'title || description || "이미지"',
+        'title || "동영상"', 'title || cleanRichFormText(text) || "확인"',
+        '["title", "label", "name", "key"], "입력값"',
     )
     violations = [snippet for snippet in (*bot_language_leaks, *analysis_language_leaks) if snippet in source]
     assert not violations, "Simulator language-boundary leaks remain:\n" + "\n".join(violations)
