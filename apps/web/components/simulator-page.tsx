@@ -1,5 +1,7 @@
 "use client";
 
+import { formatStudioRuntimeMessage, getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import * as AdaptiveCards from "adaptivecards";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -56,7 +58,7 @@ import {
   type VersionDocument,
 } from "@/lib/version-document";
 import { isSemanticNluType, type NluType } from "@/lib/nlu-options";
-import { normalizeSupportedLanguage } from "@/lib/language";
+import { normalizeSupportedLanguage, type SupportedLanguage } from "@/lib/language";
 import { formatSimulatorText, getSimulatorLabel, SIMULATOR_CATALOGS, SIMULATOR_DTMF_CATALOGS } from "@/lib/i18n/simulator";
 
 const ADAPTIVE_CARD_SCHEMA_VERSION = "1.6";
@@ -598,6 +600,7 @@ function buildAnalysis(
   similarIntentScore: number,
   extraEntities: EntityMatchResult[] = [],
   analysisNluType: NluType = "ml",
+  language: SupportedLanguage = "ko",
 ): SimulatorAnalysis {
   const scoreIn = scores
     .filter((item) => item.score >= cutoffScore)
@@ -619,7 +622,7 @@ function buildAnalysis(
     id: crypto.randomUUID(),
     nluType: analysisNluType,
     utterance,
-    selectedIntentName: selectedDialog?.name ?? "의도 미분류",
+    selectedIntentName: selectedDialog?.name ?? getStudioRuntimeMessage(language, "의도 미분류"),
     cutoffScore,
     similarIntentScore,
     scoreIn,
@@ -675,6 +678,7 @@ function buildNluValidationDiagnostics(
   scoreCutoff: number,
   similarIntentScore: number,
   maxIntentResults: number,
+  language: SupportedLanguage,
 ) {
   return versionDocument.dialogs
     .filter((dialog) => dialog.dialogType === 1)
@@ -707,20 +711,20 @@ function buildNluValidationDiagnostics(
                   : "Score 설정 후보";
           const reason =
             status === "미분류"
-              ? `최고 점수 ${top?.score.toFixed(2) ?? "0.00"}점이 Cut-off ${scoreCutoff}점 미만입니다. 기대 의도 점수는 ${expectedScore?.score.toFixed(2) ?? "0.00"}점입니다.`
+              ? formatStudioRuntimeMessage(language, "최고 점수 {top}점이 Cut-off {cutoff}점 미만입니다. 기대 의도 점수는 {expected}점입니다.", { top: top?.score.toFixed(2) ?? "0.00", cutoff: scoreCutoff, expected: expectedScore?.score.toFixed(2) ?? "0.00" })
               : status === "오분류"
-                ? `기대 의도와 1순위 의도가 다릅니다. 점수 차이는 ${scoreGap.toFixed(2)}점입니다.`
+                ? formatStudioRuntimeMessage(language, "기대 의도와 1순위 의도가 다릅니다. 점수 차이는 {gap}점입니다.", { gap: scoreGap.toFixed(2) })
                 : status === "유사의도"
-                  ? `1순위 대비 ${similarIntentScore}% 기준 안에 다른 의도가 포함됩니다.`
-                  : "검증 문장이 기대 의도로 분류되었습니다.";
+                  ? formatStudioRuntimeMessage(language, "1순위 대비 {score}% 기준 안에 다른 의도가 포함됩니다.", { score: similarIntentScore })
+                  : getStudioRuntimeMessage(language, "검증 문장이 기대 의도로 분류되었습니다.");
           const suggestion =
             diagnosisType === "학습문장 부족"
-              ? "기대 의도에 같은 의미의 T 문장을 먼저 보강하세요. 문서 기준상 의도별 최소 10개 이상을 권장합니다."
+              ? getStudioRuntimeMessage(language, "기대 의도에 같은 의미의 T 문장을 먼저 보강하세요. 문서 기준상 의도별 최소 10개 이상을 권장합니다.")
               : diagnosisType === "공통 Feature 충돌"
-                ? `공통 Feature${commonFeatures.length > 0 ? `(${commonFeatures.join(", ")})` : ""}보다 의도를 가르는 표현을 T 문장에 추가하거나 동의어/패턴을 조정하세요.`
+                ? formatStudioRuntimeMessage(language, "공통 Feature{features}보다 의도를 가르는 표현을 T 문장에 추가하거나 동의어/패턴을 조정하세요.", { features: commonFeatures.length > 0 ? `(${commonFeatures.join(", ")})` : "" })
                 : diagnosisType === "Score 설정 후보"
-                  ? "학습문장과 Feature가 충분한데도 후보가 과도하면 Cut-off 또는 유사의도 Score를 마지막에 조정하세요."
-                  : "추가 조치가 필요 없습니다.";
+                  ? getStudioRuntimeMessage(language, "학습문장과 Feature가 충분한데도 후보가 과도하면 Cut-off 또는 유사의도 Score를 마지막에 조정하세요.")
+                  : getStudioRuntimeMessage(language, "추가 조치가 필요 없습니다.");
 
           return {
             utterance: utterance.text,
@@ -3467,7 +3471,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         writeSimulatorLog("debug", "simulator.transcript_message", {
           createdAt: new Date().toISOString(),
           participantKind,
-          participantName: participantKind === "bot" ? (bot?.name ?? getSimulatorLabel(uiLanguage, "봇")) : participantKind === "user" ? "사용자" : "시스템",
+          participantName: participantKind === "bot" ? (bot?.name ?? getSimulatorLabel(uiLanguage, "봇")) : participantKind === "user" ? getStudioRuntimeMessage(uiLanguage, "사용자") : getStudioRuntimeMessage(uiLanguage, "시스템"),
           message,
         });
       });
@@ -3536,8 +3540,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     [analyses, selectedAnalysisId],
   );
   const nluValidationDiagnostics = useMemo(
-    () => buildNluValidationDiagnostics(versionDocument, nluModel, scoreCutoff, similarIntentScore, maxIntentResults),
-    [maxIntentResults, nluModel, scoreCutoff, similarIntentScore, versionDocument],
+    () => buildNluValidationDiagnostics(versionDocument, nluModel, scoreCutoff, similarIntentScore, maxIntentResults, uiLanguage),
+    [maxIntentResults, nluModel, scoreCutoff, similarIntentScore, uiLanguage, versionDocument],
   );
   const nluTrainingSupplementCandidates = useMemo(
     () =>
@@ -3562,7 +3566,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     }
     const item = scenarioValidation?.items?.find((entry) => String(entry.dialog_id ?? "") === dialog.id);
     const detail = typeof item?.message === "string" ? item.message : "대화 설계 오류가 있습니다.";
-    return `${dialog.name} ${dialog.dialogType === 0 ? "모듈" : "의도"}는 ${detail} 오류를 수정한 뒤 시뮬레이터를 실행할 수 있습니다.`;
+    return formatStudioRuntimeMessage(uiLanguage, "{dialog} {type}는 {detail} 오류를 수정한 뒤 봇 테스트를 실행할 수 있습니다.", { dialog: dialog.name, type: getStudioRuntimeMessage(uiLanguage, dialog.dialogType === 0 ? "모듈" : "의도"), detail });
   }
 
   async function handleApplyNluTrainingSupplements() {
@@ -3580,7 +3584,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     });
 
     if (candidateMap.size === 0) {
-      setNluSupplementMessage("추가할 학습문장 후보가 없습니다.");
+      setNluSupplementMessage(getStudioRuntimeMessage(uiLanguage, "추가할 학습문장 후보가 없습니다."));
       return;
     }
 
@@ -3622,7 +3626,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     );
 
     if (addedCount === 0) {
-      setNluSupplementMessage("이미 같은 문장이 등록되어 있어 추가하지 않았습니다.");
+      setNluSupplementMessage(getStudioRuntimeMessage(uiLanguage, "이미 같은 문장이 등록되어 있어 추가하지 않았습니다."));
       return;
     }
 
@@ -3637,9 +3641,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         scenario_validation: response.scenario_validation,
       };
       setBot((current) => (current ? applyUpdatedVersionToBot(current, updatedVersion) : current));
-      setNluSupplementMessage(`학습문장 ${addedCount}건을 T 문장으로 추가했습니다. 학습하기를 다시 실행하세요.`);
+      setNluSupplementMessage(formatStudioRuntimeMessage(uiLanguage, "학습문장 {count}건을 T 문장으로 추가했습니다. 학습하기를 다시 실행하세요.", { count: addedCount }));
     } catch (error) {
-      setNluSupplementMessage(error instanceof Error ? error.message : "학습문장 보강 저장에 실패했습니다.");
+      setNluSupplementMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "학습문장 보강 저장에 실패했습니다."));
     } finally {
       setNluSupplementSaving(false);
     }
@@ -3790,7 +3794,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           makeMessage(
             "bot",
             greetingMessage ||
-              formatSimulatorText(runtimeCopy.defaultGreeting, { bot: bot?.name ?? "챗봇" }),
+              formatSimulatorText(runtimeCopy.defaultGreeting, { bot: bot?.name ?? getStudioRuntimeMessage(uiLanguage, "챗봇") }),
           ),
         ];
 
@@ -3798,7 +3802,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       initialMessages.push(
         makeMessage(
           "system",
-          `${startDialog.dialogType === 0 ? "모듈" : "의도"} '${startDialog.name}' 기준으로 시뮬레이터를 시작합니다.`,
+          formatStudioRuntimeMessage(uiLanguage, "{type} '{dialog}' 기준으로 봇 테스트를 시작합니다.", { type: getStudioRuntimeMessage(uiLanguage, startDialog.dialogType === 0 ? "모듈" : "의도"), dialog: startDialog.name }),
         ),
       );
     }
@@ -3859,7 +3863,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             id: analysisId,
             utterance: "대화 시작",
             nluType: nluModel.type,
-            selectedIntentName: runtime?.dialog.name ?? startDialog?.name ?? "시나리오 실행",
+            selectedIntentName: runtime?.dialog.name ?? startDialog?.name ?? getStudioRuntimeMessage(uiLanguage, "시나리오 실행"),
             cutoffScore: scoreCutoff,
             similarIntentScore,
             scoreIn: [],
@@ -4070,7 +4074,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     const resultVariableName = stripVariablePrefix(node.config.resultVariableName) || "apiResult";
 
     if (!api || !method) {
-      const message = "Function 카드의 API 또는 Method가 설정되어 있지 않습니다.";
+      const message = getStudioRuntimeMessage(uiLanguage, "Function 카드의 API 또는 Method가 설정되어 있지 않습니다.");
       writeSimulatorLog("error", "simulator.function_config_missing", {
         analysisId,
         nodeId: node.id,
@@ -4132,7 +4136,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       }
 
       if (!response.ok || !payload?.ok) {
-        const message = payload?.message || `API 호출 실패(${payload?.status ?? response.status})`;
+        const message = payload?.message || formatStudioRuntimeMessage(uiLanguage, "API 호출 실패({status})", { status: payload?.status ?? response.status });
         writeSimulatorLog("error", "simulator.function_call_failed", {
           analysisId,
           nodeId: node.id,
@@ -4202,7 +4206,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       appendAnalysisLog(analysisId, {
         cardType: FLOW_CARD_LABELS[node.kind],
         cardName: node.title,
-        description: `${api.name} / ${method.name} 호출 결과를 ${savedVariableNames} 변수에 저장했습니다.`,
+        description: formatStudioRuntimeMessage(uiLanguage, "{api} / {method} 호출 결과를 {variables} 변수에 저장했습니다.", { api: api.name, method: method.name, variables: savedVariableNames }),
       }, nextVariables);
 
       return { ok: true, variables: nextVariables, message: "" };
@@ -4389,7 +4393,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysisId, {
           cardType: FLOW_CARD_LABELS[node.kind],
           cardName: node.title,
-          description: `분기 '${matchedBranch.label || matchedBranch.operator}' 조건으로 이동합니다.`,
+          description: formatStudioRuntimeMessage(uiLanguage, "분기 '{branch}' 조건으로 이동합니다.", { branch: matchedBranch.label || matchedBranch.operator }),
         }, nextRuntime.variables);
         nextRuntime = {
           ...nextRuntime,
@@ -4428,10 +4432,10 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           cardType: FLOW_CARD_LABELS[node.kind],
           cardName: node.title,
           description: result.error
-            ? `Script 실행 오류가 발생했습니다: ${result.error}`
+            ? formatStudioRuntimeMessage(uiLanguage, "Script 실행 오류가 발생했습니다: {error}", { error: result.error })
             : Object.keys(result.changedVariables).length > 0
-              ? `Script 실행 후 변수 ${Object.keys(result.changedVariables).map((name) => `$${name}`).join(", ")} 값을 반영했습니다.`
-              : "Script를 실행했습니다. 변경된 변수값은 없습니다.",
+              ? formatStudioRuntimeMessage(uiLanguage, "Script 실행 후 변수 {variables} 값을 반영했습니다.", { variables: Object.keys(result.changedVariables).map((name) => `$${name}`).join(", ") })
+              : getStudioRuntimeMessage(uiLanguage, "Script를 실행했습니다. 변경된 변수값은 없습니다."),
         }, result.variables);
         continue;
       }
@@ -4513,7 +4517,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           appendAnalysisLog(analysisId, {
             cardType: FLOW_CARD_LABELS[node.kind],
             cardName: node.title,
-            description: `${targetDialog.dialogType === 0 ? "모듈" : "의도"} '${targetDialog.name}'로 이동합니다.`,
+            description: formatStudioRuntimeMessage(uiLanguage, "{type} '{dialog}'로 이동합니다.", { type: getStudioRuntimeMessage(uiLanguage, targetDialog.dialogType === 0 ? "모듈" : "의도"), dialog: targetDialog.name }),
           }, nextRuntime.variables);
           nextRuntime = {
             ...nextRuntime,
@@ -4566,7 +4570,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             appendAnalysisLog(analysisId, {
               cardType: FLOW_CARD_LABELS[node.kind],
               cardName: node.title,
-              description: `세션 종료 전 모듈 '${moduleDialog.name}'을 실행합니다.`,
+              description: formatStudioRuntimeMessage(uiLanguage, "세션 종료 전 모듈 '{module}'을 실행합니다.", { module: moduleDialog.name }),
             }, nextRuntime.variables);
             nextRuntime = {
               ...nextRuntime,
@@ -4589,7 +4593,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           appendAnalysisLog(analysisId, {
             cardType: FLOW_CARD_LABELS[node.kind],
             cardName: node.title,
-            description: `대화 흐름이 종료되어 이전 ${restoredRuntime.dialog.dialogType === 0 ? "모듈" : "의도"} '${restoredRuntime.dialog.name}'로 복귀합니다.`,
+            description: formatStudioRuntimeMessage(uiLanguage, "대화 흐름이 종료되어 이전 {type} '{dialog}'로 복귀합니다.", { type: getStudioRuntimeMessage(uiLanguage, restoredRuntime.dialog.dialogType === 0 ? "모듈" : "의도"), dialog: restoredRuntime.dialog.name }),
           }, restoredRuntime.variables);
           if (restoredRuntime.waitingTalkNodeId) {
             nextRuntime = {
@@ -4614,8 +4618,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           cardType: FLOW_CARD_LABELS[node.kind],
           cardName: node.title,
           description: sessionEnded
-            ? "세션이 종료되어 변수값을 초기화했습니다."
-            : "대화 흐름이 종료되었습니다. 세션 변수값은 유지됩니다.",
+            ? getStudioRuntimeMessage(uiLanguage, "세션이 종료되어 변수값을 초기화했습니다.")
+            : getStudioRuntimeMessage(uiLanguage, "대화 흐름이 종료되었습니다. 세션 변수값은 유지됩니다."),
         }, variables);
         break;
       }
@@ -4636,7 +4640,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       appendAnalysisLog(analysisId, {
         cardType: "실행 오류",
         cardName: "루핑 방지",
-        description: `사용자 응답 사이 실행 카드 수가 설정값 ${maxCardsBetweenUserResponses}개를 초과하여 시나리오를 중단했습니다. 링크 순환 또는 사용자 응답 대기 Talk 카드 누락 여부를 확인하세요.`,
+        description: formatStudioRuntimeMessage(uiLanguage, "사용자 응답 사이 실행 카드 수가 설정값 {count}개를 초과하여 시나리오를 중단했습니다. 링크 순환 또는 사용자 응답 대기 Talk 카드 누락 여부를 확인하세요.", { count: maxCardsBetweenUserResponses }),
       }, nextRuntime.variables);
       nextRuntime = { ...nextRuntime, ended: true, nextNodeId: "" };
     }
@@ -5046,7 +5050,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         decisionLog: {
           cardType: "룰",
           cardName: ruleMatch.rule.name,
-          description: `룰 표현식 "${ruleMatch.rule.expression}"이 사용자 발화와 매칭되어 "${ruleMatch.dialog.name}" 의도로 진입했습니다.`,
+          description: formatStudioRuntimeMessage(uiLanguage, "룰 표현식 \"{rule}\"이 사용자 발화와 매칭되어 \"{intent}\" 의도로 진입했습니다.", { rule: ruleMatch.rule.expression, intent: ruleMatch.dialog.name }),
         },
       });
       return true;
@@ -5180,8 +5184,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       }
 
       const guide = versionSettings.messages.multiIntentGuide;
-      const noIntentButtonLabel = guide.noIntentButtonLabel || "원하는 의도 없음";
-      const noIntentButtonMessage = guide.noIntentButtonMessage || "다시 질문해주시면 다른 의도를 찾겠습니다.";
+      const noIntentButtonLabel = guide.noIntentButtonLabel || getStudioRuntimeMessage(uiLanguage, "원하는 의도 없음");
+      const noIntentButtonMessage = guide.noIntentButtonMessage || getStudioRuntimeMessage(uiLanguage, "다시 질문해주시면 다른 의도를 찾겠습니다.");
       setPendingIntentSelection({
         scores,
         candidates,
@@ -5229,8 +5233,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       ]);
       appendAnalysisLog(analysis.id, {
         cardType: "의도 미분류",
-        cardName: options.fallbackCardName || "사용자 입력",
-        description: options.fallbackDescription || "의도분류에 실패하여 안내 메시지를 출력한 뒤 원래 카드 흐름의 다음 링크로 진행합니다.",
+        cardName: options.fallbackCardName || getStudioRuntimeMessage(uiLanguage, "사용자 입력"),
+        description: options.fallbackDescription || getStudioRuntimeMessage(uiLanguage, "의도분류에 실패하여 안내 메시지를 출력한 뒤 원래 카드 흐름의 다음 링크로 진행합니다."),
       }, fallbackVariables);
       void continueRuntime({
         ...options.fallbackRuntime,
@@ -5516,7 +5520,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             const mismatchMessage = getConfiguredTextMessage(versionSettings.messages.buttonMismatch);
             setMessages((current) => [
               ...current,
-              makeMessage("bot", mismatchMessage || "목록에 있는 버튼 중 하나를 선택해주세요.", {
+              makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(uiLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
                 quickReplies: options,
                 sourceTalkNodeId: runtimeForStructuredResponse.waitingTalkNodeId,
               }),
@@ -5585,16 +5589,16 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         const extractedCount = extractedEntities.filter((entity) => entity.matched).length;
         appendAnalysisLog(analysis.id, {
           cardType: "사용자 입력",
-          cardName: waitingNode?.title ?? "Talk 응답",
+          cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
           description:
             extractedEntities.length > 0
-              ? `Talk 카드가 받은 사용자 입력을 변수에 반영했습니다. 개체 추출 ${extractedCount}/${extractedEntities.length}건.`
+              ? formatStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다. 개체 추출 {extracted}/{total}건.", { extracted: extractedCount, total: extractedEntities.length })
               : "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다.",
         }, { ...variables, talkResponse: utterance, responseUtterance: utterance });
         if (entityExtractionLogs.length > 0) {
           appendAnalysisLog(analysis.id, {
             cardType: "개체 추출",
-            cardName: waitingNode?.title ?? "Talk 응답",
+            cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
             description: entityExtractionLogs.join(" / "),
           }, variables);
         }
@@ -5654,7 +5658,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           const mismatchMessage = getConfiguredTextMessage(versionSettings.messages.buttonMismatch);
           setMessages((current) => [
             ...current,
-            makeMessage("bot", mismatchMessage || "목록에 있는 버튼 중 하나를 선택해주세요.", {
+            makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(uiLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
               quickReplies: options,
               sourceTalkNodeId: runtimeForStructuredResponse.waitingTalkNodeId,
             }),
@@ -5722,16 +5726,16 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       const extractedCount = extractedEntities.filter((entity) => entity.matched).length;
       appendAnalysisLog(analysis.id, {
         cardType: "사용자 입력",
-        cardName: waitingNode?.title ?? "Talk 응답",
+        cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
         description:
           extractedEntities.length > 0
-            ? `Talk 카드가 받은 사용자 입력을 변수에 반영했습니다. 개체 추출 ${extractedCount}/${extractedEntities.length}건.`
+            ? formatStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다. 개체 추출 {extracted}/{total}건.", { extracted: extractedCount, total: extractedEntities.length })
             : "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다.",
       }, { ...variables, talkResponse: utterance, responseUtterance: utterance });
       if (entityExtractionLogs.length > 0) {
         appendAnalysisLog(analysis.id, {
           cardType: "개체 추출",
-          cardName: waitingNode?.title ?? "Talk 응답",
+          cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
           description: entityExtractionLogs.join(" / "),
         }, variables);
       }
@@ -5777,7 +5781,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       appendAnalysisLog(analysisId, {
         cardType: "Adaptive Card 오류",
         cardName: message.template?.title ?? "Form(A Card)",
-        description: `Adaptive Card 렌더링 실패: ${error}`,
+        description: formatStudioRuntimeMessage(uiLanguage, "Adaptive Card 렌더링 실패: {error}", { error }),
       }, runtime?.variables ?? {});
     }
   }
@@ -5803,7 +5807,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
 
   function handleInputChange(value: string) {
     if (loadedScript?.active && value !== (loadedScript.sentences[loadedScript.index] ?? "")) {
-      const keepEditing = window.confirm("불러온 대화 진행을 중단하시겠습니까?");
+      const keepEditing = window.confirm(getStudioRuntimeMessage(uiLanguage, "불러온 대화 진행을 중단하시겠습니까?"));
       if (keepEditing) {
         setLoadedScript((current) => (current ? { ...current, active: false } : current));
       } else {
@@ -5898,23 +5902,23 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       const trainingCount = nluModel.deepLearningLite.documents.length;
       const trainedIntentCount = nluModel.deepLearningLite.dialogCentroids.length;
       if (trainingCount === 0 || trainedIntentCount === 0) {
-        return "학습 문장이 없어 의도 분류를 수행할 수 없습니다.";
+        return getStudioRuntimeMessage(uiLanguage, "학습 문장이 없어 의도 분류를 수행할 수 없습니다.");
       }
     }
 
     if (!top) {
       if (isSemanticNluType(analysis.nluType)) {
-        return "Semantic 검색 후보가 없어 의도 분류를 수행할 수 없습니다.";
+        return getStudioRuntimeMessage(uiLanguage, "Semantic 검색 후보가 없어 의도 분류를 수행할 수 없습니다.");
       }
       if (analysis.nluType === "llm") {
-        return "LLM 의도분류 후보가 없습니다.";
+        return getStudioRuntimeMessage(uiLanguage, "LLM 의도분류 후보가 없습니다.");
       }
-      return "입력 발화에서 분류에 사용할 토큰을 찾지 못했습니다.";
+      return getStudioRuntimeMessage(uiLanguage, "입력 발화에서 분류에 사용할 토큰을 찾지 못했습니다.");
     }
 
     if (analysis.selectedIntentName === "의도 미분류") {
       if (top.score < analysis.cutoffScore) {
-        return `최고 점수 ${top.score}점이 Cut-off ${analysis.cutoffScore}점 미만입니다.`;
+        return formatStudioRuntimeMessage(uiLanguage, "최고 점수 {top}점이 Cut-off {cutoff}점 미만입니다.", { top: top.score, cutoff: analysis.cutoffScore });
       }
 
       if (
@@ -5923,13 +5927,13 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         second.score >= analysis.cutoffScore &&
         second.score >= getSimilarIntentThreshold(top.score, analysis.similarIntentScore)
       ) {
-        return `상위 후보가 1순위 점수 대비 유사의도 기준 ${analysis.similarIntentScore}% 안에 포함되어 의도를 확정하지 않았습니다.`;
+        return formatStudioRuntimeMessage(uiLanguage, "상위 후보가 1순위 점수 대비 유사의도 기준 {score}% 안에 포함되어 의도를 확정하지 않았습니다.", { score: analysis.similarIntentScore });
       }
 
-      return "분류 후보는 있으나 선택 가능한 의도 조건을 만족하지 못했습니다.";
+      return getStudioRuntimeMessage(uiLanguage, "분류 후보는 있으나 선택 가능한 의도 조건을 만족하지 못했습니다.");
     }
 
-    return `${analysis.selectedIntentName} 의도가 Cut-off 기준을 통과했습니다.`;
+    return formatStudioRuntimeMessage(uiLanguage, "{intent} 의도가 Cut-off 기준을 통과했습니다.", { intent: analysis.selectedIntentName });
   }
 
   function getAppliedIntentDecision(analysis: SimulatorAnalysis) {
@@ -5948,9 +5952,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     if (isSemanticNluType(analysis.nluType)) {
       return {
         kind: "nlu" as const,
-        method: "시멘틱",
+        method: getStudioRuntimeMessage(uiLanguage, "시멘틱"),
         target: analysis.selectedIntentName,
-        reason: "선처리 단계에서 매칭된 항목이 없어 Semantic 검색 후보를 기준으로 의도를 판정했습니다.",
+        reason: getStudioRuntimeMessage(uiLanguage, "선처리 단계에서 매칭된 항목이 없어 Semantic 검색 후보를 기준으로 의도를 판정했습니다."),
       };
     }
 
@@ -5959,7 +5963,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         kind: "nlu" as const,
         method: "LLM",
         target: analysis.selectedIntentName,
-        reason: "선처리 단계에서 매칭된 항목이 없어 LLM 의도분류 결과를 기준으로 의도를 판정했습니다.",
+        reason: getStudioRuntimeMessage(uiLanguage, "선처리 단계에서 매칭된 항목이 없어 LLM 의도분류 결과를 기준으로 의도를 판정했습니다."),
       };
     }
 
@@ -5967,7 +5971,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       kind: "nlu" as const,
       method: "ML",
       target: analysis.selectedIntentName,
-      reason: "선처리 단계에서 매칭된 항목이 없어 ML Score 계산 결과를 기준으로 의도를 판정했습니다.",
+      reason: getStudioRuntimeMessage(uiLanguage, "선처리 단계에서 매칭된 항목이 없어 ML Score 계산 결과를 기준으로 의도를 판정했습니다."),
     };
   }
 
@@ -6040,10 +6044,10 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       <div className="simulator-analysis__manual-section">
         <strong>{getSimulatorLabel(uiLanguage, "검증 문장 진단")}</strong>
         <p>
-          V 문장 {nluValidationDiagnostics.length}건 중 보완 후보 {problemCount}건
+          {formatStudioRuntimeMessage(uiLanguage, "V 문장 {total}건 중 보완 후보 {problems}건", { total: nluValidationDiagnostics.length, problems: problemCount })}
         </p>
         <p>
-          공통 Feature 충돌 {diagnosisCounts["공통 Feature 충돌"]}건 / 학습문장 부족 {diagnosisCounts["학습문장 부족"]}건 / Score 설정 후보 {diagnosisCounts["Score 설정 후보"]}건
+          {formatStudioRuntimeMessage(uiLanguage, "공통 Feature 충돌 {conflicts}건 / 학습문장 부족 {shortages}건 / Score 설정 후보 {candidates}건", { conflicts: diagnosisCounts["공통 Feature 충돌"], shortages: diagnosisCounts["학습문장 부족"], candidates: diagnosisCounts["Score 설정 후보"] })}
         </p>
         <div className="simulator-analysis__diagnostic-actions">
           <button
@@ -6053,29 +6057,29 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             onClick={handleApplyNluTrainingSupplements}
           >
             {nluSupplementSaving
-              ? "보강 중"
-              : `학습문장 부족 후보 ${Math.min(nluTrainingSupplementCandidates.length, 30)}건 T 추가`}
+              ? getStudioRuntimeMessage(uiLanguage, "보강 중")
+              : formatStudioRuntimeMessage(uiLanguage, "학습문장 부족 후보 {count}건 T 추가", { count: Math.min(nluTrainingSupplementCandidates.length, 30) })}
           </button>
-          {nluSupplementMessage ? <small>{nluSupplementMessage}</small> : null}
+          {nluSupplementMessage ? <small>{getStudioRuntimeMessage(uiLanguage, nluSupplementMessage)}</small> : null}
         </div>
         <div className="simulator-analysis__diagnostic-list">
           {nluValidationDiagnostics.map((item) => (
             <div key={`${item.expectedIntentName}-${item.utterance}`} className="simulator-analysis__diagnostic-item">
-              <span className={`simulator-analysis__diagnostic-status is-${item.status}`}>{item.status}</span>
-              <span className="simulator-analysis__diagnostic-type">{item.diagnosisType}</span>
+              <span className={`simulator-analysis__diagnostic-status is-${item.status}`}>{getStudioRuntimeMessage(uiLanguage, item.status)}</span>
+              <span className="simulator-analysis__diagnostic-type">{getStudioRuntimeMessage(uiLanguage, item.diagnosisType)}</span>
               <strong>{item.utterance}</strong>
               <small>
-                기대: {item.expectedIntentName} / 1순위: {item.topIntentName} {formatScoreRate(item.topScore)}
+                {getStudioRuntimeMessage(uiLanguage, "기대")}: {item.expectedIntentName} / {getStudioRuntimeMessage(uiLanguage, "1순위")}: {item.topIntentName} {formatScoreRate(item.topScore)}
                 {item.secondIntentName !== "-"
-                  ? ` / 2순위: ${item.secondIntentName} ${formatScoreRate(item.secondScore)}`
+                  ? formatStudioRuntimeMessage(uiLanguage, " / 2순위: {intent} {score}", { intent: item.secondIntentName, score: formatScoreRate(item.secondScore) })
                   : ""}
               </small>
               <small>
-                기대 의도 점수: {formatScoreRate(item.expectedScore)} / 기대 의도 T 문장: {item.expectedTrainingCount}개
+                {getStudioRuntimeMessage(uiLanguage, "기대 의도 점수")}: {formatScoreRate(item.expectedScore)} / {getStudioRuntimeMessage(uiLanguage, "기대 의도 T 문장")}: {item.expectedTrainingCount}{getStudioRuntimeMessage(uiLanguage, "개")}
               </small>
               <small>Features: {item.features.join(", ") || "-"}</small>
-              <small>기대 의도 Features: {item.expectedFeatures.join(", ") || "-"}</small>
-              <small>공통 Features: {item.commonFeatures.join(", ") || "-"}</small>
+              <small>{getStudioRuntimeMessage(uiLanguage, "기대 의도 Features")}: {item.expectedFeatures.join(", ") || "-"}</small>
+              <small>{getStudioRuntimeMessage(uiLanguage, "공통 Features")}: {item.commonFeatures.join(", ") || "-"}</small>
               <small>{item.reason}</small>
               <small>{item.suggestion}</small>
             </div>
@@ -6089,11 +6093,11 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     const scoreOutRows = analysis.scoreOut;
     const morphemeText = analysis.morphemes.map((item) => `${item.token}/${item.tag}`).join(" + ");
     const isSemanticAnalysis = isSemanticNluType(analysis.nluType);
-    const evidenceTitle = isSemanticAnalysis ? "Semantic 검색 근거" : analysis.nluType === "llm" ? "LLM 분류 근거" : "형태소";
+    const evidenceTitle = getStudioRuntimeMessage(uiLanguage, isSemanticAnalysis ? "Semantic 검색 근거" : analysis.nluType === "llm" ? "LLM 분류 근거" : "형태소");
     const evidenceDescription = isSemanticAnalysis
-      ? "학습된 의도 벡터 검색 결과를 Score 순서로 표시합니다."
+      ? getStudioRuntimeMessage(uiLanguage, "학습된 의도 벡터 검색 결과를 Score 순서로 표시합니다.")
       : analysis.nluType === "llm"
-        ? "LLM 의도분류 결과를 Score 순서로 표시합니다."
+        ? getStudioRuntimeMessage(uiLanguage, "LLM 의도분류 결과를 Score 순서로 표시합니다.")
         : morphemeText || "-";
     const evidenceFeatures = [...analysis.scoreIn, ...analysis.scoreOut]
       .slice(0, 3)
@@ -6124,8 +6128,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           <p>{evidenceDescription}</p>
           <small>
             {analysis.nluType === "ml"
-              ? `분류 토큰: ${tokenizeForDeepLearningLite(analysis.utterance).join(", ") || "-"}`
-              : `근거: ${evidenceFeatures.join(", ") || "-"}`}
+              ? formatStudioRuntimeMessage(uiLanguage, "분류 토큰: {tokens}", { tokens: tokenizeForDeepLearningLite(analysis.utterance).join(", ") || "-" })
+              : formatStudioRuntimeMessage(uiLanguage, "근거: {features}", { features: evidenceFeatures.join(", ") || "-" })}
           </small>
         </div>
 
@@ -6133,7 +6137,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           <strong>{getSimulatorLabel(uiLanguage, "대화시작 카드")}</strong>
           <div>
             <span>{getSimulatorLabel(uiLanguage, "연결된 의도")}</span>
-            <b>{analysis.selectedIntentName}</b>
+            <b>{getStudioRuntimeMessage(uiLanguage, analysis.selectedIntentName)}</b>
           </div>
         </div>
       </div>
@@ -6151,7 +6155,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         {entries.map(([key, value]) => (
           <div key={key} className="simulator-analysis__variable">
             <span>${key}</span>
-            <code>{value || "(빈 값)"}</code>
+            <code>{value || getStudioRuntimeMessage(uiLanguage, "(빈 값)")}</code>
           </div>
         ))}
       </div>
@@ -6162,17 +6166,17 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     const currentVariables = runtime?.variables ?? selectedAnalysis?.variableSnapshots.at(-1)?.variables ?? {};
     const runtimeStatus = runtime?.ended
       ? runtime.sessionEnded
-        ? "세션 종료"
-        : "대화 종료"
+        ? getStudioRuntimeMessage(uiLanguage, "세션 종료")
+        : getStudioRuntimeMessage(uiLanguage, "대화 종료")
       : runtime
-        ? "진행 중"
+        ? getStudioRuntimeMessage(uiLanguage, "진행 중")
         : "-";
     return (
       <div className="simulator-analysis__block simulator-analysis__block--runtime">
         <strong>{getSimulatorLabel(uiLanguage, "현재 런타임 상태")}</strong>
         <div className="simulator-analysis__summary simulator-analysis__summary--compact">
           <span>{getSimulatorLabel(uiLanguage, "대화")}</span>
-          <strong>{runtime?.dialog.name ?? selectedAnalysis?.selectedIntentName ?? "-"}</strong>
+          <strong>{getStudioRuntimeMessage(uiLanguage, runtime?.dialog.name ?? selectedAnalysis?.selectedIntentName ?? "-")}</strong>
           <span>{getSimulatorLabel(uiLanguage, "다음 카드")}</span>
           <strong>{runtime?.nextNodeId || "-"}</strong>
           <span>{getSimulatorLabel(uiLanguage, "대기 카드")}</span>
@@ -6208,7 +6212,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 <small>
                   {entity.variableName}
                   {entity.targetValue ? ` / target: ${entity.targetValue}` : ""}
-                  {!entity.matched ? " / 미인식" : ""}
+                  {!entity.matched ? ` / ${getStudioRuntimeMessage(uiLanguage, "미인식")}` : ""}
                 </small>
               </div>
             ))}
@@ -6229,9 +6233,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           <div className="simulator-analysis__rows">
             {errors.map((log, index) => (
               <div key={`${log.cardName}-${index}`} className="simulator-analysis__row simulator-analysis__row--error">
-                <span>{log.cardType}</span>
-                <b>{log.cardName}</b>
-                <small>{log.description}</small>
+                <span>{getStudioRuntimeMessage(uiLanguage, log.cardType)}</span>
+                <b>{getStudioRuntimeMessage(uiLanguage, log.cardName)}</b>
+                <small>{getStudioRuntimeMessage(uiLanguage, log.description)}</small>
               </div>
             ))}
           </div>
@@ -6254,9 +6258,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 <span>{index + 1}</span>
                 <div>
                   <b>
-                    {log.cardType} / {log.cardName}
+                    {getStudioRuntimeMessage(uiLanguage, log.cardType)} / {getStudioRuntimeMessage(uiLanguage, log.cardName)}
                   </b>
-                  <small>{log.description}</small>
+                  <small>{getStudioRuntimeMessage(uiLanguage, log.description)}</small>
                   {Object.keys(log.variables).length > 0 ? (
                     <details className="simulator-analysis__flow-variables">
                       <summary>{getSimulatorLabel(uiLanguage, "카드 실행 후 변수값")}</summary>
@@ -6293,7 +6297,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 <span>
                   {log.order}. {log.cardType}
                 </span>
-                <b>{log.cardName}</b>
+                <b>{getStudioRuntimeMessage(uiLanguage, log.cardName)}</b>
                 <small>
                   [{log.utterance}] {log.description}
                 </small>
@@ -6560,7 +6564,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                               return (
                                 <div className="simulator-dtmf" aria-label={getSimulatorLabel(uiLanguage, "DTMF 입력")}>
                                   <small>{formatSimulatorText(SIMULATOR_DTMF_CATALOGS[uiLanguage].guide, { min: String(message.dtmf.minLength), max: String(message.dtmf.maxLength), end: message.dtmf.endCharacter, first: String(message.dtmf.firstInputTimeoutMs / 1000), overall: String(message.dtmf.overallInputTimeoutMs / 1000) })}</small>
-                                  <output>{value || "입력 대기 중"}</output>
+                                  <output>{value || getStudioRuntimeMessage(uiLanguage, "입력 대기 중")}</output>
                                   <div className="simulator-dtmf__keypad">
                                     {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map((digit) => (
                                       <button key={`${message.id}-${digit}`} type="button" disabled={disabled} onClick={() => appendDigit(digit)}>{digit}</button>
@@ -6751,7 +6755,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                 <span>{getSimulatorLabel(uiLanguage, "사용자 발화")}</span>
                 <strong>{selectedAnalysis.utterance}</strong>
                 <span>{getSimulatorLabel(uiLanguage, "선택 의도")}</span>
-                <strong>{selectedAnalysis.selectedIntentName}</strong>
+                <strong>{getStudioRuntimeMessage(uiLanguage, selectedAnalysis.selectedIntentName)}</strong>
               </div>
               {renderIntentDecisionSummary(selectedAnalysis)}
               {renderIntentClassificationSummary(selectedAnalysis)}

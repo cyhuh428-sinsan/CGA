@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
@@ -70,14 +72,14 @@ export function BotHubCreateForm() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setErrorMessage("프로필 이미지는 이미지 파일만 선택할 수 있습니다.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "프로필 이미지는 이미지 파일만 선택할 수 있습니다."));
       return;
     }
     try {
       setProfileImageData(await readImage(file));
       setErrorMessage("");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "프로필 이미지를 읽을 수 없습니다.");
+      setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "프로필 이미지를 읽을 수 없습니다."));
     }
   }
 
@@ -85,17 +87,17 @@ export function BotHubCreateForm() {
     event.preventDefault();
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setErrorMessage("봇 허브 이름을 입력해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 이름을 입력해주세요."));
       return;
     }
     if (!NAME_PATTERN.test(trimmedName)) {
-      setErrorMessage("봇 허브 이름은 한글/영문/숫자/공백 및 - _ . ( ) 만 사용할 수 있습니다.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 이름은 한글/영문/숫자/공백 및 - _ . ( ) 만 사용할 수 있습니다."));
       return;
     }
 
     const session = loadAuthSession();
     if (!session?.access_token) {
-      setErrorMessage("로그인 정보를 확인할 수 없습니다. 다시 로그인해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "로그인 정보를 확인할 수 없습니다. 다시 로그인해주세요."));
       return;
     }
 
@@ -115,7 +117,7 @@ export function BotHubCreateForm() {
       });
       router.replace("/studio/hubs/" + hub.id);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "봇 허브를 생성하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브를 생성하지 못했습니다."));
       setIsSubmitting(false);
     }
   }
@@ -142,7 +144,7 @@ export function BotHubCreateForm() {
         <strong>{getStudioPageLabel(copy,"봇 프로필")}<em>*</em></strong>
         <div className="profiles">
           <button className="upload" type="button" onClick={() => fileInputRef.current?.click()}>
-            {profileImageData ? <img src={profileImageData} alt="선택한 프로필" /> : "이미지"}
+            {profileImageData ? <img src={profileImageData} alt={getStudioRuntimeMessage(uiLanguage, "선택한 프로필")} /> : "이미지"}
           </button>
           {PROFILE_OPTIONS.map((profile) => (
             <button
@@ -161,7 +163,7 @@ export function BotHubCreateForm() {
 
       <label>
         <strong>{getStudioPageLabel(copy,"봇 이름")}<em>*</em></strong>
-        <input value={name} maxLength={MAX_NAME_LENGTH} onChange={(event) => setName(event.target.value)} placeholder={getStudioPageLabel(copy,"봇 허브 이름을 입력해주세요.")} />
+        <input value={name} maxLength={MAX_NAME_LENGTH} onChange={(event) => setName(event.target.value)} placeholder={getStudioRuntimeMessage(uiLanguage, "봇 허브 이름을 입력해주세요.")} />
         <small>{getStudioPageLabel(copy, "한글/영문/숫자/공백/특수문자(-, _, ., ( ))만 입력")}</small>
         <i>{name.length}/{MAX_NAME_LENGTH}</i>
       </label>
@@ -180,7 +182,7 @@ export function BotHubCreateForm() {
       {errorMessage ? <p className="error" role="alert">{errorMessage}</p> : null}
       <footer>
         <button type="button" onClick={() => router.push("/studio/hubs")}>{getStudioPageLabel(copy,"취소")}</button>
-        <button type="submit" disabled={isSubmitting}>{isSubmitting ? "생성 중" : "확인"}</button>
+        <button type="submit" disabled={isSubmitting}>{isSubmitting ? getStudioRuntimeMessage(uiLanguage, "생성 중") : getStudioRuntimeMessage(uiLanguage, "확인")}</button>
       </footer>
 
       <style jsx>{BOT_HUB_CREATE_STYLES}</style>

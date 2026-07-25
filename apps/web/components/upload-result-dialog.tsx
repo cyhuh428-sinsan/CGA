@@ -1,4 +1,6 @@
 "use client";
+
+import { formatStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
 import { useI18n } from "@/components/language-provider";
 import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
 
@@ -48,7 +50,7 @@ export function UploadResultDialog({
                 {section.rows.map((row) => (
                   <div key={row.label} className="upload-result-dialog__row">
                     <span>{getStudioPageLabel(copy, row.label)}</span>
-                    <strong>{row.value}{uiLanguage === "ko" ? "건" : ""}</strong>
+                    <strong>{formatStudioRuntimeMessage(uiLanguage, "{count}건", { count: row.value })}</strong>
                   </div>
                 ))}
               </div>

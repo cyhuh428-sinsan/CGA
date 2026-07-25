@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
@@ -331,7 +333,7 @@ export function ConversationMessageSettingsPage() {
               "대화 메시지 설정이 저장되었습니다.",
             );
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "대화 메시지 저장 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "대화 메시지 저장 중 오류가 발생했습니다."));
           } finally {
             setSaving(false);
           }
@@ -342,7 +344,7 @@ export function ConversationMessageSettingsPage() {
             <div className="bot-settings-page__top-actions">
               <Link href={mainHref} className="secondary-action">{getStudioPageLabel(copy,"취소")}</Link>
               <button type="button" className="primary-action" disabled={saving} onClick={handleSave}>
-                {saving ? "저장 중..." : "저장"}
+                {saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "저장")}
               </button>
             </div>
 
@@ -1050,7 +1052,7 @@ export function ConversationMessageSettingsPage() {
 
             <ModulePickerDialog
               open={modulePicker !== null}
-              title={modulePicker?.title ?? "모듈 목록"}
+              title={modulePicker?.title ?? getStudioRuntimeMessage(uiLanguage, "모듈 목록")}
               modules={modules}
               selectedValue={modulePicker?.selectedValue ?? ""}
               onClose={() => setModulePicker(null)}

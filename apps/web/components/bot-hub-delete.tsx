@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -18,8 +20,8 @@ export function BotHubDelete({ hubId }: Props) {
   const copy = STUDIO_PAGE_CATALOGS[uiLanguage];
   const deleteText = {
     loading: getStudioPageLabel(copy, "봇 허브를 불러오는 중입니다..."),
-    required: getStudioPageLabel(copy, "로그인이 필요합니다."),
-    error: getStudioPageLabel(copy, "봇 허브를 불러오지 못했습니다."),
+    required: getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다."),
+    error: getStudioRuntimeMessage(uiLanguage, "봇 허브를 불러오지 못했습니다."),
     title: getStudioPageLabel(copy, "봇 허브 삭제"),
     detail: getStudioPageLabel(copy, "삭제하면 허브 설정과 구성원 연결만 삭제됩니다. 하위 봇과 그 버전은 삭제되지 않습니다."),
     confirm: getStudioPageLabel(copy, "삭제하기"),

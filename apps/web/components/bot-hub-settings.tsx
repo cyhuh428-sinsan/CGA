@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { useEffect, useState, type ChangeEvent } from "react";
 
@@ -66,12 +68,12 @@ export function BotHubSettings({ hubId }: Props) {
   useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
-      setMessage("로그인이 필요합니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다."));
       return;
     }
     fetchStudioHub(session.access_token, hubId)
       .then(applyHub)
-      .catch((error) => setMessage(error instanceof Error ? error.message : "설정을 불러오지 못했습니다."));
+      .catch((error) => setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "설정을 불러오지 못했습니다.")));
   }, [hubId]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -83,11 +85,11 @@ export function BotHubSettings({ hubId }: Props) {
     event.target.value = "";
     if (!file) return;
     if (!PROFILE_IMAGE_TYPES.has(file.type)) {
-      setMessage("프로필 이미지는 PNG, JPEG 또는 WEBP 파일만 사용할 수 있습니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "프로필 이미지는 PNG, JPEG 또는 WEBP 파일만 사용할 수 있습니다."));
       return;
     }
     if (file.size > PROFILE_IMAGE_MAX_BYTES) {
-      setMessage("프로필 이미지는 2MB 이하만 사용할 수 있습니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "프로필 이미지는 2MB 이하만 사용할 수 있습니다."));
       return;
     }
     const reader = new FileReader();
@@ -97,7 +99,7 @@ export function BotHubSettings({ hubId }: Props) {
         setMessage("");
       }
     };
-    reader.onerror = () => setMessage("프로필 이미지를 읽지 못했습니다.");
+    reader.onerror = () => setMessage(getStudioRuntimeMessage(uiLanguage, "프로필 이미지를 읽지 못했습니다."));
     reader.readAsDataURL(file);
   }
 
@@ -106,7 +108,7 @@ export function BotHubSettings({ hubId }: Props) {
     if (!session || !hub) return;
     const name = profileName.trim();
     if (!name) {
-      setMessage("봇 허브 이름을 입력해주세요.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 이름을 입력해주세요."));
       return;
     }
     setSavingProfile(true);
@@ -121,9 +123,9 @@ export function BotHubSettings({ hubId }: Props) {
       });
       const savedHub = await fetchStudioHub(session.access_token, hubId);
       applyHub(savedHub);
-      setMessage("봇 허브 프로필을 저장했습니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 프로필을 저장했습니다."));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "봇 허브 프로필 저장에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브 프로필 저장에 실패했습니다."));
     } finally {
       setSavingProfile(false);
     }
@@ -155,7 +157,7 @@ export function BotHubSettings({ hubId }: Props) {
     if (!session || !form) return;
     const incompleteCallRule = form.hub_call_rules.find((rule) => !rule.expression.trim());
     if (incompleteCallRule) {
-      setMessage("봇 허브 호출 단어 또는 정규식을 입력해주세요.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 호출 단어 또는 정규식을 입력해주세요."));
       return;
     }
     setSaving(true);
@@ -171,16 +173,16 @@ export function BotHubSettings({ hubId }: Props) {
         timeout_seconds: (form.timeout_seconds ?? 0) > 0 ? form.timeout_seconds : null,
       });
       applyHub(saved);
-      setMessage("봇 허브 설정을 저장했습니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 설정을 저장했습니다."));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "봇 허브 설정 저장에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브 설정 저장에 실패했습니다."));
     } finally {
       setSaving(false);
     }
   }
 
   if (!hub || !form) {
-    return <main className="page"><p className="bot-hub__notice">{message || "설정을 불러오는 중입니다..."}</p></main>;
+    return <main className="page"><p className="bot-hub__notice">{message || getStudioRuntimeMessage(uiLanguage, "설정을 불러오는 중입니다...")}</p></main>;
   }
 
   const natural = form.call_method === "natural";
@@ -190,22 +192,22 @@ export function BotHubSettings({ hubId }: Props) {
     <main className="page bot-hub">
       <header className="bot-hub__header">
         <div>
-          <Link href={`/studio/hubs/${hubId}`} className="bot-hub__back">{hub.name} 구성</Link>
+          <Link href={`/studio/hubs/${hubId}`} className="bot-hub__back">{getStudioRuntimeMessage(uiLanguage, "{hub} 구성").replace("{hub}", hub.name)}</Link>
           <h1>{getStudioPageLabel(copy,"봇 허브 설정")}</h1>
         </div>
-        <button type="button" className="bot-hub__primary" onClick={save} disabled={saving}>{saving ? "저장 중..." : "설정 저장"}</button>
+        <button type="button" className="bot-hub__primary" onClick={save} disabled={saving}>{saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "설정 저장")}</button>
       </header>
-      {message ? <p className={`bot-hub__notice${message.endsWith("했습니다.") ? "" : " bot-hub__notice--error"}`}>{message}</p> : null}
+      {message ? <p className={`bot-hub__notice${message === getStudioRuntimeMessage(uiLanguage, "봇 허브 프로필을 저장했습니다.") || message === getStudioRuntimeMessage(uiLanguage, "봇 허브 설정을 저장했습니다.") ? "" : " bot-hub__notice--error"}`}>{message}</p> : null}
 
       <section className="bot-hub__settings">
         <section className="bot-hub__profile-settings bot-hub__settings-wide" aria-labelledby="hub-profile-title">
           <div className="bot-hub__profile-settings-heading">
             <div><h2 id="hub-profile-title">{getStudioPageLabel(copy,"프로필 설정")}</h2><p>{getStudioPageLabel(copy, "봇 허브의 이름, 기본 프로필 또는 PC 이미지를 관리합니다.")}</p></div>
-            <button type="button" className="bot-hub__secondary" onClick={saveProfile} disabled={savingProfile}>{savingProfile ? "저장 중..." : "프로필 저장"}</button>
+            <button type="button" className="bot-hub__secondary" onClick={saveProfile} disabled={savingProfile}>{savingProfile ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "프로필 저장")}</button>
           </div>
           <div className="bot-hub__profile-editor">
             <div className="bot-hub__profile-preview" aria-label={getStudioPageLabel(copy,"현재 프로필")}>
-              {displayedImage ? <img src={displayedImage.startsWith("data:") ? displayedImage : resolveApiAssetPublicUrl(displayedImage)} alt="선택한 봇 허브 프로필" /> : <span className={`bot-hub__profile bot-hub__profile--${profileKey}`} aria-hidden="true" />}
+              {displayedImage ? <img src={displayedImage.startsWith("data:") ? displayedImage : resolveApiAssetPublicUrl(displayedImage)} alt={getStudioRuntimeMessage(uiLanguage, "선택한 봇 허브 프로필")} /> : <span className={`bot-hub__profile bot-hub__profile--${profileKey}`} aria-hidden="true" />}
             </div>
             <div className="bot-hub__profile-options">
               <span>{getStudioPageLabel(copy,"기본 프로필")}</span>
@@ -224,7 +226,7 @@ export function BotHubSettings({ hubId }: Props) {
         <section className="bot-hub__settings-section bot-hub__settings-wide" aria-labelledby="hub-basic-settings-title">
           <div className="bot-hub__settings-section-heading">
             <h2 id="hub-basic-settings-title">{getStudioPageLabel(copy,"기본 설정")}</h2>
-            <span>{natural ? "자연어 입력형" : "버튼 선택형"}</span>
+            <span>{natural ? getStudioRuntimeMessage(uiLanguage, "자연어 입력형") : getStudioRuntimeMessage(uiLanguage, "버튼 선택형")}</span>
           </div>
           <div className="bot-hub__settings-fields">
             <label>Bot ID<input value={hub.id} readOnly /></label>
@@ -265,7 +267,7 @@ export function BotHubSettings({ hubId }: Props) {
               <label>{getStudioPageLabel(copy,"룰 이름")}<input value={rule.name} maxLength={120} onChange={(event) => updateHubCallRule(index, { name: event.target.value })} /></label>
               <label>{getStudioPageLabel(copy, "호출 단어 또는 정규식")}<input value={rule.expression} maxLength={500} onChange={(event) => updateHubCallRule(index, { expression: event.target.value })} /></label>
               <label className="bot-hub__check"><input type="checkbox" checked={rule.enabled} onChange={(event) => updateHubCallRule(index, { enabled: event.target.checked })} />{getStudioPageLabel(copy,"사용")}</label>
-              <button type="button" className="bot-hub__danger" onClick={() => removeHubCallRule(index)} aria-label={`${rule.name || rule.expression || "호출 단어"} 삭제`}>{getStudioPageLabel(copy,"삭제")}</button>
+              <button type="button" className="bot-hub__danger" onClick={() => removeHubCallRule(index)} aria-label={getStudioRuntimeMessage(uiLanguage, "{name} 삭제").replace("{name}", rule.name || rule.expression || getStudioRuntimeMessage(uiLanguage, "호출 단어"))}>{getStudioPageLabel(copy,"삭제")}</button>
             </div>
           ))}
         </section>
