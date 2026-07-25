@@ -1688,6 +1688,16 @@ function richFormFormatMonth(year: number, month: number, language: SupportedLan
   return formatStudioRuntimeMessage(language, "{year}년 {month}월", { year, month: month + 1 });
 }
 
+const RICH_FORM_WEEKDAY_LABELS: Record<SupportedLanguage, string[]> = {
+  ko: ["일", "월", "화", "수", "목", "금", "토"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  "zh-CN": ["日", "一", "二", "三", "四", "五", "六"],
+  ja: ["日", "月", "火", "水", "木", "金", "土"],
+  vi: ["CN", "T2", "T3", "T4", "T5", "T6", "T7"],
+  fr: ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."],
+  de: ["So.", "Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa."],
+};
+
 function richFormMonthDays(year: number, month: number) {
   const firstDay = new Date(year, month, 1).getDay();
   const lastDate = new Date(year, month + 1, 0).getDate();
@@ -1768,7 +1778,7 @@ function SimulatorRichFormDateTimeView({
             <button type="button" onClick={() => setMonth((current) => current.month === 11 ? { year: current.year + 1, month: 0 } : { ...current, month: current.month + 1 })}>›</button>
           </div>
           <div className="simulator-rich-form__calendar-grid">
-            {["일", "월", "화", "수", "목", "금", "토"].map((day) => <span key={day}>{day}</span>)}
+            {RICH_FORM_WEEKDAY_LABELS[uiLanguage].map((day) => <span key={day}>{day}</span>)}
             {richFormMonthDays(month.year, month.month).map((day, dayIndex) => (
               <button key={`${dayIndex}-${day}`} type="button" disabled={day === 0 || isDisabled} className={value === `${month.year}-${String(month.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` ? "is-selected" : undefined} onClick={() => chooseDay(day)}>{day || ""}</button>
             ))}
@@ -1776,7 +1786,7 @@ function SimulatorRichFormDateTimeView({
         </div>
       ) : (
         <div className="simulator-rich-form__picker-panel simulator-rich-form__time-panel" role="dialog">
-          <strong>{value || "시간 선택"}</strong>
+          <strong>{value || getSimulatorLabel(uiLanguage, "시간 선택")}</strong>
           <div>
             <select value={hour} disabled={isDisabled} onChange={(event) => chooseTime(event.currentTarget.value, minute)}>
               {Array.from({ length: 24 }, (_item, itemIndex) => String(itemIndex).padStart(2, "0")).map((item) => <option key={item} value={item}>{item}</option>)}
@@ -1821,7 +1831,7 @@ function renderRichFormLines(value: unknown, className?: string) {
 
 function renderRichFormImageFromRecord(record: Record<string, unknown>, title = "") {
   const url = richFormImageUrl(record as AidotRichFormComponent, record) || richFormRecordImageUrl(record);
-  const alt = cleanRichFormText(record.alt || record.title || title || "이미지");
+  const alt = cleanRichFormText(record.alt || record.title || title);
   return renderRichFormImageElement(url, alt);
 }
 
@@ -2052,7 +2062,7 @@ function richFormValidateDraftComponents(components: AidotRichFormComponent[], d
     const component = stack.shift() as AidotRichFormComponent;
     stack.push(...richFormChildComponents(component));
     if (!richFormIsValidationTarget(component)) continue;
-    const fallback = cleanRichFormText(readAidotRichFormString(component, ["title", "label", "name", "key"], "입력값"));
+    const fallback = cleanRichFormText(readAidotRichFormString(component, ["title", "label", "name", "key"], getSimulatorLabel(language, "입력값")));
     const fieldName = richFormFieldName(component, fallback);
     const value = richFormDraftValue(draft, fieldName) ?? richFormDefaultValue(component);
     const state = richFormEntryState(component, value, fieldName, draft);
@@ -2791,6 +2801,7 @@ function SimulatorRichFormToggleButton({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const [checked, setChecked] = useState(component.value === true);
   const isDisabled = disabled || component.disabled === true;
   const fallback = `toggle${index + 1}`;
@@ -2809,7 +2820,7 @@ function SimulatorRichFormToggleButton({
       disabled={isDisabled}
       onClick={nextValue}
     >
-      <span>{title || "토글"}</span>
+      <span>{title || getSimulatorLabel(uiLanguage, "토글")}</span>
       <i aria-hidden="true" />
     </button>
   );
@@ -2845,7 +2856,7 @@ function renderSimulatorRichFormComponent(
     const description = cleanRichFormText(text);
     return (
       <figure key={key} className="simulator-rich-form__media">
-        {renderRichFormImageElement(url, title || description || "이미지", "", { caption: "", link })}
+        {renderRichFormImageElement(url, title || description || getSimulatorLabel(language, "이미지"), "", { caption: "", link })}
         {title ? <figcaption>{title}</figcaption> : null}
         {description ? renderRichFormLines(description, "simulator-rich-form__media-description") : null}
       </figure>
@@ -2854,7 +2865,7 @@ function renderSimulatorRichFormComponent(
   if (type === "VIDEO") {
     const url = normalizeRichFormVideoUrl(component);
     const isEmbed = /(?:youtube\.com\/embed\/|player\.vimeo\.com\/video\/)/i.test(url);
-    return <div key={key} className="simulator-rich-form__media simulator-rich-form__media--video">{url ? isEmbed ? <iframe src={url} title={title || "동영상"} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <video src={url} controls preload="metadata" /> : null}{title || text ? renderRichFormLines(title || text) : null}</div>;
+    return <div key={key} className="simulator-rich-form__media simulator-rich-form__media--video">{url ? isEmbed ? <iframe src={url} title={title || getSimulatorLabel(language, "동영상")} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <video src={url} controls preload="metadata" /> : null}{title || text ? renderRichFormLines(title || text) : null}</div>;
   }
   if (type === "ADDRESS") return renderSimulatorAddressComponent(component, index, disabled, onAction, language, formApi);
   if (type === "DATEPICKER" || type === "TIMEPICKER") return renderSimulatorDateTimeComponent(component, index, disabled, onAction, type, formApi);
@@ -2906,7 +2917,7 @@ function renderSimulatorRichFormComponent(
       const value = simulatorRichFormValue(component);
       if (formApi) formApi.submit(component, value, "buttonValue", { buttonValue: value, validate: !readAidotRichFormString(component, ["type", "buttonType"]).toLowerCase().includes("reject"), buttonOnly: readAidotRichFormString(component, ["type", "buttonType"]).toLowerCase().includes("reject"), includeField: !readAidotRichFormString(component, ["type", "buttonType"]).toLowerCase().includes("reject") });
       else onAction(simulatorRichFormActionPayload(component, component, "buttonValue", { buttonValue: true }));
-    }}><span>{title || cleanRichFormText(text) || "확인"}</span></button>;
+    }}><span>{title || cleanRichFormText(text) || getSimulatorLabel(language, "확인")}</span></button>;
   }
   if (type === "INPUT_POPUP" || type === "INPUTPOPUP" || type === "INPUT POPUP") {
     return <SimulatorRichFormInputPopupView key={key} component={component} title={title} disabled={disabled} onAction={onAction} formApi={formApi} />;
@@ -4091,7 +4102,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         variables,
       });
       appendAnalysisLog(analysisId, {
-        cardType: "실행 오류",
+        cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
         cardName: node.title,
         description: message,
       }, variables);
@@ -4155,7 +4166,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           variables,
         });
         appendAnalysisLog(analysisId, {
-          cardType: "실행 오류",
+          cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
           cardName: node.title,
           description: message,
         }, variables);
@@ -4233,7 +4244,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         variables,
       });
       appendAnalysisLog(analysisId, {
-        cardType: "실행 오류",
+        cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
         cardName: node.title,
         description: message,
       }, variables);
@@ -4255,7 +4266,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             analysisId,
             nextRuntime,
           });
-          nextMessages.push(makeMessage("system", "다음 대화 카드가 연결되어 있지 않습니다."));
+          nextMessages.push(makeMessage("system", getStudioRuntimeMessage(runtimeLanguage, "다음 대화 카드가 연결되어 있지 않습니다.")));
         nextRuntime = { ...nextRuntime, ended: true, nextNodeId: "" };
         break;
       }
@@ -4263,7 +4274,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysisId, {
           cardType: FLOW_CARD_LABELS[node.kind],
           cardName: node.title,
-          description: "카드를 실행했습니다.",
+          description: getStudioRuntimeMessage(uiLanguage, "카드를 실행했습니다."),
         }, nextRuntime.variables);
 
       if (node.kind === "talk") {
@@ -4279,7 +4290,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           appendAnalysisLog(analysisId, {
             cardType: FLOW_CARD_LABELS[node.kind],
             cardName: node.title,
-            description: "출력할 메시지가 없습니다. 변수 치환 결과나 Talk 카드 메시지 설정을 확인해주세요.",
+            description: getStudioRuntimeMessage(uiLanguage, "출력할 메시지가 없습니다. 변수 치환 결과나 Talk 카드 메시지 설정을 확인해주세요."),
           }, nextRuntime.variables);
         }
         talkMessages.forEach((message) => {
@@ -4316,7 +4327,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           appendAnalysisLog(analysisId, {
             cardType: FLOW_CARD_LABELS[node.kind],
             cardName: node.title,
-            description: "사용자 입력을 기다립니다.",
+            description: getStudioRuntimeMessage(uiLanguage, "사용자 입력을 기다립니다."),
           }, nextRuntime.variables);
           break;
         }
@@ -4341,7 +4352,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysisId, {
           cardType: FLOW_CARD_LABELS[node.kind],
           cardName: node.title,
-          description: "변수값을 갱신했습니다.",
+          description: getStudioRuntimeMessage(uiLanguage, "변수값을 갱신했습니다."),
         }, variables);
         nextRuntime = { ...nextRuntime, variables, nextNodeId: getNextNodeId(nextRuntime.graph, node.id, "next") };
         continue;
@@ -4369,7 +4380,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             variables: nextRuntime.variables,
           });
           appendAnalysisLog(analysisId, {
-            cardType: "실행 오류",
+            cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
             cardName: node.title,
             description: detailMessage,
           }, nextRuntime.variables);
@@ -4391,7 +4402,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             variables: nextRuntime.variables,
           });
           appendAnalysisLog(analysisId, {
-            cardType: "실행 오류",
+            cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
             cardName: node.title,
             description: detailMessage,
           }, nextRuntime.variables);
@@ -4459,7 +4470,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             appendAnalysisLog(analysisId, {
               cardType: FLOW_CARD_LABELS[node.kind],
               cardName: node.title,
-              description: "Function 실행 실패 후 예외 흐름으로 이동합니다.",
+              description: getStudioRuntimeMessage(uiLanguage, "Function 실행 실패 후 예외 흐름으로 이동합니다."),
             }, result.variables);
             nextRuntime = {
               ...nextRuntime,
@@ -4470,9 +4481,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           }
           nextMessages.push(makeMessage("system", SIMULATOR_RUNTIME_MESSAGES.systemError));
           appendAnalysisLog(analysisId, {
-            cardType: "실행 오류",
+            cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
             cardName: node.title,
-            description: "Function 실행 실패 후 예외 흐름이 없어 대화를 종료합니다.",
+            description: getStudioRuntimeMessage(uiLanguage, "Function 실행 실패 후 예외 흐름이 없어 대화를 종료합니다."),
           }, result.variables);
           nextRuntime = {
             ...nextRuntime,
@@ -4506,7 +4517,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           if (scenarioBlockMessage) {
             nextMessages.push(makeMessage("system", scenarioBlockMessage));
             appendAnalysisLog(analysisId, {
-              cardType: "설계 오류",
+              cardType: getStudioRuntimeMessage(uiLanguage, "설계 오류"),
               cardName: targetDialog.name,
               description: scenarioBlockMessage,
             }, nextRuntime.variables, { visible: true });
@@ -4549,7 +4560,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           variables: nextRuntime.variables,
         });
         appendAnalysisLog(analysisId, {
-          cardType: "실행 오류",
+          cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
           cardName: node.title,
           description: detailMessage,
         }, nextRuntime.variables);
@@ -4646,8 +4657,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         maxCardsBetweenUserResponses,
       });
       appendAnalysisLog(analysisId, {
-        cardType: "실행 오류",
-        cardName: "루핑 방지",
+        cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
+        cardName: getStudioRuntimeMessage(uiLanguage, "루핑 방지"),
         description: formatStudioRuntimeMessage(uiLanguage, "사용자 응답 사이 실행 카드 수가 설정값 {count}개를 초과하여 시나리오를 중단했습니다. 링크 순환 또는 사용자 응답 대기 Talk 카드 누락 여부를 확인하세요.", { count: maxCardsBetweenUserResponses }),
       }, nextRuntime.variables);
       nextRuntime = { ...nextRuntime, ended: true, nextNodeId: "" };
@@ -4693,7 +4704,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     if (scenarioBlockMessage) {
       appendUserUtteranceLog(analysis.id, utterance, selected.name, "의도 추출 오류");
       appendAnalysisLog(analysis.id, {
-        cardType: "설계 오류",
+        cardType: getStudioRuntimeMessage(uiLanguage, "설계 오류"),
         cardName: selected.name,
         description: scenarioBlockMessage,
       }, {}, { visible: true });
@@ -5025,9 +5036,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       setAnalyses((current) => [...current, analysis]);
       setSelectedAnalysisId(analysis.id);
       appendAnalysisLog(analysis.id, {
-        cardType: "스몰토크",
+        cardType: getStudioRuntimeMessage(uiLanguage, "스몰토크"),
         cardName: smalltalk.title,
-        description: "스몰토크에 매칭되어 응답을 반환합니다.",
+        description: getStudioRuntimeMessage(uiLanguage, "스몰토크에 매칭되어 응답을 반환합니다."),
       }, variables);
       setMessages((current) => [...current, makeMessage("bot", smalltalk.response)]);
       setRuntime(null);
@@ -5043,7 +5054,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         decisionLog: {
           cardType: "Exacting Matching",
           cardName: exactDialog.name,
-          description: "사용자 발화가 등록된 학습문장과 완전히 일치하여 Score 계산 전에 해당 의도로 진입했습니다.",
+          description: getStudioRuntimeMessage(uiLanguage, "사용자 발화가 등록된 학습문장과 완전히 일치하여 Score 계산 전에 해당 의도로 진입했습니다."),
         },
       });
       return true;
@@ -5056,7 +5067,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         variables,
         parentRuntime: activeRuntime,
         decisionLog: {
-          cardType: "룰",
+          cardType: getStudioRuntimeMessage(uiLanguage, "룰"),
           cardName: ruleMatch.rule.name,
           description: formatStudioRuntimeMessage(uiLanguage, "룰 표현식 \"{rule}\"이 사용자 발화와 매칭되어 \"{intent}\" 의도로 진입했습니다.", { rule: ruleMatch.rule.expression, intent: ruleMatch.dialog.name }),
         },
@@ -5084,8 +5095,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         setSelectedAnalysisId(analysis.id);
         appendAnalysisLog(analysis.id, {
           cardType: "ML NLU",
-          cardName: "의도분류",
-          description: error instanceof Error ? error.message : "ML 의도분류 중 오류가 발생했습니다.",
+          cardName: getStudioRuntimeMessage(uiLanguage, "의도분류"),
+          description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "ML 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
           ...current,
@@ -5106,8 +5117,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         setSelectedAnalysisId(analysis.id);
         appendAnalysisLog(analysis.id, {
           cardType: "Semantic NLU",
-          cardName: "의도분류",
-          description: error instanceof Error ? error.message : "Semantic 의도분류 중 오류가 발생했습니다.",
+          cardName: getStudioRuntimeMessage(uiLanguage, "의도분류"),
+          description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "Semantic 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
           ...current,
@@ -5128,8 +5139,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         setSelectedAnalysisId(analysis.id);
         appendAnalysisLog(analysis.id, {
           cardType: "LLM NLU",
-          cardName: "의도분류",
-          description: error instanceof Error ? error.message : "LLM 의도분류 중 오류가 발생했습니다.",
+          cardName: getStudioRuntimeMessage(uiLanguage, "의도분류"),
+          description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "LLM 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
           ...current,
@@ -5192,8 +5203,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       }
 
       const guide = versionSettings.messages.multiIntentGuide;
-      const noIntentButtonLabel = guide.noIntentButtonLabel || getStudioRuntimeMessage(uiLanguage, "원하는 의도 없음");
-      const noIntentButtonMessage = guide.noIntentButtonMessage || getStudioRuntimeMessage(uiLanguage, "다시 질문해주시면 다른 의도를 찾겠습니다.");
+      const noIntentButtonLabel = guide.noIntentButtonLabel || getStudioRuntimeMessage(runtimeLanguage, "원하는 의도 없음");
+      const noIntentButtonMessage = guide.noIntentButtonMessage || getStudioRuntimeMessage(runtimeLanguage, "다시 질문해주시면 다른 의도를 찾겠습니다.");
       setPendingIntentSelection({
         scores,
         candidates,
@@ -5528,7 +5539,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             const mismatchMessage = getConfiguredTextMessage(versionSettings.messages.buttonMismatch);
             setMessages((current) => [
               ...current,
-              makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(uiLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
+              makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(runtimeLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
                 quickReplies: options,
                 sourceTalkNodeId: runtimeForStructuredResponse.waitingTalkNodeId,
               }),
@@ -5596,16 +5607,16 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         setSelectedAnalysisId(analysis.id);
         const extractedCount = extractedEntities.filter((entity) => entity.matched).length;
         appendAnalysisLog(analysis.id, {
-          cardType: "사용자 입력",
+          cardType: getStudioRuntimeMessage(uiLanguage, "사용자 입력"),
           cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
           description:
             extractedEntities.length > 0
               ? formatStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다. 개체 추출 {extracted}/{total}건.", { extracted: extractedCount, total: extractedEntities.length })
-              : "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다.",
+              : getStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다."),
         }, { ...variables, talkResponse: utterance, responseUtterance: utterance });
         if (entityExtractionLogs.length > 0) {
           appendAnalysisLog(analysis.id, {
-            cardType: "개체 추출",
+            cardType: getStudioRuntimeMessage(uiLanguage, "개체 추출"),
             cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
             description: entityExtractionLogs.join(" / "),
           }, variables);
@@ -5614,7 +5625,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           appendAnalysisLog(analysis.id, {
             cardType: "Form(A Card)",
             cardName: waitingNode.title,
-            description: "MsgKey로 같은 Adaptive Card 메시지를 갱신하고 입력 대기 상태를 유지했습니다.",
+            description: getStudioRuntimeMessage(uiLanguage, "MsgKey로 같은 Adaptive Card 메시지를 갱신하고 입력 대기 상태를 유지했습니다."),
           }, variables);
           setRuntime({
             ...runtimeForStructuredResponse,
@@ -5666,7 +5677,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           const mismatchMessage = getConfiguredTextMessage(versionSettings.messages.buttonMismatch);
           setMessages((current) => [
             ...current,
-            makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(uiLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
+            makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(runtimeLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
               quickReplies: options,
               sourceTalkNodeId: runtimeForStructuredResponse.waitingTalkNodeId,
             }),
@@ -5733,16 +5744,16 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       setSelectedAnalysisId(analysis.id);
       const extractedCount = extractedEntities.filter((entity) => entity.matched).length;
       appendAnalysisLog(analysis.id, {
-        cardType: "사용자 입력",
+        cardType: getStudioRuntimeMessage(uiLanguage, "사용자 입력"),
         cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
         description:
           extractedEntities.length > 0
             ? formatStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다. 개체 추출 {extracted}/{total}건.", { extracted: extractedCount, total: extractedEntities.length })
-            : "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다.",
+            : getStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다."),
       }, { ...variables, talkResponse: utterance, responseUtterance: utterance });
       if (entityExtractionLogs.length > 0) {
         appendAnalysisLog(analysis.id, {
-          cardType: "개체 추출",
+          cardType: getStudioRuntimeMessage(uiLanguage, "개체 추출"),
           cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
           description: entityExtractionLogs.join(" / "),
         }, variables);
@@ -5751,7 +5762,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysis.id, {
           cardType: "Form(A Card)",
           cardName: waitingNode.title,
-          description: "MsgKey로 같은 Adaptive Card 메시지를 갱신하고 입력 대기 상태를 유지했습니다.",
+          description: getStudioRuntimeMessage(uiLanguage, "MsgKey로 같은 Adaptive Card 메시지를 갱신하고 입력 대기 상태를 유지했습니다."),
         }, variables);
         setRuntime({
           ...runtimeForStructuredResponse,
