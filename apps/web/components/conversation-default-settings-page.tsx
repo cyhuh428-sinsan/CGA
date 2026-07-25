@@ -1,6 +1,6 @@
 "use client";
 
-import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+import { formatStudioRuntimeMessage, getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
 
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -43,6 +43,7 @@ function normalizeStepValue(value: number, step: number) {
 }
 
 function FieldLabel({ title, help }: { title: string; help?: string }) {
+  const { language: uiLanguage } = useI18n();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
 
@@ -78,7 +79,7 @@ function FieldLabel({ title, help }: { title: string; help?: string }) {
         <button
           type="button"
           className="settings-help-tip"
-          aria-label={`${title} 설명`}
+          aria-label={formatStudioRuntimeMessage(uiLanguage, "{title} 설명", { title })}
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
         >
@@ -122,6 +123,7 @@ function NumberStepperField({
   step?: number;
   onChange: (value: number) => void;
 }) {
+  const { language: uiLanguage } = useI18n();
   const normalizedValue = Number.isFinite(value) ? value : min ?? 0;
 
   function update(nextValue: number) {
@@ -136,7 +138,7 @@ function NumberStepperField({
           type="button"
           className="settings-stepper__button"
           onClick={() => update(normalizedValue - step)}
-          aria-label={`${title} 감소`}
+          aria-label={formatStudioRuntimeMessage(uiLanguage, "{title} 감소", { title })}
         >
           -
         </button>
@@ -153,7 +155,7 @@ function NumberStepperField({
           type="button"
           className="settings-stepper__button"
           onClick={() => update(normalizedValue + step)}
-          aria-label={`${title} 증가`}
+          aria-label={formatStudioRuntimeMessage(uiLanguage, "{title} 증가", { title })}
         >
           +
         </button>
