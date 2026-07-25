@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
@@ -816,7 +818,7 @@ export function StudioWorkspaceProvider({ children }: StudioWorkspaceProviderPro
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "봇 작업 공간을 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 작업 공간을 불러오지 못했습니다."));
         }
       })
       .finally(() => {

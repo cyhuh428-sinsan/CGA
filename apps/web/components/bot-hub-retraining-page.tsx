@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -50,7 +52,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
   useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
-      setMessage("로그인이 필요합니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다."));
       setLoading(false);
       return;
     }
@@ -76,7 +78,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
       })
       .catch((error) => {
         if (!cancelled) {
-          setMessage(error instanceof Error ? error.message : "봇 허브 재학습 후보를 불러오지 못했습니다.");
+          setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브 재학습 후보를 불러오지 못했습니다."));
         }
       })
       .finally(() => {
@@ -108,7 +110,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
     <main className="page bot-hub">
       <header className="bot-hub__header">
         <div>
-          <Link href={`/studio/hubs/${hubId}`} className="bot-hub__back">{hub?.name || "봇 허브"} 구성</Link>
+          <Link href={`/studio/hubs/${hubId}`} className="bot-hub__back">{getStudioRuntimeMessage(uiLanguage, "{hub} 구성").replace("{hub}", hub?.name || getStudioRuntimeMessage(uiLanguage, "봇 허브"))}</Link>
           <h1>{getStudioPageLabel(copy,"봇 허브 재학습")}</h1>
           <p>{getStudioPageLabel(copy, "봇 허브를 거쳐 처리된 사용자 발화를 확인하고, 선택된 하위 봇의 운영 버전에 학습문장을 반영합니다.")}</p>
         </div>
@@ -125,7 +127,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
           <label>{getStudioPageLabel(copy,"하위 봇")}<select value={memberBotId} onChange={(event) => setMemberBotId(event.target.value)}>
               <option value="">{getStudioPageLabel(copy,"전체 하위 봇")}</option>
               {members.map(({ member, bot }) => (
-                <option key={member.bot_id} value={member.bot_id}>{member.display_name || bot?.name || member.name || "삭제된 봇"}</option>
+                <option key={member.bot_id} value={member.bot_id}>{member.display_name || bot?.name || member.name || getStudioRuntimeMessage(uiLanguage, "삭제된 봇")}</option>
               ))}
             </select>
           </label>
@@ -155,7 +157,7 @@ export function BotHubRetrainingPage({ hubId }: Props) {
               : null;
             return (
               <div key={candidate.queue_event_id} className="bot-hub__history-row" role="row">
-                <strong>{candidate.user_utterance || "발화를 확인할 수 없습니다."}</strong>
+                <strong>{candidate.user_utterance || getStudioRuntimeMessage(uiLanguage, "발화를 확인할 수 없습니다.")}</strong>
                 <span>{candidate.member_bot_name || "-"}</span>
                 <span>{candidate.intent_name || RESULT_LABELS[candidate.result_kind]}</span>
                 <span>{candidate.channel_type}</span>

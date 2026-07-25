@@ -1,5 +1,7 @@
 "use client";
 
+import { formatStudioRuntimeMessage, getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Script from "next/script";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -9,6 +11,7 @@ import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { SimulatorPage } from "@/components/simulator-page";
 import { getBotVersionSettings } from "@/lib/bot-settings";
 import { FLOW_DESIGNER_CATALOGS, getFlowDesignerLabel, type FlowDesignerCatalog } from "@/lib/i18n/flow-designer";
+import type { SupportedLanguage } from "@/lib/language";
 import { useEditLock } from "@/lib/use-edit-lock";
 import { normalizeApiAssets, type VersionApiMethod, type VersionApiOutputParameter } from "@/lib/api-assets";
 import {
@@ -351,14 +354,14 @@ function getTalkResponseTypeMeta(value: string) {
   return TALK_RESPONSE_TYPE_OPTIONS.find((item) => item.value === value) ?? TALK_RESPONSE_TYPE_OPTIONS[0];
 }
 
-function getTalkResponseSettingTitle(value: string) {
+function getTalkResponseSettingTitle(value: string, language: SupportedLanguage) {
   switch (value) {
     case "single-select":
-      return "선택형 메시지 설정";
+      return getStudioRuntimeMessage(language, "선택형 메시지 설정");
     case "relay":
-      return "응답 전달 설정";
+      return getStudioRuntimeMessage(language, "응답 전달 설정");
     case "form-relay":
-      return "Form 응답 전달 설정";
+      return getStudioRuntimeMessage(language, "Form 응답 전달 설정");
     default:
       return "";
   }
@@ -373,28 +376,28 @@ function hasTalkUserResponse(value: string) {
   );
 }
 
-function getTalkTemplateRequiredError(node: Extract<DialogFlowNode, { kind: "talk" }>) {
+function getTalkTemplateRequiredError(node: Extract<DialogFlowNode, { kind: "talk" }>, language: SupportedLanguage) {
   if (node.config.messageType === "html" && !(node.config.messages[0] ?? "").trim()) {
-    return "HTML을 입력해주세요.";
+    return getStudioRuntimeMessage(language, "HTML을 입력해주세요.");
   }
 
   if (node.config.messageType === "form") {
     const formMessage = (node.config.messages[0] ?? "").trim();
     if (!formMessage) {
-      return "Form Message를 입력해주세요.";
+      return getStudioRuntimeMessage(language, "Form Message를 입력해주세요.");
     }
     if (!formMessage.startsWith("{") && !formMessage.startsWith("[")) {
-      return "Form Message는 JSON 형식으로 입력해주세요.";
+      return getStudioRuntimeMessage(language, "Form Message는 JSON 형식으로 입력해주세요.");
     }
   }
 
   if (node.config.messageType === "form-a-card") {
     const formCardMessage = (node.config.messages[0] ?? "").trim();
     if (!formCardMessage) {
-      return "Form(A Card)를 입력해주세요.";
+      return getStudioRuntimeMessage(language, "Form(A Card)를 입력해주세요.");
     }
     if (!formCardMessage.startsWith("{") && !formCardMessage.startsWith("[")) {
-      return "Form(A Card)는 JSON 형식으로 입력해주세요.";
+      return getStudioRuntimeMessage(language, "Form(A Card)는 JSON 형식으로 입력해주세요.");
     }
   }
 
@@ -408,28 +411,28 @@ function getTalkTemplateRequiredError(node: Extract<DialogFlowNode, { kind: "tal
     ];
     const emptyField = requiredDtmfFields.find((item) => !(item.value ?? "").trim());
     if (emptyField) {
-      return `${emptyField.label}를 입력해주세요.`;
+      return formatStudioRuntimeMessage(language, "{field}를 입력해주세요.", { field: getStudioRuntimeMessage(language, emptyField.label) });
     }
   }
 
   if (node.config.messageType === "card" && !(node.config.messages[0] ?? "").trim()) {
-    return "타이틀을 입력해주세요.";
+    return getStudioRuntimeMessage(language, "타이틀을 입력해주세요.");
   }
 
   if (node.config.messageType === "carousel" && !(node.config.messages[0] ?? "").trim()) {
-    return "Carousel Title을 입력해주세요.";
+    return getStudioRuntimeMessage(language, "Carousel Title을 입력해주세요.");
   }
 
   if (node.config.messageType === "carousel" && !(node.config.messages[2] ?? "").trim()) {
-    return "Item Title을 입력해주세요.";
+    return getStudioRuntimeMessage(language, "Item Title을 입력해주세요.");
   }
 
   if (node.config.messageType === "carousel" && !(node.config.messages[3] ?? "").trim()) {
-    return "Item Contents를 입력해주세요.";
+    return getStudioRuntimeMessage(language, "Item Contents를 입력해주세요.");
   }
 
   if (node.config.messageType === "button" && node.config.messages.some((item) => !item.trim())) {
-    return "Button을 입력해주세요.";
+    return getStudioRuntimeMessage(language, "Button을 입력해주세요.");
   }
 
   if (
@@ -437,7 +440,7 @@ function getTalkTemplateRequiredError(node: Extract<DialogFlowNode, { kind: "tal
     node.config.tableUseVariable &&
     !node.config.tableVariableItemId
   ) {
-    return "리스트 변수를 선택해주세요.";
+    return getStudioRuntimeMessage(language, "리스트 변수를 선택해주세요.");
   }
 
   if (node.config.messageType === "link-button") {
@@ -445,7 +448,7 @@ function getTalkTemplateRequiredError(node: Extract<DialogFlowNode, { kind: "tal
       (item) => !item.label.trim() || !item.url.trim(),
     );
     if (emptyLinkButton) {
-      return !emptyLinkButton.label.trim() ? "Label을 입력해주세요." : "Link를 입력해주세요.";
+      return !emptyLinkButton.label.trim() ? getStudioRuntimeMessage(language, "Label을 입력해주세요.") : getStudioRuntimeMessage(language, "Link를 입력해주세요.");
     }
   }
 
@@ -454,7 +457,7 @@ function getTalkTemplateRequiredError(node: Extract<DialogFlowNode, { kind: "tal
       (item) => item.enabled && (!item.label.trim() || !item.key.trim()),
     );
     if (emptyFloatingButton) {
-      return !emptyFloatingButton.label.trim() ? "플로팅 버튼명을 입력해주세요." : "플로팅 버튼 Key를 입력해주세요.";
+      return !emptyFloatingButton.label.trim() ? getStudioRuntimeMessage(language, "플로팅 버튼명을 입력해주세요.") : getStudioRuntimeMessage(language, "플로팅 버튼 Key를 입력해주세요.");
     }
   }
 
@@ -955,42 +958,42 @@ function collectTemplateVariableNamesFromText(value: string) {
   return Array.from(value.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g), (match) => getVariableReferenceRoot(match[1] ?? "")).filter(Boolean);
 }
 
-function buildNodeSummary(node: DialogFlowNode, dialog: VersionDialogAsset) {
+function buildNodeSummary(node: DialogFlowNode, dialog: VersionDialogAsset, language: SupportedLanguage) {
   switch (node.kind) {
     case "start":
-      return node.config.previewUtterance || dialog.utterances[0]?.text || "대화 시작 표현이 없습니다.";
+      return node.config.previewUtterance || dialog.utterances[0]?.text || getStudioRuntimeMessage(language, "대화 시작 표현이 없습니다.");
     case "system-variable":
       return dialog.entityBindings.length > 0
         ? dialog.entityBindings
             .map((binding) => formatVariableName(binding.variableName) || `$${binding.variableName}`)
             .slice(0, 3)
             .join(", ")
-        : "대화 시작 개체가 없습니다.";
+        : getStudioRuntimeMessage(language, "대화 시작 개체가 없습니다.");
     case "talk":
       if (node.config.messageType === "table") {
-        return node.config.tableVariableItemId ? "Table 템플릿" : "리스트 변수를 선택하세요.";
+        return node.config.tableVariableItemId ? getStudioRuntimeMessage(language, "Table 템플릿") : getStudioRuntimeMessage(language, "리스트 변수를 선택하세요.");
       }
-      return node.config.basicMessages.find((item) => item.trim()) || "텍스트 메시지를 입력하세요.";
+      return node.config.basicMessages.find((item) => item.trim()) || getStudioRuntimeMessage(language, "텍스트 메시지를 입력하세요.");
     case "jump":
       return node.config.targetType === "dialog"
-        ? node.config.targetDialogName || "이동할 의도/모듈을 선택하세요."
+        ? node.config.targetDialogName || getStudioRuntimeMessage(language, "이동할 의도/모듈을 선택하세요.")
         : node.config.targetCardId
-          ? "현재 대화의 카드로 이동"
-          : "이동할 카드를 선택하세요.";
+          ? getStudioRuntimeMessage(language, "현재 대화의 카드로 이동")
+          : getStudioRuntimeMessage(language, "이동할 카드를 선택하세요.");
     case "condition":
-      return node.config.variableName || "조건 판단에 사용할 변수를 입력하세요.";
+      return node.config.variableName || getStudioRuntimeMessage(language, "조건 판단에 사용할 변수를 입력하세요.");
     case "function":
-      return node.config.apiId ? node.config.resultVariableName || "API 호출 결과" : "API를 선택하세요.";
+      return node.config.apiId ? node.config.resultVariableName || getStudioRuntimeMessage(language, "API 호출 결과") : getStudioRuntimeMessage(language, "API를 선택하세요.");
     case "variable":
       return node.config.items
         .map((item) => formatVariableName(item.variableName))
         .filter(Boolean)
         .slice(0, 3)
-        .join(", ") || "변수를 추가하세요.";
+        .join(", ") || getStudioRuntimeMessage(language, "변수를 추가하세요.");
     case "script":
-      return node.config.code.trim() ? "JavaScript ES2020" : "스크립트 코드를 입력하세요.";
+      return node.config.code.trim() ? "JavaScript ES2020" : getStudioRuntimeMessage(language, "스크립트 코드를 입력하세요.");
     case "end":
-      return node.config.endSessionImmediately ? "Session 바로 종료" : "대화 종료";
+      return node.config.endSessionImmediately ? getStudioRuntimeMessage(language, "Session 바로 종료") : getStudioRuntimeMessage(language, "대화 종료");
   }
 }
 
@@ -2237,8 +2240,8 @@ export function FlowDesignerPage() {
         setInspectorTab("properties");
         setMessage(
           activeLinkDragState.sourcePort === "exception"
-            ? "예외 연결이 반영되었습니다."
-            : "카드 연결이 반영되었습니다.",
+            ? getStudioRuntimeMessage(uiLanguage, "예외 연결이 반영되었습니다.")
+            : getStudioRuntimeMessage(uiLanguage, "카드 연결이 반영되었습니다."),
         );
         setErrorMessage("");
       } else {
@@ -2738,7 +2741,7 @@ export function FlowDesignerPage() {
 
     for (const node of graph.nodes) {
       if (node.kind === "talk") {
-        const templateRequiredError = getTalkTemplateRequiredError(node);
+        const templateRequiredError = getTalkTemplateRequiredError(node, uiLanguage);
         if (templateRequiredError) {
           addIssue(node.id, templateRequiredError);
         }
@@ -2767,7 +2770,7 @@ export function FlowDesignerPage() {
         });
 
         if (node.config.responseType === "extract-entity" && node.config.responseEntityBindingIds.length === 0) {
-          addIssue(node.id, "추출할 개체를 선택해주세요.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "추출할 개체를 선택해주세요."));
         }
 
         if (node.config.responseType === "extract-entity") {
@@ -2793,22 +2796,22 @@ export function FlowDesignerPage() {
 
       if (node.kind === "jump") {
         if (node.config.targetType === "card" && !node.config.targetCardId) {
-          addIssue(node.id, "이동 대상 카드가 없습니다.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "이동 대상 카드가 없습니다."));
         }
         if (node.config.targetType === "card" && node.config.targetCardId && !getNodeById(graph, node.config.targetCardId)) {
-          addIssue(node.id, "삭제된 카드로 이동하도록 설정되어 있습니다.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "삭제된 카드로 이동하도록 설정되어 있습니다."));
         }
         if (node.config.targetType === "dialog" && !node.config.targetDialogId) {
-          addIssue(node.id, "이동 대상 의도/모듈이 없습니다.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "이동 대상 의도/모듈이 없습니다."));
         }
         if (node.config.targetType === "dialog" && !getFlowLinkTargetId(graph, node.id, "next")) {
-          addIssue(node.id, "다음 카드가 연결되어 있지 않습니다.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "다음 카드가 연결되어 있지 않습니다."));
         }
       }
 
       if (node.kind === "condition") {
         if (!stripVariablePrefix(node.config.variableName)) {
-          addIssue(node.id, "조건 판단 변수가 없습니다.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "조건 판단 변수가 없습니다."));
         } else {
           addMissingVariableReferenceIssue(node.id, node.config.variableName);
         }
@@ -2816,24 +2819,24 @@ export function FlowDesignerPage() {
           getFlowLinkTargetId(graph, node.id, `branch:${branch.id}`),
         );
         if (!linkedBranches.some((branch) => branch.operator === "else")) {
-          addIssue(node.id, "'그 외의 경우' 분기가 없습니다.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "'그 외의 경우' 분기가 없습니다."));
         }
         for (const branch of node.config.branches) {
           const optionMeta = getConditionOptionMeta(branch.operator);
           const targetNodeId = getFlowLinkTargetId(graph, node.id, `branch:${branch.id}`);
           if (optionMeta.requiresValue && targetNodeId && !branch.compareValue.trim()) {
-            addIssue(node.id, `${branch.label} 비교값이 없습니다.`);
+            addIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "{branch} 비교값이 없습니다.", { branch: branch.label }));
           }
           addMissingVariableReferencesFromText(node.id, branch.compareValue);
           if (targetNodeId && !getNodeById(graph, targetNodeId)) {
-            addIssue(node.id, `${branch.label} 분기가 삭제된 카드로 연결되어 있습니다.`);
+            addIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "{branch} 분기가 삭제된 카드로 연결되어 있습니다.", { branch: branch.label }));
           }
         }
       }
 
       if (node.kind === "variable") {
         if (!getFlowLinkTargetId(graph, node.id, "next")) {
-          addIssue(node.id, "다음 카드가 연결되어 있지 않습니다.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "다음 카드가 연결되어 있지 않습니다."));
         }
         for (const item of node.config.items) {
           const validationError = validateVariableName(item.variableName, entityBindingNames);
@@ -2844,7 +2847,7 @@ export function FlowDesignerPage() {
 
           const normalizedName = stripVariablePrefix(item.variableName).toLowerCase();
           if (usedVariableNames.has(normalizedName)) {
-            addIssue(node.id, "중복된 변수명이 있습니다.");
+            addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "중복된 변수명이 있습니다."));
           } else {
             usedVariableNames.add(normalizedName);
           }
@@ -2853,11 +2856,11 @@ export function FlowDesignerPage() {
 
       if (node.kind === "function") {
         if (!node.config.apiId || !node.config.methodId) {
-          addIssue(node.id, "API와 Method를 선택해주세요.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "API와 Method를 선택해주세요."));
         }
         node.config.parameterMappings.forEach((mapping) => addMissingVariableReferencesFromText(node.id, mapping.value));
         if (!getFlowLinkTargetId(graph, node.id, "next") && !getFlowLinkTargetId(graph, node.id, "exception")) {
-          addIssue(node.id, "실행 이후 이동할 카드가 없습니다.");
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "실행 이후 이동할 카드가 없습니다."));
         }
       }
 
@@ -2907,7 +2910,7 @@ export function FlowDesignerPage() {
     return new Set(
       graph.nodes
         .filter((node) => {
-          const summary = dialog ? buildNodeSummary(node, dialog) : "";
+          const summary = dialog ? buildNodeSummary(node, dialog, uiLanguage) : "";
           return (
             node.title.toLowerCase().includes(keyword) ||
             FLOW_CARD_LABELS[node.kind].toLowerCase().includes(keyword) ||
@@ -2965,7 +2968,7 @@ export function FlowDesignerPage() {
     }
 
     return connectableNodes.filter((node) => {
-      const summary = dialog ? buildNodeSummary(node, dialog) : "";
+      const summary = dialog ? buildNodeSummary(node, dialog, uiLanguage) : "";
       return (
         node.title.toLowerCase().includes(keyword) ||
         FLOW_CARD_LABELS[node.kind].toLowerCase().includes(keyword) ||
@@ -3672,7 +3675,7 @@ export function FlowDesignerPage() {
           ? {
               ...current,
               testOutputValue: undefined,
-              testError: error instanceof Error ? error.message : "API 테스트 중 오류가 발생했습니다.",
+              testError: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "API 테스트 중 오류가 발생했습니다."),
             }
           : current,
       );
@@ -3692,13 +3695,13 @@ export function FlowDesignerPage() {
       new Function(value);
       return "";
     } catch (error) {
-      return error instanceof Error ? error.message : "스크립트 문법을 확인해주세요.";
+      return error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "스크립트 문법을 확인해주세요.");
     }
   }
 
   function buildAdaptiveCardScriptSnippet(cardJson: unknown) {
     if (!cardJson || typeof cardJson !== "object" || Array.isArray(cardJson)) {
-      throw new Error("Adaptive Card JSON이 생성되지 않았습니다.");
+      throw new Error(getStudioRuntimeMessage(uiLanguage, "Adaptive Card JSON이 생성되지 않았습니다."));
     }
 
     const formattedCardJson = JSON.stringify(cardJson, null, 2);
@@ -3790,7 +3793,7 @@ export function FlowDesignerPage() {
       setAdaptiveCardDesignerOpen(false);
     } catch (error) {
       setAdaptiveCardDesignerStatus(
-        error instanceof Error ? error.message : "Adaptive Card JSON 적용에 실패했습니다.",
+        error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "Adaptive Card JSON 적용에 실패했습니다."),
       );
     }
   }
@@ -3825,7 +3828,7 @@ export function FlowDesignerPage() {
 
   function checkScriptEditorSyntax() {
     const syntaxError = validateScriptDraftSyntax(scriptCodeDraft);
-    setScriptEditorError(syntaxError || "문법 오류가 없습니다.");
+    setScriptEditorError(syntaxError || getStudioRuntimeMessage(uiLanguage, "문법 오류가 없습니다."));
   }
 
   function handleScriptEditorKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -4703,7 +4706,7 @@ export function FlowDesignerPage() {
     const nextSourcePort = sourcePort ?? getPreferredSourcePort(node, graph);
     if (!nextSourcePort) {
       setMessage("");
-      setErrorMessage("이 카드에서는 추가로 연결할 다음 카드를 선택할 수 없습니다.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "이 카드에서는 추가로 연결할 다음 카드를 선택할 수 없습니다."));
       return;
     }
 
@@ -4715,8 +4718,8 @@ export function FlowDesignerPage() {
     setErrorMessage("");
     setMessage(
       nextSourcePort === "exception"
-        ? "캔버스에서 연결할 예외 카드를 선택하세요."
-        : "캔버스에서 연결할 다음 카드를 선택하세요.",
+        ? getStudioRuntimeMessage(uiLanguage, "캔버스에서 연결할 예외 카드를 선택하세요.")
+        : getStudioRuntimeMessage(uiLanguage, "캔버스에서 연결할 다음 카드를 선택하세요."),
     );
   }
 
@@ -4971,7 +4974,7 @@ export function FlowDesignerPage() {
   }
 
   function handleNavigateToStart() {
-    if (hasUnsavedChanges && !window.confirm(getFlowDesignerLabel(copy, "변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?"))) {
+    if (hasUnsavedChanges && !window.confirm(getStudioRuntimeMessage(uiLanguage, "변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?"))) {
       return;
     }
 
@@ -4979,7 +4982,7 @@ export function FlowDesignerPage() {
   }
 
   function handleNavigateToDialogList() {
-    if (hasUnsavedChanges && !window.confirm(getFlowDesignerLabel(copy, "변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?"))) {
+    if (hasUnsavedChanges && !window.confirm(getStudioRuntimeMessage(uiLanguage, "변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?"))) {
       return;
     }
 
@@ -5064,10 +5067,10 @@ export function FlowDesignerPage() {
       return;
     }
 
-    const templateRequiredError = getTalkTemplateRequiredError(node);
+    const templateRequiredError = getTalkTemplateRequiredError(node, uiLanguage);
     if (templateRequiredError) {
       setMessage("");
-      setErrorMessage(`'${node.title}' 카드의 ${templateRequiredError}`);
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "'{title}' 카드의 {error}").replace("{title}", node.title).replace("{error}", templateRequiredError));
       return;
     }
 
@@ -5112,25 +5115,25 @@ export function FlowDesignerPage() {
       if (node.kind === "talk") {
         const targetNodeId = getFlowLinkTargetId(graph, node.id, "next");
         if (!targetNodeId) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 다음 카드를 연결해주세요.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 다음 카드를 연결해주세요.", { card: node.title }));
         } else if (!nodeExists(targetNodeId)) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 다음 연결 대상이 삭제되었습니다.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 다음 연결 대상이 삭제되었습니다.", { card: node.title }));
         }
 
-        const templateRequiredError = getTalkTemplateRequiredError(node);
+        const templateRequiredError = getTalkTemplateRequiredError(node, uiLanguage);
         if (templateRequiredError) {
-          addDesignValidationIssue(node.id, `'${node.title}' 카드의 ${templateRequiredError}`);
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 {error}", { card: node.title, error: templateRequiredError }));
         }
 
         if (node.config.responseType === "extract-entity" && node.config.responseEntityBindingIds.length === 0) {
-          addDesignValidationIssue(node.id, `'${node.title}' 카드의 추출할 개체를 선택해주세요.`);
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 추출할 개체를 선택해주세요.", { card: node.title }));
         }
 
         if (node.config.responseType === "extract-entity") {
           for (const extraction of node.config.responseEntityExtractions) {
             const validationError = validateVariableName(extraction.variableName, entityBindingNames);
             if (validationError) {
-              addDesignValidationIssue(node.id, `'${node.title}' 카드: ${validationError}`);
+              addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드: {error}", { card: node.title, error: validationError }));
             }
           }
         }
@@ -5145,7 +5148,7 @@ export function FlowDesignerPage() {
             entityBindingNames,
           );
           if (validationError) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드: ${validationError}`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드: {error}", { card: node.title, error: validationError }));
           }
 
         }
@@ -5153,9 +5156,9 @@ export function FlowDesignerPage() {
 
       if (node.kind === "jump") {
         if (node.config.targetType === "card" && !node.config.targetCardId) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 이동 대상 값을 입력해주세요.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 이동 대상 값을 입력해주세요.", { card: node.title }));
         } else if (node.config.targetType === "card" && !nodeExists(node.config.targetCardId)) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 이동 대상이 삭제되었습니다.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 이동 대상이 삭제되었습니다.", { card: node.title }));
         }
 
         if (
@@ -5166,26 +5169,26 @@ export function FlowDesignerPage() {
               link.sourceNodeId === node.config.targetCardId,
           )
         ) {
-          addDesignValidationIssue(node.id, `'${node.title}' 카드의 이동 대상이 점프를 호출한 카드와 같습니다.`);
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 이동 대상이 점프를 호출한 카드와 같습니다.", { card: node.title }));
         }
 
         if (node.config.targetType === "dialog" && !node.config.targetDialogId) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 이동 대상 값을 입력해주세요.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 이동 대상 값을 입력해주세요.", { card: node.title }));
         }
 
         if (node.config.targetType === "dialog") {
           const targetNodeId = getFlowLinkTargetId(graph, node.id, "next");
           if (!targetNodeId) {
-            addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 다음 카드 값을 입력해주세요.`);
+            addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 다음 카드 값을 입력해주세요.", { card: node.title }));
           } else if (!nodeExists(targetNodeId)) {
-            addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 다음 연결 대상이 삭제되었습니다.`);
+            addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 다음 연결 대상이 삭제되었습니다.", { card: node.title }));
           }
         }
       }
 
       if (node.kind === "condition") {
         if (!stripVariablePrefix(node.config.variableName)) {
-          addDesignValidationIssue(node.id, `'${node.title}' 카드의 조건 판단 변수를 입력해주세요.`);
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 조건 판단 변수를 입력해주세요.", { card: node.title }));
         }
 
         const linkedBranches = node.config.branches.filter((branch) =>
@@ -5193,7 +5196,7 @@ export function FlowDesignerPage() {
         );
         const hasElseBranch = linkedBranches.some((branch) => branch.operator === "else");
         if (!hasElseBranch) {
-          addDesignValidationIssue(node.id, `'${node.title}' 카드에는 '그 외의 경우' 조건이 1개 이상 필요합니다.`);
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드에는 '그 외의 경우' 조건이 1개 이상 필요합니다.", { card: node.title }));
         }
 
         for (const branch of node.config.branches) {
@@ -5201,12 +5204,12 @@ export function FlowDesignerPage() {
           const targetNodeId = getFlowLinkTargetId(graph, node.id, `branch:${branch.id}`);
           const targetExists = targetNodeId ? graph.nodes.some((item) => item.id === targetNodeId) : false;
           if (!targetNodeId) {
-            addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 ${branch.label} 다음 카드를 연결해주세요.`);
+            addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 {branch} 다음 카드를 연결해주세요.", { card: node.title, branch: branch.label }));
           } else if (!targetExists) {
-            addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 ${branch.label} 연결 대상이 삭제되었습니다.`);
+            addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 {branch} 연결 대상이 삭제되었습니다.", { card: node.title, branch: branch.label }));
           }
           if (optionMeta.requiresValue && targetNodeId && !branch.compareValue.trim()) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드의 ${branch.label} 비교값을 입력해주세요.`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 {branch} 비교값을 입력해주세요.", { card: node.title, branch: branch.label }));
           }
         }
       }
@@ -5214,20 +5217,20 @@ export function FlowDesignerPage() {
       if (node.kind === "variable") {
         const targetNodeId = getFlowLinkTargetId(graph, node.id, "next");
         if (!targetNodeId) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 다음 카드를 연결해주세요.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 다음 카드를 연결해주세요.", { card: node.title }));
         } else if (!nodeExists(targetNodeId)) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 다음 연결 대상이 삭제되었습니다.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 다음 연결 대상이 삭제되었습니다.", { card: node.title }));
         }
 
         for (const item of node.config.items) {
           const validationError = validateVariableName(item.variableName, entityBindingNames);
           if (validationError) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드: ${validationError}`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드: {error}", { card: node.title, error: validationError }));
           }
 
           const normalizedName = stripVariablePrefix(item.variableName).toLowerCase();
           if (usedVariableNames.has(normalizedName)) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드에 중복된 변수명이 있습니다.`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드에 중복된 변수명이 있습니다.", { card: node.title }));
             continue;
           }
           usedVariableNames.add(normalizedName);
@@ -5238,19 +5241,19 @@ export function FlowDesignerPage() {
         const functionApi = apiAssets.find((api) => api.id === node.config.apiId) ?? null;
         const functionMethod = functionApi?.methods.find((method) => method.id === node.config.methodId) ?? null;
         if (!node.config.apiId || !node.config.methodId) {
-          addDesignValidationIssue(node.id, `'${node.title}' 카드의 API와 Method를 선택해주세요.`);
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 API와 Method를 선택해주세요.", { card: node.title }));
         }
 
         const nextTargetNodeId = getFlowLinkTargetId(graph, node.id, "next");
         const exceptionTargetNodeId = getFlowLinkTargetId(graph, node.id, "exception");
         if (!nextTargetNodeId && !exceptionTargetNodeId) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 실행 이후 이동할 카드를 연결해주세요.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 실행 이후 이동할 카드를 연결해주세요.", { card: node.title }));
         }
         if (nextTargetNodeId && !nodeExists(nextTargetNodeId)) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 실행 이후 연결 대상이 삭제되었습니다.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 실행 이후 연결 대상이 삭제되었습니다.", { card: node.title }));
         }
         if (exceptionTargetNodeId && !nodeExists(exceptionTargetNodeId)) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 예외 흐름 연결 대상이 삭제되었습니다.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 예외 흐름 연결 대상이 삭제되었습니다.", { card: node.title }));
         }
 
         if (functionMethod) {
@@ -5260,12 +5263,12 @@ export function FlowDesignerPage() {
             );
             const value = mapping?.value ?? parameter.defaultValue;
             if (parameter.required && !value.trim()) {
-              addDesignValidationIssue(node.id, `'${node.title}' 카드의 ${parameter.name} 입력값이 없습니다.`);
+              addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 {parameter} 입력값이 없습니다.", { card: node.title, parameter: parameter.name }));
             }
           }
 
           if (node.config.outputMappings.length === 0) {
-            addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 출력 Parameter를 선택해주세요.`);
+            addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 출력 Parameter를 선택해주세요.", { card: node.title }));
           }
         }
       }
@@ -5273,44 +5276,44 @@ export function FlowDesignerPage() {
       if (node.kind === "script") {
         const targetNodeId = getFlowLinkTargetId(graph, node.id, "next");
         if (!targetNodeId) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 다음 카드를 연결해주세요.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 다음 카드를 연결해주세요.", { card: node.title }));
         } else if (!nodeExists(targetNodeId)) {
-          addFatalDesignValidationIssue(node.id, `'${node.title}' 카드의 다음 연결 대상이 삭제되었습니다.`);
+          addFatalDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 다음 연결 대상이 삭제되었습니다.", { card: node.title }));
         }
 
         if (!node.config.code.trim()) {
-          addDesignValidationIssue(node.id, `'${node.title}' 카드의 스크립트 코드를 입력해주세요.`);
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 스크립트 코드를 입력해주세요.", { card: node.title }));
         }
 
         for (const parameter of node.config.parameters) {
           if (!parameter.name.trim()) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드의 파라미터명을 입력해주세요.`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 파라미터명을 입력해주세요.", { card: node.title }));
             continue;
           }
 
           if (!isScriptIdentifier(parameter.name)) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드의 파라미터명은 JavaScript 변수명 규칙에 맞게 입력해주세요.`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 파라미터명은 JavaScript 변수명 규칙에 맞게 입력해주세요.", { card: node.title }));
           }
         }
 
         for (const returnVariable of node.config.returnVariables) {
           const validationError = validateVariableName(returnVariable.variableName, entityBindingNames);
           if (validationError) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드: ${validationError}`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드: {error}", { card: node.title, error: validationError }));
           }
 
           if (!returnVariable.scriptVariableName.trim()) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드의 스크립트 변수명을 입력해주세요.`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 스크립트 변수명을 입력해주세요.", { card: node.title }));
             continue;
           }
 
           if (!isScriptIdentifier(returnVariable.scriptVariableName)) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드의 스크립트 변수명은 JavaScript 변수명 규칙에 맞게 입력해주세요.`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 스크립트 변수명은 JavaScript 변수명 규칙에 맞게 입력해주세요.", { card: node.title }));
           }
 
           const normalizedName = stripVariablePrefix(returnVariable.variableName).toLowerCase();
           if (usedVariableNames.has(normalizedName)) {
-            addDesignValidationIssue(node.id, `'${node.title}' 카드에 중복된 리턴 변수명이 있습니다.`);
+            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드에 중복된 리턴 변수명이 있습니다.", { card: node.title }));
             continue;
           }
           usedVariableNames.add(normalizedName);
@@ -5322,7 +5325,7 @@ export function FlowDesignerPage() {
     if (immediateLoopNode) {
       addDesignValidationIssue(
         immediateLoopNode.id,
-        `'${immediateLoopNode.title}' 카드가 사용자 입력 없이 반복되는 흐름을 만들고 있습니다.`,
+        formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드가 사용자 입력 없이 반복되는 흐름을 만들고 있습니다.", { card: immediateLoopNode.title }),
       );
     }
 
@@ -5330,7 +5333,7 @@ export function FlowDesignerPage() {
     if (nodeWithoutTerminalPath) {
       addDesignValidationIssue(
         nodeWithoutTerminalPath.id,
-        `'${nodeWithoutTerminalPath.title}' 카드 흐름이 End 카드로 이어지도록 연결해주세요.`,
+        formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드 흐름이 End 카드로 이어지도록 연결해주세요.", { card: nodeWithoutTerminalPath.title }),
       );
     }
 
@@ -5339,7 +5342,7 @@ export function FlowDesignerPage() {
       setSelectedNodeId(firstIssue.nodeId);
       setMessage("");
       setErrorMessage(
-        `저장할 수 없는 설계 오류 ${fatalDesignValidationIssues.length}건이 있습니다. ${firstIssue.message}`,
+        formatStudioRuntimeMessage(uiLanguage, "저장할 수 없는 설계 오류 {count}건이 있습니다. {message}", { count: fatalDesignValidationIssues.length, message: firstIssue.message }),
       );
       return;
     }
@@ -5488,7 +5491,7 @@ export function FlowDesignerPage() {
         setSelectedNodeId(firstIssue.nodeId);
         setMessage(getFlowDesignerLabel(copy, "대화 설계가 저장되었습니다."));
         setErrorMessage(
-          `설계 오류 ${designValidationIssues.length}건이 있습니다. 학습과 실행은 제한됩니다. ${firstIssue.message}`,
+          formatStudioRuntimeMessage(uiLanguage, "설계 오류 {count}건이 있습니다. 학습과 실행은 제한됩니다. {message}", { count: designValidationIssues.length, message: firstIssue.message }),
         );
       } else {
         setMessage(getFlowDesignerLabel(copy, "대화 설계가 저장되었습니다."));
@@ -6497,7 +6500,7 @@ export function FlowDesignerPage() {
                             setMessage(
                               versionSettings.conversationDefaults.voice.ttsUrl
                                 ? `TTS 테스트 URL: ${versionSettings.conversationDefaults.voice.ttsUrl}`
-                                : "TTS 테스트 URL이 설정되어 있지 않습니다.",
+                                : getStudioRuntimeMessage(uiLanguage, "TTS 테스트 URL이 설정되어 있지 않습니다."),
                             )
                           }
                         >
@@ -7301,7 +7304,7 @@ export function FlowDesignerPage() {
                                   setMessage(
                                     versionSettings.conversationDefaults.voice.ttsUrl
                                       ? `TTS 테스트 URL: ${versionSettings.conversationDefaults.voice.ttsUrl}`
-                                      : "TTS 테스트 URL이 설정되어 있지 않습니다.",
+                                      : getStudioRuntimeMessage(uiLanguage, "TTS 테스트 URL이 설정되어 있지 않습니다."),
                                   )
                                 }
                               >
@@ -7368,7 +7371,7 @@ export function FlowDesignerPage() {
                       selectedNode.config.responseType === "form-relay" ? (
                         <div className="flow-designer-page__subcard">
                           <div className="flow-designer-page__message-head">
-                            <strong>{getTalkResponseSettingTitle(selectedNode.config.responseType)}</strong>
+                            <strong>{getTalkResponseSettingTitle(selectedNode.config.responseType, uiLanguage)}</strong>
                           </div>
                           <label className="flow-designer-page__field">
                             <div className="flow-designer-page__variable-prefix-field">
@@ -8308,14 +8311,14 @@ export function FlowDesignerPage() {
                         >{getFlowDesignerLabel(copy, "API 선택")}</button>
                         <div>
                           <span>{getFlowDesignerLabel(copy, "API 이름")}</span>
-                          <strong>{selectedFunctionApi?.name || "선택 안 함"}</strong>
+                          <strong>{selectedFunctionApi?.name || getStudioRuntimeMessage(uiLanguage, "선택 안 함")}</strong>
                         </div>
                         <div>
                           <span>{getFlowDesignerLabel(copy, "API 메서드")}</span>
                           <strong>
                             {selectedFunctionMethod
                               ? `${selectedFunctionMethod.name} (${selectedFunctionMethod.httpMethod})`
-                              : "선택 안 함"}
+                              : getStudioRuntimeMessage(uiLanguage, "선택 안 함")}
                           </strong>
                         </div>
                       </div>
@@ -8776,7 +8779,7 @@ export function FlowDesignerPage() {
                         <button type="button" className="secondary-action" onClick={openAdaptiveCardDesigner}>{getFlowDesignerLabel(copy, "Adaptive Card 디자이너")}</button>
                       </div>
                       <div className="flow-designer-page__code-preview">
-                        {selectedNode.config.code.trim() || "스크립트 코드가 없습니다."}
+                        {selectedNode.config.code.trim() || getStudioRuntimeMessage(uiLanguage, "스크립트 코드가 없습니다.")}
                       </div>
                     </div>
                   </div>
@@ -9389,7 +9392,7 @@ export function FlowDesignerPage() {
                 <p>{getFlowDesignerLabel(copy, "적용하면 현재 Script 카드에 Adaptive Card JSON을 $adaptiveCard, $msgKey 변수로 저장하는 코드가 들어갑니다.")}</p>
                 <div className="flow-designer-page__adaptive-card-designer-preview">
                   <span>{getFlowDesignerLabel(copy, "생성 상태")}</span>
-                  <b>{adaptiveCardDesignerOutput?.adaptiveCard ? "Adaptive Card JSON 생성됨" : "디자인 내용을 기다리는 중"}</b>
+                  <b>{adaptiveCardDesignerOutput?.adaptiveCard ? getStudioRuntimeMessage(uiLanguage, "Adaptive Card JSON 생성됨") : getStudioRuntimeMessage(uiLanguage, "디자인 내용을 기다리는 중")}</b>
                 </div>
                 {adaptiveCardDesignerStatus ? (
                   <div className="flow-designer-page__script-dialog-status">
@@ -9620,7 +9623,7 @@ export function FlowDesignerPage() {
                                     <button
                                       type="button"
                                       className="flow-designer-page__function-output-toggle"
-                                      aria-label={expanded ? "하위 Parameter 닫기" : "하위 Parameter 열기"}
+                                      aria-label={expanded ? getStudioRuntimeMessage(uiLanguage, "하위 Parameter 닫기") : getStudioRuntimeMessage(uiLanguage, "하위 Parameter 열기")}
                                       onClick={(event) => {
                                         event.preventDefault();
                                         setFunctionPicker((current) =>

@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,7 +26,7 @@ export function BotDeletePage() {
             return;
           }
           if (confirmText.trim().toUpperCase() !== "DELETE") {
-            setErrorMessage("삭제를 진행하려면 DELETE를 입력해주세요.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "삭제를 진행하려면 DELETE를 입력해주세요."));
             return;
           }
 
@@ -37,7 +39,7 @@ export function BotDeletePage() {
             router.push("/studio/bots");
             router.refresh();
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "봇 삭제 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 삭제 중 오류가 발생했습니다."));
             setIsDeleting(false);
           }
         }
@@ -64,7 +66,7 @@ export function BotDeletePage() {
             <div className="bot-settings-page__footer">
               <Link href={mainHref} className="secondary-action">{getStudioPageLabel(copy,"취소")}</Link>
               <button type="button" className="primary-action primary-action--danger" disabled={isDeleting} onClick={handleDelete}>
-                {isDeleting ? "삭제 중..." : "삭제"}
+                {isDeleting ? getStudioRuntimeMessage(uiLanguage, "삭제 중...") : getStudioRuntimeMessage(uiLanguage, "삭제")}
               </button>
             </div>
           </section>

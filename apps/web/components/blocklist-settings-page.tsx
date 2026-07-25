@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { buildBlocklistText, parseBlocklistText } from "@/lib/asset-text-format";
@@ -176,7 +178,7 @@ export function BlocklistSettingsPage() {
 
         async function handleSaveEditor() {
           if (!editor.name.trim() || !editor.pattern.trim()) {
-            setErrorMessage("제외/무시 목록 이름과 제외/무시 텍스트 또는 정규식을 입력해주세요.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "제외/무시 목록 이름과 제외/무시 텍스트 또는 정규식을 입력해주세요."));
             return;
           }
 
@@ -259,7 +261,7 @@ export function BlocklistSettingsPage() {
             const text = await file.text();
             const uploaded = parseBlocklistText(text);
             if (uploaded.length === 0) {
-              setErrorMessage("업로드 가능한 제외/무시 목록이 없습니다.");
+              setErrorMessage(getStudioRuntimeMessage(uiLanguage, "업로드 가능한 제외/무시 목록이 없습니다."));
               return;
             }
             const stamped = uploaded.map((item) => ({
@@ -286,7 +288,7 @@ export function BlocklistSettingsPage() {
             setMoreMenuOpen(false);
             await persistItems(nextItems, `제외/무시 목록 업로드: 추가 ${addedCount}건, 갱신 ${updatedCount}건`);
           } catch {
-            setErrorMessage("제외/무시 목록 업로드 파일을 읽지 못했습니다.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "제외/무시 목록 업로드 파일을 읽지 못했습니다."));
           }
         }
 
@@ -447,9 +449,9 @@ export function BlocklistSettingsPage() {
                     <button type="button" className="settings-link-button" onClick={() => openEditor(item)}>
                       {item.name}
                     </button>
-                    <span>{item.type === "regex" ? "정규식" : "텍스트"}</span>
+                    <span>{item.type === "regex" ? getStudioRuntimeMessage(uiLanguage, "정규식") : getStudioRuntimeMessage(uiLanguage, "텍스트")}</span>
                     <span>{item.pattern}</span>
-                    <span>{item.enabled ? "사용" : "미사용"}</span>
+                    <span>{item.enabled ? getStudioRuntimeMessage(uiLanguage, "사용") : getStudioRuntimeMessage(uiLanguage, "미사용")}</span>
                     <span>{formatDateTime(item.updatedAt)}</span>
                     <span>{item.updatedBy || "-"}</span>
                   </div>
@@ -579,7 +581,7 @@ export function BlocklistSettingsPage() {
                     <div className="settings-dialog__footer">
                       <button type="button" className="secondary-action" disabled={saving} onClick={() => setEditorOpen(false)}>{getStudioPageLabel(copy,"취소")}</button>
                       <button type="button" className="primary-action" disabled={saving} onClick={() => void handleSaveEditor()}>
-                        {saving ? "저장 중..." : "확인"}
+                        {saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "확인")}
                       </button>
                     </div>
                   </div>

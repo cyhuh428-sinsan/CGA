@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 
@@ -81,7 +83,7 @@ export function BotsWorkspace({ activeTab = "bot", overlay }: BotsWorkspaceProps
     const session = loadAuthSession();
     if (!session) {
       setLoading(false);
-      setErrorMessage(getStudioPageLabel(copy, "로그인이 필요합니다."));
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다."));
       return;
     }
 
@@ -215,7 +217,7 @@ export function BotsWorkspace({ activeTab = "bot", overlay }: BotsWorkspaceProps
                 : getStudioPageLabel(copy, "아직 생성된 봇 허브가 없네요.")}
               <br />
               {uiLanguage === "ko"
-                ? `새로운 ${activeTab === "bot" ? "봇" : "봇 허브"}을 만들고 메인 화면에서 이어서 작업하세요.`
+                ? getStudioRuntimeMessage(uiLanguage, "새로운 {type}을 만들고 메인 화면에서 이어서 작업하세요.").replace("{type}", activeTab === "bot" ? getStudioRuntimeMessage(uiLanguage, "봇") : getStudioRuntimeMessage(uiLanguage, "봇 허브"))
                 : `Create a new ${activeTab === "bot" ? "bot" : "Bot Hub"} and continue from its main screen.`}
             </p>
             <Link href="/studio/bots/new" className="bots-workspace__create-button">
