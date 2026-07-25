@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -7,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { AssetUploadDialog } from "@/components/asset-upload-dialog";
 import { useI18n } from "@/components/language-provider";
 import { getIntentStartLabel, INTENT_START_CATALOGS } from "@/lib/i18n/intent-start";
+import type { SupportedLanguage } from "@/lib/language";
 import { SimulatorFloatingLauncher } from "@/components/simulator-page";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import {
@@ -478,16 +481,16 @@ function isSystemPairEntityName(name: string) {
   return getSystemPairBaseName(name) !== null;
 }
 
-function buildEntityMetaLabel(entityName: string, isSystem: boolean) {
+function buildEntityMetaLabel(entityName: string, isSystem: boolean, language: SupportedLanguage) {
   if (!isSystem) {
-    return "사용자 개체";
+    return getStudioRuntimeMessage(language, "사용자 개체");
   }
 
   if (isSystemPairEntityName(entityName)) {
-    return "시스템 개체 · start/end 쌍";
+    return getStudioRuntimeMessage(language, "시스템 개체 · start/end 쌍");
   }
 
-  return "시스템 개체";
+  return getStudioRuntimeMessage(language, "시스템 개체");
 }
 
 function getEditableChatbotMessages(binding: VersionDialogEntityBinding) {
@@ -661,7 +664,7 @@ export function IntentStartPage() {
         if (!dialogsLoaded && !entitiesLoaded) {
           const dialogsError = dialogsResult.reason instanceof Error ? dialogsResult.reason.message : "";
           const entitiesError = entitiesResult.reason instanceof Error ? entitiesResult.reason.message : "";
-          setErrorMessage(dialogsError || entitiesError || "대화 시작 정보를 불러오지 못했습니다.");
+          setErrorMessage(dialogsError || entitiesError || getStudioRuntimeMessage(uiLanguage, "대화 시작 정보를 불러오지 못했습니다."));
           return;
         }
 
@@ -676,7 +679,7 @@ export function IntentStartPage() {
         };
         const versionResponse = dialogsResponse?.version ?? entitiesResponse?.version;
         if (!versionResponse) {
-          setErrorMessage("대화 시작 정보를 불러오지 못했습니다.");
+          setErrorMessage(getStudioRuntimeMessage(uiLanguage, "대화 시작 정보를 불러오지 못했습니다."));
           return;
         }
         const nextVersion = {
@@ -698,7 +701,7 @@ export function IntentStartPage() {
           setErrorMessage(
             dialogsResult.reason instanceof Error
               ? dialogsResult.reason.message
-              : "의도 학습문장 정보를 불러오지 못했습니다.",
+              : getStudioRuntimeMessage(uiLanguage, "의도 학습문장 정보를 불러오지 못했습니다."),
           );
           return;
         }
@@ -707,7 +710,7 @@ export function IntentStartPage() {
           setErrorMessage(
             entitiesResult.reason instanceof Error
               ? entitiesResult.reason.message
-              : "개체 정보를 불러오지 못했습니다.",
+              : getStudioRuntimeMessage(uiLanguage, "개체 정보를 불러오지 못했습니다."),
           );
           return;
         }
@@ -716,7 +719,7 @@ export function IntentStartPage() {
       })
       .catch((error) => {
         if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "대화 시작 정보를 불러오지 못했습니다.");
+          setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "대화 시작 정보를 불러오지 못했습니다."));
         }
       })
       .finally(() => {
@@ -910,12 +913,12 @@ export function IntentStartPage() {
       [
         {
           key: "user",
-          title: "사용자 개체",
+          title: getStudioRuntimeMessage(uiLanguage, "사용자 개체"),
           items: visibleCandidateEntities.filter((entity) => !entity.system),
         },
         {
           key: "system",
-          title: "시스템 개체",
+          title: getStudioRuntimeMessage(uiLanguage, "시스템 개체"),
           items: visibleCandidateEntities.filter((entity) => entity.system),
         },
       ].filter((section) => section.items.length > 0),
@@ -945,7 +948,7 @@ export function IntentStartPage() {
   }
 
   function handleNavigateToIntentList() {
-    if (hasUnsavedStartChanges && !window.confirm("변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?")) {
+    if (hasUnsavedStartChanges && !window.confirm(getStudioRuntimeMessage(uiLanguage, "변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?"))) {
       return;
     }
 
@@ -963,7 +966,7 @@ export function IntentStartPage() {
   ) {
     if (isViewMode) {
       setMessage("");
-      setErrorMessage("조회모드에서는 작업한 내용을 저장할 수 없습니다.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "조회모드에서는 작업한 내용을 저장할 수 없습니다."));
       return;
     }
 
@@ -1000,7 +1003,7 @@ export function IntentStartPage() {
       setMessage(successMessage);
       afterSave?.();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "대화 시작 설정을 저장하지 못했습니다.");
+      setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "대화 시작 설정을 저장하지 못했습니다."));
     } finally {
       setSaving(false);
     }
@@ -1013,19 +1016,19 @@ export function IntentStartPage() {
 
     const normalizedText = newUtteranceText.trim();
     if (!normalizedText) {
-      setErrorMessage("학습문장을 입력해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "학습문장을 입력해주세요."));
       return;
     }
 
     const normalizedKey = normalizeUtteranceKey(normalizedText);
     if (dialog.utterances.some((item) => normalizeUtteranceKey(item.text) === normalizedKey)) {
-      setErrorMessage("이미 등록된 학습문장입니다.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "이미 등록된 학습문장입니다."));
       return;
     }
 
     const ownerName = findUtteranceOwner(normalizedText);
     if (ownerName) {
-      setErrorMessage(`'${normalizedText}' 학습문장은 '${ownerName}' 의도에서 이미 사용 중입니다.`);
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "'{text}' 학습문장은 '{intent}' 의도에서 이미 사용 중입니다.").replace("{text}", normalizedText).replace("{intent}", ownerName));
       return;
     }
 
@@ -1094,7 +1097,7 @@ export function IntentStartPage() {
     const normalizedText = editingUtteranceText.trim();
     if (!normalizedText) {
       setMessage("");
-      setErrorMessage("학습문장을 입력해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "학습문장을 입력해주세요."));
       return;
     }
 
@@ -1104,14 +1107,14 @@ export function IntentStartPage() {
     );
     if (hasDuplicate) {
       setMessage("");
-      setErrorMessage("이미 등록된 학습문장입니다.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "이미 등록된 학습문장입니다."));
       return;
     }
 
     const ownerName = findUtteranceOwner(normalizedText);
     if (ownerName) {
       setMessage("");
-      setErrorMessage(`'${normalizedText}' 학습문장은 '${ownerName}' 의도에서 이미 사용 중입니다.`);
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "'{text}' 학습문장은 '{intent}' 의도에서 이미 사용 중입니다.").replace("{text}", normalizedText).replace("{intent}", ownerName));
       return;
     }
 
@@ -1161,7 +1164,7 @@ export function IntentStartPage() {
 
     if (entityBindings.some((item) => item.entityId === entity.id)) {
       setMessage("");
-      setErrorMessage(`'${entity.name}' 개체는 이미 등록되어 있습니다.`);
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "'{entity}' 개체는 이미 등록되어 있습니다.").replace("{entity}", entity.name));
       return;
     }
 
@@ -1195,7 +1198,7 @@ export function IntentStartPage() {
 
     if (selectedCandidateEntityIds.length === 0) {
       setMessage("");
-      setErrorMessage("추가할 개체를 먼저 선택해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "추가할 개체를 먼저 선택해주세요."));
       return;
     }
 
@@ -1207,7 +1210,7 @@ export function IntentStartPage() {
 
     if (nextBindings.length === 0) {
       setMessage("");
-      setErrorMessage("선택한 개체는 이미 등록되어 있습니다.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "선택한 개체는 이미 등록되어 있습니다."));
       return;
     }
 
@@ -1366,7 +1369,7 @@ export function IntentStartPage() {
     );
     if (!draftValue) {
       setMessage("");
-      setErrorMessage("변수명을 입력해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "변수명을 입력해주세요."));
       setBindingNameDrafts((current) => ({
         ...current,
         [binding.id]: formatVariableNameInput(binding.variableName),
@@ -1376,7 +1379,7 @@ export function IntentStartPage() {
 
     if (draftValue.startsWith("_")) {
       setMessage("");
-      setErrorMessage("`$_`로 시작하는 변수명은 시스템 변수 예약어라 사용할 수 없습니다.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "`$_`로 시작하는 변수명은 시스템 변수 예약어라 사용할 수 없습니다."));
       setBindingNameDrafts((current) => ({
         ...current,
         [binding.id]: formatVariableNameInput(binding.variableName),
@@ -1386,7 +1389,7 @@ export function IntentStartPage() {
 
     if (!isJavaScriptStyleVariableName(draftValue) || JAVASCRIPT_RESERVED_WORDS.has(draftValue)) {
       setMessage("");
-      setErrorMessage("변수명은 JavaScript/Node.js 규칙에 맞게 입력해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "변수명은 JavaScript/Node.js 규칙에 맞게 입력해주세요."));
       setBindingNameDrafts((current) => ({
         ...current,
         [binding.id]: formatVariableNameInput(binding.variableName),
@@ -1401,7 +1404,7 @@ export function IntentStartPage() {
     );
     if (hasDuplicate) {
       setMessage("");
-      setErrorMessage(`'$${draftValue}' 변수명은 이미 등록되어 있습니다.`);
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "'{variable}' 변수명은 이미 등록되어 있습니다.").replace("{variable}", `$${draftValue}`));
       setBindingNameDrafts((current) => ({
         ...current,
         [binding.id]: formatVariableNameInput(binding.variableName),
@@ -1443,7 +1446,7 @@ export function IntentStartPage() {
     if (validationCount !== requiredValidationCount) {
       return {
         requiredValidationCount,
-        message: `Training 문장 : Validation 문장 비율을 9:1로 조정하기 위해 Validation 문장을 ${requiredValidationCount}개로 설정하세요.`,
+        message: getStudioRuntimeMessage(uiLanguage, "Training 문장 : Validation 문장 비율을 9:1로 조정하기 위해 Validation 문장을 {count}개로 설정하세요.").replace("{count}", String(requiredValidationCount)),
       };
     }
 
@@ -1454,7 +1457,7 @@ export function IntentStartPage() {
     if (!dialog || isViewMode) {
       if (isViewMode) {
         setMessage("");
-        setErrorMessage("조회모드에서는 작업한 내용을 저장할 수 없습니다.");
+        setErrorMessage(getStudioRuntimeMessage(uiLanguage, "조회모드에서는 작업한 내용을 저장할 수 없습니다."));
       }
       return;
     }
@@ -1478,7 +1481,7 @@ export function IntentStartPage() {
       updatedBy: authSession?.user.login_id ?? dialog.updatedBy,
     };
 
-    await persistDialog(nextDialog, "대화 시작 설정이 저장되었습니다.", afterSave);
+    await persistDialog(nextDialog, getStudioRuntimeMessage(uiLanguage, "대화 시작 설정이 저장되었습니다."), afterSave);
   }
 
   function handleReplaceUtterances() {
@@ -1489,19 +1492,19 @@ export function IntentStartPage() {
     const searchText = searchValue.trim();
     if (!searchText) {
       setMessage("");
-      setErrorMessage("검색어를 먼저 입력해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "검색어를 먼저 입력해주세요."));
       return;
     }
 
     if (!replaceValue.trim()) {
       setMessage("");
-      setErrorMessage("바꿀 내용을 입력해주세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "바꿀 내용을 입력해주세요."));
       return;
     }
 
     if (selectedUtteranceIds.length === 0) {
       setMessage("");
-      setErrorMessage("바꿀 학습문장을 먼저 선택해주세요. 모두 바꾸려면 학습문장 왼쪽 체크박스를 선택하세요.");
+      setErrorMessage(getStudioRuntimeMessage(uiLanguage, "바꿀 학습문장을 먼저 선택해주세요. 모두 바꾸려면 학습문장 왼쪽 체크박스를 선택하세요."));
       return;
     }
 
@@ -1559,8 +1562,8 @@ export function IntentStartPage() {
       setMessage("");
       setErrorMessage(
         duplicateCount > 0 || blockedByOtherIntentCount > 0
-          ? "바꾸기 결과가 중복되었거나 다른 의도에서 이미 사용 중이라 적용되지 않았습니다."
-          : "검색어가 포함된 학습문장이 없습니다.",
+          ? getStudioRuntimeMessage(uiLanguage, "바꾸기 결과가 중복되었거나 다른 의도에서 이미 사용 중이라 적용되지 않았습니다.")
+          : getStudioRuntimeMessage(uiLanguage, "검색어가 포함된 학습문장이 없습니다."),
       );
       return;
     }
@@ -1571,8 +1574,8 @@ export function IntentStartPage() {
     }));
     setMessage(
       duplicateCount > 0 || blockedByOtherIntentCount > 0
-        ? `${replacedCount}건을 바꾸고, ${duplicateCount + blockedByOtherIntentCount}건은 중복 또는 다른 의도 사용으로 제외했습니다.`
-        : `${replacedCount}건을 바꿨습니다.`,
+        ? getStudioRuntimeMessage(uiLanguage, "{replaced}건을 바꾸고, {excluded}건은 중복 또는 다른 의도 사용으로 제외했습니다.").replace("{replaced}", String(replacedCount)).replace("{excluded}", String(duplicateCount + blockedByOtherIntentCount))
+        : getStudioRuntimeMessage(uiLanguage, "{count}건을 바꿨습니다.").replace("{count}", String(replacedCount)),
     );
     setErrorMessage("");
   }
@@ -1621,22 +1624,22 @@ export function IntentStartPage() {
 
     setUploadDialogOpen(false);
     setUploadResult({
-      message: "업로드가 완료되었습니다.",
+      message: getStudioRuntimeMessage(uiLanguage, "업로드가 완료되었습니다."),
       note: isFixedValidationMode
-        ? "중복되거나 다른 의도에서 이미 사용 중이거나 구분값(T/V)이 올바르지 않은 학습문장은 등록되지 않습니다."
-        : "중복되거나 다른 의도에서 이미 사용 중인 학습문장은 등록되지 않습니다.",
+        ? getStudioRuntimeMessage(uiLanguage, "중복되거나 다른 의도에서 이미 사용 중이거나 구분값(T/V)이 올바르지 않은 학습문장은 등록되지 않습니다.")
+        : getStudioRuntimeMessage(uiLanguage, "중복되거나 다른 의도에서 이미 사용 중인 학습문장은 등록되지 않습니다."),
       sections: [
         {
           rows: [
-            { label: "추가된 학습문장", value: nextUtterances.length },
-            { label: "중복된 학습문장", value: duplicateCount },
-            { label: "구분값이 잘못된 학습문장", value: invalidTypeCount },
-            { label: "비어 있는 학습문장", value: emptyCount },
+            { label: getStudioRuntimeMessage(uiLanguage, "추가된 학습문장"), value: nextUtterances.length },
+            { label: getStudioRuntimeMessage(uiLanguage, "중복된 학습문장"), value: duplicateCount },
+            { label: getStudioRuntimeMessage(uiLanguage, "구분값이 잘못된 학습문장"), value: invalidTypeCount },
+            { label: getStudioRuntimeMessage(uiLanguage, "비어 있는 학습문장"), value: emptyCount },
           ],
         },
       ],
     });
-    setMessage("학습문장 업로드 결과가 반영되었습니다. 저장하기를 눌러 완료하세요.");
+    setMessage(getStudioRuntimeMessage(uiLanguage, "학습문장 업로드 결과가 반영되었습니다. 저장하기를 눌러 완료하세요."));
     setErrorMessage("");
   }
 
@@ -1667,7 +1670,7 @@ export function IntentStartPage() {
 
     if (
       hasUnsavedStartChanges &&
-      !window.confirm("저장하지 않은 대화 시작 설정이 있습니다. 저장하지 않고 대화 설계로 이동하시겠습니까?")
+      !window.confirm(getStudioRuntimeMessage(uiLanguage, "저장하지 않은 대화 시작 설정이 있습니다. 저장하지 않고 대화 설계로 이동하시겠습니까?"))
     ) {
       return;
     }
@@ -2024,7 +2027,7 @@ export function IntentStartPage() {
 
               {filteredUtterances.length === 0 ? (
                 <p className="manual-main__empty">
-                  {searchValue.trim() ? "검색 조건에 맞는 학습문장이 없습니다." : "등록된 학습문장이 없습니다."}
+                  {searchValue.trim() ? getStudioRuntimeMessage(uiLanguage, "검색 조건에 맞는 학습문장이 없습니다.") : getStudioRuntimeMessage(uiLanguage, "등록된 학습문장이 없습니다.")}
                 </p>
               ) : null}
             </div>
@@ -2120,7 +2123,7 @@ export function IntentStartPage() {
                                   {alreadyBound ? <small>{getIntentStartLabel(copy,"이미 추가됨")}</small> : null}
                                 </span>
                                 <span className="intent-editor__entity-candidate-kind">
-                                  {entity.system ? "시스템 개체" : "사용자 개체"}
+                                  {entity.system ? getStudioRuntimeMessage(uiLanguage, "시스템 개체") : getStudioRuntimeMessage(uiLanguage, "사용자 개체")}
                                 </span>
                                 <span className="intent-editor__entity-candidate-value">
                                   {buildEntityBindingValue(entity)}
@@ -2220,8 +2223,8 @@ export function IntentStartPage() {
                         <span className="intent-editor__entity-name">
                           <strong>{formatEntityDisplayName(binding.entityName)}</strong>
                           <small>
-                            {buildEntityMetaLabel(binding.entityName, isSystemEntity)}
-                            {pairBinding ? ` · ${formatEntityDisplayName(pairBinding.entityName)} 연결` : ""}
+                            {buildEntityMetaLabel(binding.entityName, isSystemEntity, uiLanguage)}
+                            {pairBinding ? getStudioRuntimeMessage(uiLanguage, " · {entity} 연결").replace("{entity}", formatEntityDisplayName(pairBinding.entityName)) : ""}
                           </small>
                         </span>
                         <span className="intent-editor__entity-value" title={binding.entityValue}>
@@ -2234,7 +2237,7 @@ export function IntentStartPage() {
                             disabled={isViewMode}
                             onChange={() => handleToggleRequiredBinding(binding)}
                           />
-                          <span>{binding.required ? "사용" : "미사용"}</span>
+                          <span>{binding.required ? getStudioRuntimeMessage(uiLanguage, "사용") : getStudioRuntimeMessage(uiLanguage, "미사용")}</span>
                         </label>
                         <label className="intent-editor__entity-toggle">
                           <input
@@ -2245,7 +2248,7 @@ export function IntentStartPage() {
                               handleUpdateEntityBinding(binding.id, { local: !binding.local })
                             }
                           />
-                          <span>{binding.local ? "사용" : "미사용"}</span>
+                          <span>{binding.local ? getStudioRuntimeMessage(uiLanguage, "사용") : getStudioRuntimeMessage(uiLanguage, "미사용")}</span>
                         </label>
                         <span className="intent-editor__entity-message-cell">
                           {binding.required ? (
@@ -2255,7 +2258,7 @@ export function IntentStartPage() {
                               disabled={isViewMode}
                               onClick={() => handleOpenChatbotMessageEditor(binding)}
                             >
-                              {filledMessageCount > 0 ? `${filledMessageCount}건` : "메시지 설정"}
+                              {filledMessageCount > 0 ? getStudioRuntimeMessage(uiLanguage, "{count}건").replace("{count}", String(filledMessageCount)) : getStudioRuntimeMessage(uiLanguage, "메시지 설정")}
                             </button>
                           ) : (
                             <span className="intent-editor__entity-message-empty">-</span>
@@ -2293,7 +2296,7 @@ export function IntentStartPage() {
 
       {showViewModeDialog ? (
         <ViewModeDialog
-          ownerLabel={lockConflictOwner || editingUserLabel || "다른 사용자"}
+          ownerLabel={lockConflictOwner || editingUserLabel || getStudioRuntimeMessage(uiLanguage, "다른 사용자")}
           onCancel={lockConflictOwner ? editLock.cancelViewOnly : handleNavigateToIntentList}
           onConfirm={() => {
             if (lockConflictOwner) {
@@ -2320,7 +2323,7 @@ export function IntentStartPage() {
               </ul>
             </>
           }
-          exampleTitle="예시"
+          exampleTitle={getStudioRuntimeMessage(uiLanguage, "예시")}
           exampleLines={["발화문,구분값", "내가 디비에 보험 가입했다고?,T", "가입이 되있다구요,V"]}
           accept=".txt,.csv,text/plain,text/csv"
           templateFileName="LearningExpr_양식.txt"

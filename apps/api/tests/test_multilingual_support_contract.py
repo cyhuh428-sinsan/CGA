@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -1144,7 +1145,14 @@ def test_studio_page_native_catalog_covers_every_korean_source_label() -> None:
         marker = f'  "{language}": {{'
         assert marker in catalog_source
         block = catalog_source.split(marker, 1)[1].split("\n  },", 1)[0]
-        translated = dict(re.findall(r'^\s*"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"', block, re.MULTILINE))
+        translated = {
+            json.loads(key): json.loads(value)
+            for key, value in re.findall(
+                r'^\s*("(?:[^"\\]|\\.)*")\s*:\s*("(?:[^"\\]|\\.)*")',
+                block,
+                re.MULTILINE,
+            )
+        }
         assert len(translated) >= 365, language
         assert direct_korean_labels <= translated.keys(), language
         assert all(value.strip() and not re.search(r"[가-힣]", value) for value in translated.values()), language
@@ -1155,3 +1163,74 @@ def test_studio_page_native_catalog_covers_every_korean_source_label() -> None:
 
     assert "STUDIO_PAGE_COMPLETE_NATIVE" in studio_source
     assert '...STUDIO_PAGE_COMPLETE_NATIVE["zh-CN"]' in studio_source
+
+
+def test_interactive_studio_messages_do_not_bypass_locale_catalogs() -> None:
+    """Interactive notices, confirmation prompts, and accessibility text must be localized."""
+
+    component_names = (
+        "blocklist-settings-page.tsx", "bot-delete-page.tsx", "bot-hub-composition.tsx",
+        "bot-hub-create-form.tsx", "bot-hub-home.tsx", "bot-hub-retraining-page.tsx",
+        "bot-hub-settings.tsx", "botstation-settings-page.tsx", "conversation-default-settings-page.tsx",
+        "conversation-message-settings-page.tsx", "flow-designer-page.tsx", "intent-start-page.tsx",
+        "messenger-floating-buttons-page.tsx", "messenger-settings-page.tsx", "rule-settings-page.tsx",
+        "simulator-page.tsx", "smalltalk-settings-page.tsx", "studio-workspace-provider.tsx",
+    )
+    direct_message = re.compile(
+        r'(?:set(?:ErrorMessage|Message|Notice|Feedback|Toast|Banner|ResultMessage)|window\.(?:alert|confirm|prompt))'
+        r'[^\n]*(?:"[^"\n]*[가-힣][^"\n]*"|`[^`\n]*[가-힣][^`\n]*`)'
+    )
+    direct_accessibility = re.compile(r'(?:alt|title|aria-label|data-help)="[^"]*[가-힣][^"]*"')
+    violations: list[str] = []
+
+    for name in component_names:
+        source = (ROOT_DIR / "apps" / "web" / "components" / name).read_text(encoding="utf-8")
+        for line_number, line in enumerate(source.splitlines(), start=1):
+            if "i18n-allow-data" in line or "i18n-allow-contract" in line:
+                continue
+            translated = any(token in line for token in (
+                "getStudioPageLabel(", "getIntentStartLabel(", "getFlowDesignerLabel(",
+                "getSimulatorLabel(", "getStudioRuntimeMessage(", "copy.", "inputCopy.",
+            ))
+            if not translated and (direct_message.search(line) or direct_accessibility.search(line)):
+                violations.append(f"{name}:{line_number}:{line.strip()}")
+
+    assert not violations, "Unlocalized interactive copy remains:\n" + "\n".join(violations)
+
+def test_studio_runtime_message_catalog_has_complete_native_translations() -> None:
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/studio-runtime-native.ts").read_text(encoding="utf-8")
+    component_source = "\n".join(
+        path.read_text(encoding="utf-8") for path in (ROOT_DIR / "apps/web/components").glob("*.tsx")
+    )
+    used_keys = {
+        json.loads(f'"{value}"')
+        for value in re.findall(
+            r'(?:getStudioRuntimeMessage|formatStudioRuntimeMessage)\([^,]+,\s*"((?:[^"\\]|\\.)*)"',
+            component_source,
+        )
+    }
+    assert len(used_keys) >= 70
+
+    baseline_keys: set[str] | None = None
+    for language in ("en", "zh-CN", "ja", "vi", "fr", "de"):
+        marker = f'  "{language}": {{'
+        assert marker in catalog_source
+        block = catalog_source.split(marker, 1)[1].split("\n  },", 1)[0]
+        translated = {
+            json.loads(key): json.loads(value)
+            for key, value in re.findall(
+                r'^\s*("(?:[^"\\]|\\.)*")\s*:\s*("(?:[^"\\]|\\.)*")',
+                block,
+                re.MULTILINE,
+            )
+        }
+        missing_keys = sorted(used_keys - translated.keys())
+        assert not missing_keys, f"{language}: missing {len(missing_keys)} keys: {missing_keys}"
+        assert all(value.strip() and not re.search(r"[가-힣]", value) for value in translated.values()), language
+        if baseline_keys is None:
+            baseline_keys = set(translated)
+        else:
+            assert set(translated) == baseline_keys, language
+
+    assert 'DELETE' in catalog_source
+    assert '`$_`' in catalog_source

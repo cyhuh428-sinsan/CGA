@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { useEffect, useMemo, useState } from "react";
 
 import { BotSettingsShell } from "@/components/bot-settings-shell";
@@ -146,7 +148,7 @@ export function BotStationSettingsPage() {
             })
             .catch((error) => {
               if (!ignore) {
-                setErrorMessage(error instanceof Error ? error.message : "채널 목록을 불러오지 못했습니다.");
+                setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "채널 목록을 불러오지 못했습니다."));
               }
             })
             .finally(() => {
@@ -197,7 +199,7 @@ export function BotStationSettingsPage() {
               successMessage,
             );
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "봇스테이션 저장 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇스테이션 저장 중 오류가 발생했습니다."));
           } finally {
             setSaving(false);
           }
@@ -296,10 +298,10 @@ export function BotStationSettingsPage() {
                     <span>{getStudioPageLabel(copy,"봇스테이션")}</span>
                     <label className="botstation-settings__switch">
                       <input type="checkbox" checked={form.enabled} onChange={handleToggleBotStation} />
-                      <span>{form.enabled ? "사용" : "미사용"}</span>
+                      <span>{form.enabled ? getStudioRuntimeMessage(uiLanguage, "사용") : getStudioRuntimeMessage(uiLanguage, "미사용")}</span>
                     </label>
                     <span className="botstation-settings__connected">
-                      {form.connectedAt ? `연결일시 ${formatDateTime(form.connectedAt)}` : "봇이 연결되었습니다."}
+                      {form.connectedAt ? getStudioRuntimeMessage(uiLanguage, "연결일시 {time}").replace("{time}", formatDateTime(form.connectedAt)) : getStudioRuntimeMessage(uiLanguage, "봇이 연결되었습니다.")}
                     </span>
                     <button
                       type="button"
@@ -311,7 +313,7 @@ export function BotStationSettingsPage() {
 
                   <div className="botstation-settings__table-wrap">
                     <div className="botstation-settings__count">
-                      {loadingChannels ? "채널 조회 중" : `전체 ${channelRows.length}`}
+                      {loadingChannels ? getStudioRuntimeMessage(uiLanguage, "채널 조회 중") : getStudioRuntimeMessage(uiLanguage, "전체 {count}").replace("{count}", String(channelRows.length))}
                     </div>
                     <div className="settings-list-card">
                       <div className="settings-list-card__header settings-list-card__header--botstation">
@@ -338,7 +340,7 @@ export function BotStationSettingsPage() {
                               checked={channel.enabled}
                               onChange={() => handleToggleChannel(adminChannel, channel)}
                             />
-                            <span>{channel.enabled ? "사용" : "미사용"}</span>
+                            <span>{channel.enabled ? getStudioRuntimeMessage(uiLanguage, "사용") : getStudioRuntimeMessage(uiLanguage, "미사용")}</span>
                           </label>
                         </div>
                       ))}
@@ -499,7 +501,7 @@ export function BotStationSettingsPage() {
                       }
                       return (
                         <div className="admin-form-guide admin-form-guide--wide">
-                          <strong>{isKakaoMeta(meta) ? "Kakao 연결 입력 안내" : "채널 연결 입력 안내"}</strong>
+                          <strong>{isKakaoMeta(meta) ? getStudioRuntimeMessage(uiLanguage, "Kakao 연결 입력 안내") : getStudioRuntimeMessage(uiLanguage, "채널 연결 입력 안내")}</strong>
                           {meta.endpointUrl ? (
                             <p>
                               기본 webhook: <code>{meta.endpointUrl}</code>

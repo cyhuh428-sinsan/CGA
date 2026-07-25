@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -124,7 +126,7 @@ export function MessengerSettingsPage() {
             setRecommendedIntents(nextRecommendedIntents);
             return true;
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "메신저 편의 기능 저장 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "메신저 편의 기능 저장 중 오류가 발생했습니다."));
             return false;
           } finally {
             setSaving(false);
@@ -164,7 +166,7 @@ export function MessengerSettingsPage() {
 
         async function handleSaveFloatingButtonToList() {
           if (!editingButton.label.trim() || !editingButton.actionValue.trim()) {
-            setErrorMessage("버튼명과 Key/Command 값을 입력해주세요.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "버튼명과 Key/Command 값을 입력해주세요."));
             return;
           }
 
@@ -292,7 +294,7 @@ export function MessengerSettingsPage() {
                             disabled={saving}
                             onChange={() => void toggleFloatingButtonEnabled(item)}
                           />
-                          <span>{item.enabled ? "사용" : "미사용"}</span>
+                          <span>{item.enabled ? getStudioRuntimeMessage(uiLanguage, "사용") : getStudioRuntimeMessage(uiLanguage, "미사용")}</span>
                         </label>
                       </div>
                     ))}
@@ -494,7 +496,7 @@ export function MessengerSettingsPage() {
                     <div className="settings-dialog__footer">
                       <button type="button" className="secondary-action" onClick={() => setButtonEditorOpen(false)}>{getStudioPageLabel(copy,"취소")}</button>
                       <button type="button" className="primary-action" disabled={saving} onClick={() => void handleSaveFloatingButtonToList()}>
-                        {saving ? "저장 중..." : "확인"}
+                        {saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "확인")}
                       </button>
                     </div>
                   </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -97,7 +99,7 @@ export function MessengerFloatingButtonsPage() {
 
         function handleSaveItem() {
           if (!editingItem.label.trim() || !editingItem.actionValue.trim()) {
-            setErrorMessage("버튼명과 Key/Command 값을 입력해주세요.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "버튼명과 Key/Command 값을 입력해주세요."));
             return;
           }
 
@@ -126,7 +128,7 @@ export function MessengerFloatingButtonsPage() {
               "플로팅 버튼 설정이 저장되었습니다.",
             );
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "플로팅 버튼 저장 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "플로팅 버튼 저장 중 오류가 발생했습니다."));
           } finally {
             setSaving(false);
           }
@@ -178,7 +180,7 @@ export function MessengerFloatingButtonsPage() {
                               handleToggle(item.id);
                             }}
                           />
-                          <span>{item.enabled ? "사용" : "미사용"}</span>
+                          <span>{item.enabled ? getStudioRuntimeMessage(uiLanguage, "사용") : getStudioRuntimeMessage(uiLanguage, "미사용")}</span>
                         </label>
                       </span>
                     </button>
@@ -260,7 +262,7 @@ export function MessengerFloatingButtonsPage() {
             <div className="bot-settings-page__footer">
               <Link href={mainHref} className="secondary-action">{getStudioPageLabel(copy,"메인 화면으로")}</Link>
               <button type="button" className="primary-action" disabled={saving} onClick={handlePersist}>
-                {saving ? "저장 중..." : "저장"}
+                {saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "저장")}
               </button>
             </div>
           </>

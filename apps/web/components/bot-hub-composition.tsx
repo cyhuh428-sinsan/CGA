@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -29,11 +31,11 @@ export function BotHubComposition({ hubId }: Props) {
 
   useEffect(() => {
     const session = loadAuthSession();
-    if (!session) { setMessage("로그인이 필요합니다."); setLoading(false); return; }
+    if (!session) { setMessage(getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다.")); setLoading(false); return; }
     let disposed = false;
     Promise.all([fetchStudioHub(session.access_token, hubId), fetchStudioBots(session.access_token)])
       .then(([loadedHub, loadedBots]) => { if (!disposed) { setHub(loadedHub); setBots(loadedBots); setMembers(toDraftMembers(loadedHub)); } })
-      .catch((error) => { if (!disposed) setMessage(error instanceof Error ? error.message : "봇 허브를 불러오지 못했습니다."); })
+      .catch((error) => { if (!disposed) setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브를 불러오지 못했습니다.")); })
       .finally(() => { if (!disposed) setLoading(false); });
     return () => { disposed = true; };
   }, [hubId]);
@@ -55,24 +57,24 @@ export function BotHubComposition({ hubId }: Props) {
     });
   }
   async function save() {
-    const session = loadAuthSession(); if (!session) { setMessage("로그인이 필요합니다."); return; }
+    const session = loadAuthSession(); if (!session) { setMessage(getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다.")); return; }
     setSaving(true); setMessage("");
     try {
       const saved = await updateStudioHubMembers(session.access_token, hubId, { members: members.map((member) => ({ ...member, display_name: member.display_name.trim() || undefined, use_as_small_talk: hub?.call_method === "natural" && member.use_as_small_talk })) });
-      setHub(saved); setMembers(toDraftMembers(saved)); setMessage("봇 허브 구성을 저장했습니다.");
-    } catch (error) { setMessage(error instanceof Error ? error.message : "봇 허브 구성 저장에 실패했습니다."); }
+      setHub(saved); setMembers(toDraftMembers(saved)); setMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 구성을 저장했습니다."));
+    } catch (error) { setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브 구성 저장에 실패했습니다.")); }
     finally { setSaving(false); }
   }
 
   async function trainNaturalHub() {
     const session = loadAuthSession();
-    if (!session || !hub) { setMessage("로그인이 필요합니다."); return; }
-    if (hub.call_method !== "natural") { setMessage("자연어 입력형 봇 허브에서만 학습할 수 있습니다."); return; }
+    if (!session || !hub) { setMessage(getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다.")); return; }
+    if (hub.call_method !== "natural") { setMessage(getStudioRuntimeMessage(uiLanguage, "자연어 입력형 봇 허브에서만 학습할 수 있습니다.")); return; }
     const savedMemberIds = hub.members.map((member) => member.bot_id).join("|");
     const draftMemberIds = members.map((member) => member.bot_id).join("|");
-    if (savedMemberIds !== draftMemberIds) { setMessage("하위 봇 구성을 먼저 저장한 후 학습해주세요."); return; }
+    if (savedMemberIds !== draftMemberIds) { setMessage(getStudioRuntimeMessage(uiLanguage, "하위 봇 구성을 먼저 저장한 후 학습해주세요.")); return; }
     const readyMemberCount = hub.members.filter((member) => botById.get(member.bot_id)?.active_version?.is_trained).length;
-    if (readyMemberCount < 2) { setMessage("자연어 입력형 봇 허브는 학습 완료된 운영 버전의 하위 봇이 2개 이상 필요합니다."); return; }
+    if (readyMemberCount < 2) { setMessage(getStudioRuntimeMessage(uiLanguage, "자연어 입력형 봇 허브는 학습 완료된 운영 버전의 하위 봇이 2개 이상 필요합니다.")); return; }
     setTraining(true); setMessage("");
     try {
       const versions = await fetchStudioBotVersions(session.access_token, hubId);
@@ -82,16 +84,16 @@ export function BotHubComposition({ hubId }: Props) {
       await activateStudioBotVersion(session.access_token, hubId, version.id);
       const refreshed = await fetchStudioHub(session.access_token, hubId);
       setHub(refreshed); setMembers(toDraftMembers(refreshed));
-      setMessage("봇 허브 학습과 운영 버전 적용이 완료되었습니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 학습과 운영 버전 적용이 완료되었습니다."));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "봇 허브 학습에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브 학습에 실패했습니다."));
     } finally {
       setTraining(false);
     }
   }
 
   if (loading) return <main className="page"><p className="bot-hub__notice">{getStudioPageLabel(copy,"봇 허브를 불러오는 중입니다...")}</p></main>;
-  if (!hub) return <main className="page"><p className="bot-hub__notice bot-hub__notice--error">{message || "봇 허브를 찾을 수 없습니다."}</p></main>;
+  if (!hub) return <main className="page"><p className="bot-hub__notice bot-hub__notice--error">{message || getStudioRuntimeMessage(uiLanguage, "봇 허브를 찾을 수 없습니다.")}</p></main>;
 
   return <main className="page bot-hub">
     <header className="bot-hub__header">
@@ -104,13 +106,13 @@ export function BotHubComposition({ hubId }: Props) {
         </div>
       </div>
       <div className="bot-hub__header-actions">
-        <button type="button" className="bot-hub__primary" onClick={save} disabled={saving}>{saving ? "저장 중..." : "구성 저장"}</button>
+        <button type="button" className="bot-hub__primary" onClick={save} disabled={saving}>{saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "구성 저장")}</button>
       </div>
     </header>
-    {message ? <p className={`bot-hub__notice${message.endsWith("했습니다.") ? "" : " bot-hub__notice--error"}`}>{message}</p> : null}
+    {message ? <p className={`bot-hub__notice${message === getStudioRuntimeMessage(uiLanguage, "봇 허브 구성을 저장했습니다.") || message === getStudioRuntimeMessage(uiLanguage, "봇 허브 학습과 운영 버전 적용이 완료되었습니다.") ? "" : " bot-hub__notice--error"}`}>{message}</p> : null}
     <section className="bot-hub__grid">
-      <article className="bot-hub__panel"><div className="bot-hub__panel-title"><h2>{getStudioPageLabel(copy,"하위 봇 선택")}</h2><span>{candidates.length}개</span></div><p className="bot-hub__help">{hub.call_method === "natural" ? "학습 완료된 운영 버전의 일반 봇을 2개 이상 선택해야 합니다." : "일반 봇을 선택하면 허브의 호출 버튼으로 사용됩니다."}</p><div className="bot-hub__candidate-list">{candidates.map((bot) => <label key={bot.id} className="bot-hub__candidate"><input type="checkbox" checked={members.some((member) => member.bot_id === bot.id)} onChange={() => toggle(bot)} /><span><strong>{bot.name}</strong><small>{bot.active_version_id ? (bot.active_version?.is_trained ? "운영 버전 · 학습 완료" : "운영 버전 · 학습 필요") : "운영 버전 없음"}</small></span></label>)}{candidates.length === 0 ? <p className="bot-hub__help">{getStudioPageLabel(copy,"추가할 일반 봇이 없습니다.")}</p> : null}</div></article>
-      <article className="bot-hub__panel"><div className="bot-hub__panel-title"><h2>{getStudioPageLabel(copy,"허브 구성")}</h2><span>{members.length}개 선택</span></div><p className="bot-hub__help">{hub.call_method === "natural" ? "표시명은 후보 안내에, 순서는 동점 후보 정렬에 사용됩니다." : "표시 순서는 호출 버튼의 표시 순서입니다."}</p><ol className="bot-hub__member-list">{members.map((member, index) => { const bot = botById.get(member.bot_id); return <li key={member.bot_id}><div className="bot-hub__member-main"><strong>{bot?.name || "삭제된 봇"}</strong><input aria-label={getStudioPageLabel(copy,"표시명")} value={member.display_name} onChange={(event) => update(member.bot_id, { display_name: event.target.value })} />{hub.call_method === "natural" ? <label className="bot-hub__check"><input type="checkbox" checked={member.use_as_small_talk} onChange={(event) => update(member.bot_id, { use_as_small_talk: event.target.checked })} />{getStudioPageLabel(copy, "봇 허브 스몰토크 사용")}</label> : null}</div><div className="bot-hub__member-actions"><button type="button" onClick={() => move(member.bot_id, -1)} disabled={index === 0}>↑</button><button type="button" onClick={() => move(member.bot_id, 1)} disabled={index === members.length - 1}>↓</button><button type="button" onClick={() => setMembers((current) => current.filter((item) => item.bot_id !== member.bot_id))}>×</button></div></li>; })}</ol>{members.length === 0 ? <p className="bot-hub__empty">{getStudioPageLabel(copy,"왼쪽 목록에서 하위 봇을 선택하세요.")}</p> : null}</article>
+      <article className="bot-hub__panel"><div className="bot-hub__panel-title"><h2>{getStudioPageLabel(copy,"하위 봇 선택")}</h2><span>{getStudioRuntimeMessage(uiLanguage, "{count}개").replace("{count}", String(candidates.length))}</span></div><p className="bot-hub__help">{hub.call_method === "natural" ? getStudioRuntimeMessage(uiLanguage, "학습 완료된 운영 버전의 일반 봇을 2개 이상 선택해야 합니다.") : getStudioRuntimeMessage(uiLanguage, "일반 봇을 선택하면 허브의 호출 버튼으로 사용됩니다.")}</p><div className="bot-hub__candidate-list">{candidates.map((bot) => <label key={bot.id} className="bot-hub__candidate"><input type="checkbox" checked={members.some((member) => member.bot_id === bot.id)} onChange={() => toggle(bot)} /><span><strong>{bot.name}</strong><small>{bot.active_version_id ? (bot.active_version?.is_trained ? getStudioRuntimeMessage(uiLanguage, "운영 버전 · 학습 완료") : getStudioRuntimeMessage(uiLanguage, "운영 버전 · 학습 필요")) : getStudioRuntimeMessage(uiLanguage, "운영 버전 없음")}</small></span></label>)}{candidates.length === 0 ? <p className="bot-hub__help">{getStudioPageLabel(copy,"추가할 일반 봇이 없습니다.")}</p> : null}</div></article>
+      <article className="bot-hub__panel"><div className="bot-hub__panel-title"><h2>{getStudioPageLabel(copy,"허브 구성")}</h2><span>{getStudioRuntimeMessage(uiLanguage, "{count}개 선택").replace("{count}", String(members.length))}</span></div><p className="bot-hub__help">{hub.call_method === "natural" ? getStudioRuntimeMessage(uiLanguage, "표시명은 후보 안내에, 순서는 동점 후보 정렬에 사용됩니다.") : getStudioRuntimeMessage(uiLanguage, "표시 순서는 호출 버튼의 표시 순서입니다.")}</p><ol className="bot-hub__member-list">{members.map((member, index) => { const bot = botById.get(member.bot_id); return <li key={member.bot_id}><div className="bot-hub__member-main"><strong>{bot?.name || getStudioRuntimeMessage(uiLanguage, "삭제된 봇")}</strong><input aria-label={getStudioPageLabel(copy,"표시명")} value={member.display_name} onChange={(event) => update(member.bot_id, { display_name: event.target.value })} />{hub.call_method === "natural" ? <label className="bot-hub__check"><input type="checkbox" checked={member.use_as_small_talk} onChange={(event) => update(member.bot_id, { use_as_small_talk: event.target.checked })} />{getStudioPageLabel(copy, "봇 허브 스몰토크 사용")}</label> : null}</div><div className="bot-hub__member-actions"><button type="button" onClick={() => move(member.bot_id, -1)} disabled={index === 0}>↑</button><button type="button" onClick={() => move(member.bot_id, 1)} disabled={index === members.length - 1}>↓</button><button type="button" onClick={() => setMembers((current) => current.filter((item) => item.bot_id !== member.bot_id))}>×</button></div></li>; })}</ol>{members.length === 0 ? <p className="bot-hub__empty">{getStudioPageLabel(copy,"왼쪽 목록에서 하위 봇을 선택하세요.")}</p> : null}</article>
     </section>
   </main>;
 }
