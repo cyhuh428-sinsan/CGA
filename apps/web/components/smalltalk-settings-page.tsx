@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { buildSmalltalkText, parseSmalltalkText } from "@/lib/asset-text-format";
@@ -262,7 +264,7 @@ export function SmalltalkSettingsPage() {
         function addUserMessage() {
           const nextMessage = userMessageDraft.trim();
           if (!nextMessage) {
-            setErrorMessage("사용자 메시지를 입력해주세요.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "사용자 메시지를 입력해주세요."));
             return;
           }
           setErrorMessage("");
@@ -273,7 +275,7 @@ export function SmalltalkSettingsPage() {
         function addBotMessage() {
           const nextMessage = botMessageDraft.trim();
           if (!nextMessage) {
-            setErrorMessage("봇 메시지를 입력해주세요.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "봇 메시지를 입력해주세요."));
             return;
           }
           setErrorMessage("");
@@ -325,7 +327,7 @@ export function SmalltalkSettingsPage() {
             setForm(nextSettings);
             return true;
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "스몰토크 저장 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "스몰토크 저장 중 오류가 발생했습니다."));
             return false;
           } finally {
             setSaving(false);
@@ -341,7 +343,7 @@ export function SmalltalkSettingsPage() {
             createdBy: editor.createdBy || editorName,
           });
           if (!normalizedEditor.title.trim() || !normalizedEditor.userMessages?.length || !normalizedEditor.botMessages?.length) {
-            setErrorMessage("스몰토크명, 사용자 메시지, 봇 메시지를 모두 입력해주세요.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "스몰토크명, 사용자 메시지, 봇 메시지를 모두 입력해주세요."));
             return;
           }
 
@@ -376,7 +378,7 @@ export function SmalltalkSettingsPage() {
             const text = await file.text();
             const uploaded = parseSmalltalkText(text);
             if (uploaded.length === 0) {
-              setErrorMessage("업로드 가능한 스몰토크가 없습니다.");
+              setErrorMessage(getStudioRuntimeMessage(uiLanguage, "업로드 가능한 스몰토크가 없습니다."));
               return;
             }
             const stamped = uploaded.map((item) => ({
@@ -390,7 +392,7 @@ export function SmalltalkSettingsPage() {
             setMoreMenuOpen(false);
             await persistItems(nextItems, `${uploaded.length}개의 스몰토크를 불러왔습니다.`);
           } catch {
-            setErrorMessage("스몰토크 업로드 파일을 읽지 못했습니다.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "스몰토크 업로드 파일을 읽지 못했습니다."));
           }
         }
 
@@ -793,7 +795,7 @@ export function SmalltalkSettingsPage() {
                     <div className="settings-dialog__footer">
                       <button type="button" className="secondary-action" onClick={() => setEditorOpen(false)}>{getStudioPageLabel(copy,"취소")}</button>
                       <button type="button" className="primary-action" disabled={saving} onClick={() => void handleReflectEditor()}>
-                        {saving ? "저장 중..." : "확인"}
+                        {saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "확인")}
                       </button>
                     </div>
                   </div>

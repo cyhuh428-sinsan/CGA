@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -40,7 +42,7 @@ export function BotHubHome({ hubId }: Props) {
   useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
-      setMessage("로그인이 필요합니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다."));
       setLoading(false);
       return;
     }
@@ -61,7 +63,7 @@ export function BotHubHome({ hubId }: Props) {
           });
       })
       .catch((error) => {
-        if (!disposed) setMessage(error instanceof Error ? error.message : "봇 허브를 불러오지 못했습니다.");
+        if (!disposed) setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브를 불러오지 못했습니다."));
       })
       .finally(() => {
         if (!disposed) setLoading(false);
@@ -75,13 +77,13 @@ export function BotHubHome({ hubId }: Props) {
   async function trainNaturalHub() {
     const session = loadAuthSession();
     if (!session || !hub) {
-      setMessage("로그인이 필요합니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "로그인이 필요합니다."));
       return;
     }
 
     const readyMemberCount = hub.members.filter((member) => botsById[member.bot_id]?.active_version?.is_trained).length;
     if (readyMemberCount < 2) {
-      setMessage("자연어 입력형 봇 허브는 학습 완료된 운영 버전의 하위 봇이 2개 이상 필요합니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "자연어 입력형 봇 허브는 학습 완료된 운영 버전의 하위 봇이 2개 이상 필요합니다."));
       return;
     }
 
@@ -95,9 +97,9 @@ export function BotHubHome({ hubId }: Props) {
       await trainStudioBotVersionNlu(session.access_token, hubId, version.id);
       await activateStudioBotVersion(session.access_token, hubId, version.id);
       setHub(await fetchStudioHub(session.access_token, hubId));
-      setMessage("봇 허브 학습과 운영 버전 적용이 완료되었습니다.");
+      setMessage(getStudioRuntimeMessage(uiLanguage, "봇 허브 학습과 운영 버전 적용이 완료되었습니다."));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "봇 허브 학습에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "봇 허브 학습에 실패했습니다."));
     } finally {
       setTraining(false);
     }
@@ -107,7 +109,7 @@ export function BotHubHome({ hubId }: Props) {
     return <main className="page"><p className="bot-hub__notice">{getStudioPageLabel(copy,"봇 허브를 불러오는 중입니다...")}</p></main>;
   }
   if (!hub) {
-    return <main className="page"><p className="bot-hub__notice bot-hub__notice--error">{message || "봇 허브를 찾을 수 없습니다."}</p></main>;
+    return <main className="page"><p className="bot-hub__notice bot-hub__notice--error">{message || getStudioRuntimeMessage(uiLanguage, "봇 허브를 찾을 수 없습니다.")}</p></main>;
   }
 
   return (
@@ -118,13 +120,13 @@ export function BotHubHome({ hubId }: Props) {
           <div>
             <Link href="/studio/hubs" className="bot-hub__back">{getStudioPageLabel(copy,"봇 허브 목록")}</Link>
             <h1>{hub.name}</h1>
-            <p>{hub.introduction || `${hub.call_method === "natural" ? "자연어 입력형" : "버튼 선택형"} 봇 허브`}</p>
+            <p>{hub.introduction || getStudioRuntimeMessage(uiLanguage, "{type} 봇 허브").replace("{type}", hub.call_method === "natural" ? getStudioRuntimeMessage(uiLanguage, "자연어 입력형") : getStudioRuntimeMessage(uiLanguage, "버튼 선택형"))}</p>
           </div>
         </div>
         <div className="bot-hub__header-actions">
           {hub.call_method === "natural" ? (
             <button type="button" className="bot-hub__secondary" onClick={trainNaturalHub} disabled={training}>
-              {training ? "학습 중..." : "봇 허브 학습"}
+              {training ? getStudioPageLabel(copy, "학습 중...") : getStudioPageLabel(copy, "봇 허브 학습")}
             </button>
           ) : null}
           <Link href={`/studio/hubs/${hubId}/retraining`} className="bot-hub__secondary">{getStudioPageLabel(copy,"재학습")}</Link>
@@ -133,12 +135,12 @@ export function BotHubHome({ hubId }: Props) {
         </div>
       </header>
 
-      {message ? <p className={`bot-hub__notice${message.endsWith("완료되었습니다.") ? "" : " bot-hub__notice--error"}`}>{message}</p> : null}
+      {message ? <p className={`bot-hub__notice${message === getStudioRuntimeMessage(uiLanguage, "봇 허브 학습과 운영 버전 적용이 완료되었습니다.") ? "" : " bot-hub__notice--error"}`}>{message}</p> : null}
 
       <section className="bot-hub__panel bot-hub__panel--members">
         <div className="bot-hub__panel-title">
           <h2>{getStudioPageLabel(copy, "봇 허브에 담긴 챗봇 정보 목록")}</h2>
-          <span>{hub.members.length}개</span>
+          <span>{getStudioRuntimeMessage(uiLanguage, "{count}개").replace("{count}", String(hub.members.length))}</span>
         </div>
         {hub.members.length === 0 ? (
           <p className="bot-hub__empty">{getStudioPageLabel(copy,"담긴 봇이 없습니다. 봇 허브 구성을 클릭해 일반 봇을 추가하세요.")}</p>
@@ -156,13 +158,13 @@ export function BotHubHome({ hubId }: Props) {
                 return (
                   <tr key={member.id}>
                     <td>{index + 1}</td>
-                    <td>{member.name || bot?.name || "삭제된 봇"}</td>
+                    <td>{member.name || bot?.name || getStudioRuntimeMessage(uiLanguage, "삭제된 봇")}</td>
                     <td>{member.display_name || member.name || bot?.name || "-"}</td>
                     <td>{bot?.description || "-"}</td>
                     <td>{version?.name || "-"}</td>
-                    <td>{version?.is_trained ? "학습 완료" : member.has_operating_version ? "운영" : "운영 버전 없음"}</td>
+                    <td>{version?.is_trained ? getStudioRuntimeMessage(uiLanguage, "학습 완료") : member.has_operating_version ? getStudioRuntimeMessage(uiLanguage, "운영") : getStudioRuntimeMessage(uiLanguage, "운영 버전 없음")}</td>
                     <td>{version?.updated_at ? new Date(version.updated_at).toLocaleString("ko-KR") : "-"}</td>
-                    <td>{member.use_as_small_talk ? "사용" : "미사용"}</td>
+                    <td>{member.use_as_small_talk ? getStudioRuntimeMessage(uiLanguage, "사용") : getStudioRuntimeMessage(uiLanguage, "미사용")}</td>
                   </tr>
                 );
               })}
@@ -175,7 +177,7 @@ export function BotHubHome({ hubId }: Props) {
         type="button"
         className="bot-hub__simulator-fab"
         disabled={!hub.active_version_id}
-        title={hub.active_version_id ? "봇 허브 대화 시뮬레이터 열기" : "운영 버전을 지정한 후 사용할 수 있습니다."}
+        title={hub.active_version_id ? getStudioRuntimeMessage(uiLanguage, "봇 허브 대화 시뮬레이터 열기") : getStudioRuntimeMessage(uiLanguage, "운영 버전을 지정한 후 사용할 수 있습니다.")}
         onClick={() => setSimulatorOpen(true)}
       >
         대화 시뮬레이터

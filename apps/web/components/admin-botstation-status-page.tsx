@@ -1,5 +1,7 @@
 "use client";
 
+import { formatStudioRuntimeMessage, getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { useEffect, useMemo, useState } from "react";
 
 import { DataGrid, type DataGridRow, type DataGridSortState } from "@/components/data-grid";
@@ -34,6 +36,7 @@ import {
 import { useI18n } from "@/components/language-provider";
 import { ADMIN_COMMON_CATALOGS } from "@/lib/i18n/admin-common";
 import { ADMIN_BOTSTATION_STATUS_CATALOGS, getAdminBotstationStatusLabel } from "@/lib/i18n/admin-botstation-status";
+import type { SupportedLanguage } from "@/lib/language";
 
 type BotStationStatus = "전체" | "Active" | "Inactive";
 
@@ -136,7 +139,7 @@ function normalizeFallbackReasons(value: unknown) {
     .filter(Boolean);
 }
 
-function buildKakaoLogSummary(logs: AdminSystemLogItem[]): KakaoLogSummary {
+function buildKakaoLogSummary(logs: AdminSystemLogItem[], language: SupportedLanguage): KakaoLogSummary {
   const respondedLogs = logs.filter((item) => String(item.event || "").trim() === "kakao.webhook.responded");
   const rejectedLogs = logs.filter((item) => String(item.event || "").trim() === "kakao.webhook.rejected");
   const failedLogs = logs.filter((item) => String(item.event || "").trim() === "kakao.webhook.failed");
@@ -150,7 +153,7 @@ function buildKakaoLogSummary(logs: AdminSystemLogItem[]): KakaoLogSummary {
   const fallbackReasons = latestFallback ? normalizeFallbackReasons((latestFallback.data as Record<string, unknown>)?.fallback_reasons) : [];
 
   return {
-    statusLabel: latestFailure ? "최근 실패 있음" : latestResponded ? "최근 응답 정상" : "최근 이력 확인 필요",
+    statusLabel: getStudioRuntimeMessage(language, latestFailure ? "최근 실패 있음" : latestResponded ? "최근 응답 정상" : "최근 이력 확인 필요"),
     statusTone: latestFailure ? "warn" : "ok",
     respondedCount: respondedLogs.length,
     rejectedCount: rejectedLogs.length,
@@ -260,17 +263,17 @@ function buildSettingsForAdminChannels(
   };
 }
 
-function getVersionStatusLabel(bot: StudioBotApiItem) {
+function getVersionStatusLabel(bot: StudioBotApiItem, language: SupportedLanguage) {
   if (!bot.active_version) {
-    return "운영버전 없음";
+    return getStudioRuntimeMessage(language, "운영버전 없음");
   }
   if (!isStudioBotVersionTrained(bot.active_version)) {
-    return "학습 필요";
+    return getStudioRuntimeMessage(language, "학습 필요");
   }
-  return bot.active_version.status === "active" ? "운영" : bot.active_version.status;
+  return bot.active_version.status === "active" ? getStudioRuntimeMessage(language, "운영") : bot.active_version.status;
 }
 
-function buildRows(bots: StudioBotApiItem[], adminChannels: AdminChannelItem[]): BotStationRow[] {
+function buildRows(bots: StudioBotApiItem[], adminChannels: AdminChannelItem[], language: SupportedLanguage): BotStationRow[] {
   return bots.map((bot) => {
     const versionName = getBotSettingsVersionName(bot);
     const settings = buildSettingsForAdminChannels(bot, cloneSettings(getBotVersionSettings(bot).botstation), adminChannels);
@@ -278,13 +281,13 @@ function buildRows(bots: StudioBotApiItem[], adminChannels: AdminChannelItem[]):
     const activeMessengerCount = activeChannels.length;
     const hasActiveVersion = Boolean(bot.active_version);
     const status = hasActiveVersion && settings.connected && settings.enabled && activeMessengerCount > 0 ? "Active" : "Inactive";
-    const issueMessage = !hasActiveVersion
+    const issueMessage = getStudioRuntimeMessage(language, !hasActiveVersion
       ? "운영버전 없음"
       : !settings.enabled
         ? "봇스테이션 미사용"
         : activeMessengerCount === 0
           ? "활성 채널 없음"
-          : "정상";
+          : "정상");
 
     return {
       bot,
@@ -293,8 +296,8 @@ function buildRows(bots: StudioBotApiItem[], adminChannels: AdminChannelItem[]):
       groupName: bot.group_name ?? bot.group_code ?? "-",
       botName: bot.name,
       status,
-      operatingVersion: bot.active_version ? `${bot.active_version.name} / ${getVersionStatusLabel(bot)}` : "-",
-      operatingStatus: getVersionStatusLabel(bot),
+      operatingVersion: bot.active_version ? `${bot.active_version.name} / ${getVersionStatusLabel(bot, language)}` : "-",
+      operatingStatus: getVersionStatusLabel(bot, language),
       channelSummary: activeChannels.map((channel) => channel.channelName || channel.name).join(", ") || "-",
       channelCodes: activeChannels.map((channel) => channel.channelCode || channel.id),
       activeMessengerCount,
@@ -451,7 +454,7 @@ export function AdminBotstationStatusPage() {
     };
   }, []);
 
-  const allRows = useMemo(() => buildRows(bots, adminChannels), [adminChannels, bots]);
+  const allRows = useMemo(() => buildRows(bots, adminChannels, uiLanguage), [adminChannels, bots, uiLanguage]);
   const filteredRows = useMemo(() => {
     const botName = appliedFilters.botName.trim().toLowerCase();
     const updatedBy = appliedFilters.updatedBy.trim().toLowerCase();
@@ -642,7 +645,7 @@ export function AdminBotstationStatusPage() {
       ? channelLogItems.filter((item) => String(item.event || "").startsWith("kakao.webhook."))
       : [];
   const selectedChannelLogs = selectedChannelAllLogs.slice(0, 5);
-  const selectedKakaoLogSummary = selectedChannelAllLogs.length ? buildKakaoLogSummary(selectedChannelAllLogs) : null;
+  const selectedKakaoLogSummary = selectedChannelAllLogs.length ? buildKakaoLogSummary(selectedChannelAllLogs, uiLanguage) : null;
 
   return (
     <section className="admin-page admin-botstation">
@@ -755,7 +758,11 @@ export function AdminBotstationStatusPage() {
 
       <div className="admin-page__toolbar">
         <div className="admin-page__toolbar-left">
-          <strong>{loading ? "조회 중" : `전체 ${filteredRows.length}건`}</strong>
+          <strong>
+            {loading
+              ? getStudioRuntimeMessage(uiLanguage, "조회 중")
+              : `${getAdminBotstationStatusLabel(stationCopy, "전체")} ${formatStudioRuntimeMessage(uiLanguage, "{count}건", { count: filteredRows.length })}`}
+          </strong>
           <label className="manual-main__mini-select manual-main__mini-select--select">
             <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as ListPageSize)}>
               {LIST_PAGE_SIZE_OPTIONS.map((option) => (
@@ -776,7 +783,7 @@ export function AdminBotstationStatusPage() {
           variant="admin"
           className="admin-botstation__grid"
           template="96px 140px minmax(150px, 1fr) minmax(160px, 1fr) 150px 96px minmax(140px, 1fr) 160px 120px"
-          columns={["상태", "그룹", "채널", "봇 이름", "운영버전", "활성 채널", "메시지", "최종수정일시", "최종수정자"]}
+          columns={["상태", "그룹", "채널", "봇 이름", "운영버전", "활성 채널", "메시지", "최종수정일시", "최종수정자"].map((label) => getAdminBotstationStatusLabel(stationCopy, label))}
           rows={gridRows}
           sortState={sortState}
           onSort={setSortState}

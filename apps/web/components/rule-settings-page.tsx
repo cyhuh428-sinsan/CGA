@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { buildRuleText, parseRuleText } from "@/lib/asset-text-format";
@@ -250,7 +252,7 @@ export function RuleSettingsPage() {
             setItems(nextItems);
             return true;
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "룰 저장 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "룰 저장 중 오류가 발생했습니다."));
             return false;
           } finally {
             setSaving(false);
@@ -324,7 +326,7 @@ export function RuleSettingsPage() {
 
         async function handleSaveEditor() {
           if (!editor.name.trim() || !editor.expression.trim()) {
-            setErrorMessage("룰 이름과 룰 표현식을 입력해주세요.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "룰 이름과 룰 표현식을 입력해주세요."));
             return;
           }
 
@@ -383,7 +385,7 @@ export function RuleSettingsPage() {
             const text = await file.text();
             const uploaded = parseRuleText(text);
             if (uploaded.length === 0) {
-              setErrorMessage("업로드 가능한 룰이 없습니다.");
+              setErrorMessage(getStudioRuntimeMessage(uiLanguage, "업로드 가능한 룰이 없습니다."));
               return;
             }
             const stamped = uploaded.map((item) => ({
@@ -410,7 +412,7 @@ export function RuleSettingsPage() {
             setMoreMenuOpen(false);
             await persistItems(nextItems, `룰 업로드: 추가 ${addedCount}건, 갱신 ${updatedCount}건`);
           } catch {
-            setErrorMessage("룰 업로드 파일을 읽지 못했습니다.");
+            setErrorMessage(getStudioRuntimeMessage(uiLanguage, "룰 업로드 파일을 읽지 못했습니다."));
           }
         }
 
@@ -534,7 +536,7 @@ export function RuleSettingsPage() {
                 </label>
                 <div className="settings-form-card">
                   <span>{getStudioPageLabel(copy,"결과")}</span>
-                  <p className="bot-settings-page__caption">{testResultText || "룰이 연결되는지 확인해보세요."}</p>
+                  <p className="bot-settings-page__caption">{testResultText || getStudioRuntimeMessage(uiLanguage, "룰이 연결되는지 확인해보세요.")}</p>
                 </div>
               </div>
 
@@ -750,7 +752,7 @@ export function RuleSettingsPage() {
                             disabled={targetOptions.length === 0}
                             onChange={(event) => setEditor((current) => ({ ...current, target: event.target.value }))}
                           >
-                            <option value="">{targetOptions.length === 0 ? "선택 가능한 의도/모듈 없음" : "선택 안 함"}</option>
+                            <option value="">{targetOptions.length === 0 ? getStudioRuntimeMessage(uiLanguage, "선택 가능한 의도/모듈 없음") : getStudioRuntimeMessage(uiLanguage, "선택 안 함")}</option>
                             {editor.target && !hasEditorTargetInOptions ? (
                               <option value={editor.target}>{editor.target} - 기존 연결값</option>
                             ) : null}
@@ -775,7 +777,7 @@ export function RuleSettingsPage() {
                     <div className="settings-dialog__footer">
                       <button type="button" className="secondary-action" disabled={saving} onClick={() => setEditorOpen(false)}>{getStudioPageLabel(copy,"취소")}</button>
                       <button type="button" className="primary-action" disabled={saving} onClick={() => void handleSaveEditor()}>
-                        {saving ? "저장 중..." : "확인"}
+                        {saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "확인")}
                       </button>
                     </div>
                   </div>

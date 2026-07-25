@@ -1,5 +1,7 @@
 "use client";
 
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
@@ -413,7 +415,7 @@ export function ConversationDefaultSettingsPage() {
               "대화 기본값 설정이 저장되었습니다.",
             );
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "대화 기본값 저장 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "대화 기본값 저장 중 오류가 발생했습니다."));
           } finally {
             setSaving(false);
           }
@@ -426,7 +428,7 @@ export function ConversationDefaultSettingsPage() {
             <div className="bot-settings-page__top-actions">
               <Link href={mainHref} className="secondary-action">{getStudioPageLabel(copy,"취소")}</Link>
               <button type="button" className="primary-action" disabled={saving} onClick={handleSave}>
-                {saving ? "저장 중..." : "저장"}
+                {saving ? getStudioRuntimeMessage(uiLanguage, "저장 중...") : getStudioRuntimeMessage(uiLanguage, "저장")}
               </button>
             </div>
 
@@ -447,7 +449,7 @@ export function ConversationDefaultSettingsPage() {
                           className="settings-defaults-input"
                           value={form.voice.ttsUrl}
                           disabled={!isVoiceBot}
-                          placeholder={isVoiceBot ? "등록할 URL을 입력하세요." : "보이스봇일 때만 설정할 수 있습니다."}
+                          placeholder={isVoiceBot ? getStudioRuntimeMessage(uiLanguage, "등록할 URL을 입력하세요.") : getStudioRuntimeMessage(uiLanguage, "보이스봇일 때만 설정할 수 있습니다.")}
                           onChange={(event) =>
                             updateSection("voice", {
                               ttsUrl: event.target.value,
