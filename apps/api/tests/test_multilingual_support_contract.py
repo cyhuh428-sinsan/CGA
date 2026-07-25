@@ -1278,3 +1278,22 @@ def test_dynamic_studio_copy_does_not_fall_back_to_korean() -> None:
                 violations.append(f"{name}: {snippet}")
 
     assert not violations, "Dynamic Korean copy remains:\n" + "\n".join(violations)
+
+
+def test_simulator_separates_bot_language_from_analysis_language() -> None:
+    source = (ROOT_DIR / "apps/web/components/simulator-page.tsx").read_text(encoding="utf-8")
+    bot_language_leaks = (
+        'getStudioRuntimeMessage(uiLanguage, "원하는 의도 없음")',
+        'getStudioRuntimeMessage(uiLanguage, "다시 질문해주시면 다른 의도를 찾겠습니다.")',
+        'getStudioRuntimeMessage(uiLanguage, "목록에 있는 버튼 중 하나를 선택해주세요.")',
+        'makeMessage("system", "다음 대화 카드가 연결되어 있지 않습니다.")',
+    )
+    analysis_language_leaks = (
+        'cardType: "실행 오류"', 'cardType: "설계 오류"', 'cardType: "스몰토크"',
+        'cardType: "룰"', 'cardName: "의도분류"', 'cardType: "개체 추출"',
+        'description: "카드를 실행했습니다."', 'description: "사용자 입력을 기다립니다."',
+        'description: "변수값을 갱신했습니다."',
+        'description: "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다."',
+    )
+    violations = [snippet for snippet in (*bot_language_leaks, *analysis_language_leaks) if snippet in source]
+    assert not violations, "Simulator language-boundary leaks remain:\n" + "\n".join(violations)
