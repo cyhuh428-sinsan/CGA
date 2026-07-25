@@ -1300,3 +1300,28 @@ def test_simulator_separates_bot_language_from_analysis_language() -> None:
     )
     violations = [snippet for snippet in (*bot_language_leaks, *analysis_language_leaks) if snippet in source]
     assert not violations, "Simulator language-boundary leaks remain:\n" + "\n".join(violations)
+
+
+def test_simulator_native_controls_and_timestamps_follow_ui_language() -> None:
+    """Simulator chrome must not fall back to English or a fixed Korean time locale."""
+
+    component_source = (ROOT_DIR / "apps/web/components/simulator-page.tsx").read_text(encoding="utf-8")
+    catalog_source = (ROOT_DIR / "apps/web/lib/i18n/simulator.ts").read_text(encoding="utf-8")
+
+    assert 'toLocaleTimeString("ko-KR"' not in component_source
+    assert "SIMULATOR_TIME_LOCALES" in component_source
+    assert component_source.count("formatMessageTime(message.timestamp, uiLanguage)") == 2
+
+    assert "type SimulatorUiLabelKey = keyof typeof enUiLabels" in catalog_source
+    assert "const simulatorNativeLabels" in catalog_source
+    assert (
+        'satisfies Record<Exclude<SupportedLanguage, "ko" | "en">, '
+        "Record<SimulatorUiLabelKey, string>>"
+    ) in catalog_source
+
+    ui_label_block = catalog_source.split("const simulatorUiLabels", 1)[1].split(
+        "export function getSimulatorLabel", 1
+    )[0]
+    assert "...enUiLabels" not in ui_label_block
+    for language in ('"zh-CN"', "ja", "vi", "fr", "de"):
+        assert f"{language}: simulatorNativeLabels" in ui_label_block
