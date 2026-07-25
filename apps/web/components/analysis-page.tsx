@@ -10,6 +10,8 @@ import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { ANALYSIS_CATALOGS, formatAnalysisText, getAnalysisMethodLabel, type AnalysisCatalog } from "@/lib/i18n/analysis";
+import { formatStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+import type { SupportedLanguage } from "@/lib/language";
 import {
   type AdminConversationHistoryItem,
   fetchConversationHistory,
@@ -279,13 +281,13 @@ function responseRate(answered: number, total: number) {
   return Math.round((answered / total) * 1000) / 10;
 }
 
-function buildDailyRows(items: AdminConversationHistoryItem[], month: string): DailyAnalysis[] {
+function buildDailyRows(items: AdminConversationHistoryItem[], month: string, language: SupportedLanguage): DailyAnalysis[] {
   const daysInMonth = new Date(parseMonth(month).getFullYear(), parseMonth(month).getMonth() + 1, 0).getDate();
   const rows = Array.from({ length: daysInMonth }, (_, index) => {
     const dateKey = `${month}-${String(index + 1).padStart(2, "0")}`;
     return {
       dateKey,
-      label: `${String(index + 1).padStart(2, "0")}일`,
+      label: formatStudioRuntimeMessage(language, "{day}일", { day: String(index + 1).padStart(2, "0") }),
       inquiries: 0,
       answered: 0,
       unanswered: 0,
@@ -936,7 +938,7 @@ export function AnalysisPageClient({ botId: routeBotId, versionId }: AnalysisPag
     [botRows, selectedChannel],
   );
   const latestDataMonth = cumulativeRows[0] ? monthOf(cumulativeRows[0].uttered_at) : "";
-  const dailyRows = useMemo(() => buildDailyRows(visibleRows, month), [month, visibleRows]);
+  const dailyRows = useMemo(() => buildDailyRows(visibleRows, month, uiLanguage), [month, uiLanguage, visibleRows]);
   const weekRows = useMemo(() => buildWeekRows(dailyRows, weekIndex), [dailyRows, weekIndex]);
   const selectedDayRows = useMemo(
     () => visibleRows.filter((item) => dayKey(item.uttered_at) === selectedDate),
