@@ -1173,14 +1173,17 @@ def test_interactive_studio_messages_do_not_bypass_locale_catalogs() -> None:
         "bot-hub-create-form.tsx", "bot-hub-home.tsx", "bot-hub-retraining-page.tsx",
         "bot-hub-settings.tsx", "botstation-settings-page.tsx", "conversation-default-settings-page.tsx",
         "conversation-message-settings-page.tsx", "flow-designer-page.tsx", "intent-start-page.tsx",
-        "messenger-floating-buttons-page.tsx", "messenger-settings-page.tsx", "rule-settings-page.tsx",
+        "messenger-floating-buttons-page.tsx", "messenger-recommended-intents-page.tsx", "messenger-settings-page.tsx", "rule-settings-page.tsx",
         "simulator-page.tsx", "smalltalk-settings-page.tsx", "studio-workspace-provider.tsx",
     )
     direct_message = re.compile(
-        r'(?:set(?:ErrorMessage|Message|Notice|Feedback|Toast|Banner|ResultMessage)|window\.(?:alert|confirm|prompt))'
+        r'(?:set(?:ErrorMessage|Message|Notice|Feedback|Toast|Banner|ResultMessage)|throw new Error|window\.(?:alert|confirm|prompt))'
         r'[^\n]*(?:"[^"\n]*[가-힣][^"\n]*"|`[^`\n]*[가-힣][^`\n]*`)'
     )
-    direct_accessibility = re.compile(r'(?:alt|title|aria-label|data-help)="[^"]*[가-힣][^"]*"')
+    direct_accessibility = re.compile(
+        r'(?:alt|title|aria-label|data-help|placeholder)='
+        r'(?:"[^"]*[가-힣][^"]*"|\{`[^`]*[가-힣][^`]*`\})'
+    )
     violations: list[str] = []
 
     for name in component_names:
