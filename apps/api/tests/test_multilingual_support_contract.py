@@ -1289,11 +1289,10 @@ def test_simulator_separates_bot_language_from_analysis_language() -> None:
         'makeMessage("system", "다음 대화 카드가 연결되어 있지 않습니다.")',
     )
     analysis_language_leaks = (
-        'cardType: "실행 오류"', 'cardType: "설계 오류"', 'cardType: "스몰토크"',
-        'cardType: "룰"', 'cardName: "의도분류"', 'cardType: "개체 추출"',
-        'description: "카드를 실행했습니다."', 'description: "사용자 입력을 기다립니다."',
-        'description: "변수값을 갱신했습니다."',
-        'description: "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다."',
+        '{log.order}. {log.cardType}',
+        '[{log.utterance}] {log.description}',
+        '{snapshot.order}. [{snapshot.utterance}] {snapshot.label}',
+        '<summary>{snapshot.label}</summary>',
         '{["일", "월", "화", "수", "목", "금", "토"].map',
         'value || "시간 선택"', 'title || "토글"', 'title || description || "이미지"',
         'title || "동영상"', 'title || cleanRichFormText(text) || "확인"',
