@@ -985,6 +985,7 @@ function resolveRuntimeVariableValue(variables: Record<string, string>, variable
 function buildTableMessage(
   node: Extract<DialogFlowNode, { kind: "talk" }>,
   variables: Record<string, string>,
+  language: SupportedLanguage,
 ) {
   const config = node.config;
   const mappedColumns = config.tableColumnMappings
@@ -994,8 +995,10 @@ function buildTableMessage(
   const valueColumns =
     mappedColumns.length > 0
       ? mappedColumns
-      : Array.from({ length: manualValueCount }, (_, index) => (index === 0 ? "값" : `값${index + 1}`));
-  const columns = ["항목", ...valueColumns];
+      : Array.from({ length: manualValueCount }, (_, index) => (index === 0
+        ? getStudioRuntimeMessage(language, "값")
+        : formatStudioRuntimeMessage(language, "값{index}", { index: index + 1 })));
+  const columns = [getStudioRuntimeMessage(language, "항목"), ...valueColumns];
   const debugLogs: SimulatorMessage["debugLogs"] = [];
 
   if (config.tableUseVariable) {
@@ -1180,6 +1183,44 @@ function isVisibleSimulatorMessage(message: SimulatorMessage) {
     return true;
   }
   return Boolean(message.template?.valid);
+}
+
+function localizeSimulatorAnalysisLabel(language: SupportedLanguage, value: string) {
+  return value
+    .split(" / ")
+    .map((part) => getStudioRuntimeMessage(language, part))
+    .join(" / ");
+}
+
+function localizeSimulatorAnalysisDescription(language: SupportedLanguage, value: string) {
+  for (const prefix of ["템플릿 JSON 파싱 실패", "Table 변수 JSON 파싱 실패"]) {
+    if (value === prefix) return getStudioRuntimeMessage(language, prefix);
+    if (value.startsWith(`${prefix}: `)) {
+      return `${getStudioRuntimeMessage(language, prefix)}: ${value.slice(prefix.length + 2)}`;
+    }
+  }
+  const extracted = value.match(/^(.*?) → (.*?): '(.*?)' 추출, target '(.*?)'$/);
+  if (extracted) {
+    return formatStudioRuntimeMessage(language, "{entity} → {variable}: '{value}' 추출, target '{target}'", {
+      entity: extracted[1],
+      variable: extracted[2],
+      value: extracted[3],
+      target: extracted[4],
+    });
+  }
+  const failed = value.match(/^(.*?) → (.*?): 추출 실패\((.*)\)$/);
+  if (failed) {
+    return formatStudioRuntimeMessage(language, "{entity} → {variable}: 추출 실패({detail})", {
+      entity: failed[1],
+      variable: failed[2],
+      detail: failed[3],
+    });
+  }
+  return getStudioRuntimeMessage(language, value);
+}
+
+function localizeSimulatorAnalysisUtterance(language: SupportedLanguage, value: string) {
+  return value === "대화 시작" ? getStudioRuntimeMessage(language, value) : value;
 }
 
 function describeSimulatorDebugLog(log: NonNullable<SimulatorMessage["debugLogs"]>[number]) {
@@ -1475,8 +1516,8 @@ function richFormChoiceRows(component: AidotRichFormComponent) {
   return richFormRowsFromValue(component.value);
 }
 
-function richFormChoiceLabel(row: Record<string, unknown>, index: number) {
-  return cleanRichFormText(row.value || row.title || row.label || row.name || row.text || `항목 ${index + 1}`);
+function richFormChoiceLabel(row: Record<string, unknown>, index: number, language: SupportedLanguage) {
+  return cleanRichFormText(row.value || row.title || row.label || row.name || row.text || formatStudioRuntimeMessage(language, "항목 {index}", { index: index + 1 }));
 }
 
 function richFormBoolean(value: unknown) {
@@ -1626,14 +1667,14 @@ function buildRichFormGroupPayload(parent: AidotRichFormComponent, values: Recor
   return JSON.stringify({ webchatRichFormVersion: "1.0", response });
 }
 
-function renderSimulatorAddressComponent(component: AidotRichFormComponent, index: number, disabled: boolean, onAction: (value: string) => void, formApi?: RichFormFormApi) {
+function renderSimulatorAddressComponent(component: AidotRichFormComponent, index: number, disabled: boolean, onAction: (value: string) => void, language: SupportedLanguage, formApi?: RichFormFormApi) {
   const items = richFormAddressItems(component);
   const key = `ADDRESS-${index}`;
   return (
     <div key={key} className="simulator-rich-form__address" data-rich-form-address={key}>
       {items.map((item, itemIndex) => {
         const itemRecord = item as AidotRichFormComponent;
-        const itemTitle = cleanRichFormText(readAidotRichFormString(itemRecord, ["title", "label", "name"], itemIndex === 0 ? "주소" : `주소 ${itemIndex + 1}`));
+        const itemTitle = cleanRichFormText(readAidotRichFormString(itemRecord, ["title", "label", "name"], itemIndex === 0 ? getStudioRuntimeMessage(language, "주소") : formatStudioRuntimeMessage(language, "주소 {index}", { index: itemIndex + 1 })));
         const itemKey = richFormFieldName(itemRecord, itemIndex === 0 ? "address" : `address${itemIndex + 1}`);
         const placeholder = readAidotRichFormString(itemRecord, ["hint", "placeholder"]);
         const value = readAidotRichFormString(itemRecord, ["value", "defaultValue"]);
@@ -1681,9 +1722,19 @@ function richFormTimeInputValue(value: string) {
   return "";
 }
 
-function richFormFormatMonth(year: number, month: number) {
-  return `${year}년 ${month + 1}월`;
+function richFormFormatMonth(year: number, month: number, language: SupportedLanguage) {
+  return formatStudioRuntimeMessage(language, "{year}년 {month}월", { year, month: month + 1 });
 }
+
+const RICH_FORM_WEEKDAY_LABELS: Record<SupportedLanguage, string[]> = {
+  ko: ["일", "월", "화", "수", "목", "금", "토"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  "zh-CN": ["日", "一", "二", "三", "四", "五", "六"],
+  ja: ["日", "月", "火", "水", "木", "金", "土"],
+  vi: ["CN", "T2", "T3", "T4", "T5", "T6", "T7"],
+  fr: ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."],
+  de: ["So.", "Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa."],
+};
 
 function richFormMonthDays(year: number, month: number) {
   const firstDay = new Date(year, month, 1).getDay();
@@ -1761,11 +1812,11 @@ function SimulatorRichFormDateTimeView({
         <div className="simulator-rich-form__picker-panel simulator-rich-form__calendar" role="dialog">
           <div className="simulator-rich-form__calendar-head">
             <button type="button" onClick={() => setMonth((current) => current.month === 0 ? { year: current.year - 1, month: 11 } : { ...current, month: current.month - 1 })}>‹</button>
-            <strong>{richFormFormatMonth(month.year, month.month)}</strong>
+            <strong>{richFormFormatMonth(month.year, month.month, uiLanguage)}</strong>
             <button type="button" onClick={() => setMonth((current) => current.month === 11 ? { year: current.year + 1, month: 0 } : { ...current, month: current.month + 1 })}>›</button>
           </div>
           <div className="simulator-rich-form__calendar-grid">
-            {["일", "월", "화", "수", "목", "금", "토"].map((day) => <span key={day}>{day}</span>)}
+            {RICH_FORM_WEEKDAY_LABELS[uiLanguage].map((day) => <span key={day}>{day}</span>)}
             {richFormMonthDays(month.year, month.month).map((day, dayIndex) => (
               <button key={`${dayIndex}-${day}`} type="button" disabled={day === 0 || isDisabled} className={value === `${month.year}-${String(month.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` ? "is-selected" : undefined} onClick={() => chooseDay(day)}>{day || ""}</button>
             ))}
@@ -1773,7 +1824,7 @@ function SimulatorRichFormDateTimeView({
         </div>
       ) : (
         <div className="simulator-rich-form__picker-panel simulator-rich-form__time-panel" role="dialog">
-          <strong>{value || "시간 선택"}</strong>
+          <strong>{value || getSimulatorLabel(uiLanguage, "시간 선택")}</strong>
           <div>
             <select value={hour} disabled={isDisabled} onChange={(event) => chooseTime(event.currentTarget.value, minute)}>
               {Array.from({ length: 24 }, (_item, itemIndex) => String(itemIndex).padStart(2, "0")).map((item) => <option key={item} value={item}>{item}</option>)}
@@ -1818,7 +1869,7 @@ function renderRichFormLines(value: unknown, className?: string) {
 
 function renderRichFormImageFromRecord(record: Record<string, unknown>, title = "") {
   const url = richFormImageUrl(record as AidotRichFormComponent, record) || richFormRecordImageUrl(record);
-  const alt = cleanRichFormText(record.alt || record.title || title || "이미지");
+  const alt = cleanRichFormText(record.alt || record.title || title);
   return renderRichFormImageElement(url, alt);
 }
 
@@ -1953,7 +2004,7 @@ function richFormConditionExpression(component: AidotRichFormComponent) {
   return readAidotRichFormString(validation, ["condition", "expression", "rule", "value"]) || readAidotRichFormString(component, ["validationCondition", "condition"]);
 }
 
-function richFormValidationMessage(component: AidotRichFormComponent, fallback: string) {
+function richFormValidationMessage(component: AidotRichFormComponent, fallback: string, language: SupportedLanguage) {
   const validation = richFormValidationRecord(component);
   const message = validation.message;
   if (message && typeof message === "object" && !Array.isArray(message)) {
@@ -1963,7 +2014,7 @@ function richFormValidationMessage(component: AidotRichFormComponent, fallback: 
   return cleanRichFormText(
     readAidotRichFormString(validation, ["invalidMessage", "errorMessage", "messageInvalid", "failMessage"]) ||
     readAidotRichFormString(component, ["invalidMessage", "errorMessage", "messageInvalid"])
-  ) || `${fallback} 값을 확인해 주세요.`;
+  ) || formatStudioRuntimeMessage(language, "{field} 값을 확인해 주세요.", { field: fallback });
 }
 
 function richFormValidationRequired(component: AidotRichFormComponent) {
@@ -2043,18 +2094,18 @@ function richFormChildComponents(component: AidotRichFormComponent): AidotRichFo
   return children;
 }
 
-function richFormValidateDraftComponents(components: AidotRichFormComponent[], draft: RichFormResponseDraft): string | null {
+function richFormValidateDraftComponents(components: AidotRichFormComponent[], draft: RichFormResponseDraft, language: SupportedLanguage): string | null {
   const stack = [...components];
   while (stack.length > 0) {
     const component = stack.shift() as AidotRichFormComponent;
     stack.push(...richFormChildComponents(component));
     if (!richFormIsValidationTarget(component)) continue;
-    const fallback = cleanRichFormText(readAidotRichFormString(component, ["title", "label", "name", "key"], "입력값"));
+    const fallback = cleanRichFormText(readAidotRichFormString(component, ["title", "label", "name", "key"], getSimulatorLabel(language, "입력값")));
     const fieldName = richFormFieldName(component, fallback);
     const value = richFormDraftValue(draft, fieldName) ?? richFormDefaultValue(component);
     const state = richFormEntryState(component, value, fieldName, draft);
-    if (!state.requiredOk) return `${fallback}은(는) 필수입니다.`;
-    if (!state.validated) return richFormValidationMessage(component, fallback);
+    if (!state.requiredOk) return formatStudioRuntimeMessage(language, "{field}은(는) 필수입니다.", { field: fallback });
+    if (!state.validated) return richFormValidationMessage(component, fallback, language);
   }
   return null;
 }
@@ -2527,7 +2578,7 @@ function SimulatorRichFormButtonPopupAction({
             {popupContent.length > 0 ? (
               <div className="simulator-rich-form__popup-content">
                 {popupContent.map((item, contentIndex) => (
-                  <Fragment key={`popup-content-${contentIndex}`}>{renderSimulatorRichFormComponent(item, contentIndex, disabled || action.disabled === true, onAction, formApi)}</Fragment>
+                  <Fragment key={`popup-content-${contentIndex}`}>{renderSimulatorRichFormComponent(item, contentIndex, disabled || action.disabled === true, onAction, uiLanguage, formApi)}</Fragment>
                 ))}
               </div>
             ) : null}
@@ -2613,7 +2664,7 @@ function SimulatorRichFormChoiceView({
           }}
         >
           <option value="">{getSimulatorLabel(uiLanguage, "선택하세요")}</option>
-          {rows.map((row, rowIndex) => <option key={`combo-${index}-${rowIndex}`} value={rowIndex}>{richFormChoiceLabel(row, rowIndex)}</option>)}
+          {rows.map((row, rowIndex) => <option key={`combo-${index}-${rowIndex}`} value={rowIndex}>{richFormChoiceLabel(row, rowIndex, uiLanguage)}</option>)}
         </select>
       </div>
     );
@@ -2623,7 +2674,7 @@ function SimulatorRichFormChoiceView({
     <div className={`simulator-rich-form__choice simulator-rich-form__choice--${dataDirection === "vertical" ? "vertical" : "horizontal"}`}>
       {title ? <strong>{title}</strong> : null}
       <div>{rows.map((row, rowIndex) => {
-        const label = richFormChoiceLabel(row, rowIndex);
+        const label = richFormChoiceLabel(row, rowIndex, uiLanguage);
         const checked = checkedIndexes.includes(rowIndex);
         return (
           <label key={`choice-${index}-${rowIndex}`} className={`simulator-rich-form__option${checked ? " is-selected" : ""}`}>
@@ -2699,6 +2750,7 @@ function SimulatorRichFormStarView({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const maxScore = richFormStarMaxScore(component, title, text);
   const defaultScore = Math.max(0, Math.min(maxScore, Number(component.selectedValue ?? component.selectedScore ?? component.score ?? component.value ?? 0)));
   const [selectedScore, setSelectedScore] = useState(defaultScore);
@@ -2710,7 +2762,7 @@ function SimulatorRichFormStarView({
           key={score}
           type="button"
           className={score <= selectedScore ? "is-selected" : ""}
-          aria-label={`${score}점`}
+          aria-label={formatStudioRuntimeMessage(uiLanguage, "{score}점", { score })}
           disabled={disabled || component.disabled === true}
           onClick={() => {
             setSelectedScore(score);
@@ -2735,6 +2787,7 @@ function SimulatorRichFormTabsView({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const tabs = simulatorObjectItems(component.tab || component.tabs);
   const [activeIndex, setActiveIndex] = useState(0);
   if (tabs.length === 0) return null;
@@ -2761,12 +2814,12 @@ function SimulatorRichFormTabsView({
             className={`simulator-rich-form__tab-button${tabIndex === safeActiveIndex ? " is-active" : ""}`}
             onClick={() => setActiveIndex(tabIndex)}
           >
-            {cleanRichFormText(tab.title || tab.label || tab.key || `탭 ${tabIndex + 1}`)}
+            {cleanRichFormText(tab.title || tab.label || tab.key || formatStudioRuntimeMessage(uiLanguage, "탭 {index}", { index: tabIndex + 1 }))}
           </button>
         ))}
       </div>
       <div className="simulator-rich-form__tab-panel" role="tabpanel">
-        {children.map((child, childIndex) => renderSimulatorRichFormComponent(child as AidotRichFormComponent, childIndex, disabled, onAction, scopedFormApi))}
+        {children.map((child, childIndex) => renderSimulatorRichFormComponent(child as AidotRichFormComponent, childIndex, disabled, onAction, uiLanguage, scopedFormApi))}
       </div>
     </div>
   );
@@ -2786,6 +2839,7 @@ function SimulatorRichFormToggleButton({
   onAction: (value: string) => void;
   formApi?: RichFormFormApi;
 }) {
+  const { language: uiLanguage } = useI18n();
   const [checked, setChecked] = useState(component.value === true);
   const isDisabled = disabled || component.disabled === true;
   const fallback = `toggle${index + 1}`;
@@ -2804,7 +2858,7 @@ function SimulatorRichFormToggleButton({
       disabled={isDisabled}
       onClick={nextValue}
     >
-      <span>{title || "토글"}</span>
+      <span>{title || getSimulatorLabel(uiLanguage, "토글")}</span>
       <i aria-hidden="true" />
     </button>
   );
@@ -2815,6 +2869,7 @@ function renderSimulatorRichFormComponent(
   index: number,
   disabled: boolean,
   onAction: (value: string) => void,
+  language: SupportedLanguage,
   formApi?: RichFormFormApi,
 ): ReactNode {
   const type = readAidotRichFormString(component, ["type"]).toUpperCase();
@@ -2839,7 +2894,7 @@ function renderSimulatorRichFormComponent(
     const description = cleanRichFormText(text);
     return (
       <figure key={key} className="simulator-rich-form__media">
-        {renderRichFormImageElement(url, title || description || "이미지", "", { caption: "", link })}
+        {renderRichFormImageElement(url, title || description || getSimulatorLabel(language, "이미지"), "", { caption: "", link })}
         {title ? <figcaption>{title}</figcaption> : null}
         {description ? renderRichFormLines(description, "simulator-rich-form__media-description") : null}
       </figure>
@@ -2848,9 +2903,9 @@ function renderSimulatorRichFormComponent(
   if (type === "VIDEO") {
     const url = normalizeRichFormVideoUrl(component);
     const isEmbed = /(?:youtube\.com\/embed\/|player\.vimeo\.com\/video\/)/i.test(url);
-    return <div key={key} className="simulator-rich-form__media simulator-rich-form__media--video">{url ? isEmbed ? <iframe src={url} title={title || "동영상"} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <video src={url} controls preload="metadata" /> : null}{title || text ? renderRichFormLines(title || text) : null}</div>;
+    return <div key={key} className="simulator-rich-form__media simulator-rich-form__media--video">{url ? isEmbed ? <iframe src={url} title={title || getSimulatorLabel(language, "동영상")} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <video src={url} controls preload="metadata" /> : null}{title || text ? renderRichFormLines(title || text) : null}</div>;
   }
-  if (type === "ADDRESS") return renderSimulatorAddressComponent(component, index, disabled, onAction, formApi);
+  if (type === "ADDRESS") return renderSimulatorAddressComponent(component, index, disabled, onAction, language, formApi);
   if (type === "DATEPICKER" || type === "TIMEPICKER") return renderSimulatorDateTimeComponent(component, index, disabled, onAction, type, formApi);
   if (["INPUT", "TEXTAREA"].includes(type)) {
     const placeholder = readAidotRichFormString(component, ["placeholder", "hint"]);
@@ -2900,7 +2955,7 @@ function renderSimulatorRichFormComponent(
       const value = simulatorRichFormValue(component);
       if (formApi) formApi.submit(component, value, "buttonValue", { buttonValue: value, validate: !readAidotRichFormString(component, ["type", "buttonType"]).toLowerCase().includes("reject"), buttonOnly: readAidotRichFormString(component, ["type", "buttonType"]).toLowerCase().includes("reject"), includeField: !readAidotRichFormString(component, ["type", "buttonType"]).toLowerCase().includes("reject") });
       else onAction(simulatorRichFormActionPayload(component, component, "buttonValue", { buttonValue: true }));
-    }}><span>{title || cleanRichFormText(text) || "확인"}</span></button>;
+    }}><span>{title || cleanRichFormText(text) || getSimulatorLabel(language, "확인")}</span></button>;
   }
   if (type === "INPUT_POPUP" || type === "INPUTPOPUP" || type === "INPUT POPUP") {
     return <SimulatorRichFormInputPopupView key={key} component={component} title={title} disabled={disabled} onAction={onAction} formApi={formApi} />;
@@ -2921,7 +2976,7 @@ function renderSimulatorRichFormComponent(
     return <SimulatorRichFormMapView key={key} component={component} title={title} text={text} disabled={disabled} onAction={onAction} formApi={formApi} />;
   }
   if (type === "STAR_RATE" || type === "STARRATE" || type === "STAR") return <SimulatorRichFormStarView key={key} component={component} index={index} title={title} text={text} disabled={disabled} onAction={onAction} formApi={formApi} />;
-  return <div key={key} className="simulator-rich-form__unsupported">{title || cleanRichFormText(text) || `${type || "UNKNOWN"} 컴포넌트`}</div>;
+  return <div key={key} className="simulator-rich-form__unsupported">{title || cleanRichFormText(text) || formatStudioRuntimeMessage(language, "{type} 컴포넌트", { type: type || "UNKNOWN" })}</div>;
 }
 
 function richFormInputPayload(component: AidotRichFormComponent, value: string, fallback: string) {
@@ -2993,6 +3048,7 @@ function RichFormRenderer({
   disabled: boolean;
   onAction: (value: string) => void;
 }) {
+  const { language: uiLanguage } = useI18n();
   const components = getAidotRichFormComponents(template.rawJson);
   const initialDraft = useMemo(() => richFormInitialDraftFromComponents(components), [template.rawJson]);
   const [draft, setDraft] = useState<RichFormResponseDraft>(() => initialDraft);
@@ -3013,7 +3069,7 @@ function RichFormRenderer({
       const [fieldName, entry] = richFormResponseEntry(component, value, fallback, draft);
       const nextDraft = options.includeField === false ? { ...draft } : { ...draft, [fieldName]: entry };
       if (options.validate !== false) {
-        const error = richFormValidateDraftComponents(components, nextDraft);
+        const error = richFormValidateDraftComponents(components, nextDraft, uiLanguage);
         if (error) {
           setValidationError(error);
           return;
@@ -3033,7 +3089,7 @@ function RichFormRenderer({
       const [fieldName, entry] = richFormResponseEntry(component, value, fallback, draft);
       const nextDraft = options.includeField === false ? { ...draft } : richFormNestedDraft(draft, responsePath, fieldName, entry);
       if (options.validate !== false) {
-        const error = richFormValidateDraftComponents(components, nextDraft);
+        const error = richFormValidateDraftComponents(components, nextDraft, uiLanguage);
         if (error) {
           setValidationError(error);
           return;
@@ -3042,15 +3098,15 @@ function RichFormRenderer({
       setValidationError("");
       onAction(richFormPayloadFromDraft(nextDraft, options));
     },
-  }), [components, draft, onAction]);
+  }), [components, draft, onAction, uiLanguage]);
   if (components.length === 0) return null;
   return <div className="simulator-rich-form">{components.map((component, index) => {
     const componentKey = `${readAidotRichFormString(component, ["type"])}-${readAidotRichFormString(component, ["key", "name", "id"])}-${index}`;
-    return <Fragment key={componentKey}>{renderSimulatorRichFormComponent(component, index, disabled, onAction, formApi)}</Fragment>;
+    return <Fragment key={componentKey}>{renderSimulatorRichFormComponent(component, index, disabled, onAction, uiLanguage, formApi)}</Fragment>;
   })}{validationError ? <p className="simulator-rich-form__validation-error">{validationError}</p> : null}</div>;
 }
 
-function buildTalkMessages(node: Extract<DialogFlowNode, { kind: "talk" }>, variables: Record<string, string>) {
+function buildTalkMessages(node: Extract<DialogFlowNode, { kind: "talk" }>, variables: Record<string, string>, language: SupportedLanguage) {
   const config = getTalkConfigForChannel(node, "SM_CHAT");
   const channelNode = { ...node, config };
   const baseMessages = config.basicMessages.map((item) => replaceVariables(item, variables).trim()).filter(Boolean);
@@ -3067,7 +3123,7 @@ function buildTalkMessages(node: Extract<DialogFlowNode, { kind: "talk" }>, vari
       return [makeMessage("bot", "", { html: first, sourceTalkNodeId: node.id })];
     case "card":
       return [
-        makeMessage("bot", first || "Card 메시지입니다.", {
+        makeMessage("bot", first || getStudioRuntimeMessage(language, "Card 메시지입니다."), {
           cardTitle: messages[0] || "Card",
           cardImageUrl: messages[1]?.trim() || "",
           cardDescription: messages[2]?.trim() || "",
@@ -3075,7 +3131,7 @@ function buildTalkMessages(node: Extract<DialogFlowNode, { kind: "talk" }>, vari
         }),
       ];
     case "table":
-      const tableMessage = buildTableMessage(channelNode, variables);
+      const tableMessage = buildTableMessage(channelNode, variables, language);
       return [
         makeMessage("bot", "", {
           table: {
@@ -3089,14 +3145,14 @@ function buildTalkMessages(node: Extract<DialogFlowNode, { kind: "talk" }>, vari
       ];
     case "button":
       return [
-        makeMessage("bot", baseMessages[0] || "선택하세요.", {
+        makeMessage("bot", baseMessages[0] || getStudioRuntimeMessage(language, "선택하세요."), {
           quickReplies: messages.filter(Boolean),
           sourceTalkNodeId: node.id,
         }),
       ];
     case "link-button":
       return [
-        makeMessage("bot", baseMessages[0] || "링크 버튼 메시지입니다.", {
+        makeMessage("bot", baseMessages[0] || getStudioRuntimeMessage(language, "링크 버튼 메시지입니다."), {
           cardTitle: "Link Button",
           cardItems: config.linkButtonItems.map((item) => {
             const url = item.url.trim();
@@ -3121,7 +3177,7 @@ function buildTalkMessages(node: Extract<DialogFlowNode, { kind: "talk" }>, vari
       ];
     case "carousel":
       return [
-        makeMessage("bot", first || "Carousel 메시지입니다.", {
+        makeMessage("bot", first || getStudioRuntimeMessage(language, "Carousel 메시지입니다."), {
           cardTitle: messages[2]?.trim() || first || "Carousel",
           cardImageUrl: messages[1]?.trim() || "",
           cardDescription: messages[3]?.trim() || "",
@@ -3134,7 +3190,7 @@ function buildTalkMessages(node: Extract<DialogFlowNode, { kind: "talk" }>, vari
       const minLength = Math.min(maxLength, numberAt(1, 1));
       const configuredEndCharacter = messages[2]?.trim();
       const endCharacter = configuredEndCharacter === "*" || configuredEndCharacter === "#" ? configuredEndCharacter : "#";
-      return [makeMessage("bot", baseMessages[0] || "번호를 입력하세요.", {
+      return [makeMessage("bot", baseMessages[0] || getStudioRuntimeMessage(language, "번호를 입력하세요."), {
         dtmf: {
           minLength,
           maxLength,
@@ -3216,6 +3272,7 @@ function evaluateCondition(operator: string, currentValue: string, compareValue:
 function runScriptNode(
   node: Extract<DialogFlowNode, { kind: "script" }>,
   variables: Record<string, string>,
+  language: SupportedLanguage,
 ) {
   const params = Object.fromEntries(
     node.config.parameters.map((item) => [item.name, replaceVariables(item.value, variables)]),
@@ -3246,7 +3303,7 @@ function runScriptNode(
   const normalizeAdaptiveCard = (value: unknown) => {
     const source = typeof value === "string" ? JSON.parse(value) : value;
     if (!source || typeof source !== "object" || Array.isArray(source)) {
-      throw new Error("Adaptive Card JSON은 객체여야 합니다.");
+      throw new Error(getStudioRuntimeMessage(language, "Adaptive Card JSON은 객체여야 합니다."));
     }
     return {
       $schema: "https://adaptivecards.io/schemas/adaptive-card.json",
@@ -3565,7 +3622,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       return "";
     }
     const item = scenarioValidation?.items?.find((entry) => String(entry.dialog_id ?? "") === dialog.id);
-    const detail = typeof item?.message === "string" ? item.message : "대화 설계 오류가 있습니다.";
+    const detail = typeof item?.message === "string" ? item.message : getStudioRuntimeMessage(uiLanguage, "대화 설계 오류가 있습니다.");
     return formatStudioRuntimeMessage(uiLanguage, "{dialog} {type}는 {detail} 오류를 수정한 뒤 봇 테스트를 실행할 수 있습니다.", { dialog: dialog.name, type: getStudioRuntimeMessage(uiLanguage, dialog.dialogType === 0 ? "모듈" : "의도"), detail });
   }
 
@@ -4247,7 +4304,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             analysisId,
             nextRuntime,
           });
-          nextMessages.push(makeMessage("system", "다음 대화 카드가 연결되어 있지 않습니다."));
+          nextMessages.push(makeMessage("system", getStudioRuntimeMessage(runtimeLanguage, "다음 대화 카드가 연결되어 있지 않습니다.")));
         nextRuntime = { ...nextRuntime, ended: true, nextNodeId: "" };
         break;
       }
@@ -4259,7 +4316,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         }, nextRuntime.variables);
 
       if (node.kind === "talk") {
-        const talkMessages = buildTalkMessages(node, nextRuntime.variables);
+        const talkMessages = buildTalkMessages(node, nextRuntime.variables, runtimeLanguage);
         if (talkMessages.length === 0) {
           writeSimulatorLog("warn", "simulator.talk_empty_output", {
             analysisId,
@@ -4403,7 +4460,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       }
 
       if (node.kind === "script") {
-        const result = runScriptNode(node, nextRuntime.variables);
+        const result = runScriptNode(node, nextRuntime.variables, uiLanguage);
         if (result.error) {
           writeSimulatorLog("error", "simulator.script_error", {
             analysisId,
@@ -5077,7 +5134,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysis.id, {
           cardType: "ML NLU",
           cardName: "의도분류",
-          description: error instanceof Error ? error.message : "ML 의도분류 중 오류가 발생했습니다.",
+          description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "ML 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
           ...current,
@@ -5099,7 +5156,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysis.id, {
           cardType: "Semantic NLU",
           cardName: "의도분류",
-          description: error instanceof Error ? error.message : "Semantic 의도분류 중 오류가 발생했습니다.",
+          description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "Semantic 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
           ...current,
@@ -5121,7 +5178,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysis.id, {
           cardType: "LLM NLU",
           cardName: "의도분류",
-          description: error instanceof Error ? error.message : "LLM 의도분류 중 오류가 발생했습니다.",
+          description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "LLM 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
           ...current,
@@ -5184,8 +5241,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       }
 
       const guide = versionSettings.messages.multiIntentGuide;
-      const noIntentButtonLabel = guide.noIntentButtonLabel || getStudioRuntimeMessage(uiLanguage, "원하는 의도 없음");
-      const noIntentButtonMessage = guide.noIntentButtonMessage || getStudioRuntimeMessage(uiLanguage, "다시 질문해주시면 다른 의도를 찾겠습니다.");
+      const noIntentButtonLabel = guide.noIntentButtonLabel || getStudioRuntimeMessage(runtimeLanguage, "원하는 의도 없음");
+      const noIntentButtonMessage = guide.noIntentButtonMessage || getStudioRuntimeMessage(runtimeLanguage, "다시 질문해주시면 다른 의도를 찾겠습니다.");
       setPendingIntentSelection({
         scores,
         candidates,
@@ -5233,8 +5290,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       ]);
       appendAnalysisLog(analysis.id, {
         cardType: "의도 미분류",
-        cardName: options.fallbackCardName || getStudioRuntimeMessage(uiLanguage, "사용자 입력"),
-        description: options.fallbackDescription || getStudioRuntimeMessage(uiLanguage, "의도분류에 실패하여 안내 메시지를 출력한 뒤 원래 카드 흐름의 다음 링크로 진행합니다."),
+        cardName: options.fallbackCardName || "사용자 입력",
+        description: options.fallbackDescription || "의도분류에 실패하여 안내 메시지를 출력한 뒤 원래 카드 흐름의 다음 링크로 진행합니다.",
       }, fallbackVariables);
       void continueRuntime({
         ...options.fallbackRuntime,
@@ -5520,7 +5577,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             const mismatchMessage = getConfiguredTextMessage(versionSettings.messages.buttonMismatch);
             setMessages((current) => [
               ...current,
-              makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(uiLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
+              makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(runtimeLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
                 quickReplies: options,
                 sourceTalkNodeId: runtimeForStructuredResponse.waitingTalkNodeId,
               }),
@@ -5593,7 +5650,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           description:
             extractedEntities.length > 0
               ? formatStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다. 개체 추출 {extracted}/{total}건.", { extracted: extractedCount, total: extractedEntities.length })
-              : "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다.",
+              : getStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다."),
         }, { ...variables, talkResponse: utterance, responseUtterance: utterance });
         if (entityExtractionLogs.length > 0) {
           appendAnalysisLog(analysis.id, {
@@ -5658,7 +5715,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           const mismatchMessage = getConfiguredTextMessage(versionSettings.messages.buttonMismatch);
           setMessages((current) => [
             ...current,
-            makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(uiLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
+            makeMessage("bot", mismatchMessage || getStudioRuntimeMessage(runtimeLanguage, "목록에 있는 버튼 중 하나를 선택해주세요."), {
               quickReplies: options,
               sourceTalkNodeId: runtimeForStructuredResponse.waitingTalkNodeId,
             }),
@@ -5730,7 +5787,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         description:
           extractedEntities.length > 0
             ? formatStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다. 개체 추출 {extracted}/{total}건.", { extracted: extractedCount, total: extractedEntities.length })
-            : "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다.",
+            : getStudioRuntimeMessage(uiLanguage, "Talk 카드가 받은 사용자 입력을 변수에 반영했습니다."),
       }, { ...variables, talkResponse: utterance, responseUtterance: utterance });
       if (entityExtractionLogs.length > 0) {
         appendAnalysisLog(analysis.id, {
@@ -6235,7 +6292,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               <div key={`${log.cardName}-${index}`} className="simulator-analysis__row simulator-analysis__row--error">
                 <span>{getStudioRuntimeMessage(uiLanguage, log.cardType)}</span>
                 <b>{getStudioRuntimeMessage(uiLanguage, log.cardName)}</b>
-                <small>{getStudioRuntimeMessage(uiLanguage, log.description)}</small>
+                <small>{localizeSimulatorAnalysisDescription(uiLanguage, log.description)}</small>
               </div>
             ))}
           </div>
@@ -6260,7 +6317,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                   <b>
                     {getStudioRuntimeMessage(uiLanguage, log.cardType)} / {getStudioRuntimeMessage(uiLanguage, log.cardName)}
                   </b>
-                  <small>{getStudioRuntimeMessage(uiLanguage, log.description)}</small>
+                  <small>{localizeSimulatorAnalysisDescription(uiLanguage, log.description)}</small>
                   {Object.keys(log.variables).length > 0 ? (
                     <details className="simulator-analysis__flow-variables">
                       <summary>{getSimulatorLabel(uiLanguage, "카드 실행 후 변수값")}</summary>
@@ -6295,11 +6352,11 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             {logs.map((log) => (
               <div key={`${log.order}-${log.cardType}-${log.cardName}`} className="simulator-analysis__row simulator-analysis__row--trace">
                 <span>
-                  {log.order}. {log.cardType}
+                  {log.order}. {getStudioRuntimeMessage(uiLanguage, log.cardType)}
                 </span>
                 <b>{getStudioRuntimeMessage(uiLanguage, log.cardName)}</b>
                 <small>
-                  [{log.utterance}] {log.description}
+                  [{localizeSimulatorAnalysisUtterance(uiLanguage, log.utterance)}] {localizeSimulatorAnalysisDescription(uiLanguage, log.description)}
                 </small>
                 <div>{renderVariableTable(log.variables)}</div>
               </div>
@@ -6329,7 +6386,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             {snapshots.map((snapshot, index) => (
               <details key={`${snapshot.order}-${snapshot.label}`} open={index === snapshots.length - 1}>
                 <summary>
-                  {snapshot.order}. [{snapshot.utterance}] {snapshot.label}
+                  {snapshot.order}. [{localizeSimulatorAnalysisUtterance(uiLanguage, snapshot.utterance)}] {localizeSimulatorAnalysisLabel(uiLanguage, snapshot.label)}
                 </summary>
                 {renderVariableTable(snapshot.variables)}
               </details>
@@ -6753,7 +6810,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               {renderRuntimeState()}
               <div className="simulator-analysis__summary">
                 <span>{getSimulatorLabel(uiLanguage, "사용자 발화")}</span>
-                <strong>{selectedAnalysis.utterance}</strong>
+                <strong>{localizeSimulatorAnalysisUtterance(uiLanguage, selectedAnalysis.utterance)}</strong>
                 <span>{getSimulatorLabel(uiLanguage, "선택 의도")}</span>
                 <strong>{getStudioRuntimeMessage(uiLanguage, selectedAnalysis.selectedIntentName)}</strong>
               </div>
@@ -6773,7 +6830,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                       <div className="simulator-analysis__snapshots">
                         {selectedAnalysis.variableSnapshots.map((snapshot, index) => (
                           <details key={`${snapshot.label}-${index}`}>
-                            <summary>{snapshot.label}</summary>
+                            <summary>{localizeSimulatorAnalysisLabel(uiLanguage, snapshot.label)}</summary>
                             {renderVariableTable(snapshot.variables)}
                           </details>
                         ))}

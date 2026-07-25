@@ -1173,14 +1173,17 @@ def test_interactive_studio_messages_do_not_bypass_locale_catalogs() -> None:
         "bot-hub-create-form.tsx", "bot-hub-home.tsx", "bot-hub-retraining-page.tsx",
         "bot-hub-settings.tsx", "botstation-settings-page.tsx", "conversation-default-settings-page.tsx",
         "conversation-message-settings-page.tsx", "flow-designer-page.tsx", "intent-start-page.tsx",
-        "messenger-floating-buttons-page.tsx", "messenger-settings-page.tsx", "rule-settings-page.tsx",
+        "messenger-floating-buttons-page.tsx", "messenger-recommended-intents-page.tsx", "messenger-settings-page.tsx", "rule-settings-page.tsx",
         "simulator-page.tsx", "smalltalk-settings-page.tsx", "studio-workspace-provider.tsx",
     )
     direct_message = re.compile(
-        r'(?:set(?:ErrorMessage|Message|Notice|Feedback|Toast|Banner|ResultMessage)|window\.(?:alert|confirm|prompt))'
+        r'(?:set(?:ErrorMessage|Message|Notice|Feedback|Toast|Banner|ResultMessage)|throw new Error|window\.(?:alert|confirm|prompt))'
         r'[^\n]*(?:"[^"\n]*[가-힣][^"\n]*"|`[^`\n]*[가-힣][^`\n]*`)'
     )
-    direct_accessibility = re.compile(r'(?:alt|title|aria-label|data-help)="[^"]*[가-힣][^"]*"')
+    direct_accessibility = re.compile(
+        r'(?:alt|title|aria-label|data-help|placeholder)='
+        r'(?:"[^"]*[가-힣][^"]*"|\{`[^`]*[가-힣][^`]*`\})'
+    )
     violations: list[str] = []
 
     for name in component_names:
@@ -1234,3 +1237,66 @@ def test_studio_runtime_message_catalog_has_complete_native_translations() -> No
 
     assert 'DELETE' in catalog_source
     assert '`$_`' in catalog_source
+
+
+def test_dynamic_studio_copy_does_not_fall_back_to_korean() -> None:
+    """Dynamic labels and generated defaults must honor the selected UI or bot language."""
+
+    forbidden_by_component = {
+        "analysis-page.tsx": ('padStart(2, "0")}일`',),
+        "flow-designer-page.tsx": (
+            "정의되지 않은 변수 '$${root}'를 사용하고 있습니다.",
+            "`TTS 테스트 URL: ${",
+            "label: `조건 ${regularIndex}`",
+        ),
+        "rule-settings-page.tsx": (
+            "`정규식 문법 오류: ${regexResult}`",
+            '`${matchedRule.target || "의도/모듈 미연결"} 으로 연결됩니다.`',
+            ': "룰이 매칭되지 않는 표현입니다.";',
+        ),
+        "intent-configure-page.tsx": (
+            "cluster.name || `RAG 의도 ${index + 1}`",
+            "cluster.name || `의도 ${index + 1}`",
+            "makeDefaultAnswer(cluster.name || `의도 ${index + 1}`)",
+        ),
+        "version-management-page.tsx": ('`${selectedVersion.name} 복사본`',),
+        "simulator-page.tsx": (
+            '`항목 ${index + 1}`', '`주소 ${itemIndex + 1}`', '`${year}년 ${month + 1}월`',
+            '`${fallback} 값을 확인해 주세요.`', '`${fallback}은(는) 필수입니다.`',
+            '`탭 ${tabIndex + 1}`', '`${type || "UNKNOWN"} 컴포넌트`',
+            'first || "Card 메시지입니다."', 'baseMessages[0] || "선택하세요."',
+            'baseMessages[0] || "링크 버튼 메시지입니다."', 'first || "Carousel 메시지입니다."',
+            'baseMessages[0] || "번호를 입력하세요."',
+        ),
+    }
+    violations: list[str] = []
+    component_dir = ROOT_DIR / "apps" / "web" / "components"
+    for name, snippets in forbidden_by_component.items():
+        source = (component_dir / name).read_text(encoding="utf-8")
+        for snippet in snippets:
+            if snippet in source:
+                violations.append(f"{name}: {snippet}")
+
+    assert not violations, "Dynamic Korean copy remains:\n" + "\n".join(violations)
+
+
+def test_simulator_separates_bot_language_from_analysis_language() -> None:
+    source = (ROOT_DIR / "apps/web/components/simulator-page.tsx").read_text(encoding="utf-8")
+    bot_language_leaks = (
+        'getStudioRuntimeMessage(uiLanguage, "원하는 의도 없음")',
+        'getStudioRuntimeMessage(uiLanguage, "다시 질문해주시면 다른 의도를 찾겠습니다.")',
+        'getStudioRuntimeMessage(uiLanguage, "목록에 있는 버튼 중 하나를 선택해주세요.")',
+        'makeMessage("system", "다음 대화 카드가 연결되어 있지 않습니다.")',
+    )
+    analysis_language_leaks = (
+        '{log.order}. {log.cardType}',
+        '[{log.utterance}] {log.description}',
+        '{snapshot.order}. [{snapshot.utterance}] {snapshot.label}',
+        '<summary>{snapshot.label}</summary>',
+        '{["일", "월", "화", "수", "목", "금", "토"].map',
+        'value || "시간 선택"', 'title || "토글"', 'title || description || "이미지"',
+        'title || "동영상"', 'title || cleanRichFormText(text) || "확인"',
+        '["title", "label", "name", "key"], "입력값"',
+    )
+    violations = [snippet for snippet in (*bot_language_leaks, *analysis_language_leaks) if snippet in source]
+    assert not violations, "Simulator language-boundary leaks remain:\n" + "\n".join(violations)

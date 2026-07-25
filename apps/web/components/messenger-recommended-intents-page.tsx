@@ -8,6 +8,7 @@ import { BotSettingsShell } from "@/components/bot-settings-shell";
 import { getBotDialogs } from "@/lib/dialog-assets";
 import { useI18n } from "@/components/language-provider";
 import { getStudioPageLabel, STUDIO_PAGE_CATALOGS } from "@/lib/i18n/studio-pages";
+import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
 
 type IntentOption = { id: string; label: string };
 
@@ -99,7 +100,7 @@ export function MessengerRecommendedIntentsPage() {
               "추천 의도 구성이 저장되었습니다.",
             );
           } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "추천 의도 저장 중 오류가 발생했습니다.");
+            setErrorMessage(error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "추천 의도 저장 중 오류가 발생했습니다."));
           } finally {
             setSaving(false);
           }

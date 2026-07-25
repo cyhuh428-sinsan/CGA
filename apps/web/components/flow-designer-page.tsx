@@ -2709,7 +2709,7 @@ export function FlowDesignerPage() {
     const addMissingVariableReferenceIssue = (nodeId: string, value: string) => {
       const root = getVariableReferenceRoot(value);
       if (root && !knownVariableNames.has(root.toLowerCase())) {
-        addIssue(nodeId, `정의되지 않은 변수 '$${root}'를 사용하고 있습니다.`);
+        addIssue(nodeId, formatStudioRuntimeMessage(uiLanguage, "정의되지 않은 변수 '{variable}'를 사용하고 있습니다.", { variable: `$${root}` }));
       }
     };
     const addMissingVariableReferencesFromText = (nodeId: string, value: string) => {
@@ -2870,7 +2870,7 @@ export function FlowDesignerPage() {
     }
 
     return issues;
-  }, [dialog, graph]);
+  }, [dialog, graph, uiLanguage]);
   const selectedLink = useMemo(
     () => (graph && selectedLinkId ? graph.links.find((link) => link.id === selectedLinkId) ?? null : null),
     [graph, selectedLinkId],
@@ -6011,7 +6011,7 @@ export function FlowDesignerPage() {
                                 sourcePort: selectedNodeSourcePort,
                               } : undefined)
                             }
-                            title={`${item.label} 카드 추가`}
+                            title={formatStudioRuntimeMessage(uiLanguage, "{label} 카드 추가", { label: item.label })}
                           >
                             {renderFlowIcon(item.kind, "action")}
                           </button>
@@ -6499,7 +6499,7 @@ export function FlowDesignerPage() {
                           onClick={() =>
                             setMessage(
                               versionSettings.conversationDefaults.voice.ttsUrl
-                                ? `TTS 테스트 URL: ${versionSettings.conversationDefaults.voice.ttsUrl}`
+                                ? formatStudioRuntimeMessage(uiLanguage, "TTS 테스트 URL: {url}", { url: versionSettings.conversationDefaults.voice.ttsUrl })
                                 : getStudioRuntimeMessage(uiLanguage, "TTS 테스트 URL이 설정되어 있지 않습니다."),
                             )
                           }
@@ -6729,7 +6729,7 @@ export function FlowDesignerPage() {
                                               },
                                             }))
                                           }
-                                          placeholder={`키 ${rowIndex + 1}`}
+                                          placeholder={formatStudioRuntimeMessage(uiLanguage, "키 {index}", { index: rowIndex + 1 })}
                                         />
                                         <input
                                           className="bot-settings-card__input"
@@ -6747,7 +6747,7 @@ export function FlowDesignerPage() {
                                             onChange={(event) =>
                                               updateTalkManualTableCell(row.id, valueIndex + 1, event.target.value)
                                             }
-                                            placeholder={`값 ${valueIndex + 2}`}
+                                            placeholder={formatStudioRuntimeMessage(uiLanguage, "값 {index}", { index: valueIndex + 2 })}
                                           />
                                         ))}
                                         <button
@@ -7303,7 +7303,7 @@ export function FlowDesignerPage() {
                                 onClick={() =>
                                   setMessage(
                                     versionSettings.conversationDefaults.voice.ttsUrl
-                                      ? `TTS 테스트 URL: ${versionSettings.conversationDefaults.voice.ttsUrl}`
+                                      ? formatStudioRuntimeMessage(uiLanguage, "TTS 테스트 URL: {url}", { url: versionSettings.conversationDefaults.voice.ttsUrl })
                                       : getStudioRuntimeMessage(uiLanguage, "TTS 테스트 URL이 설정되어 있지 않습니다."),
                                   )
                                 }
@@ -7991,7 +7991,7 @@ export function FlowDesignerPage() {
                                           }
 
                                           regularIndex += 1;
-                                          return { ...item, label: `조건 ${regularIndex}` };
+                                          return { ...item, label: formatStudioRuntimeMessage(uiLanguage, "조건 {index}", { index: regularIndex }) };
                                         }),
                                       },
                                     };
@@ -8186,7 +8186,7 @@ export function FlowDesignerPage() {
                                         type="button"
                                         className="flow-designer-page__variable-column-tag-button"
                                         onClick={() => editVariableColumn(item.id, columnIndex)}
-                                        aria-label={`${column} 키값 수정`}
+                                        aria-label={formatStudioRuntimeMessage(uiLanguage, "{column} 키값 수정", { column })}
                                       >
                                         ✎
                                       </button>
@@ -8194,7 +8194,7 @@ export function FlowDesignerPage() {
                                         type="button"
                                         className="flow-designer-page__variable-column-tag-button"
                                         onClick={() => removeVariableColumn(item.id, columnIndex)}
-                                        aria-label={`${column} 키값 삭제`}
+                                        aria-label={formatStudioRuntimeMessage(uiLanguage, "{column} 키값 삭제", { column })}
                                       >
                                         ×
                                       </button>

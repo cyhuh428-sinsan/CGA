@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/components/language-provider";
 import { hasApiWriteRole, loadAuthSession } from "@/lib/auth";
 import { getVersionManagementLabel, VERSION_MANAGEMENT_CATALOGS, type VersionManagementCatalog } from "@/lib/i18n/version-management";
+import { formatStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
 import {
   activateStudioBotVersion,
   deactivateStudioBotVersion,
@@ -613,7 +614,7 @@ export function VersionManagementPage({ botId: routeBotId, initialSelectedId }: 
       name: `v${nextVersionNo}`,
       versionNo: nextVersionNo,
       status: "draft",
-      description: `${selectedVersion.name} 복사본`,
+      description: formatStudioRuntimeMessage(uiLanguage, "{name} 복사본", { name: selectedVersion.name }),
       comment: selectedVersion.comment,
       updatedAt: nowText(),
       isTrained: false,

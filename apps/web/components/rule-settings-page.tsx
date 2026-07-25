@@ -1,6 +1,6 @@
 "use client";
 
-import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+import { formatStudioRuntimeMessage, getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -264,7 +264,7 @@ export function RuleSettingsPage() {
           if (!expression) {
             setRegexTestState({
               tone: "error",
-              message: "먼저 룰 표현식을 입력해주세요.",
+              message: getStudioRuntimeMessage(uiLanguage, "먼저 룰 표현식을 입력해주세요."),
             });
             return;
           }
@@ -274,11 +274,11 @@ export function RuleSettingsPage() {
             typeof regexResult === "string"
               ? {
                   tone: "error",
-                  message: `정규식 문법 오류: ${regexResult}`,
+                  message: formatStudioRuntimeMessage(uiLanguage, "정규식 문법 오류: {error}", { error: regexResult }),
                 }
               : {
                   tone: "success",
-                  message: "등록 가능한 정규식입니다.",
+                  message: getStudioRuntimeMessage(uiLanguage, "등록 가능한 정규식입니다."),
                 },
           );
         }
@@ -289,7 +289,7 @@ export function RuleSettingsPage() {
           if (!expression) {
             setRegexTestState({
               tone: "error",
-              message: "먼저 룰 표현식을 입력해주세요.",
+              message: getStudioRuntimeMessage(uiLanguage, "먼저 룰 표현식을 입력해주세요."),
             });
             return;
           }
@@ -297,7 +297,7 @@ export function RuleSettingsPage() {
           if (!testText) {
             setRegexTestState({
               tone: "error",
-              message: "테스트할 문장을 입력해주세요.",
+              message: getStudioRuntimeMessage(uiLanguage, "테스트할 문장을 입력해주세요."),
             });
             return;
           }
@@ -306,7 +306,7 @@ export function RuleSettingsPage() {
           if (typeof regexResult === "string") {
             setRegexTestState({
               tone: "error",
-              message: `정규식 문법 오류: ${regexResult}`,
+              message: formatStudioRuntimeMessage(uiLanguage, "정규식 문법 오류: {error}", { error: regexResult }),
             });
             return;
           }
@@ -315,11 +315,11 @@ export function RuleSettingsPage() {
             regexResult.test(testText)
               ? {
                   tone: "success",
-                  message: "룰 표현식과 일치합니다.",
+                  message: getStudioRuntimeMessage(uiLanguage, "룰 표현식과 일치합니다."),
                 }
               : {
                   tone: "error",
-                  message: "룰 표현식과 일치하지 않습니다.",
+                  message: getStudioRuntimeMessage(uiLanguage, "룰 표현식과 일치하지 않습니다."),
                 },
           );
         }
@@ -442,9 +442,9 @@ export function RuleSettingsPage() {
           });
 
           return matchedRule
-            ? `${matchedRule.target || "의도/모듈 미연결"} 으로 연결됩니다.`
-            : "룰이 매칭되지 않는 표현입니다.";
-        }, [items, testSentence]);
+            ? formatStudioRuntimeMessage(uiLanguage, "{target} 으로 연결됩니다.", { target: matchedRule.target || getStudioRuntimeMessage(uiLanguage, "의도/모듈 미연결") })
+            : getStudioRuntimeMessage(uiLanguage, "룰이 매칭되지 않는 표현입니다.");
+        }, [items, testSentence, uiLanguage]);
 
         return (
           <>

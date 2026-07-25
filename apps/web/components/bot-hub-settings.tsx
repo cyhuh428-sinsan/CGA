@@ -1,6 +1,6 @@
 "use client";
 
-import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+import { formatStudioRuntimeMessage, getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
 
 import Link from "next/link";
 import { useEffect, useState, type ChangeEvent } from "react";
@@ -212,7 +212,7 @@ export function BotHubSettings({ hubId }: Props) {
             <div className="bot-hub__profile-options">
               <span>{getStudioPageLabel(copy,"기본 프로필")}</span>
               <div>
-                {(["gray", "accent", "outline"] as const).map((key) => <button key={key} type="button" className={`bot-hub__profile-option bot-hub__profile--${key}${profileImageData === undefined && !hub.profile_image_url && profileKey === key ? " is-selected" : ""}`} aria-label={`${key} 기본 프로필`} onClick={() => { setProfileKey(key); setProfileImageData(null); }} />)}
+                {(["gray", "accent", "outline"] as const).map((key) => <button key={key} type="button" className={`bot-hub__profile-option bot-hub__profile--${key}${profileImageData === undefined && !hub.profile_image_url && profileKey === key ? " is-selected" : ""}`} aria-label={formatStudioRuntimeMessage(uiLanguage, "{label} 기본 프로필", { label: key })} onClick={() => { setProfileKey(key); setProfileImageData(null); }} />)}
               </div>
               <label className="bot-hub__profile-upload">{getStudioPageLabel(copy,"PC 이미지 선택")}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleProfileImageChange} /></label>
               {displayedImage ? <button type="button" className="bot-hub__profile-reset" onClick={() => setProfileImageData(null)}>{getStudioPageLabel(copy,"기본 프로필 사용")}</button> : null}
