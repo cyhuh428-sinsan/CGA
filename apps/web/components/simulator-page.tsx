@@ -1185,6 +1185,44 @@ function isVisibleSimulatorMessage(message: SimulatorMessage) {
   return Boolean(message.template?.valid);
 }
 
+function localizeSimulatorAnalysisLabel(language: SupportedLanguage, value: string) {
+  return value
+    .split(" / ")
+    .map((part) => getStudioRuntimeMessage(language, part))
+    .join(" / ");
+}
+
+function localizeSimulatorAnalysisDescription(language: SupportedLanguage, value: string) {
+  for (const prefix of ["템플릿 JSON 파싱 실패", "Table 변수 JSON 파싱 실패"]) {
+    if (value === prefix) return getStudioRuntimeMessage(language, prefix);
+    if (value.startsWith(`${prefix}: `)) {
+      return `${getStudioRuntimeMessage(language, prefix)}: ${value.slice(prefix.length + 2)}`;
+    }
+  }
+  const extracted = value.match(/^(.*?) → (.*?): '(.*?)' 추출, target '(.*?)'$/);
+  if (extracted) {
+    return formatStudioRuntimeMessage(language, "{entity} → {variable}: '{value}' 추출, target '{target}'", {
+      entity: extracted[1],
+      variable: extracted[2],
+      value: extracted[3],
+      target: extracted[4],
+    });
+  }
+  const failed = value.match(/^(.*?) → (.*?): 추출 실패\((.*)\)$/);
+  if (failed) {
+    return formatStudioRuntimeMessage(language, "{entity} → {variable}: 추출 실패({detail})", {
+      entity: failed[1],
+      variable: failed[2],
+      detail: failed[3],
+    });
+  }
+  return getStudioRuntimeMessage(language, value);
+}
+
+function localizeSimulatorAnalysisUtterance(language: SupportedLanguage, value: string) {
+  return value === "대화 시작" ? getStudioRuntimeMessage(language, value) : value;
+}
+
 function describeSimulatorDebugLog(log: NonNullable<SimulatorMessage["debugLogs"]>[number]) {
   const detail = log.detail;
   const nodeTitle = typeof detail.nodeTitle === "string" ? detail.nodeTitle : "Talk";
@@ -3584,7 +3622,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       return "";
     }
     const item = scenarioValidation?.items?.find((entry) => String(entry.dialog_id ?? "") === dialog.id);
-    const detail = typeof item?.message === "string" ? item.message : "대화 설계 오류가 있습니다.";
+    const detail = typeof item?.message === "string" ? item.message : getStudioRuntimeMessage(uiLanguage, "대화 설계 오류가 있습니다.");
     return formatStudioRuntimeMessage(uiLanguage, "{dialog} {type}는 {detail} 오류를 수정한 뒤 봇 테스트를 실행할 수 있습니다.", { dialog: dialog.name, type: getStudioRuntimeMessage(uiLanguage, dialog.dialogType === 0 ? "모듈" : "의도"), detail });
   }
 
@@ -4102,7 +4140,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         variables,
       });
       appendAnalysisLog(analysisId, {
-        cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
+        cardType: "실행 오류",
         cardName: node.title,
         description: message,
       }, variables);
@@ -4166,7 +4204,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           variables,
         });
         appendAnalysisLog(analysisId, {
-          cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
+          cardType: "실행 오류",
           cardName: node.title,
           description: message,
         }, variables);
@@ -4244,7 +4282,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         variables,
       });
       appendAnalysisLog(analysisId, {
-        cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
+        cardType: "실행 오류",
         cardName: node.title,
         description: message,
       }, variables);
@@ -4274,7 +4312,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysisId, {
           cardType: FLOW_CARD_LABELS[node.kind],
           cardName: node.title,
-          description: getStudioRuntimeMessage(uiLanguage, "카드를 실행했습니다."),
+          description: "카드를 실행했습니다.",
         }, nextRuntime.variables);
 
       if (node.kind === "talk") {
@@ -4290,7 +4328,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           appendAnalysisLog(analysisId, {
             cardType: FLOW_CARD_LABELS[node.kind],
             cardName: node.title,
-            description: getStudioRuntimeMessage(uiLanguage, "출력할 메시지가 없습니다. 변수 치환 결과나 Talk 카드 메시지 설정을 확인해주세요."),
+            description: "출력할 메시지가 없습니다. 변수 치환 결과나 Talk 카드 메시지 설정을 확인해주세요.",
           }, nextRuntime.variables);
         }
         talkMessages.forEach((message) => {
@@ -4327,7 +4365,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           appendAnalysisLog(analysisId, {
             cardType: FLOW_CARD_LABELS[node.kind],
             cardName: node.title,
-            description: getStudioRuntimeMessage(uiLanguage, "사용자 입력을 기다립니다."),
+            description: "사용자 입력을 기다립니다.",
           }, nextRuntime.variables);
           break;
         }
@@ -4352,7 +4390,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysisId, {
           cardType: FLOW_CARD_LABELS[node.kind],
           cardName: node.title,
-          description: getStudioRuntimeMessage(uiLanguage, "변수값을 갱신했습니다."),
+          description: "변수값을 갱신했습니다.",
         }, variables);
         nextRuntime = { ...nextRuntime, variables, nextNodeId: getNextNodeId(nextRuntime.graph, node.id, "next") };
         continue;
@@ -4380,7 +4418,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             variables: nextRuntime.variables,
           });
           appendAnalysisLog(analysisId, {
-            cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
+            cardType: "실행 오류",
             cardName: node.title,
             description: detailMessage,
           }, nextRuntime.variables);
@@ -4402,7 +4440,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             variables: nextRuntime.variables,
           });
           appendAnalysisLog(analysisId, {
-            cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
+            cardType: "실행 오류",
             cardName: node.title,
             description: detailMessage,
           }, nextRuntime.variables);
@@ -4470,7 +4508,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             appendAnalysisLog(analysisId, {
               cardType: FLOW_CARD_LABELS[node.kind],
               cardName: node.title,
-              description: getStudioRuntimeMessage(uiLanguage, "Function 실행 실패 후 예외 흐름으로 이동합니다."),
+              description: "Function 실행 실패 후 예외 흐름으로 이동합니다.",
             }, result.variables);
             nextRuntime = {
               ...nextRuntime,
@@ -4481,9 +4519,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           }
           nextMessages.push(makeMessage("system", SIMULATOR_RUNTIME_MESSAGES.systemError));
           appendAnalysisLog(analysisId, {
-            cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
+            cardType: "실행 오류",
             cardName: node.title,
-            description: getStudioRuntimeMessage(uiLanguage, "Function 실행 실패 후 예외 흐름이 없어 대화를 종료합니다."),
+            description: "Function 실행 실패 후 예외 흐름이 없어 대화를 종료합니다.",
           }, result.variables);
           nextRuntime = {
             ...nextRuntime,
@@ -4517,7 +4555,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           if (scenarioBlockMessage) {
             nextMessages.push(makeMessage("system", scenarioBlockMessage));
             appendAnalysisLog(analysisId, {
-              cardType: getStudioRuntimeMessage(uiLanguage, "설계 오류"),
+              cardType: "설계 오류",
               cardName: targetDialog.name,
               description: scenarioBlockMessage,
             }, nextRuntime.variables, { visible: true });
@@ -4560,7 +4598,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           variables: nextRuntime.variables,
         });
         appendAnalysisLog(analysisId, {
-          cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
+          cardType: "실행 오류",
           cardName: node.title,
           description: detailMessage,
         }, nextRuntime.variables);
@@ -4657,8 +4695,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         maxCardsBetweenUserResponses,
       });
       appendAnalysisLog(analysisId, {
-        cardType: getStudioRuntimeMessage(uiLanguage, "실행 오류"),
-        cardName: getStudioRuntimeMessage(uiLanguage, "루핑 방지"),
+        cardType: "실행 오류",
+        cardName: "루핑 방지",
         description: formatStudioRuntimeMessage(uiLanguage, "사용자 응답 사이 실행 카드 수가 설정값 {count}개를 초과하여 시나리오를 중단했습니다. 링크 순환 또는 사용자 응답 대기 Talk 카드 누락 여부를 확인하세요.", { count: maxCardsBetweenUserResponses }),
       }, nextRuntime.variables);
       nextRuntime = { ...nextRuntime, ended: true, nextNodeId: "" };
@@ -4704,7 +4742,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
     if (scenarioBlockMessage) {
       appendUserUtteranceLog(analysis.id, utterance, selected.name, "의도 추출 오류");
       appendAnalysisLog(analysis.id, {
-        cardType: getStudioRuntimeMessage(uiLanguage, "설계 오류"),
+        cardType: "설계 오류",
         cardName: selected.name,
         description: scenarioBlockMessage,
       }, {}, { visible: true });
@@ -5036,9 +5074,9 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       setAnalyses((current) => [...current, analysis]);
       setSelectedAnalysisId(analysis.id);
       appendAnalysisLog(analysis.id, {
-        cardType: getStudioRuntimeMessage(uiLanguage, "스몰토크"),
+        cardType: "스몰토크",
         cardName: smalltalk.title,
-        description: getStudioRuntimeMessage(uiLanguage, "스몰토크에 매칭되어 응답을 반환합니다."),
+        description: "스몰토크에 매칭되어 응답을 반환합니다.",
       }, variables);
       setMessages((current) => [...current, makeMessage("bot", smalltalk.response)]);
       setRuntime(null);
@@ -5054,7 +5092,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         decisionLog: {
           cardType: "Exacting Matching",
           cardName: exactDialog.name,
-          description: getStudioRuntimeMessage(uiLanguage, "사용자 발화가 등록된 학습문장과 완전히 일치하여 Score 계산 전에 해당 의도로 진입했습니다."),
+          description: "사용자 발화가 등록된 학습문장과 완전히 일치하여 Score 계산 전에 해당 의도로 진입했습니다.",
         },
       });
       return true;
@@ -5067,7 +5105,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         variables,
         parentRuntime: activeRuntime,
         decisionLog: {
-          cardType: getStudioRuntimeMessage(uiLanguage, "룰"),
+          cardType: "룰",
           cardName: ruleMatch.rule.name,
           description: formatStudioRuntimeMessage(uiLanguage, "룰 표현식 \"{rule}\"이 사용자 발화와 매칭되어 \"{intent}\" 의도로 진입했습니다.", { rule: ruleMatch.rule.expression, intent: ruleMatch.dialog.name }),
         },
@@ -5095,7 +5133,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         setSelectedAnalysisId(analysis.id);
         appendAnalysisLog(analysis.id, {
           cardType: "ML NLU",
-          cardName: getStudioRuntimeMessage(uiLanguage, "의도분류"),
+          cardName: "의도분류",
           description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "ML 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
@@ -5117,7 +5155,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         setSelectedAnalysisId(analysis.id);
         appendAnalysisLog(analysis.id, {
           cardType: "Semantic NLU",
-          cardName: getStudioRuntimeMessage(uiLanguage, "의도분류"),
+          cardName: "의도분류",
           description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "Semantic 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
@@ -5139,7 +5177,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         setSelectedAnalysisId(analysis.id);
         appendAnalysisLog(analysis.id, {
           cardType: "LLM NLU",
-          cardName: getStudioRuntimeMessage(uiLanguage, "의도분류"),
+          cardName: "의도분류",
           description: error instanceof Error ? error.message : getStudioRuntimeMessage(uiLanguage, "LLM 의도분류 중 오류가 발생했습니다."),
         }, variables);
         setMessages((current) => [
@@ -5252,8 +5290,8 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       ]);
       appendAnalysisLog(analysis.id, {
         cardType: "의도 미분류",
-        cardName: options.fallbackCardName || getStudioRuntimeMessage(uiLanguage, "사용자 입력"),
-        description: options.fallbackDescription || getStudioRuntimeMessage(uiLanguage, "의도분류에 실패하여 안내 메시지를 출력한 뒤 원래 카드 흐름의 다음 링크로 진행합니다."),
+        cardName: options.fallbackCardName || "사용자 입력",
+        description: options.fallbackDescription || "의도분류에 실패하여 안내 메시지를 출력한 뒤 원래 카드 흐름의 다음 링크로 진행합니다.",
       }, fallbackVariables);
       void continueRuntime({
         ...options.fallbackRuntime,
@@ -5607,7 +5645,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         setSelectedAnalysisId(analysis.id);
         const extractedCount = extractedEntities.filter((entity) => entity.matched).length;
         appendAnalysisLog(analysis.id, {
-          cardType: getStudioRuntimeMessage(uiLanguage, "사용자 입력"),
+          cardType: "사용자 입력",
           cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
           description:
             extractedEntities.length > 0
@@ -5616,7 +5654,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         }, { ...variables, talkResponse: utterance, responseUtterance: utterance });
         if (entityExtractionLogs.length > 0) {
           appendAnalysisLog(analysis.id, {
-            cardType: getStudioRuntimeMessage(uiLanguage, "개체 추출"),
+            cardType: "개체 추출",
             cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
             description: entityExtractionLogs.join(" / "),
           }, variables);
@@ -5625,7 +5663,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
           appendAnalysisLog(analysis.id, {
             cardType: "Form(A Card)",
             cardName: waitingNode.title,
-            description: getStudioRuntimeMessage(uiLanguage, "MsgKey로 같은 Adaptive Card 메시지를 갱신하고 입력 대기 상태를 유지했습니다."),
+            description: "MsgKey로 같은 Adaptive Card 메시지를 갱신하고 입력 대기 상태를 유지했습니다.",
           }, variables);
           setRuntime({
             ...runtimeForStructuredResponse,
@@ -5744,7 +5782,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       setSelectedAnalysisId(analysis.id);
       const extractedCount = extractedEntities.filter((entity) => entity.matched).length;
       appendAnalysisLog(analysis.id, {
-        cardType: getStudioRuntimeMessage(uiLanguage, "사용자 입력"),
+        cardType: "사용자 입력",
         cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
         description:
           extractedEntities.length > 0
@@ -5753,7 +5791,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
       }, { ...variables, talkResponse: utterance, responseUtterance: utterance });
       if (entityExtractionLogs.length > 0) {
         appendAnalysisLog(analysis.id, {
-          cardType: getStudioRuntimeMessage(uiLanguage, "개체 추출"),
+          cardType: "개체 추출",
           cardName: waitingNode?.title ?? getStudioRuntimeMessage(uiLanguage, "Talk 응답"),
           description: entityExtractionLogs.join(" / "),
         }, variables);
@@ -5762,7 +5800,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
         appendAnalysisLog(analysis.id, {
           cardType: "Form(A Card)",
           cardName: waitingNode.title,
-          description: getStudioRuntimeMessage(uiLanguage, "MsgKey로 같은 Adaptive Card 메시지를 갱신하고 입력 대기 상태를 유지했습니다."),
+          description: "MsgKey로 같은 Adaptive Card 메시지를 갱신하고 입력 대기 상태를 유지했습니다.",
         }, variables);
         setRuntime({
           ...runtimeForStructuredResponse,
@@ -6254,7 +6292,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               <div key={`${log.cardName}-${index}`} className="simulator-analysis__row simulator-analysis__row--error">
                 <span>{getStudioRuntimeMessage(uiLanguage, log.cardType)}</span>
                 <b>{getStudioRuntimeMessage(uiLanguage, log.cardName)}</b>
-                <small>{getStudioRuntimeMessage(uiLanguage, log.description)}</small>
+                <small>{localizeSimulatorAnalysisDescription(uiLanguage, log.description)}</small>
               </div>
             ))}
           </div>
@@ -6279,7 +6317,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                   <b>
                     {getStudioRuntimeMessage(uiLanguage, log.cardType)} / {getStudioRuntimeMessage(uiLanguage, log.cardName)}
                   </b>
-                  <small>{getStudioRuntimeMessage(uiLanguage, log.description)}</small>
+                  <small>{localizeSimulatorAnalysisDescription(uiLanguage, log.description)}</small>
                   {Object.keys(log.variables).length > 0 ? (
                     <details className="simulator-analysis__flow-variables">
                       <summary>{getSimulatorLabel(uiLanguage, "카드 실행 후 변수값")}</summary>
@@ -6314,11 +6352,11 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             {logs.map((log) => (
               <div key={`${log.order}-${log.cardType}-${log.cardName}`} className="simulator-analysis__row simulator-analysis__row--trace">
                 <span>
-                  {log.order}. {log.cardType}
+                  {log.order}. {getStudioRuntimeMessage(uiLanguage, log.cardType)}
                 </span>
                 <b>{getStudioRuntimeMessage(uiLanguage, log.cardName)}</b>
                 <small>
-                  [{log.utterance}] {log.description}
+                  [{localizeSimulatorAnalysisUtterance(uiLanguage, log.utterance)}] {localizeSimulatorAnalysisDescription(uiLanguage, log.description)}
                 </small>
                 <div>{renderVariableTable(log.variables)}</div>
               </div>
@@ -6348,7 +6386,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
             {snapshots.map((snapshot, index) => (
               <details key={`${snapshot.order}-${snapshot.label}`} open={index === snapshots.length - 1}>
                 <summary>
-                  {snapshot.order}. [{snapshot.utterance}] {snapshot.label}
+                  {snapshot.order}. [{localizeSimulatorAnalysisUtterance(uiLanguage, snapshot.utterance)}] {localizeSimulatorAnalysisLabel(uiLanguage, snapshot.label)}
                 </summary>
                 {renderVariableTable(snapshot.variables)}
               </details>
@@ -6772,7 +6810,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
               {renderRuntimeState()}
               <div className="simulator-analysis__summary">
                 <span>{getSimulatorLabel(uiLanguage, "사용자 발화")}</span>
-                <strong>{selectedAnalysis.utterance}</strong>
+                <strong>{localizeSimulatorAnalysisUtterance(uiLanguage, selectedAnalysis.utterance)}</strong>
                 <span>{getSimulatorLabel(uiLanguage, "선택 의도")}</span>
                 <strong>{getStudioRuntimeMessage(uiLanguage, selectedAnalysis.selectedIntentName)}</strong>
               </div>
@@ -6792,7 +6830,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                       <div className="simulator-analysis__snapshots">
                         {selectedAnalysis.variableSnapshots.map((snapshot, index) => (
                           <details key={`${snapshot.label}-${index}`}>
-                            <summary>{snapshot.label}</summary>
+                            <summary>{localizeSimulatorAnalysisLabel(uiLanguage, snapshot.label)}</summary>
                             {renderVariableTable(snapshot.variables)}
                           </details>
                         ))}
