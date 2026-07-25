@@ -1236,6 +1236,7 @@ def test_studio_runtime_message_catalog_has_complete_native_translations() -> No
             assert set(translated) == baseline_keys, language
 
     assert 'DELETE' in catalog_source
+    assert '`$_`' in catalog_source
 
 
 def test_dynamic_studio_copy_does_not_fall_back_to_korean() -> None:
@@ -1251,7 +1252,7 @@ def test_dynamic_studio_copy_does_not_fall_back_to_korean() -> None:
         "rule-settings-page.tsx": (
             "`정규식 문법 오류: ${regexResult}`",
             '`${matchedRule.target || "의도/모듈 미연결"} 으로 연결됩니다.`',
-            '"룰이 매칭되지 않는 표현입니다."',
+            ': "룰이 매칭되지 않는 표현입니다.";',
         ),
         "intent-configure-page.tsx": (
             "cluster.name || `RAG 의도 ${index + 1}`",
@@ -1277,4 +1278,3 @@ def test_dynamic_studio_copy_does_not_fall_back_to_korean() -> None:
                 violations.append(f"{name}: {snippet}")
 
     assert not violations, "Dynamic Korean copy remains:\n" + "\n".join(violations)
-    assert '`$_`' in catalog_source

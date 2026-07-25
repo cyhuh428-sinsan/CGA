@@ -79,7 +79,7 @@ export function BotHubComposition({ hubId }: Props) {
     try {
       const versions = await fetchStudioBotVersions(session.access_token, hubId);
       const version = versions.find((item) => item.is_active) || versions.at(-1);
-      if (!version) throw new Error("학습할 봇 허브 버전이 없습니다.");
+      if (!version) throw new Error(getStudioRuntimeMessage(uiLanguage, "학습할 봇 허브 버전이 없습니다."));
       await trainStudioBotVersionNlu(session.access_token, hubId, version.id);
       await activateStudioBotVersion(session.access_token, hubId, version.id);
       const refreshed = await fetchStudioHub(session.access_token, hubId);

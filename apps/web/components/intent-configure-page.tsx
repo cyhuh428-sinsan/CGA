@@ -11,6 +11,8 @@ import { type SummaryStatItem } from "@/components/summary-stat-grid";
 import { saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { getBotVersionSettings, normalizeConfigurationScoring, type ConfigurationScoringConfig } from "@/lib/bot-settings";
 import { INTENT_CONFIGURE_INPUT_CATALOGS, formatIntentConfigureInputText, getIntentConfigureCriteriaLabel, type IntentConfigureInputCatalog } from "@/lib/i18n/intent-configure-input";
+import { formatStudioRuntimeMessage, getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+import { normalizeSupportedLanguage, type SupportedLanguage } from "@/lib/language";
 import { applyUpdatedVersionToBot, getNextDialogNo, getVersionDialogs, withEnsuredDialogFlowGraph, withUpdatedDialogs } from "@/lib/dialog-assets";
 import {
   NLU_MODEL_OPTIONS_BY_TYPE,
@@ -2231,8 +2233,8 @@ async function createClusters(
   return createClustersForUtterances(utterances, targetCount, lexicon, scoring, nluType, targetCountPolicy, tokenContext, onProgress);
 }
 
-function makeDefaultAnswer(name: string) {
-  return `${name}에 대해 안내드리겠습니다.`;
+function makeDefaultAnswer(name: string, language: SupportedLanguage) {
+  return formatStudioRuntimeMessage(language, "{name}에 대해 안내드리겠습니다.", { name });
 }
 
 function formatTalkVariableAnswer(value: string) {
@@ -2399,6 +2401,7 @@ export function IntentConfigurePage() {
   const aiConfig = useMemo(() => getVersionAiConfig(effectiveVersion, bot), [bot, effectiveVersion]);
   const nluType = configureNluType as ConfigureNluType;
   const nluModel = configureNluModel;
+  const botLanguage = normalizeSupportedLanguage(bot?.data_json?.language);
   const ragAnswerMode = isRagAnswerMode(aiConfig);
   const nluModelEmbedding = getNluModelEmbedding(configureNluType, configureNluModel);
   const ragEmbedding = aiConfig.answer_mode === "llm_rag"
@@ -2713,7 +2716,7 @@ export function IntentConfigurePage() {
         : await configureStudioBotVersionRagAnswers(authSession.access_token, bot.id, effectiveVersion.id, {
             answer_training: {
               source_type: "text",
-              title: title || "RAG 답변 문서",
+              title: title || getStudioRuntimeMessage(botLanguage, "RAG 답변 문서"),
               text,
               embedding_provider: ragEmbedding.provider,
               embedding_model: ragEmbedding.model,
@@ -2724,7 +2727,7 @@ export function IntentConfigurePage() {
       setRagConfigureStage("intent");
       const nextClusters = response.groups.map((cluster, index) => ({
         id: cluster.id || crypto.randomUUID(),
-        name: cluster.name || `RAG 의도 ${index + 1}`,
+        name: cluster.name || formatStudioRuntimeMessage(botLanguage, "RAG 의도 {index}", { index: index + 1 }),
         answer: formatTalkVariableAnswer(cluster.answer || "$_rag_answer_text"),
         utterances: cluster.utterances,
         seed: cluster.utterances[0] ?? "",
@@ -2831,8 +2834,8 @@ export function IntentConfigurePage() {
         engineLabel = "LLM Engine";
         nextClusters = response.groups.map((cluster, index) => ({
           id: cluster.id || crypto.randomUUID(),
-          name: cluster.name || `의도 ${index + 1}`,
-          answer: cluster.answer || makeDefaultAnswer(cluster.name || `의도 ${index + 1}`),
+          name: cluster.name || formatStudioRuntimeMessage(botLanguage, "의도 {index}", { index: index + 1 }),
+          answer: cluster.answer || makeDefaultAnswer(cluster.name || formatStudioRuntimeMessage(botLanguage, "의도 {index}", { index: index + 1 }), botLanguage),
           utterances: cluster.utterances,
           seed: cluster.utterances[0] ?? "",
         }));
@@ -2848,8 +2851,8 @@ export function IntentConfigurePage() {
         engineLabel = "Semantic Vector Worker";
         nextClusters = response.groups.map((cluster, index) => ({
           id: cluster.id || crypto.randomUUID(),
-          name: cluster.name || `의도 ${index + 1}`,
-          answer: cluster.answer || makeDefaultAnswer(cluster.name || `의도 ${index + 1}`),
+          name: cluster.name || formatStudioRuntimeMessage(botLanguage, "의도 {index}", { index: index + 1 }),
+          answer: cluster.answer || makeDefaultAnswer(cluster.name || formatStudioRuntimeMessage(botLanguage, "의도 {index}", { index: index + 1 }), botLanguage),
           utterances: cluster.utterances,
           seed: cluster.utterances[0] ?? "",
         }));
@@ -2868,8 +2871,8 @@ export function IntentConfigurePage() {
         engineLabel = "ML DeepLearning Lite";
         nextClusters = response.groups.map((cluster, index) => ({
           id: cluster.id || crypto.randomUUID(),
-          name: cluster.name || `의도 ${index + 1}`,
-          answer: cluster.answer || makeDefaultAnswer(cluster.name || `의도 ${index + 1}`),
+          name: cluster.name || formatStudioRuntimeMessage(botLanguage, "의도 {index}", { index: index + 1 }),
+          answer: cluster.answer || makeDefaultAnswer(cluster.name || formatStudioRuntimeMessage(botLanguage, "의도 {index}", { index: index + 1 }), botLanguage),
           utterances: cluster.utterances,
           seed: cluster.utterances[0] ?? "",
         }));
@@ -2924,7 +2927,7 @@ export function IntentConfigurePage() {
         ...primary,
         utterances: mergedUtterances,
         seed: primary.seed || mergedUtterances[0] || "",
-        answer: primary.answer || makeDefaultAnswer(primary.name),
+        answer: primary.answer || makeDefaultAnswer(primary.name, botLanguage),
       };
       return [mergedCluster, ...current.filter((cluster) => !selectedSet.has(cluster.id))];
     });

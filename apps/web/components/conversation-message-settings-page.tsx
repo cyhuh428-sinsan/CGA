@@ -1,6 +1,6 @@
 "use client";
 
-import { getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
+import { formatStudioRuntimeMessage, getStudioRuntimeMessage } from "@/lib/i18n/studio-runtime-native";
 
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -38,6 +38,7 @@ const MESSAGE_HELP: Record<string, string> = {
 const MESSAGE_TEXT_MAX_LENGTH = 100;
 
 function FieldLabel({ title, help }: { title: string; help?: string }) {
+  const { language: uiLanguage } = useI18n();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
 
@@ -73,7 +74,7 @@ function FieldLabel({ title, help }: { title: string; help?: string }) {
         <button
           type="button"
           className="settings-help-tip"
-          aria-label={`${title} 설명`}
+          aria-label={formatStudioRuntimeMessage(uiLanguage, "{title} 설명", { title })}
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
         >
