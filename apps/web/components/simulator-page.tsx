@@ -244,13 +244,23 @@ function nowText() {
   return new Date().toISOString();
 }
 
-function formatMessageTime(value: string) {
+const SIMULATOR_TIME_LOCALES: Record<SupportedLanguage, string> = {
+  ko: "ko-KR",
+  en: "en-US",
+  "zh-CN": "zh-CN",
+  ja: "ja-JP",
+  vi: "vi-VN",
+  fr: "fr-FR",
+  de: "de-DE",
+};
+
+function formatMessageTime(value: string, language: SupportedLanguage) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return "";
   }
 
-  return date.toLocaleTimeString("ko-KR", {
+  return date.toLocaleTimeString(SIMULATOR_TIME_LOCALES[language], {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -6460,7 +6470,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                         ) : null}
                         <div className="chat-message__line">
                           {message.sender === "user" ? (
-                            <time dateTime={message.timestamp}>{formatMessageTime(message.timestamp)}</time>
+                            <time dateTime={message.timestamp}>{formatMessageTime(message.timestamp, uiLanguage)}</time>
                           ) : null}
                           <div
                             className={`chat-bubble chat-bubble--${message.sender === "user" ? "user" : "bot"}${message.sender === "system" ? " chat-bubble--system" : ""}`}
@@ -6662,7 +6672,7 @@ export function SimulatorPage({ embedded = false, startDialogId: startDialogIdPr
                             ) : null}
                           </div>
                           {message.sender !== "system" && message.sender !== "user" ? (
-                            <time dateTime={message.timestamp}>{formatMessageTime(message.timestamp)}</time>
+                            <time dateTime={message.timestamp}>{formatMessageTime(message.timestamp, uiLanguage)}</time>
                           ) : null}
                         </div>
                       </div>
