@@ -230,6 +230,45 @@ Fälle, die bei Validierungs-ML-Bots beobachtet wurden:
 
 Passen Sie den Status nicht durch direktes Ändern der Datenbank oder CLI an. Der Bot, die Version, die Engine, die Fehlermeldung und die Auftrittszeit auf dem Bildschirm werden aufgezeichnet und an den Betriebsleiter übermittelt.
 
+## 11. Ausführung und Zustandsbewertung von Lernen und Indexierung
+
+- Prüfen Sie vor der Ausführung Bot-UUID, Version, Sprache, Engine, Modell, Antwortmethode, gespeicherte Assets und den Referenztestsatz.
+- ML-Lernen und Semantic-Indexierung können länger als drei Minuten dauern. Eine Anforderungsmeldung allein belegt keinen Erfolg.
+- Prüfen Sie den Endzustand im Lernverlauf und führen Sie erst dann den Bot-Test aus. Fehlender Verlauf, unveränderter Status „ungelernt“, leerer Index oder fehlgeschlagener LLM-Aufruf gelten als Fehler.
+
+## 12. Betrieb von Score und Cut-off
+
+1. Notieren Sie die aktuellen Cut-off- und Ähnlichkeitskriterien.
+2. Erfassen Sie Score-Verteilungen für richtige, falsche, Grenz- und nicht unterstützte Äußerungen.
+3. Ändern Sie jeweils nur ein Kriterium und führen Sie denselben Regressionstestsatz erneut aus.
+4. Bewerten Sie Fehlannahmen und Fehlablehnungen; optimieren Sie nicht nur den angezeigten Prozentsatz.
+
+## 13. Mehrsprachiger NLU-Betrieb
+
+CGA unterstützt Koreanisch, Englisch, vereinfachtes Chinesisch, Japanisch, Vietnamesisch, Französisch und Deutsch für UI und Bot-Sprache. Bezeichner und API-Verträge bleiben kanonisch; Äußerungen, Meldungen, Entitäten und Bewertungssätze werden in der Zielsprache erstellt.
+
+Die Nachrichtensuche verwendet zuerst die Anfragesprache und andernfalls die Bot-Sprache. Prüfen Sie Morphologie, Abstände, Höflichkeitsformen, Akzente und sprachspezifische Varianten getrennt und verlassen Sie sich nicht nur auf wörtliche Übersetzung.
+
+## 14. Kontrollierte Engine-Experimente
+
+- Erstellen Sie eine separate Arbeitsversion, statt die Betriebsversion zu überschreiben.
+- Fixieren Sie den Testsatz und ändern Sie pro Versuch nur Daten, Schwellenwert, Modell, Provider, Prompt oder Indexeinstellung.
+- Protokollieren Sie Genauigkeit, Fehlerart, Antwortkonsistenz, Latenz, Kosten und Betriebsgrenzen.
+- Übernehmen Sie nur Versionen, die die vereinbarten Kriterien erfüllen und bestehende Erfolgsfälle bewahren.
+
+## 15. Beispiel zur Qualitätsverbesserung
+
+Trennen Sie bei Lieferanfragen Termin- und Statusanfragen, erstellen Sie repräsentative, variierte, Grenz-, Ausnahme- und Regressionsäußerungen, prüfen Sie die Extraktion der Bestellnummer und vergleichen Sie nach Lernen oder Indexierung alle Sätze erneut. Weniger Fehler reichen nicht aus, wenn frühere Erfolgsfälle Score oder Intent verlieren.
+
+## 16. Checkliste für die Betriebsübernahme
+
+- [ ] Bot-UUID, Version, Sprache, Engine, Modell und Antwortmethode wurden notiert.
+- [ ] Vorher/Nachher wurde mit demselben Testsatz verglichen.
+- [ ] Lernen oder Indexierung wurde im Verlauf bestätigt.
+- [ ] Scores, Konflikte ähnlicher Intents und Regressionen wurden geprüft.
+- [ ] Zielsprachige Meldungen und Entitätsextraktion wurden geprüft.
+- [ ] Realer Kanal sowie Dialog-, API- und Queue-Verlauf wurden geprüft.
+
 ## Verwandte Dokumente
 
 - [Das gesamte CGA-Handbuch ansehen](../README.md)

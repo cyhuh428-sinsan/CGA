@@ -90,6 +90,30 @@ def set_font(run, size=10.5, color=None, bold=None, italic=None):
         run.italic = italic
 
 
+INLINE_PATTERN = re.compile(r"(\*\*[^*]+\*\*|`[^`]+`|\[[^]]+\]\([^)]+\))")
+
+
+def add_inline_runs(paragraph, text, size=10.5, color=None, bold=False, italic=False):
+    for part in INLINE_PATTERN.split(text):
+        if not part:
+            continue
+        part_bold = bold
+        part_italic = italic
+        display = part
+        if part.startswith("**") and part.endswith("**"):
+            display = part[2:-2]
+            part_bold = True
+        elif part.startswith("`") and part.endswith("`"):
+            display = part[1:-1]
+            part_bold = True
+        else:
+            link = re.fullmatch(r"\[([^]]+)\]\(([^)]+)\)", part)
+            if link:
+                display = link.group(1)
+        run = paragraph.add_run(display)
+        set_font(run, size=size, color=color, bold=part_bold, italic=part_italic)
+
+
 def style_document(doc):
     section = doc.sections[0]
     section.top_margin = Inches(1)
@@ -125,8 +149,7 @@ def style_document(doc):
 
 def add_text(doc, text, style=None, bold=False, italic=False, color=None):
     p = doc.add_paragraph(style=style)
-    run = p.add_run(text)
-    set_font(run, color=color, bold=bold, italic=italic)
+    add_inline_runs(p, text, color=color, bold=bold, italic=italic)
     return p
 
 
@@ -145,8 +168,7 @@ def add_table(doc, rows):
             cell.text = ""
             p = cell.paragraphs[0]
             p.paragraph_format.space_after = Pt(2)
-            run = p.add_run(value.strip())
-            set_font(run, size=9.2, bold=row_index == 0, color=DARK_BLUE if row_index == 0 else None)
+            add_inline_runs(p, value.strip(), size=9.2, bold=row_index == 0, color=DARK_BLUE if row_index == 0 else None)
             if row_index == 0:
                 set_cell_shading(cell, "E8EEF5")
     doc.add_paragraph()
@@ -183,8 +205,7 @@ def convert_markdown(source, output):
             p.paragraph_format.right_indent = Inches(0.2)
             p.paragraph_format.space_before = Pt(4)
             p.paragraph_format.space_after = Pt(8)
-            run = p.add_run(line[1:].strip())
-            set_font(run, size=9.5, color=GRAY, italic=True)
+            add_inline_runs(p, line[1:].strip(), size=9.5, color=GRAY, italic=True)
             index += 1
             continue
         image_match = re.match(r"^!\[([^]]*)\]\(([^)]+)\)$", line)
@@ -216,11 +237,14 @@ def convert_markdown(source, output):
             continue
         list_match = re.match(r"^(\s*)([-*]|\d+\.)\s+(.*)$", line)
         if list_match:
-            style = "List Number" if list_match.group(2)[0].isdigit() else "List Bullet"
-            p = doc.add_paragraph(style=style)
+            is_numbered = list_match.group(2)[0].isdigit()
+            p = doc.add_paragraph(style=None if is_numbered else "List Bullet")
+            if is_numbered:
+                p.paragraph_format.left_indent = Inches(0.25)
+                p.paragraph_format.first_line_indent = Inches(-0.2)
             p.paragraph_format.space_after = Pt(4)
-            run = p.add_run(list_match.group(3).strip())
-            set_font(run, size=10.5)
+            marker = f"{list_match.group(2)} " if is_numbered else ""
+            add_inline_runs(p, marker + list_match.group(3).strip(), size=10.5)
             index += 1
             continue
         if re.match(r"^상태:", line) or re.match(r"^대상:", line):

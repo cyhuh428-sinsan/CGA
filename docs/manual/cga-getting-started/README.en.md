@@ -218,6 +218,17 @@ After the first test, check the results on the next screen.
 
 If the results are insufficient, check the NLU utilization guide for data improvement and revalidation procedures for each engine.
 
+## Using the on-screen Getting Started
+
+Open `?` at the lower left and select `Getting Started`. The guide runs over the current CGA screen and can be closed at any time.
+
+| Tour | Eight-step flow |
+|---|---|
+| Explore main menus | Bot → API → Admin → intents and utterances → entities and dictionaries → evaluation → retraining → analytics |
+| Create a bot | bot creation → intent engine → model and response mode → intents and utterances → entities, dictionaries, and flows → training → Bot Test → quality improvement |
+
+Choose a tour and select `Start`. Use `Previous`, `Next`, or a numbered step. `View another tour` switches courses. On the final step, `End tour` opens the bot list for the menu tour or the new-bot screen for the creation tour. `Don't show this popup at startup` is stored only in the current browser; the guide can still be reopened from Help.
+
 ## Next document
 
 - [View all CGA manuals](../README.md)

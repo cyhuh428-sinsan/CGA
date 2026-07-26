@@ -1,7 +1,7 @@
 # CGA 문서 기능 검증표
 
 상태: 브라우저 실행 결과 반영 검토본
-작성일: 2026-07-21
+작성일: 2026-07-26
 
 이 표는 세 문서에 기능을 수록할 때 근거와 검증 수준을 추적하기 위한 내부 검토표입니다.
 
@@ -22,6 +22,9 @@
 | Getting Started | NLU 방식 선택 | ML·Semantic Vector Worker·Semantic External Embedding·LLM Engine | 브라우저 확인 | 설명 수록 | 선택 상태와 지원 조합 표시 확인; 실제 실행은 미확인 |
 | Getting Started | 답변 방식 선택 | 정해진 답변·Semantic RAG·LLM RAG·LLM 답변 | 브라우저 확인 | 설명 수록 | 선택 상태와 지원 조합 표시 확인; 실제 실행은 미확인 |
 | Getting Started | 테스트 | 검증용 봇의 시뮬레이터 | 브라우저 확인 | 절차 수록 | 실행 성공; 미학습 상태에서 `의도 미분류`와 학습문장 없음 메시지 확인 |
+| Getting Started | Aidot 주요 메뉴 탐색 과정 | Aidot 운영 화면의 로그인 세션에서 Getting Started 8단계 직접 확인 | 참고 확인 | CGA 기능에 맞게 재구성 | Bot·API·Admin·봇 구성·평가·재학습·분석 순서, 이전/다음·진행 상태·과정 전환 확인 |
+| Getting Started | Aidot 봇 만들기 과정 | Aidot 운영 화면의 로그인 세션에서 Getting Started 8단계 직접 확인 | 참고 확인 | CGA 기능에 맞게 재구성 | 봇 생성·엔진·의도·대화 설계·학습·시뮬레이터 순서 확인; Aidot 전용 기능은 CGA에 이식하지 않음 |
+| Getting Started | CGA 단계형 안내 UI | `apps/web/components/studio-rail.tsx`, `apps/web/lib/i18n/getting-started.ts` | 소스 확인 | 7개 언어 반영 | 주요 메뉴 탐색 8단계와 봇 만들기 8단계 구현; 운영 배포 후 실제 클릭 검증 필요 |
 | 사용자 설명서 | 봇 생성 화면의 구조 요약·지원 상태 | 언어·NLU 방식·모델·답변 방식·LLM·버전 및 `실행/학습 가능`·`설정 저장만 가능` 표시 | 브라우저 확인 | 수록 | `확인` 제출 및 생성 결과 확인 |
 | 사용자 설명서 | 봇 목록·버전 | `apps/web/app/studio/bots/page.tsx`, `apps/web/app/studio/bots/[botId]/versions/page.tsx` | 소스 확인 | 수록 | 실제 화면 확인 필요 |
 | 사용자 설명서 | 의도·개체·사전 | 해당 `intents`, `entities`, `dictionary` routes | 소스 확인 | 수록 | 저장 결과 확인 필요 |
@@ -41,6 +44,7 @@
 - Semantic 외부 임베딩 API의 운영 연결 조건
 - LLM Provider와 세부 모델의 실제 호출 결과·비용·지연
 - 각 관리자 메뉴의 역할별 접근과 저장 결과
+- 단계형 Getting Started의 운영 배포 후 7개 언어 전환·이전/다음·과정 전환·종료 이동 결과
 
 위 항목은 확정 기능으로 표현하지 않고, 후속 브라우저·운영 유사 환경 검증 대상으로 남깁니다.
 

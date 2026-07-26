@@ -23,13 +23,14 @@ import { SHELL_NAVIGATION } from "@/lib/i18n/shell-navigation";
 import { ADMIN_NAVIGATION_CATALOGS, buildAdminNavigationGroups } from "@/lib/i18n/admin-navigation";
 import { ACCOUNT_PAGE_CATALOGS, getAccountRoleLabel } from "@/lib/i18n/account-pages";
 import { STUDIO_RAIL_CATALOGS, formatStudioRailText } from "@/lib/i18n/studio-rail";
+import { GETTING_STARTED_CATALOGS, type GettingStartedCourseId } from "@/lib/i18n/getting-started";
 
 const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
 const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
 
 type PrimaryPanelId = "operations" | "build" | "api" | "admin";
 
-type GettingStartedMode = "explore" | "create" | "sample";
+type GettingStartedPhase = "introduction" | "course";
 
 type BuildNavigationItem = {
   label: string;
@@ -52,6 +53,7 @@ export function StudioRail() {
   const { language, setLanguage, t } = useI18n();
   const navigation = SHELL_NAVIGATION[language];
   const railCopy = STUDIO_RAIL_CATALOGS[language];
+  const gettingStartedCopy = GETTING_STARTED_CATALOGS[language];
   const accountCatalog = ACCOUNT_PAGE_CATALOGS[language];
   const adminGroups = useMemo(
     () => buildAdminNavigationGroups(ADMIN_NAVIGATION_CATALOGS[language]),
@@ -63,7 +65,9 @@ export function StudioRail() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [gettingStartedOpen, setGettingStartedOpen] = useState(false);
   const [gettingStartedSlide, setGettingStartedSlide] = useState(0);
-  const [gettingStartedMode, setGettingStartedMode] = useState<GettingStartedMode>("explore");
+  const [gettingStartedMode, setGettingStartedMode] = useState<GettingStartedCourseId>("explore");
+  const [gettingStartedPhase, setGettingStartedPhase] = useState<GettingStartedPhase>("introduction");
+  const [gettingStartedStep, setGettingStartedStep] = useState(0);
   const [hideGettingStarted, setHideGettingStarted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [licenseStatus, setLicenseStatus] = useState<AdminLicenseStatusResponse | null>(null);
@@ -71,6 +75,8 @@ export function StudioRail() {
   const helpMenuRef = useRef<HTMLDivElement | null>(null);
 
   const currentGettingStartedSlide = railCopy.gettingStartedSlides[gettingStartedSlide];
+  const currentGettingStartedCourse = gettingStartedCopy.courses[gettingStartedMode];
+  const currentGettingStartedStep = currentGettingStartedCourse.steps[gettingStartedStep];
   const manualHref = (manual: "getting-started" | "user-manual" | "nlu-guide") =>
     `/manuals/cga-${manual}-${language}.pdf`;
 
@@ -174,6 +180,8 @@ export function StudioRail() {
     setHelpOpen(false);
     setGettingStartedSlide(slide);
     setGettingStartedMode("explore");
+    setGettingStartedPhase("introduction");
+    setGettingStartedStep(0);
     setHideGettingStarted(window.localStorage.getItem("cga.getting-started.hidden") === "true");
     setGettingStartedOpen(true);
   }
@@ -186,12 +194,18 @@ export function StudioRail() {
   }
 
   function startGettingStarted() {
+    setGettingStartedStep(0);
+    setGettingStartedPhase("course");
+  }
+
+  function finishGettingStarted() {
     closeGettingStarted(hideGettingStarted);
-    if (gettingStartedMode === "create") {
-      router.push("/studio/bots/new");
-    } else if (gettingStartedMode === "sample") {
-      router.push("/studio/bots");
-    }
+    router.push(gettingStartedMode === "create" ? "/studio/bots/new" : "/studio/bots");
+  }
+
+  function switchGettingStartedCourse() {
+    setGettingStartedMode((current) => (current === "explore" ? "create" : "explore"));
+    setGettingStartedStep(0);
   }
 
   const accountInitial = session?.user.name?.trim().charAt(0) || session?.user.login_id?.trim().charAt(0) || "A";
@@ -507,73 +521,115 @@ export function StudioRail() {
               </button>
             </header>
 
-            <div className={`studio-getting-started__hero is-${currentGettingStartedSlide.variant}`}>
-              <div className="studio-getting-started__illustration" aria-hidden="true">
-                <div className="studio-getting-started__bot">
-                  <span className="studio-getting-started__bot-eye" />
-                  <span className="studio-getting-started__bot-eye" />
-                </div>
-                <div className="studio-getting-started__cards">
-                  <span>Intent</span>
-                  <span>Bot Station</span>
-                  <span>Analytics</span>
-                </div>
-              </div>
-              <div className="studio-getting-started__copy">
-                <h2>{currentGettingStartedSlide.title}</h2>
-                <p>{currentGettingStartedSlide.description}</p>
-              </div>
-              <button
-                type="button"
-                className="studio-getting-started__next"
-                aria-label={railCopy.nextIntroduction}
-                onClick={() => setGettingStartedSlide((current) => (current + 1) % railCopy.gettingStartedSlides.length)}
-              >
-                ›
-              </button>
-              <div className="studio-getting-started__dots" aria-label={railCopy.introductionSelection}>
-                {railCopy.gettingStartedSlides.map((slide, index) => (
+            {gettingStartedPhase === "introduction" ? (
+              <>
+                <div className={`studio-getting-started__hero is-${currentGettingStartedSlide.variant}`}>
+                  <div className="studio-getting-started__illustration" aria-hidden="true">
+                    <div className="studio-getting-started__bot">
+                      <span className="studio-getting-started__bot-eye" />
+                      <span className="studio-getting-started__bot-eye" />
+                    </div>
+                    <div className="studio-getting-started__cards">
+                      <span>Intent</span>
+                      <span>Bot Station</span>
+                      <span>Analytics</span>
+                    </div>
+                  </div>
+                  <div className="studio-getting-started__copy">
+                    <h2>{currentGettingStartedSlide.title}</h2>
+                    <p>{currentGettingStartedSlide.description}</p>
+                  </div>
                   <button
-                    key={slide.variant}
                     type="button"
-                    className={index === gettingStartedSlide ? "is-active" : ""}
-                    aria-label={formatStudioRailText(railCopy.introductionAt, { index: index + 1 })}
-                    aria-current={index === gettingStartedSlide ? "step" : undefined}
-                    onClick={() => setGettingStartedSlide(index)}
-                  />
-                ))}
-              </div>
-            </div>
+                    className="studio-getting-started__next"
+                    aria-label={railCopy.nextIntroduction}
+                    onClick={() => setGettingStartedSlide((current) => (current + 1) % railCopy.gettingStartedSlides.length)}
+                  >
+                    ›
+                  </button>
+                  <div className="studio-getting-started__dots" aria-label={railCopy.introductionSelection}>
+                    {railCopy.gettingStartedSlides.map((slide, index) => (
+                      <button
+                        key={slide.variant}
+                        type="button"
+                        className={index === gettingStartedSlide ? "is-active" : ""}
+                        aria-label={formatStudioRailText(railCopy.introductionAt, { index: index + 1 })}
+                        aria-current={index === gettingStartedSlide ? "step" : undefined}
+                        onClick={() => setGettingStartedSlide(index)}
+                      />
+                    ))}
+                  </div>
+                </div>
 
-            <div className="studio-getting-started__body">
-              <h3>{t("gettingStarted.choose")}</h3>
-              <div className="studio-getting-started__modes" role="radiogroup" aria-label={railCopy.experienceMode}>
-                <label className={gettingStartedMode === "explore" ? "is-selected" : ""}>
-                  <input type="radio" name="getting-started-mode" value="explore" checked={gettingStartedMode === "explore"} onChange={() => setGettingStartedMode("explore")} />
-                  <span>{t("gettingStarted.explore")}</span>
-                </label>
-                <label className={gettingStartedMode === "create" ? "is-selected" : ""}>
-                  <input type="radio" name="getting-started-mode" value="create" checked={gettingStartedMode === "create"} onChange={() => setGettingStartedMode("create")} />
-                  <span>{t("gettingStarted.create")}</span>
-                </label>
-                <label className={gettingStartedMode === "sample" ? "is-selected" : ""}>
-                  <input type="radio" name="getting-started-mode" value="sample" checked={gettingStartedMode === "sample"} onChange={() => setGettingStartedMode("sample")} />
-                  <span>{t("gettingStarted.sample")}</span>
+                <div className="studio-getting-started__body">
+                  <h3>{t("gettingStarted.choose")}</h3>
+                  <div className="studio-getting-started__course-options" role="radiogroup" aria-label={railCopy.experienceMode}>
+                    {(["explore", "create"] as const).map((mode) => (
+                      <label key={mode} className={gettingStartedMode === mode ? "is-selected" : ""}>
+                        <input type="radio" name="getting-started-mode" value={mode} checked={gettingStartedMode === mode} onChange={() => setGettingStartedMode(mode)} />
+                        <strong>{mode === "explore" ? t("gettingStarted.explore") : t("gettingStarted.create")}</strong>
+                        <span>{gettingStartedCopy.courses[mode].description}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="studio-getting-started__actions">
+                    <button type="button" className="studio-getting-started__secondary" onClick={() => closeGettingStarted(hideGettingStarted)}>
+                      {t("gettingStarted.freeStart")}
+                    </button>
+                    <button type="button" className="studio-getting-started__primary" onClick={startGettingStarted}>
+                      {t("gettingStarted.start")}
+                    </button>
+                  </div>
+                  <label className="studio-getting-started__remember">
+                    <input type="checkbox" checked={hideGettingStarted} onChange={(event) => setHideGettingStarted(event.target.checked)} />
+                    <span>{t("gettingStarted.hide")}</span>
+                  </label>
+                </div>
+              </>
+            ) : (
+              <div className="studio-getting-started__course">
+                <div className="studio-getting-started__course-copy">
+                  <span>{`${t("gettingStarted.title")} · ${gettingStartedMode === "explore" ? t("gettingStarted.explore") : t("gettingStarted.create")} · ${currentGettingStartedStep.section}`}</span>
+                  <h2>{currentGettingStartedStep.title}</h2>
+                  <p>{currentGettingStartedStep.description}</p>
+                </div>
+                <ol className="studio-getting-started__progress" aria-label={gettingStartedCopy.progress.replace("{current}", String(gettingStartedStep + 1)).replace("{total}", String(currentGettingStartedCourse.steps.length))}>
+                  {currentGettingStartedCourse.steps.map((step, index) => (
+                    <li key={`${step.section}:${index}`} className={index === gettingStartedStep ? "is-active" : index < gettingStartedStep ? "is-passed" : ""}>
+                      <button type="button" onClick={() => setGettingStartedStep(index)} aria-current={index === gettingStartedStep ? "step" : undefined}>
+                        <b>{index + 1}</b>
+                        <span>{step.section}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+                {gettingStartedStep === currentGettingStartedCourse.steps.length - 1 ? (
+                  <p className="studio-getting-started__finished">{gettingStartedCopy.finished}</p>
+                ) : null}
+                <div className="studio-getting-started__course-actions">
+                  <button type="button" className="studio-getting-started__secondary" disabled={gettingStartedStep === 0} onClick={() => setGettingStartedStep((current) => current - 1)}>
+                    {gettingStartedCopy.previous}
+                  </button>
+                  <span>{gettingStartedCopy.progress.replace("{current}", String(gettingStartedStep + 1)).replace("{total}", String(currentGettingStartedCourse.steps.length))}</span>
+                  {gettingStartedStep < currentGettingStartedCourse.steps.length - 1 ? (
+                    <button type="button" className="studio-getting-started__primary" onClick={() => setGettingStartedStep((current) => current + 1)}>
+                      {gettingStartedCopy.next}
+                    </button>
+                  ) : (
+                    <button type="button" className="studio-getting-started__primary" onClick={finishGettingStarted}>
+                      {gettingStartedCopy.finish}
+                    </button>
+                  )}
+                </div>
+                <button type="button" className="studio-getting-started__switch" onClick={switchGettingStartedCourse}>
+                  {gettingStartedCopy.switchCourse}
+                </button>
+                <label className="studio-getting-started__remember">
+                  <input type="checkbox" checked={hideGettingStarted} onChange={(event) => setHideGettingStarted(event.target.checked)} />
+                  <span>{t("gettingStarted.hide")}</span>
                 </label>
               </div>
-              <div className="studio-getting-started__actions">
-                <button type="button" className="studio-getting-started__secondary" onClick={() => closeGettingStarted(hideGettingStarted)}>
-                  {t("gettingStarted.freeStart")}
-                </button>
-                <button type="button" className="studio-getting-started__primary" onClick={startGettingStarted}>
-                  {t("gettingStarted.start")}
-                </button>
-              </div>
-              <label className="studio-getting-started__remember">
-                <input type="checkbox" checked={hideGettingStarted} onChange={(event) => setHideGettingStarted(event.target.checked)} />
-                <span>{t("gettingStarted.hide")}</span>
-              </label>
-            </div>
+            )}
           </section>
         </div>
       ) : null}

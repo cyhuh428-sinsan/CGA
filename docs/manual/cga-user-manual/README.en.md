@@ -366,6 +366,44 @@ The save success message alone does not determine that the operation reflection 
 | Indexing | Preparing the search structure of data for retrieval |
 | RAG | How to use retrieved knowledge and generative models together |
 
+## 10. Entities and dictionaries
+
+- Use entities for values extracted from utterances, such as dates, regions, products, or order numbers.
+- Use dictionaries to normalize domain terms and synonyms. After changing either asset, retest every linked intent.
+- Keep names, representative expressions, variables, and the connected dialog flow consistent.
+
+## 11. Dialog flows and templates
+
+1. Start from the intent and identify the first card.
+2. Connect answers, conditions, API calls, variables, and the next card.
+3. Create normal, exception, and termination paths, then confirm that no card is disconnected.
+4. Select only active templates registered for the target channel and verify the rendered result in Bot Test and the real channel.
+
+## 12. API management and execution
+
+- Register the API name, destination Base URL, method, authentication, headers, path, query, and body fields.
+- Browser code must call a same-origin path; internal Docker addresses and credentials remain on the server side.
+- After a test, check the analysis data and **Admin > API call history** for status, latency, and failure details.
+
+## 13. Bot Test, evaluation, retraining, and analysis
+
+- In **Bot Test**, verify the response and the analysis panel together: applied classification stage, score, entities, variables, dialog card, and final response.
+- In **Evaluation**, review misclassified utterances, low-score utterances, and similar-intent conflicts with the same baseline data set.
+- In **Retraining**, reflect only validated utterances and confirm the processing result in training history.
+- In **Analysis**, distinguish zero data from a filter or collection problem before changing the model.
+
+## 14. System administration and operations dashboard
+
+- Manage users, groups, roles, channels, botstation links, templates, licenses, and localized system messages from Admin.
+- Use the operations dashboard for API/DB readiness, cache, response latency, errors, edit locks, DB separation, ML GPU, and Semantic GPU status.
+- Use history screens to trace bot, version, language, utterance, channel, request time, and result; do not expose credentials or personal information.
+
+## 15. Operator checklist and example flow
+
+Before a change, record the bot UUID, version, language, operating version, affected assets, baseline utterances, and connected channels. After a change, verify save status, training/indexing, Bot Test, evaluation, analysis, conversation/API/Queue history, and the real channel.
+
+Example: create a delivery inquiry bot, add schedule and current-status intents, register multilingual utterances and order-number entities, connect an API card, train or index the version, test representative and boundary utterances, and reflect only verified failures through retraining.
+
 ## Related Documents
 
 - [View all CGA manuals](../README.md)

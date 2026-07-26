@@ -229,6 +229,45 @@ Cas observés dans les robots ML de validation :
 
 N'ajustez pas l'état en modifiant directement la base de données ou la CLI. Le bot, la version, le moteur, le message d'erreur et l'heure d'apparition à l'écran sont enregistrés et transmis au responsable des opérations.
 
+## 11. Exécution et décision d’état de l’apprentissage/indexation
+
+- Avant l’exécution, vérifiez UUID, version, langue, moteur, modèle, méthode de réponse, ressources enregistrées et jeu de référence.
+- L’apprentissage ML et l’indexation Semantic peuvent durer plus de trois minutes. Un message de demande ne prouve pas la réussite.
+- Confirmez l’état final dans l’historique avant le test du bot. Historique absent, état non appris inchangé, index vide ou appel LLM échoué sont des échecs.
+
+## 12. Exploitation du Score et du Cut-off
+
+1. Notez les critères actuels de Cut-off et de similarité.
+2. Collectez les distributions de Score des énoncés corrects, incorrects, limites et non pris en charge.
+3. Modifiez un seul critère à la fois et relancez le même jeu de régression.
+4. Évaluez faux positifs et faux négatifs, pas seulement le pourcentage affiché.
+
+## 13. Exploitation NLU multilingue
+
+CGA prend en charge le coréen, l’anglais, le chinois simplifié, le japonais, le vietnamien, le français et l’allemand pour l’interface et la langue du bot. Les identifiants et contrats API restent canoniques ; énoncés, messages, entités et évaluations sont rédigés dans la langue cible.
+
+La recherche de message privilégie la langue de la requête puis utilise la langue du bot. Vérifiez séparément morphologie, espaces, politesse, accents et variantes propres à chaque langue ; une traduction littérale ne suffit pas.
+
+## 14. Expériences contrôlées sur les moteurs
+
+- Créez une version de travail distincte sans écraser la version d’exploitation.
+- Figez le jeu de test et ne changez qu’un élément : données, seuil, modèle, Provider, Prompt ou index.
+- Notez précision, type d’échec, cohérence, latence, coût et contraintes d’exploitation.
+- Ne promouvez qu’une version conforme aux critères et conservant les cas déjà réussis.
+
+## 15. Exemple d’amélioration de la qualité
+
+Pour les demandes de livraison, séparez calendrier et état actuel, préparez des énoncés représentatifs, variés, limites, exceptionnels et de régression, puis vérifiez l’extraction du numéro de commande. Après apprentissage ou indexation, comparez tous les jeux ; moins d’erreurs ne suffit pas si les réussites précédentes perdent leur Score ou changent d’intention.
+
+## 16. Liste de contrôle de mise en exploitation
+
+- [ ] UUID, version, langue, moteur, modèle et réponse ont été notés.
+- [ ] Les résultats avant/après utilisent le même jeu de test.
+- [ ] La réussite de l’apprentissage ou de l’indexation est visible dans l’historique.
+- [ ] Scores, conflits d’intentions similaires et régressions ont été examinés.
+- [ ] Messages et extraction d’entités dans la langue cible ont été vérifiés.
+- [ ] Canal réel et historiques dialogue, API et Queue ont été contrôlés.
+
 ## Documents connexes
 
 - [Voir l'intégralité du manuel CGA](../README.md)

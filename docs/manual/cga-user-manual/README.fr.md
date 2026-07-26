@@ -367,6 +367,44 @@ Le message de réussite de l'enregistrement à lui seul ne détermine pas que la
 | Indexation | Préparer la structure de recherche des données pour la récupération |
 | CHIFFON | Comment utiliser ensemble les connaissances récupérées et les modèles génératifs |
 
+## 10. Entités et dictionnaires
+
+- Les entités extraient des valeurs telles que date, région, produit ou numéro de commande.
+- Les dictionnaires normalisent les termes métier et les synonymes. Après une modification, retestez toutes les intentions associées.
+- Conservez la cohérence entre noms, expressions représentatives, variables et flux de dialogue.
+
+## 11. Flux de dialogue et modèles
+
+1. Partez de l’intention et identifiez la première carte.
+2. Reliez réponses, conditions, API, variables et carte suivante.
+3. Créez les chemins normal, exceptionnel et final, puis vérifiez qu’aucune carte n’est isolée.
+4. Sélectionnez uniquement les modèles actifs du canal cible et vérifiez le rendu dans le test du bot et le canal réel.
+
+## 12. Gestion et exécution des API
+
+- Enregistrez le nom, la Base URL, la méthode, l’authentification, les en-têtes, le Path, la Query et le Body.
+- Le code navigateur appelle uniquement un chemin same-origin ; les adresses Docker internes et les secrets restent côté serveur.
+- Après le test, contrôlez état, latence et erreurs dans les données d’analyse et **Admin > Historique des appels API**.
+
+## 13. Test du bot, évaluation, réapprentissage et analyse
+
+- Dans le test du bot, vérifiez ensemble la réponse et le panneau d’analyse : étape appliquée, Score, entités, variables, carte de dialogue et réponse finale.
+- Dans l’évaluation, examinez les phrases mal classées, les faibles Scores et les conflits d’intentions similaires avec le même jeu de référence.
+- Lors du réapprentissage, n’intégrez que les phrases validées et vérifiez le résultat dans l’historique d’apprentissage.
+- Dans l’analyse, distinguez absence de données, filtre incorrect et problème de collecte avant de modifier le modèle.
+
+## 14. Administration système et tableau de bord d’exploitation
+
+- Gérez utilisateurs, groupes, rôles, canaux, liaisons Botstation, modèles, licences et messages système multilingues dans Admin.
+- Le tableau de bord montre API/DB, cache, latence, erreurs, verrous d’édition, séparation DB, GPU ML et GPU Semantic.
+- Utilisez les historiques pour suivre bot, version, langue, énoncé, canal, heure et résultat sans exposer de secrets ni de données personnelles.
+
+## 15. Liste de contrôle et exemple opérationnel
+
+Avant une modification, notez UUID du bot, version, langue, version d’exploitation, ressources touchées, énoncés de référence et canaux connectés. Ensuite vérifiez sauvegarde, apprentissage/indexation, test du bot, évaluation, analyse, historiques dialogue/API/Queue et canal réel.
+
+Exemple : créez un bot de suivi de livraison, ajoutez les intentions calendrier et état actuel, des énoncés multilingues et l’entité numéro de commande, connectez une carte API, apprenez ou indexez, puis ne réutilisez en réapprentissage que les échecs confirmés.
+
 ## Documents connexes
 
 - [Voir tous les manuels CGA](../README.md)

@@ -5993,6 +5993,183 @@ textarea {
   accent-color: #18c6d7;
 }
 
+.studio-getting-started__course-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.studio-getting-started__course-options label {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  column-gap: 8px;
+  row-gap: 5px;
+  padding: 16px;
+  border: 1px solid #d9dee6;
+  border-radius: 3px;
+  color: #697487;
+  cursor: pointer;
+}
+
+.studio-getting-started__course-options label.is-selected {
+  border-color: #18b8c9;
+  background: #f1fbfc;
+}
+
+.studio-getting-started__course-options input {
+  grid-row: 1 / span 2;
+  margin: 2px 0 0;
+  accent-color: #18c6d7;
+}
+
+.studio-getting-started__course-options strong {
+  color: #374054;
+  font-size: 13px;
+}
+
+.studio-getting-started__course-options span {
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.studio-getting-started__course {
+  padding: 34px 42px 24px;
+  text-align: center;
+}
+
+.studio-getting-started__course-copy {
+  min-height: 132px;
+  padding: 8px 36px 24px;
+}
+
+.studio-getting-started__course-copy > span {
+  color: #7f8998;
+  font-size: 10px;
+}
+
+.studio-getting-started__course-copy h2 {
+  margin: 12px 0;
+  color: #2f3656;
+  font-size: 20px;
+}
+
+.studio-getting-started__course-copy p {
+  max-width: 720px;
+  margin: 0 auto;
+  color: #687181;
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.studio-getting-started__progress {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 26px;
+  padding: 0;
+  list-style: none;
+}
+
+.studio-getting-started__progress li {
+  position: relative;
+}
+
+.studio-getting-started__progress li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: calc(50% + 14px);
+  width: calc(100% - 28px);
+  height: 1px;
+  background: #d9dee6;
+}
+
+.studio-getting-started__progress li.is-passed:not(:last-child)::after {
+  background: #18b8c9;
+}
+
+.studio-getting-started__progress button {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: #8c95a1;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.studio-getting-started__progress b {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #cfd5dd;
+  border-radius: 50%;
+  background: #ffffff;
+  font-size: 10px;
+}
+
+.studio-getting-started__progress .is-active button,
+.studio-getting-started__progress .is-passed button {
+  color: #2f3656;
+  font-weight: 700;
+}
+
+.studio-getting-started__progress .is-active b,
+.studio-getting-started__progress .is-passed b {
+  border-color: #18b8c9;
+  background: #18b8c9;
+  color: #ffffff;
+}
+
+.studio-getting-started__finished {
+  margin: -8px 0 18px;
+  color: #149eac;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.studio-getting-started__course-actions {
+  display: grid;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  gap: 12px;
+}
+
+.studio-getting-started__course-actions button {
+  height: 38px;
+  border-radius: 2px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.studio-getting-started__course-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.studio-getting-started__course-actions > span {
+  color: #87909d;
+  font-size: 10px;
+}
+
+.studio-getting-started__switch {
+  margin-top: 16px;
+  border: 0;
+  background: transparent;
+  color: #347699;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .studio-getting-started__actions {
   display: flex;
   justify-content: center;
@@ -6058,6 +6235,23 @@ textarea {
   .studio-getting-started__actions {
     flex-direction: column;
     align-items: center;
+  }
+
+  .studio-getting-started__course-options {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-getting-started__course {
+    padding: 24px 18px;
+  }
+
+  .studio-getting-started__course-copy {
+    padding: 4px 4px 20px;
+  }
+
+  .studio-getting-started__progress {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    row-gap: 16px;
   }
 }
 

@@ -219,6 +219,17 @@ Grenzen Sie den Bereich in der folgenden Reihenfolge ein:
 
 Wenn die Ergebnisse unzureichend sind, sehen Sie im NLU-Nutzungsleitfaden nach, um die Datenverbesserungs- und Revalidierungsverfahren für jede Engine zu finden.
 
+## Bildschirmgeführtes Getting Started verwenden
+
+Unten links `?` öffnen und `Erste Schritte` wählen. Die Anleitung liegt über dem aktuellen CGA-Bildschirm und kann jederzeit geschlossen werden.
+
+| Tour | Acht Schritte |
+|---|---|
+| Hauptmenüs erkunden | Bot → API → Admin → Intents und Trainingssätze → Entitäten und Wörterbücher → Bewertung → Nachtraining → Analyse |
+| Bot erstellen | Erstellung → Intent-Engine → Modell und Antwortart → Intents und Sätze → Entitäten, Wörterbücher und Flows → Training → Bot Test → Verbesserung |
+
+Tour wählen und `Starten` drücken. Mit `Zurück`, `Weiter` oder einer Schrittnummer navigieren. `Andere Tour anzeigen` wechselt den Kurs. Im letzten Schritt öffnet `Tour beenden` die Bot-Liste oder die Neuerstellung. Die Ausblendung beim Start gilt nur für den aktuellen Browser; über Hilfe kann die Tour erneut geöffnet werden.
+
 ## Nächstes Dokument
 
 - [Alle CGA-Handbücher anzeigen](../README.md)

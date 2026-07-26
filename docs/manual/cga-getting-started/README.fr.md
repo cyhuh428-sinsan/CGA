@@ -216,6 +216,17 @@ Après le premier test, vérifiez les résultats sur l'écran suivant.
 
 Si les résultats sont insuffisants, consultez le guide d'utilisation de NLU pour connaître les procédures d'amélioration des données et de revalidation pour chaque moteur.
 
+## Utiliser le guide Getting Started à l’écran
+
+Ouvrez `?` en bas à gauche puis choisissez `Bien démarrer`. Le guide s’affiche sur l’écran CGA actuel et peut être fermé à tout moment.
+
+| Parcours | Huit étapes |
+|---|---|
+| Explorer les menus | Bot → API → Admin → intentions et phrases → entités et dictionnaires → évaluation → réentraînement → analyse |
+| Créer un bot | création → moteur d’intention → modèle et réponse → intentions et phrases → entités, dictionnaires et flux → entraînement → Bot Test → amélioration |
+
+Choisissez un parcours puis `Commencer`. Utilisez `Précédent`, `Suivant` ou le numéro d’étape. `Voir un autre parcours` permet de changer. À la dernière étape, `Terminer` ouvre la liste des bots ou la création d’un bot. Le masquage au démarrage est enregistré uniquement dans le navigateur courant; le guide reste accessible depuis l’aide.
+
 ## Document suivant
 
 - [Voir tous les manuels CGA](../README.md)

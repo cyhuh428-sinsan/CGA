@@ -230,6 +230,45 @@ Cases seen in validation ML bots:
 
 Do not adjust the status by directly modifying the DB or CLI. The bot, version, engine, error message, and occurrence time on the screen are recorded and delivered to the operation manager.
 
+## 11. Training/indexing execution and state judgment
+
+- Before execution, confirm bot UUID, version, language, engine, model, answer method, saved assets, and the baseline test set.
+- ML training and Semantic indexing can take more than three minutes. A request message alone is not proof of success.
+- Confirm the final state in training history and then run Bot Test. Treat missing history, an unchanged untrained state, an empty index, or a failed LLM call as a failure.
+
+## 12. Score and cut-off operation
+
+1. Record the current cut-off and similarity criteria.
+2. Collect score distributions for correct, incorrect, boundary, and unsupported utterances.
+3. Change one criterion at a time and rerun the same regression set.
+4. Evaluate both false acceptance and false rejection; never optimize only the displayed percentage.
+
+## 13. Multilingual NLU operation
+
+CGA supports Korean, English, Simplified Chinese, Japanese, Vietnamese, French, and German for the UI and bot language. Keep identifiers and API contracts canonical while authoring utterances, messages, entities, and evaluation sets in the target language.
+
+Message lookup uses the requested language first and the bot language as fallback. Validate morphology, spacing, honorifics, accents, and language-specific variants separately; do not rely on literal translation alone.
+
+## 14. Controlled engine experiments
+
+- Create a separate working version instead of overwriting the operating version.
+- Fix the test set and change only one of data, threshold, model, provider, prompt, or index settings per experiment.
+- Record accuracy, failure type, response consistency, latency, cost, and operational constraints.
+- Promote only a version that meets the agreed criteria and retains previous successful cases.
+
+## 15. Quality improvement example
+
+For delivery inquiries, separate schedule inquiries from current-status inquiries, prepare representative, variant, boundary, exception, and regression utterances, verify order-number extraction, retrain or reindex, and compare all sets again. A lower error count is not enough if successful utterances lose score or switch intent.
+
+## 16. Operational reflection checklist
+
+- [ ] Bot UUID, version, language, engine, model, and answer method were recorded.
+- [ ] Before/after results were compared with the same test set.
+- [ ] Training or indexing success was confirmed in history.
+- [ ] Scores, similar-intent conflicts, and regression utterances were reviewed.
+- [ ] Target-language messages and entity extraction were verified.
+- [ ] Real channel, conversation, API, and Queue histories were checked.
+
 ## Related Documents
 
 - [View all CGA manuals](../README.md)

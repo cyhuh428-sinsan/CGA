@@ -367,6 +367,44 @@ Die Erfolgsmeldung beim Speichern allein bestimmt nicht, dass die Vorgangsreflex
 | Indizierung | Vorbereiten der Suchstruktur von Daten für den Abruf |
 | RAG | Wie man abgerufenes Wissen und generative Modelle gemeinsam nutzt |
 
+## 10. Entitäten und Wörterbücher
+
+- Entitäten extrahieren Werte wie Datum, Region, Produkt oder Bestellnummer aus Äußerungen.
+- Wörterbücher normalisieren Fachbegriffe und Synonyme. Testen Sie nach Änderungen alle verknüpften Intents erneut.
+- Namen, repräsentative Ausdrücke, Variablen und Dialogabläufe müssen konsistent bleiben.
+
+## 11. Dialogabläufe und Vorlagen
+
+1. Beginnen Sie beim Intent und bestimmen Sie die erste Karte.
+2. Verbinden Sie Antworten, Bedingungen, APIs, Variablen und die nächste Karte.
+3. Erstellen Sie Normal-, Ausnahme- und Endpfade und prüfen Sie auf nicht verbundene Karten.
+4. Wählen Sie nur aktive Vorlagen des Zielkanals und prüfen Sie die Darstellung im Bot-Test und im realen Kanal.
+
+## 12. API-Verwaltung und Ausführung
+
+- Registrieren Sie API-Name, Ziel-Base-URL, Methode, Authentifizierung, Header, Path, Query und Body.
+- Browsercode ruft nur Same-Origin-Pfade auf; interne Docker-Adressen und Zugangsdaten verbleiben auf der Serverseite.
+- Prüfen Sie nach dem Test Status, Latenz und Fehler in den Analysedaten und unter **Admin > API-Aufrufverlauf**.
+
+## 13. Bot-Test, Bewertung, Nachtraining und Analyse
+
+- Prüfen Sie im Bot-Test Antwort und Analysebereich gemeinsam: angewandte Stufe, Score, Entitäten, Variablen, Dialogkarte und endgültige Antwort.
+- Untersuchen Sie in der Bewertung Fehlklassifikationen, niedrige Scores und Konflikte ähnlicher Intents mit demselben Referenzdatensatz.
+- Übernehmen Sie beim Nachtraining nur geprüfte Äußerungen und kontrollieren Sie das Ergebnis im Lernverlauf.
+- Unterscheiden Sie in der Analyse zwischen null Daten, Filterfehlern und Erfassungsproblemen, bevor Sie das Modell ändern.
+
+## 14. Systemverwaltung und Betriebsdashboard
+
+- Verwalten Sie Benutzer, Gruppen, Rollen, Kanäle, Botstation-Verknüpfungen, Vorlagen, Lizenzen und mehrsprachige Systemmeldungen in Admin.
+- Das Betriebsdashboard zeigt API/DB, Cache, Antwortlatenz, Fehler, Bearbeitungssperren, DB-Trennung sowie ML- und Semantic-GPU-Status.
+- Verfolgen Sie Bot, Version, Sprache, Äußerung, Kanal, Anforderungszeit und Ergebnis in den Verlaufsansichten, ohne Zugangsdaten oder personenbezogene Daten offenzulegen.
+
+## 15. Betriebscheckliste und Beispielablauf
+
+Notieren Sie vor Änderungen Bot-UUID, Version, Sprache, Betriebsversion, betroffene Assets, Referenzäußerungen und verbundene Kanäle. Prüfen Sie danach Speichern, Lernen/Indexierung, Bot-Test, Bewertung, Analyse, Dialog-/API-/Queue-Verlauf und den realen Kanal.
+
+Beispiel: Erstellen Sie einen Lieferauskunfts-Bot, erfassen Sie Intents für Termin und aktuellen Status, mehrsprachige Äußerungen und Bestellnummern, verbinden Sie eine API-Karte, lernen oder indexieren Sie die Version und übernehmen Sie nur bestätigte Fehler in das Nachtraining.
+
 ## Verwandte Dokumente
 
 - [Alle CGA-Handbücher anzeigen](../README.md)

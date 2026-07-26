@@ -218,6 +218,17 @@ Sau lần kiểm tra đầu tiên, hãy kiểm tra kết quả trên màn hình 
 
 Nếu kết quả không đủ, hãy kiểm tra hướng dẫn sử dụng NLU để biết quy trình xác thực và cải thiện dữ liệu cho từng động cơ.
 
+## Sử dụng Getting Started trên màn hình
+
+Mở `?` ở góc dưới bên trái và chọn `Bắt đầu`. Hướng dẫn hiển thị trên màn hình CGA hiện tại và có thể đóng bất kỳ lúc nào.
+
+| Quy trình | Tám bước |
+|---|---|
+| Khám phá menu | Bot → API → Admin → ý định và câu huấn luyện → thực thể và từ điển → đánh giá → huấn luyện lại → phân tích |
+| Tạo bot | tạo bot → động cơ ý định → mô hình và cách trả lời → ý định và câu huấn luyện → thực thể, từ điển và luồng → huấn luyện → Bot Test → cải thiện |
+
+Chọn quy trình rồi nhấn `Bắt đầu`. Dùng `Trước`, `Tiếp` hoặc số bước. `Xem quy trình khác` dùng để chuyển quy trình. Ở bước cuối, `Kết thúc` mở danh sách bot hoặc màn hình tạo bot. Tùy chọn không hiển thị khi khởi động chỉ được lưu trong trình duyệt hiện tại; vẫn có thể mở lại từ Trợ giúp.
+
 ## Tài liệu tiếp theo
 
 - [Xem tất cả hướng dẫn sử dụng CGA](../README.md)

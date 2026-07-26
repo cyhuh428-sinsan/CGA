@@ -229,6 +229,45 @@ Các trường hợp được thấy trong bot ML xác thực:
 
 Không điều chỉnh trạng thái bằng cách sửa đổi trực tiếp DB hoặc CLI. Bot, phiên bản, động cơ, thông báo lỗi và thời gian xuất hiện trên màn hình đều được ghi lại và gửi đến người quản lý vận hành.
 
+## 11. Thực thi học/lập chỉ mục và đánh giá trạng thái
+
+- Trước khi chạy, xác nhận UUID bot, phiên bản, ngôn ngữ, engine, mô hình, phương thức trả lời, tài sản đã lưu và bộ kiểm thử chuẩn.
+- Học ML và lập chỉ mục Semantic có thể mất hơn ba phút. Chỉ có thông báo yêu cầu không chứng minh thành công.
+- Kiểm tra trạng thái cuối trong lịch sử học rồi mới chạy Kiểm thử bot. Không có lịch sử, vẫn chưa học, chỉ mục rỗng hoặc gọi LLM thất bại đều là lỗi.
+
+## 12. Vận hành Score và Cut-off
+
+1. Ghi lại tiêu chí Cut-off và độ tương tự hiện tại.
+2. Thu thập phân bố Score cho phát ngôn đúng, sai, ranh giới và không được hỗ trợ.
+3. Mỗi lần chỉ thay đổi một tiêu chí và chạy lại cùng bộ hồi quy.
+4. Đánh giá cả chấp nhận sai và từ chối sai; không chỉ tối ưu tỷ lệ hiển thị.
+
+## 13. Vận hành NLU đa ngôn ngữ
+
+CGA hỗ trợ tiếng Hàn, Anh, Trung giản thể, Nhật, Việt, Pháp và Đức cho giao diện và ngôn ngữ bot. Định danh và hợp đồng API giữ giá trị chuẩn; phát ngôn, thông báo, thực thể và bộ đánh giá được soạn bằng ngôn ngữ đích.
+
+Tra cứu thông báo ưu tiên ngôn ngữ yêu cầu, nếu không có thì dùng ngôn ngữ bot. Hãy kiểm tra riêng hình thái, khoảng trắng, kính ngữ, dấu và biến thể đặc thù; không chỉ dựa vào dịch từng chữ.
+
+## 14. Thử nghiệm engine có kiểm soát
+
+- Tạo phiên bản làm việc riêng thay vì ghi đè phiên bản vận hành.
+- Cố định bộ kiểm thử và mỗi thử nghiệm chỉ thay đổi dữ liệu, ngưỡng, mô hình, Provider, Prompt hoặc chỉ mục.
+- Ghi lại độ chính xác, loại lỗi, tính nhất quán, độ trễ, chi phí và hạn chế vận hành.
+- Chỉ đưa vào vận hành phiên bản đạt tiêu chí và giữ được các trường hợp thành công trước đó.
+
+## 15. Ví dụ cải thiện chất lượng
+
+Với câu hỏi giao hàng, tách lịch giao và trạng thái hiện tại, chuẩn bị phát ngôn đại diện, biến thể, ranh giới, ngoại lệ và hồi quy, rồi xác nhận trích xuất mã đơn hàng. Sau học hoặc lập chỉ mục, so sánh lại toàn bộ; giảm số lỗi chưa đủ nếu phát ngôn từng thành công bị giảm Score hoặc đổi ý định.
+
+## 16. Danh sách kiểm tra đưa vào vận hành
+
+- [ ] Đã ghi UUID bot, phiên bản, ngôn ngữ, engine, mô hình và phương thức trả lời.
+- [ ] Đã so sánh trước/sau bằng cùng bộ kiểm thử.
+- [ ] Đã xác nhận học hoặc lập chỉ mục thành công trong lịch sử.
+- [ ] Đã xem Score, xung đột ý định tương tự và phát ngôn hồi quy.
+- [ ] Đã kiểm tra thông báo và trích xuất thực thể bằng ngôn ngữ đích.
+- [ ] Đã kiểm tra kênh thật và lịch sử hội thoại, API, Queue.
+
 ## Tài liệu liên quan
 
 - [Xem tất cả hướng dẫn sử dụng CGA](../README.md)

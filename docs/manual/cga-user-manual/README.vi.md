@@ -366,6 +366,44 @@ Chỉ thông báo lưu thành công không xác định được rằng phản �
 | Lập chỉ mục | Chuẩn bị cấu trúc tìm kiếm dữ liệu để truy xuất |
 | RAG | Cách sử dụng kết hợp kiến ​​thức được truy xuất và mô hình tổng quát |
 
+## 10. Thực thể và từ điển
+
+- Thực thể dùng để trích xuất ngày, khu vực, sản phẩm, mã đơn hàng và các giá trị cần thiết từ phát ngôn.
+- Từ điển chuẩn hóa thuật ngữ nghiệp vụ và từ đồng nghĩa. Sau khi thay đổi, hãy kiểm thử lại mọi ý định liên kết.
+- Giữ nhất quán tên, biểu thức đại diện, biến và luồng hội thoại được kết nối.
+
+## 11. Luồng hội thoại và mẫu
+
+1. Bắt đầu từ ý định và xác định thẻ đầu tiên.
+2. Kết nối câu trả lời, điều kiện, API, biến và thẻ tiếp theo.
+3. Tạo đường đi bình thường, ngoại lệ và kết thúc; xác nhận không có thẻ bị ngắt kết nối.
+4. Chỉ chọn mẫu đang hoạt động của kênh đích và kiểm tra kết quả hiển thị trong Kiểm thử bot và kênh thật.
+
+## 12. Quản lý và thực thi API
+
+- Đăng ký tên API, Base URL đích, phương thức, xác thực, Header, Path, Query và Body.
+- Mã chạy trên trình duyệt chỉ gọi đường dẫn same-origin; địa chỉ Docker nội bộ và thông tin xác thực chỉ được xử lý phía máy chủ.
+- Sau kiểm thử, kiểm tra trạng thái, độ trễ và lỗi trong dữ liệu phân tích và **Admin > Lịch sử gọi API**.
+
+## 13. Kiểm thử bot, đánh giá, tái huấn luyện và phân tích
+
+- Trong Kiểm thử bot, xem đồng thời câu trả lời và bảng phân tích: bước áp dụng, Score, thực thể, biến, thẻ hội thoại và câu trả lời cuối.
+- Trong Đánh giá, kiểm tra câu phân loại sai, câu Score thấp và xung đột ý định tương tự bằng cùng bộ dữ liệu chuẩn.
+- Trong Tái huấn luyện, chỉ phản ánh phát ngôn đã xác nhận và kiểm tra kết quả trong lịch sử học.
+- Trong Phân tích, phân biệt không có dữ liệu, bộ lọc sai và lỗi thu thập trước khi thay đổi mô hình.
+
+## 14. Quản trị hệ thống và bảng điều hành
+
+- Quản lý người dùng, nhóm, vai trò, kênh, liên kết Botstation, mẫu, giấy phép và thông báo hệ thống đa ngôn ngữ trong Admin.
+- Bảng điều hành hiển thị API/DB, bộ nhớ đệm, độ trễ, lỗi, khóa chỉnh sửa, tách DB, GPU ML và GPU Semantic.
+- Dùng màn hình lịch sử để truy vết bot, phiên bản, ngôn ngữ, phát ngôn, kênh, thời gian và kết quả mà không làm lộ thông tin xác thực hay dữ liệu cá nhân.
+
+## 15. Danh sách kiểm tra và luồng ví dụ
+
+Trước khi thay đổi, ghi lại UUID bot, phiên bản, ngôn ngữ, phiên bản vận hành, tài sản bị ảnh hưởng, phát ngôn chuẩn và kênh kết nối. Sau đó kiểm tra lưu, học/lập chỉ mục, Kiểm thử bot, đánh giá, phân tích, lịch sử hội thoại/API/Queue và kênh thật.
+
+Ví dụ: tạo bot hỏi đáp giao hàng, thêm ý định lịch giao và trạng thái hiện tại, phát ngôn đa ngôn ngữ và thực thể mã đơn hàng, kết nối thẻ API, học hoặc lập chỉ mục rồi chỉ đưa các lỗi đã xác nhận vào tái huấn luyện.
+
 ## Tài liệu liên quan
 
 - [Xem tất cả hướng dẫn sử dụng CGA](../README.md)
