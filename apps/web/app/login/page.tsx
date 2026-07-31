@@ -147,6 +147,7 @@ export default function LoginPage() {
 
             <select
               className="login-select"
+              aria-label={t("common.language")}
               value={language}
               onChange={(event) => setLanguage(normalizeSupportedLanguage(event.target.value))}
             >
