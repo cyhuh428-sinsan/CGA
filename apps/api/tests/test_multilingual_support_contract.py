@@ -132,6 +132,12 @@ def test_header_rail_and_login_share_reactive_ui_language() -> None:
     assert "window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY" not in rail_source
 
 
+def test_login_language_selector_has_localized_accessible_name() -> None:
+    login_source = (ROOT_DIR / "apps/web/app/login/page.tsx").read_text(encoding="utf-8")
+
+    assert 'aria-label={t("common.language")}' in login_source
+
+
 def test_signup_and_language_settings_use_shared_language_contract() -> None:
     signup_source = (ROOT_DIR / "apps/web/app/signup/page.tsx").read_text(encoding="utf-8")
     settings_source = (ROOT_DIR / "apps/web/app/me/language/page.tsx").read_text(encoding="utf-8")
