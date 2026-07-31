@@ -21,7 +21,7 @@
 
 카탈로그는 파일마다 구조가 달라(중첩·스프레드·모듈 간 참조) 텍스트 파싱이 취약하므로,
 Node와 저장소에 이미 설치된 TypeScript로 실제 로드해 비교한다. 두 도구가 없는 환경에서는
-수집 오류를 만들지 않고 건너뛴다.
+검사가 조용히 사라지지 않도록 명시적으로 실패한다.
 """
 
 from __future__ import annotations
@@ -121,9 +121,9 @@ process.stdout.write(JSON.stringify({ violations, loadFailures, comparedStrings,
 def _load_untranslated_report() -> dict:
     node = shutil.which("node")
     if node is None:
-        pytest.skip("Node를 찾을 수 없어 카탈로그 로드 검사를 건너뜁니다.")
+        pytest.fail("Node를 찾을 수 없어 카탈로그 로드 검사를 실행할 수 없습니다.")
     if not (WEB_DIR / "node_modules" / "typescript").is_dir():
-        pytest.skip("apps/web에 typescript가 설치되지 않아 카탈로그 로드 검사를 건너뜁니다.")
+        pytest.fail("apps/web에 typescript가 설치되지 않아 카탈로그 로드 검사를 실행할 수 없습니다.")
 
     completed = subprocess.run(
         [node, "-e", _COLLECT_UNTRANSLATED_JS, str(WEB_DIR)],
