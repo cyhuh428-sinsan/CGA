@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "adaptivecards": "^3.0.6",
-    "next": "latest",
+    "next": "16.2.12",
     "react": "latest",
     "react-dom": "latest"
   },
@@ -18,5 +18,9 @@
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "typescript": "6.0.3"
+  },
+  "overrides": {
+    "postcss": "8.5.18",
+    "sharp": "0.35.3"
   }
 }
