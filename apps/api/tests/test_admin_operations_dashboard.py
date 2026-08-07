@@ -3,7 +3,21 @@ from types import SimpleNamespace
 from datetime import date, datetime, timedelta, timezone
 from uuid import uuid4
 
+import pytest
+
 from app.api.routes import admin
+
+
+@pytest.fixture(autouse=True)
+def isolate_container_log_root(tmp_path, monkeypatch):
+    """컨테이너 절대 경로를 임시 경로로 돌려 호스트 로그가 섞이지 않게 한다.
+
+    로그 조회는 ROOT_DIR 기준 경로 외에 컨테이너 배포용 절대 경로도 함께 훑는다.
+    ROOT_DIR만 tmp_path로 바꾸면 그 절대 경로는 그대로 남아, 실행 호스트에 같은
+    경로가 실재할 경우 실제 로그가 결과에 섞여 테스트가 환경에 따라 실패한다.
+    """
+
+    monkeypatch.setattr(admin, "CONTAINER_ROOT_DIR", tmp_path / "__absent_container_root__")
 
 
 class _FakeScalarResult:
