@@ -20,13 +20,17 @@
 이 규칙 덕분에 별도 예외 목록 없이 오탐 0으로 동작한다.
 
 카탈로그는 파일마다 구조가 달라(중첩·스프레드·모듈 간 참조) 텍스트 파싱이 취약하므로,
-Node와 저장소에 이미 설치된 TypeScript로 실제 로드해 비교한다. 두 도구가 없는 환경에서는
-검사가 조용히 사라지지 않도록 명시적으로 실패한다.
+Node와 저장소에 이미 설치된 TypeScript로 실제 로드해 비교한다.
+
+도구가 없는 환경에서는 기본적으로 건너뛰고, `CGA_REQUIRE_L10N_GUARD=1`이 설정된
+통합 실행에서는 실패로 처리한다. 백엔드 전용 환경을 깨뜨리지 않으면서도 검사가
+조용히 사라지는 것을 막기 위한 절충이다. 자세한 근거는 `_handle_missing_tooling` 참조.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -118,12 +122,39 @@ process.stdout.write(JSON.stringify({ violations, loadFailures, comparedStrings,
 """
 
 
-def _load_untranslated_report() -> dict:
-    node = shutil.which("node")
-    if node is None:
-        pytest.fail("Node를 찾을 수 없어 카탈로그 로드 검사를 실행할 수 없습니다.")
+def _missing_tooling() -> str:
+    """카탈로그 로드에 필요한 도구 중 빠진 것을 설명 문자열로 돌려준다."""
+
+    if shutil.which("node") is None:
+        return "Node를 찾을 수 없습니다."
     if not (WEB_DIR / "node_modules" / "typescript").is_dir():
-        pytest.fail("apps/web에 typescript가 설치되지 않아 카탈로그 로드 검사를 실행할 수 없습니다.")
+        return "apps/web에 typescript가 설치되지 않았습니다. `npm ci`로 의존성을 맞추세요."
+    return ""
+
+
+def _handle_missing_tooling(reason: str) -> None:
+    """도구가 없을 때의 처리.
+
+    도구 부재를 항상 실패로 다루면 apps/web 의존성이 없는 백엔드 전용 환경
+    (새 워크트리, 백엔드만 도는 CI 잡, `-Scope Full` 단독 실행)에서 번역 결함이
+    없는데도 스위트가 깨진다. 반대로 항상 건너뛰면 검사가 조용히 사라진다.
+
+    그래서 기본은 건너뛰되, `CGA_REQUIRE_L10N_GUARD=1`이 설정된 환경
+    (웹 의존성이 준비된 통합 실행)에서는 실패로 처리해 검사 누락을 막는다.
+    """
+
+    if os.environ.get("CGA_REQUIRE_L10N_GUARD") == "1":
+        pytest.fail(
+            f"{reason} CGA_REQUIRE_L10N_GUARD=1 환경에서는 카탈로그 로드 검사를 건너뛸 수 없습니다."
+        )
+    pytest.skip(f"{reason} 카탈로그 로드 검사를 건너뜁니다.")
+
+
+def _load_untranslated_report() -> dict:
+    reason = _missing_tooling()
+    if reason:
+        _handle_missing_tooling(reason)
+    node = shutil.which("node")
 
     completed = subprocess.run(
         [node, "-e", _COLLECT_UNTRANSLATED_JS, str(WEB_DIR)],
