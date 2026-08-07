@@ -83,6 +83,11 @@ ADMIN_ROLE_CODES = {"system_manager", "it_admin"}
 OPERATIONS_VIEW_ROLE_CODES = ADMIN_ROLE_CODES | {"operation_manager"}
 LOGIN_HISTORY_ACTIONS = {"auth.login", "auth.logout"}
 
+# 컨테이너 배포에서 앱이 놓이는 절대 경로. 소스 트리 기준인 ROOT_DIR와 별개라서
+# 상수로 분리해 둔다. 이 값이 함수 안에 박혀 있으면 ROOT_DIR만 바꾸는 테스트가
+# 호스트의 실제 로그를 함께 읽어 격리가 깨진다.
+CONTAINER_ROOT_DIR = Path("/workspace")
+
 _operations_dashboard_cache_lock = Lock()
 _operations_dashboard_cache: dict[str, tuple[float, dict[str, object]]] = {}
 
@@ -1329,7 +1334,7 @@ def _read_web_jsonl_logs(
     log_dirs = [
         ROOT_DIR / "apps" / "web" / "logs" / log_dir_name,
         ROOT_DIR / "logs" / log_dir_name,
-        Path("/workspace") / "logs" / log_dir_name,
+        CONTAINER_ROOT_DIR / "logs" / log_dir_name,
     ]
     log_files: list[Path] = []
     seen_paths: set[Path] = set()
