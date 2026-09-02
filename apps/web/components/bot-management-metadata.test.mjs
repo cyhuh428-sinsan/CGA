@@ -18,8 +18,10 @@ test("봇 목록 메타데이터에는 내부 봇 ID를 표시하지 않는다",
       active_version: { name: "v1" },
     },
     statusLabel: "운영",
+    localeLabel: "언어",
+    locale: "ko",
   }));
 
-  assert.match(markup, />v1 · 운영<\/span>/);
+  assert.equal(markup, "<span>v1 · 운영 · 언어: ko</span>");
   assert.doesNotMatch(markup, /internal-bot-id-123/);
 });

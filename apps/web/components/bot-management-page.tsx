@@ -246,8 +246,12 @@ export function BotManagementPage() {
             {bots.map((bot) => (
               <button key={bot.id} type="button" className={`cga-bot-select-card${bot.id === selectedBotId ? " is-selected" : ""}`} onClick={() => chooseBot(bot)}>
                 <strong>{bot.name}</strong>
-                <BotManagementMetadata bot={bot} statusLabel={botManagementStatusLabel(bot.status, copy)} />
-                <span>{copy.locale}: {operationBotLocale(bot)}</span>
+                <BotManagementMetadata
+                  bot={bot}
+                  statusLabel={botManagementStatusLabel(bot.status, copy)}
+                  localeLabel={copy.locale}
+                  locale={operationBotLocale(bot)}
+                />
               </button>
             ))}
             {!loading && bots.length === 0 ? <div className="cga-operation-empty">{copy.noBots}</div> : null}
