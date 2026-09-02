@@ -2,10 +2,12 @@
   "name": "@aidot/web",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "next dev --webpack --port 3320",
     "build": "next build --webpack",
-    "start": "next start --hostname 0.0.0.0 --port 3000"
+    "start": "next start --hostname 0.0.0.0 --port 3000",
+    "test": "node --test components/*.test.mjs"
   },
   "dependencies": {
     "adaptivecards": "^3.0.6",
