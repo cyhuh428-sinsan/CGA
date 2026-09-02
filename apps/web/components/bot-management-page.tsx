@@ -18,6 +18,7 @@ import {
   resolveInitialOperationBotId,
   safeOperationFilePart,
 } from "@/components/bot-operation-shared";
+import { BotManagementMetadata } from "@/components/bot-management-metadata";
 import { useI18n } from "@/components/language-provider";
 import { loadAuthSession, type AuthSession } from "@/lib/auth";
 import {
@@ -245,7 +246,7 @@ export function BotManagementPage() {
             {bots.map((bot) => (
               <button key={bot.id} type="button" className={`cga-bot-select-card${bot.id === selectedBotId ? " is-selected" : ""}`} onClick={() => chooseBot(bot)}>
                 <strong>{bot.name}</strong>
-                <span>{bot.id} · {bot.active_version?.name || "-"} · {botManagementStatusLabel(bot.status, copy)}</span>
+                <BotManagementMetadata bot={bot} statusLabel={botManagementStatusLabel(bot.status, copy)} />
                 <span>{copy.locale}: {operationBotLocale(bot)}</span>
               </button>
             ))}
