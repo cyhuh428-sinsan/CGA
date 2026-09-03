@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     nlu_training_worker_interval_seconds: float = 1.0
     nlu_training_worker_error_backoff_seconds: float = 30.0
     cga_license_public_key: str = ""
+    cga_legacy_asset_root: str = ""
 
     openai_api_key: str = ""
     groq_api_key: str = ""
@@ -117,6 +118,11 @@ class Settings(BaseSettings):
     def nlu_model_storage_dir(self) -> Path:
         path = Path(self.nlu_model_storage_path)
         return path if path.is_absolute() else ROOT_DIR / path
+
+    @property
+    def legacy_asset_root_path(self) -> Path | None:
+        value = self.cga_legacy_asset_root.strip()
+        return Path(value).expanduser().resolve(strict=False) if value else None
 
 
 @lru_cache
