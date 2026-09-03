@@ -1,0 +1,185 @@
+name: cga
+
+services:
+  api:
+    container_name: cga-api
+    image: cga-api:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      APP_ENV: production
+      APP_NAME: CGA API
+      DATABASE_URL: ${CGA_DATABASE_URL:?CGA_DATABASE_URL is required}
+      JWT_SECRET: ${CGA_JWT_SECRET:?CGA_JWT_SECRET is required}
+      INITIAL_ADMIN_PASSWORD: ${CGA_INITIAL_ADMIN_PASSWORD:?CGA_INITIAL_ADMIN_PASSWORD is required}
+      CGA_LICENSE_PUBLIC_KEY: ${CGA_LICENSE_PUBLIC_KEY:?CGA_LICENSE_PUBLIC_KEY is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4173}
+      CGA_LEGACY_ASSET_ROOT: ${CGA_LEGACY_ASSET_ROOT:-}
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      REDIS_URL: ${REDIS_URL:-redis://cga-redis:6379/0}
+      CACHE_DEFAULT_TTL_SECONDS: ${CACHE_DEFAULT_TTL_SECONDS:-60}
+      CACHE_VERSION_SECTION_TTL_SECONDS: ${CACHE_VERSION_SECTION_TTL_SECONDS:-60}
+      EDIT_LOCK_CLEANUP_ENABLED: "true"
+      EDIT_LOCK_CLEANUP_INTERVAL_SECONDS: "60"
+      AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350
+    depends_on:
+      vector-worker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+    networks:
+      - proxy_net
+      - db_net
+      - cga_internal
+    volumes:
+      - cga_api_storage:/workspace/storage
+      - cga_nlu_models:/workspace/data/nlu_models
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=5)
+      interval: 15s
+      timeout: 7s
+      retries: 10
+      start_period: 45s
+
+  nlu-training-worker:
+    container_name: cga-nlu-training-worker
+    image: cga-api:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ["python", "-m", "app.workers.nlu_training_worker"]
+    environment:
+      APP_ENV: production
+      APP_NAME: CGA NLU Training Worker
+      DATABASE_URL: ${CGA_DATABASE_URL:?CGA_DATABASE_URL is required}
+      JWT_SECRET: ${CGA_JWT_SECRET:?CGA_JWT_SECRET is required}
+      INITIAL_ADMIN_PASSWORD: ${CGA_INITIAL_ADMIN_PASSWORD:?CGA_INITIAL_ADMIN_PASSWORD is required}
+      CGA_LICENSE_PUBLIC_KEY: ${CGA_LICENSE_PUBLIC_KEY:?CGA_LICENSE_PUBLIC_KEY is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4173}
+      CGA_LEGACY_ASSET_ROOT: ${CGA_LEGACY_ASSET_ROOT:-}
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      REDIS_URL: ${REDIS_URL:-redis://cga-redis:6379/0}
+      CACHE_DEFAULT_TTL_SECONDS: ${CACHE_DEFAULT_TTL_SECONDS:-60}
+      CACHE_VERSION_SECTION_TTL_SECONDS: ${CACHE_VERSION_SECTION_TTL_SECONDS:-60}
+      AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350
+    depends_on:
+      vector-worker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - db_net
+      - cga_internal
+    volumes:
+      - cga_api_storage:/workspace/storage
+      - cga_nlu_models:/workspace/data/nlu_models
+
+  vector-worker:
+    container_name: cga-vector-worker
+    image: cga-vector-worker:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/vector-worker/Dockerfile
+    environment:
+      AIDOT_VECTOR_STORAGE_DIR: /workspace/apps/vector-worker/data
+      AIDOT_VECTOR_EMBEDDING_PROVIDER: ${CGA_VECTOR_EMBEDDING_PROVIDER:-aidot_vector_worker}
+      AIDOT_VECTOR_EMBEDDING_MODEL: ${CGA_VECTOR_EMBEDDING_MODEL:-semantic_engine_default}
+      AIDOT_OLLAMA_BASE_URL: ${CGA_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    expose:
+      - "8350"
+    networks:
+      - cga_internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - cga_vector_data:/workspace/apps/vector-worker/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8350/health', timeout=5)
+      interval: 15s
+      timeout: 7s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    container_name: cga-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    expose:
+      - "6379"
+    networks:
+      - cga_internal
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  studio:
+    container_name: cga-studio
+    image: cga-studio:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      CGA_INTERNAL_API_BASE_URL: http://cga-api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "4173:4173"
+    networks:
+      - proxy_net
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4173/health/ready').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 7s
+      retries: 10
+      start_period: 30s
+
+networks:
+  proxy_net:
+    external: true
+    name: proxy-network
+  db_net:
+    external: true
+    name: common_default
+  cga_internal:
+    driver: bridge
+
+volumes:
+  cga_api_storage:
+  cga_nlu_models:
+  cga_vector_data:
