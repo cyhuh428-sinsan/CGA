@@ -1,0 +1,23 @@
+title = "CGA public repository secret scanning"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "cga-private-key-material"
+description = "Private key material must never be committed"
+regex = '''(?i)-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'''
+keywords = ["PRIVATE KEY"]
+
+[[rules]]
+id = "cga-license-secret-assignment"
+description = "CGA license signing secrets must remain outside Git"
+regex = '''(?i)(?:license_private_key|cga_license_private_key|license_signing_key)\s*[:=]\s*["']?[A-Za-z0-9+/=_-]{20,}'''
+keywords = ["license_private_key", "cga_license_private_key", "license_signing_key"]
+
+[[allowlists]]
+description = "Dialog UUIDs are public structural identifiers, not credentials"
+regexTarget = "match"
+regexes = [
+  '''(?i)dialogKey["']?\s*:\s*["']?[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}''',
+]
