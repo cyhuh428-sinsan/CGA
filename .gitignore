@@ -19,6 +19,18 @@ storage/
 !.env.example
 backups/
 
+# Public repository boundary: only end-user manuals are publishable documents.
+/AGENTS.md
+/CODEx_WORK_LOG.md
+/README.md
+/apps/api/README.md
+/apps/vector-worker/README.md
+/docs/*
+!/docs/manual/
+!/docs/manual/**
+/docs/manual/cga-manual-verification-matrix.md
+/docs/manual/cga-nlu-guide/engine-comparison.md
+
 # Local manual reference archives and reproducible QA/render outputs
 /docs/manual/Getting Started/
 /docs/manual/NLU 활용 가이드/
