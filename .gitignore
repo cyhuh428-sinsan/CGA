@@ -19,10 +19,9 @@ storage/
 !.env.example
 backups/
 
-# Public repository boundary: only end-user manuals are publishable documents.
+# Public repository boundary: only localized root READMEs and end-user manuals are publishable documents.
 /AGENTS.md
 /CODEx_WORK_LOG.md
-/README.md
 /apps/api/README.md
 /apps/vector-worker/README.md
 /docs/*

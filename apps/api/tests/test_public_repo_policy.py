@@ -14,16 +14,32 @@ from scripts.security.public_repo_policy import (  # noqa: E402
 )
 
 
-def test_internal_documents_are_rejected() -> None:
+def test_public_readmes_are_allowed() -> None:
     violations = find_path_violations(
         [
             "README.md",
+            "README.en.md",
+            "README.zh-CN.md",
+            "README.ja.md",
+            "README.vi.md",
+            "README.fr.md",
+            "README.de.md",
+        ]
+    )
+
+    assert violations == []
+
+
+def test_internal_documents_are_rejected() -> None:
+    violations = find_path_violations(
+        [
+            "README.es.md",
             "docs/testing/report.md",
             "docs/manual/cga-user-manual/README.ko.md",
         ]
     )
 
-    assert "README.md:non-manual-document" in violations
+    assert "README.es.md:non-manual-document" in violations
     assert "docs/testing/report.md:non-manual-document" in violations
     assert all(
         "docs/manual/cga-user-manual/README.ko.md" not in item

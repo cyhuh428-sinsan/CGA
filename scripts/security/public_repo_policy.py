@@ -13,10 +13,20 @@ MANUAL_PREFIXES = (
     "docs/manual/",
     "apps/web/public/manuals/",
 )
+PUBLIC_READMES = frozenset(
+    {
+        "README.md",
+        "README.en.md",
+        "README.zh-CN.md",
+        "README.ja.md",
+        "README.vi.md",
+        "README.fr.md",
+        "README.de.md",
+    }
+)
 FORBIDDEN_DOCUMENTS = {
     "AGENTS.md",
     "CODEx_WORK_LOG.md",
-    "README.md",
     "apps/api/README.md",
     "apps/vector-worker/README.md",
     "docs/manual/cga-manual-verification-matrix.md",
@@ -61,10 +71,16 @@ def find_path_violations(paths: Iterable[str]) -> list[str]:
     violations: list[str] = []
     for raw_path in paths:
         path = _normalise_path(raw_path)
+        is_root_readme = (
+            "/" not in path
+            and path.startswith("README")
+            and path.endswith(".md")
+        )
         forbidden = (
             path in FORBIDDEN_DOCUMENTS
             or path.startswith(".local/")
             or (path.startswith("docs/") and not _is_manual(path))
+            or (is_root_readme and path not in PUBLIC_READMES)
         )
         if forbidden:
             violations.append(f"{path}:non-manual-document")
