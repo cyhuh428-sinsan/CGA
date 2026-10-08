@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, model_validator
 from typing import Literal
 
 
-NluType = Literal["ml", "semantic", "semantic_vector", "semantic_external", "llm"]
+NluType = Literal["ml", "semantic", "semantic_vector", "semantic_external", "llm", "laya"]
 NluModel = Literal[
     "deep_learning_lite",
     "ml_tfidf_linear",
@@ -24,6 +24,7 @@ NluModel = Literal[
     "llm_engine_default",
     "llm_intent_fast",
     "llm_intent_reasoning",
+    "laya_intent",
 ]
 AnswerMode = Literal["fixed", "semantic_rag", "llm_rag", "llm"]
 LlmProvider = Literal["gemini", "chatgpt", "claude", "groq", "cerebras", "mistral", "ollama", "openrouter"]
@@ -84,6 +85,7 @@ MODELS_BY_NLU_TYPE: dict[str, set[str]] = {
         "semantic_ollama_qwen3_embedding_8b",
     },
     "llm": {"llm_engine_default", "llm_intent_fast", "llm_intent_reasoning"},
+    "laya": {"laya_intent"},
 }
 
 MODELS_BY_LLM_PROVIDER: dict[str, set[str]] = {

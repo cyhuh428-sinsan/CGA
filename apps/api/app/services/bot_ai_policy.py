@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.config import settings
 from app.services.vector_search import intent_vector_config
 
 
@@ -10,6 +11,7 @@ SUPPORTED_NLU_MODEL = "deep_learning_lite"
 SUPPORTED_ANSWER_MODE = "fixed"
 RUNTIME_SUPPORTED_ANSWER_MODES = {"fixed", "semantic_rag", "llm_rag", "llm"}
 SEMANTIC_NLU_TYPES = {"semantic", "semantic_vector", "semantic_external"}
+LAYA_UNSUPPORTED_ANSWER_MODE_REASON = "Laya NLU는 정해진 답변 방식과 함께 사용할 수 있습니다."
 UNSUPPORTED_ANSWER_MODE_REASON = (
     "선택한 답변 방식은 아직 실행 엔진에 연결되지 않았습니다. "
     "현재 실행 가능한 답변 방식은 정해진 답변, Semantic RAG 답변, LLM RAG 답변입니다."
@@ -37,6 +39,12 @@ def runtime_block_reason(data_json: dict[str, Any] | None) -> str | None:
         return None
     if nlu_type == "llm":
         return None
+    if nlu_type == "laya":
+        if answer_mode != SUPPORTED_ANSWER_MODE:
+            return LAYA_UNSUPPORTED_ANSWER_MODE_REASON
+        if not settings.laya_serve_base_url:
+            return "Laya NLU를 사용하려면 LAYA_SERVE_BASE_URL 설정이 필요합니다."
+        return None
     if nlu_type != SUPPORTED_NLU_TYPE or nlu_model != SUPPORTED_NLU_MODEL:
         return "선택한 NLU 엔진은 아직 실행 엔진에 연결되지 않았습니다. 현재 실행 가능한 조합은 ML + DeepLearning Lite입니다."
     return None
@@ -52,7 +60,7 @@ def training_block_reason(data_json: dict[str, Any] | None) -> str | None:
             missing = ", ".join(config.missing_fields)
             return f"Semantic NLU 학습에는 Intent Vector DB 연결 설정이 필요합니다. 누락: {missing}"
         return None
-    if nlu_type == "llm":
+    if nlu_type in {"llm", "laya"}:
         return None
     if nlu_type != SUPPORTED_NLU_TYPE or nlu_model != SUPPORTED_NLU_MODEL:
         return "선택한 NLU 엔진은 아직 학습 엔진에 연결되지 않았습니다. 현재 학습 가능한 조합은 ML + DeepLearning Lite입니다."

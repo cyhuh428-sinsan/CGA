@@ -38,6 +38,7 @@ from app.services.hub_runtime import (
 from app.services.default_messages import DEFAULT_MESSAGE_FALLBACKS, get_default_message_text
 from app.services.bot_ai_policy import runtime_block_reason
 from app.services.llm_client import LlmChatClient, LlmClientError, resolve_llm_provider_config
+from app.services.laya_nlu import LayaNluError, build_intent_criteria, classify_intent_with_laya
 from app.services.llm_nlu import classify_intent_with_llm_snapshot
 from app.services.nlu.deep_learning_lite import classify_deep_learning_lite_model, score_deep_learning_lite_model
 from app.services.runtime_session import apply_end_card_state, runtime_completion_reason
@@ -4386,6 +4387,15 @@ def _select_dialog(document: dict[str, Any], message: str, *, prefer_exact_utter
     return scored[0]
 
 
+def _laya_select_dialog(document: dict[str, Any], message: str) -> tuple[dict[str, Any] | None, float]:
+    criteria = build_intent_criteria(document.get("dialogs"))
+    ranked = classify_intent_with_laya(query=message, criteria=criteria)
+    if not ranked:
+        return None, 0.0
+    intent_key, confidence = ranked[0]
+    return _dialog_by_id_or_name(document, intent_key), confidence
+
+
 def _dialog_by_id_or_name(document: dict[str, Any], intent_id: str, intent_name: str = "") -> dict[str, Any] | None:
     for dialog in _safe_dialogs(document):
         if str(dialog.get("dialogType") or "1") not in {"1", "1.0"}:
@@ -4519,6 +4529,18 @@ def _select_dialog_for_bot(
                 "LLM intent classification failed.",
                 extra={
                     "event": "channel.llm_nlu.classification_failed",
+                    "extra_data": {"bot_id": str(bot.id), "version_id": str(version.id), "error": str(error)},
+                },
+            )
+            return None, 0.0
+    if nlu_type == "laya":
+        try:
+            return with_cutoff(_laya_select_dialog(document, message))
+        except LayaNluError as error:
+            logger.warning(
+                "Laya intent classification failed.",
+                extra={
+                    "event": "channel.laya_nlu.classification_failed",
                     "extra_data": {"bot_id": str(bot.id), "version_id": str(version.id), "error": str(error)},
                 },
             )

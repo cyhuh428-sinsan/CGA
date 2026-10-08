@@ -29,6 +29,9 @@ export type BotAiCombinationRow = {
 };
 
 export function botAiCombinationStatus(nluType: NluType, nluModel: NluModelKey, answerMode: AnswerMode) {
+  if (nluType === "laya") {
+    return answerMode === "fixed" ? "implemented" : "unsupported";
+  }
   if (nluType === "ml" && answerMode !== "fixed") {
     return "unsupported";
   }

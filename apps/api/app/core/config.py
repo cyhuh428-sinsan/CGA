@@ -71,6 +71,11 @@ class Settings(BaseSettings):
     nlu_model_storage_path: str = "data/nlu_models"
     aidot_vector_worker_base_url: str = "http://localhost:8350"
     aidot_vector_embedding_timeout_seconds: float = 120.0
+    # Laya NLU (self-hosted laya-serve). Empty base URL keeps the feature off.
+    laya_serve_base_url: str = ""
+    laya_serve_api_key: str = ""
+    laya_serve_model_name: str = "intent"
+    laya_serve_timeout_seconds: float = 5.0
     answer_vector_index_timeout_seconds: float = 7200.0
 
     jwt_secret: str = "change-me"

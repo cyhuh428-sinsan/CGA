@@ -24,6 +24,8 @@ services:
       EDIT_LOCK_CLEANUP_ENABLED: "true"
       EDIT_LOCK_CLEANUP_INTERVAL_SECONDS: "60"
       AIDOT_VECTOR_WORKER_BASE_URL: http://cga-vector-worker:8350
+      LAYA_SERVE_BASE_URL: ${CGA_LAYA_SERVE_BASE_URL:-}
+      LAYA_SERVE_API_KEY: ${LAYA_API_KEY:-}
     depends_on:
       vector-worker:
         condition: service_healthy
@@ -141,6 +143,101 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+
+  # Laya NLU server. Off by default: start exactly one of these with COMPOSE_PROFILES.
+  #   COMPOSE_PROFILES=laya-cpu  -> CPU build
+  #   COMPOSE_PROFILES=laya-gpu  -> NVIDIA GPU build (needs the NVIDIA Container Toolkit)
+  # Both services join cga_internal under the alias `laya-serve`, so the api reaches either one at
+  # http://laya-serve:8000 and no host port is published. Clone the Laya repository into
+  # services/laya first, and put the trained intent checkpoint in LAYA_INTENT_MODEL_DIR.
+  laya-cpu:
+    container_name: cga-laya-cpu
+    image: cga-laya-cpu:latest
+    profiles: ["laya-cpu"]
+    restart: unless-stopped
+    build:
+      context: ./services/laya
+      args:
+        TORCH_INDEX: cpu
+    command: ["laya-serve"]
+    environment:
+      LAYA_HOST: 0.0.0.0
+      LAYA_PORT: "8000"
+      LAYA_DEVICE: cpu
+      LAYA_PRELOAD: "1"
+      LAYA_MODELS: intent
+      LAYA_EXTRA_MODELS: '{"intent": "/models/intent"}'
+      LAYA_DEFAULT_MODEL: intent
+      LAYA_API_KEY: ${LAYA_API_KEY:-}
+      LAYA_THREADS: ${LAYA_THREADS:-4}
+      HF_HUB_OFFLINE: "1"
+    volumes:
+      - ${LAYA_INTENT_MODEL_DIR:-./models/laya-intent}:/models/intent:ro
+    expose:
+      - "8000"
+    networks:
+      cga_internal:
+        aliases:
+          - laya-serve
+    init: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5m
+
+  laya-gpu:
+    container_name: cga-laya-gpu
+    image: cga-laya-gpu:latest
+    profiles: ["laya-gpu"]
+    restart: unless-stopped
+    build:
+      context: ./services/laya
+      args:
+        TORCH_INDEX: ${LAYA_TORCH_INDEX:-cu130}
+    command: ["laya-serve"]
+    environment:
+      LAYA_HOST: 0.0.0.0
+      LAYA_PORT: "8000"
+      LAYA_DEVICE: cuda
+      LAYA_CUDA_AMP: ${LAYA_CUDA_AMP:-}
+      LAYA_PRELOAD: "1"
+      LAYA_MODELS: intent
+      LAYA_EXTRA_MODELS: '{"intent": "/models/intent"}'
+      LAYA_DEFAULT_MODEL: intent
+      LAYA_API_KEY: ${LAYA_API_KEY:-}
+      HF_HUB_OFFLINE: "1"
+    volumes:
+      - ${LAYA_INTENT_MODEL_DIR:-./models/laya-intent}:/models/intent:ro
+    expose:
+      - "8000"
+    networks:
+      cga_internal:
+        aliases:
+          - laya-serve
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${LAYA_GPU_ID:-0}"]
+              capabilities: [gpu]
+    init: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5m
 
   studio:
     container_name: cga-studio

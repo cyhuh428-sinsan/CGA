@@ -1,6 +1,7 @@
-export type NluType = "ml" | "semantic_vector" | "semantic_external" | "llm";
+export type NluType = "ml" | "semantic_vector" | "semantic_external" | "llm" | "laya";
 export type NluModelKey =
   | "deep_learning_lite"
+  | "laya_intent"
   | "ml_tfidf_linear"
   | "ml_keyword_baseline"
   | "semantic_engine_default"
@@ -43,6 +44,7 @@ export const NLU_TYPE_OPTIONS: NluTypeOption[] = [
   { value: "semantic_vector", label: "Semantic - Vector Worker", note: "Aidot 자체 Vector DB" },
   { value: "semantic_external", label: "Semantic - External Embedding", note: "외부 임베딩 + Local Vector DB" },
   { value: "llm", label: "LLM Engine", note: "1.5 설정" },
+  { value: "laya", label: "Laya", note: "laya-serve 의도분류 (CPU/GPU)" },
 ];
 
 export const NLU_MODEL_OPTIONS_BY_TYPE: Record<NluType, NluModelOption[]> = {
@@ -157,6 +159,15 @@ export const NLU_MODEL_OPTIONS_BY_TYPE: Record<NluType, NluModelOption[]> = {
       label: "LLM Intent Reasoning",
       type: "llm",
       note: "1.5 설정",
+    },
+  ],
+  laya: [
+    {
+      value: "laya_intent",
+      label: "Laya Intent",
+      type: "laya",
+      note: "정해진 답변 전용",
+      description: "laya-serve의 의도분류 모델로 고객 문의의 의도를 판별합니다. 정해진 답변 방식에서만 사용할 수 있습니다.",
     },
   ],
 };

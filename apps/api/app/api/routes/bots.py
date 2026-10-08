@@ -6017,6 +6017,64 @@ def _run_version_nlu_training(
                 "answer_training": answer_training_result,
             },
         )
+    if str(data_json.get("nlu_type") or "ml") == "laya":
+        if int(training_summary["intent_count"]) < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Laya NLU에 사용할 의도가 없습니다. 학습문장이 있는 의도를 1개 이상 등록해주세요.",
+            )
+        laya_trained_at = datetime.now(timezone.utc)
+        laya_evaluation = {
+            "engine_type": "laya",
+            "nlu_type": "laya",
+            "nlu_model": _safe_text_value(data_json.get("nlu_model") or data_json.get("nlu_engine")) or "laya_intent",
+            "model_name": settings.laya_serve_model_name,
+            "trained_at": laya_trained_at.isoformat(),
+            "intent_count": training_summary["intent_count"],
+            "utterance_count": training_summary["utterance_count"],
+            "message": "Laya NLU는 CGA에서 학습하지 않습니다. laya-serve에 등록된 체크포인트를 사용하고, 의도 목록은 실행 시 전달합니다.",
+        }
+        version_json = normalize_version_document(version.version_json)
+        system_config = dict(version_json.get("system_config") or {})
+        system_config["nlu_evaluation"] = {
+            "latest": laya_evaluation,
+            "history": [],
+            "snapshot": None,
+            "quality_diagnostics": {},
+        }
+        if answer_training_result:
+            system_config["answer_training"] = answer_training_result
+        version_json["system_config"] = system_config
+        _assign_version_document(version, version_json)
+        version.updated_at = laya_trained_at
+        bot.updated_at = laya_trained_at
+        db.add(bot)
+        db.add(version)
+        _write_audit_log(
+            db,
+            request,
+            current_user,
+            action_type="bot.version.nlu.train",
+            target_type="bot_version",
+            target_id=version.id,
+            after_json={**laya_evaluation, **nlu_engine_snapshot},
+        )
+        db.commit()
+        _purge_version_cache(version)
+        return success_response(
+            request,
+            {
+                "schema_version": None,
+                "engine_type": "laya",
+                "model_path": None,
+                "counts": {
+                    "intent_count": training_summary["intent_count"],
+                    "utterance_count": training_summary["utterance_count"],
+                },
+                "evaluation": laya_evaluation,
+                "answer_training": answer_training_result,
+            },
+        )
     if str(data_json.get("nlu_type") or "ml") in SEMANTIC_NLU_TYPES:
         training_started_at = datetime.now(timezone.utc)
         result = _train_semantic_intent_vector_index(bot, version, ai_config)

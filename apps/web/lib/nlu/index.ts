@@ -34,6 +34,9 @@ function inferNluTypeFromModel(value: string | null | undefined): NluType | null
   if (!normalizedValue) {
     return null;
   }
+  if (normalizedValue.includes("laya")) {
+    return "laya";
+  }
   if (normalizedValue.includes("llm")) {
     return "llm";
   }
