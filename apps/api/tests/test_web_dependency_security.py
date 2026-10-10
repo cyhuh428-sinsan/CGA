@@ -19,15 +19,18 @@ def _version_tuple(value: str) -> tuple[int, ...]:
 def test_security_sensitive_web_dependencies_are_pinned() -> None:
     manifest = json.loads(PACKAGE_JSON.read_text(encoding="utf-8"))
 
-    assert manifest["dependencies"]["next"] == "16.2.12"
-    assert manifest["overrides"]["postcss"] == "8.5.18"
-    assert manifest["overrides"]["sharp"] == "0.35.3"
+    assert manifest["dependencies"]["next"] == "16.4.0"
+    assert manifest["overrides"]["postcss"] == "8.5.29"
+    assert manifest["overrides"]["sharp"] == "0.35.5"
 
 
 def test_locked_web_dependencies_meet_security_minimums() -> None:
     lock = json.loads(PACKAGE_LOCK.read_text(encoding="utf-8"))
     packages = lock["packages"]
 
-    assert _version_tuple(packages["node_modules/next"]["version"]) >= (16, 2, 11)
-    assert _version_tuple(packages["node_modules/postcss"]["version"]) > (8, 5, 17)
-    assert _version_tuple(packages["node_modules/sharp"]["version"]) >= (0, 35, 0)
+    assert _version_tuple(packages["node_modules/next"]["version"]) >= (16, 4, 0)
+    assert _version_tuple(packages["node_modules/baseline-browser-mapping"]["version"]) >= (2, 11, 0)
+    assert _version_tuple(packages["node_modules/postcss"]["version"]) >= (8, 5, 29)
+    assert _version_tuple(packages["node_modules/nanoid"]["version"]) >= (3, 3, 20)
+    assert _version_tuple(packages["node_modules/sharp"]["version"]) >= (0, 35, 5)
+    assert _version_tuple(packages["node_modules/source-map-js"]["version"]) >= (1, 2, 2)
