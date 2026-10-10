@@ -1,18 +1,24 @@
 from app.services.scenario_validation import scenario_validation_block_reason, scenario_validation_error_detail, validate_version_document
 
 
-def _dialog(dialog_id: str = "dialog-1") -> dict[str, object]:
+def _dialog(dialog_id: str = "dialog-1", *, dialog_type: int = 0) -> dict[str, object]:
     return {
         "id": dialog_id,
         "name": "테스트 모듈",
         "displayName": "테스트 모듈",
-        "dialogType": 0,
+        "dialogType": dialog_type,
     }
 
 
-def _document(nodes: list[dict[str, object]], links: list[dict[str, object]], *, apis: list[dict[str, object]] | None = None) -> dict[str, object]:
+def _document(
+    nodes: list[dict[str, object]],
+    links: list[dict[str, object]],
+    *,
+    apis: list[dict[str, object]] | None = None,
+    dialog_type: int = 0,
+) -> dict[str, object]:
     return {
-        "dialogs": [_dialog()],
+        "dialogs": [_dialog(dialog_type=dialog_type)],
         "dialog_flow_graphs": [
             {
                 "id": "graph-1",
@@ -468,6 +474,88 @@ def test_script_card_design_errors_block_dialog() -> None:
     assert "script.return_variable_missing" in codes
     assert "script.return_script_variable_missing" in codes
     assert "script.return_script_variable_invalid" in codes
+    assert result["blocked_dialog_ids"] == ["dialog-1"]
+
+
+def test_module_script_accepts_caller_variable_reference() -> None:
+    result = validate_version_document(
+        _document(
+            [
+                {"id": "start-1", "kind": "start", "title": "Start", "config": {}},
+                {
+                    "id": "script-1",
+                    "kind": "script",
+                    "title": "의도분류",
+                    "config": {
+                        "code": "return { keyword: param_avr_debug };",
+                        "parameters": [
+                            {
+                                "id": "param-1",
+                                "name": "param_avr_debug",
+                                "value": "{{$avr_debug.target()}}",
+                            }
+                        ],
+                        "returnVariables": [
+                            {
+                                "id": "return-1",
+                                "variableName": "$g_keyword",
+                                "scriptVariableName": "keyword",
+                            }
+                        ],
+                    },
+                },
+                {"id": "end-1", "kind": "end", "title": "End", "config": {}},
+            ],
+            [
+                {"sourceNodeId": "start-1", "sourcePort": "next", "targetNodeId": "script-1"},
+                {"sourceNodeId": "script-1", "sourcePort": "next", "targetNodeId": "end-1"},
+            ],
+            dialog_type=0,
+        )
+    )
+
+    assert "variable.reference_missing" not in _codes(result)
+    assert result["error_count"] == 0
+
+
+def test_intent_script_rejects_undefined_variable_reference() -> None:
+    result = validate_version_document(
+        _document(
+            [
+                {"id": "start-1", "kind": "start", "title": "Start", "config": {}},
+                {
+                    "id": "script-1",
+                    "kind": "script",
+                    "title": "스크립트",
+                    "config": {
+                        "code": "return { keyword: param_missing };",
+                        "parameters": [
+                            {
+                                "id": "param-1",
+                                "name": "param_missing",
+                                "value": "{{$missing.target()}}",
+                            }
+                        ],
+                        "returnVariables": [
+                            {
+                                "id": "return-1",
+                                "variableName": "$g_keyword",
+                                "scriptVariableName": "keyword",
+                            }
+                        ],
+                    },
+                },
+                {"id": "end-1", "kind": "end", "title": "End", "config": {}},
+            ],
+            [
+                {"sourceNodeId": "start-1", "sourcePort": "next", "targetNodeId": "script-1"},
+                {"sourceNodeId": "script-1", "sourcePort": "next", "targetNodeId": "end-1"},
+            ],
+            dialog_type=1,
+        )
+    )
+
+    assert "variable.reference_missing" in _codes(result)
     assert result["blocked_dialog_ids"] == ["dialog-1"]
 
 

@@ -671,7 +671,10 @@ def validate_version_document(version_json: dict[str, Any] | None) -> dict[str, 
             if node_id and node_id not in reachable_node_ids and _text(node.get("kind")) != "start":
                 continue
             kind = _text(node.get("kind"))
-            _validate_variable_references(items, graph=graph, dialog=dialog, node=node, known_variables=known_variables, reported_refs=reported_variable_refs)
+            dialog_type = _as_dict(dialog).get("dialogType")
+            accepts_caller_variables = dialog_type == 0 or str(dialog_type).strip() == "0"
+            if not accepts_caller_variables:
+                _validate_variable_references(items, graph=graph, dialog=dialog, node=node, known_variables=known_variables, reported_refs=reported_variable_refs)
             if kind == "condition":
                 _validate_condition(items, graph=graph, dialog=dialog, node=node, node_ids=node_ids)
             elif kind == "jump":

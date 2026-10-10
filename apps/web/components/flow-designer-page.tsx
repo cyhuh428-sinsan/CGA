@@ -10,6 +10,11 @@ import { useI18n } from "@/components/language-provider";
 import { useStudioWorkspace } from "@/components/studio-workspace-provider";
 import { SimulatorPage } from "@/components/simulator-page";
 import { getBotVersionSettings } from "@/lib/bot-settings";
+import { getDialogStartPath } from "@/lib/dialog-flow-navigation";
+import {
+  hasDuplicateVariableNames,
+  shouldValidateVariableReferences,
+} from "@/lib/flow-variable-validation";
 import { FLOW_DESIGNER_CATALOGS, getFlowDesignerLabel, type FlowDesignerCatalog } from "@/lib/i18n/flow-designer";
 import type { SupportedLanguage } from "@/lib/language";
 import { useEditLock } from "@/lib/use-edit-lock";
@@ -2696,9 +2701,6 @@ export function FlowDesignerPage() {
       issues.set(nodeId, [...(issues.get(nodeId) ?? []), message]);
     };
     const entityBindingNames = dialog.entityBindings.map((binding) => binding.variableName);
-    const usedVariableNames = new Set(
-      entityBindingNames.map((item) => stripVariablePrefix(item).toLowerCase()),
-    );
     const knownVariableNames = new Set(SYSTEM_FLOW_VARIABLE_NAMES.map((item) => item.toLowerCase()));
     const addKnownVariableName = (value: string) => {
       const root = getVariableReferenceRoot(value);
@@ -2707,6 +2709,10 @@ export function FlowDesignerPage() {
       }
     };
     const addMissingVariableReferenceIssue = (nodeId: string, value: string) => {
+      if (!shouldValidateVariableReferences(dialog.dialogType)) {
+        return;
+      }
+
       const root = getVariableReferenceRoot(value);
       if (root && !knownVariableNames.has(root.toLowerCase())) {
         addIssue(nodeId, formatStudioRuntimeMessage(uiLanguage, "정의되지 않은 변수 '{variable}'를 사용하고 있습니다.", { variable: `$${root}` }));
@@ -2845,12 +2851,9 @@ export function FlowDesignerPage() {
           }
           addMissingVariableReferencesFromText(node.id, item.value);
 
-          const normalizedName = stripVariablePrefix(item.variableName).toLowerCase();
-          if (usedVariableNames.has(normalizedName)) {
-            addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "중복된 변수명이 있습니다."));
-          } else {
-            usedVariableNames.add(normalizedName);
-          }
+        }
+        if (hasDuplicateVariableNames(node.config.items.map((item) => item.variableName))) {
+          addIssue(node.id, getStudioRuntimeMessage(uiLanguage, "중복된 변수명이 있습니다."));
         }
       }
 
@@ -4974,11 +4977,20 @@ export function FlowDesignerPage() {
   }
 
   function handleNavigateToStart() {
+    if (!dialog) {
+      return;
+    }
+
+    const dialogStartPath = getDialogStartPath(dialog.dialogType, botId, versionId, dialogId);
+    if (!dialogStartPath) {
+      return;
+    }
+
     if (hasUnsavedChanges && !window.confirm(getStudioRuntimeMessage(uiLanguage, "변경사항이 저장되지 않았습니다. 다른 화면으로 이동하시겠습니까?"))) {
       return;
     }
 
-    router.push(`/studio/bots/${botId}/versions/${versionId}/intents/${dialogId}`);
+    router.push(dialogStartPath);
   }
 
   function handleNavigateToDialogList() {
@@ -5104,9 +5116,6 @@ export function FlowDesignerPage() {
     const nodeExists = (nodeId: string) => graph.nodes.some((item) => item.id === nodeId);
     const entityBindingNames = dialog.entityBindings.map((binding) => binding.variableName);
     const reachableNodeIds = collectReachableNodeIds(graph);
-    const usedVariableNames = new Set(
-      entityBindingNames.map((item) => stripVariablePrefix(item).toLowerCase()),
-    );
     for (const node of graph.nodes) {
       if (!isSystemFlowNode(node) && !reachableNodeIds.has(node.id)) {
         continue;
@@ -5228,12 +5237,9 @@ export function FlowDesignerPage() {
             addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드: {error}", { card: node.title, error: validationError }));
           }
 
-          const normalizedName = stripVariablePrefix(item.variableName).toLowerCase();
-          if (usedVariableNames.has(normalizedName)) {
-            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드에 중복된 변수명이 있습니다.", { card: node.title }));
-            continue;
-          }
-          usedVariableNames.add(normalizedName);
+        }
+        if (hasDuplicateVariableNames(node.config.items.map((item) => item.variableName))) {
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드에 중복된 변수명이 있습니다.", { card: node.title }));
         }
       }
 
@@ -5311,12 +5317,9 @@ export function FlowDesignerPage() {
             addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드의 스크립트 변수명은 JavaScript 변수명 규칙에 맞게 입력해주세요.", { card: node.title }));
           }
 
-          const normalizedName = stripVariablePrefix(returnVariable.variableName).toLowerCase();
-          if (usedVariableNames.has(normalizedName)) {
-            addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드에 중복된 리턴 변수명이 있습니다.", { card: node.title }));
-            continue;
-          }
-          usedVariableNames.add(normalizedName);
+        }
+        if (hasDuplicateVariableNames(node.config.returnVariables.map((item) => item.variableName))) {
+          addDesignValidationIssue(node.id, formatStudioRuntimeMessage(uiLanguage, "'{card}' 카드에 중복된 리턴 변수명이 있습니다.", { card: node.title }));
         }
       }
     }
@@ -5565,8 +5568,12 @@ export function FlowDesignerPage() {
                 {getFlowDesignerLabel(copy, getDialogTypeLabel(dialog.dialogType))} ({dialog.name})
               </button>
               <span>&gt;</span>
-              <button type="button" onClick={handleNavigateToStart}>{getFlowDesignerLabel(copy, "대화 시작")}</button>
-              <span>&gt;</span>
+              {dialog.dialogType === 1 ? (
+                <>
+                  <button type="button" onClick={handleNavigateToStart}>{getFlowDesignerLabel(copy, "대화 시작")}</button>
+                  <span>&gt;</span>
+                </>
+              ) : null}
               <span className="flow-designer-page__crumb-current">{getFlowDesignerLabel(copy, "대화 설계")}</span>
               <button
                 type="button"
