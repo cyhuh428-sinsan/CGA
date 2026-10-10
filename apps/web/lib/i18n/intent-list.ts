@@ -57,6 +57,9 @@ export type IntentListCatalog = {
   uploadEncodingHelp: string;
   uploadHeaderHelp: string;
   uploadRepeatedNameHelp: string;
+  uploadAnswerHeaderHelp: string;
+  uploadRepeatedNameAnswerHelp: string;
+  uploadMissingAnswers: string;
   uploadNoIntents: string;
   uploadLoadError: string;
   uploadComplete: string;
@@ -113,7 +116,16 @@ type IntentValidationCatalog = Pick<
   | "savePriorityBotError"
   | "saveIntentError"
 >;
-type IntentListBaseCatalog = Omit<IntentListCatalog, keyof IntentValidationCatalog>;
+type IntentImportAnswerCatalog = Pick<
+  IntentListCatalog,
+  | "uploadAnswerHeaderHelp"
+  | "uploadRepeatedNameAnswerHelp"
+  | "uploadMissingAnswers"
+>;
+type IntentListBaseCatalog = Omit<
+  IntentListCatalog,
+  keyof IntentValidationCatalog | keyof IntentImportAnswerCatalog
+>;
 
 const INTENT_VALIDATION_CATALOGS = {
   ko: { loadIntentError: "의도/모듈 정보를 불러오지 못했습니다.", scenarioIssueFallback: "대화 설계 오류가 있습니다.", optionTransitionLock: "의도전환잠금", optionReturnBlock: "의도복귀차단", optionFeedback: "의도별 피드백", otherOptionsAria: "기타옵션", optionEnabled: "설정됨", optionDisabled: "설정 안 됨", scenarioErrorAria: "대화 설계 오류 {count}건", scenarioErrorLabel: "오류", saveBlocked: "저장 차단", trainingRunBlocked: "학습/실행 차단", trainingBlockedByScenarioErrors: "설계 오류 {count}건이 있어 학습할 수 없습니다.", fixMarkedRows: "오류 칸의 표시가 있는 의도/모듈을 수정해주세요.", fixUnplacedErrors: "목록 행과 연결되지 않은 오류가 있습니다. 대화 설계를 다시 저장한 뒤 오류 위치를 확인해주세요.", unplacedErrors: "미표시 오류: {messages}", utteranceRequiredForDesign: "의도는 학습문장을 등록한 후 대화 설계로 이동할 수 있습니다.", reloadTrainingError: "학습 결과를 다시 불러오지 못했습니다.", savePriorityBotError: "우선 봇 설정을 저장하지 못했습니다.", saveIntentError: "의도/모듈 저장 중 오류가 발생했습니다." },
@@ -124,6 +136,16 @@ const INTENT_VALIDATION_CATALOGS = {
   fr: { loadIntentError: "Impossible de charger les intentions/modules.", scenarioIssueFallback: "Une erreur de conception du dialogue est présente.", optionTransitionLock: "Verrouillage de transition", optionReturnBlock: "Blocage du retour d'intention", optionFeedback: "Retour par intention", otherOptionsAria: "Autres options", optionEnabled: "Activé", optionDisabled: "Non activé", scenarioErrorAria: "{count} erreurs de conception du dialogue", scenarioErrorLabel: "Erreur", saveBlocked: "Enregistrement bloqué", trainingRunBlocked: "Entraînement/exécution bloqué", trainingBlockedByScenarioErrors: "L'entraînement est impossible en raison de {count} erreurs de conception.", fixMarkedRows: "Corrigez les intentions/modules marqués dans la colonne Erreur.", fixUnplacedErrors: "Certaines erreurs ne sont liées à aucune ligne. Enregistrez de nouveau la conception et vérifiez leur emplacement.", unplacedErrors: "Erreurs non localisées : {messages}", utteranceRequiredForDesign: "Enregistrez une phrase d'entraînement avant d'ouvrir la conception du dialogue.", reloadTrainingError: "Impossible de recharger le résultat d'entraînement.", savePriorityBotError: "Impossible d'enregistrer le bot prioritaire.", saveIntentError: "Une erreur est survenue lors de l'enregistrement des intentions/modules." },
   de: { loadIntentError: "Intent-/Modulinformationen konnten nicht geladen werden.", scenarioIssueFallback: "Es liegt ein Dialogentwurfsfehler vor.", optionTransitionLock: "Intent-Übergangssperre", optionReturnBlock: "Intent-Rückkehrsperre", optionFeedback: "Intent-Feedback", otherOptionsAria: "Weitere Optionen", optionEnabled: "Aktiviert", optionDisabled: "Nicht aktiviert", scenarioErrorAria: "{count} Dialogentwurfsfehler", scenarioErrorLabel: "Fehler", saveBlocked: "Speichern blockiert", trainingRunBlocked: "Training/Ausführung blockiert", trainingBlockedByScenarioErrors: "Training ist wegen {count} Entwurfsfehlern nicht möglich.", fixMarkedRows: "Korrigieren Sie die in der Fehlerspalte markierten Intents/Module.", fixUnplacedErrors: "Einige Fehler sind keiner Listenzeile zugeordnet. Speichern Sie den Dialogentwurf erneut und prüfen Sie die Position.", unplacedErrors: "Nicht zugeordnete Fehler: {messages}", utteranceRequiredForDesign: "Registrieren Sie einen Trainingssatz, bevor Sie den Dialogentwurf öffnen.", reloadTrainingError: "Das Trainingsergebnis konnte nicht neu geladen werden.", savePriorityBotError: "Die Prioritäts-Bot-Einstellung konnte nicht gespeichert werden.", saveIntentError: "Beim Speichern der Intents/Module ist ein Fehler aufgetreten." },
 } satisfies Record<SupportedLanguage, IntentValidationCatalog>;
+
+const INTENT_IMPORT_ANSWER_CATALOGS = {
+  ko: { uploadAnswerHeaderHelp: "헤더는 `의도명,표시명,의도 Key,학습문장,태그,답변` 형식을 사용하세요.", uploadRepeatedNameAnswerHelp: "같은 의도명이 여러 줄이면 모든 학습문장을 추가하고 첫 번째 답변을 사용합니다.", uploadMissingAnswers: "새 의도의 답변을 입력해주세요: {names}" },
+  en: { uploadAnswerHeaderHelp: "Use the header `의도명,표시명,의도 Key,학습문장,태그,답변`.", uploadRepeatedNameAnswerHelp: "Rows with the same intent name add all training sentences and use the first answer.", uploadMissingAnswers: "Enter an answer for each new intent: {names}" },
+  "zh-CN": { uploadAnswerHeaderHelp: "请使用表头 `의도명,표시명,의도 Key,학습문장,태그,답변`。", uploadRepeatedNameAnswerHelp: "相同意图名称的多行会添加全部训练语句，并使用第一个回答。", uploadMissingAnswers: "请为每个新意图填写回答：{names}" },
+  ja: { uploadAnswerHeaderHelp: "ヘッダーは `의도명,표시명,의도 Key,학습문장,태그,답변` を使用してください。", uploadRepeatedNameAnswerHelp: "同じ意図名の全学習文を追加し、最初の回答を使用します。", uploadMissingAnswers: "新しい意図の回答を入力してください: {names}" },
+  vi: { uploadAnswerHeaderHelp: "Sử dụng tiêu đề `의도명,표시명,의도 Key,학습문장,태그,답변`.", uploadRepeatedNameAnswerHelp: "Các dòng cùng tên ý định sẽ thêm mọi câu huấn luyện và dùng câu trả lời đầu tiên.", uploadMissingAnswers: "Nhập câu trả lời cho từng ý định mới: {names}" },
+  fr: { uploadAnswerHeaderHelp: "Utilisez l’en-tête `의도명,표시명,의도 Key,학습문장,태그,답변`.", uploadRepeatedNameAnswerHelp: "Les lignes du même nom ajoutent toutes les phrases et utilisent la première réponse.", uploadMissingAnswers: "Saisissez une réponse pour chaque nouvelle intention : {names}" },
+  de: { uploadAnswerHeaderHelp: "Verwenden Sie die Kopfzeile `의도명,표시명,의도 Key,학습문장,태그,답변`.", uploadRepeatedNameAnswerHelp: "Zeilen mit gleichem Intent-Namen übernehmen alle Trainingssätze und die erste Antwort.", uploadMissingAnswers: "Geben Sie für jeden neuen Intent eine Antwort ein: {names}" },
+} satisfies Record<SupportedLanguage, IntentImportAnswerCatalog>;
 
 export function formatIntentListText(
   template: string,
@@ -146,11 +168,11 @@ const INTENT_LIST_BASE_CATALOGS = {
 } satisfies Record<SupportedLanguage, IntentListBaseCatalog>;
 
 export const INTENT_LIST_CATALOGS = {
-  ko: { ...INTENT_LIST_BASE_CATALOGS.ko, ...INTENT_VALIDATION_CATALOGS.ko },
-  en: { ...INTENT_LIST_BASE_CATALOGS.en, ...INTENT_VALIDATION_CATALOGS.en },
-  "zh-CN": { ...INTENT_LIST_BASE_CATALOGS["zh-CN"], ...INTENT_VALIDATION_CATALOGS["zh-CN"] },
-  ja: { ...INTENT_LIST_BASE_CATALOGS.ja, ...INTENT_VALIDATION_CATALOGS.ja },
-  vi: { ...INTENT_LIST_BASE_CATALOGS.vi, ...INTENT_VALIDATION_CATALOGS.vi },
-  fr: { ...INTENT_LIST_BASE_CATALOGS.fr, ...INTENT_VALIDATION_CATALOGS.fr },
-  de: { ...INTENT_LIST_BASE_CATALOGS.de, ...INTENT_VALIDATION_CATALOGS.de },
+  ko: { ...INTENT_LIST_BASE_CATALOGS.ko, ...INTENT_VALIDATION_CATALOGS.ko, ...INTENT_IMPORT_ANSWER_CATALOGS.ko },
+  en: { ...INTENT_LIST_BASE_CATALOGS.en, ...INTENT_VALIDATION_CATALOGS.en, ...INTENT_IMPORT_ANSWER_CATALOGS.en },
+  "zh-CN": { ...INTENT_LIST_BASE_CATALOGS["zh-CN"], ...INTENT_VALIDATION_CATALOGS["zh-CN"], ...INTENT_IMPORT_ANSWER_CATALOGS["zh-CN"] },
+  ja: { ...INTENT_LIST_BASE_CATALOGS.ja, ...INTENT_VALIDATION_CATALOGS.ja, ...INTENT_IMPORT_ANSWER_CATALOGS.ja },
+  vi: { ...INTENT_LIST_BASE_CATALOGS.vi, ...INTENT_VALIDATION_CATALOGS.vi, ...INTENT_IMPORT_ANSWER_CATALOGS.vi },
+  fr: { ...INTENT_LIST_BASE_CATALOGS.fr, ...INTENT_VALIDATION_CATALOGS.fr, ...INTENT_IMPORT_ANSWER_CATALOGS.fr },
+  de: { ...INTENT_LIST_BASE_CATALOGS.de, ...INTENT_VALIDATION_CATALOGS.de, ...INTENT_IMPORT_ANSWER_CATALOGS.de },
 } satisfies Record<SupportedLanguage, IntentListCatalog>;

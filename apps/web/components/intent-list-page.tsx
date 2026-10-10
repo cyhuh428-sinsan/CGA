@@ -35,11 +35,21 @@ import {
   getDialogTypeLabel,
   getNextDialogNo,
   getVersionDialogs,
-  withEnsuredDialogFlowGraph,
   withUpdatedDialogs,
 } from "@/lib/dialog-assets";
+import {
+  createImportedIntentFlowGraph,
+  getDialogFlowPrimaryAnswer,
+} from "@/lib/dialog-flow";
 import { getVersionUserDictionary } from "@/lib/dictionary-assets";
 import { getVersionUserEntities } from "@/lib/entity-assets";
+import {
+  buildIntentDownloadCsv,
+  buildIntentUploadTemplateCsv,
+  findMissingNewIntentAnswerNames,
+  groupIntentImportRows,
+  parseIntentImportRows,
+} from "@/lib/intent-import";
 import {
   fetchStudioBotVersionDialogs,
   fetchStudioBotVersionReferences,
@@ -83,14 +93,6 @@ type SortKey =
 type ValidationFilter = "all" | "success" | "failure" | "none";
 type DialogFilter = "all" | "intent" | "module";
 type SearchType = "all" | "dialogType" | "validation" | "tag";
-
-type IntentUploadRow = {
-  name: string;
-  displayName: string;
-  dialogKey: string;
-  utterance: string;
-  tags: string[];
-};
 
 type IntentUploadResult = {
   message: string;
@@ -231,166 +233,6 @@ function downloadTextFile(fileName: string, text: string, type = "text/plain;cha
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
-}
-
-function escapeCsvCell(value: string | number | boolean) {
-  const text = String(value ?? "");
-  if (/[",\n\r]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
-
-function splitCsvLine(line: string) {
-  const cells: string[] = [];
-  let current = "";
-  let inQuote = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-    const nextChar = line[index + 1];
-
-    if (char === '"' && inQuote && nextChar === '"') {
-      current += '"';
-      index += 1;
-      continue;
-    }
-
-    if (char === '"') {
-      inQuote = !inQuote;
-      continue;
-    }
-
-    if (char === "," && !inQuote) {
-      cells.push(current.trim());
-      current = "";
-      continue;
-    }
-
-    current += char;
-  }
-
-  cells.push(current.trim());
-  return cells;
-}
-
-function parseCsvText(text: string) {
-  const normalizedText = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const rows: string[][] = [];
-  let currentLine = "";
-  let inQuote = false;
-
-  for (let index = 0; index < normalizedText.length; index += 1) {
-    const char = normalizedText[index];
-    const nextChar = normalizedText[index + 1];
-
-    if (char === '"' && inQuote && nextChar === '"') {
-      currentLine += '""';
-      index += 1;
-      continue;
-    }
-
-    if (char === '"') {
-      inQuote = !inQuote;
-    }
-
-    if (char === "\n" && !inQuote) {
-      if (currentLine.trim()) {
-        rows.push(splitCsvLine(currentLine));
-      }
-      currentLine = "";
-      continue;
-    }
-
-    currentLine += char;
-  }
-
-  if (currentLine.trim()) {
-    rows.push(splitCsvLine(currentLine));
-  }
-
-  return rows;
-}
-
-function normalizeHeader(value: string) {
-  return value.trim().replace(/\s+/g, "").toLowerCase();
-}
-
-function getCellByHeaders(
-  cells: string[],
-  headerMap: Map<string, number>,
-  keys: string[],
-  fallbackIndex: number,
-) {
-  for (const key of keys) {
-    const index = headerMap.get(normalizeHeader(key));
-    if (index != null) {
-      return cells[index]?.trim() ?? "";
-    }
-  }
-
-  return cells[fallbackIndex]?.trim() ?? "";
-}
-
-function parseIntentImportRows(text: string): IntentUploadRow[] {
-  const rows = parseCsvText(text);
-  if (rows.length === 0) {
-    return [];
-  }
-
-  const firstRow = rows[0].map(normalizeHeader);
-  const hasHeader = firstRow.some((cell) =>
-    ["의도명", "intentname", "학습문장", "utterance"].includes(cell),
-  );
-  const headerMap = new Map<string, number>();
-  const dataRows = hasHeader ? rows.slice(1) : rows;
-
-  if (hasHeader) {
-    rows[0].forEach((header, index) => {
-      headerMap.set(normalizeHeader(header), index);
-    });
-  }
-
-  return dataRows
-    .map((cells) => {
-      const name = getCellByHeaders(cells, headerMap, ["의도명", "Intent Name", "intentName", "name"], 0);
-      const displayName = getCellByHeaders(cells, headerMap, ["표시명", "Display Name", "displayName"], 1);
-      const dialogKey = getCellByHeaders(cells, headerMap, ["의도 Key", "Intent Key", "dialogKey"], 2);
-      const utterance = getCellByHeaders(cells, headerMap, ["학습문장", "Utterance", "utterance"], 3);
-      const tagText = getCellByHeaders(cells, headerMap, ["태그", "Tags", "tags"], 4);
-
-      return {
-        name,
-        displayName,
-        dialogKey,
-        utterance,
-        tags: tagText
-          .split(/[|;]/)
-          .map((item) => item.trim())
-          .filter(Boolean),
-      };
-    })
-    .filter((row) => row.name || row.displayName || row.dialogKey || row.utterance || row.tags.length > 0);
-}
-
-function buildIntentDownloadCsv(dialogs: VersionDialogAsset[]) {
-  const rows = [["의도명", "표시명", "의도 Key", "학습문장", "태그"]];
-
-  dialogs
-    .filter((dialog) => dialog.dialogType === 1)
-    .forEach((dialog) => {
-      const tags = dialog.tags.join("|");
-      if (dialog.utterances.length === 0) {
-        rows.push([dialog.name, dialog.displayName, dialog.dialogKey, "", tags]);
-        return;
-      }
-
-      dialog.utterances.forEach((utterance) => {
-        rows.push([dialog.name, dialog.displayName, dialog.dialogKey, utterance.text, tags]);
-      });
-    });
-
-  return rows.map((row) => row.map((cell) => escapeCsvCell(cell)).join(",")).join("\n");
 }
 
 function buildUtterance(text: string): VersionDialogUtterance {
@@ -1162,15 +1004,18 @@ export function IntentListPage() {
   function handleDownloadTemplate() {
     downloadTextFile(
       "intent-upload-template.csv",
-      [["의도명", "표시명", "의도 Key", "학습문장", "태그"], ["주문조회", "주문조회", "", "주문 상태 알려줘", "주문|배송"]]
-        .map((row) => row.map((cell) => escapeCsvCell(cell)).join(","))
-        .join("\n"),
+      buildIntentUploadTemplateCsv(),
       "text/csv;charset=utf-8",
     );
   }
 
   function handleDownloadIntents() {
-    const csv = buildIntentDownloadCsv(dialogs);
+    const answersByDialogId = new Map(
+      dialogs
+        .filter((dialog) => dialog.dialogType === 1)
+        .map((dialog) => [dialog.id, getDialogFlowPrimaryAnswer(referenceDocument, dialog)]),
+    );
+    const csv = buildIntentDownloadCsv(dialogs, answersByDialogId);
     downloadTextFile("intent-list.csv", csv, "text/csv;charset=utf-8");
   }
 
@@ -1187,6 +1032,12 @@ export function IntentListPage() {
       setErrorMessage(copy.uploadNoIntents);
       return;
     }
+    const intentGroups = groupIntentImportRows(rows);
+    if (intentGroups.length === 0) {
+      setMessage("");
+      setErrorMessage(copy.uploadNoIntents);
+      return;
+    }
 
     const now = new Date().toISOString();
     const currentDialogs = [...dialogs];
@@ -1196,6 +1047,15 @@ export function IntentListPage() {
         .filter((dialog) => dialog.dialogType === 1)
         .map((dialog) => [normalizeTextKey(dialog.name), dialog]),
     );
+    const missingAnswerNames = findMissingNewIntentAnswerNames(
+      intentGroups,
+      currentDialogs.filter((dialog) => dialog.dialogType === 1).map((dialog) => dialog.name),
+    );
+    if (missingAnswerNames.length > 0) {
+      setMessage("");
+      setErrorMessage(formatIntentListText(copy.uploadMissingAnswers, { names: missingAnswerNames.join(", ") }));
+      return;
+    }
     const utteranceOwners = new Map<string, string>();
 
     currentDialogs
@@ -1210,18 +1070,15 @@ export function IntentListPage() {
     let addedIntentCount = 0;
     let addedUtteranceCount = 0;
     let duplicateUtteranceCount = 0;
-    let invalidRowCount = 0;
+    const invalidRowCount = rows.filter((row) => !row.name.trim()).length;
     let duplicateKeyCount = 0;
     const updatedIntentIds = new Set<string>();
+    const addedIntentIds = new Set<string>();
+    const addedIntentAnswers = new Map<string, string>();
 
-    for (const row of rows) {
-      const normalizedName = row.name.trim();
-      if (!normalizedName) {
-        invalidRowCount += 1;
-        continue;
-      }
-
-      const normalizedKey = row.dialogKey.trim();
+    for (const group of intentGroups) {
+      const normalizedName = group.name;
+      const normalizedKey = group.dialogKey;
       const duplicatedKey =
         normalizedKey &&
         nextDialogs.some(
@@ -1236,16 +1093,17 @@ export function IntentListPage() {
 
       const intentKey = normalizeTextKey(normalizedName);
       let nextDialog = intentByName.get(intentKey);
-      const isNew = !nextDialog;
 
       if (!nextDialog) {
         nextDialog = {
           ...createEmptyVersionDialog(1),
           dialogNo: nextDialogNo,
           name: normalizedName,
-          displayName: row.displayName.trim() || normalizedName,
+          displayName: group.displayName || normalizedName,
           dialogKey: normalizedKey || crypto.randomUUID(),
           tags: [],
+          cardCount: 2,
+          hasFallbackResponse: true,
           updatedAt: now,
           updatedBy: authSession.user.login_id,
         };
@@ -1253,10 +1111,12 @@ export function IntentListPage() {
         addedIntentCount += 1;
         intentByName.set(intentKey, nextDialog);
         nextDialogs.unshift(nextDialog);
+        addedIntentIds.add(nextDialog.id);
+        addedIntentAnswers.set(nextDialog.id, group.answer);
       } else {
         nextDialog = {
           ...nextDialog,
-          displayName: row.displayName.trim() || nextDialog.displayName || normalizedName,
+          displayName: group.displayName || nextDialog.displayName || normalizedName,
           dialogKey: normalizedKey || nextDialog.dialogKey,
           updatedAt: now,
           updatedBy: authSession.user.login_id,
@@ -1264,12 +1124,11 @@ export function IntentListPage() {
         updatedIntentIds.add(nextDialog.id);
       }
 
-      if (row.tags.length > 0) {
-        nextDialog.tags = [...new Set([...nextDialog.tags, ...row.tags])];
+      if (group.tags.length > 0) {
+        nextDialog.tags = [...new Set([...nextDialog.tags, ...group.tags])];
       }
 
-      const normalizedUtterance = row.utterance.trim();
-      if (normalizedUtterance) {
+      for (const normalizedUtterance of group.utterances) {
         const utteranceKey = normalizeTextKey(normalizedUtterance);
         const existingOwnerId = utteranceOwners.get(utteranceKey);
         if (existingOwnerId && existingOwnerId !== nextDialog.id) {
@@ -1282,6 +1141,8 @@ export function IntentListPage() {
           addedUtteranceCount += 1;
         }
       }
+
+      intentByName.set(intentKey, nextDialog);
 
       const targetIndex = nextDialogs.findIndex((dialog) => dialog.id === nextDialog?.id);
       if (targetIndex >= 0) {
@@ -1305,11 +1166,13 @@ export function IntentListPage() {
       },
       nextDialogs,
     );
-    nextDialogs
-      .filter((dialog) => dialog.dialogType === 1)
-      .forEach((dialog) => {
-        nextDocument = withEnsuredDialogFlowGraph(nextDocument, dialog);
-      });
+    const addedIntentGraphs = nextDialogs
+      .filter((dialog) => addedIntentIds.has(dialog.id))
+      .map((dialog) => createImportedIntentFlowGraph(dialog, addedIntentAnswers.get(dialog.id) ?? ""));
+    nextDocument = {
+      ...nextDocument,
+      dialog_flow_graphs: [...nextDocument.dialog_flow_graphs, ...addedIntentGraphs],
+    };
 
     await persistVersionDocument(nextDocument, copy.uploadComplete);
     setUploadDialogOpen(false);
@@ -1752,8 +1615,8 @@ export function IntentListPage() {
             <>
               <p>{copy.uploadEncodingHelp}</p>
               <ul className="asset-upload-dialog__list">
-                <li>{copy.uploadHeaderHelp}</li>
-                <li>{copy.uploadRepeatedNameHelp}</li>
+                <li>{copy.uploadAnswerHeaderHelp}</li>
+                <li>{copy.uploadRepeatedNameAnswerHelp}</li>
               </ul>
             </>
           }
