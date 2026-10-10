@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { apiRequest } from "@/lib/api";
@@ -14,37 +14,40 @@ import {
 import { fetchStudioBots } from "@/lib/studio-bots-api";
 import { useI18n } from "@/components/language-provider";
 import { normalizeSupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/language";
-
-const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
-const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings/;
+import { resolveStudioWorkContext } from "@/components/studio-work-context";
 
 export function CgaStudioHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { language, setLanguage, t } = useI18n();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [botName, setBotName] = useState("");
   const [versionName, setVersionName] = useState("-");
+  const [lastBotScreen, setLastBotScreen] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const routeContext = useMemo(() => {
-    const versionMatch = pathname.match(botVersionPathPattern);
-    const settingsMatch = pathname.match(botSettingsPathPattern);
-    return {
-      botId: versionMatch?.[1] ?? settingsMatch?.[1] ?? "",
-      versionId: versionMatch?.[2] ?? "",
-    };
-  }, [pathname]);
+    return resolveStudioWorkContext({
+      pathname,
+      selectedBotId: searchParams.get("bot"),
+      selectedVersionId: searchParams.get("version"),
+      lastBotScreen,
+    });
+  }, [lastBotScreen, pathname, searchParams]);
 
   useEffect(() => {
     const currentSession = loadAuthSession();
     setSession(currentSession);
+    setLastBotScreen(currentSession ? loadLastBotScreen(currentSession.user.login_id) : null);
+  }, []);
 
-    if (!currentSession) {
+  useEffect(() => {
+    if (!session) {
       return;
     }
 
-    fetchStudioBots(currentSession.access_token)
+    fetchStudioBots(session.access_token)
       .then((bots) => {
         const currentBot = bots.find((bot) => bot.id === routeContext.botId);
         setBotName(currentBot?.name ?? "");
@@ -54,7 +57,7 @@ export function CgaStudioHeader() {
         setBotName("");
         setVersionName(routeContext.versionId || "-");
       });
-  }, [routeContext]);
+  }, [routeContext.botId, routeContext.versionId, session]);
 
   function handleLanguageChange(value: string) {
     setLanguage(normalizeSupportedLanguage(value));

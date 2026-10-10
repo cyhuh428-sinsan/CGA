@@ -15,6 +15,7 @@ import {
   type RecentOperationBot,
 } from "@/components/bot-operation-shared";
 import { useI18n } from "@/components/language-provider";
+import { buildStudioSelectionHref, resolveStudioQueryVersion } from "@/components/studio-work-context";
 import { loadAuthSession, saveLastBotScreen, type AuthSession } from "@/lib/auth";
 import { BOT_WORKSPACE_CATALOGS } from "@/lib/i18n/bot-workspace";
 import {
@@ -128,11 +129,12 @@ export function BotOperationsWorkspacePage() {
     }
     setSession(currentSession);
     setRecentBots(loadRecentOperationBots());
+    const requestedBotId = new URLSearchParams(window.location.search).get("bot") || "";
     fetchStudioBots(currentSession.access_token, true)
       .then((items) => {
         const operationBots = filterOperationBots(currentSession, items);
         setBots(operationBots);
-        setSelectedBotId(resolveInitialOperationBotId(currentSession, operationBots));
+        setSelectedBotId(resolveInitialOperationBotId(currentSession, operationBots, requestedBotId));
       })
       .catch((error) => setMessage(error instanceof Error ? error.message : copy.loadBotsError))
       .finally(() => setLoading(false));
@@ -145,7 +147,8 @@ export function BotOperationsWorkspacePage() {
     }
     setLoading(true);
     setMessage("");
-    const preferredVersion = selectedBot.active_version?.name || selectedBot.active_version?.id || "v1";
+    const requestedVersion = resolveStudioQueryVersion(window.location.search, selectedBot.id);
+    const preferredVersion = requestedVersion || selectedBot.active_version?.name || selectedBot.active_version?.id || "v1";
     fetchStudioWorkspaceContext(
       session.access_token,
       selectedBot.id,
@@ -162,10 +165,19 @@ export function BotOperationsWorkspacePage() {
           `/studio/bots/${selectedBot.id}/versions/${encodeURIComponent(currentVersionName)}/intents`,
           session.user.login_id,
         );
+        const nextHref = buildStudioSelectionHref(
+          "/studio/workspace",
+          window.location.search,
+          selectedBot.id,
+          currentVersionName,
+        );
+        if (`${window.location.pathname}${window.location.search}` !== nextHref) {
+          router.replace(nextHref, { scroll: false });
+        }
       })
       .catch((error) => setMessage(error instanceof Error ? error.message : copy.loadWorkspaceError))
       .finally(() => setLoading(false));
-  }, [selectedBot, session]);
+  }, [router, selectedBot, session]);
 
   const workRows = useMemo(() => {
     const dialogs = selectedVersion?.version_json?.dialogs || [];
@@ -197,6 +209,7 @@ export function BotOperationsWorkspacePage() {
     if (!bots.some((bot) => bot.id === botId)) return;
     setMessage("");
     setSelectedBotId(botId);
+    router.replace(buildStudioSelectionHref("/studio/workspace", window.location.search, botId), { scroll: false });
   }
 
   function openCurrent(target: "settings" | "configure" | "management" | "build") {

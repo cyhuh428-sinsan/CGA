@@ -24,9 +24,7 @@ import { ADMIN_NAVIGATION_CATALOGS, buildAdminNavigationGroups } from "@/lib/i18
 import { ACCOUNT_PAGE_CATALOGS, getAccountRoleLabel } from "@/lib/i18n/account-pages";
 import { STUDIO_RAIL_CATALOGS, formatStudioRailText } from "@/lib/i18n/studio-rail";
 import { GETTING_STARTED_CATALOGS, type GettingStartedCourseId } from "@/lib/i18n/getting-started";
-
-const botVersionPathPattern = /^\/studio\/bots\/([^/]+)\/versions\/([^/]+)/;
-const botSettingsPathPattern = /^\/studio\/bots\/([^/]+)\/settings(?:\/.*)?$/;
+import { buildStudioSelectionHref, resolveStudioWorkContext } from "@/components/studio-work-context";
 
 type PrimaryPanelId = "operations" | "build" | "api" | "admin";
 
@@ -216,21 +214,23 @@ export function StudioRail() {
   const groupSummary = session?.user.group_name ?? "-";
   const organizationSummary = session?.user.organization_name ?? railCopy.defaultServer;
   const lastBotScreen = session ? loadLastBotScreen(session.user.login_id) : null;
-  const botVersionMatch = pathname.match(botVersionPathPattern);
-  const botSettingsMatch = pathname.match(botSettingsPathPattern);
-  const lastBotVersionMatch = lastBotScreen?.match(botVersionPathPattern);
-  const routeVersionHint = searchParams.get("version")?.trim() || "";
-  const currentBotId = botVersionMatch?.[1] ?? botSettingsMatch?.[1] ?? lastBotVersionMatch?.[1] ?? "";
-  const currentVersionId =
-    botVersionMatch?.[2] ||
-    (botSettingsMatch ? routeVersionHint : "") ||
-    (lastBotVersionMatch?.[1] === currentBotId ? lastBotVersionMatch[2] : "") ||
-    "";
+  const currentContext = resolveStudioWorkContext({
+    pathname,
+    selectedBotId: searchParams.get("bot"),
+    selectedVersionId: searchParams.get("version"),
+    lastBotScreen,
+  });
+  const currentBotId = currentContext.botId;
+  const currentVersionId = currentContext.versionId;
   const hasBotContext = Boolean(currentBotId);
   const resolvedVersionId = currentVersionId || "v1";
   const currentBotBasePath = hasBotContext ? `/studio/bots/${currentBotId}/versions/${resolvedVersionId}` : "";
   const botContextFallback = "/studio/bots";
   const botWorkspaceHref = hasBotContext ? `${currentBotBasePath}/intents` : botContextFallback;
+  const isBuildBotSelectionPath = pathname === "/studio/workspace" && searchParams.get("mode") === "build";
+  const botSelectionHref = hasBotContext
+    ? buildStudioSelectionHref("/studio/workspace", "mode=build", currentBotId, currentVersionId)
+    : "/studio/workspace?mode=build";
   const visibleAdminGroups = hasAdminRole(roles)
     ? adminGroups
     : adminGroups.filter((group) => group.key === "status");
@@ -246,7 +246,7 @@ export function StudioRail() {
   const isOperationPath =
     isDbOperationsDashboardPath ||
     pathname === "/studio/bots" ||
-    pathname === "/studio/workspace" ||
+    (pathname === "/studio/workspace" && !isBuildBotSelectionPath) ||
     pathname === "/studio/operations-dashboard" ||
     pathname.startsWith("/studio/hubs") ||
     pathname.includes("/retraining") ||
@@ -270,12 +270,18 @@ export function StudioRail() {
   const buildNavigationGroups: BuildNavigationGroup[] = [
     {
       code: "01",
+      title: navigation.botSelect,
+      href: botSelectionHref,
+      active: isBuildBotSelectionPath,
+    },
+    {
+      code: "02",
       title: navigation.botCreate,
       href: "/studio/bots/new",
       active: pathname === "/studio/bots/new",
     },
     {
-      code: "02",
+      code: "03",
       title: navigation.botSettings,
       items: [
         { label: navigation.aiModelSettings, path: "", active: pathname === botSettingsBasePath },
@@ -292,13 +298,13 @@ export function StudioRail() {
       })),
     },
     {
-      code: "03",
+      code: "04",
       title: navigation.botConfigure,
       href: hasBotContext ? `${currentBotBasePath}/configure` : botContextFallback,
       active: pathname.includes("/configure"),
     },
     {
-      code: "04",
+      code: "05",
       title: navigation.botBuild,
       items: [
         { label: navigation.intentManagement, href: botWorkspaceHref, active: pathname.includes("/intents") },
@@ -307,13 +313,13 @@ export function StudioRail() {
       ],
     },
     {
-      code: "05",
+      code: "06",
       title: navigation.botTest,
       href: hasBotContext ? `${currentBotBasePath}/simulator` : botContextFallback,
       active: pathname.includes("/simulator"),
     },
     {
-      code: "06",
+      code: "07",
       title: navigation.botEvaluation,
       href: hasBotContext ? `${currentBotBasePath}/evaluation` : botContextFallback,
       active: pathname.includes("/evaluation"),

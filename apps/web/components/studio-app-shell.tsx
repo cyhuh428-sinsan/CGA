@@ -38,7 +38,9 @@ export function StudioAppShell({ children }: StudioAppShellProps) {
 
   return (
     <div className="studio-app-shell theme-ink-sand">
-      <CgaStudioHeader />
+      <Suspense fallback={null}>
+        <CgaStudioHeader />
+      </Suspense>
       <Suspense fallback={null}>
         <StudioRail />
       </Suspense>
