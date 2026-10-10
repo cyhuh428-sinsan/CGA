@@ -1302,6 +1302,98 @@ export function createDefaultDialogFlowGraph(
   };
 }
 
+export function createImportedIntentFlowGraph(
+  dialog: VersionDialogAsset,
+  answer: string,
+): DialogFlowGraph {
+  const graph = createDefaultDialogFlowGraph(dialog);
+  const talkNodeId = crypto.randomUUID();
+  const endNodeId = crypto.randomUUID();
+  const normalizedAnswer = answer.trim();
+
+  return {
+    ...graph,
+    nodes: [
+      graph.nodes[0],
+      {
+        id: talkNodeId,
+        kind: "talk",
+        title: "Talk 1",
+        position: { x: 360, y: 96 },
+        config: normalizeTalkConfig({
+          messageType: "text",
+          basicMessages: [normalizedAnswer],
+          messages: [normalizedAnswer],
+        }),
+      },
+      {
+        id: endNodeId,
+        kind: "end",
+        title: "End 1",
+        position: { x: 600, y: 96 },
+        config: normalizeEndConfig({}),
+      },
+    ],
+    links: [
+      {
+        id: crypto.randomUUID(),
+        sourceNodeId: graph.nodes[0].id,
+        sourcePort: "next",
+        targetNodeId: talkNodeId,
+        kind: "default",
+        waypoints: [],
+      },
+      {
+        id: crypto.randomUUID(),
+        sourceNodeId: talkNodeId,
+        sourcePort: "next",
+        targetNodeId: endNodeId,
+        kind: "default",
+        waypoints: [],
+      },
+    ],
+  };
+}
+
+export function getDialogFlowPrimaryAnswer(
+  document: Pick<VersionDocument, "dialog_flow_graphs">,
+  dialog: Pick<VersionDialogAsset, "id">,
+) {
+  const graph = document.dialog_flow_graphs.find((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return false;
+    }
+    return String((item as Record<string, unknown>).dialogId ?? "") === dialog.id;
+  });
+  if (!graph || typeof graph !== "object" || Array.isArray(graph)) {
+    return "";
+  }
+
+  const nodes = Array.isArray((graph as Record<string, unknown>).nodes)
+    ? ((graph as Record<string, unknown>).nodes as unknown[])
+    : [];
+  for (const item of nodes) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      continue;
+    }
+    const node = item as Record<string, unknown>;
+    if (node.kind !== "talk" || !node.config || typeof node.config !== "object" || Array.isArray(node.config)) {
+      continue;
+    }
+    const config = node.config as Record<string, unknown>;
+    for (const key of ["basicMessages", "messages"] as const) {
+      if (!Array.isArray(config[key])) {
+        continue;
+      }
+      const answer = config[key].find((value) => typeof value === "string" && value.trim());
+      if (typeof answer === "string") {
+        return answer.trim();
+      }
+    }
+  }
+  return "";
+}
+
 export function getDialogFlowGraph(
   document: VersionDocument,
   dialog: VersionDialogAsset,

@@ -15,7 +15,11 @@ registerHooks({
   },
 });
 
-const { createDefaultDialogFlowGraph } = await import("../lib/dialog-flow.ts");
+const {
+  createDefaultDialogFlowGraph,
+  createImportedIntentFlowGraph,
+  getDialogFlowPrimaryAnswer,
+} = await import("../lib/dialog-flow.ts");
 
 test("새 대화 설계는 시작 카드만 생성한다", () => {
   const graph = createDefaultDialogFlowGraph({
@@ -42,4 +46,39 @@ test("새 대화 설계는 시작 카드만 생성한다", () => {
 
   assert.deepEqual(graph.nodes.map((node) => node.kind), ["start"]);
   assert.deepEqual(graph.links, []);
+});
+
+test("파일로 등록한 새 의도는 답변 Talk과 End가 연결된다", () => {
+  const graph = createImportedIntentFlowGraph({
+    id: "intent-1",
+    dialogNo: 100001,
+    dialogType: 1,
+    name: "대출상담",
+    displayName: "대출상담",
+    dialogKey: "loan",
+    classificationType: "기본",
+    transitionLocked: false,
+    returnBlocked: false,
+    feedbackEnabled: false,
+    llmAnswerPrompt: "",
+    tags: [],
+    utterances: [],
+    entityBindings: [],
+    validationStatus: "none",
+    cardCount: 0,
+    hasFallbackResponse: false,
+    updatedAt: "2026-10-11T00:00:00.000Z",
+    updatedBy: "tester",
+  }, "상담 안내입니다.");
+
+  assert.deepEqual(graph.nodes.map((node) => node.kind), ["start", "talk", "end"]);
+  assert.deepEqual(graph.links.map((link) => link.sourcePort), ["next", "next"]);
+  assert.deepEqual(graph.nodes[1].config.basicMessages, ["상담 안내입니다."]);
+  assert.equal(
+    getDialogFlowPrimaryAnswer(
+      { dialog_flow_graphs: [graph] },
+      { id: "intent-1" },
+    ),
+    "상담 안내입니다.",
+  );
 });
