@@ -69,7 +69,9 @@ export function AdminConsoleLayout({ children }: AdminConsoleLayoutProps) {
   if (!authorized) {
     return (
       <div className="admin-console">
-        <CgaStudioHeader />
+        <Suspense fallback={null}>
+          <CgaStudioHeader />
+        </Suspense>
         <Suspense fallback={null}>
           <StudioRail />
         </Suspense>
@@ -82,7 +84,9 @@ export function AdminConsoleLayout({ children }: AdminConsoleLayoutProps) {
 
   return (
     <div className="admin-console">
-      <CgaStudioHeader />
+      <Suspense fallback={null}>
+        <CgaStudioHeader />
+      </Suspense>
       <Suspense fallback={null}>
         <StudioRail />
       </Suspense>

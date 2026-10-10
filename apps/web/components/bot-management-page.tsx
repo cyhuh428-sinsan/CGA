@@ -20,6 +20,7 @@ import {
 } from "@/components/bot-operation-shared";
 import { BotManagementMetadata } from "@/components/bot-management-metadata";
 import { useI18n } from "@/components/language-provider";
+import { buildStudioSelectionHref, resolveStudioVersionId } from "@/components/studio-work-context";
 import { loadAuthSession, type AuthSession } from "@/lib/auth";
 import {
   BOT_MANAGEMENT_CATALOGS,
@@ -69,6 +70,20 @@ export function BotManagementPage() {
   const activeVersion = useMemo(() => versions.find((version) => version.is_active) || null, [versions]);
 
   useEffect(() => {
+    if (!session || !selectedBot || !selectedVersion) return;
+    rememberOperationVersion(session, selectedBot, selectedVersion);
+    const nextHref = buildStudioSelectionHref(
+      "/studio/bots",
+      window.location.search,
+      selectedBot.id,
+      operationVersionName(selectedVersion),
+    );
+    if (`${window.location.pathname}${window.location.search}` !== nextHref) {
+      router.replace(nextHref, { scroll: false });
+    }
+  }, [router, selectedBot, selectedVersion, session]);
+
+  useEffect(() => {
     const currentSession = loadAuthSession();
     if (!currentSession) {
       router.replace("/login");
@@ -95,10 +110,11 @@ export function BotManagementPage() {
     fetchStudioBotVersions(session.access_token, selectedBotId, true)
       .then((items) => {
         const sorted = [...items].sort((left, right) => (right.updated_at || "").localeCompare(left.updated_at || ""));
+        const requestedVersion = new URLSearchParams(window.location.search).get("version") || "";
         setVersions(sorted);
         setSelectedVersionId((current) => current && sorted.some((item) => item.id === current)
           ? current
-          : (sorted.find((item) => item.is_active) || sorted[0])?.id || "");
+          : resolveStudioVersionId(sorted, requestedVersion));
       })
       .catch((error) => setMessage(error instanceof Error ? error.message : copy.loadVersionsError))
       .finally(() => setBusy(false));
@@ -107,7 +123,7 @@ export function BotManagementPage() {
   function chooseBot(bot: StudioBotApiItem) {
     setSelectedBotId(bot.id);
     setSelectedVersionId("");
-    router.replace(`/studio/bots?bot=${encodeURIComponent(bot.id)}`);
+    router.replace(buildStudioSelectionHref("/studio/bots", window.location.search, bot.id), { scroll: false });
   }
 
   function chooseVersion(version: StudioBotVersionApiItem) {
