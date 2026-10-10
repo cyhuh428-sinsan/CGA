@@ -353,14 +353,6 @@ function buildStartNodeId(dialogId: string) {
   return `flow-start-${dialogId}`;
 }
 
-function buildSystemVariableNodeId(dialogId: string) {
-  return `flow-system-variable-${dialogId}`;
-}
-
-function buildSystemLinkId(dialogId: string) {
-  return `flow-link-start-${dialogId}`;
-}
-
 export function isSystemFlowNode(node: DialogFlowNode) {
   return node.kind === "start" || node.kind === "system-variable";
 }
@@ -1295,13 +1287,6 @@ export function createDefaultDialogFlowGraph(
         previewUtterance: getFirstUtterancePreview(dialog),
       },
     },
-    {
-      id: buildSystemVariableNodeId(dialog.id),
-      kind: "system-variable",
-      title: "변수",
-      position: { x: 280, y: 96 },
-      config: {},
-    },
   ];
 
   return {
@@ -1311,16 +1296,7 @@ export function createDefaultDialogFlowGraph(
     dialogType: dialog.dialogType,
     name: dialog.name,
     nodes,
-    links: [
-      {
-        id: buildSystemLinkId(dialog.id),
-        sourceNodeId: buildStartNodeId(dialog.id),
-        sourcePort: "next",
-        targetNodeId: buildSystemVariableNodeId(dialog.id),
-        kind: "default",
-        waypoints: [],
-      },
-    ],
+    links: [],
     updatedAt: dialog.updatedAt,
     updatedBy: dialog.updatedBy,
   };
