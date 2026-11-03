@@ -26,6 +26,7 @@ from app.services.edit_lock_cleanup import delete_expired_edit_locks
 from app.services.channel_connection_supervisor import ConnectionSupervisor, ADAPTERS
 from app.services.channel_connection_teams import TeamsAdapter
 from app.services.channel_connection_slack import SlackAdapter
+from app.services.channel_connection_discord import DiscordAdapter
 
 
 configure_logging()
@@ -35,6 +36,7 @@ edit_lock_cleanup_task: asyncio.Task | None = None
 connection_supervisor = ConnectionSupervisor(SessionLocal)
 ADAPTERS["ms_teams"] = TeamsAdapter(SessionLocal, owner=connection_supervisor.owner)
 ADAPTERS["slack"] = SlackAdapter(SessionLocal, owner=connection_supervisor.owner)
+ADAPTERS["discord"] = DiscordAdapter(SessionLocal, owner=connection_supervisor.owner)
 
 
 def _queue_worker_sleep_seconds(interval: float, consecutive_failures: int) -> float:

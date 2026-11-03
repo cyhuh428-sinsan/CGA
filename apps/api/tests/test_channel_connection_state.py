@@ -104,6 +104,32 @@ def accept(s, db, row, lease):
     return s.accept_delivery(db, row.id, lease.id, "worker-1", lease.fence, event(), key=KEY, version="v1")
 
 
+@pytest.mark.parametrize('decision', [False, None, 1, 'yes'])
+def test_eligibility_only_explicit_true_claims_and_blocks_its_room(state_db, decision):
+    s, db, row, lease = activated(state_db)
+    first = accept(s, db, row, lease)
+    same = s.accept_delivery(db, row.id, lease.id, 'worker-1', 1,
+        {**event(), 'eventId':'same-room-second'}, key=KEY, version='v1')
+    other = s.accept_delivery(db, row.id, lease.id, 'worker-1', 1,
+        {**event(), 'eventId':'other-room', 'nativeRoomKey':'other-room'}, key=KEY, version='v1')
+    now = s.clock(db)
+    first.created_at, same.created_at, other.created_at = now-timedelta(seconds=3), now-timedelta(seconds=2), now-timedelta(seconds=1)
+    db.flush()
+    claimed = s.claim_delivery(db, row.id, lease.id, 'worker-1', 1, deadline_seconds=30,
+        eligibility=lambda item: decision if item.id == first.id else True)
+    assert claimed.id == other.id
+    assert first.status == same.status == 'received' and first.execution_claim_id is None
+
+
+def test_eligibility_exception_does_not_claim(state_db):
+    s, db, row, lease = activated(state_db)
+    item = accept(s, db, row, lease)
+    def reject(item): raise RuntimeError('synthetic eligibility failure')
+    with pytest.raises(RuntimeError):
+        s.claim_delivery(db, row.id, lease.id, 'worker-1', 1, deadline_seconds=30, eligibility=reject)
+    assert item.status == 'received' and item.execution_claim_id is None
+
+
 def test_single_live_owner_and_monotonic_fence(state_db):
     s, db, row, lease = activated(state_db)
     assert lease.fence == 1

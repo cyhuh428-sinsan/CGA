@@ -49,6 +49,33 @@ def seed_native(state_db):
     return s, db, row, lease, factory, ConnectionRuntime(factory, key=KEY, version="v1")
 
 
+def test_listener_eligibility_prevents_native_claim_and_message(state_db):
+    from app.models import ChannelConnectionDelivery,ChannelMessage
+    s,db,row,lease,factory,runtime=seed_native(state_db)
+    listener=SyntheticListener();listener.can_execute=lambda item:False
+    async def run():
+        did=await runtime.receive(row.id,lease.id,'worker-1',1,event())
+        assert not await runtime.process_one(row.id,lease.id,'worker-1',1,listener)
+        db.expire_all();assert db.get(ChannelConnectionDelivery,did).status=='received'
+        assert db.query(ChannelMessage).count()==0 and listener.sent==[]
+    asyncio.run(run())
+
+
+def test_ready_resume_sends_existing_execution_without_second_native_claim(state_db):
+    from app.models import ChannelConnectionDelivery,ChannelMessage
+    s,db,row,lease,factory,runtime=seed_native(state_db)
+    listener=SyntheticListener();listener.can_execute=lambda item:True
+    async def run():
+        did=await runtime.receive(row.id,lease.id,'worker-1',1,event(channelId='C123'))
+        assert await asyncio.to_thread(runtime._execute_one,row.id,lease.id,'worker-1',1,listener.can_execute)==did
+        db.expire_all();assert db.get(ChannelConnectionDelivery,did).status=='ready' and db.query(ChannelMessage).count()==2
+        listener.can_execute=lambda item:False
+        assert await runtime.process_one(row.id,lease.id,'worker-1',1,listener)
+        db.expire_all();assert db.get(ChannelConnectionDelivery,did).status=='sent' and db.query(ChannelMessage).count()==2
+        assert len(listener.sent)==1
+    asyncio.run(run())
+
+
 def test_receive_real_native_fixed_answer_and_send(state_db, monkeypatch):
     from app.services.channel_connection_runtime import ConnectionRuntime
     import socket

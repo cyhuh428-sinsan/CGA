@@ -60,12 +60,13 @@ class ConnectionRuntime:
         return delivery_id
 
     async def process_one(self, connection_id, installation_id, owner, fence, listener):
-        delivery_id = await asyncio.to_thread(self._execute_one, connection_id, installation_id, owner, fence)
+        delivery_id = await asyncio.to_thread(self._execute_one, connection_id, installation_id, owner, fence,
+            getattr(listener, 'can_execute', None))
         if delivery_id is None:
             return False
         return await self._send(delivery_id, installation_id, owner, fence, listener)
 
-    def _execute_one(self, connection_id, installation_id, owner, fence):
+    def _execute_one(self, connection_id, installation_id, owner, fence, eligibility=None):
         with self.session_factory() as db:
             state._live(db, connection_id, installation_id, owner, fence)
             state.recover_expired(db, connection_id)
@@ -75,7 +76,8 @@ class ConnectionRuntime:
             if ready is not None:
                 db.commit()
                 return ready
-            item = state.claim_delivery(db, connection_id, installation_id, owner, fence, deadline_seconds=300)
+            item = state.claim_delivery(db, connection_id, installation_id, owner, fence, deadline_seconds=300,
+                eligibility=eligibility)
             if item is None:
                 db.commit(); return None
             delivery_id, claim, generation = item.id, item.execution_claim_id, item.generation

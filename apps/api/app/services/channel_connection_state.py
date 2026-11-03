@@ -198,7 +198,7 @@ def _delivery(db, delivery_id):
     return item
 
 
-def claim_delivery(db, connection_id, installation_id, owner, fence, *, deadline_seconds):
+def claim_delivery(db, connection_id, installation_id, owner, fence, *, deadline_seconds, eligibility=None):
     if not 5 <= deadline_seconds <= 7200: raise HTTPException(422, "INVALID_EXECUTION_DEADLINE")
     row = _live(db, connection_id, installation_id, owner, fence)
     items = db.scalars(select(ChannelConnectionDelivery).where(ChannelConnectionDelivery.connection_id == row.id,
@@ -211,6 +211,9 @@ def claim_delivery(db, connection_id, installation_id, owner, fence, *, deadline
         if item.generation != row.generation:
             item.status, item.last_error_code = "cancelled", "CONNECTION_CHANGED"
         elif item.native_room_hash not in blocked:
+            if eligibility is not None and eligibility(item) is not True:
+                blocked.add(item.native_room_hash)
+                continue
             item.status, item.execution_claim_id, item.installation_fence = "executing", str(uuid4()), fence
             item.deadline_at = clock(db) + timedelta(seconds=deadline_seconds)
             db.flush(); return item
