@@ -13,6 +13,8 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from fastapi import HTTPException
+from sqlalchemy import select
+from app.services import channel_connection_state as state
 from app.services.channel_connection_bridge import convert_packet
 from app.services.channel_connection_runtime import ConnectionTarget
 
@@ -121,6 +123,7 @@ class SlackBinding:
 
 class SlackAdapter:
     def __init__(self, sessions, *, owner, http=None, socket=None):
+        self.sessions = sessions
         self.owner = owner
         self.http, self.socket = http or SlackHttpTransport(), socket or SlackSocketTransport()
         self.bindings, self.open_not_before = {}, {}
@@ -319,12 +322,52 @@ class SlackListener:
         except (ValueError, OverflowError, TypeError): raise HTTPException(422, 'SLACK_EVENT_TIME_INVALID') from None
         normalized['destination'] = dict(team_id=team, app_id=self.app_id, bot_user_id=target.account_id,
             channelId=channel, threadTs=normalized.get('threadTs'), generation=target.generation)
+        try:selection=json.loads(normalized['message'])
+        except (ValueError,TypeError):selection=None
+        if isinstance(selection,dict) and selection.get('webchatRichFormVersion')=='1.0':
+            # native가 이해하는 구조화 텍스트도 callback과 같은 원본 검증을 통과해야 한다.
+            normalized['sourceMessageId']=selection.get('sourceMessageId')
+            normalized['message']=await asyncio.to_thread(self._selection,target,normalized)
         if (self.stopped or source is not self.ws or revision != self.revision
             or self.targets.get(target.id) != target or self._binding(target) != binding):
             raise HTTPException(409, 'CONNECTION_CHANGED')
         # receive는 암호화 원장 commit만 수행한다. 봇 실행/송신은 supervisor의 별도 작업이다.
         receipt = await receive(target.id, normalized)
         if receipt is None: raise RuntimeError('SLACK_COMMIT_UNCONFIRMED')
+
+    def _selection(self,target,event):
+        from uuid import UUID
+        from app.models import ChannelConnectionRoom,ChannelRoom,ChannelMessage,Bot,ChannelInstallationLease
+        try:identifier=UUID(event.get('sourceMessageId'))
+        except (ValueError,TypeError,AttributeError):raise HTTPException(422,'SLACK_SELECTION_INVALID') from None
+        with self.adapter.sessions() as db:
+            leases=db.scalars(select(ChannelInstallationLease).where(ChannelInstallationLease.provider=='slack',
+                ChannelInstallationLease.listener_scope_hash==state._digest(['slack','verified-listener','slack-app:'+self.app_id]),
+                ChannelInstallationLease.owner==self.adapter.owner,ChannelInstallationLease.lease_expires_at>state.clock(db))).all()
+            if len(leases)!=1:raise HTTPException(409,'CONNECTION_CHANGED')
+            lease=state._installation(db,leases[0].id,self.adapter.owner,leases[0].fence)
+            row=state._live(db,target.id,lease.id,self.adapter.owner,lease.fence)
+            if ConnectionTarget.from_row(row)!=target:raise HTTPException(409,'CONNECTION_CHANGED')
+            scope=[row.provider,row.installation_id,row.account_id,row.target_id,event['nativeRoomKey']]
+            source=db.scalar(select(ChannelMessage).join(ChannelRoom,ChannelRoom.id==ChannelMessage.room_id)
+                .join(Bot,Bot.id==ChannelRoom.bot_id).join(ChannelConnectionRoom,ChannelConnectionRoom.room_id==ChannelRoom.id)
+                .where(ChannelConnectionRoom.connection_id==row.id,ChannelConnectionRoom.native_room_hash==state._digest(scope),
+                    ChannelMessage.id==identifier,ChannelMessage.participant_kind=='bot',ChannelMessage.channel_type=='slack',
+                    ChannelMessage.deleted_at.is_(None),ChannelRoom.deleted_at.is_(None),ChannelRoom.bot_id==row.bot_id,
+                    Bot.organization_id==row.organization_id,Bot.deleted_at.is_(None)))
+            if source is None or row.accept_after is not None and state._utc(source.created_at)<state._utc(row.accept_after):raise HTTPException(403,'SLACK_SELECTION_INVALID')
+            packets=convert_packet('slack','replies',{'messages':[dict(id=str(source.id),participantKind='bot',
+                messageType=source.message_type,text=source.text,payload=source.payload_json)],'destination':dict(channelId=target.target_id,threadTs=event.get('threadTs'))})
+            submitted=json.loads(event['message'])
+            for packet in packets:
+                for block in packet.get('blocks',[]):
+                    for action in block.get('elements',[]):
+                        if action.get('type')!='button' or 'value' not in action:continue
+                        saved=json.loads(action['value'])
+                        restored=dict(webchatRichFormVersion='1.0',sourceMessageId=str(source.id),
+                            sourceTalkNodeId=saved['sourceTalkNodeId'],response=saved['response'])
+                        if submitted==restored:return json.dumps(restored,ensure_ascii=False)
+            raise HTTPException(403,'SLACK_SELECTION_INVALID')
 
     async def send(self, target, packets, event):
         # 공통 runtime이 유효 lease/connection DB lock을 소유한다. 별도 session 재잠금 금지.

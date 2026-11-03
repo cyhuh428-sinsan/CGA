@@ -25,6 +25,7 @@ def slack(state_db):
     http, ws = Http(), Ws()
     adapter = subject().SlackAdapter(factory, owner='synthetic', http=http, socket=Socket(ws))
     worker = ConnectionSupervisor(factory, config=config, adapters={'slack':adapter})
+    adapter.owner = worker.owner
     return db, row, factory, adapter, worker, http, ws
 
 

@@ -320,8 +320,13 @@ export function normalizeAidotDiscordEvent(input: unknown, connection: AidotDisc
     return { ...common, eventId: `discord-interaction:${discordId(data.id)}`, message: "", addressed: true, sourceMessageId: match[1], choiceIndex: Number(match[2]) };
   }
   if (data.type !== undefined && data.type !== 0 && data.type !== 19) return null;
-  const raw = discordText(data.content, 4000, "질문"), mention = new RegExp(`<@!?${self}>`, "g");
+  // MESSAGE_CONTENT 없는 정상 guild frame도 scope/actor/event ID는 먼저 검증한다.
+  discordId(data.id);
+  if (typeof data.content !== "string" || data.content.length > 4000) throw new Error("Discord 질문 형식이 올바르지 않습니다.");
+  const raw = data.content, mention = new RegExp(`<@!?${self}>`, "g");
   const addressed = dm || (Array.isArray(data.mentions) && data.mentions.some(item => discordRecord(item).id === self) && raw.match(mention) !== null);
+  // 첨부만 또는 mention만 있는 입력은 지원하지 않는다. listener는 계속 진행한다.
+  if (!raw.trim() || (addressed && !raw.replace(mention, "").trim())) return null;
   const message = addressed ? discordText(raw.replace(mention, "").trim(), 4000, "질문") : raw;
   return { ...common, eventId: `discord-message:${discordId(data.id)}`, message, addressed };
 }

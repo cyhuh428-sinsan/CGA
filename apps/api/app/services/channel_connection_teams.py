@@ -15,6 +15,7 @@ from app.services import channel_connection_state as state
 from app.services.channel_connections import encrypt_event_context,decrypt_event_context,_cipher
 from app.services.channel_connection_supervisor import NativeHandshakePending
 from app.services.channel_connection_runtime import ConnectionTarget
+from app.services.channel_connection_bridge import convert_packet
 from app.services.channel_connection_teams_auth import TeamsAuthenticator,validate_teams_service_url,_NoRedirect
 
 
@@ -58,11 +59,18 @@ class TeamsHttpTransport:
 
 
 
+@dataclass(frozen=True)
+class TeamsCredentialBinding:
+    target: ConnectionTarget
+    credentials: tuple = field(repr=False)
+
+
 class TeamsAdapter:
     def __init__(self, sessions, *, owner, config=settings, http=None, authenticator=None):
         self.sessions, self.owner, self.config = sessions, owner, config
         self.http, self.authenticator = http or TeamsHttpTransport(), authenticator or TeamsAuthenticator()
         self.tokens, self.token_lock = {}, asyncio.Lock()
+        self.credential_bindings = {}
 
     @staticmethod
     def scope(client): return 'teams-app:' + _uuid(client)
@@ -126,12 +134,19 @@ class TeamsAdapter:
         await self._token(credentials)
         proof, marker = await asyncio.to_thread(self._prepare, target)
         if proof is None: raise NativeHandshakePending()
+        self.credential_bindings[target.id]=TeamsCredentialBinding(target,tuple(sorted(credentials.items())))
         return dict(installation_id=target.installation_id, account_id=target.account_id,
             listener_scope=self.scope(target.account_id), exclusive=True, service_url=proof['service_url'],
             pending_activation={k: marker[k] for k in ('generation', 'owner', 'fence')})
 
     async def open(self, targets, credentials, identity):
-        return TeamsListener(self, targets, credentials)
+        if not targets or dict(self.credential_binding(targets[0]).credentials)!=credentials:raise HTTPException(409,'CONNECTION_CHANGED')
+        return TeamsListener(self, targets)
+
+    def credential_binding(self,target):
+        binding=self.credential_bindings.get(target.id)
+        if binding is None or binding.target!=target:raise HTTPException(409,'CONNECTION_CHANGED')
+        return binding
 
     def _client_candidate(self, client):
         with self.sessions() as db:
@@ -231,12 +246,67 @@ class TeamsAdapter:
             row = state._connection(db, cid)
             if row.generation != generation: raise HTTPException(409, 'CONNECTION_CHANGED')
             state._target_active(db, row)
+            event=dict(event)
+            try:selection=json.loads(event['message'])
+            except (ValueError,TypeError):selection=None
+            if isinstance(selection,dict) and selection.get('webchatRichFormVersion')=='1.0':
+                event['message']=self._selection(db,row,event,selection)
             if row.observed_state != 'connected': return None
             item = state.accept_delivery(db, cid, lease_id, self.owner, fence, event,
                 key=self.config.channel_connection_encryption_key, version=self.config.channel_connection_key_version)
             result = {'delivery_id': str(item.id)}
             db.commit()
             return result
+
+    def _selection(self,db,row,event,selection):
+        from app.models import ChannelConnectionRoom,ChannelRoom,ChannelMessage,Bot
+        try:identifier=UUID(selection.get('sourceMessageId'))
+        except (ValueError,TypeError,AttributeError):raise HTTPException(422,'TEAMS_CARD_RESPONSE_INVALID') from None
+        scope=[row.provider,row.installation_id,row.account_id,row.target_id,event['nativeRoomKey']]
+        source=db.scalar(select(ChannelMessage).join(ChannelRoom,ChannelRoom.id==ChannelMessage.room_id)
+            .join(Bot,Bot.id==ChannelRoom.bot_id).join(ChannelConnectionRoom,ChannelConnectionRoom.room_id==ChannelRoom.id)
+            .where(ChannelConnectionRoom.connection_id==row.id,ChannelConnectionRoom.native_room_hash==state._digest(scope),
+                ChannelMessage.id==identifier,ChannelMessage.participant_kind=='bot',ChannelMessage.channel_type=='ms-teams',
+                ChannelMessage.deleted_at.is_(None),ChannelRoom.deleted_at.is_(None),ChannelRoom.bot_id==row.bot_id,
+                Bot.organization_id==row.organization_id,Bot.deleted_at.is_(None)))
+        if (source is None or row.accept_after is not None and state._utc(source.created_at)<state._utc(row.accept_after)
+            or selection.get('sourceTalkNodeId')!=(source.payload_json or {}).get('sourceTalkNodeId')):
+            raise HTTPException(403,'TEAMS_CARD_RESPONSE_INVALID')
+        packets=convert_packet('ms_teams','replies',{'messages':[dict(id=str(source.id),participantKind='bot',
+            messageType=source.message_type,text=source.text,payload=source.payload_json)],'destination':{}})
+        inputs={};actions=[]
+        def visit(value):
+            if isinstance(value,list):
+                for child in value:visit(child)
+            elif isinstance(value,dict):
+                kind=value.get('type','')
+                if kind.startswith('Input.') and isinstance(value.get('id'),str):
+                    field=value['id']
+                    if field=='__cga_buttonValue':field='buttonValue'
+                    elif field.startswith('__cga_input_'):
+                        encoded=field[len('__cga_input_'):];field=base64.urlsafe_b64decode(encoded+'='*(-len(encoded)%4)).decode()
+                    inputs[field]=value
+                if kind in {'Action.Submit','Action.Execute'}:actions.append(value.get('data',{}).get('response',{}))
+                for child in value.values():visit(child)
+        visit(packets)
+        response=selection.get('response')
+        if not isinstance(response,dict):raise HTTPException(422,'TEAMS_CARD_RESPONSE_INVALID')
+        for field,control in inputs.items():
+            if field not in response:continue
+            value=response[field]
+            if control['type']=='Input.ChoiceSet':
+                values=value.split(',') if control.get('isMultiSelect') and isinstance(value,str) else [value]
+                if any(v not in [c.get('value') for c in control.get('choices',[])] for v in values):raise HTTPException(403,'TEAMS_CARD_RESPONSE_INVALID')
+            elif control['type']=='Input.Toggle':
+                if value not in [control.get('valueOn','true'),control.get('valueOff','false')]:raise HTTPException(403,'TEAMS_CARD_RESPONSE_INVALID')
+            elif not isinstance(value,(str,int,float)) or isinstance(value,bool):raise HTTPException(403,'TEAMS_CARD_RESPONSE_INVALID')
+        for fixed in actions:
+            if not isinstance(fixed,dict):continue
+            expected={**fixed,**{key:value for key,value in response.items() if key in inputs}}
+            if response==expected:
+                return json.dumps(dict(webchatRichFormVersion='1.0',sourceMessageId=str(source.id),
+                    sourceTalkNodeId=source.payload_json['sourceTalkNodeId'],response=response),ensure_ascii=False,sort_keys=True)
+        raise HTTPException(403,'TEAMS_CARD_RESPONSE_INVALID')
 
     async def receive(self, authorization, activity):
         try:
@@ -271,18 +341,31 @@ class TeamsAdapter:
 
 class TeamsListener:
     """수신 route는 원장에 commit하고 공통 runtime이 송신 fencing을 단독 소유한다."""
-    def __init__(self, adapter, targets, credentials):
-        self.adapter, self.credentials = adapter, dict(credentials)
+    def __init__(self, adapter, targets):
+        self.adapter = adapter
+        self.scope=(targets[0].installation_id,targets[0].account_id)
+        self.bindings=self._bindings(targets)
         self.targets = {t.id: t for t in targets}
         self.stopped = asyncio.Event()
 
+    def _bindings(self,targets):
+        bindings={}
+        for target in targets:
+            if (target.installation_id,target.account_id)!=self.scope:raise HTTPException(403,'TEAMS_PROOF_SCOPE_MISMATCH')
+            bindings[target.id]=self.adapter.credential_binding(target)
+        return bindings
+
     async def listen(self, receive): await self.stopped.wait()
-    async def update(self, targets): self.targets = {t.id: t for t in targets}
+    async def update(self, targets):
+        bindings=self._bindings(targets)
+        self.targets = {t.id: t for t in targets};self.bindings=bindings
     async def close(self): self.stopped.set()
 
     async def send(self, target, packets, event):
         context = event.get('destination', {})
         if self.stopped.is_set() or self.targets.get(target.id) != target: raise HTTPException(409, 'CONNECTION_CHANGED')
+        binding=self.adapter.credential_binding(target)
+        if self.bindings.get(target.id)!=binding:raise HTTPException(409,'CONNECTION_CHANGED')
         if (context.get('tenant'), context.get('client'), context.get('target'), context.get('generation')) != (
             target.installation_id, target.account_id, target.target_id, target.generation):
             raise HTTPException(409, 'TEAMS_PROOF_SCOPE_MISMATCH')
@@ -294,10 +377,11 @@ class TeamsListener:
                 'conversation': {'id': context['conversation_id']}, 'replyToId': context['activity_id']}
             if len(json.dumps(packet, ensure_ascii=False).encode()) > 28000: raise HTTPException(422, 'TEAMS_PACKET_LIMIT')
             prepared.append(packet)
-        token = await self.adapter._token(self.credentials)
+        token = await self.adapter._token(dict(binding.credentials))
         ids = []
         for packet in prepared:
-            if self.stopped.is_set() or self.targets.get(target.id) != target: raise HTTPException(409, 'CONNECTION_CHANGED')
+            if (self.stopped.is_set() or self.targets.get(target.id) != target
+                or self.bindings.get(target.id)!=binding or self.adapter.credential_binding(target)!=binding):raise HTTPException(409,'CONNECTION_CHANGED')
             result = await asyncio.to_thread(self.adapter.http.send, service, context['conversation_id'],
                 context['activity_id'], token, packet)
             ids.append(_text(result.get('id')))

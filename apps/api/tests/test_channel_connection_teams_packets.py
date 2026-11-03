@@ -7,6 +7,18 @@ from test_channel_connection_teams_adapter import teams, TENANT, CLIENT
 from test_channel_connection_state import state_db
 
 
+async def verified_open(teams):
+    from app.services.channel_connection_supervisor import NativeHandshakePending
+    from test_channel_connection_teams_adapter import activity
+    from types import SimpleNamespace
+    db,row,credentials,target,adapter=teams
+    with pytest.raises(NativeHandshakePending):await adapter.verify(target,credentials)
+    adapter._bind_activity(CLIENT,SimpleNamespace(service_url=activity()['serviceUrl']),activity())
+    identity=await adapter.verify(target,credentials)
+    adapter.http.oauth_calls.clear()
+    return await adapter.open([target],credentials,identity)
+
+
 def context(target):
     return {"destination": dict(tenant=TENANT, client=CLIENT, target=target.target_id,
         generation=target.generation, service_url="https://smba.trafficmanager.net/amer/",
@@ -20,7 +32,7 @@ def test_node_packet_and_listener_send_targeted_reply(teams):
     packets = convert_packet("ms_teams", "replies", {"messages": [{"text": "답변", "payload": {}}], "destination": event["destination"]})
     assert packets and packets[0]["type"] == "message"
     async def run():
-        listener = await adapter.open([target], credentials, {})
+        listener = await verified_open(teams)
         adapter.sessions = lambda: pytest.fail("adapter send reentered common runtime DB lock")
         assert await listener.send(target, packets, event) == ["synthetic-receipt"]
         await listener.close()
@@ -37,7 +49,7 @@ def test_reply_scope_mismatch_never_submits_http(teams, changed):
     db, row, credentials, target, adapter = teams
     event = context(target); event["destination"].update(changed)
     async def run():
-        listener = await adapter.open([target], credentials, {})
+        listener = await verified_open(teams)
         with pytest.raises(HTTPException): await listener.send(target, [{"type": "message", "text": "hi"}], event)
     asyncio.run(run())
     assert not adapter.http.sends and not adapter.http.oauth_calls

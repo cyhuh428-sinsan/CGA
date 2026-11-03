@@ -139,7 +139,7 @@ class DiscordState:
                     ChannelMessage.id==identifier,ChannelMessage.participant_kind=='bot',ChannelMessage.channel_type=='discord',
                     ChannelMessage.deleted_at.is_(None),ChannelRoom.deleted_at.is_(None),ChannelRoom.bot_id==row.bot_id,
                     Bot.organization_id==row.organization_id,Bot.deleted_at.is_(None)))
-            if source is None:raise HTTPException(403,'DISCORD_SELECTION_INVALID')
+            if source is None or state._utc(source.created_at)<state._utc(row.accept_after):raise HTTPException(403,'DISCORD_SELECTION_INVALID')
             packet={'id':str(source.id),'participantKind':'bot','messageType':source.message_type,'text':source.text,'payload':source.payload_json}
             return convert_packet('discord','selection',{'source':packet,'event':event})
 

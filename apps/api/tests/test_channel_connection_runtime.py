@@ -4,6 +4,7 @@ from uuid import uuid4
 import asyncio
 import json
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import select
 from test_channel_connection_state import state_db, activated, event, KEY
 
@@ -38,7 +39,7 @@ def test_optional_prepare_send_uses_held_session_and_preserves_unknown(state_db,
     from app.models import ChannelConnectionDelivery
     from sqlalchemy.orm import object_session
     s,db,row,lease,factory,runtime=seed_native(state_db)
-    prepared=[]
+    prepared=[];failures=[]
     class Guarded(SyntheticListener):
         def prepare_send(self,session,target,item,incoming,packets,*,cancelled):
             assert object_session(item) is session and item.status=='sending' and item.send_claim_id
@@ -48,6 +49,7 @@ def test_optional_prepare_send_uses_held_session_and_preserves_unknown(state_db,
             return 'synthetic-guard'
         async def send(self,target,packets,incoming,*,send_guard):
             assert send_guard=='synthetic-guard';return await super().send(target,packets,incoming)
+        def record_send_failure(self,session,target,error,*scope):failures.append(error)
     listener=Guarded()
     async def run():
         did=await runtime.receive(row.id,lease.id,'worker-1',1,event(channelId='C123'))
@@ -56,6 +58,11 @@ def test_optional_prepare_send_uses_held_session_and_preserves_unknown(state_db,
         assert prepared==[did]
         assert item.status==('unknown' if reject else 'sent')
         assert len(listener.sent)==(0 if reject else 1)
+        if reject:
+            from fastapi import HTTPException as ExpectedHTTPException
+            assert len(failures)==1 and isinstance(failures[0],ExpectedHTTPException)
+            assert failures[0].status_code==409 and failures[0].detail=='SYNTHETIC_PREPARE_REJECTED'
+        else:assert failures==[]
     asyncio.run(run())
 
 

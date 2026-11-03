@@ -106,6 +106,23 @@ def test_general_chat_bot_and_off_target_do_not_execute(discord):
     asyncio.run(run())
 
 
+@pytest.mark.parametrize('content,mentions', [('', []), ('', [{'id':'200'}]), ('<@200>', [{'id':'200'}])])
+def test_empty_or_mention_only_frame_advances_and_next_question_executes(discord, content, mentions):
+    from app.models import ChannelMessage
+    db,row,factory,adapter,worker,h,ws=discord
+    async def run():
+        try:
+            await worker.tick()
+            body=message();body['d'].update(content=content,mentions=mentions)
+            await delivered(worker,ws,body);await worker.tick()
+            db.expire_all();assert db.query(ChannelMessage).count()==0 and not h.posts
+            await delivered(worker,ws,message(offset=1));await worker.tick()
+            assert not next(iter(worker.handles.values())).task.done()
+            assert len(h.posts)==1 and h.posts[0][1]['content']=='fixed QA answer'
+        finally:await worker.stop()
+    asyncio.run(run())
+
+
 def test_main_registry_and_disabled_discord_open_zero(monkeypatch):
     from app.main import connection_supervisor
     from app.services.channel_connection_supervisor import ADAPTERS,ConnectionSupervisor
@@ -267,7 +284,7 @@ def test_valid_resume_restores_only_established_same_generation_cutoff(discord,d
     asyncio.run(run())
 
 
-@pytest.mark.parametrize('change',['other_room','other_org','user','source','index','generation'])
+@pytest.mark.parametrize('change',['other_room','other_org','user','source','index','generation','old_card'])
 def test_selection_restore_rejects_out_of_scope_sources(discord,change):
     from app.models import ChannelMessage,Bot
     from app.services.channel_connection_runtime import ConnectionTarget
@@ -285,8 +302,33 @@ def test_selection_restore_rejects_out_of_scope_sources(discord,change):
             if change=='source':event['sourceMessageId']=str(__import__('uuid').uuid4())
             if change=='index':event['choiceIndex']=25
             if change=='generation':row.generation+=1
+            if change=='old_card':source.created_at=row.accept_after-timedelta(seconds=1)
             db.commit()
             with pytest.raises(HTTPException):await asyncio.to_thread(listener.gate.restore_selection,target,event)
+            assert not h.acks and len(h.posts)==1
+        finally:await worker.stop()
+    asyncio.run(run())
+
+
+def test_new_ready_rejects_previous_generation_card_before_ack_or_native(discord,discord_management):
+    from app.models import ChannelConnectionDelivery,ChannelMessage
+    from fastapi import HTTPException
+    db,row,factory,adapter,worker,h,ws=discord;client,url,other=discord_management
+    async def run():
+        try:
+            source=await button_source(discord);before=db.query(ChannelMessage).count()
+            rotate(client,url,row,'synthetic-rotated')
+            await worker.stop()
+            fresh=Ws([hello(),ready(session_id='new-card-session')]);adapter.socket=Socket(fresh);adapter.open_not_before.clear()
+            await worker.tick();db.refresh(row)
+            assert source.created_at<row.accept_after
+            listener=next(iter(worker.handles.values())).listener
+            handle=next(iter(worker.handles.values()))
+            async def receive(cid,event):return await worker.runtime.receive(cid,handle.lease_id,worker.owner,handle.fence,event)
+            with pytest.raises(HTTPException) as rejected:
+                await listener.handle(interaction(source),receive,source=fresh,revision=listener.revision)
+            assert rejected.value.status_code==403 and rejected.value.detail=='DISCORD_SELECTION_INVALID'
+            db.expire_all();assert db.query(ChannelMessage).count()==before and db.query(ChannelConnectionDelivery).count()==1
             assert not h.acks and len(h.posts)==1
         finally:await worker.stop()
     asyncio.run(run())
