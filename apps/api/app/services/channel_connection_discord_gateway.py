@@ -167,6 +167,24 @@ class DiscordState:
             self._persist_cutoffs(lease)
             db.commit()
 
+    def restore_binding(self,binding,cursor,pending):
+        from app.services.channel_connection_runtime import ConnectionTarget
+        target=binding.target
+        if (target not in pending or self.loaded_cursor is None or _session(cursor)!=_session(self.loaded_cursor)
+            or (binding.application_id,binding.bot_user_id)!=(cursor.get('application_id'),cursor.get('bot_user_id'))):return False
+        with self.sessions() as db:
+            lease=self._lease(db)
+            saved=(lease.cursor_json or {}).get('discord_gateway')
+            if saved is None:return False
+            wrapper=self._unprotect(lease,saved);proof=wrapper['target_cutoffs'].get(str(target.id))
+            if (_session(wrapper['value'])!=_session(cursor) or proof is None
+                or proof!=self.cutoffs.get(str(target.id)) or proof['generation']!=target.generation):return False
+            try:row=state._live(db,target.id,self.lease_id,self.owner,self.fence)
+            except HTTPException as error:
+                if error.status_code not in {404,409}:raise
+                return False
+            return ConnectionTarget.from_row(row)==target
+
     def _persist_cutoffs(self,lease):
         saved=(lease.cursor_json or {}).get('discord_gateway')
         if saved is None:return
@@ -369,6 +387,8 @@ class DiscordListener:
             if binding.application_id!=self.app_id:raise HTTPException(403,'DISCORD_GATEWAY_SCOPE_MISMATCH')
             previous=self.targets.get(binding.target.id)
             if binding!=previous and not self.accepts_target(binding):
+                # 새 session에 확립된 기존 target만 fresh REST 검증 binding을 복원한다.
+                if self.resumed and await asyncio.to_thread(self.gate.restore_binding,binding,self.cursor,self.pending_targets):continue
                 if previous is None or binding.target.generation<=previous.target.generation:raise HTTPException(403,'DISCORD_GATEWAY_SCOPE_MISMATCH')
                 if replacement is not None and replacement.credentials!=binding.credentials:raise HTTPException(403,'DISCORD_GATEWAY_SCOPE_MISMATCH')
                 replacement=binding
@@ -378,7 +398,8 @@ class DiscordListener:
                 await asyncio.to_thread(self.gate.reset_cursor,list(self.targets.values()),'DISCORD_SESSION_INVALID',self.cursor.get('sequence'),self.received_sequence)
             fresh=await open_gateway(self.adapter,[replacement],self.gate)
             try:
-                if not fresh.resumed:await asyncio.to_thread(self.gate.fresh_cutoff,[replacement])
+                if not fresh.resumed:await asyncio.to_thread(self.gate.fresh_cutoff,list(prepared.values()))
+                pending=await asyncio.to_thread(self.gate.pending_targets)
                 if self.stopped:raise HTTPException(409,'DISCORD_LISTENER_STOPPED')
             except BaseException:
                 await fresh.close();raise
@@ -389,6 +410,7 @@ class DiscordListener:
             previous_ws=self.ws
             self.ws,self.digest,self.interval=fresh.ws,fresh.digest,fresh.interval
             self.cursor,self.received_sequence,self.buffer=fresh.cursor,fresh.received_sequence,fresh.buffer
+            self.resumed=fresh.resumed;self.pending_targets=pending
             self.deferred=[];self.checkpoints=[]
             self.awaiting_ack=False;self.targets=prepared;self.revision+=1;self.socket_changed.set()
             self.heartbeat=asyncio.create_task(self._heartbeat())

@@ -110,3 +110,30 @@ def test_generation_changed_prevents_ack_and_fresh_cutoff_keeps_connected(discor
 @pytest.mark.parametrize('value', [{'bot_token':'synthetic'}, {'application_id':'100','bot_user_id':'200','token_hash':'a'*64,'session_id':'s','resume_url':'wss://evil.test','sequence':1}])
 def test_cursor_rejects_invalid_shape_and_destination(discord_state,value):
     with pytest.raises(HTTPException):discord_state[-1].save_cursor(value)
+
+
+@pytest.mark.parametrize('invalid',['none','old_session','generation','deleted','organization','scope','app','bot','gateway_token','missing_pending'])
+def test_restored_binding_requires_current_session_exact_active_proof(discord_state,invalid):
+    from app.services.channel_connection_discord import DiscordAdapter
+    from app.services.channel_connection_runtime import ConnectionTarget
+    from test_channel_connection_discord import Http
+    from app.models import ChannelConnection
+    s,db,row,lease,factory,gate=discord_state
+    target=ConnectionTarget.from_row(row)
+    adapter=DiscordAdapter(factory,owner='worker-1',http=Http())
+    asyncio=__import__('asyncio');asyncio.run(adapter.verify(target,{'bot_token':'synthetic-other-verified'}))
+    binding=adapter.bindings[target.id]
+    value=cursor();gate.start_cursor(value);gate.fresh_cutoff([binding]);gate.load_cursor()
+    pending=[target]
+    if invalid=='old_session':
+        value={**value,'session_id':'new-without-proof'};gate.start_cursor(value);gate.load_cursor()
+    if invalid=='generation':
+        row.generation+=1;db.commit();binding=replace(binding,target=ConnectionTarget.from_row(row));pending=[binding.target]
+    if invalid=='deleted':row.deleted_at=s.clock(db);db.commit()
+    if invalid=='organization':row.organization_id=uuid4();db.commit()
+    if invalid=='scope':row.listener_scope_hash='0'*64;db.commit()
+    if invalid=='app':binding=replace(binding,application_id='101')
+    if invalid=='bot':binding=replace(binding,bot_user_id='201')
+    if invalid=='gateway_token':value={**value,'token_hash':'b'*64}
+    if invalid=='missing_pending':pending=[]
+    assert gate.restore_binding(binding,value,pending) is (invalid=='none')

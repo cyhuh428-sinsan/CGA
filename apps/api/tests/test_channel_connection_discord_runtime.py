@@ -445,3 +445,114 @@ def test_failed_rotation_ready_does_not_harm_other_verified_target(discord,disco
             assert [x[0] for x in h.posts]==['/channels/401/messages']
         finally:await worker.stop()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize('followup',['target','generation'])
+def test_resumed_to_ready_rotation_keeps_followup_updates_working(discord,discord_management,followup):
+    from app.models import ChannelConnection
+    from app.services.channel_connections import encrypt_credentials
+    from app.services.channel_connection_discord import DiscordAdapter
+    from app.services.channel_connection_supervisor import ConnectionSupervisor
+    db,row,factory,adapter,worker,h,ws=discord;client,url,other=discord_management
+    async def run():
+        restarted=None
+        try:
+            await worker.tick();await worker.stop()
+            resumed=Ws([hello(),{'op':0,'t':'RESUMED','s':2,'d':{}}])
+            current=DiscordAdapter(factory,owner='restart',http=h,socket=Socket(resumed))
+            restarted=ConnectionSupervisor(factory,config=worker.config,adapters={'discord':current});current.owner=restarted.owner
+            await restarted.tick()
+            listener=next(iter(restarted.handles.values())).listener
+            for _ in range(100):
+                if listener.cursor.get('sequence')==2:break
+                await asyncio.sleep(.01)
+            assert listener.resumed
+            rotate(client,url,row,'synthetic-rotated');fresh=Ws([hello(),ready(session_id='rotated-ready')]);current.socket=Socket(fresh)
+            await restarted.tick();assert listener.ws is fresh and fresh.sent[0]['op']==2
+            if followup=='generation':
+                rotate(client,url,row,'synthetic-rotated');target=row
+            else:
+                target=ChannelConnection(organization_id=row.organization_id,bot_id=row.bot_id,channel_id=row.channel_id,name='QA3',provider='discord',installation_id='300',account_id='200',target_id='402',desired_state='connected',observed_state='connecting')
+                db.add(target);db.flush()
+                target.credential_ciphertext=encrypt_credentials({'bot_token':'synthetic-rotated'},target.organization_id,target.id,KEY,'v1');target.credential_key_version='v1';db.commit()
+            await restarted.tick();db.refresh(target)
+            assert target.observed_state=='connected'
+            await delivered(restarted,fresh,message(channel=target.target_id));await restarted.tick()
+            assert h.posts[-1][0]=='/channels/'+target.target_id+'/messages'
+        finally:
+            await worker.stop()
+            if restarted:await restarted.stop()
+    asyncio.run(run())
+
+
+def test_rotated_new_session_proves_retained_target_for_next_adapter_resume(discord,discord_management):
+    from app.models import ChannelConnectionDelivery
+    from app.services.channel_connection_discord import DiscordAdapter
+    from app.services.channel_connection_supervisor import ConnectionSupervisor
+    db,row,factory,adapter,worker,h,ws=discord;client,url,other=discord_management
+    async def run():
+        restarted=None
+        try:
+            await worker.tick();rotate(client,url,row,'synthetic-rotated')
+            rotated=Ws([hello(),ready(session_id='rotated-ready')]);adapter.socket=Socket(rotated);await worker.tick()
+            db.refresh(other);established=other.accept_after
+            await worker.stop()
+            replay=message(channel='401');replay['d']['id']=str((int(time.time()*1000)-1420070400000)<<22)
+            resumed=Ws([hello(),replay,{'op':0,'t':'RESUMED','s':3,'d':{}}])
+            current=DiscordAdapter(factory,owner='restart',http=h,socket=Socket(resumed))
+            restarted=ConnectionSupervisor(factory,config=worker.config,adapters={'discord':current});current.owner=restarted.owner
+            await restarted.tick();db.refresh(other)
+            assert other.observed_state=='connected'
+            listener=next(iter(restarted.handles.values())).listener
+            for _ in range(100):
+                handle=next(iter(restarted.handles.values()))
+                if handle.task.done():await handle.task
+                if listener.cursor.get('sequence')==3:break
+                await asyncio.sleep(.01)
+            await restarted.tick();db.expire_all()
+            item=db.query(ChannelConnectionDelivery).filter_by(connection_id=other.id).one()
+            assert item.status=='sent' and other.accept_after==established
+            assert [x[0] for x in h.posts]==['/channels/401/messages'] and resumed.sent[0]['op']==6
+        finally:
+            await worker.stop()
+            if restarted:await restarted.stop()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('invalid',['app','bot','rejected'])
+def test_resume_proof_does_not_replace_failed_fresh_rest_identity(discord,discord_management,invalid):
+    from app.models import ChannelConnectionDelivery,ChannelMessage
+    from app.services.channel_connection_discord import DiscordAdapter,DiscordApiRejected
+    from app.services.channel_connection_supervisor import ConnectionSupervisor
+    db,row,factory,adapter,worker,h,ws=discord;client,url,other=discord_management
+    async def run():
+        restarted=None
+        try:
+            await worker.tick();rotate(client,url,row,'synthetic-rotated')
+            adapter.socket=Socket(Ws([hello(),ready(session_id='rotated-ready')]));await worker.tick();await worker.stop()
+            resumed=Ws([hello(),{'op':0,'t':'RESUMED','s':2,'d':{}}]);wrong=Ws([hello(),ready()])
+            class SequenceSocket:
+                def __init__(self):self.items=[resumed,wrong]
+                async def open(self,url):return self.items.pop(0)
+            original=h.call
+            def untrusted(method,path,token,payload=None):
+                if token=='synthetic-only':
+                    if invalid=='bot' and path=='/users/@me':return {'id':'201','bot':True}
+                    if invalid=='rejected' and path=='/users/@me':raise DiscordApiRejected()
+                    if invalid=='app' and path=='/oauth2/applications/@me':return {'id':'101','bot':{'id':'200'}}
+                return original(method,path,token,payload)
+            h.call=untrusted
+            current=DiscordAdapter(factory,owner='restart',http=h,socket=SequenceSocket())
+            restarted=ConnectionSupervisor(factory,config=worker.config,adapters={'discord':current});current.owner=restarted.owner
+            await restarted.tick();db.refresh(other);assert other.observed_state=='error'
+            await resumed.queue.put(json.dumps(message(channel='401',offset=1)))
+            for _ in range(100):
+                handle=next(iter(restarted.handles.values()))
+                if handle.task.done() or handle.listener.deferred:break
+                await asyncio.sleep(.01)
+            db.expire_all()
+            assert db.query(ChannelConnectionDelivery).count()==db.query(ChannelMessage).count()==0 and not h.posts and not h.acks
+        finally:
+            await worker.stop()
+            if restarted:await restarted.stop()
+    asyncio.run(run())
