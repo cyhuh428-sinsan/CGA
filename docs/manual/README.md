@@ -10,6 +10,8 @@ CGA 메뉴얼은 사용 목적에 따라 다음 세 문서로 제공합니다.
 | [CGA 사용자 설명서](cga-user-manual/README.md) | 일반 사용자·봇 운영자·시스템 관리자 | 봇·버전·대화 설계·테스트·운영·관리자 메뉴의 전체 흐름을 확인합니다. |
 | [CGA NLU 활용 가이드](cga-nlu-guide/README.md) | 봇·대화 설계 운영자·AI/NLU 담당자 | ML·Semantic·LLM 엔진 선택, 데이터 준비, 학습·인덱싱, 품질 개선 방법을 확인합니다. |
 
+추가 운영 가이드: [외부 채널 연결](channel-connections.md) — Teams·Slack·Discord·Telegram·Google Chat·LINE의 설정·오류·복구와 실제 플랫폼 미검증 경계를 설명합니다. [English](channel-connections.en.md) · [简体中文](channel-connections.zh-CN.md) · [日本語](channel-connections.ja.md) · [Tiếng Việt](channel-connections.vi.md) · [Français](channel-connections.fr.md) · [Deutsch](channel-connections.de.md). 이 추가 가이드는 Markdown 7개 언어로 제공하며 아래 기존 세 문서의 Word/PDF 생성 대상에는 포함하지 않습니다.
+
 ## 권장 읽기 순서
 
 1. 처음 사용하는 경우 Getting Started에서 봇 생성부터 봇 테스트까지 따라 합니다.

@@ -147,6 +147,7 @@ def test_card_selection_restores_native_choice_and_rejects_cross_room_and_index(
             assert await a.receive(header,body)==accepted;await finish(google)
             db.expire_all();item=db.get(ChannelConnectionDelivery,UUID(accepted['delivery_id']))
             assert item.status=='sent' and len(h.posts)==2
+            assert h.posts[1][1]['text']=='selected: two'
             user=db.get(ChannelMessage,item.request_message_id)
             assert 'two' in user.text and 'sourceMessageId' in user.text
         finally:await w.stop()
