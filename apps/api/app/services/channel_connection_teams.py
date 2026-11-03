@@ -302,4 +302,3 @@ class TeamsListener:
                 context['activity_id'], token, packet)
             ids.append(_text(result.get('id')))
         return ids
-
