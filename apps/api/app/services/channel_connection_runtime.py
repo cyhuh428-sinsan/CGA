@@ -170,8 +170,12 @@ class ConnectionRuntime:
                 if cancelled.is_set(): raise concurrent.futures.CancelledError()
                 # 변환 subprocess 대기 동안 시간이 지났을 수 있으므로 송신 직전 DB clock으로 재검사한다.
                 state._live(db, target.id, installation_id, owner, fence)
+                send_options = {}
+                prepare = getattr(listener, 'prepare_send', None)
+                if prepare is not None:
+                    send_options['send_guard'] = prepare(db, target, item, context['event'], packets, cancelled=cancelled)
                 send = asyncio.run_coroutine_threadsafe(
-                    asyncio.wait_for(listener.send(target, packets, context["event"]), timeout=25), loop)
+                    asyncio.wait_for(listener.send(target, packets, context["event"], **send_options), timeout=25), loop)
                 try:
                     while True:
                         if cancelled.is_set(): raise concurrent.futures.CancelledError()
@@ -186,6 +190,7 @@ class ConnectionRuntime:
                 state.record_sent(db, delivery_id, claim, ids)
                 db.commit()
             except BaseException as error:
+                cancelled.set()
                 db.rollback()
                 failure = getattr(listener, 'record_send_failure', None)
                 if failure is not None:

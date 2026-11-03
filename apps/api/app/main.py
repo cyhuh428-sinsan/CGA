@@ -29,6 +29,7 @@ from app.services.channel_connection_slack import SlackAdapter
 from app.services.channel_connection_discord import DiscordAdapter
 from app.services.channel_connection_telegram import TelegramAdapter
 from app.services.channel_connection_google_chat import GoogleChatAdapter
+from app.services.channel_connection_line import LineAdapter
 
 
 configure_logging()
@@ -41,6 +42,7 @@ ADAPTERS["slack"] = SlackAdapter(SessionLocal, owner=connection_supervisor.owner
 ADAPTERS["discord"] = DiscordAdapter(SessionLocal, owner=connection_supervisor.owner)
 ADAPTERS["telegram"] = TelegramAdapter(SessionLocal, owner=connection_supervisor.owner)
 ADAPTERS["google_chat"] = GoogleChatAdapter(SessionLocal, owner=connection_supervisor.owner)
+ADAPTERS["line"] = LineAdapter(SessionLocal, owner=connection_supervisor.owner)
 
 
 def _queue_worker_sleep_seconds(interval: float, consecutive_failures: int) -> float:

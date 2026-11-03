@@ -33,6 +33,32 @@ class SyntheticListener:
     async def update(self, targets): pass
 
 
+@pytest.mark.parametrize('reject',[False,True])
+def test_optional_prepare_send_uses_held_session_and_preserves_unknown(state_db,reject):
+    from app.models import ChannelConnectionDelivery
+    from sqlalchemy.orm import object_session
+    s,db,row,lease,factory,runtime=seed_native(state_db)
+    prepared=[]
+    class Guarded(SyntheticListener):
+        def prepare_send(self,session,target,item,incoming,packets,*,cancelled):
+            assert object_session(item) is session and item.status=='sending' and item.send_claim_id
+            assert not cancelled.is_set() and target.id==row.id and incoming['message']=='question'
+            prepared.append(item.id)
+            if reject:raise HTTPException(409,'SYNTHETIC_PREPARE_REJECTED')
+            return 'synthetic-guard'
+        async def send(self,target,packets,incoming,*,send_guard):
+            assert send_guard=='synthetic-guard';return await super().send(target,packets,incoming)
+    listener=Guarded()
+    async def run():
+        did=await runtime.receive(row.id,lease.id,'worker-1',1,event(channelId='C123'))
+        await runtime.process_one(row.id,lease.id,'worker-1',1,listener)
+        db.expire_all();item=db.get(ChannelConnectionDelivery,did)
+        assert prepared==[did]
+        assert item.status==('unknown' if reject else 'sent')
+        assert len(listener.sent)==(0 if reject else 1)
+    asyncio.run(run())
+
+
 def seed_native(state_db):
     from app.models import Base, Bot, BotVersion
     s, db, row, lease = activated(state_db)
