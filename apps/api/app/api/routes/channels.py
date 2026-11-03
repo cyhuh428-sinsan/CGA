@@ -6042,70 +6042,62 @@ def create_channel_room(
     channel_code = _channel_template_code(channel)
     _verify_channel_key(x_aidot_webchat_key)
     with SessionLocal() as db:
-        bot, version, group = _get_active_bot_version(db, payload.bot_id, channel)
-        existing_room = None
-        if payload.client_room_id:
-            existing_room = db.scalar(
-                select(ChannelRoom).where(
-                    ChannelRoom.channel_type == channel,
-                    ChannelRoom.client_room_id == payload.client_room_id,
-                    ChannelRoom.deleted_at.is_(None),
-                )
-            )
-        request_languages = _message_language_candidates(
-            payload.language,
-            request.headers.get("accept-language"),
-            bot,
-            existing_room,
-        )
-        if existing_room is not None:
-            existing_metadata = _as_dict(existing_room.metadata_json)
-            existing_metadata["language"] = request_languages[0]
-            existing_room.metadata_json = existing_metadata
-            flag_modified(existing_room, "metadata_json")
-            if existing_room.status != "open" or existing_room.bot_id != bot.id:
-                _archive_room_for_new_session(db, existing_room, "replaced")
-                _write_channel_audit_log(
-                    db,
-                    request,
-                    "channel.session.closed",
-                    existing_room.id,
-                    {
-                        "reason": "replaced",
-                        "channel": channel,
-                        "bot_id": str(existing_room.bot_id),
-                    },
-                )
-                db.flush()
-            elif existing_room.bot_version_id != version.id:
-                previous_version_id = _apply_active_version_to_room(existing_room, bot, version, channel)
-                _write_channel_audit_log(
-                    db,
-                    request,
-                    "channel.session.version_applied",
-                    existing_room.id,
-                    {
-                        "channel": channel,
-                        "bot_id": str(bot.id),
-                        "previous_version_id": previous_version_id,
-                        "active_version_id": str(version.id),
-                    },
-                )
-                db.flush()
-            else:
-                messages = _ensure_room_started(db, existing_room, bot, version, channel)
-                db.commit()
-                db.refresh(existing_room)
-                for message in messages:
-                    db.refresh(message)
-                return success_response(
-                    request,
-                    {"room": _serialize_room(db, existing_room), "messages": [_serialize_message(message) for message in messages], "initialMessages": []},
-                )
-        if existing_room is not None and payload.client_room_id:
-            db.flush()
+        return _open_native_channel_room(db, channel, payload, request)
 
-        if existing_room is not None and existing_room.status == "open":
+
+def _open_native_channel_room(db: Session, channel: str, payload: ChannelRoomCreateRequest, request: Request) -> dict[str, object]:
+    channel_code = _channel_template_code(channel)
+    bot, version, group = _get_active_bot_version(db, payload.bot_id, channel)
+    existing_room = None
+    if payload.client_room_id:
+        existing_room = db.scalar(
+            select(ChannelRoom).where(
+                ChannelRoom.channel_type == channel,
+                ChannelRoom.client_room_id == payload.client_room_id,
+                ChannelRoom.deleted_at.is_(None),
+            )
+        )
+    request_languages = _message_language_candidates(
+        payload.language,
+        request.headers.get("accept-language"),
+        bot,
+        existing_room,
+    )
+    if existing_room is not None:
+        existing_metadata = _as_dict(existing_room.metadata_json)
+        existing_metadata["language"] = request_languages[0]
+        existing_room.metadata_json = existing_metadata
+        flag_modified(existing_room, "metadata_json")
+        if existing_room.status != "open" or existing_room.bot_id != bot.id:
+            _archive_room_for_new_session(db, existing_room, "replaced")
+            _write_channel_audit_log(
+                db,
+                request,
+                "channel.session.closed",
+                existing_room.id,
+                {
+                    "reason": "replaced",
+                    "channel": channel,
+                    "bot_id": str(existing_room.bot_id),
+                },
+            )
+            db.flush()
+        elif existing_room.bot_version_id != version.id:
+            previous_version_id = _apply_active_version_to_room(existing_room, bot, version, channel)
+            _write_channel_audit_log(
+                db,
+                request,
+                "channel.session.version_applied",
+                existing_room.id,
+                {
+                    "channel": channel,
+                    "bot_id": str(bot.id),
+                    "previous_version_id": previous_version_id,
+                    "active_version_id": str(version.id),
+                },
+            )
+            db.flush()
+        else:
             messages = _ensure_room_started(db, existing_room, bot, version, channel)
             db.commit()
             db.refresh(existing_room)
@@ -6115,43 +6107,56 @@ def create_channel_room(
                 request,
                 {"room": _serialize_room(db, existing_room), "messages": [_serialize_message(message) for message in messages], "initialMessages": []},
             )
-
-        runtime_state = _initial_runtime_state_for_version(bot, version, channel)
-        runtime_state["language"] = request_languages[0]
-        room = ChannelRoom(
-            channel_type=channel,
-            client_room_id=payload.client_room_id,
-            bot_id=bot.id,
-            bot_version_id=version.id,
-            participant_id=payload.participant_id or "visitor",
-            participant_name=payload.participant_name or "사용자",
-            status="open",
-            metadata_json=runtime_state,
-        )
-        db.add(room)
+    if existing_room is not None and payload.client_room_id:
         db.flush()
-        _set_runtime_system_variables(
-            runtime_state,
-            bot=bot,
-            channel_code=_channel_template_code(channel),
-            room=room,
-            participant_id=room.participant_id,
-            participant_name=room.participant_name,
-        )
-        room.metadata_json = runtime_state
-        flag_modified(room, "metadata_json")
 
-        bot_messages = []
-        if payload.start_immediately and payload.use_configured_initial_messages:
-            bot_messages = _add_configured_initial_messages(db, room, bot, version, channel)
-        if payload.start_immediately and not bot_messages:
-            bot_messages = _ensure_room_started(db, room, bot, version, channel, [])
+    if existing_room is not None and existing_room.status == "open":
+        messages = _ensure_room_started(db, existing_room, bot, version, channel)
         db.commit()
-        db.refresh(room)
-        for message in bot_messages:
+        db.refresh(existing_room)
+        for message in messages:
             db.refresh(message)
-        serialized_messages = [_serialize_message(message) for message in bot_messages]
-        return success_response(request, {"room": _serialize_room(db, room), "messages": serialized_messages, "initialMessages": []})
+        return success_response(
+            request,
+            {"room": _serialize_room(db, existing_room), "messages": [_serialize_message(message) for message in messages], "initialMessages": []},
+        )
+
+    runtime_state = _initial_runtime_state_for_version(bot, version, channel)
+    runtime_state["language"] = request_languages[0]
+    room = ChannelRoom(
+        channel_type=channel,
+        client_room_id=payload.client_room_id,
+        bot_id=bot.id,
+        bot_version_id=version.id,
+        participant_id=payload.participant_id or "visitor",
+        participant_name=payload.participant_name or "사용자",
+        status="open",
+        metadata_json=runtime_state,
+    )
+    db.add(room)
+    db.flush()
+    _set_runtime_system_variables(
+        runtime_state,
+        bot=bot,
+        channel_code=_channel_template_code(channel),
+        room=room,
+        participant_id=room.participant_id,
+        participant_name=room.participant_name,
+    )
+    room.metadata_json = runtime_state
+    flag_modified(room, "metadata_json")
+
+    bot_messages = []
+    if payload.start_immediately and payload.use_configured_initial_messages:
+        bot_messages = _add_configured_initial_messages(db, room, bot, version, channel)
+    if payload.start_immediately and not bot_messages:
+        bot_messages = _ensure_room_started(db, room, bot, version, channel, [])
+    db.commit()
+    db.refresh(room)
+    for message in bot_messages:
+        db.refresh(message)
+    serialized_messages = [_serialize_message(message) for message in bot_messages]
+    return success_response(request, {"room": _serialize_room(db, room), "messages": serialized_messages, "initialMessages": []})
 
 
 @router.options("/{channel_type}/rooms")
@@ -6277,186 +6282,289 @@ def create_channel_room_message(
     channel_code = _channel_template_code(channel)
     _verify_channel_key(x_aidot_webchat_key)
     with SessionLocal() as db:
-        room = db.scalar(
-            select(ChannelRoom).where(
-                ChannelRoom.id == room_id,
-                ChannelRoom.channel_type == channel,
-                ChannelRoom.status == "open",
-                ChannelRoom.deleted_at.is_(None),
-            )
+        return _execute_native_channel_message(db, channel, room_id, payload, request)
+
+
+def _execute_native_channel_message(db: Session, channel: str, room_id: UUID, payload: ChannelMessageRequest, request: Request) -> dict[str, object]:
+    channel_code = _channel_template_code(channel)
+    room = db.scalar(
+        select(ChannelRoom).where(
+            ChannelRoom.id == room_id,
+            ChannelRoom.channel_type == channel,
+            ChannelRoom.status == "open",
+            ChannelRoom.deleted_at.is_(None),
         )
-        if room is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="채팅방을 찾을 수 없습니다.")
-        bot = db.get(Bot, room.bot_id)
-        if bot is None:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="채팅방의 봇 정보를 찾을 수 없습니다.")
-        version = db.get(BotVersion, room.bot_version_id)
-        if version is None or bot.active_version_id != room.bot_version_id or version.status != "active":
-            _, version, _ = _get_active_bot_version(db, str(bot.id), channel)
-            previous_version_id = _apply_active_version_to_room(room, bot, version, channel)
-            _write_channel_audit_log(
-                db,
-                request,
-                "channel.session.version_applied",
-                room.id,
-                {
-                    "channel": channel,
-                    "bot_id": str(bot.id),
-                    "previous_version_id": previous_version_id,
-                    "active_version_id": str(version.id),
-                },
-            )
-        if _requires_botstation_connection(channel):
-            _ensure_botstation_connection(db, bot, version, channel)
-        _ensure_runtime_supported(bot, version)
-        message_languages = _message_language_candidates(
-            payload.language,
-            request.headers.get("accept-language"),
-            bot,
-            room,
+    )
+    if room is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="채팅방을 찾을 수 없습니다.")
+    bot = db.get(Bot, room.bot_id)
+    if bot is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="채팅방의 봇 정보를 찾을 수 없습니다.")
+    version = db.get(BotVersion, room.bot_version_id)
+    if version is None or bot.active_version_id != room.bot_version_id or version.status != "active":
+        _, version, _ = _get_active_bot_version(db, str(bot.id), channel)
+        previous_version_id = _apply_active_version_to_room(room, bot, version, channel)
+        _write_channel_audit_log(
+            db,
+            request,
+            "channel.session.version_applied",
+            room.id,
+            {
+                "channel": channel,
+                "bot_id": str(bot.id),
+                "previous_version_id": previous_version_id,
+                "active_version_id": str(version.id),
+            },
         )
-        room_metadata = _as_dict(room.metadata_json)
-        room_metadata["language"] = message_languages[0]
-        room.metadata_json = room_metadata
+    if _requires_botstation_connection(channel):
+        _ensure_botstation_connection(db, bot, version, channel)
+    _ensure_runtime_supported(bot, version)
+    message_languages = _message_language_candidates(
+        payload.language,
+        request.headers.get("accept-language"),
+        bot,
+        room,
+    )
+    room_metadata = _as_dict(room.metadata_json)
+    room_metadata["language"] = message_languages[0]
+    room.metadata_json = room_metadata
+    flag_modified(room, "metadata_json")
+
+    user_message = _add_message(
+        db,
+        room,
+        participant_id=payload.participant_id or room.participant_id,
+        participant_kind="user",
+        participant_name=room.participant_name,
+        text=payload.message,
+    )
+    db.flush()
+    queue_event = _create_queue_event(db, room, bot, version, user_message, payload)
+    db.flush()
+    if payload.defer_processing:
+        db.commit()
+        db.refresh(user_message)
+        db.refresh(queue_event)
+        return success_response(
+            request,
+            {
+                "roomId": str(room.id),
+                "channelType": channel,
+                "queued": True,
+                "bot": {"id": str(bot.id), "name": bot.name},
+                "activeVersion": {"id": str(version.id), "name": version.name, "versionNo": version.version_no},
+                "queueEvent": {"id": str(queue_event.id), "status": queue_event.status, "receiveStatus": queue_event.receive_status},
+                "userMessage": _serialize_message(user_message),
+                "botMessage": None,
+                "botMessages": [],
+            },
+        )
+    _set_queue_status(queue_event, "processing", receive_status="processing")
+
+    document = normalize_version_document(version.version_json)
+    default_messages = _load_default_messages(db, bot.organization_id, message_languages)
+    runtime_state_before = _as_dict(room.metadata_json) or _initial_runtime_state_for_version(bot, version, room.channel_type)
+    _reset_stalled_waiting_talk_state(document, runtime_state_before, channel_code)
+    runtime_state_snapshot = deepcopy(runtime_state_before)
+    _set_runtime_system_variables(
+        runtime_state_before,
+        bot=bot,
+        channel_code=channel_code,
+        room=room,
+        participant_id=payload.participant_id or room.participant_id,
+        participant_name=room.participant_name,
+        message=payload.message,
+    )
+    runtime_state_after = runtime_state_before
+    selected_dialog = None
+    score = 0.0
+    bot_messages: list[ChannelMessage] = []
+    form_response_handled = False
+    structured_talk_input = _is_structured_talk_input(
+        document,
+        payload.source_talk_node_id,
+        payload.message,
+        channel_code,
+        None if payload.source_talk_node_id is None else str(runtime_state_before.get("waitingNodeId") or None),
+    )
+
+    try:
+        item = _append_runtime_event(
+            runtime_state_before,
+            level="info",
+            event="channel.runtime.message_received",
+            message="채널 메시지를 수신했습니다.",
+            data={
+                "channel": channel,
+                "roomId": str(room.id),
+                "botId": str(bot.id),
+                "botName": bot.name,
+                "versionId": str(version.id),
+                "participantId": payload.participant_id or room.participant_id,
+                "messagePreview": _log_preview(payload.message, 500),
+                "sourceTalkNodeId": payload.source_talk_node_id,
+                "queueEventId": str(queue_event.id),
+            },
+        )
+        _log_runtime_event(item)
+        interrupted_intent_transition = False
+        if payload.target_dialog_id:
+            selected_dialog = _direct_dialog_definition(document, payload.target_dialog_id)
+            if selected_dialog is None:
+                raise ValueError(f"대화를 찾을 수 없습니다: {payload.target_dialog_id}")
+            score = 1.0
+            runtime_outputs, runtime_state = _run_direct_dialog(
+                document,
+                runtime_state_before,
+                bot,
+                version,
+                selected_dialog,
+                payload.dialog_params,
+                default_messages,
+                channel_code,
+                return_to_previous=not payload.direct_dialog_root,
+            )
+            interrupted_intent_transition = True
+        elif payload.source_talk_node_id is None and not structured_talk_input:
+            runtime_outputs, runtime_state, selected_dialog, interrupted_intent_transition = _interrupt_waiting_talk_with_intent(
+                document,
+                runtime_state_before,
+                bot,
+                version,
+                payload.message,
+                default_messages,
+                channel_code,
+            )
+        if interrupted_intent_transition:
+            form_response_handled = False
+        else:
+            form_response_handled, form_next_node_id = _store_form_result_variable(
+                document,
+                runtime_state_before,
+                payload.source_talk_node_id,
+                payload.message,
+                channel_code,
+                str(runtime_state_before.get("waitingNodeId") or None),
+            )
+            if form_response_handled:
+                runtime_state_before["waitingNodeId"] = ""
+                if form_next_node_id:
+                    runtime_outputs, runtime_state = _run_runtime(document, runtime_state_before, form_next_node_id, default_messages, channel_code)
+                else:
+                    runtime_outputs, runtime_state = [], runtime_state_before
+            else:
+                runtime_outputs, runtime_state = _handle_runtime_message(
+                    document,
+                    runtime_state_before,
+                    payload.message,
+                    default_messages,
+                    channel_code,
+                    _button_selection_option(bot, version),
+                )
+        runtime_state_after = runtime_state
+        room.metadata_json = runtime_state
         flag_modified(room, "metadata_json")
 
-        user_message = _add_message(
-            db,
-            room,
-            participant_id=payload.participant_id or room.participant_id,
-            participant_kind="user",
-            participant_name=room.participant_name,
-            text=payload.message,
-        )
-        db.flush()
-        queue_event = _create_queue_event(db, room, bot, version, user_message, payload)
-        db.flush()
-        if payload.defer_processing:
-            db.commit()
-            db.refresh(user_message)
-            db.refresh(queue_event)
-            return success_response(
-                request,
-                {
-                    "roomId": str(room.id),
-                    "channelType": channel,
-                    "queued": True,
-                    "bot": {"id": str(bot.id), "name": bot.name},
-                    "activeVersion": {"id": str(version.id), "name": version.name, "versionNo": version.version_no},
-                    "queueEvent": {"id": str(queue_event.id), "status": queue_event.status, "receiveStatus": queue_event.receive_status},
-                    "userMessage": _serialize_message(user_message),
-                    "botMessage": None,
-                    "botMessages": [],
-                },
-            )
-        _set_queue_status(queue_event, "processing", receive_status="processing")
-
-        document = normalize_version_document(version.version_json)
-        default_messages = _load_default_messages(db, bot.organization_id, message_languages)
-        runtime_state_before = _as_dict(room.metadata_json) or _initial_runtime_state_for_version(bot, version, room.channel_type)
-        _reset_stalled_waiting_talk_state(document, runtime_state_before, channel_code)
-        runtime_state_snapshot = deepcopy(runtime_state_before)
-        _set_runtime_system_variables(
-            runtime_state_before,
-            bot=bot,
-            channel_code=channel_code,
-            room=room,
-            participant_id=payload.participant_id or room.participant_id,
-            participant_name=room.participant_name,
-            message=payload.message,
-        )
-        runtime_state_after = runtime_state_before
-        selected_dialog = None
-        score = 0.0
-        bot_messages: list[ChannelMessage] = []
-        form_response_handled = False
-        structured_talk_input = _is_structured_talk_input(
-            document,
-            payload.source_talk_node_id,
-            payload.message,
-            channel_code,
-            None if payload.source_talk_node_id is None else str(runtime_state_before.get("waitingNodeId") or None),
-        )
-
-        try:
-            item = _append_runtime_event(
-                runtime_state_before,
-                level="info",
-                event="channel.runtime.message_received",
-                message="채널 메시지를 수신했습니다.",
-                data={
-                    "channel": channel,
-                    "roomId": str(room.id),
-                    "botId": str(bot.id),
-                    "botName": bot.name,
-                    "versionId": str(version.id),
-                    "participantId": payload.participant_id or room.participant_id,
-                    "messagePreview": _log_preview(payload.message, 500),
-                    "sourceTalkNodeId": payload.source_talk_node_id,
-                    "queueEventId": str(queue_event.id),
-                },
-            )
-            _log_runtime_event(item)
-            interrupted_intent_transition = False
-            if payload.target_dialog_id:
-                selected_dialog = _direct_dialog_definition(document, payload.target_dialog_id)
-                if selected_dialog is None:
-                    raise ValueError(f"대화를 찾을 수 없습니다: {payload.target_dialog_id}")
-                score = 1.0
-                runtime_outputs, runtime_state = _run_direct_dialog(
-                    document,
-                    runtime_state_before,
-                    bot,
-                    version,
-                    selected_dialog,
-                    payload.dialog_params,
-                    default_messages,
-                    channel_code,
-                    return_to_previous=not payload.direct_dialog_root,
-                )
-                interrupted_intent_transition = True
-            elif payload.source_talk_node_id is None and not structured_talk_input:
-                runtime_outputs, runtime_state, selected_dialog, interrupted_intent_transition = _interrupt_waiting_talk_with_intent(
-                    document,
-                    runtime_state_before,
-                    bot,
-                    version,
-                    payload.message,
-                    default_messages,
-                    channel_code,
-                )
-            if interrupted_intent_transition:
-                form_response_handled = False
-            else:
-                form_response_handled, form_next_node_id = _store_form_result_variable(
-                    document,
-                    runtime_state_before,
-                    payload.source_talk_node_id,
-                    payload.message,
-                    channel_code,
-                    str(runtime_state_before.get("waitingNodeId") or None),
-                )
-                if form_response_handled:
-                    runtime_state_before["waitingNodeId"] = ""
-                    if form_next_node_id:
-                        runtime_outputs, runtime_state = _run_runtime(document, runtime_state_before, form_next_node_id, default_messages, channel_code)
-                    else:
-                        runtime_outputs, runtime_state = [], runtime_state_before
-                else:
-                    runtime_outputs, runtime_state = _handle_runtime_message(
-                        document,
-                        runtime_state_before,
-                        payload.message,
-                        default_messages,
-                        channel_code,
-                        _button_selection_option(bot, version),
+        if runtime_outputs:
+            for output in runtime_outputs:
+                bot_messages.append(
+                    _add_message(
+                        db,
+                        room,
+                        participant_id=str(bot.id),
+                        participant_kind="bot",
+                        participant_name=bot.name,
+                        text=str(output.get("text") or ""),
+                        message_type=str(output.get("type") or "text"),
+                        payload_json={"options": output.get("options") or [], **_as_dict(output.get("payload"))},
                     )
-            runtime_state_after = runtime_state
-            room.metadata_json = runtime_state
-            flag_modified(room, "metadata_json")
+                )
+        elif (not interrupted_intent_transition) and _should_run_intent_fallback(
+            runtime_outputs,
+            form_response_handled,
+            bool(runtime_state_before.get("waitingNodeId")),
+            structured_talk_input,
+        ) and _runtime_allows_general_intent_transition(document, runtime_state):
+            score = 1.0
+            intent_outputs, runtime_state, selected_dialog, handled_pre_nlu, nlu_message = _handle_pre_nlu_settings(
+                document,
+                runtime_state,
+                bot,
+                version,
+                payload.message,
+                default_messages,
+                channel_code,
+            )
+            if not handled_pre_nlu:
+                selected_dialog, score = _select_dialog_for_bot(
+                    document,
+                    bot,
+                    version,
+                    nlu_message,
+                    prefer_exact_utterance=_exacting_matching_enabled(bot, version),
+                )
+            if selected_dialog:
+                item = _append_runtime_event(
+                    runtime_state,
+                    level="info",
+                    event="channel.runtime.intent_matched",
+                    message="의도 인식 결과로 대화 흐름을 선택했습니다.",
+                    data={
+                        "intentId": str(selected_dialog.get("id") or ""),
+                        "intentName": str(selected_dialog.get("name") or selected_dialog.get("displayName") or ""),
+                        "intentScore": round(score * 100, 2),
+                        "nluType": str(
+                            _version_ai_config(bot, version).get("nlu_type")
+                            or _version_ai_config(bot, version).get("nluType")
+                            or "ml"
+                        ),
+                    },
+                )
+                _log_runtime_event(item)
+            elif not handled_pre_nlu:
+                item = _append_runtime_event(
+                    runtime_state,
+                    level="warning",
+                    event="channel.runtime.intent_fallback",
+                    message="의도를 찾지 못해 fallback 답변을 사용했습니다.",
+                    data={"intentScore": round(score * 100, 2), "messagePreview": _log_preview(payload.message, 500)},
+                )
+                _log_runtime_event(item)
 
-            if runtime_outputs:
-                for output in runtime_outputs:
+            if selected_dialog and not intent_outputs:
+                runtime_state["intentFallbackCount"] = 0
+                intent_graph = _graph_for_dialog(document, selected_dialog)
+                start_node_id = _first_runtime_node_id(intent_graph) if intent_graph else None
+                if intent_graph is not None and start_node_id:
+                    _queue_runtime_return(document, runtime_state, selected_dialog)
+                    runtime_state["__runtimeTransitionLocked"] = runtime_state.get("__runtimeTransitionLocked") is True or bool(
+                        selected_dialog.get("transitionLocked") is True
+                    )
+                    runtime_state["__runtimeReturnBlocked"] = bool(selected_dialog.get("returnBlocked") is True)
+                    runtime_state["graphId"] = str(intent_graph.get("id") or "")
+                    runtime_state["dialogId"] = str(intent_graph.get("dialogId") or selected_dialog.get("id") or "")
+                    runtime_state["waitingNodeId"] = ""
+                    variables = _as_dict(runtime_state.get("variables"))
+                    runtime_state["variables"] = variables
+                    _set_variable(variables, "$input", nlu_message)
+                    _prepare_answer_rag_variables(runtime_state, bot, version, nlu_message, selected_dialog)
+                    intent_outputs, runtime_state = _run_runtime(document, runtime_state, start_node_id, default_messages, channel_code)
+                    runtime_state_after = runtime_state
+            elif not handled_pre_nlu:
+                overflow_outputs, runtime_state, ran_overflow = _handle_intent_not_found(
+                    document,
+                    runtime_state,
+                    bot,
+                    version,
+                    default_messages,
+                    channel_code,
+                )
+                if ran_overflow:
+                    intent_outputs = overflow_outputs
+                    runtime_state_after = runtime_state
+
+            if intent_outputs:
+                for output in intent_outputs:
                     bot_messages.append(
                         _add_message(
                             db,
@@ -6469,270 +6577,172 @@ def create_channel_room_message(
                             payload_json={"options": output.get("options") or [], **_as_dict(output.get("payload"))},
                         )
                     )
-            elif (not interrupted_intent_transition) and _should_run_intent_fallback(
-                runtime_outputs,
-                form_response_handled,
-                bool(runtime_state_before.get("waitingNodeId")),
-                structured_talk_input,
-            ) and _runtime_allows_general_intent_transition(document, runtime_state):
-                score = 1.0
-                intent_outputs, runtime_state, selected_dialog, handled_pre_nlu, nlu_message = _handle_pre_nlu_settings(
-                    document,
-                    runtime_state,
-                    bot,
-                    version,
-                    payload.message,
-                    default_messages,
-                    channel_code,
+            else:
+                reply = _reply_for_dialog(db, bot, selected_dialog, message_languages)
+                bot_messages.append(
+                    _add_message(
+                        db,
+                        room,
+                        participant_id=str(bot.id),
+                        participant_kind="bot",
+                        participant_name=bot.name,
+                        text=reply,
+                    )
                 )
-                if not handled_pre_nlu:
-                    selected_dialog, score = _select_dialog_for_bot(
-                        document,
-                        bot,
-                        version,
-                        nlu_message,
-                        prefer_exact_utterance=_exacting_matching_enabled(bot, version),
-                    )
-                if selected_dialog:
-                    item = _append_runtime_event(
-                        runtime_state,
-                        level="info",
-                        event="channel.runtime.intent_matched",
-                        message="의도 인식 결과로 대화 흐름을 선택했습니다.",
-                        data={
-                            "intentId": str(selected_dialog.get("id") or ""),
-                            "intentName": str(selected_dialog.get("name") or selected_dialog.get("displayName") or ""),
-                            "intentScore": round(score * 100, 2),
-                            "nluType": str(
-                                _version_ai_config(bot, version).get("nlu_type")
-                                or _version_ai_config(bot, version).get("nluType")
-                                or "ml"
-                            ),
-                        },
-                    )
-                    _log_runtime_event(item)
-                elif not handled_pre_nlu:
-                    item = _append_runtime_event(
-                        runtime_state,
-                        level="warning",
-                        event="channel.runtime.intent_fallback",
-                        message="의도를 찾지 못해 fallback 답변을 사용했습니다.",
-                        data={"intentScore": round(score * 100, 2), "messagePreview": _log_preview(payload.message, 500)},
-                    )
-                    _log_runtime_event(item)
-
-                if selected_dialog and not intent_outputs:
-                    runtime_state["intentFallbackCount"] = 0
-                    intent_graph = _graph_for_dialog(document, selected_dialog)
-                    start_node_id = _first_runtime_node_id(intent_graph) if intent_graph else None
-                    if intent_graph is not None and start_node_id:
-                        _queue_runtime_return(document, runtime_state, selected_dialog)
-                        runtime_state["__runtimeTransitionLocked"] = runtime_state.get("__runtimeTransitionLocked") is True or bool(
-                            selected_dialog.get("transitionLocked") is True
-                        )
-                        runtime_state["__runtimeReturnBlocked"] = bool(selected_dialog.get("returnBlocked") is True)
-                        runtime_state["graphId"] = str(intent_graph.get("id") or "")
-                        runtime_state["dialogId"] = str(intent_graph.get("dialogId") or selected_dialog.get("id") or "")
-                        runtime_state["waitingNodeId"] = ""
-                        variables = _as_dict(runtime_state.get("variables"))
-                        runtime_state["variables"] = variables
-                        _set_variable(variables, "$input", nlu_message)
-                        _prepare_answer_rag_variables(runtime_state, bot, version, nlu_message, selected_dialog)
-                        intent_outputs, runtime_state = _run_runtime(document, runtime_state, start_node_id, default_messages, channel_code)
-                        runtime_state_after = runtime_state
-                elif not handled_pre_nlu:
-                    overflow_outputs, runtime_state, ran_overflow = _handle_intent_not_found(
-                        document,
-                        runtime_state,
-                        bot,
-                        version,
-                        default_messages,
-                        channel_code,
-                    )
-                    if ran_overflow:
-                        intent_outputs = overflow_outputs
-                        runtime_state_after = runtime_state
-
-                if intent_outputs:
-                    for output in intent_outputs:
-                        bot_messages.append(
-                            _add_message(
-                                db,
-                                room,
-                                participant_id=str(bot.id),
-                                participant_kind="bot",
-                                participant_name=bot.name,
-                                text=str(output.get("text") or ""),
-                                message_type=str(output.get("type") or "text"),
-                                payload_json={"options": output.get("options") or [], **_as_dict(output.get("payload"))},
-                            )
-                        )
-                else:
-                    reply = _reply_for_dialog(db, bot, selected_dialog, message_languages)
-                    bot_messages.append(
-                        _add_message(
-                            db,
-                            room,
-                            participant_id=str(bot.id),
-                            participant_kind="bot",
-                            participant_name=bot.name,
-                            text=reply,
-                        )
-                    )
-            item = _append_runtime_event(
-                runtime_state,
-                level="info",
-                event="channel.runtime.completed",
-                message="채널 메시지 처리를 완료했습니다.",
-                data={
-                    "queueEventId": str(queue_event.id),
-                    "botMessageCount": len(bot_messages),
-                    "dialogEnded": runtime_state.get("dialogEnded") is True,
-                    "sessionEnded": runtime_state.get("sessionEnded") is True,
-                    "completionReason": runtime_completion_reason(runtime_state),
-                },
-            )
-            _log_runtime_event(item)
-            room.metadata_json = runtime_state
-            flag_modified(room, "metadata_json")
-            _set_queue_status(
-                queue_event,
-                "completed",
-                receive_status="completed",
-                intent_name=str(selected_dialog.get("name") or selected_dialog.get("displayName") or "") if selected_dialog else None,
-                result_json={
-                    "botMessageCount": len(bot_messages),
-                    "intentId": str(selected_dialog.get("id")) if selected_dialog else None,
-                    "intentScore": round(score * 100, 2),
-                    "dialogEnded": runtime_state.get("dialogEnded") is True,
-                    "sessionEnded": runtime_state.get("sessionEnded") is True,
-                    "completionReason": runtime_completion_reason(runtime_state),
-                    "runtimeEvents": _as_list(runtime_state.get("runtimeEvents")),
-                },
-            )
-            if runtime_state.get("sessionEnded") is True:
-                _archive_room_for_new_session(db, room, "end_session_immediately")
-                _write_channel_audit_log(
-                    db,
-                    request,
-                    "channel.session.closed",
-                    room.id,
-                    {
-                        "reason": "end_session_immediately",
-                        "channel": channel,
-                        "bot_id": str(bot.id),
-                        "version_id": str(version.id),
-                        "queue_event_id": str(queue_event.id),
-                    },
-                )
-        except Exception as error:
-            item = _append_runtime_event(
-                runtime_state_before,
-                level="error",
-                event="channel.runtime.exception",
-                message="채널 런타임 처리 중 오류가 발생했습니다.",
-                data={
-                    "channel": channel,
-                    "roomId": str(room.id),
-                    "botId": str(bot.id),
-                    "botName": bot.name,
-                    "versionId": str(version.id),
-                    "participantId": payload.participant_id or room.participant_id,
-                    "messagePreview": _log_preview(payload.message, 500),
-                    "errorType": type(error).__name__,
-                    "errorMessage": str(error),
-                    "queueEventId": str(queue_event.id),
-                },
-            )
-            _log_runtime_event(item)
-            logger.exception(
-                "Channel runtime failed.",
-                extra={
-                    "event": "channel.runtime.exception",
-                    "extra_data": {
-                        "channel": channel,
-                        "room_id": str(room.id),
-                        "bot_id": str(bot.id),
-                        "bot_name": bot.name,
-                        "version_id": str(version.id),
-                        "participant_id": payload.participant_id or room.participant_id,
-                        "message_preview": _log_preview(payload.message, 500),
-                        "error_type": type(error).__name__,
-                        "error_message": str(error),
-                    },
-                },
-            )
-            _set_queue_status(
-                queue_event,
-                "failed",
-                receive_status="failed",
-                error_message=str(error),
-                result_json={
-                    "errorType": type(error).__name__,
-                    "errorMessage": str(error),
-                    "runtimeEvents": _as_list(runtime_state_before.get("runtimeEvents")),
-                },
-            )
+        item = _append_runtime_event(
+            runtime_state,
+            level="info",
+            event="channel.runtime.completed",
+            message="채널 메시지 처리를 완료했습니다.",
+            data={
+                "queueEventId": str(queue_event.id),
+                "botMessageCount": len(bot_messages),
+                "dialogEnded": runtime_state.get("dialogEnded") is True,
+                "sessionEnded": runtime_state.get("sessionEnded") is True,
+                "completionReason": runtime_completion_reason(runtime_state),
+            },
+        )
+        _log_runtime_event(item)
+        room.metadata_json = runtime_state
+        flag_modified(room, "metadata_json")
+        _set_queue_status(
+            queue_event,
+            "completed",
+            receive_status="completed",
+            intent_name=str(selected_dialog.get("name") or selected_dialog.get("displayName") or "") if selected_dialog else None,
+            result_json={
+                "botMessageCount": len(bot_messages),
+                "intentId": str(selected_dialog.get("id")) if selected_dialog else None,
+                "intentScore": round(score * 100, 2),
+                "dialogEnded": runtime_state.get("dialogEnded") is True,
+                "sessionEnded": runtime_state.get("sessionEnded") is True,
+                "completionReason": runtime_completion_reason(runtime_state),
+                "runtimeEvents": _as_list(runtime_state.get("runtimeEvents")),
+            },
+        )
+        if runtime_state.get("sessionEnded") is True:
+            _archive_room_for_new_session(db, room, "end_session_immediately")
             _write_channel_audit_log(
                 db,
                 request,
-                "channel.runtime.error",
+                "channel.session.closed",
                 room.id,
                 {
+                    "reason": "end_session_immediately",
                     "channel": channel,
-                    "room_id": str(room.id),
                     "bot_id": str(bot.id),
                     "version_id": str(version.id),
                     "queue_event_id": str(queue_event.id),
+                },
+            )
+    except Exception as error:
+        item = _append_runtime_event(
+            runtime_state_before,
+            level="error",
+            event="channel.runtime.exception",
+            message="채널 런타임 처리 중 오류가 발생했습니다.",
+            data={
+                "channel": channel,
+                "roomId": str(room.id),
+                "botId": str(bot.id),
+                "botName": bot.name,
+                "versionId": str(version.id),
+                "participantId": payload.participant_id or room.participant_id,
+                "messagePreview": _log_preview(payload.message, 500),
+                "errorType": type(error).__name__,
+                "errorMessage": str(error),
+                "queueEventId": str(queue_event.id),
+            },
+        )
+        _log_runtime_event(item)
+        logger.exception(
+            "Channel runtime failed.",
+            extra={
+                "event": "channel.runtime.exception",
+                "extra_data": {
+                    "channel": channel,
+                    "room_id": str(room.id),
+                    "bot_id": str(bot.id),
+                    "bot_name": bot.name,
+                    "version_id": str(version.id),
                     "participant_id": payload.participant_id or room.participant_id,
+                    "message_preview": _log_preview(payload.message, 500),
                     "error_type": type(error).__name__,
                     "error_message": str(error),
                 },
-            )
-            room.metadata_json = runtime_state_snapshot
-            flag_modified(room, "metadata_json")
-            runtime_state_after = runtime_state_snapshot
-            bot_messages.append(
-                _add_message(
-                    db,
-                    room,
-                    participant_id=str(bot.id),
-                    participant_kind="bot",
-                    participant_name=bot.name,
-                    text=_runtime_message(default_messages, "system_error", DEFAULT_MESSAGE_FALLBACKS["system_error"]),
-                )
-            )
-        room.updated_at = datetime.now(timezone.utc)
-        db.add(room)
-        db.commit()
-        db.refresh(user_message)
-        for bot_message in bot_messages:
-            db.refresh(bot_message)
-
-        serialized_bot_messages = [_serialize_message(message) for message in bot_messages]
-        return success_response(
-            request,
-            {
-                "roomId": str(room.id),
-                "channelType": channel,
-                "bot": {"id": str(bot.id), "name": bot.name},
-                "activeVersion": {"id": str(version.id), "name": version.name, "versionNo": version.version_no},
-                "queueEvent": {"id": str(queue_event.id), "status": queue_event.status, "receiveStatus": queue_event.receive_status},
-                "userMessage": _serialize_message(user_message),
-                "botMessage": serialized_bot_messages[-1] if serialized_bot_messages else None,
-                "botMessages": serialized_bot_messages,
-                "intent": {
-                    "id": str(selected_dialog.get("id")) if selected_dialog else None,
-                    "name": str(selected_dialog.get("name")) if selected_dialog else None,
-                    "score": round(score * 100, 2),
-                },
-                "runtime": {
-                    "dialogEnded": runtime_state_after.get("dialogEnded") is True,
-                    "sessionEnded": runtime_state_after.get("sessionEnded") is True,
-                    "completionReason": runtime_completion_reason(runtime_state_after),
-                },
             },
         )
+        _set_queue_status(
+            queue_event,
+            "failed",
+            receive_status="failed",
+            error_message=str(error),
+            result_json={
+                "errorType": type(error).__name__,
+                "errorMessage": str(error),
+                "runtimeEvents": _as_list(runtime_state_before.get("runtimeEvents")),
+            },
+        )
+        _write_channel_audit_log(
+            db,
+            request,
+            "channel.runtime.error",
+            room.id,
+            {
+                "channel": channel,
+                "room_id": str(room.id),
+                "bot_id": str(bot.id),
+                "version_id": str(version.id),
+                "queue_event_id": str(queue_event.id),
+                "participant_id": payload.participant_id or room.participant_id,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
+        room.metadata_json = runtime_state_snapshot
+        flag_modified(room, "metadata_json")
+        runtime_state_after = runtime_state_snapshot
+        bot_messages.append(
+            _add_message(
+                db,
+                room,
+                participant_id=str(bot.id),
+                participant_kind="bot",
+                participant_name=bot.name,
+                text=_runtime_message(default_messages, "system_error", DEFAULT_MESSAGE_FALLBACKS["system_error"]),
+            )
+        )
+    room.updated_at = datetime.now(timezone.utc)
+    db.add(room)
+    db.commit()
+    db.refresh(user_message)
+    for bot_message in bot_messages:
+        db.refresh(bot_message)
+
+    serialized_bot_messages = [_serialize_message(message) for message in bot_messages]
+    return success_response(
+        request,
+        {
+            "roomId": str(room.id),
+            "channelType": channel,
+            "bot": {"id": str(bot.id), "name": bot.name},
+            "activeVersion": {"id": str(version.id), "name": version.name, "versionNo": version.version_no},
+            "queueEvent": {"id": str(queue_event.id), "status": queue_event.status, "receiveStatus": queue_event.receive_status},
+            "userMessage": _serialize_message(user_message),
+            "botMessage": serialized_bot_messages[-1] if serialized_bot_messages else None,
+            "botMessages": serialized_bot_messages,
+            "intent": {
+                "id": str(selected_dialog.get("id")) if selected_dialog else None,
+                "name": str(selected_dialog.get("name")) if selected_dialog else None,
+                "score": round(score * 100, 2),
+            },
+            "runtime": {
+                "dialogEnded": runtime_state_after.get("dialogEnded") is True,
+                "sessionEnded": runtime_state_after.get("sessionEnded") is True,
+                "completionReason": runtime_completion_reason(runtime_state_after),
+            },
+        },
+    )
 
 
 @router.options("/{channel_type}/rooms/{room_id}/messages")
