@@ -99,3 +99,86 @@ def test_two_workers_real_pg_single_lease_and_fence(pg_state):
         db.commit()
     with Session(engine) as db:
         assert s.claim_send(db, ids[0], lease_id, winner, 1) is None
+
+
+def ready_delivery(pg_state):
+    from app.models import ChannelConnection
+    from app.services import channel_connection_state as s
+    from app.services.channel_connections import encrypt_event_context
+    engine, connection_id = pg_state
+    with Session(engine) as db:
+        row = db.get(ChannelConnection, connection_id)
+        lease = s.claim_installation(db, row, "worker", ttl_seconds=60)
+        s.activate_connection(db, row.id, lease.id, "worker", lease.fence, {"installation_id": "i", "account_id": "a"})
+        incoming = event(channelId="C123")
+        item = s.accept_delivery(db, row.id, lease.id, "worker", lease.fence, incoming, key=KEY, version="v1")
+        s.claim_delivery(db, row.id, lease.id, "worker", lease.fence, deadline_seconds=30)
+        item.context_ciphertext = encrypt_event_context({"event": incoming, "messages": [{"text": "answer"}]},
+            row.organization_id, item.id, KEY, "v1")
+        s.mark_ready(db, item.id, {"messageCount": 1}, item.execution_claim_id, lease.id, "worker", lease.fence)
+        result = row.id, lease.id, lease.fence, item.id
+        db.commit()
+        return result
+
+
+def test_pg_receive_during_pending_send_keeps_event_loop_live(pg_state):
+    import asyncio
+    from sqlalchemy.orm import sessionmaker
+    from app.services.channel_connection_runtime import ConnectionRuntime
+    from app.models import ChannelConnectionDelivery
+    engine, _ = pg_state
+    connection_id, lease_id, fence, delivery_id = ready_delivery(pg_state)
+    runtime = ConnectionRuntime(sessionmaker(engine, expire_on_commit=False), key=KEY, version="v1")
+    class Listener:
+        started = None
+        async def send(self, target, packets, context):
+            self.started.set()
+            await asyncio.sleep(0.1)
+            return ["synthetic-message"]
+    async def run():
+        listener = Listener(); listener.started = asyncio.Event()
+        send = asyncio.create_task(runtime._send(delivery_id, lease_id, "worker", fence, listener))
+        try:
+            await asyncio.wait_for(listener.started.wait(), timeout=3)
+            incoming = event(channelId="C123"); incoming["eventId"] = "second-event"
+            received = asyncio.create_task(runtime.receive(connection_id, lease_id, "worker", fence, incoming))
+            results = await asyncio.wait_for(asyncio.gather(send, received), timeout=3)
+            assert results[0] is True
+            return results[1]
+        finally:
+            if not send.done(): send.cancel()
+    second_id = asyncio.run(run())
+    with Session(engine) as db:
+        assert db.get(ChannelConnectionDelivery, delivery_id).status == "sent"
+        assert db.get(ChannelConnectionDelivery, second_id).status == "received"
+
+
+def test_pg_send_cancellation_finishes_thread_and_preserves_unknown(pg_state):
+    import asyncio
+    from sqlalchemy.orm import sessionmaker
+    from app.services.channel_connection_runtime import ConnectionRuntime
+    from app.models import ChannelConnectionDelivery
+    engine, _ = pg_state
+    connection_id, lease_id, fence, delivery_id = ready_delivery(pg_state)
+    runtime = ConnectionRuntime(sessionmaker(engine, expire_on_commit=False), key=KEY, version="v1")
+    class Listener:
+        started = None
+        closed = None
+        async def send(self, target, packets, context):
+            self.started.set()
+            try: await asyncio.Event().wait()
+            finally: self.closed.set()
+    async def run():
+        listener = Listener(); listener.started, listener.closed = asyncio.Event(), asyncio.Event()
+        send = asyncio.create_task(runtime._send(delivery_id, lease_id, "worker", fence, listener))
+        await asyncio.wait_for(listener.started.wait(), timeout=3)
+        send.cancel()
+        with pytest.raises(asyncio.CancelledError): await asyncio.wait_for(send, timeout=3)
+        await asyncio.wait_for(listener.closed.wait(), timeout=3)
+        # Cancellation has already joined the DB transaction thread and released lease locks.
+        incoming = event(channelId="C123"); incoming["eventId"] = "after-cancellation"
+        return await asyncio.wait_for(runtime.receive(connection_id, lease_id, "worker", fence, incoming), timeout=3)
+    next_id = asyncio.run(run())
+    with Session(engine) as db:
+        assert db.get(ChannelConnectionDelivery, delivery_id).status == "unknown"
+        assert db.get(ChannelConnectionDelivery, next_id).status == "received"

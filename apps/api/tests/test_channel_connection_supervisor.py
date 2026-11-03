@@ -92,3 +92,45 @@ def test_registered_enabled_connect_only_sets_desired_state(management, monkeypa
 
 
 from test_channel_connections import management
+
+
+def test_listener_update_removes_disconnected_target_and_keeps_other(state_db):
+    from sqlalchemy.orm import sessionmaker
+    from app.services.channel_connection_supervisor import ConnectionSupervisor
+    from app.services.channel_connections import encrypt_credentials, disconnect_connection
+    from app.models import ChannelConnection
+    db, first = state_db
+    first.credential_ciphertext = encrypt_credentials({"bot_token": "synthetic"}, first.organization_id, first.id, KEY, "v1")
+    first.credential_key_version = "v1"
+    second = ChannelConnection(organization_id=first.organization_id, channel_id=first.channel_id, bot_id=first.bot_id,
+        name="B", provider="slack", installation_id="i", account_id="a", target_id="other",
+        desired_state="connected", observed_state="connecting")
+    db.add(second); db.flush()
+    second.credential_ciphertext = encrypt_credentials({"bot_token": "synthetic"}, second.organization_id, second.id, KEY, "v1")
+    second.credential_key_version = "v1"; db.commit()
+    class Listener:
+        closed = False
+        targets = set()
+        async def listen(self, receive): await asyncio.Event().wait()
+        async def update(self, targets): self.targets = {x.id for x in targets}
+        async def close(self): self.closed = True
+    listener = Listener()
+    class Adapter:
+        async def verify(self, target, credentials): return {"installation_id": "i", "account_id": "a"}
+        async def open(self, targets, credentials, identity):
+            await listener.update(targets)
+            return listener
+    factory = sessionmaker(db.bind, expire_on_commit=False)
+    worker = ConnectionSupervisor(factory, config=config(True, KEY), adapters={"slack": Adapter()})
+    async def run():
+        try:
+            await worker.tick()
+            assert listener.targets == {first.id, second.id}
+            with factory() as session:
+                disconnect_connection(session.get(ChannelConnection, first.id)); session.commit()
+            await worker.tick()
+            assert listener.targets == {second.id}
+            assert not listener.closed
+            assert next(iter(worker.handles.values())).targets[0].id == second.id
+        finally: await worker.stop()
+    asyncio.run(run())

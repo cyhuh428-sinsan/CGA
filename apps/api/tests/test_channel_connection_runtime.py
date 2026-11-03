@@ -182,8 +182,10 @@ def test_supervisor_synthetic_adapter_receive_native_fixed_qa_send(state_db):
     row.credential_ciphertext = encrypt_credentials({"bot_token": "synthetic"}, row.organization_id, row.id, KEY, "v1")
     row.credential_key_version = "v1"; db.commit()
     class Listener(SyntheticListener):
+        received = asyncio.Event()
         async def listen(self, receive):
             await receive(row.id, event(channelId="C123"))
+            self.received.set()
             await asyncio.Event().wait()
     listener = Listener()
     class Adapter:
@@ -195,7 +197,14 @@ def test_supervisor_synthetic_adapter_receive_native_fixed_qa_send(state_db):
     async def run():
         try:
             await worker.tick()
-            await asyncio.sleep(0)
+            handle = next(iter(worker.handles.values()))
+            received = asyncio.create_task(listener.received.wait())
+            try:
+                done, _ = await asyncio.wait({handle.task, received}, timeout=2, return_when=asyncio.FIRST_COMPLETED)
+                if handle.task in done: await handle.task
+                assert received in done
+            finally:
+                received.cancel()
             await worker.tick()
         finally: await worker.stop()
     asyncio.run(run())
@@ -204,3 +213,29 @@ def test_supervisor_synthetic_adapter_receive_native_fixed_qa_send(state_db):
     assert db.query(ChannelQueueEvent).one().status == "completed"
     assert len(listener.sent) == 1 and listener.sent[0][0]["text"] == "fixed QA answer"
     assert listener.closed
+
+
+def test_database_wait_does_not_block_async_listener_loop():
+    """DB session이 기다려도 async 수신 loop의 해제 처리가 실행된다."""
+    from threading import Event
+    from app.services.channel_connection_runtime import ConnectionRuntime
+    entered, release = Event(), Event()
+    class BlockedSession:
+        def __enter__(self):
+            entered.set()
+            if not release.wait(timeout=0.5): raise TimeoutError("DB wait blocked event loop")
+            raise RuntimeError("finished synthetic DB boundary")
+        def __exit__(self, *args): pass
+    runtime = ConnectionRuntime(BlockedSession, key=KEY, version="v1")
+    async def run():
+        async def release_on_loop():
+            while not entered.is_set(): await asyncio.sleep(0.001)
+            release.set()
+        releaser = asyncio.create_task(release_on_loop())
+        try:
+            with pytest.raises(RuntimeError, match="finished synthetic DB boundary"):
+                await runtime.receive(uuid4(), uuid4(), "owner", 1, event())
+        finally:
+            release.set()
+            await releaser
+    asyncio.run(run())

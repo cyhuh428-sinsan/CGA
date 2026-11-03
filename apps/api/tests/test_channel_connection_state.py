@@ -8,7 +8,7 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.ext.compiler import compiles, deregister
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql.elements import TextClause
 
@@ -16,7 +16,7 @@ KEY = base64.urlsafe_b64encode(bytes(range(32))).decode()
 
 
 @pytest.fixture
-def state_db():
+def state_db(tmp_path):
     from app.models import (Organization, Group, Bot, AdminChannel, ChannelConnection,
         ChannelInstallationLease, ChannelConnectionDelivery, ChannelConnectionRoom, ChannelRoom,
         ChannelMessage, ChannelQueueEvent, BotVersion, AuditLog)
@@ -25,11 +25,16 @@ def state_db():
     @compiles(TextClause, "sqlite")
     def _text(element, compiler, **kw):
         return element.text.replace("::jsonb", "")
-    engine = create_engine("sqlite://")
-    for cls in (Organization, Group, Bot, AdminChannel, ChannelConnection, ChannelInstallationLease,
-                ChannelConnectionDelivery, ChannelConnectionRoom, ChannelRoom, ChannelMessage,
-                ChannelQueueEvent, BotVersion, AuditLog):
-        cls.__table__.create(engine)
+    # thread마다 독립 DB connection을 사용한다. StaticPool은 동시 session rollback을 공유한다.
+    engine = create_engine("sqlite:///" + str(tmp_path / "state.sqlite"), connect_args={"check_same_thread": False})
+    try:
+        for cls in (Organization, Group, Bot, AdminChannel, ChannelConnection, ChannelInstallationLease,
+                    ChannelConnectionDelivery, ChannelConnectionRoom, ChannelRoom, ChannelMessage,
+                    ChannelQueueEvent, BotVersion, AuditLog):
+            cls.__table__.create(engine)
+    finally:
+        # PostgreSQL DDL default의 ::jsonb 제거에만 사용. 런타임 bind SQL에는 적용하지 않는다.
+        deregister(TextClause)
     with Session(engine, expire_on_commit=False) as db:
         org = Organization(name="QA", code="task5")
         db.add(org); db.flush()

@@ -131,5 +131,13 @@ class ConnectionSupervisor:
                         row.observed_state, row.last_error_code = "error", "CONNECTION_RUNTIME_ERROR"
                     db.commit()
                 logger.warning("Connection target failed", extra={"event": "channel.connection.target_failed"})
+        valid_ids = {target.id for target in targets}
         for key in list(self.handles):
-            if key not in active: await self._close(key)
+            if key not in active:
+                await self._close(key)
+                continue
+            handle = self.handles[key]
+            members = [target for target in handle.targets if target.id in valid_ids]
+            if members != handle.targets:
+                await handle.listener.update(members)
+                handle.targets = members

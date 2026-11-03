@@ -1,6 +1,8 @@
 """인증된 합성/실제 adapter 이벤트를 native 런타임과 전달 원장으로 연결한다."""
 from __future__ import annotations
 import asyncio
+import concurrent.futures
+from threading import Event
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Protocol
@@ -47,6 +49,9 @@ class ConnectionRuntime:
         self.session_factory, self.key, self.version = session_factory, key, version
 
     async def receive(self, connection_id, installation_id, owner, fence, event):
+        return await asyncio.to_thread(self._receive, connection_id, installation_id, owner, fence, event)
+
+    def _receive(self, connection_id, installation_id, owner, fence, event):
         with self.session_factory() as db:
             item = state.accept_delivery(db, connection_id, installation_id, owner, fence, event,
                 key=self.key, version=self.version)
@@ -55,6 +60,12 @@ class ConnectionRuntime:
         return delivery_id
 
     async def process_one(self, connection_id, installation_id, owner, fence, listener):
+        delivery_id = await asyncio.to_thread(self._execute_one, connection_id, installation_id, owner, fence)
+        if delivery_id is None:
+            return False
+        return await self._send(delivery_id, installation_id, owner, fence, listener)
+
+    def _execute_one(self, connection_id, installation_id, owner, fence):
         with self.session_factory() as db:
             state._live(db, connection_id, installation_id, owner, fence)
             state.recover_expired(db, connection_id)
@@ -63,10 +74,10 @@ class ConnectionRuntime:
                 .order_by(ChannelConnectionDelivery.created_at).limit(1))
             if ready is not None:
                 db.commit()
-                return await self._send(ready, installation_id, owner, fence, listener)
+                return ready
             item = state.claim_delivery(db, connection_id, installation_id, owner, fence, deadline_seconds=300)
             if item is None:
-                db.commit(); return False
+                db.commit(); return None
             delivery_id, claim, generation = item.id, item.execution_claim_id, item.generation
             event = decrypt_event_context(item.context_ciphertext, item.organization_id, item.id,
                 self.key, item.context_key_version)
@@ -119,9 +130,23 @@ class ConnectionRuntime:
                     item.status, item.last_error_code = "unknown", "EXECUTION_UNKNOWN"
                     db.commit()
                 raise
-        return await self._send(delivery_id, installation_id, owner, fence, listener)
+        return delivery_id
 
     async def _send(self, delivery_id, installation_id, owner, fence, listener):
+        loop = asyncio.get_running_loop()
+        cancelled = Event()
+        task = asyncio.create_task(asyncio.to_thread(self._send_transaction, delivery_id,
+            installation_id, owner, fence, listener, loop, cancelled))
+        try:
+            return await asyncio.shield(task)
+        except asyncio.CancelledError:
+            cancelled.set()
+            # DB thread records unknown and releases locks before shutdown returns.
+            try: await task
+            except concurrent.futures.CancelledError: pass
+            raise
+
+    def _send_transaction(self, delivery_id, installation_id, owner, fence, listener, loop, cancelled):
         with self.session_factory() as db:
             claim = state.claim_send(db, delivery_id, installation_id, owner, fence)
             if not claim:
@@ -140,12 +165,27 @@ class ConnectionRuntime:
                 # Keep the fresh lease/connection row locks until send completes or becomes unknown.
                 packets = convert_packet(target.provider, "replies", {"messages": context["messages"],
                     "destination": context["event"].get("destination", context["event"])})
-                ids = await asyncio.wait_for(listener.send(target, packets, context["event"]), timeout=25)
+                if cancelled.is_set(): raise concurrent.futures.CancelledError()
+                # 변환 subprocess 대기 동안 시간이 지났을 수 있으므로 송신 직전 DB clock으로 재검사한다.
+                state._live(db, target.id, installation_id, owner, fence)
+                send = asyncio.run_coroutine_threadsafe(
+                    asyncio.wait_for(listener.send(target, packets, context["event"]), timeout=25), loop)
+                try:
+                    while True:
+                        if cancelled.is_set(): raise concurrent.futures.CancelledError()
+                        try:
+                            ids = send.result(timeout=0.05)
+                            break
+                        except concurrent.futures.TimeoutError:
+                            if send.done(): raise
+                except BaseException:
+                    send.cancel()
+                    raise
                 state.record_sent(db, delivery_id, claim, ids)
                 db.commit()
             except BaseException as error:
                 db.rollback()
                 state.mark_unknown(db, delivery_id, claim, "DELIVERY_UNKNOWN")
                 db.commit()
-                if isinstance(error, asyncio.CancelledError): raise
+                if isinstance(error, (asyncio.CancelledError, concurrent.futures.CancelledError)): raise
         return True
