@@ -199,3 +199,107 @@ def test_wrong_app_token_cannot_starve_valid_target_in_real_sequential_superviso
             assert len(http.posts) == 1 and http.posts[0]['channel'] == good.target_id
         finally: await worker.stop()
     asyncio.run(run())
+
+
+@pytest.fixture
+def slack_management(slack, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.api.deps import get_current_user, get_db
+    from app.api.routes.channel_connections import router
+    from app.core.config import settings
+    from app.models import Bot, User, Role, UserRole, ChannelConnection
+    from app.services.channel_connection_supervisor import ADAPTERS
+    from app.services.channel_connections import encrypt_credentials
+    db, row, factory, adapter, worker, http, ws = slack
+    user = User(organization_id=row.organization_id, group_id=db.get(Bot, row.bot_id).group_id,
+        name='QA', login_id='slack-management', password_hash='synthetic', status='active')
+    role = Role(code='system_manager', name='QA')
+    db.add_all([user, role]); db.flush(); db.add(UserRole(user_id=user.id, role_id=role.id))
+    other = ChannelConnection(organization_id=row.organization_id, bot_id=row.bot_id, channel_id=row.channel_id,
+        name='QA2', provider='slack', installation_id='TQA001', account_id='UQA001', target_id='CQA002',
+        desired_state='connected', observed_state='connecting')
+    db.add(other); db.flush()
+    other.credential_ciphertext = encrypt_credentials(CREDENTIALS, other.organization_id, other.id, KEY, 'v1')
+    other.credential_key_version = 'v1'; db.commit()
+    app = FastAPI(); app.include_router(router, prefix='/api/v1')
+    def session():
+        with factory() as current: yield current
+    app.dependency_overrides[get_db] = session
+    app.dependency_overrides[get_current_user] = lambda: user
+    monkeypatch.setattr(settings, 'channel_connection_encryption_key', KEY)
+    monkeypatch.setattr(settings, 'channel_connection_worker_enabled', True)
+    monkeypatch.setitem(ADAPTERS, 'slack', adapter)
+    with TestClient(app) as client:
+        yield client, f'/api/v1/admin/channels/{row.channel_id}/connections/{row.id}', other
+
+
+def rotate_through_management(client, url, row, app_token):
+    disconnected = client.post(url + '/disconnect')
+    assert disconnected.status_code == 200, disconnected.text
+    assert disconnected.json()['data']['observed_state'] == 'disconnected'
+    updated = client.patch(url, json=dict(name='Rotated', bot_id=str(row.bot_id), installation_id=row.installation_id,
+        account_id=row.account_id, target_id=row.target_id, credentials=dict(bot_token=CREDENTIALS['bot_token'], app_token=app_token)))
+    assert updated.status_code == 200, updated.text
+    connected = client.post(url + '/connect')
+    assert connected.status_code == 200, connected.text
+    return connected.json()['data']['generation']
+
+
+@pytest.mark.parametrize('rotate_token', [True, False])
+def test_management_rotation_recovers_without_inbound_event_and_preserves_other_target(slack, slack_management, rotate_token):
+    db, row, factory, adapter, worker, http, old_ws = slack
+    client, url, other = slack_management
+    fresh = Ws()
+    async def run():
+        try:
+            await worker.tick(); handle = next(iter(worker.handles.values()))
+            old_task = handle.task
+            token = 'synthetic-rotated-app-token' if rotate_token else CREDENTIALS['app_token']
+            generation = rotate_through_management(client, url, row, token)
+            assert old_ws.sent == []  # 3개 관리 요청 사이에 worker tick/수신 이벤트 없음.
+            adapter.socket = Socket(fresh)
+            for _ in range(3): await worker.tick()
+            db.refresh(row); db.refresh(other)
+            assert row.observed_state == 'connected' and row.generation == generation
+            live = next(iter(worker.handles.values()))
+            assert live.task is old_task and not old_task.done()
+            assert other.observed_state == 'connected' and len(live.targets) == 2
+            if rotate_token:
+                assert old_ws.closed and live.listener.ws is fresh
+                assert [c[1] for c in http.calls if c[0] == 'apps.connections.open'] == [CREDENTIALS['app_token'], token]
+            active_ws = fresh if rotate_token else old_ws
+            await deliver(worker, active_ws, frame()); await worker.tick()
+            body = frame(); body['envelope_id'] = 'unrelated-still-live'; body['payload']['event']['channel'] = 'CQA002'
+            await deliver(worker, active_ws, body); await worker.tick()
+            assert [p['channel'] for p in http.posts] == ['CQA001', 'CQA002']
+        finally: await worker.stop()
+        assert old_ws.closed and (fresh.closed if rotate_token else True)
+    asyncio.run(run())
+
+
+def test_failed_rotation_hello_keeps_unrelated_target_but_never_executes_rotated_target(slack, slack_management):
+    from fastapi import HTTPException
+    from app.services.channel_connection_runtime import ConnectionTarget
+    db, row, factory, adapter, worker, http, old_ws = slack
+    client, url, other = slack_management
+    fresh = Ws('AOTHER')
+    async def run():
+        try:
+            await worker.tick(); handle = next(iter(worker.handles.values()))
+            old_target = next(t for t in handle.targets if t.id == row.id)
+            rotate_through_management(client, url, row, 'synthetic-rotated-app-token')
+            adapter.socket = Socket(fresh); await worker.tick()
+            db.refresh(row); db.refresh(other)
+            assert fresh.closed and not old_ws.closed
+            assert row.observed_state == 'error' and other.observed_state == 'connected'
+            for changed in (old_target, ConnectionTarget.from_row(row)):
+                with pytest.raises(HTTPException): await handle.listener.send(changed, [], {})
+            stale = frame(); stale['envelope_id'] = 'invalid-rotated-target'
+            await old_ws.queue.put(json.dumps(stale))
+            good = frame(); good['envelope_id'] = 'normal-after-failed-rotation'; good['payload']['event']['channel'] = 'CQA002'
+            await deliver(worker, old_ws, good); await worker.tick()
+            assert not any(v['envelope_id'] == 'invalid-rotated-target' for v in old_ws.sent)
+            assert [p['channel'] for p in http.posts] == ['CQA002']
+        finally: await worker.stop()
+    asyncio.run(run())

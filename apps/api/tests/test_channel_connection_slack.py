@@ -299,3 +299,89 @@ def test_reply_uses_verified_token_exact_thread_and_safe_native_packet_without_d
             assert http.calls[-1][1] == 'synthetic-bot-token'
         finally: await live.close()
     asyncio.run(run())
+
+
+class TrackingWs(Ws):
+    def __init__(self):
+        super().__init__()
+        self.waiting, self.recv_started = 0, asyncio.Event()
+        self.close_started, self.close_release = asyncio.Event(), asyncio.Event()
+        self.close_release.set()
+    async def recv(self):
+        if not self.queue.empty(): return await super().recv()
+        self.waiting += 1; self.recv_started.set()
+        try: return await super().recv()
+        finally: self.waiting -= 1
+    async def close(self):
+        self.close_started.set(); await self.close_release.wait(); await super().close()
+
+
+async def rotated(live, adapter, spec, fresh):
+    changed = replace(spec, generation=spec.generation + 1)
+    await adapter.verify(changed, {**CREDENTIALS, 'app_token':'synthetic-rotated-app-token'})
+    adapter.socket = Socket(fresh)
+    return changed
+
+
+def test_socket_rotation_wakes_old_recv_and_close_joins_all_listener_waiters():
+    async def run():
+        old, fresh = TrackingWs(), TrackingWs()
+        live, adapter, http, sock, spec = await listener(old)
+        running = asyncio.create_task(live.listen(None))
+        try:
+            await asyncio.wait_for(old.recv_started.wait(), 1)
+            changed = await rotated(live, adapter, spec, fresh)
+            await live.update([changed])
+            await asyncio.wait_for(fresh.recv_started.wait(), 1)
+            assert old.closed and old.waiting == 0 and fresh.waiting == 1
+            await live.close(); await asyncio.wait_for(running, 1)
+            assert fresh.closed and fresh.waiting == 0
+        finally:
+            running.cancel(); await asyncio.gather(running, return_exceptions=True)
+            await live.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('phase', ['hello', 'retire'])
+def test_cancelled_rotation_closes_only_owned_candidate_or_retired_socket(phase):
+    async def run():
+        old, fresh = TrackingWs(), TrackingWs()
+        live, adapter, http, sock, spec = await listener(old)
+        changed = await rotated(live, adapter, spec, fresh)
+        if phase == 'hello': fresh.queue.get_nowait()
+        else: old.close_release.clear()
+        updating = asyncio.create_task(live.update([changed]))
+        try:
+            await asyncio.wait_for((fresh.recv_started if phase == 'hello' else old.close_started).wait(), 1)
+            updating.cancel(); old.close_release.set()
+            with pytest.raises(asyncio.CancelledError): await updating
+            if phase == 'hello':
+                assert fresh.closed and fresh.waiting == 0 and not old.closed and live.ws is old
+                with pytest.raises(HTTPException): await live.send(spec, [], {})
+            else:
+                assert old.closed and live.ws is fresh and not fresh.closed
+        finally:
+            old.close_release.set()
+            if not updating.done(): updating.cancel()
+            await asyncio.gather(updating, return_exceptions=True)
+            await live.close()
+        assert old.closed and fresh.closed
+    asyncio.run(run())
+
+
+def test_close_during_replacement_hello_closes_both_sockets():
+    async def run():
+        old, fresh = TrackingWs(), TrackingWs()
+        live, adapter, http, sock, spec = await listener(old)
+        changed = await rotated(live, adapter, spec, fresh); fresh.queue.get_nowait()
+        updating = asyncio.create_task(live.update([changed]))
+        try:
+            await asyncio.wait_for(fresh.recv_started.wait(), 1)
+            await live.close()
+            fresh.queue.put_nowait(json.dumps(dict(type='hello', connection_info=dict(app_id='AQA001'))))
+            with pytest.raises(HTTPException): await updating
+            assert old.closed and fresh.closed and fresh.waiting == 0
+        finally:
+            updating.cancel(); await asyncio.gather(updating, return_exceptions=True)
+            await live.close()
+    asyncio.run(run())
