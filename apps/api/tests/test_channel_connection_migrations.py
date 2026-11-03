@@ -122,3 +122,27 @@ def test_downgrade_refuses_data(db, revision, table):
     with pytest.raises(RuntimeError, match="[Pp]reserv|records exist|state exists"):
         migrate(db, [directory.get_revision(revision)], "downgrade")
     assert db.execute(sa.text(f'SELECT count(*) FROM "{table}"')).scalar_one() == 1
+
+
+@pytest.mark.parametrize("revision", [REVISIONS[1], REVISIONS[2]])
+def test_downgrade_refuses_lease_without_connection(db, revision):
+    directory = baseline(db)
+    selected = REVISIONS[: REVISIONS.index(revision) + 1]
+    migrate(db, [directory.get_revision(name) for name in selected], "upgrade")
+    from app.models import Organization
+    org = insert(db, Organization, name="lease-only QA", code="lease-only-qa")
+    lease_table = sa.Table("channel_installation_leases", sa.MetaData(), autoload_with=db)
+    values = dict(id=uuid4(), organization_id=org, provider="slack", installation_id="synthetic-installation", account_id="synthetic-account")
+    if "listener_scope_hash" in lease_table.c:
+        values["listener_scope_hash"] = "a" * 64
+    db.execute(sa.insert(lease_table).values(**values))
+    # Fix the independent guard precondition: no connection/room/delivery can
+    # accidentally satisfy another preservation guard before the lease check.
+    for table in ["channel_connections", "channel_connection_rooms", "channel_connection_deliveries"]:
+        assert db.execute(sa.text(f'SELECT count(*) FROM "{table}"')).scalar_one() == 0
+    assert db.execute(sa.select(sa.func.count()).select_from(lease_table)).scalar_one() == 1
+    before = set(sa.inspect(db).get_table_names())
+    with pytest.raises(RuntimeError, match="[Pp]reserv|records exist|state exists"):
+        migrate(db, [directory.get_revision(revision)], "downgrade")
+    assert set(sa.inspect(db).get_table_names()) == before
+    assert db.execute(sa.select(sa.func.count()).select_from(lease_table)).scalar_one() == 1
