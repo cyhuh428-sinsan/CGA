@@ -140,7 +140,7 @@ def test_ack_waits_only_for_durable_receipt_not_bot_execution():
         seen = []
         async def receive(cid, event):
             seen.append((cid, event)); entered.set(); await release.wait(); return uuid4()
-        task = asyncio.create_task(live.handle(frame(), receive))
+        task = asyncio.create_task(live.handle(frame(), receive, source=live.ws, revision=live.revision))
         try:
             await asyncio.wait_for(entered.wait(), 2)
             assert sock.ws.sent == [] and http.posts == []
@@ -162,7 +162,7 @@ def test_failed_or_unconfirmed_commit_is_not_acked(monkeypatch, failure):
         def broken(*args): raise HTTPException(503, 'CHANNEL_PACKET_RUNTIME_UNAVAILABLE')
         if failure == 'bridge': monkeypatch.setattr(subject(), 'convert_packet', broken)
         try:
-            with pytest.raises((RuntimeError, HTTPException)): await live.handle(frame(), receive)
+            with pytest.raises((RuntimeError, HTTPException)): await live.handle(frame(), receive, source=live.ws, revision=live.revision)
             assert sock.ws.sent == []
         finally: await live.close()
     asyncio.run(run())
@@ -173,13 +173,13 @@ def test_self_and_other_targets_are_ignored_but_normal_chat_is_normalized():
         live, adapter, http, sock, spec = await listener(); seen = []
         async def receive(cid, event): seen.append(event); return uuid4()
         try:
-            body = frame(); body['payload']['event']['user'] = 'UQA001'; await live.handle(body, receive)
-            body = frame(); body['payload']['event']['channel'] = 'COTHER'; await live.handle(body, receive)
+            body = frame(); body['payload']['event']['user'] = 'UQA001'; await live.handle(body, receive, source=live.ws, revision=live.revision)
+            body = frame(); body['payload']['event']['channel'] = 'COTHER'; await live.handle(body, receive, source=live.ws, revision=live.revision)
             assert not seen and len(sock.ws.sent) == 2
-            body = frame(); body['payload']['event']['text'] = '일반 대화'; await live.handle(body, receive)
+            body = frame(); body['payload']['event']['text'] = '일반 대화'; await live.handle(body, receive, source=live.ws, revision=live.revision)
             assert len(seen) == 1 and seen[0]['addressed'] is False
             body = frame(); body['payload']['api_app_id'] = 'AOTHER'
-            with pytest.raises(HTTPException): await live.handle(body, receive)
+            with pytest.raises(HTTPException): await live.handle(body, receive, source=live.ws, revision=live.revision)
             assert len(sock.ws.sent) == 3
         finally: await live.close()
     asyncio.run(run())
@@ -268,7 +268,7 @@ def test_send_rejects_cross_target_stale_or_unsafe_packet(change):
         async def receive(cid, event): seen.append(event); return uuid4()
         try:
             body = frame(); body['payload']['event']['thread_ts'] = '1700000000.000001'
-            await live.handle(body, receive); event = seen[0]
+            await live.handle(body, receive, source=live.ws, revision=live.revision); event = seen[0]
             packets = convert_packet('slack', 'replies', dict(messages=[dict(text='safe <text>')], destination=event['destination']))
             if change == 'channel': event['destination']['channelId'] = 'COTHER'
             if change == 'thread': event['destination']['threadTs'] = '1700000000.000002'
@@ -291,7 +291,7 @@ def test_reply_uses_verified_token_exact_thread_and_safe_native_packet_without_d
         async def receive(cid, event): seen.append(event); return uuid4()
         try:
             body = frame(); body['payload']['event']['thread_ts'] = '1700000000.000001'
-            await live.handle(body, receive); event = seen[0]
+            await live.handle(body, receive, source=live.ws, revision=live.revision); event = seen[0]
             packets = convert_packet('slack', 'replies', dict(messages=[dict(text='safe <text>')], destination=event['destination']))
             assert await live.send(spec, packets, event) == ['CQA001:1700000001.000001']
             assert http.posts == [dict(channel='CQA001', text='safe &lt;text&gt;', thread_ts='1700000000.000001',
@@ -383,5 +383,30 @@ def test_close_during_replacement_hello_closes_both_sockets():
             assert old.closed and fresh.closed and fresh.waiting == 0
         finally:
             updating.cancel(); await asyncio.gather(updating, return_exceptions=True)
+            await live.close()
+    asyncio.run(run())
+
+
+def test_identical_reverify_update_does_not_discard_already_received_frame(monkeypatch):
+    async def run():
+        live, adapter, http, sock, spec = await listener()
+        paused, release, committed = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        original = live.handle
+        async def scheduled(value, receive, **source):
+            paused.set(); await release.wait(); return await original(value, receive, **source)
+        monkeypatch.setattr(live, 'handle', scheduled)
+        async def receive(cid, event): committed.set(); return uuid4()
+        running = asyncio.create_task(live.listen(receive))
+        try:
+            await sock.ws.queue.put(json.dumps(frame()))
+            await asyncio.wait_for(paused.wait(), 1)
+            await adapter.verify(spec, CREDENTIALS); await live.update([spec])
+            release.set(); await asyncio.wait_for(committed.wait(), 1)
+            for _ in range(100):
+                if sock.ws.sent: break
+                await asyncio.sleep(.005)
+            assert sock.ws.sent == [dict(envelope_id='envelope-1')]
+        finally:
+            release.set(); running.cancel(); await asyncio.gather(running, return_exceptions=True)
             await live.close()
     asyncio.run(run())

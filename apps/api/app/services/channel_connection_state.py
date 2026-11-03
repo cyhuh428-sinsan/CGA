@@ -156,6 +156,11 @@ def _event(event):
 
 def accept_delivery(db, connection_id, installation_id, owner, fence, event, *, key, version):
     row = _live(db, connection_id, installation_id, owner, fence)
+    destination = event.get('destination') if isinstance(event, dict) else None
+    if isinstance(destination, dict) and 'generation' in destination:
+        generation = destination['generation']
+        if type(generation) is not int or generation != row.generation:
+            raise HTTPException(409, 'CONNECTION_CHANGED')
     _event(event)
     # event IDs are provider-local: include installation/account/target/room before hashing.
     scope = [row.provider, row.installation_id, row.account_id, row.target_id, event["nativeRoomKey"]]

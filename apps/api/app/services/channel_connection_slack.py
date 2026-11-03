@@ -196,6 +196,7 @@ class SlackListener:
         self.targets = {t.id: t for t in targets}
         # 인증 근거는 각 target의 exact binding이다. 회전 후에도 다른 target의 기존 증명은 유지한다.
         self.accepted_bindings = {t.id: adapter.binding(t) for t in targets}
+        self.revision = 0
         self.socket_changed = asyncio.Event()
         self.stopped = False
 
@@ -221,6 +222,7 @@ class SlackListener:
                     raise HTTPException(403, 'SLACK_SOCKET_SCOPE_MISMATCH')
                 replacement = binding
             prepared[target.id] = binding
+        updated_targets = {t.id: t for t in targets}
         if replacement is not None:
             # 기존 id의 승인된 세대 변경만 fresh hello로 회복한다. 신규 target token fallback은 없다.
             fresh = await self.adapter._open_socket(replacement)
@@ -229,8 +231,9 @@ class SlackListener:
                 raise HTTPException(409, 'SLACK_LISTENER_STOPPED')
             previous_ws, self.ws = self.ws, fresh
             self.app_token_digest = replacement.app_token_digest
-            self.targets = {t.id: t for t in targets}
+            self.targets = updated_targets
             self.accepted_bindings = prepared
+            self.revision += 1
             self.socket_changed.set()
             closing = asyncio.create_task(previous_ws.close())
             try: await asyncio.shield(closing)
@@ -238,27 +241,39 @@ class SlackListener:
                 await closing
                 raise
             return
-        self.targets = {t.id: t for t in targets}
+        changed = updated_targets != self.targets or prepared != self.accepted_bindings
+        self.targets = updated_targets
         self.accepted_bindings = prepared
+        if changed:
+            self.revision += 1
+            self.socket_changed.set()
 
     async def close(self):
         self.stopped = True
         self.socket_changed.set()
         await self.ws.close()
 
+    async def _receive_frame(self, ws):
+        raw = await ws.recv()
+        # recv 완료 시점에 동기 snapshot한다. 대기 시작 시점의 옛 revision을 새 frame에 붙이지 않는다.
+        return raw, self.revision
+
     async def listen(self, receive):
         while not self.stopped:
             ws = self.ws
-            reading = asyncio.create_task(ws.recv())
+            reading = asyncio.create_task(self._receive_frame(ws))
             changed = asyncio.create_task(self.socket_changed.wait())
             try:
                 done, _ = await asyncio.wait({reading, changed}, return_when=asyncio.FIRST_COMPLETED)
-                if changed in done or ws is not self.ws:
+                if ws is not self.ws or reading not in done:
                     self.socket_changed.clear()
                     continue
-                value = _frame(reading.result())
+                raw, revision = reading.result()
+                self.socket_changed.clear()
+                if revision != self.revision: continue
+                value = _frame(raw)
                 if value.get('type') == 'disconnect': raise RuntimeError('SLACK_SOCKET_REFRESH_REQUIRED')
-                try: await asyncio.wait_for(self.handle(value, receive), 2.5)
+                try: await asyncio.wait_for(self.handle(value, receive, source=ws, revision=revision), 2.5)
                 except HTTPException as error:
                     # 회전 실패 target은 ACK/실행하지 않되 같은 socket의 정상 target을 끊지 않는다.
                     if error.status_code != 409 or error.detail != 'CONNECTION_CHANGED': raise
@@ -267,16 +282,16 @@ class SlackListener:
                     if not task.done(): task.cancel()
                 await asyncio.gather(reading, changed, return_exceptions=True)
 
-    async def handle(self, value, receive):
+    async def handle(self, value, receive, *, source, revision):
         if self.stopped: raise HTTPException(409, 'SLACK_LISTENER_STOPPED')
+        if source is not self.ws or revision != self.revision: raise HTTPException(409, 'CONNECTION_CHANGED')
         if (not isinstance(value, dict) or not isinstance(value.get('envelope_id'), str)
             or not 0 < len(value['envelope_id']) <= 512): raise HTTPException(422, 'SLACK_ENVELOPE_INVALID')
-        ws = self.ws
-        await self._handle_payload(value, receive)
-        if ws is self.ws and not self.stopped:
-            await ws.send(json.dumps({'envelope_id': value['envelope_id']}))
+        await self._handle_payload(value, receive, source=source, revision=revision)
+        if source is self.ws and revision == self.revision and not self.stopped:
+            await source.send(json.dumps({'envelope_id': value['envelope_id']}))
 
-    async def _handle_payload(self, value, receive):
+    async def _handle_payload(self, value, receive, *, source, revision):
         if value.get('type') not in {'events_api', 'interactive'}: return
         payload = value.get('payload')
         if not isinstance(payload, dict) or payload.get('api_app_id') != self.app_id:
@@ -304,7 +319,8 @@ class SlackListener:
         except (ValueError, OverflowError, TypeError): raise HTTPException(422, 'SLACK_EVENT_TIME_INVALID') from None
         normalized['destination'] = dict(team_id=team, app_id=self.app_id, bot_user_id=target.account_id,
             channelId=channel, threadTs=normalized.get('threadTs'), generation=target.generation)
-        if self.targets.get(target.id) != target or self._binding(target) != binding:
+        if (self.stopped or source is not self.ws or revision != self.revision
+            or self.targets.get(target.id) != target or self._binding(target) != binding):
             raise HTTPException(409, 'CONNECTION_CHANGED')
         # receive는 암호화 원장 commit만 수행한다. 봇 실행/송신은 supervisor의 별도 작업이다.
         receipt = await receive(target.id, normalized)

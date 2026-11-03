@@ -303,3 +303,113 @@ def test_failed_rotation_hello_keeps_unrelated_target_but_never_executes_rotated
             assert [p['channel'] for p in http.posts] == ['CQA002']
         finally: await worker.stop()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize('rotate_token', [True, False])
+def test_frame_received_before_rotation_but_handled_after_is_not_accepted_or_acked(slack, slack_management, monkeypatch, rotate_token):
+    from app.models import ChannelConnectionDelivery, ChannelMessage, ChannelQueueEvent
+    db, row, factory, adapter, worker, http, old_ws = slack
+    client, url, other = slack_management
+    fresh = Ws()
+    async def run():
+        paused, release, completed = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        try:
+            await worker.tick(); live = next(iter(worker.handles.values())).listener
+            original = live.handle
+            async def scheduled(value, receive, **source):
+                # 실제 recv 완료/검사 뒤 wait_for가 예약한 handler의 첫 실행 직전에 정지한다.
+                paused.set(); await release.wait()
+                try: return await original(value, receive, **source)
+                finally: completed.set()
+            monkeypatch.setattr(live, 'handle', scheduled)
+            old_frame = frame(); old_frame['envelope_id'] = 'old-frame-across-rotation'
+            await old_ws.queue.put(json.dumps(old_frame))
+            await asyncio.wait_for(paused.wait(), 1)
+            token = 'synthetic-rotated-app-token' if rotate_token else CREDENTIALS['app_token']
+            rotate_through_management(client, url, row, token)
+            adapter.socket = Socket(fresh); await worker.tick()
+            if rotate_token: assert old_ws.closed and live.ws is fresh
+            else: assert not old_ws.closed and live.ws is old_ws
+            release.set(); await asyncio.wait_for(completed.wait(), 1)
+            await worker.tick()
+            db.expire_all()
+            assert db.query(ChannelConnectionDelivery).count() == 0
+            assert db.query(ChannelMessage).count() == 0 and db.query(ChannelQueueEvent).count() == 0
+            assert old_ws.sent == [] and fresh.sent == [] and http.posts == []
+            assert not next(iter(worker.handles.values())).task.done()
+            monkeypatch.setattr(live, 'handle', original)
+            valid = frame(); valid['envelope_id'] = 'new-frame-after-rotation'
+            await deliver(worker, live.ws, valid); await worker.tick()
+            assert [v['envelope_id'] for v in live.ws.sent] == ['new-frame-after-rotation']
+            assert len(http.posts) == 1
+        finally: release.set(); await worker.stop()
+    asyncio.run(run())
+
+
+def test_old_socket_frame_for_unchanged_target_is_rejected_after_normalization_crosses_rotation(slack, slack_management, monkeypatch):
+    from threading import Event
+    from app.models import ChannelConnectionDelivery, ChannelMessage
+    db, row, factory, adapter, worker, http, old_ws = slack
+    client, url, other = slack_management
+    entered, release = Event(), Event(); fresh = Ws()
+    original = subject().convert_packet
+    def blocked(provider, direction, payload):
+        entered.set()
+        if not release.wait(3): raise TimeoutError('synthetic normalization barrier')
+        return original(provider, direction, payload)
+    monkeypatch.setattr(subject(), 'convert_packet', blocked)
+    async def run():
+        completed = asyncio.Event()
+        try:
+            await worker.tick()
+            live = next(iter(worker.handles.values())).listener
+            original_handle = live.handle
+            async def observed(value, receive, **source):
+                try: return await original_handle(value, receive, **source)
+                finally: completed.set()
+            monkeypatch.setattr(live, 'handle', observed)
+            body = frame(); body['envelope_id'] = 'old-socket-unchanged-target'; body['payload']['event']['channel'] = 'CQA002'
+            await old_ws.queue.put(json.dumps(body))
+            for _ in range(100):
+                if entered.is_set(): break
+                await asyncio.sleep(.005)
+            assert entered.is_set()
+            rotate_through_management(client, url, row, 'synthetic-rotated-app-token')
+            adapter.socket = Socket(fresh); await worker.tick(); release.set()
+            await asyncio.wait_for(completed.wait(), 1)
+            await worker.tick(); db.expire_all()
+            assert db.query(ChannelConnectionDelivery).count() == 0 and db.query(ChannelMessage).count() == 0
+            assert old_ws.sent == [] and fresh.sent == [] and http.posts == []
+        finally: release.set(); await worker.stop()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('future_clock', [False, True])
+def test_generation_rotation_after_provider_guard_before_real_common_receive(slack, slack_management, monkeypatch, future_clock):
+    import time
+    from app.models import ChannelConnectionDelivery, ChannelMessage
+    db, row, factory, adapter, worker, http, old_ws = slack
+    client, url, other = slack_management
+    async def run():
+        paused, release, completed = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        original = worker.runtime.receive
+        async def guarded(*args):
+            # provider 최종 guard 통과 뒤, 실제 common receive/to_thread 시작 직전 경계.
+            paused.set(); await release.wait()
+            try: return await original(*args)
+            finally: completed.set()
+        monkeypatch.setattr(worker.runtime, 'receive', guarded)
+        try:
+            await worker.tick()
+            body = frame()
+            if future_clock: body['payload']['event']['ts'] = f'{time.time() + 30:.6f}'
+            await old_ws.queue.put(json.dumps(body)); await asyncio.wait_for(paused.wait(), 1)
+            rotate_through_management(client, url, row, 'synthetic-rotated-app-token')
+            adapter.socket = Socket(Ws()); await worker.tick()
+            release.set(); await asyncio.wait_for(completed.wait(), 1); await worker.tick()
+            db.expire_all()
+            found = [(v.status, v.generation, v.last_error_code) for v in db.query(ChannelConnectionDelivery)]
+            assert found == [], dict(deliveries=found, native_messages=db.query(ChannelMessage).count())
+            assert db.query(ChannelMessage).count() == 0 and http.posts == []
+        finally: release.set(); await worker.stop()
+    asyncio.run(run())

@@ -66,6 +66,40 @@ def event(**overrides):
         participantKind="user", roomMode="shared", addressed=True, message="question", **overrides)
 
 
+@pytest.mark.parametrize('generation', [0, 2, True, '1', None])
+def test_destination_generation_must_be_exact_integer_before_insert(state_db, generation):
+    from app.models import ChannelConnectionDelivery
+    s, db, row, lease = activated(state_db)
+    incoming = event(destination={'generation':generation})
+    with pytest.raises(HTTPException) as error:
+        s.accept_delivery(db, row.id, lease.id, 'worker-1', 1, incoming, key=KEY, version='v1')
+    assert error.value.status_code == 409 and error.value.detail == 'CONNECTION_CHANGED'
+    assert db.query(ChannelConnectionDelivery).count() == 0
+
+
+def test_stale_generation_is_rejected_before_returning_old_duplicate(state_db):
+    from app.models import ChannelConnectionDelivery
+    s, db, row, lease = activated(state_db)
+    incoming = event(destination={'generation':1})
+    original = s.accept_delivery(db, row.id, lease.id, 'worker-1', 1, incoming, key=KEY, version='v1')
+    row.generation = 2; db.flush()
+    with pytest.raises(HTTPException) as error:
+        s.accept_delivery(db, row.id, lease.id, 'worker-1', 1, incoming, key=KEY, version='v1')
+    assert error.value.detail == 'CONNECTION_CHANGED'
+    assert db.query(ChannelConnectionDelivery).count() == 1 and original.generation == 1
+
+
+@pytest.mark.parametrize('include_generation', [True, False])
+def test_valid_or_absent_destination_generation_preserves_receive_and_dedupe(state_db, include_generation):
+    from app.models import ChannelConnectionDelivery
+    s, db, row, lease = activated(state_db)
+    incoming = event(destination={'generation':1}) if include_generation else event()
+    original = s.accept_delivery(db, row.id, lease.id, 'worker-1', 1, incoming, key=KEY, version='v1')
+    duplicate = s.accept_delivery(db, row.id, lease.id, 'worker-1', 1, incoming, key=KEY, version='v1')
+    assert original.id == duplicate.id and original.status == 'received'
+    assert db.query(ChannelConnectionDelivery).count() == 1
+
+
 def accept(s, db, row, lease):
     return s.accept_delivery(db, row.id, lease.id, "worker-1", lease.fence, event(), key=KEY, version="v1")
 
