@@ -120,6 +120,44 @@ test('panel events load, add, save, edit, check, connect error, disconnect, dele
   assert.ok(requests.some(r=>r.init.method==='DELETE'));
 });
 
+for (const scenario of ['saved notice', 'known error', 'unknown sensitive error']) {
+  test(`panel retranslates ${scenario} when language changes without repeating the action`, async t => {
+    const host=hookHost();
+    const {CONNECTION_COPY}=loadModule('lib/i18n/channel-connections.ts');
+    const row={id:'connection',channel_id:'parent',bot_id:'bot',name:'QA',provider:'slack',installation_id:'i',account_id:'a',target_id:'t',desired_state:'disconnected',observed_state:'disconnected',generation:1,credentials_registered:true,identity_verified:false,last_error_code:null,last_checked_at:null};
+    let mutations=0;
+    t.mock.method(globalThis,'fetch',async (_url,init)=>{
+      if(!init.method) return new Response(JSON.stringify({data:{items:[row],bots:[{id:'bot',name:'QA'}],total:1}}));
+      mutations++;
+      if(scenario==='saved notice') return new Response(JSON.stringify({data:row}));
+      const detail=scenario==='known error'?'CONNECTION_KEY_UNAVAILABLE: synthetic-sensitive':'synthetic-sensitive';
+      return new Response(JSON.stringify({detail}),{status:503});
+    });
+    const {ChannelConnectionsPanel}=loadModule('components/channel-connections-panel.tsx',{
+      react:host.react,'@/lib/auth':{redirectToLogin(){}},
+    });
+    const props={token:'synthetic-session',language:'ko',channel:{id:'parent',name:'Slack',data_json:{provider:'slack'}},onClose(){}};
+    let tree;
+    const render=()=>{host.reset();tree=ChannelConnectionsPanel(props);host.effects();};
+    const button=label=>flatten(tree).find(n=>n.type==='button'&&text(n)===label);
+    render();await flush();render();
+    if(scenario==='saved notice') {
+      button(CONNECTION_COPY.ko.edit).props.onClick();render();
+      await flatten(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
+    } else await button(CONNECTION_COPY.ko.connect).props.onClick();
+    render();
+    const role=scenario==='saved notice'?'status':'alert';
+    const key=scenario==='saved notice'?'saved':scenario==='known error'?'keyUnavailable':'error';
+    assert.equal(text(flatten(tree).find(n=>n.props?.role===role)),CONNECTION_COPY.ko[key]);
+    for(const language of ['en','zh-CN','ja','vi','fr','de','ko']) {
+      props.language=language;render();await flush();render();
+      assert.equal(text(flatten(tree).find(n=>n.props?.role===role)),CONNECTION_COPY[language][key]);
+      assert.ok(!text(tree).includes('synthetic-sensitive'));
+    }
+    assert.equal(mutations,1,'language changes must not repeat a write request');
+  });
+}
+
 test('provider aliases retain the eight Admin/DB/runtime mappings', async () => {
   const {normalizeChannelProvider, runtimeChannelForProvider} = await import('../../../packages/shared/src/channel-provider-map.ts');
   for (const [admin, db, runtime] of [

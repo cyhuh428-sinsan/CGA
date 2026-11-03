@@ -9,6 +9,18 @@ import { CONNECTION_COPY, connectionErrorMessage } from "@/lib/i18n/channel-conn
 import type { SupportedLanguage } from "@/lib/language";
 
 const EMPTY_DRAFT: ConnectionDraft = {name:"", bot_id:"", installation_id:"", account_id:"", target_id:""};
+type NoticeKey = "saved" | "configOk" | "deleted" | "connecting" | "disconnected" | "";
+const SAFE_ERROR_CODES = new Set([
+  "CONNECTION_KEY_UNAVAILABLE", "CONNECTION_CREDENTIALS_UNAVAILABLE", "CONNECTION_TARGET_DUPLICATE",
+  "CONNECTION_ACTIVE", "INVALID_CREDENTIALS", "INVALID_CONNECTION", "CONNECTION_CREDENTIALS_REQUIRED",
+  "CONNECTION_WORKER_UNAVAILABLE", "CHANNEL_PACKET_RUNTIME_UNAVAILABLE",
+]);
+
+function safeErrorCode(error: unknown): string {
+  const code = error instanceof Error ? error.message.split(":", 1)[0] : "";
+  // 서버 오류 원문/입력값은 state에도 보관하지 않고 알려진 code만 유지한다.
+  return SAFE_ERROR_CODES.has(code) ? code : "UNKNOWN_ERROR";
+}
 
 export function ChannelConnectionsPanel({token, channel, language, onClose}: {
   token: string; channel: {id: string; name: string; data_json: Record<string, unknown>}; language: SupportedLanguage; onClose: () => void;
@@ -23,7 +35,7 @@ export function ChannelConnectionsPanel({token, channel, language, onClose}: {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<NoticeKey>("");
   const active = useRef(true);
   const fields = credentialFieldsForProvider(channel.data_json.provider);
 
@@ -33,10 +45,10 @@ export function ChannelConnectionsPanel({token, channel, language, onClose}: {
     setLoading(true);
     fetchChannelConnections(token, channel.id)
       .then(result => {if (live) {setItems(result.items); setBots(result.bots);}})
-      .catch(error => {if (live) setError(connectionErrorMessage(error, copy));})
+      .catch(error => {if (live) setError(safeErrorCode(error));})
       .finally(() => {if (live) setLoading(false);});
     return () => {live = false; active.current = false;};
-  }, [token, channel.id, copy]);
+  }, [token, channel.id]);
 
   function resetForm() {setDraft(EMPTY_DRAFT); setCredentials({}); setEditing(undefined); setFormOpen(false);}
   async function reload() {
@@ -49,8 +61,8 @@ export function ChannelConnectionsPanel({token, channel, language, onClose}: {
     setBusy(true); setError(""); setNotice("");
     try {
       await saveChannelConnection(token, channel.id, buildConnectionPayload(draft, credentials), editing);
-      if (active.current) {resetForm(); setNotice(copy.saved); await reload();}
-    } catch (error) {if (active.current) setError(connectionErrorMessage(error, copy));}
+      if (active.current) {resetForm(); setNotice("saved"); await reload();}
+    } catch (error) {if (active.current) setError(safeErrorCode(error));}
     finally {if (active.current) setBusy(false);}
   }
   async function action(item: ChannelConnection, name: ConnectionAction) {
@@ -60,10 +72,10 @@ export function ChannelConnectionsPanel({token, channel, language, onClose}: {
       await actOnChannelConnection(token, channel.id, item.id, name);
       if (active.current) {
         if (name === "delete" && editing === item.id) resetForm();
-        setNotice(name === "check" ? copy.configOk : name === "delete" ? copy.deleted : name === "connect" ? copy.connecting : copy.disconnected);
+        setNotice(name === "check" ? "configOk" : name === "delete" ? "deleted" : name === "connect" ? "connecting" : "disconnected");
         await reload();
       }
-    } catch (error) {if (active.current) setError(connectionErrorMessage(error, copy));}
+    } catch (error) {if (active.current) setError(safeErrorCode(error));}
     finally {if (active.current) setBusy(false);}
   }
   function edit(item: ChannelConnection) {
@@ -77,8 +89,8 @@ export function ChannelConnectionsPanel({token, channel, language, onClose}: {
       <button type="button" className="admin-page__ghost" disabled={busy} onClick={() => {resetForm(); onClose();}}>{copy.close}</button>
     </div>
     <p>{copy.pending}</p>
-    {error ? <p role="alert">{error}</p> : null}
-    {notice ? <p role="status">{notice}</p> : null}
+    {error ? <p role="alert">{connectionErrorMessage(new Error(error), copy)}</p> : null}
+    {notice ? <p role="status">{copy[notice]}</p> : null}
     {loading ? <p role="status">{copy.loading}</p> : null}
     <button type="button" className="admin-page__primary" disabled={busy || loading} onClick={() => {resetForm(); setFormOpen(true);}}>{copy.add}</button>
     {!loading && !items.length ? <p>{copy.empty}</p> : null}
