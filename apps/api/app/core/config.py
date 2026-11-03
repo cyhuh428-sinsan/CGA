@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     login_history_retention_days: int = 90
     webchat_api_key: str = ""
     channel_queue_worker_enabled: bool = True
+    channel_connection_encryption_key: str = Field(default="", repr=False)
+    channel_connection_key_version: str = "v1"
+    channel_connection_worker_enabled: bool = False
+    channel_connection_node_binary: str = "node"
     channel_queue_worker_interval_seconds: float = 2.0
     channel_queue_worker_batch_size: int = 10
     channel_queue_worker_error_backoff_seconds: float = 30.0

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -121,3 +122,60 @@ def test_office_and_pdf_manuals_are_treated_as_binary() -> None:
 
     assert "*.docx binary" in attributes
     assert "*.pdf binary" in attributes
+
+
+GOOGLE_LITERAL_CASES = [
+    ('chat@system.gserviceaccount.com', 'apps/api/app/services/channel_connection_google_chat_auth.py'),
+    ('qa@cga-qa-project.iam.gserviceaccount.com', 'apps/api/tests/test_channel_connection_google_chat_runtime.py'),
+    ('second@cga-qa-project.iam.gserviceaccount.com', 'apps/api/tests/test_channel_connection_google_chat_runtime.py'),
+    ('rotated@cga-qa-project.iam.gserviceaccount.com', 'apps/api/tests/test_channel_connection_google_chat_runtime.py'),
+]
+
+
+@pytest.mark.parametrize('address,provider_path', GOOGLE_LITERAL_CASES)
+@pytest.mark.parametrize('location', ['provider','policy','regression'])
+def test_only_approved_google_literal_and_path_pairs_are_public(tmp_path,address,provider_path,location):
+    path={'provider':provider_path,'policy':'scripts/security/public_repo_policy.py',
+        'regression':'apps/api/tests/test_public_repo_policy.py'}[location]
+    sample=tmp_path/path;sample.parent.mkdir(parents=True,exist_ok=True);sample.write_text(address,encoding='utf-8')
+    assert find_content_violations(tmp_path,[path])==[]
+
+
+@pytest.mark.parametrize('address,provider_path', GOOGLE_LITERAL_CASES)
+@pytest.mark.parametrize('path', ['apps/api/tests/unrelated.py','apps/api/app/services/unrelated.py'])
+def test_approved_google_address_in_other_path_is_still_rejected(tmp_path,address,provider_path,path):
+    sample=tmp_path/path;sample.parent.mkdir(parents=True,exist_ok=True);sample.write_text(address,encoding='utf-8')
+    assert find_content_violations(tmp_path,[path])==[path+':1:personal-email']
+
+
+@pytest.mark.parametrize('address,provider_path', GOOGLE_LITERAL_CASES)
+def test_google_addresses_cannot_exchange_auth_and_fixture_paths(tmp_path,address,provider_path):
+    path=('apps/api/tests/test_channel_connection_google_chat_runtime.py' if provider_path.endswith('_auth.py')
+        else 'apps/api/app/services/channel_connection_google_chat_auth.py')
+    sample=tmp_path/path;sample.parent.mkdir(parents=True,exist_ok=True);sample.write_text(address,encoding='utf-8')
+    assert find_content_violations(tmp_path,[path])==[path+':1:personal-email']
+
+
+@pytest.mark.parametrize('address,provider_path', GOOGLE_LITERAL_CASES)
+@pytest.mark.parametrize('change', ['localpart','project','domain','case'])
+def test_other_google_account_or_project_domain_and_case_are_not_allowlisted(tmp_path,address,provider_path,change):
+    if change=='localpart':value='unapproved-'+address
+    elif change=='project':value=address.replace('cga-qa-project','unapproved-project').replace('@system.','@other.')
+    elif change=='domain':value=address.replace('gserviceaccount.com','unapproved-account.com')
+    else:value=address.upper()
+    sample=tmp_path/provider_path;sample.parent.mkdir(parents=True,exist_ok=True);sample.write_text(value,encoding='utf-8')
+    assert find_content_violations(tmp_path,[provider_path])==[provider_path+':1:personal-email']
+
+
+@pytest.mark.parametrize('address,provider_path', GOOGLE_LITERAL_CASES)
+def test_allowlisted_email_does_not_suppress_other_sensitive_rules_on_same_line(tmp_path,address,provider_path):
+    sensitive='cy'+'huh';sample=tmp_path/provider_path;sample.parent.mkdir(parents=True,exist_ok=True)
+    sample.write_text(address+' '+sensitive,encoding='utf-8')
+    assert find_content_violations(tmp_path,[provider_path])==[provider_path+':1:personal-identifier']
+
+
+@pytest.mark.parametrize('address,provider_path', GOOGLE_LITERAL_CASES)
+def test_allowlisted_email_does_not_hide_another_account_on_same_line(tmp_path,address,provider_path):
+    sample=tmp_path/provider_path;sample.parent.mkdir(parents=True,exist_ok=True)
+    sample.write_text(address+' unapproved-'+address,encoding='utf-8')
+    assert find_content_violations(tmp_path,[provider_path])==[provider_path+':1:personal-email']

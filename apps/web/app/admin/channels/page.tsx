@@ -5,6 +5,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataGrid, dataGridCellText, type DataGridRow, type DataGridSortState } from "@/components/data-grid";
 import { useI18n } from "@/components/language-provider";
+import { ChannelConnectionsPanel } from "@/components/channel-connections-panel";
+import { credentialFieldsForProvider } from "@/lib/channel-connections-api";
+import { CONNECTION_COPY } from "@/lib/i18n/channel-connections";
+import { CHANNEL_PROVIDER_MAP } from "../../../../../packages/shared/src/channel-provider-map";
 import {
   createChannel,
   deleteChannel,
@@ -148,6 +152,7 @@ export default function AdminChannelsPage() {
   const [appliedStatus, setAppliedStatus] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminChannelItem | null>(null);
+  const [connectionChannel, setConnectionChannel] = useState<AdminChannelItem | null>(null);
   const [draft, setDraft] = useState({
     code: "",
     name: "",
@@ -469,6 +474,11 @@ export default function AdminChannelsPage() {
       channel.updater_name,
       formatDate(channel.updated_at, locale),
       <div key={`manage-${channel.id}`} className="admin-page__table-actions">
+        {credentialFieldsForProvider(channel.data_json.provider).length ? (
+          <button type="button" className="admin-page__ghost" onClick={() => setConnectionChannel(channel)}>
+            {CONNECTION_COPY[uiLanguage].title}
+          </button>
+        ) : null}
         <button type="button" className="admin-page__ghost" onClick={() => checkChannelConnection(channel)}>
           {copy.connectionTest}
         </button>
@@ -602,6 +612,7 @@ export default function AdminChannelsPage() {
       </div>
 
       {noticeMessage ? <p className="admin-page__empty">{noticeMessage}</p> : null}
+      {connectionChannel ? <ChannelConnectionsPanel key={connectionChannel.id} token={token} channel={connectionChannel} language={uiLanguage} onClose={() => setConnectionChannel(null)}/> : null}
       {errorMessage ? (
         <div className="admin-state-box">
           <p>{errorMessage}</p>
@@ -615,7 +626,7 @@ export default function AdminChannelsPage() {
         <>
           <DataGrid
             variant="admin"
-            template="70px 130px 150px 120px 130px 100px 130px 130px 170px 180px"
+            template="70px 130px 150px 120px 130px 100px 130px 130px 170px 300px"
             columns={[copy.order, copy.channelId, copy.channel, "Provider", copy.renderer, copy.status, copy.creator, copy.updatedBy, copy.updatedAt, copy.manage]}
             rows={loading ? [] : pagedRows}
             sortState={sortState}
@@ -696,6 +707,9 @@ export default function AdminChannelsPage() {
                   <option value="webchat">Webchat</option>
                   <option value="kakao">Kakao</option>
                   <option value="ms_teams">MS Teams</option>
+                  {CHANNEL_PROVIDER_MAP.filter(item => !["webchat", "kakao", "ms_teams"].includes(item.provider)).map(item => (
+                    <option key={item.provider} value={item.provider}>{item.admin}</option>
+                  ))}
                   <option value="simulator">Simulator</option>
                 </select>
               </label>

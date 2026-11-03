@@ -23,12 +23,26 @@ from app.core.db_metrics import finish_db_metrics, start_db_metrics
 from app.core.logging import configure_logging, get_logger
 from app.db.session import SessionLocal
 from app.services.edit_lock_cleanup import delete_expired_edit_locks
+from app.services.channel_connection_supervisor import ConnectionSupervisor, ADAPTERS
+from app.services.channel_connection_teams import TeamsAdapter
+from app.services.channel_connection_slack import SlackAdapter
+from app.services.channel_connection_discord import DiscordAdapter
+from app.services.channel_connection_telegram import TelegramAdapter
+from app.services.channel_connection_google_chat import GoogleChatAdapter
+from app.services.channel_connection_line import LineAdapter
 
 
 configure_logging()
 logger = get_logger("aidot.api")
 queue_worker_task: asyncio.Task | None = None
 edit_lock_cleanup_task: asyncio.Task | None = None
+connection_supervisor = ConnectionSupervisor(SessionLocal)
+ADAPTERS["ms_teams"] = TeamsAdapter(SessionLocal, owner=connection_supervisor.owner)
+ADAPTERS["slack"] = SlackAdapter(SessionLocal, owner=connection_supervisor.owner)
+ADAPTERS["discord"] = DiscordAdapter(SessionLocal, owner=connection_supervisor.owner)
+ADAPTERS["telegram"] = TelegramAdapter(SessionLocal, owner=connection_supervisor.owner)
+ADAPTERS["google_chat"] = GoogleChatAdapter(SessionLocal, owner=connection_supervisor.owner)
+ADAPTERS["line"] = LineAdapter(SessionLocal, owner=connection_supervisor.owner)
 
 
 def _queue_worker_sleep_seconds(interval: float, consecutive_failures: int) -> float:
@@ -173,9 +187,11 @@ async def stop_edit_lock_cleanup_worker() -> None:
 async def lifespan(app: FastAPI):
     await start_channel_queue_worker()
     await start_edit_lock_cleanup_worker()
+    await connection_supervisor.start()
     try:
         yield
     finally:
+        await connection_supervisor.stop()
         await stop_edit_lock_cleanup_worker()
         await stop_channel_queue_worker()
 

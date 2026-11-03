@@ -36,6 +36,8 @@ from app.models import AdminChannel, AdminDefaultMessage, AdminLicense, AdminTem
 from app.services.license_policy import assert_license_allows_creation, get_license_usage_counts, get_license_warnings
 from app.services.nlu.deep_learning_lite import get_ml_acceleration_status
 from app.services.scenario_validation import scenario_validation_from_version
+from app.models import ChannelConnection
+from app.services.channel_connection_bridge import normalize_channel_provider
 from app.services.default_message_catalog import DEFAULT_MESSAGE_CATALOGS
 from app.schemas.admin import (
     AdminApiCallHistoryItem,
@@ -6133,12 +6135,16 @@ def update_admin_channel(
         select(AdminChannel).where(
             AdminChannel.id == channel_id,
             AdminChannel.deleted_at.is_(None),
-        )
+        ).with_for_update()
     )
     if channel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="채널을 찾을 수 없습니다.")
 
     before_json = channel.data_json or {}
+    if payload.provider != before_json.get("provider", "webchat"):
+        if db.scalar(select(ChannelConnection.id).where(ChannelConnection.channel_id == channel_id, ChannelConnection.deleted_at.is_(None)).limit(1)):
+            if normalize_channel_provider(payload.provider) != normalize_channel_provider(before_json.get("provider", "webchat")):
+                raise HTTPException(409, "CHANNEL_HAS_CONNECTIONS: 연결 대상을 먼저 삭제하세요.")
     channel.name = payload.name.strip()
     channel.description = payload.description.strip() if payload.description else None
     channel.status = payload.status
@@ -6180,11 +6186,13 @@ def delete_admin_channel(
         select(AdminChannel).where(
             AdminChannel.id == channel_id,
             AdminChannel.deleted_at.is_(None),
-        )
+        ).with_for_update()
     )
     if channel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="채널을 찾을 수 없습니다.")
 
+    if db.scalar(select(ChannelConnection.id).where(ChannelConnection.channel_id == channel_id, ChannelConnection.deleted_at.is_(None)).limit(1)):
+        raise HTTPException(409, "CHANNEL_HAS_CONNECTIONS: 연결 대상을 먼저 삭제하세요.")
     channel.deleted_at = datetime.now(timezone.utc)
     channel.updated_by = current_user.id
     db.add(channel)
