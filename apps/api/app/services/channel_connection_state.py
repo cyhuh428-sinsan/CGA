@@ -114,7 +114,11 @@ def activate_connection(db, connection_id, installation_id, owner, fence, verifi
         raise HTTPException(409, "INSTALLATION_SCOPE_MISMATCH")
     if verified_identity.get("installation_id") != row.installation_id or verified_identity.get("account_id") != row.account_id:
         raise HTTPException(409, "VERIFIED_IDENTITY_MISMATCH")
-    if row.observed_state != "connected" or row.lease_owner != owner:
+    pending = verified_identity.get("pending_activation")
+    preserve_pending = (row.observed_state == "connecting" and row.lease_owner == owner
+        and row.accept_after is not None and pending == {
+            "generation": row.generation, "owner": owner, "fence": fence})
+    if (row.observed_state != "connected" or row.lease_owner != owner) and not preserve_pending:
         row.accept_after = clock(db)
     row.listener_scope_hash = expected
     row.observed_state, row.lease_owner, row.lease_expires_at = "connected", owner, lease.lease_expires_at

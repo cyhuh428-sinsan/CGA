@@ -28,8 +28,7 @@ def test_invalid_key_prevents_any_session_or_adapter():
 
 def test_registry_defaults_empty_and_shutdown_cancels_cleanly():
     from app.services.channel_connection_supervisor import ConnectionSupervisor, ADAPTERS
-    assert ADAPTERS == {}
-    worker = ConnectionSupervisor(lambda: pytest.fail("empty registry touched DB"), config=config(True, KEY))
+    worker = ConnectionSupervisor(lambda: pytest.fail("empty registry touched DB"), config=config(True, KEY), adapters={})
     async def run():
         await worker.start(); await asyncio.sleep(0.03); await worker.stop(); assert worker.task is None
     asyncio.run(run())

@@ -23,7 +23,8 @@ from app.core.db_metrics import finish_db_metrics, start_db_metrics
 from app.core.logging import configure_logging, get_logger
 from app.db.session import SessionLocal
 from app.services.edit_lock_cleanup import delete_expired_edit_locks
-from app.services.channel_connection_supervisor import ConnectionSupervisor
+from app.services.channel_connection_supervisor import ConnectionSupervisor, ADAPTERS
+from app.services.channel_connection_teams import TeamsAdapter
 
 
 configure_logging()
@@ -31,6 +32,7 @@ logger = get_logger("aidot.api")
 queue_worker_task: asyncio.Task | None = None
 edit_lock_cleanup_task: asyncio.Task | None = None
 connection_supervisor = ConnectionSupervisor(SessionLocal)
+ADAPTERS["ms_teams"] = TeamsAdapter(SessionLocal, owner=connection_supervisor.owner)
 
 
 def _queue_worker_sleep_seconds(interval: float, consecutive_failures: int) -> float:

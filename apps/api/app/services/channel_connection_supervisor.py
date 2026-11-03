@@ -15,6 +15,10 @@ ADAPTERS: dict[str, ConnectionAdapter] = {}
 logger = get_logger("cga.channel.connections")
 
 
+class NativeHandshakePending(Exception):
+    """외부 앱 인증은 성공했지만 실제 대상의 인증 Activity를 기다린다."""
+
+
 @dataclass
 class ListenerHandle:
     listener: object
@@ -124,6 +128,12 @@ class ConnectionSupervisor:
                         handle.targets = members
                 await self.runtime.process_one(current.id, lease_id, self.owner, fence, handle.listener)
             except asyncio.CancelledError: raise
+            except NativeHandshakePending:
+                with self.session_factory() as db:
+                    row = state._connection(db, target.id)
+                    if row.generation == target.generation and row.desired_state == "connected":
+                        row.observed_state, row.last_error_code = "connecting", "WAITING_FIRST_ACTIVITY"
+                    db.commit()
             except Exception:
                 with self.session_factory() as db:
                     row = state._connection(db, target.id)
