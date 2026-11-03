@@ -247,6 +247,47 @@ def test_main_registry_disabled_worker_has_zero_db_and_http(monkeypatch):
     worker=ConnectionSupervisor(forbidden,config=SimpleNamespace(channel_connection_worker_enabled=False,channel_connection_encryption_key='',channel_connection_key_version='v1'),adapters={'telegram':adapter})
     asyncio.run(worker.start());assert worker.task is None
 
+@pytest.mark.parametrize('unknown',[False,True])
+def test_superseded_callback_new_owner_proof_precedes_old_card_cutoff_and_keeps_unknown_block(telegram,monkeypatch,unknown):
+    from app.models import ChannelConnection,ChannelConnectionDelivery,ChannelMessage
+    from app.services.channel_connection_telegram import TelegramAdapter
+    from app.services.channel_connection_supervisor import ConnectionSupervisor
+    db,row,factory,adapter,worker,h=telegram;other=add_target(telegram)
+    async def run():
+        fresh=None
+        try:
+            source=await button_source(telegram);source_delivery=db.query(ChannelConnectionDelivery).one().id
+            handle=next(iter(worker.handles.values()))
+            handle.task.cancel();await asyncio.gather(handle.task,return_exceptions=True)
+            listener=handle.listener;advance=listener.gate.advance
+            def raced(*a,**k):
+                with factory() as session:session.get(ChannelConnection,row.id).generation+=1;session.commit()
+                return advance(*a,**k)
+            monkeypatch.setattr(listener.gate,'advance',raced);h.fail_ack=unknown
+            body=action(2,'cga:'+str(source.id)+':0',1)
+            async def receive(cid,event):return await worker.runtime.receive(cid,handle.lease_id,worker.owner,handle.fence,event)
+            with pytest.raises(HTTPException,match='CONNECTION_CHANGED'):await listener.handle(body,receive)
+            db.expire_all();old=next(x for x in db.query(ChannelConnectionDelivery) if x.id!=source_delivery)
+            old_id=old.id;old_hash=old.request_hash;count=db.query(ChannelMessage).count()
+            assert count==2 and len(h.acks)==1 and len(h.posts)==1
+            await worker.stop();h.pending.clear();h.queue.put(body);h.fail_ack=False
+            current=TelegramAdapter(factory,owner='fresh',http=h);fresh=ConnectionSupervisor(factory,config=worker.config,adapters={'telegram':current});current.owner=fresh.owner
+            await fresh.tick();await delivered(fresh,h,body);await fresh.tick()
+            db.expire_all();old=db.get(ChannelConnectionDelivery,old_id)
+            assert old.status==('unknown' if unknown else 'cancelled') and old.request_hash==old_hash
+            assert db.query(ChannelMessage).count()==count and len(h.acks)==1 and len(h.posts)==1
+            await delivered(fresh,h,message(3,chat=-301));await fresh.tick()
+            db.expire_all();assert db.query(ChannelConnectionDelivery).filter_by(connection_id=other.id).one().status=='sent'
+            assert db.query(ChannelMessage).count()==count+2 and len(h.posts)==2 and len(h.acks)==1
+            if unknown:
+                await delivered(fresh,h,message(4));await fresh.tick();db.expire_all()
+                assert db.query(ChannelConnectionDelivery).filter_by(connection_id=row.id,generation=2).one().status=='received'
+                assert db.query(ChannelMessage).count()==count+2 and len(h.posts)==2 and len(h.acks)==1
+        finally:
+            await worker.stop()
+            if fresh:await fresh.stop()
+    asyncio.run(run())
+
 @pytest.mark.parametrize('kind',['photo','selection'])
 def test_deferred_definitely_invalid_packet_is_isolated_after_target_verification(telegram,kind):
     from app.models import ChannelConnectionDelivery
@@ -386,8 +427,11 @@ def test_late_poll_after_lease_loss_cannot_advance_ack_or_execute(telegram,chang
 
 def test_generation_changes_after_accept_cannot_commit_offset_or_execute(telegram,monkeypatch):
     from app.models import ChannelConnectionDelivery,ChannelMessage
+    from app.services.channel_connection_telegram import TelegramAdapter
+    from app.services.channel_connection_supervisor import ConnectionSupervisor
     db,row,factory,adapter,worker,h=telegram
     async def run():
+        fresh=None
         try:
             await worker.tick();handle=next(iter(worker.handles.values()));handle.task.cancel();await asyncio.gather(handle.task,return_exceptions=True)
             listener=handle.listener;advance=listener.gate.advance
@@ -397,11 +441,25 @@ def test_generation_changes_after_accept_cannot_commit_offset_or_execute(telegra
                 return advance(*a,**k)
             monkeypatch.setattr(listener.gate,'advance',raced)
             async def receive(cid,event):return await worker.runtime.receive(cid,handle.lease_id,worker.owner,handle.fence,event)
-            with pytest.raises(HTTPException,match='CONNECTION_CHANGED'):await listener.handle(message(),receive)
+            old=message()
+            with pytest.raises(HTTPException,match='CONNECTION_CHANGED'):await listener.handle(old,receive)
             db.expire_all();assert db.query(ChannelConnectionDelivery).count()==1
             assert db.query(ChannelMessage).count()==0 and not h.posts and not h.acks
             assert listener.offset==listener.gate.load_cursor()['offset']==0
-        finally:await worker.stop()
+            await worker.stop();h.pending.clear();h.queue.put(old)
+            current=TelegramAdapter(factory,owner='fresh',http=h)
+            fresh=ConnectionSupervisor(factory,config=worker.config,adapters={'telegram':current});current.owner=fresh.owner
+            await fresh.tick();await delivered(fresh,h,old);await fresh.tick()
+            db.expire_all();prior=db.query(ChannelConnectionDelivery).one()
+            assert prior.generation==1 and prior.status=='cancelled' and not prior.execution_claim_id
+            assert db.query(ChannelMessage).count()==0 and not h.posts and not h.acks
+            await delivered(fresh,h,message(2));await fresh.tick()
+            db.expire_all();assert db.query(ChannelConnectionDelivery).filter_by(generation=2).one().status=='sent'
+            assert db.query(ChannelMessage).count()==2 and len(h.posts)==1 and not h.acks
+            assert next(iter(fresh.handles.values())).listener.gate.load_cursor()['offset']==3
+        finally:
+            await worker.stop()
+            if fresh:await fresh.stop()
     asyncio.run(run())
 
 def test_poll_requires_at_least_one_current_active_allowed_target(telegram,monkeypatch):

@@ -180,6 +180,132 @@ def test_invalid_poll_time_cannot_advance_offset(native_context,invalid):
     with pytest.raises(HTTPException,match='TELEGRAM_POLL_TIME_INVALID'):s.advance(9000,request_started_at=value)
     assert s.load_cursor()['offset']==0 and s.load_cursor()['last_commit_at'] is None
 
+@pytest.mark.parametrize('change',['generation','fence','owner'])
+def test_superseded_proof_never_bypasses_fresh_offset_transaction_guard(native_context,change):
+    from app.models import ChannelConnection,ChannelInstallationLease
+    from fastapi import HTTPException
+    c=native_context;s,target,replay,did,snapshot=superseded(c)
+    assert s.superseded_replay(target,replay) is True
+    with c.sessions() as db:
+        started=state.clock(db).isoformat()
+        if change=='generation':db.get(ChannelConnection,target.id).generation+=1
+        else:
+            lease=db.get(ChannelInstallationLease,c.leases[0][0])
+            if change=='fence':lease.fence+=1
+            else:lease.owner='other'
+        db.commit()
+    with pytest.raises(HTTPException):s.advance(99,request_started_at=started,targets=[target])
+    with c.sessions() as db:
+        # 원래 owner/fence 검증을 우회하지 않고 저장된 ciphertext의 offset만 읽는다.
+        lease=db.get(ChannelInstallationLease,c.leases[0][0])
+        assert s._load(lease)['offset']==0
+
+def test_superseded_same_generation_still_uses_common_payload_conflict(native_context):
+    from app.models import ChannelConnection
+    from app.services.channel_connection_runtime import ConnectionTarget
+    from fastapi import HTTPException
+    c=native_context;s,target,replay,did,snapshot=superseded(c)
+    with c.sessions() as db:
+        row=db.get(ChannelConnection,target.id);row.generation=1;target=ConnectionTarget.from_row(row);db.commit()
+    replay['generation']=replay['destination']['generation']=1;replay['message']='tampered'
+    assert s.superseded_replay(target,replay) is False
+    with pytest.raises(HTTPException,match='NATIVE_EVENT_CONFLICT'):accept(c,replay)
+    assert s.load_cursor()['offset']==0
+
+def superseded(c,*,status='received',callback=False,ack='pending',wrapped=False):
+    from copy import deepcopy
+    from uuid import uuid4
+    from app.models import ChannelConnection,ChannelConnectionDelivery
+    from app.services.channel_connection_runtime import ConnectionTarget
+    s=gate(c)
+    incoming={**event(),'generation':1,'bot_id':'100','chat_id':'-300','chatId':'-300','thread_id':None,'threadId':None,
+        'destination':{'generation':1,'chatId':'-300','threadId':None}}
+    if callback:
+        incoming.update(sourceMessageId=str(uuid4()),choiceIndex=1,message='validated native selection',
+            callback_id='synthetic-replay',telegram_ack={'status':'pending','expires_at':9999999999})
+    did=accept(c,incoming)
+    replay=deepcopy(incoming);replay['generation']=2;replay['destination']['generation']=2
+    if callback:replay['message']='';replay['telegram_ack']['expires_at']=10000000009
+    with c.sessions() as db:
+        item=db.get(ChannelConnectionDelivery,did);item.status=status
+        item.execution_claim_id='synthetic-execution' if status in {'executing','ready','sending','sent','unknown'} else None
+        item.send_claim_id='synthetic-send' if status in {'sending','sent','unknown'} else None
+        item.last_error_code='CONNECTION_CHANGED' if status=='cancelled' else 'SYNTHETIC_UNCHANGED' if status in {'failed','unknown'} else None
+        item.provider_message_ids=['synthetic-receipt'] if status=='sent' else []
+        saved=s.context(item)
+        if callback:
+            saved['telegram_ack']['status']=ack
+            if ack!='pending':saved.pop('callback_id',None);saved['telegram_ack']['claim_id']='synthetic-ack'
+        if wrapped:saved={'event':saved,'messages':[]}
+        s.write_context(item,saved)
+        row=db.get(ChannelConnection,c.ids['connections'][0]);row.generation=2;target=ConnectionTarget.from_row(row)
+        snapshot=(item.status,item.execution_claim_id,item.send_claim_id,item.last_error_code,item.provider_message_ids,item.request_hash,s.context(item))
+        db.commit()
+    return s,target,replay,did,snapshot
+
+
+@pytest.mark.parametrize('status',['received','executing','ready','sending','sent','failed','unknown','cancelled'])
+def test_superseded_accepted_proof_preserves_every_delivery_state(native_context,status):
+    from app.models import ChannelConnectionDelivery
+    c=native_context;s,target,replay,did,snapshot=superseded(c,status=status)
+    assert s.superseded_replay(target,replay) is True
+    with c.sessions() as db:
+        item=db.get(ChannelConnectionDelivery,did)
+        assert (item.status,item.execution_claim_id,item.send_claim_id,item.last_error_code,item.provider_message_ids,item.request_hash,s.context(item))==snapshot
+    assert s.load_cursor()['offset']==0
+
+
+@pytest.mark.parametrize('ack',['pending','confirmed','unknown','failed'])
+@pytest.mark.parametrize('wrapped',[False,True])
+def test_superseded_callback_proof_survives_id_removal_and_wrapper(native_context,ack,wrapped):
+    c=native_context;s,target,replay,did,snapshot=superseded(c,status='unknown' if ack=='unknown' else 'sent',callback=True,ack=ack,wrapped=wrapped)
+    assert s.superseded_replay(target,replay) is True
+    assert s.reserve_ack(did) is None and s.load_cursor()['offset']==0
+
+
+@pytest.mark.parametrize('field',['message','actor','destination_chat','destination_thread','callback_id','source','index'])
+def test_superseded_proof_rejects_mutated_immutable_payload(native_context,field):
+    from fastapi import HTTPException
+    c=native_context;callback=field in {'callback_id','source','index'}
+    s,target,replay,did,snapshot=superseded(c,callback=callback,ack='confirmed')
+    if field=='message':replay['message']='tampered'
+    if field=='actor':replay['nativeParticipantKey']='different'
+    if field=='destination_chat':replay['destination']['chatId']='-301'
+    if field=='destination_thread':replay['destination']['threadId']=99
+    if field=='callback_id':replay['callback_id']='other-callback'
+    if field=='source':replay['sourceMessageId']=str(__import__('uuid').uuid4())
+    if field=='index':replay['choiceIndex']=2
+    with pytest.raises(HTTPException,match='NATIVE_EVENT_CONFLICT'):s.superseded_replay(target,replay)
+    assert s.load_cursor()['offset']==0
+
+
+@pytest.mark.parametrize('change',['missing','same_generation','room','epoch','organization','account','generation','fence','scope','ciphertext'])
+def test_superseded_proof_requires_exact_current_and_accepted_scope(native_context,change):
+    from dataclasses import replace
+    from app.models import ChannelConnectionDelivery,ChannelConnection,ChannelInstallationLease
+    from fastapi import HTTPException
+    c=native_context;s,target,replay,did,snapshot=superseded(c)
+    if change=='same_generation':
+        with c.sessions() as db:db.get(ChannelConnectionDelivery,did).generation=2;db.commit()
+    if change=='missing':
+        with c.sessions() as db:db.delete(db.get(ChannelConnectionDelivery,did));db.commit()
+    if change=='room':replay['nativeRoomKey']='different-room'
+    if change=='epoch':replay['eventId']='telegram-epoch:1:'+replay['eventId']
+    if change=='organization':target=replace(target,organization_id=__import__('uuid').uuid4())
+    if change=='account':target=replace(target,account_id='101')
+    if change=='generation':
+        with c.sessions() as db:db.get(ChannelConnection,target.id).generation+=1;db.commit()
+    if change=='fence':
+        with c.sessions() as db:db.get(ChannelInstallationLease,c.leases[0][0]).fence+=1;db.commit()
+    if change=='scope':
+        with c.sessions() as db:db.get(ChannelConnection,target.id).listener_scope_hash='c'*64;db.commit()
+    if change=='ciphertext':
+        with c.sessions() as db:db.get(ChannelConnectionDelivery,did).context_ciphertext='corrupt';db.commit()
+    if change in {'missing','same_generation','room','epoch'}:assert s.superseded_replay(target,replay) is False
+    else:
+        with pytest.raises(HTTPException):s.superseded_replay(target,replay)
+    if change!='fence':assert s.load_cursor()['offset']==0
+
 @pytest.mark.parametrize('change',['none','pending','ready','generation','deleted','scope','bot','organization'])
 def test_restored_existing_binding_requires_ready_proof_and_current_scope(native_context,change):
     from app.models import ChannelConnection,ChannelInstallationLease

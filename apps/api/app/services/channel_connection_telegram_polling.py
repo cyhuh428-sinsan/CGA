@@ -144,6 +144,37 @@ class TelegramState:
             if not isinstance(ack,dict):raise HTTPException(409,'NATIVE_EVENT_CONFLICT')
             return {**event,'occurredAt':saved.get('occurredAt',event.get('occurredAt')),
                 'telegram_ack':{**event['telegram_ack'],'expires_at':ack['expires_at']}}
+    def superseded_replay(self,target,event):
+        """옛 세대의 동일 durable 접수만 증명한다. 실행/ACK/결과 상태는 바꾸지 않는다."""
+        from app.services.channel_connection_runtime import ConnectionTarget
+        with self.sessions() as db:
+            lease=self.lease(db);row=state._live(db,target.id,self.lease_id,self.owner,self.fence)
+            destination=event.get('destination')
+            if ConnectionTarget.from_row(row)!=target or type(event.get('generation')) is not int or event['generation']!=row.generation or not isinstance(destination,dict) or type(destination.get('generation')) is not int or destination['generation']!=row.generation:
+                raise HTTPException(409,'CONNECTION_CHANGED')
+            scope=[row.provider,row.installation_id,row.account_id,row.target_id,event['nativeRoomKey']]
+            item=db.scalar(select(ChannelConnectionDelivery).where(ChannelConnectionDelivery.connection_id==row.id,
+                ChannelConnectionDelivery.event_key==state._digest([scope,event['eventId']])).with_for_update())
+            if item is None or item.generation>=row.generation:return False
+            saved=self.context(item)
+            if isinstance(saved.get('event'),dict) and 'messages' in saved:saved=saved['event']
+            original_destination=saved.get('destination')
+            if item.organization_id!=lease.organization_id or item.native_room_hash!=state._digest(scope) or type(item.generation) is not int or item.generation<1 or saved.get('generation')!=item.generation or not isinstance(original_destination,dict) or original_destination.get('generation')!=item.generation or saved.get('bot_id')!=self.bot_id or saved.get('chat_id')!=row.target_id:
+                raise HTTPException(409,'NATIVE_EVENT_CONFLICT')
+            # 새 세대 stamp만 가상 환산한다. 실제 수신 입력/기존 request_hash는 수정하지 않는다.
+            candidate={**event,'generation':item.generation,'destination':{**destination,'generation':item.generation}}
+            if 'callback_id' in event:
+                ack=saved.get('telegram_ack')
+                if not isinstance(ack,dict) or 'expires_at' not in ack or not isinstance(event.get('telegram_ack'),dict):
+                    raise HTTPException(409,'NATIVE_EVENT_CONFLICT')
+                candidate['telegram_ack']={**event['telegram_ack'],'expires_at':ack['expires_at']}
+                # callback의 빈 message는 Node 선택 복원 전 형식이다. 동일 source/index의
+                # 원래 검증된 선택 문자열을 hash 증명에만 사용하며 native로 전달하지 않는다.
+                if event.get('message')=='' and event.get('sourceMessageId')==saved.get('sourceMessageId') and event.get('choiceIndex')==saved.get('choiceIndex'):
+                    candidate['message']=saved.get('message')
+            immutable={k:v for k,v in candidate.items() if k not in {'timestamp','redelivery','occurredAt','replyToken'}}
+            if state._digest([scope,immutable])!=item.request_hash:raise HTTPException(409,'NATIVE_EVENT_CONFLICT')
+            return True
     def restore_selection(self,target,event):
         from uuid import UUID
         from app.models import ChannelConnectionRoom,ChannelRoom,ChannelMessage,Bot
@@ -431,7 +462,6 @@ class TelegramListener:
         if normalized is None:return
         if batch.cursor['epoch']:normalized['eventId']='telegram-epoch:'+str(batch.cursor['epoch'])+':'+normalized['eventId']
         if isinstance(query,dict):
-            normalized['message']=await asyncio.to_thread(self.gate.restore_selection,binding.target,normalized)
             stamp=datetime.fromisoformat(batch.cursor.get('received_at',batch.cursor['request_started_at'])).timestamp()
         else:stamp=message.get('date')
         try:
@@ -444,6 +474,10 @@ class TelegramListener:
             callback=query.get('id')
             if not isinstance(callback,str) or not 0<len(callback)<=200:raise HTTPException(422,'TELEGRAM_EVENT_TIME_INVALID')
             normalized.update(callback_id=callback,telegram_ack={'status':'pending','expires_at':stamp+10})
+        if await asyncio.to_thread(self.gate.superseded_replay,binding.target,normalized):
+            self._current(binding,batch.digest);return
+        if isinstance(query,dict):
+            normalized['message']=await asyncio.to_thread(self.gate.restore_selection,binding.target,normalized)
             normalized=await asyncio.to_thread(self.gate.callback_event,binding.target,normalized)
         self._current(binding,batch.digest)
         committed=await accept(binding.target.id,normalized)
