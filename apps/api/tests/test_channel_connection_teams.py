@@ -70,7 +70,7 @@ def test_main_registers_only_teams_with_matching_supervisor_owner_and_disabled_s
     from app.main import connection_supervisor
     from app.services.channel_connection_supervisor import ADAPTERS, ConnectionSupervisor
     from app.services.channel_connection_teams import TeamsAdapter
-    assert set(ADAPTERS) == {"ms_teams"}
+    assert set(ADAPTERS) == {"ms_teams", "slack"}
     assert isinstance(ADAPTERS["ms_teams"], TeamsAdapter)
     assert ADAPTERS["ms_teams"].owner == connection_supervisor.owner
     config = SimpleNamespace(channel_connection_worker_enabled=False, channel_connection_encryption_key="",
