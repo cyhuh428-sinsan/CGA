@@ -138,6 +138,40 @@ def test_invalid_key_prevents_oauth_transport(teams):
     assert not adapter.http.oauth_calls
 
 
+@pytest.mark.parametrize("change", ["generation", "fence", "owner"])
+def test_verified_proof_cannot_activate_after_interleaved_scope_change(teams, change):
+    """verify 성공 이후 다른 transaction의 재연결/lease 교체를 교차시킨다."""
+    from app.services.channel_connection_supervisor import NativeHandshakePending
+    from app.services import channel_connection_state as state
+    from app.models import ChannelInstallationLease
+    db, row, credentials, target, adapter = teams
+    async def verified():
+        with pytest.raises(NativeHandshakePending): await adapter.verify(target, credentials)
+        adapter._bind_activity(CLIENT, SimpleNamespace(service_url=activity()["serviceUrl"]), activity())
+        return await adapter.verify(target, credentials)
+    identity = asyncio.run(verified())
+    owner = adapter.owner
+    with adapter.sessions() as other:
+        current = other.get(type(row), row.id)
+        lease = other.query(ChannelInstallationLease).one()
+        if change == "generation":
+            current.generation += 1
+        else:
+            lease.lease_expires_at = state.clock(other) - timedelta(seconds=1)
+            if change == "owner": owner = "replacement-worker"
+        other.commit()
+    with adapter.sessions() as session:
+        current = session.get(type(row), row.id)
+        lease = state.claim_installation(session, current, owner, ttl_seconds=60,
+            listener_scope=identity["listener_scope"], exclusive=True)
+        with pytest.raises(HTTPException) as error:
+            state.activate_connection(session, row.id, lease.id, owner, lease.fence, identity)
+        assert error.value.status_code == 409
+        session.rollback()
+    db.refresh(row)
+    assert row.observed_state == "connecting"
+
+
 def test_first_activity_not_ready_returns_503_not_success_ack(teams):
     from app.services.channel_connection_supervisor import NativeHandshakePending
     from app.models import ChannelConnectionDelivery

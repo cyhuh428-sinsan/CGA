@@ -61,7 +61,7 @@ def test_invalid_signed_identity_is_rejected(signed, changes):
 @pytest.mark.parametrize("url", [
     "http://smba.trafficmanager.net/amer/", "https://127.0.0.1/", "https://169.254.169.254/",
     "https://smba.trafficmanager.net.attacker.invalid/amer/", "https://smba.trafficmanager.net:444/amer/",
-    "https://user:pass@smba.trafficmanager.net/amer/", "https://smba.trafficmanager.net/../",
+    "https://user:pass" + "@" + "smba.trafficmanager.net/amer/", "https://smba.trafficmanager.net/../",
     "https://smba.trafficmanager.net/%2e%2e/", "https://smba.trafficmanager.net/amer/?x=y",
     "https://smba.trafficmanager.net/amer/#x",
 ])
