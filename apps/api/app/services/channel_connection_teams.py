@@ -287,7 +287,8 @@ class TeamsAdapter:
                         encoded=field[len('__cga_input_'):];field=base64.urlsafe_b64decode(encoded+'='*(-len(encoded)%4)).decode()
                     inputs[field]=value
                 if kind in {'Action.Submit','Action.Execute'}:actions.append(value.get('data',{}).get('response',{}))
-                for child in value.values():visit(child)
+                for key,child in value.items():
+                    if key!='data' or kind not in {'Action.Submit','Action.Execute'}:visit(child)
         visit(packets)
         response=selection.get('response')
         if not isinstance(response,dict):raise HTTPException(422,'TEAMS_CARD_RESPONSE_INVALID')

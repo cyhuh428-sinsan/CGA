@@ -186,7 +186,20 @@ def test_slack_reconnect_rejects_previous_card_without_ack_or_native(slack,slack
 
 
 @pytest.mark.parametrize('action_type',['Action.Submit','Action.Execute'])
-def test_teams_form_reserved_name_unicode_and_original_data_remain_inputs(teams,action_type):
+@pytest.mark.parametrize('original_data',[
+    {'context':{'lang':'ko'}},
+    {'type':123,'context':'valid business data'},
+    {'type':None,'context':'valid business data'},
+    {'type':{'kind':'business'},'context':'valid business data'},
+    {'type':['business'],'context':'valid business data'},
+    {'type':'Input.ChoiceSet','id':'__cga_buttonValue','choices':[{'title':'opaque','value':'not-user-input'}]},
+    {'type':'Action.Submit','data':{'literal':'kept'}},
+    {'type':'Action.Execute','data':{'literal':'kept'}},
+    {'business':{'type':'Input.ChoiceSet','id':'__cga_buttonValue','choices':[{'title':'opaque','value':'not-user-input'}]}},
+    {'business':[{'type':'Action.Submit','data':{'literal':'kept'}},{'type':'Action.Execute','data':{'literal':'kept'}}]},
+    {'business':{'type':'Input.ChoiceSet','id':'__cga_input_X19jZ2FfYnV0dG9uVmFsdWU','choices':[{'title':'opaque','value':'not-user-input'}]}},
+])
+def test_teams_form_reserved_name_unicode_and_original_data_remain_inputs(teams,action_type,original_data):
     from app.models import ChannelMessage
     from app.services.channel_connection_bridge import convert_packet
     db,row,c,target,a=teams;worker=teams_worker(teams)
@@ -197,16 +210,76 @@ def test_teams_form_reserved_name_unicode_and_original_data_remain_inputs(teams,
             card={'type':'AdaptiveCard','version':'1.6','body':[
                 {'type':'Input.Text','id':'__cga_buttonValue'},
                 {'type':'Input.Text','id':'이름'}],
-                'actions':[{'type':action_type,'title':'제출','data':{'context':{'lang':'ko'}}}]}
+                'actions':[{'type':action_type,'title':'제출','data':deepcopy(original_data)}]}
             source.message_type='form-a-card';source.payload_json={'sourceTalkNodeId':'choice','adaptiveCard':card};db.commit()
             packet=convert_packet('ms_teams','replies',{'messages':[dict(id=str(source.id),text='입력',messageType=source.message_type,payload=source.payload_json)],'destination':{}})[0]
             rendered=packet['attachments'][0]['content'];value=deepcopy(rendered['actions'][0]['data'])
+            assert value['response']==original_data  # 업무 data는 카드 요소가 아니라 opaque 원문이다.
             value[rendered['body'][0]['id']]='일반 입력';value[rendered['body'][1]['id']]='홍길동'
             incoming=activity(id='form-submit',value=value)
             if action_type=='Action.Execute':incoming=activity(id='form-submit',type='invoke',name='adaptiveCard/action',value={'trigger':'manual','action':{'type':'Action.Execute','data':value}})
             await a.receive(AUTHORIZATION,incoming);await worker.tick();db.expire_all()
             message=db.query(ChannelMessage).filter_by(participant_kind='user').order_by(ChannelMessage.created_at.desc()).first()
-            assert json.loads(message.text)['response']=={'context':{'lang':'ko'},'__cga_buttonValue':'일반 입력','이름':'홍길동'}
+            assert json.loads(message.text)['response']=={**original_data,'__cga_buttonValue':'일반 입력','이름':'홍길동'}
+        finally:await worker.stop()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('action_type',['Action.Submit','Action.Execute'])
+def test_teams_opaque_action_data_does_not_authorize_forged_submission(teams,action_type):
+    from app.models import ChannelMessage,ChannelConnectionDelivery
+    from app.services.channel_connection_bridge import convert_packet
+    db,row,c,target,a=teams;worker=teams_worker(teams)
+    async def run():
+        try:
+            await teams_start(teams,worker);db.expire_all()
+            source=db.query(ChannelMessage).filter_by(participant_kind='bot').one()
+            original_data={'businessAction':{'type':action_type,'data':{'response':{'injected':'forged'}}}}
+            card={'type':'AdaptiveCard','version':'1.6','body':[{'type':'Input.Text','id':'name'}],
+                'actions':[{'type':action_type,'title':'submit','data':original_data}]}
+            source.message_type='form-a-card';source.payload_json={'sourceTalkNodeId':'choice','adaptiveCard':card};db.commit()
+            packet=convert_packet('ms_teams','replies',{'messages':[dict(id=str(source.id),text='input',messageType=source.message_type,payload=source.payload_json)],'destination':{}})[0]
+            value=deepcopy(packet['attachments'][0]['content']['actions'][0]['data'])
+            # 실제 rendered opaque 업무 JSON을 실제 action의 승인 data로 승격하는 위조.
+            value['response']=deepcopy(value['response']['businessAction']['data']['response'])
+            value.pop('businessAction',None)
+            incoming=activity(id='forged-opaque-action',value=value)
+            if action_type=='Action.Execute':incoming=activity(id='forged-opaque-action',type='invoke',name='adaptiveCard/action',value={'trigger':'manual','action':{'type':'Action.Execute','data':value}})
+            with pytest.raises(HTTPException) as rejected:await a.receive(AUTHORIZATION,incoming)
+            assert rejected.value.status_code==403 and rejected.value.detail=='TEAMS_CARD_RESPONSE_INVALID'
+            db.expire_all();assert db.query(ChannelMessage).count()==2 and db.query(ChannelConnectionDelivery).count()==1
+        finally:await worker.stop()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('action_type',['Action.Submit','Action.Execute'])
+def test_teams_nested_card_children_keep_binding_and_input_validation(teams,action_type):
+    from app.models import ChannelMessage,ChannelConnectionDelivery
+    from app.services.channel_connection_bridge import convert_packet
+    db,row,c,target,a=teams;worker=teams_worker(teams)
+    async def run():
+        try:
+            await teams_start(teams,worker);db.expire_all()
+            source=db.query(ChannelMessage).filter_by(participant_kind='bot').one()
+            original_data={'type':123,'context':'opaque business data'}
+            card={'type':'AdaptiveCard','version':'1.6','body':[{'type':'Container','items':[
+                {'type':'Input.ChoiceSet','id':'실제선택','choices':[{'title':'정상','value':'yes'}]},
+                {'type':'ActionSet','actions':[{'type':action_type,'title':'submit','data':original_data}]}]}]}
+            source.message_type='form-a-card';source.payload_json={'sourceTalkNodeId':'choice','adaptiveCard':card};db.commit()
+            packet=convert_packet('ms_teams','replies',{'messages':[dict(id=str(source.id),text='input',messageType=source.message_type,payload=source.payload_json)],'destination':{}})[0]
+            items=packet['attachments'][0]['content']['body'][0]['items']
+            value=deepcopy(items[1]['actions'][0]['data']);input_id=items[0]['id']
+            assert input_id.startswith('__cga_input_') and value['response']==original_data
+            def incoming(eid,choice):
+                selected={**deepcopy(value),input_id:choice}
+                if action_type=='Action.Execute':return activity(id=eid,type='invoke',name='adaptiveCard/action',value={'trigger':'manual','action':{'type':'Action.Execute','data':selected}})
+                return activity(id=eid,value=selected)
+            with pytest.raises(HTTPException) as rejected:await a.receive(AUTHORIZATION,incoming('invalid-nested-input','not-a-choice'))
+            assert rejected.value.status_code==403 and rejected.value.detail=='TEAMS_CARD_RESPONSE_INVALID'
+            db.expire_all();assert db.query(ChannelMessage).count()==2 and db.query(ChannelConnectionDelivery).count()==1
+            await a.receive(AUTHORIZATION,incoming('valid-nested-input','yes'));await worker.tick();db.expire_all()
+            message=db.query(ChannelMessage).filter_by(participant_kind='user').order_by(ChannelMessage.created_at.desc()).first()
+            assert json.loads(message.text)['response']=={**original_data,'실제선택':'yes'}
         finally:await worker.stop()
     asyncio.run(run())
 

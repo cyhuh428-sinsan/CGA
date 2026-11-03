@@ -47,7 +47,8 @@ export function buildAidotTeamsReplyPayload(message){
  function bind(value){
   if(Array.isArray(value))return value.map(bind);
   if(!value||typeof value!=="object")return value;
-  const copy=Object.fromEntries(Object.entries(value).map(([key,child])=>[key,bind(child)]));
+  const action=value.type==="Action.Submit"||value.type==="Action.Execute";
+  const copy=Object.fromEntries(Object.entries(value).map(([key,child])=>[key,action&&key==="data"?child:bind(child)]));
   if(typeof copy.type==="string"&&copy.type.startsWith("Input.")&&typeof copy.id==="string"&&(type==="form-a-card"||copy.id!=="__cga_buttonValue"))copy.id="__cga_input_"+Buffer.from(copy.id,"utf8").toString("base64url");
   if(copy.type==="Action.Submit"||copy.type==="Action.Execute"){
    const data=typeof copy.data==="string"?{response:{buttonValue:copy.data}}:record(copy.data);
