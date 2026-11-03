@@ -64,6 +64,13 @@ def open_native_channel_room(db: Session, command: NativeRoomCommand) -> NativeR
     from app.api.routes import channels
 
     channel = channels._ensure_channel(command.channel_type)
+    try:
+        bot_id = UUID(str(command.payload.bot_id).strip())
+    except (TypeError, ValueError):
+        _not_found()
+    scoped_bot = db.get(channels.Bot, bot_id)
+    if scoped_bot is None or command.organization_id is None or scoped_bot.organization_id != command.organization_id:
+        _not_found()
     bot, _, _ = channels._get_active_bot_version(db, command.payload.bot_id, channel)
     if command.organization_id is None or bot.organization_id != command.organization_id:
         _not_found()

@@ -61,7 +61,7 @@ def test_native_room_rejects_cross_organization_before_writing(monkeypatch):
 
     bot = SimpleNamespace(id=uuid4(), organization_id=uuid4())
     monkeypatch.setattr(channels, "_get_active_bot_version", lambda *a: (bot, None, None))
-    db = SimpleNamespace()
+    db = SimpleNamespace(get=lambda *a: bot)
     command = native.NativeRoomCommand(
         organization_id=uuid4(), channel_type="webchat",
         payload=channels.ChannelRoomCreateRequest(bot_id=str(bot.id)),
@@ -70,6 +70,24 @@ def test_native_room_rejects_cross_organization_before_writing(monkeypatch):
     with pytest.raises(HTTPException) as error:
         native.open_native_channel_room(db, command)
     assert error.value.status_code == 404
+
+
+def test_native_room_cross_org_hides_inactive_version_before_resolution(monkeypatch):
+    from app.services import channel_runtime_native as native
+    from app.api.routes import channels
+    bot = SimpleNamespace(id=uuid4(), organization_id=uuid4(), active_version_id=None)
+    resolved = []
+    def active_version(*args):
+        resolved.append(True)
+        raise HTTPException(status_code=409, detail="운영버전이 지정되지 않은 봇입니다.")
+    monkeypatch.setattr(channels, "_get_active_bot_version", active_version)
+    db = SimpleNamespace(get=lambda *a: bot)
+    command = native.NativeRoomCommand(organization_id=uuid4(), channel_type="webchat",
+        payload=channels.ChannelRoomCreateRequest(bot_id=str(bot.id)), request=SimpleNamespace())
+    with pytest.raises(HTTPException) as error:
+        native.open_native_channel_room(db, command)
+    assert error.value.status_code == 404
+    assert resolved == []
 
 
 @pytest.mark.parametrize("boundary", ["organization", "bot", "room"])
