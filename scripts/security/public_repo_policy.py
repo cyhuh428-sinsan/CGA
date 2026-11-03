@@ -44,6 +44,26 @@ EMAIL_PATTERN = re.compile(
     r"[a-z]{2,63}\b"
 )
 
+# 승인된 공개 Google 주체 1개와 합성 테스트 계정 3개만 경로까지 고정한다.
+APPROVED_EMAIL_LITERALS = {
+    "chat@system.gserviceaccount.com": frozenset({
+        "apps/api/app/services/channel_connection_google_chat_auth.py",
+        "scripts/security/public_repo_policy.py", "apps/api/tests/test_public_repo_policy.py",
+    }),
+    "qa@cga-qa-project.iam.gserviceaccount.com": frozenset({
+        "apps/api/tests/test_channel_connection_google_chat_runtime.py",
+        "scripts/security/public_repo_policy.py", "apps/api/tests/test_public_repo_policy.py",
+    }),
+    "second@cga-qa-project.iam.gserviceaccount.com": frozenset({
+        "apps/api/tests/test_channel_connection_google_chat_runtime.py",
+        "scripts/security/public_repo_policy.py", "apps/api/tests/test_public_repo_policy.py",
+    }),
+    "rotated@cga-qa-project.iam.gserviceaccount.com": frozenset({
+        "apps/api/tests/test_channel_connection_google_chat_runtime.py",
+        "scripts/security/public_repo_policy.py", "apps/api/tests/test_public_repo_policy.py",
+    }),
+}
+
 
 def _normalise_path(path: str) -> str:
     return PurePosixPath(path.replace("\\", "/")).as_posix().lstrip("./")
@@ -114,6 +134,8 @@ def find_content_violations(repo: Path, paths: Iterable[str]) -> list[str]:
                 if pattern.search(line):
                     violations.append(f"{path}:{line_number}:{rule}")
             for match in EMAIL_PATTERN.finditer(line):
+                if path in APPROVED_EMAIL_LITERALS.get(match.group(0), ()):
+                    continue
                 domain = match.group(0).rsplit("@", 1)[1].lower()
                 if domain not in {"example.com", "example.org", "example.net"} and not domain.endswith(".invalid"):
                     violations.append(f"{path}:{line_number}:personal-email")

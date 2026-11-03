@@ -266,3 +266,24 @@ def test_database_wait_does_not_block_async_listener_loop():
             release.set()
             await releaser
     asyncio.run(run())
+
+
+@pytest.mark.parametrize('hook_fails',[False,True])
+def test_send_failure_hook_uses_existing_transaction_and_failure_preserves_unknown(state_db,hook_fails):
+    from app.models import ChannelConnectionDelivery,ChannelConnection
+    s,db,row,lease,factory,runtime=seed_native(state_db)
+    class FailureListener(SyntheticListener):
+        async def send(self,target,packets,context):raise TimeoutError('synthetic-only')
+        def record_send_failure(self,session,target,error,installation_id,owner,fence):
+            assert isinstance(error,TimeoutError)
+            current=s._live(session,target.id,installation_id,owner,fence)
+            current.last_error_code='SYNTHETIC_HOOK_MARKER'
+            if hook_fails:raise RuntimeError('synthetic hook failure')
+    listener=FailureListener()
+    async def run():
+        did=await runtime.receive(row.id,lease.id,'worker-1',1,event(channelId='C123'))
+        assert await runtime.process_one(row.id,lease.id,'worker-1',1,listener)
+        db.expire_all();item=db.get(ChannelConnectionDelivery,did)
+        assert item.status=='unknown' and item.last_error_code=='DELIVERY_UNKNOWN'
+        assert db.get(ChannelConnection,row.id).last_error_code==(None if hook_fails else 'SYNTHETIC_HOOK_MARKER')
+    asyncio.run(run())

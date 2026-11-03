@@ -187,6 +187,12 @@ class ConnectionRuntime:
                 db.commit()
             except BaseException as error:
                 db.rollback()
+                failure = getattr(listener, 'record_send_failure', None)
+                if failure is not None:
+                    try:
+                        failure(db, target, error, installation_id, owner, fence)
+                    except Exception:
+                        db.rollback()
                 state.mark_unknown(db, delivery_id, claim, "DELIVERY_UNKNOWN")
                 db.commit()
                 if isinstance(error, (asyncio.CancelledError, concurrent.futures.CancelledError)): raise
