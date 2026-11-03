@@ -217,7 +217,16 @@ def connect_connection(channel_id: UUID, connection_id: UUID, request: Request, 
     row = _row(db, current_user, channel_id, connection_id)
     # 키 부재/손상은 worker 미준비보다 먼저 실패시킨다. 실제 identity 확인은 후속 worker 담당.
     _check_configuration(db, current_user, row)
-    raise HTTPException(409, "CONNECTION_WORKER_UNAVAILABLE: 연결 실행 기능은 준비 중입니다.")
+    from app.services.channel_connection_supervisor import ADAPTERS
+    if not settings.channel_connection_worker_enabled or row.provider not in ADAPTERS:
+        raise HTTPException(409, "CONNECTION_WORKER_UNAVAILABLE: 연결 실행 기능은 준비 중입니다.")
+    if row.desired_state != "connected":
+        row.generation += 1
+        row.desired_state, row.observed_state = "connected", "connecting"
+        row.last_error_code = None
+        row.updated_by = current_user.id
+    _commit(db, current_user, row, "connect")
+    return success_response(request, serialize_connection(row))
 
 
 @router.post("/{connection_id}/disconnect")

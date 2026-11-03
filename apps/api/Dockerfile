@@ -1,3 +1,4 @@
+FROM node:22.23.0-bookworm-slim AS channel-node
 FROM python:3.12-slim
 
 WORKDIR /workspace
@@ -22,6 +23,8 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt \
 ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY apps/api /workspace/apps/api
+COPY --from=channel-node /usr/local/bin/node /usr/local/bin/node
+COPY packages/shared/src/channel.ts packages/shared/src/channel-provider-map.ts packages/shared/src/channel-bridge.mjs packages/shared/src/teams.mjs packages/shared/src/adaptive-card.ts /workspace/packages/shared/src/
 RUN find /workspace/apps/api -type d -name '__pycache__' -prune -exec rm -rf {} + \
     && find /workspace/apps/api -type f -name '*.py[co]' -delete \
     && chmod +x /workspace/apps/api/scripts/start-cga-api.sh

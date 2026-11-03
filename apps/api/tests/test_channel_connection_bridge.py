@@ -76,3 +76,14 @@ def test_python_can_consume_authoritative_mapping_without_alias_replacement():
     assert len(result['value']) == 8
     assert result['value'][2] == {'admin': 'TEAMS', 'provider': 'ms_teams', 'runtime': 'ms-teams', 'bridge': 'ms-teams'}
     assert result['value'][6] == {'admin': 'GOOGLE_CHAT', 'provider': 'google_chat', 'runtime': 'google-chat', 'bridge': 'google-chat'}
+
+
+def test_python_bridge_conversion_and_missing_binary_fail_closed(monkeypatch):
+    from app.services.channel_connection_bridge import convert_packet
+    from app.core.config import settings
+    from fastapi import HTTPException
+    assert convert_packet("slack", "replies", {"messages": [{"text": "answer"}], "destination": {"channelId": "C123"}})[0]["text"] == "answer"
+    monkeypatch.setattr(settings, "channel_connection_node_binary", "missing-node-task5")
+    with pytest.raises(HTTPException) as error:
+        convert_packet("slack", "replies", {"messages": [{"text": "answer"}], "destination": {"channelId": "C123"}})
+    assert error.value.detail == "CHANNEL_PACKET_RUNTIME_UNAVAILABLE"

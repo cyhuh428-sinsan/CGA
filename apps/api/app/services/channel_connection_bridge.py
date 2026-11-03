@@ -39,3 +39,23 @@ def normalize_channel_provider(value: str) -> str:
         if value in (row["admin"], row["provider"], row["runtime"]):
             return row["provider"]
     raise HTTPException(422, "CHANNEL_PROVIDER_INVALID")
+
+
+def channel_mapping(value: str) -> dict[str, str]:
+    for row in provider_mapping():
+        if value in (row["admin"], row["provider"], row["runtime"]):
+            return row
+    raise HTTPException(422, "CHANNEL_PROVIDER_INVALID")
+
+
+def convert_packet(provider: str, direction: str, payload: dict):
+    try:
+        response = subprocess.run([settings.channel_connection_node_binary, str(BRIDGE)],
+            input=json.dumps({"provider": provider, "operation": direction, "payload": payload}, ensure_ascii=False),
+            text=True, capture_output=True, timeout=10, encoding="utf-8", check=False)
+        value = json.loads(response.stdout)
+        if response.returncode or value.get("ok") is not True:
+            raise HTTPException(422, "CHANNEL_PACKET_INVALID")
+        return value["value"]
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError):
+        raise HTTPException(503, "CHANNEL_PACKET_RUNTIME_UNAVAILABLE") from None

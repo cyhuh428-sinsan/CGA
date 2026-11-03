@@ -23,12 +23,14 @@ from app.core.db_metrics import finish_db_metrics, start_db_metrics
 from app.core.logging import configure_logging, get_logger
 from app.db.session import SessionLocal
 from app.services.edit_lock_cleanup import delete_expired_edit_locks
+from app.services.channel_connection_supervisor import ConnectionSupervisor
 
 
 configure_logging()
 logger = get_logger("aidot.api")
 queue_worker_task: asyncio.Task | None = None
 edit_lock_cleanup_task: asyncio.Task | None = None
+connection_supervisor = ConnectionSupervisor(SessionLocal)
 
 
 def _queue_worker_sleep_seconds(interval: float, consecutive_failures: int) -> float:
@@ -173,9 +175,11 @@ async def stop_edit_lock_cleanup_worker() -> None:
 async def lifespan(app: FastAPI):
     await start_channel_queue_worker()
     await start_edit_lock_cleanup_worker()
+    await connection_supervisor.start()
     try:
         yield
     finally:
+        await connection_supervisor.stop()
         await stop_edit_lock_cleanup_worker()
         await stop_channel_queue_worker()
 

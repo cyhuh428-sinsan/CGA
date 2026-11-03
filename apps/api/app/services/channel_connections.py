@@ -73,6 +73,32 @@ def decrypt_credentials(ciphertext: str, org: UUID, connection: UUID, key: str, 
         raise HTTPException(503, "CONNECTION_CREDENTIALS_UNAVAILABLE: 인증정보를 확인할 수 없습니다.") from None
 
 
+def encrypt_event_context(context: dict, org: UUID, delivery: UUID, key: str, version: str) -> str:
+    if not version or not isinstance(context, dict):
+        raise HTTPException(422, "INVALID_EVENT_CONTEXT")
+    try:
+        plain = json.dumps(context, ensure_ascii=False).encode()
+        if len(plain) > 262144:
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise HTTPException(422, "INVALID_EVENT_CONTEXT") from None
+    nonce = os.urandom(12)
+    return base64.urlsafe_b64encode(nonce + _cipher(key).encrypt(nonce, plain,
+        b"event-context:" + _aad(org, delivery, version))).decode()
+
+
+def decrypt_event_context(ciphertext: str, org: UUID, delivery: UUID, key: str, version: str) -> dict:
+    cipher = _cipher(key)
+    try:
+        raw = base64.b64decode(ciphertext.encode("ascii"), altchars=b"-_", validate=True)
+        value = json.loads(cipher.decrypt(raw[:12], raw[12:], b"event-context:" + _aad(org, delivery, version)))
+        if not isinstance(value, dict):
+            raise ValueError()
+        return value
+    except (ValueError, TypeError, UnicodeError, InvalidTag, binascii.Error):
+        raise HTTPException(503, "CONNECTION_CONTEXT_UNAVAILABLE") from None
+
+
 def serialize_connection(row, lease=None) -> dict:
     now = datetime.now(timezone.utc)
     observed = row.observed_state

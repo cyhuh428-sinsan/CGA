@@ -105,7 +105,7 @@ def execute_native_channel_message(db: Session, command: NativeMessageCommand) -
     )["data"]
 
 
-def run_connection_envelope(db: Session, envelope: ConnectionRuntimeEnvelope) -> ConnectionRuntimeResult:
+def run_connection_envelope(db: Session, envelope: ConnectionRuntimeEnvelope, *, before_message=None) -> ConnectionRuntimeResult:
     from app.api.routes.channels import ChannelMessageRequest, ChannelRoomCreateRequest
 
     # 외부 식별자는 hash만 허용한다. 중복 제거와 mapping 저장은 호출자 책임이다.
@@ -126,6 +126,9 @@ def run_connection_envelope(db: Session, envelope: ConnectionRuntimeEnvelope) ->
             language=envelope.language, start_immediately=False,
         ),
     ))
+    # 방 open은 기존 contract상 commit한다. 메시지 실행 전 lease/generation을 재검증한다.
+    if before_message is not None:
+        before_message(UUID(room_result["room"]["id"]))
     message_result = execute_native_channel_message(db, NativeMessageCommand(
         organization_id=envelope.organization_id, bot_id=envelope.bot_id,
         channel_type=envelope.channel_type, room_id=UUID(room_result["room"]["id"]),

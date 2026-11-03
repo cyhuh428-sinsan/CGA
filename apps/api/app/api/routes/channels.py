@@ -781,7 +781,11 @@ def _verify_channel_key(api_key: str | None) -> None:
 def _ensure_channel(channel_type: str) -> str:
     normalized = channel_type.strip().lower()
     if normalized not in SUPPORTED_CHANNELS:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="지원하지 않는 채널입니다.")
+        if normalized not in {"slack", "discord", "telegram", "google-chat", "line"}:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="지원하지 않는 채널입니다.")
+        from app.services.channel_connection_bridge import channel_mapping
+        mapping = channel_mapping(normalized)
+        return mapping["runtime"]
     return normalized
 
 
@@ -1432,6 +1436,9 @@ def _initial_messages_for_version(
 
 def _channel_admin_code(channel_type: str | None) -> str:
     normalized = (channel_type or "webchat").strip().lower()
+    if normalized in {"slack", "discord", "telegram", "google-chat", "line"}:
+        from app.services.channel_connection_bridge import channel_mapping
+        return channel_mapping(normalized)["admin"]
     return {
         "webchat": "WEBCHAT",
         "kakao": "KAKAO",
@@ -2352,6 +2359,9 @@ def _table_rows_from_variable(value: Any) -> list[dict[str, Any]]:
 
 def _channel_template_code(channel_type: str | None) -> str:
     normalized = (channel_type or "webchat").strip().lower()
+    if normalized in {"slack", "discord", "telegram", "google-chat", "line"}:
+        from app.services.channel_connection_bridge import channel_mapping
+        return channel_mapping(normalized)["admin"]
     return {
         "webchat": "WEBCHAT",
         "kakao": "KAKAO",
