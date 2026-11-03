@@ -11,6 +11,8 @@ from app.models.access_control import (
 )
 from app.models.audit import AuditLog
 from app.models.channel import ChannelMessage, ChannelQueueEvent, ChannelRoom
+from app.models.channel_connection import ChannelConnection
+from app.models.channel_connection_runtime import ChannelInstallationLease, ChannelConnectionRoom, ChannelConnectionDelivery
 from app.models.admin import AdminChannel, AdminDefaultMessage, AdminLicense, AdminTemplate, CommonVariable
 from app.models.studio import Bot, BotHub, BotHubMember, BotVersion, EditLock, VersionDialogAsset, VersionDialogFlowGraph
 
@@ -27,6 +29,10 @@ __all__ = [
     "ChannelMessage",
     "ChannelQueueEvent",
     "ChannelRoom",
+    "ChannelConnection",
+    "ChannelInstallationLease",
+    "ChannelConnectionRoom",
+    "ChannelConnectionDelivery",
     "CommonVariable",
     "EditLock",
     "Group",
