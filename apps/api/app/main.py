@@ -27,6 +27,7 @@ from app.services.channel_connection_supervisor import ConnectionSupervisor, ADA
 from app.services.channel_connection_teams import TeamsAdapter
 from app.services.channel_connection_slack import SlackAdapter
 from app.services.channel_connection_discord import DiscordAdapter
+from app.services.channel_connection_telegram import TelegramAdapter
 
 
 configure_logging()
@@ -37,6 +38,7 @@ connection_supervisor = ConnectionSupervisor(SessionLocal)
 ADAPTERS["ms_teams"] = TeamsAdapter(SessionLocal, owner=connection_supervisor.owner)
 ADAPTERS["slack"] = SlackAdapter(SessionLocal, owner=connection_supervisor.owner)
 ADAPTERS["discord"] = DiscordAdapter(SessionLocal, owner=connection_supervisor.owner)
+ADAPTERS["telegram"] = TelegramAdapter(SessionLocal, owner=connection_supervisor.owner)
 
 
 def _queue_worker_sleep_seconds(interval: float, consecutive_failures: int) -> float:
